@@ -15,14 +15,6 @@
 #ifndef AUDIO_BUFFER_DESC_H
 #define AUDIO_BUFFER_DESC_H
 
-#include <map>
-#include <set>
-#include <string>
-#include <unordered_map>
-#include <parcel.h>
-
-#include "securec.h"
-
 namespace OHOS {
 namespace AudioStandard {
 struct BufferDesc {
@@ -33,6 +25,7 @@ struct BufferDesc {
     size_t metaLength = 0;
     uint64_t position = 0;
     uint64_t timeStampInNs = 0;
+    uint64_t syncFramePts = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

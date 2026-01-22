@@ -18,10 +18,12 @@ module_output_path = "audio_framework/audio_framework_policy/audio_manager"
 ohos_unittest("audio_manager_unit_test") {
   testonly = true
   module_out_path = module_output_path
+  defines = [ "AUDIO_BUILD_VARIANT_ROOT" ]
   include_dirs = [
     "./include",
     "../../../../common/include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../services/audio_service/test/unittest/include"
   ]
 
   cflags = [
@@ -38,6 +40,9 @@ ohos_unittest("audio_manager_unit_test") {
     "../../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../../../services/audio_policy:audio_foundation",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
   ]

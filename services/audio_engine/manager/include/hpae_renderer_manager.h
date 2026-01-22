@@ -98,8 +98,10 @@ public:
     void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     bool IsBypassSpatializationForStereo() override;
+    void SetCollDelayCount() override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
@@ -121,7 +123,7 @@ private:
     void ConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void ConnectOutputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
-    void DisConnectOutputCluster(HpaeProcessorType sceneType);
+    void DisConnectOutputCluster(HpaeProcessorType sceneType, const bool isNeedInitEffectBuffer = false);
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     void DereferenceInputCluster(uint32_t sessionId);
@@ -153,6 +155,9 @@ private:
     bool IsClusterDisConnected(HpaeProcessorType sceneType);
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
+    void StopOuputNode();
+    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId,
+        RendererState state, uint32_t appUid = INVALID_UID);
 
 private:
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -43,8 +43,9 @@ public:
         const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
         bool skipForce = false);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
+    std::string GetModuleNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-        AudioStreamInfo &streamInfo, bool isReloadProcess);
+        AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess);
     uint32_t GenerateSessionId();
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
     int32_t SetRendererTarget(uint32_t target, uint32_t lastTarget, uint32_t sessionId);

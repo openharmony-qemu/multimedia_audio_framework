@@ -16,8 +16,7 @@
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
-
-#include "audio_manager_base.h"
+#include "audio_device_descriptor.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "audio_service.h"
@@ -840,8 +839,14 @@ void DisableAllInnerCapFuzzTest()
 
 void OnStatusUpdateFuzzTest()
 {
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
     uint32_t streamIndex = g_fuzzUtils.GetData<uint32_t>();
-    auto StreamCallbacksPtr = std::make_shared<StreamCallbacks>(streamIndex);
+    auto StreamCallbacksPtr = std::make_shared<StreamCallbacks>(streamIndex, rendererInServer);
     CHECK_AND_RETURN(StreamCallbacksPtr != nullptr);
 
     IOperation operation = g_fuzzUtils.GetData<IOperation>();
@@ -850,8 +855,14 @@ void OnStatusUpdateFuzzTest()
 
 void OnWriteDataStreamsCallbackFuzzTest()
 {
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
     uint32_t streamIndex = g_fuzzUtils.GetData<uint32_t>();
-    auto StreamCallbacksPtr = std::make_shared<StreamCallbacks>(streamIndex);
+    auto StreamCallbacksPtr = std::make_shared<StreamCallbacks>(streamIndex, rendererInServer);
     CHECK_AND_RETURN(StreamCallbacksPtr != nullptr);
 
     size_t length = g_fuzzUtils.GetData<size_t>();
@@ -860,8 +871,14 @@ void OnWriteDataStreamsCallbackFuzzTest()
 
 void GetAvailableSizeStreamsCallbackFuzzTest()
 {
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
     uint32_t streamIndex = g_fuzzUtils.GetData<uint32_t>();
-    auto StreamCallbacksPtr = std::make_shared<StreamCallbacks>(streamIndex);
+    auto StreamCallbacksPtr = std::make_shared<StreamCallbacks>(streamIndex, rendererInServer);
     CHECK_AND_RETURN(StreamCallbacksPtr != nullptr);
 
     size_t length = g_fuzzUtils.GetData<size_t>();
@@ -909,7 +926,7 @@ void SetDuckFactorFuzzTest()
     CHECK_AND_RETURN(renderer != nullptr);
 
     float duckFactor = g_fuzzUtils.GetData<float>();
-    renderer->SetDuckFactor(duckFactor);
+    renderer->SetDuckFactor(duckFactor, 0);
 }
 
 void SetDefaultOutputDeviceFuzzTest()

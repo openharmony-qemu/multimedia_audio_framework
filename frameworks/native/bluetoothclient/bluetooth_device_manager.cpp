@@ -88,7 +88,7 @@ void UnregisterDeviceObserver()
 
 void SendUserSelectionEvent(AudioStandard::DeviceType devType, const std::string &macAddress, int32_t eventType)
 {
-    AUDIO_INFO_LOG("devType is %{public}d, eventType is%{public}d.", devType, eventType);
+    HILOG_COMM_INFO("[SendUserSelectionEvent]devType is %{public}d, eventType is%{public}d.", devType, eventType);
     BluetoothRemoteDevice device;
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         if (MediaBluetoothDeviceManager::GetConnectedA2dpBluetoothDevice(macAddress, device) != SUCCESS) {
@@ -445,6 +445,9 @@ void MediaBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemot
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
+    std::string deviceName = "";
+    device.GetDeviceName(deviceName, false);
+    desc.dmDeviceInfo_ = deviceName;
     AUDIO_WARNING_LOG("a2dpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address\
         is %{public}s, category is %{public}d", deviceStatus,
         GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
@@ -489,6 +492,9 @@ void MediaBluetoothDeviceManager::NotifyToUpdateVirtualDevice(const BluetoothRem
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::VIRTUAL_CONNECTED;
+    std::string deviceName = "";
+    device.GetDeviceName(deviceName, false);
+    desc.dmDeviceInfo_ = deviceName;
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "NotifyToUpdateVirtualDevice, device observer is null");
     bool isConnected = deviceStatus == DeviceStatus::VIRTUAL_ADD;
@@ -632,6 +638,7 @@ void A2dpInBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemo
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::CONNECTED;
+    desc.highQualityRecordingSupported_ = true;
     AUDIO_INFO_LOG("a2dpInBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d", deviceStatus, GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
     {

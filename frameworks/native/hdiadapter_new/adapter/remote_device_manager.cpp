@@ -80,6 +80,7 @@ void RemoteDeviceManager::UnloadAdapter(const std::string &adapterName, bool for
 
     if (wrapper->routeHandle_ != -1) {
         wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
+        wrapper->routeHandle_ = -1;
     }
     audioManager_->UnloadAdapter(wrapper->adapterDesc_.adapterName);
     wrapper->adapter_ = nullptr;
@@ -130,6 +131,7 @@ std::string RemoteDeviceManager::GetAudioParameter(const std::string &adapterNam
     std::string value;
     int32_t ret = wrapper->adapter_->GetExtraParams(hdiKey, condition.c_str(), value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "get param fail, error code: %{public}d", ret);
+    AUDIO_INFO_LOG("value: %{public}s", value.c_str());
     return value;
 #else
     AUDIO_INFO_LOG("not support");
@@ -168,7 +170,8 @@ int32_t RemoteDeviceManager::SetOutputRoute(const std::string &adapterName, cons
     route.sources.push_back(source);
     route.sinks.push_back(sink);
 
-    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, ERR_INVALID_HANDLE,
         "adapter %{public}s is nullptr", GetEncryptStr(adapterName).c_str());
     ret = wrapper->adapter_->UpdateAudioRoute(route, wrapper->routeHandle_);
@@ -210,6 +213,16 @@ int32_t RemoteDeviceManager::SetInputRoute(const std::string &adapterName, Devic
     return SUCCESS;
 }
 
+void RemoteDeviceManager::ReleaseOutputRoute(const std::string &adapterName)
+{
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    CHECK_AND_RETURN(wrapper->routeHandle_ != -1);
+    wrapper->adapter_->ReleaseAudioRoute(wrapper->routeHandle_);
+    wrapper->routeHandle_ = -1;
+}
+
 void RemoteDeviceManager::SetMicMute(const std::string &adapterName, bool isMute)
 {
     AUDIO_INFO_LOG("not support");
@@ -219,6 +232,7 @@ int32_t RemoteDeviceManager::HandleEvent(const std::string &adapterName, const A
     const char *value, void *reserved)
 {
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition, value);
+    HandleAdapterParamChangeEvent(adapterName, key, condition, value);
     int32_t ret = SUCCESS;
     switch (key) {
         case AudioParamKey::PARAM_KEY_STATE:
@@ -262,6 +276,20 @@ void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapter
     wrapper->captureCallbacks_[hdiCaptureId] = callback;
 }
 
+void RemoteDeviceManager::RegistAdapterManagerCallback(const std::string &adapterName,
+    IAudioSinkCallback *callback)
+{
+    std::lock_guard<std::mutex> mgrLock(managerMtx_);
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    std::lock_guard<std::mutex> lock(adapterParamCallbackMtx_);
+
+    CHECK_AND_RETURN_LOG(adapterParamCallbacks_.count(adapterName) == 0,
+        "callback already existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
+    adapterParamCallbacks_[adapterName] = callback;
+}
+
 void RemoteDeviceManager::UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
@@ -282,6 +310,23 @@ void RemoteDeviceManager::UnRegistCaptureSourceCallback(const std::string &adapt
     CHECK_AND_RETURN_LOG(wrapper->captureCallbacks_.count(hdiCaptureId) != 0,
         "callback not exist, hdiCaptureId: %{public}u", hdiCaptureId);
     wrapper->captureCallbacks_.erase(hdiCaptureId);
+}
+
+void RemoteDeviceManager::UnRegistAdapterManagerCallback(const std::string &adapterName)
+{
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    std::lock_guard<std::mutex> lock(adapterParamCallbackMtx_);
+    CHECK_AND_RETURN_LOG(adapterParamCallbacks_.count(adapterName) != 0,
+        "callback not existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
+    adapterParamCallbacks_.erase(adapterName);
+}
+
+void RemoteDeviceManager::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
+{
+    AUDIO_INFO_LOG("in");
+    callback_.RegistCallback(type, callback);
 }
 
 void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
@@ -550,6 +595,8 @@ int32_t RemoteDeviceManager::HandleStateChangeEvent(const std::string &adapterNa
         "not find daudio device type value, contentDes: %{public}s", contentDesStr.c_str());
 
     int32_t ret = SUCCESS;
+    ret = HandleRouteEnableEvent(adapterName, key, condition, value, contentDesStr);
+    CHECK_AND_RETURN_RET(ret != SUCCESS, ret);
     if (contentDesStr[devTypeValPos] == DAUDIO_DEV_TYPE_SPK) {
         AUDIO_INFO_LOG("ERR_EVENT is DAUDIO_DEV_TYPE_SPK");
         ret = HandleRenderParamEvent(adapterName, key, condition, value);
@@ -624,6 +671,24 @@ int32_t RemoteDeviceManager::HandleCaptureParamEvent(const std::string &adapterN
     return SUCCESS;
 }
 
+int32_t RemoteDeviceManager::HandleRouteEnableEvent(const std::string &adapterName, const AudioParamKey key,
+    const char *condition, const char *value, const std::string &contentDesStr)
+{
+    std::string routeEnableKey = "ROUTE_ENABLE=";
+    size_t routeEnableKeyPos = contentDesStr.find(routeEnableKey);
+    CHECK_AND_RETURN_RET_LOG(routeEnableKeyPos != std::string::npos, ERR_INVALID_PARAM,
+        "not find daudio route enable info, contentDes: %{public}s", contentDesStr.c_str());
+    size_t routeEnableValPos = routeEnableKeyPos + routeEnableKey.length();
+    CHECK_AND_RETURN_RET_LOG(routeEnableValPos < contentDesStr.length(), ERR_INVALID_PARAM,
+        "not find daudio route enable value, contentDes: %{public}s", contentDesStr.c_str());
+    CHECK_AND_RETURN_RET_LOG(contentDesStr[routeEnableValPos] == ROUTE_ENABLE ||
+        contentDesStr[routeEnableValPos] == ROUTE_DISABLE, ERR_INVALID_PARAM, "invalid route state");
+    bool enable = contentDesStr[routeEnableValPos] == ROUTE_ENABLE;
+    AUDIO_INFO_LOG("enable: %{public}d", enable);
+    callback_.OnHdiRouteStateChange(adapterName, enable);
+    return SUCCESS;
+}
+
 int32_t RemoteDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 {
     int32_t ret = SUCCESS;
@@ -683,5 +748,29 @@ void RemoteDeviceManager::SetAudioScene(const AudioScene scene)
 {
     AUDIO_INFO_LOG("not support");
 }
+
+int32_t RemoteDeviceManager::HandleAdapterParamChangeEvent(const std::string &adapterName, const AudioParamKey key,
+    const char *condition, const char *value)
+{
+    CHECK_AND_RETURN_RET_LOG(condition != nullptr && value != nullptr, ERR_INVALID_PARAM,
+        "condition or value is nullptr");
+    uint32_t renderId = ParseRenderId(condition);
+    CHECK_AND_RETURN_RET_LOG(renderId == HDI_INVALID_ID, ERR_INVALID_HANDLE, "renderId is %{public}u", renderId);
+    std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
+        GetEncryptStr(adapterName).c_str());
+    IAudioSinkCallback *adapterParamCallback = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(adapterParamCallbackMtx_);
+        AUDIO_INFO_LOG("exist %{public}zu renders in adapter", adapterParamCallbacks_.size());
+        adapterParamCallback = adapterParamCallbacks_.count(adapterName) != 0 ?
+            adapterParamCallbacks_[adapterName] : adapterParamCallback;
+    }
+    CHECK_AND_RETURN_RET_LOG(adapterParamCallback != nullptr, ERR_INVALID_HANDLE,
+        "callback not existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
+    adapterParamCallback->OnAdapterParamChange(adapterName, key, std::string(condition), std::string(value));
+    return SUCCESS;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

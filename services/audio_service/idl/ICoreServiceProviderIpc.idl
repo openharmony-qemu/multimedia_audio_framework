@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,6 +36,7 @@ interface ICoreServiceProviderIpc {
         [in] unsigned int sessionID,
         [out] AudioDeviceDescriptor deviceInfo,
         [out] AudioStreamInfo streamInfo,
+        [out] boolean isUltraFast,
         [in] boolean isReloadProcess);
     void GenerateSessionId([out] unsigned int sessionId);
     void ReloadCaptureSession(
@@ -61,4 +62,5 @@ interface ICoreServiceProviderIpc {
     void A2dpOffloadGetRenderPosition([out] unsigned int delayValue, [out] unsigned long sendDataSize, [out] unsigned int timeStamp, [out] int ret);
     void OnCheckActiveMusicTime([in] String reason);
     [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
+    void GetModuleNameBySessionId([in] unsigned int sessionID, [out] String name);
 }

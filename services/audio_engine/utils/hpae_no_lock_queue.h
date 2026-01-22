@@ -22,7 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-const size_t CURRENT_REQUEST_COUNT = 10000;
+const size_t CURRENT_REQUEST_COUNT = 1000;
 using Request = std::function<void()>;
 struct RequestNode {
     RequestNode() = default;

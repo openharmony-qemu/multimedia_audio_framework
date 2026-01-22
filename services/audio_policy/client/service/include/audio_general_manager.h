@@ -18,8 +18,7 @@
 
 #include <mutex>
 #include "audio_policy_interface.h"
-#include "audio_manager_base.h"
-#include "audio_system_manager.h"
+#include "audio_stream_types.h"
 #include "istandard_audio_service.h"
 
 namespace OHOS {
@@ -114,6 +113,7 @@ public:
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
 
     int32_t SetDeviceConnectionStatus(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isConnected);
+    int32_t SetAsrVoiceMuteMode(const AsrVoiceMuteMode asrVoiceMuteMode, bool on);
     int32_t UpdateDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, DeviceInfoUpdateCommand command);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors) const;
@@ -123,6 +123,8 @@ public:
     int32_t SetActiveHfpDevice(const std::string &macAddress);
     int32_t SetSleAudioOperationCallback(const std::shared_ptr<SleAudioOperationCallback> &callback);
     int32_t RestoreDistributedDeviceInfo();
+    int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
 private:
     std::shared_ptr<AudioFocusInfoChangeCallback> audioFocusInfoCallback_ = nullptr;
     int32_t volumeChangeClientPid_ = -1;

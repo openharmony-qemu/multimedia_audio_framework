@@ -72,6 +72,10 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_VOICE_RING, SourceType::SOURCE_TYPE_INVALID, true}},
     {"STREAM_CAMCORDER",
         {AudioStreamType::STREAM_CAMCORDER, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_ANNOUNCEMENT",
+        {AudioStreamType::STREAM_ANNOUNCEMENT, SourceType::SOURCE_TYPE_INVALID, true}},
+    {"STREAM_EMERGENCY",
+        {AudioStreamType::STREAM_EMERGENCY, SourceType::SOURCE_TYPE_INVALID, true}},
     // source type for audio interrupt
     {"SOURCE_TYPE_MIC",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_MIC, false}},
@@ -99,6 +103,8 @@ std::map<std::string, AudioFocusType> AudioFocusParser::audioFocusMap = {
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_UNPROCESSED, false}},
     {"SOURCE_TYPE_LIVE",
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_LIVE, false}},
+    {"SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT",
+        {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, false}},
 };
 
 // Initialize action map with string vs InterruptActionType

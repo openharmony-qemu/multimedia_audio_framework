@@ -149,6 +149,54 @@ struct CurrentInputDeviceChangedEvent : public Parcelable {
         return event;
     }
 };
+
+class AudioSessionCallback {
+public:
+    virtual ~AudioSessionCallback() = default;
+    /**
+     * @brief OnAudioSessionDeactive will be executed when the audio session is deactivated be others.
+     *
+     * @param deactiveEvent the audio session deactive event info.
+     * @since 12
+     */
+    virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
+};
+
+class AudioSessionStateChangedCallback {
+public:
+    virtual ~AudioSessionStateChangedCallback() = default;
+    /**
+     * @brief The function will be executed when the audio session state changed.
+     *
+     * @param stateChangedEvent the audio session state changed event.
+     * @since 20
+     */
+    virtual void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) = 0;
+};
+
+class AudioSessionCurrentDeviceChangedCallback {
+public:
+    virtual ~AudioSessionCurrentDeviceChangedCallback() = default;
+    /**
+     * @brief
+     *
+     * @param deviceChangedEvent the audio session current device changed event.
+     * @since 20
+     */
+    virtual void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) = 0;
+};
+
+class AudioSessionCurrentInputDeviceChangedCallback {
+public:
+    virtual ~AudioSessionCurrentInputDeviceChangedCallback() = default;
+    /**
+     * @brief
+     *
+     * @param deviceChangedEvent the audio session current device changed event.
+     * @since 21
+     */
+    virtual void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent) = 0;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SESSION_DEVICE_INFO_H

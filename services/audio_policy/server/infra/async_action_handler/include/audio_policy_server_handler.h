@@ -20,8 +20,11 @@
 #include "event_handler.h"
 #include "event_runner.h"
 
+#include "audio_stream_types.h"
+#include "audio_interrupt_types.h"
+#include "audio_stream_change_info.h"
+
 #include "audio_policy_log.h"
-#include "audio_system_manager.h"
 #include "istandard_audio_policy_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "i_audio_zone_event_dispatcher.h"
@@ -85,6 +88,7 @@ public:
         VOLUME_DEGREE_EVENT,
         AUDIO_DEVICE_INFO_UPDATE,
         COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
+        PREFERRED_DEVICE_SET,
         DEVICE_CONFIG_CHANGED,
         ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICE,
     };
@@ -119,6 +123,9 @@ public:
         std::shared_ptr<AudioZoneEvent> audioZoneEvent;
         uint32_t routeFlag;
         AudioErrors errorCode;
+        PreferredType preferredType_;
+        int32_t uid_;
+        std::string caller_;
         int32_t callerPid_ = -1;
         bool collaborationEnabled;
     };
@@ -221,6 +228,8 @@ public:
     bool SendAudioSessionDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     bool SendAudioSessionInputDeviceChange(const AudioStreamDeviceChangeReason changeReason, int32_t callerPid = -1);
     void SendCollaborationEnabledChangeForCurrentDeviceEvent(const bool &enabled);
+    bool SendPreferredDeviceSetEvent(PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
     void SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     bool SendDeviceConfigChangedEvent(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     bool SendAdaptiveSpatialRenderingEnabledChangeForAnyDeviceEvent(
@@ -284,13 +293,19 @@ private:
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
     void HandleCollaborationEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandlePreferredDeviceSetEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleDeviceConfigChangedEvent(const AppExecFwk::InnerEvent::Pointer &event);
 
     std::vector<AudioRendererFilter> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
     bool IsForceGetDevByVolumeType(int32_t uid);
+    bool IsForceGetZoneDevice(int32_t uid);
     bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
+    bool BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,
+        AudioSessionStateChangedEvent &stateChangedEvent);
+    void ValidatePreferredOutputDeviceCallback(int32_t clientPid,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;

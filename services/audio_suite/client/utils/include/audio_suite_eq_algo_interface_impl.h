@@ -27,7 +27,6 @@
 #include <charconv>
 #include "audio_suite_algo_interface.h"
 #include "imedia_api.h"
-#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,7 +48,7 @@ struct EqAlgoApi {
 
 class AudioSuiteEqAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    explicit AudioSuiteEqAlgoInterfaceImpl(NodeCapability &nc);
+    explicit AudioSuiteEqAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteEqAlgoInterfaceImpl();
 
     int32_t Init() override;

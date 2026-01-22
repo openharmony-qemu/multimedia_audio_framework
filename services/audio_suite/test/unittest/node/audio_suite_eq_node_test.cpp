@@ -30,7 +30,11 @@ public:
 };
 
 void AudioSuiteEqNodeTest::SetUp()
-{}
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void AudioSuiteEqNodeTest::TearDown()
 {}
@@ -59,24 +63,24 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_001, TestSize.L
 
 HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSetOptions, TestSize.Level0)
 {
-    AudioSuiteEqNode eq;
-    eq.Init();
+    auto node = std::make_shared<AudioSuiteEqNode>();
+    node->Init();
 
     std::string value = "";
-    EXPECT_EQ(eq.SetOptions("AudioEqualizerFrequencyBandGains", "8:8:8:8:8:8:8:0:10:-10"), 0);
-    EXPECT_EQ(eq.GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
+    EXPECT_EQ(node->SetOptions("AudioEqualizerFrequencyBandGains", "8:8:8:8:8:8:8:0:10:-10"), 0);
+    EXPECT_EQ(node->GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
     EXPECT_EQ(value, "8:8:8:8:8:8:8:0:10:-10");
 
-    EXPECT_NE(eq.SetOptions("-------------", "0:0:0:0:0:0:0:0:0:0"), 0);
-    EXPECT_NE(eq.GetOptions("-------------", value), 0);
+    EXPECT_NE(node->SetOptions("-------------", "0:0:0:0:0:0:0:0:0:0"), 0);
+    EXPECT_NE(node->GetOptions("-------------", value), 0);
     EXPECT_EQ(value, "8:8:8:8:8:8:8:0:10:-10");
 }
 
 HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeDeInit, TestSize.Level0)
 {
-    AudioSuiteEqNode eq;
-    EXPECT_EQ(eq.Init(), 0);
-    EXPECT_NE(eq.Init(), 0);
-    EXPECT_EQ(eq.DeInit(), 0);
+    auto node = std::make_shared<AudioSuiteEqNode>();
+    EXPECT_EQ(node->Init(), 0);
+    EXPECT_NE(node->Init(), 0);
+    EXPECT_EQ(node->DeInit(), 0);
 }
 }  // namespace

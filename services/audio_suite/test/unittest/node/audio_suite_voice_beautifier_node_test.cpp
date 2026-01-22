@@ -33,6 +33,9 @@ class AudioSuiteVoiceBeautifierNodeTest : public testing::Test {
 public:
     void SetUp() override
     {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
     }
     void TearDown() override
     {

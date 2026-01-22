@@ -36,6 +36,7 @@
 #include "callback/RegisterCallback.h"
 #include "audioEffectNode/NoiseReduction.h"
 #include "audioEffectNode/EnvEffect.h"
+#include "audioEffectNode/SpaceRender.h"
 #include "audioEffectNode/AissEffect.h"
 #include "audioEffectNode/SoundSpeedTone.h"
 #include "audioEffectNode/VoiceChange.h"
@@ -68,10 +69,10 @@ static napi_value RegisterAudioFormatCallback(napi_env env, napi_callback_info i
     napi_value args[1];
     napi_value callback;
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // 创建全局引用
+    // Creating a Global Reference
     napi_create_reference(env, args[0], 1, &callbackStringArrayRef);
 
-    // 创建线程安全函数
+    // Creating Thread-Safe Functions
     napi_value global;
     napi_get_global(env, &global);
     napi_get_reference_value(env, callbackStringArrayRef, &callback);
@@ -91,13 +92,13 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
     size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 解析工作模式
+    // Parsing Work Mode
 
-    // 创建引擎
+    // Create Engine
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_Create(&g_audioSuiteEngine);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest OH_AudioEditEngine_Create result: %{public}d",
         static_cast<int>(result));
-    // 根据入参判断当前的workmode
+    // Determine the current work mode based on the input parameters
     unsigned int mode = -1;
     napi_status status = napi_get_value_uint32(env, argv[0], &mode);
     if (status != napi_ok) {
@@ -125,11 +126,11 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
         delete[] argv;
         return nullptr;
     }
-    // 创建管线
+    // Create Pipeline
     result = OH_AudioSuiteEngine_CreatePipeline(g_audioSuiteEngine, &g_audioSuitePipeline, workMode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
         "audioEditTest OH_AudioEditEngine_CreatePipeline result: %{public}d", static_cast<int>(result));
-    // 实例化NodeManager
+    // Instantiate NodeManager
     g_singlePipelineNodeManager = std::make_shared<NodeManager>(g_audioSuitePipeline);
     g_nodeManager = g_singlePipelineNodeManager;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest createNodeManager result: %{public}d",
@@ -141,13 +142,13 @@ static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-// 释放内存
+// deallocate memory
 static void Clear()
 {
-    // 释放map内存
+    // Release the map memory
     g_writeDataBufferMap.clear();
     for (auto &pair : g_userDataMap) {
-        delete pair.second; // 删除指针指向的对象
+        delete pair.second; // Delete the object pointed to by the pointer
     }
     g_userDataMap.clear();
 }
@@ -173,18 +174,18 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
     size_t argc = 4;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    // 获取通道数
+    // Get Number of channels
     unsigned int channels;
     napi_get_value_uint32(env, argv[ARG_0], &channels);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat channels is %{public}d", channels);
-    // 获取采样率
+    // Get Sampling Rate
     unsigned int sampleRate;
     napi_get_value_uint32(env, argv[ARG_1], &sampleRate);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetFormat sampleRate is %{public}d", sampleRate);
-    // 获取位深
+    // Get bit depth
     unsigned int bitsPerSample;
     napi_get_value_uint32(env, argv[ARG_2], &bitsPerSample);
-    // 获取位深类型
+    // Get the bit depth type.
     unsigned int bitsPerSampleMode;
     napi_get_value_uint32(env, argv[ARG_3], &bitsPerSampleMode);
     ConvertBitsPerSample(bitsPerSample, bitsPerSampleMode);
@@ -192,14 +193,14 @@ static napi_value SetFormat(napi_env env, napi_callback_info info)
         "audioEditTest SetFormat bitsPerSample: %{public}d, bitsPerSampleMode: %{public}d",
         bitsPerSample, bitsPerSampleMode);
 
-    // 设置采样率
+    // Set Sampling Rate
     g_audioFormatOutput.samplingRate = SetSamplingRate(sampleRate);
-    // 设置声道
+    // Set audio channels
     g_audioFormatOutput.channelCount = channels;
     g_audioFormatOutput.channelLayout = SetChannelLayout(channels);
-    // 设置位深
+    // Set bit depth
     g_audioFormatOutput.sampleFormat = SetSampleFormat(bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     g_audioFormatOutput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     const std::vector<Node> outPutNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::OUTPUT_NODE_TYPE_DEFAULT);
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_SetAudioFormat(outPutNodes[0].physicalNode, &g_audioFormatOutput);
@@ -218,7 +219,7 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
     AudioParamsByCascad params;
     napi_status status = ParseArgumentsByCascad(env, argv, params);
     
-    // 获取音频buffer
+    // Obtains the audio buffer
     void *pcmBuffer = nullptr;
     size_t pcmBufferSize = static_cast<size_t>(params.pcmBufferSize);
     status = napi_get_arraybuffer_info(env, argv[ARG_4], &pcmBuffer, &pcmBufferSize);
@@ -252,7 +253,7 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
-// 导入音频调用
+// Import Audio Call
 static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest AudioInAndOutInit start");
@@ -269,7 +270,7 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     if (trackFormat == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-    // 采样率，声道，位深
+    // Sampling rate, channel, bit depth
     int32_t sampleRate;
     int32_t channels;
     int32_t bitsPerSample;
@@ -280,7 +281,7 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
         std::to_string(sampleRate), std::to_string(channels), std::to_string(bitsPerSample)
     };
     CallStringArrayCallback(audioFormat);
-    // 为资源实例创建对应的解封器
+    // Create a corresponding unsealer for the resource instance
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
@@ -339,7 +340,7 @@ OH_AudioSuite_Result DeleteNodeOfSong(Node &node, int size)
     return OH_AudioSuite_Result::AUDIOSUITE_SUCCESS;
 }
 
-// 删除音频
+// Delete audio
 static napi_value DeleteSong(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong start");
@@ -350,7 +351,7 @@ static napi_value DeleteSong(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
-    // 获取inputId参数
+    // Get the inputId parameter
     std::string inputId;
     napi_status status = ParseNapiString(env, argv[0], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteSong inputId is %{public}s",
@@ -381,7 +382,7 @@ static napi_value DeleteSong(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-// 删除节点
+// Delete Node
 static napi_value DeleteNode(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteNode start");
@@ -392,7 +393,7 @@ static napi_value DeleteNode(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
-    // 获取nodeId参数
+    // Get the nodeId parameter
     std::string nodeId;
     napi_status status = ParseNapiString(env, argv[0], nodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest DeleteNode nodeId is %{public}s",
@@ -405,7 +406,7 @@ static napi_value DeleteNode(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-// 设置均衡器模式方法
+// Method for Setting Equalizer Mode
 static napi_value SetEqualizerMode(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEqualizerMode start");
@@ -417,7 +418,7 @@ static napi_value SetEqualizerMode(napi_env env, napi_callback_info info)
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
 
-    // 创建均衡器效果节点
+    // Create Equalizer Effect Node
     Node eqNode = GetOrCreateEqualizerNodeByMode(equalizerId, inputId);
     if (!eqNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
@@ -437,7 +438,7 @@ static napi_value SetEqualizerMode(napi_env env, napi_callback_info info)
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
-// 设置均衡器频带增益
+// Sets the equalizer band gain
 static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetEqualizerFrequencyBandGains start");
@@ -447,7 +448,7 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
-    // 创建均衡器效果节点
+    // Create Equalizer Effect Node
     Node eqNode = GetOrCreateEqualizerNodeByGains(params.equalizerId, params.inputId, params.selectedNodeId);
     if (!eqNode.physicalNode) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_CREATE_NODE_ERROR));
@@ -458,7 +459,7 @@ static napi_value SetEqualizerFrequencyBandGains(napi_env env, napi_callback_inf
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
-// 设置音速音调效果节点
+// Set up the speed and pitch effect node
 static napi_value SetSoundSpeedTone(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest SetSoundSpeedTone start");
@@ -470,7 +471,7 @@ static napi_value SetSoundSpeedTone(napi_env env, napi_callback_info info)
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
     }
-    // 创建音速音调节点
+    // Create Sonic Sound Adjustment Point
     Node soundSpeedToneNode = GetOrCreateSpeedToneNode(params.soundSpeedToneId, params.inputId, params.selectedNodeId);
     if (!soundSpeedToneNode.physicalNode) {
         return ReturnResult(env, AudioSuiteResult::DEMO_CREATE_NODE_ERROR);
@@ -497,7 +498,7 @@ static napi_value SaveFileBuffer(napi_env env, napi_callback_info info)
             free(g_totalBuff);
             g_totalBuff = nullptr;
         }
-        // 创建 ArrayBuffer 失败， 返回一个大小为 0 的ArrayBuffer
+        // Failed to create ArrayBuffer; returned an ArrayBuffer with a size of 0
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
@@ -521,20 +522,20 @@ static napi_value startVBEffect(napi_env env, napi_callback_info info)
     napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---inputId==%{public}s",
                  inputId.c_str());
-    // 获取二参、美化类型
+    // Get parameters 2, beautify types
     int mode = -1;
     napi_get_value_int32(env, argv[ARG_1], &mode);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect--mode==%{public}zd", mode);
-    // 获取三参、效果节点id
+    // Get parameters 3 and effect node ID
     std::string voiceBeautifierId;
     status = ParseNapiString(env, argv[ARG_2], voiceBeautifierId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---uuid==%{public}s", voiceBeautifierId.c_str());
-    // 获取当前选中的节点id
+    // Get the ID of the currently selected node
     std::string selectNodeId;
     status = ParseNapiString(env, argv[ARG_3], selectNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "audioEditTest---startVBEffect---selectNodeId==%{public}s",
                  selectNodeId.c_str());
-     //调用添加美化效果节点接口
+     // Invoke the interface for adding beautification effects node
     napi_value ret;
     int result = AddVBEffectNode(inputId, mode, voiceBeautifierId, selectNodeId);
 
@@ -549,7 +550,7 @@ static napi_value resetVBEffect(napi_env env, napi_callback_info info)
     int mode = -1;
     std::string inputId;
     std::string voiceBeautifierId;
-    //解析参数
+    // Parsing Parameters
     napi_status status = getResetVBParameters(env, info, inputId, mode, voiceBeautifierId);
     if (status != napi_ok) {
         return ReturnResult(env, static_cast<AudioSuiteResult>(AudioSuiteResult::DEMO_PARAMETER_ANALYSIS_ERROR));
@@ -704,20 +705,20 @@ static napi_value getAudioOfTap(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-// 音频播放 -------------------------------------
+// Audio playback -------------------------------------
 static napi_ref callbackAudioRendererRef = nullptr;
 
-// 注册回调，获取音频播放的finished的值
+// Register callback to get the finished value of audio playback
 static napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info)
 {
     size_t argc = 1;
     napi_value args[1];
     napi_value callback;
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // 创建全局引用
+    // Creating a Global Reference
     napi_create_reference(env, args[0], 1, &callbackAudioRendererRef);
 
-    // 创建线程安全函数
+    // Creating Thread-Safe Functions
     napi_value global;
     napi_get_global(env, &global);
     napi_get_reference_value(env, callbackAudioRendererRef, &callback);
@@ -755,7 +756,7 @@ static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
             free(g_playTotalAudioData);
             g_playTotalAudioData = nullptr;
         }
-        // 创建 ArrayBuffer 失败，返回一个大小为 0 的ArrayBuffer
+        // Failed to create ArrayBuffer; returned an ArrayBuffer with a size of 0
         napi_create_arraybuffer(env, 0, &arrayBufferData, &napiValue);
         return napiValue;
     } else {
@@ -773,26 +774,26 @@ static napi_value RealTimeSaveFileBuffer(napi_env env, napi_callback_info info)
 static napi_value AudioRendererInit(napi_env env, napi_callback_info info)
 {
     ReleaseExistingResources();
-    // 创建构造器
+    // Create Constructor
     OH_AudioStream_Type type = OH_AudioStream_Type::AUDIOSTREAM_TYPE_RENDERER;
     OH_AudioStreamBuilder_Create(&rendererBuilder, type);
 
-    // 获取位深
+    // Get bit depth
     int32_t bitsPerSample = 0;
     OH_AudioStream_SampleFormat streamSampleFormat;
     GetBitsPerSampleAndStreamFormat(g_audioFormatOutput, &bitsPerSample, &streamSampleFormat);
 
-    // 设置音频采样率。
+    // Set the audio sampling rate
     OH_AudioStreamBuilder_SetSamplingRate(rendererBuilder, g_audioFormatOutput.samplingRate);
-    // 设置音频声道。
+    // Set audio channels
     OH_AudioStreamBuilder_SetChannelCount(rendererBuilder, g_audioFormatOutput.channelCount);
-    // 设置音频采样格式。
+    // Set the audio sampling format
     OH_AudioStreamBuilder_SetSampleFormat(rendererBuilder, streamSampleFormat);
-    // 设置音频流的编码类型。
+    // Set the encoding type for the audio stream
     OH_AudioStreamBuilder_SetEncodingType(rendererBuilder, AUDIOSTREAM_ENCODING_TYPE_RAW);
-    // 设置输出音频流的工作场景。
+    // Set up the working scenario for outputting audio streams
     OH_AudioStreamBuilder_SetRendererInfo(rendererBuilder, AUDIOSTREAM_USAGE_MUSIC);
-    // 设置 audioDataSize 长度 （待播放的数据大小）
+    // Set the length of audioDataSize (the size of the data to be played)
     g_playDataSize = SAMPLINGRATE_MULTI * g_audioFormatOutput.samplingRate *
         g_audioFormatOutput.channelCount * bitsPerSample / BITSPERSAMPLE_MULTI / CHANNELCOUNT_MULTI;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
@@ -801,7 +802,7 @@ static napi_value AudioRendererInit(napi_env env, napi_callback_info info)
         g_playDataSize, g_audioFormatOutput.samplingRate, g_audioFormatOutput.channelCount, bitsPerSample);
     OH_AudioStreamBuilder_SetFrameSizeInCallback(rendererBuilder, g_playDataSize);
 
-    // 配置写入音频数据回调函数。
+    // Configure the callback function for writing audio data
     OH_AudioRenderer_OnWriteDataCallback rendererCallbacks = PlayAudioRendererOnWriteData;
     OH_AudioStreamBuilder_SetRendererWriteDataCallback(rendererBuilder, rendererCallbacks, nullptr);
 
@@ -814,9 +815,9 @@ static napi_value AudioRendererDestory(napi_env env, napi_callback_info info)
 {
     napi_value napiValue = nullptr;
     if (audioRenderer) {
-        // 释放播放实例
+        // Releasing a Playback Instance
         OH_AudioStream_Result result = OH_AudioRenderer_Release(audioRenderer);
-        // 释放构造器
+        // Release Constructor
         result = OH_AudioStreamBuilder_Destroy(rendererBuilder);
         napi_create_int64(env, static_cast<int>(result), &napiValue);
         audioRenderer = nullptr;
@@ -825,7 +826,7 @@ static napi_value AudioRendererDestory(napi_env env, napi_callback_info info)
     return napiValue;
 }
 
-// 开始播放
+// Start playing
 static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "g_writeDataBufferMap size %{public}d",
@@ -837,7 +838,7 @@ static napi_value AudioRendererStart(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
-// 暂停播放
+// pause playback
 static napi_value AudioRendererPause(napi_env env, napi_callback_info info)
 {
     // pause
@@ -845,17 +846,17 @@ static napi_value AudioRendererPause(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
-// 停止播放
+// Stop playing
 static napi_value AudioRendererStop(napi_env env, napi_callback_info info)
 {
     // stop
     OH_AudioRenderer_Stop(audioRenderer);
-    // 停止管线
+    // Stop pipeline
     OH_AudioSuiteEngine_StopPipeline(g_audioSuitePipeline);
     return nullptr;
 }
 
-// 获取播放状态
+// Get the playback status.
 static napi_value GetRendererState(napi_env env, napi_callback_info info)
 {
     OH_AudioStream_State state;
@@ -866,17 +867,17 @@ static napi_value GetRendererState(napi_env env, napi_callback_info info)
     return sum;
 }
 
-// 是否重置totalWriteAudioDataSize
+// Whether to reset totalWriteAudioDataSize
 static napi_value ResetTotalWriteAudioDataSize(napi_env env, napi_callback_info info)
 {
-    // 写入音频的buffer，重头开始
+    // Buffer for writing audio, starting from the beginning
     ResetAllIsResetTotalWriteAudioDataSize();
-    // 报错音频的也重头开始保存
+    // Save the audio that reported the error from the beginning again
     g_playResultTotalSize = 0;
     return nullptr;
 }
 
-//获取效果节点options
+// Get the effect node options.
 static napi_value getOptions(napi_env env, napi_callback_info info)
 {
     size_t argc = 1;
@@ -884,12 +885,12 @@ static napi_value getOptions(napi_env env, napi_callback_info info)
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_value napiValue;
     
-    //获取nodeId
+    // Get nodeId
     std::string nodeId;
     ParseNapiString(env, argv[0], nodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions nodeId is %{public}s", nodeId.c_str());
     Node node = g_nodeManager->GetNodeById(nodeId);
-    //根据不同效果类型获取效果参数
+    // Get effect parameters based on different effect types
     std::string type = g_nodeManager->GetOptionsByType(node);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "getOptions type is %{public}s", type.c_str());
     napi_create_string_utf8(env, type.c_str(), NAPI_AUTO_LENGTH, &napiValue);
@@ -899,7 +900,7 @@ static napi_value getOptions(napi_env env, napi_callback_info info)
 
 static napi_value getEffectNodeList(napi_env env, napi_callback_info info)
 {
-    // 返回 JS 数组
+    // Returns the JS array
     return GetSupportedAudioNodeTypes(env);
 }
 
@@ -972,6 +973,18 @@ const std::vector<napi_property_descriptor> voiceChangeDescriptors = {
     {"resetPureVoiceChange", nullptr, ResetPureVoiceChange, nullptr, nullptr, nullptr, napi_default, nullptr },
 };
 
+const std::vector<napi_property_descriptor> spaceRenderDescriptors = {
+    {"StartFixedPositionEffect", nullptr, StartFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"StartDynamicRenderEffect", nullptr, StartDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"StartExpandEffect", nullptr, StartExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetFixedPositionEffect", nullptr, ResetFixedPositionEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetDynamicRenderEffect", nullptr, ResetDynamicRenderEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"ResetExpandEffect", nullptr, ResetExpandEffect, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetFixedPositionParams", nullptr, GetFixedPositionParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetDynamicRenderParams", nullptr, GetDynamicRenderParams, nullptr, nullptr, nullptr, napi_default, nullptr},
+    {"GetExpandParams", nullptr, GetExpandParams, nullptr, nullptr, nullptr, napi_default, nullptr}
+};
+
 EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
 {
     std::vector<napi_property_descriptor> desc = {
@@ -1015,10 +1028,11 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"getEffectNodeList", nullptr, getEffectNodeList, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setSoundSpeedTone", nullptr, SetSoundSpeedTone, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setIsRecord", nullptr, SetIsRecord, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"setSeparationMode", nullptr, SetSeparationMode, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"setSeparationMode", nullptr, SetSeparationMode, nullptr, nullptr, nullptr, napi_default, nullptr}
     };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
     desc.insert(desc.end(), voiceChangeDescriptors.begin(), voiceChangeDescriptors.end());
+    desc.insert(desc.end(), spaceRenderDescriptors.begin(), spaceRenderDescriptors.end());
     napi_define_properties(env, exports, desc.size(), desc.data());
     return exports;
 }

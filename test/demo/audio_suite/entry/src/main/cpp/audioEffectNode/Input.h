@@ -20,26 +20,27 @@ extern OH_AudioSuitePipeline *g_audioSuitePipeline;
 
 extern char *g_totalBuff;
 
-// 需要写入的音频数据大小
+// Size of audio data to be written
 extern int32_t g_totalSize;
 
 extern OH_AudioFormat g_audioFormatInput;
 
-// 写入音频数据的map
+// Map for writing audio data
 extern std::map<std::string, std::vector<uint8_t>> g_writeDataBufferMap;
 
-// 定义一个结构体来存储ID和数字
+// Define a structure to store ID and number
 struct UserData {
-    std::string id;                        // 根据id去g_writeDataBufferMap获取对应的音频数据
-    int32_t bufferSize;                    // 音频总数据大小
-    int32_t totalWriteAudioDataSize;       // 已经写入的音频数据大小
-    bool isResetTotalWriteAudioDataSize;   // 音频是否从头开始写入
+    // Retrieve the corresponding audio data from g_writeDataBufferMap based on the ID
+    std::string id;
+    int32_t bufferSize;                    // Total audio data size
+    int32_t totalWriteAudioDataSize;       // Size of audio data already written
+    bool isResetTotalWriteAudioDataSize;   // If the audio written from the beginning
 };
 
-// 存储UserData的map
+// Map for storing UserData
 extern std::map<std::string, UserData *> g_userDataMap;
 
-// 创造 output builder 构造器
+// Create output builder constructor
 extern OH_AudioNodeBuilder *builderOut;
 
 struct AudioParams {

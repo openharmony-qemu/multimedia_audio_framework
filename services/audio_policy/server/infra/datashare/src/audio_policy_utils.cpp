@@ -28,6 +28,8 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
+#include "audio_bus_selector.h"
+#include "audio_bundle_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -62,7 +64,20 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
     {PRIMARY_UNPROCESS_MIC, TYPE_PRIMARY},
     {PRIMARY_VOICE_RECOGNITION_MIC, TYPE_PRIMARY},
+    {PRIMARY_RAW_AI_MIC, TYPE_PRIMARY},
 };
+
+static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
+{
+    switch (routeFlag) {
+        case AUDIO_INPUT_FLAG_AI:               return PRIMARY_AI_MIC;
+        case AUDIO_INPUT_FLAG_UNPROCESS:        return PRIMARY_UNPROCESS_MIC;
+        case AUDIO_INPUT_FLAG_ULTRASONIC:       return PRIMARY_ULTRASONIC_MIC;
+        case AUDIO_INPUT_FLAG_VOICE_RECOGNITION:return PRIMARY_VOICE_RECOGNITION_MIC;
+        case AUDIO_INPUT_FLAG_RAW_AI:           return PRIMARY_RAW_AI_MIC;
+        default:                                return PRIMARY_MIC;
+    }
+}
 
 int32_t AudioPolicyUtils::startDeviceId = 1;
 
@@ -133,6 +148,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
         return ERR_INVALID_PARAM;
     }
     int32_t ret = SUCCESS;
+    bool mediaControllerFlag = IsSelectedByMediaController();
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
             audioStateManager_.SetPreferredMediaRenderDevice(desc);
@@ -144,12 +160,13 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredCallCaptureDevice(desc);
             break;
         case AUDIO_RECORD_CAPTURE:
-            audioStateManager_.SetPreferredRecordCaptureDevice(desc);
             {
                 RecordDeviceInfo info {.uid_ = uid, .activeSelectedDevice_ = desc};
                 AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
-                    UpdateType::SYSTEM_SELECT, info);
+                    UpdateType::SYSTEM_SELECT, info, mediaControllerFlag);
             }
+            CHECK_AND_BREAK_LOG(!mediaControllerFlag, "selected by media controller");
+            audioStateManager_.SetPreferredRecordCaptureDevice(desc);
             break;
         case AUDIO_RING_RENDER:
         case AUDIO_TONE_RENDER:
@@ -168,8 +185,22 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
         ErasePreferredDeviceByType(preferredType);
     }
     if (ret != SUCCESS) {
-        HILOG_COMM_INFO("Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
+        HILOG_COMM_INFO("[SetPreferredDevice]Set preferredType %{public}d failed, ret: %{public}d",
+            preferredType, ret);
+        return ret;
     }
+    AudioDeviceStatus::GetInstance().NotifyPreferredDeviceSet(preferredType, desc, uid, caller);
+    return ret;
+}
+
+bool AudioPolicyUtils::IsSelectedByMediaController()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
+    CHECK_AND_RETURN_RET(audioClientInfoMgrCallback_ != nullptr, false);
+    bool ret = false;
+    audioClientInfoMgrCallback_->OnCheckMediaControllerBundle(bundleName, ret);
     return ret;
 }
 
@@ -357,12 +388,21 @@ string AudioPolicyUtils::ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
     }
 }
 
+bool AudioPolicyUtils::IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_t sessionId)
+{
+    return GetSinkName(desc, sessionId) == PRIMARY_SPEAKER;
+}
+
 std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId)
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
+#ifdef MULTI_BUS_ENABLE
+        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
+#else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc.deviceType_, pipeType);
+#endif
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
@@ -371,9 +411,13 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId)
 {
     if (desc->networkId_ == LOCAL_NETWORK_ID) {
+#ifdef MULTI_BUS_ENABLE
+        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
+#else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc->deviceType_, pipeType);
+#endif
     } else {
         return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
     }
@@ -384,22 +428,10 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_MIC:
+        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
-            if (routeFlag == AUDIO_INPUT_FLAG_AI) {
-                portName = PRIMARY_AI_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_AI_IC for devicetype: %{public}d", deviceType);
-            } else if (routeFlag == AUDIO_INPUT_FLAG_UNPROCESS) {
-                portName = PRIMARY_UNPROCESS_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_UNPROCESS_MIC for devicetype: %{public}d", deviceType);
-            } else if (routeFlag == AUDIO_INPUT_FLAG_ULTRASONIC) {
-                portName = PRIMARY_ULTRASONIC_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_ULTRASONIC_MIC for devicetype: %{public}d", deviceType);
-            } else if (routeFlag == AUDIO_INPUT_FLAG_VOICE_RECOGNITION) {
-                portName = PRIMARY_VOICE_RECOGNITION_MIC;
-                AUDIO_INFO_LOG("use PRIMARY_VOICE_RECOGNITION_MIC for devicetype: %{public}d", deviceType);
-            } else {
-                portName = PRIMARY_MIC;
-            }
+            portName = ResolvePrimaryMicPort(routeFlag);
+            AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
             break;
         case DeviceType::DEVICE_TYPE_BT_SPP:
             portName = VIRTUAL_AUDIO;
@@ -462,6 +494,7 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {PORT_NONE, INVALID_CLASS},
         {PRIMARY_ULTRASONIC_MIC, PRIMARY_CLASS},
         {PRIMARY_VOICE_RECOGNITION_MIC, PRIMARY_CLASS},
+        {PRIMARY_RAW_AI_MIC, PRIMARY_CLASS},
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -717,7 +750,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
     } else if (deviceName == "Built_in_mic" || deviceName == PRIMARY_AI_MIC || deviceName == PRIMARY_UNPROCESS_MIC
         || deviceName == PRIMARY_ULTRASONIC_MIC ||
-        deviceName == PRIMARY_VOICE_RECOGNITION_MIC) {
+        deviceName == PRIMARY_VOICE_RECOGNITION_MIC || deviceName == PRIMARY_RAW_AI_MIC) {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
@@ -780,15 +813,19 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
     }
 }
 
-int32_t AudioPolicyUtils::UnexcludeOutputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+int32_t AudioPolicyUtils::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     if (isBTReconnecting_) {
         return SUCCESS;
     }
 
-    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
-    AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
-
+    if ((audioDevUsage & MEDIA_OUTPUT_DEVICES) != 0) {
+        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
+    }
+    if ((audioDevUsage & CALL_OUTPUT_DEVICES) != 0) {
+        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
+    }
     return SUCCESS;
 }
 
@@ -861,5 +898,11 @@ bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)
     }
 }
 
+int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    audioClientInfoMgrCallback_ = callback;
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -180,13 +180,11 @@ audio_ohos_library("audio_policy_service") {
     "../audio_service/client/src/core_service_provider_stub.cpp",
     "../audio_service/client/src/microphone_descriptor.cpp",
     "../audio_service/client/src/policy_provider_stub.cpp",
-    "server/domain/interrupt/src/audio_interrupt_group_info.cpp",
     "server/domain/volume/src/audio_volume_group_info.cpp",
     "server/domain/pipe/src/audio_definition_adapter_info.cpp",
     "server/domain/pipe/src/audio_definition_policy_utils.cpp",
     "server/infra/appclient/src/app_state_listener.cpp",
     "server/infra/appclient/src/audio_background_manager.cpp",
-    "server/infra/appclient/src/audio_bundle_manager.cpp",
     "server/infra/appclient/src/client_type_manager.cpp",
     "server/infra/appclient/src/client_type_manager_handler.cpp",
     "server/infra/config/parser/src/audio_affinity_parser.cpp",
@@ -209,6 +207,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
     "server/infra/window/window_utils.cpp",
     "server/common/src/audio_group_handle.cpp",
+    "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
     "server/infra/async_action_handler/src/audio_policy_server_handler.cpp",
     "server/domain/stream/audio_stream_collector.cpp",
@@ -253,6 +252,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/device/src/audio_active_device.cpp",
     "server/domain/pipe/src/audio_capturer_session.cpp",
     "server/domain/device/src/audio_connected_device.cpp",
+    "server/domain/device/src/audio_device_capability.cpp",
     "server/domain/device/src/audio_device_common.cpp",
     "server/domain/device/src/audio_device_lock.cpp",
     "server/domain/device/src/audio_device_status.cpp",
@@ -292,6 +292,11 @@ audio_ohos_library("audio_policy_service") {
   defines = []
   if (!audio_framework_feature_mutesink_enable) {
     defines += [ "MUTE_SINK_DISABLE" ]
+  }
+
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+    sources += [ "server/domain/pipe/src/audio_bus_selector.cpp" ]
   }
 
   if (audio_framework_feature_wired_audio) {
@@ -344,7 +349,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
-    "../audio_engine:audio_engine_manager",
+    "../audio_engine:hpae_engine_manager",
   ]
 
   external_deps = [
@@ -367,9 +372,10 @@ audio_ohos_library("audio_policy_service") {
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "cJSON:cjson",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "hdf_core:libhdf_host",
     "hdf_core:libhdf_ipc_adapter",
@@ -396,10 +402,6 @@ audio_ohos_library("audio_policy_service") {
 
   public_external_deps = [ "ffrt:libffrt" ]
 
-  public_external_deps += [
-    "openssl:libcrypto_shared",
-  ]
-
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
@@ -412,6 +414,10 @@ audio_ohos_library("audio_policy_service") {
 
   if (audio_framework_feature_wireless_default_exclude) {
     defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
+  }
+
+  if (audio_framework_feature_exclude_indirect_usb_input_device) {
+    defines += [ "EXCLUDE_INDIRECT_USB_INPUT_DEVICE" ]
   }
 
   if (audio_framework_config_policy_enable) {
@@ -683,6 +689,9 @@ ohos_executable("audio_dump_test") {
   deps = [
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
   ]
 
   include_dirs = []
@@ -709,6 +718,9 @@ ohos_executable("audio_policy_test") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
   ]
 
   include_dirs = []
@@ -751,6 +763,7 @@ ohos_shared_library("audio_foundation") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
+    "../audio_service/client/src/audio_manager_util.cpp",
     "server/domain/device/src/audio_device_descriptor.cpp",
     "server/domain/device/src/audio_device_type.cpp",
     "server/domain/effect/src/audio_effect_map.cpp",
@@ -797,6 +810,7 @@ config("audio_manager_client_public_config") {
     "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiodefinitions/include/common",
     "../../frameworks/native/hdiadapter_new/include/common",
+    "../../interfaces/inner_api/native/audiocommon/include"
   ]
 }
 
@@ -814,7 +828,9 @@ ohos_shared_library("audio_manager_client") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_anahs_manager.cpp",
+    "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "client/service/src/audio_general_manager.cpp",
+    "server/domain/device/src/audio_device_capability.cpp",
   ]
 
   public_configs = [ ":audio_manager_client_public_config" ]
@@ -822,7 +838,6 @@ ohos_shared_library("audio_manager_client") {
   deps = [
     ":audio_foundation",
     ":audio_policy_client",
-    ":audio_policy_common",
     "../../frameworks/native/audioutils:audio_utils",
     "../audio_service:audio_common",
   ]
@@ -830,6 +845,7 @@ ohos_shared_library("audio_manager_client") {
   external_deps = [
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "cJSON:cjson",
     "eventhandler:libeventhandler",
     "hicollie:libhicollie",
     "hilog:libhilog",
@@ -871,7 +887,6 @@ ohos_shared_library("audio_policy_common") {
   }
   install_enable = true
   sources = [
-    "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "../audio_service/client/src/resource_manager_adapter.cpp",
   ]
 

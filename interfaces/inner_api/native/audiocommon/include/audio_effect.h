@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include "audio_info.h"
+#include "audio_spatialization_types.h"
 
 #define AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR "AELI"
 #define EFFECT_STRING_LEN_MAX 64
@@ -36,6 +37,7 @@ constexpr uint32_t SEND_HDI_COMMAND_LEN = 20;
 constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
 constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
 constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
+constexpr const char* SYSTEM_LOAD_SUBKEY = "systemLoad_state";
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -54,15 +56,9 @@ enum HdiSetParamCommandCode {
     HDI_LID_STATE = 13,
     HDI_QUERY_CHANNELLAYOUT = 14,
     HDI_ABS_VOLUME_STATE = 15,
-};
-
-enum AudioSpatialDeviceType {
-    EARPHONE_TYPE_NONE = 0,
-    EARPHONE_TYPE_INEAR,
-    EARPHONE_TYPE_HALF_INEAR,
-    EARPHONE_TYPE_HEADPHONE,
-    EARPHONE_TYPE_GLASSES,
-    EARPHONE_TYPE_OTHERS,
+    HDI_OUTDOOR_MODE = 16,
+    HDI_SUPER_LOUDNESS_MODE = 17,
+    HDI_SYSTEMLOAD_STATE = 18,
 };
 
 enum AudioEarphoneProduct : int32_t {
@@ -82,42 +78,6 @@ enum FoldState : uint32_t {
     FOLD_STATE_EXPAND = 1,
     FOLD_STATE_CLOSE = 2,
     FOLD_STATE_MIDDLE = 3,
-};
-
-struct AudioSpatialDeviceState : public Parcelable {
-    std::string address;
-    bool isSpatializationSupported;
-    bool isHeadTrackingSupported;
-    AudioSpatialDeviceType spatialDeviceType;
-
-    AudioSpatialDeviceState() = default;
-    AudioSpatialDeviceState(const std::string &address, bool isSpatializationSupported,
-        bool isHeadTrackingSupported, AudioSpatialDeviceType spatialDeviceType)
-        : address(address), isSpatializationSupported(isSpatializationSupported),
-        isHeadTrackingSupported(isHeadTrackingSupported), spatialDeviceType(spatialDeviceType)
-    {
-    }
-
-    bool Marshalling(Parcel &parcel) const override
-    {
-        return parcel.WriteString(address) &&
-            parcel.WriteBool(isSpatializationSupported) &&
-            parcel.WriteBool(isHeadTrackingSupported) &&
-            parcel.WriteInt32(spatialDeviceType);
-    }
-
-    static AudioSpatialDeviceState *Unmarshalling(Parcel &parcel)
-    {
-        auto deviceState = new(std::nothrow) AudioSpatialDeviceState();
-        if (deviceState == nullptr) {
-            return nullptr;
-        }
-        deviceState->address = parcel.ReadString();
-        deviceState->isSpatializationSupported = parcel.ReadBool();
-        deviceState->isHeadTrackingSupported = parcel.ReadBool();
-        deviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(parcel.ReadInt32());
-        return deviceState;
-    }
 };
 
 struct Library : public Parcelable {
@@ -739,6 +699,9 @@ enum AudioEffectChainSetParamIndex {
     LOUDNESS_GAIN_INDEX = 12,
     ABS_VOLUME_STATE = 13,
     EARPHONE_PRODUCT = 14,
+    OUTDOOR_MODE = 15,
+    SUPER_LOUDNESS_MODE = 16,
+    SYSTEMLOAD_STATE_INDEX = 17,
     MAX_PARAM_INDEX,
 };
 
@@ -844,53 +807,24 @@ struct AudioEffectLibEntry {
     std::vector<std::string> effectName;
 };
 
-struct AudioSpatializationState : public Parcelable {
-    bool spatializationEnabled = false;
-    bool headTrackingEnabled = false;
-    bool adaptiveSpatialRenderingEnabled = false;
-
-    AudioSpatializationState() = default;
-    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
-    {
-        this->spatializationEnabled = spatializationEnabled;
-        this->headTrackingEnabled = headTrackingEnabled;
-    }
-
-    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled, bool adaptiveSpatialRenderingEnabled)
-    {
-        this->spatializationEnabled = spatializationEnabled;
-        this->headTrackingEnabled = headTrackingEnabled;
-        this->adaptiveSpatialRenderingEnabled = adaptiveSpatialRenderingEnabled;
-    }
-
-    bool Marshalling(Parcel &parcel) const override
-    {
-        return parcel.WriteBool(spatializationEnabled)
-            && parcel.WriteBool(headTrackingEnabled);
-    }
-
-    static AudioSpatializationState *Unmarshalling(Parcel &parcel)
-    {
-        auto info = new(std::nothrow) AudioSpatializationState();
-        if (info == nullptr) {
-            return nullptr;
-        }
-        info->spatializationEnabled = parcel.ReadBool();
-        info->headTrackingEnabled = parcel.ReadBool();
-        return info;
-    }
-};
-
 struct ConverterConfig : public Parcelable {
     std::string version;
     Library library;
     uint64_t outChannelLayout = 0;
+    std::vector<uint64_t> supportOutChannelLayout;
+    static constexpr int32_t MAX_OUT_CHANNEL_LAYOUT_SIZE = 1000;
 
     bool Marshalling(Parcel &parcel) const override
     {
-        return parcel.WriteString(version) &&
-            library.Marshalling(parcel) &&
-            parcel.WriteUint64(outChannelLayout);
+        parcel.WriteString(version);
+        library.Marshalling(parcel);
+        parcel.WriteUint64(outChannelLayout);
+        int32_t size = static_cast<int32_t>(supportOutChannelLayout.size());
+        parcel.WriteInt32(size);
+        for (auto &pOutChannelLayout : supportOutChannelLayout) {
+            parcel.WriteUint64(pOutChannelLayout);
+        }
+        return true;
     }
 
     static ConverterConfig *Unmarshalling(Parcel &parcel)
@@ -902,22 +836,16 @@ struct ConverterConfig : public Parcelable {
         config->version = parcel.ReadString();
         config->library.UnmarshallingSelf(parcel);
         config->outChannelLayout = parcel.ReadUint64();
+        int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > MAX_OUT_CHANNEL_LAYOUT_SIZE) {
+            delete config;
+            return nullptr;
+        }
+        for (int32_t i = 0; i < size; i++) {
+            config->supportOutChannelLayout.push_back(parcel.ReadUint64());
+        }
         return config;
     }
-};
-
-enum AudioSpatializationSceneType {
-    SPATIALIZATION_SCENE_TYPE_DEFAULT = 0,
-    SPATIALIZATION_SCENE_TYPE_MUSIC = 1,
-    SPATIALIZATION_SCENE_TYPE_MOVIE = 2,
-    SPATIALIZATION_SCENE_TYPE_AUDIOBOOK = 3,
-    SPATIALIZATION_SCENE_TYPE_MAX = SPATIALIZATION_SCENE_TYPE_AUDIOBOOK,
-};
-
-struct AudioRendererInfoForSpatialization {
-    RendererState rendererState;
-    std::string deviceMacAddress;
-    StreamUsage streamUsage;
 };
 
 struct AudioEnhanceParam {

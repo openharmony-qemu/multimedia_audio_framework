@@ -33,6 +33,8 @@ sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSinkAttr;
 sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSourceAttr;
 sequenceable audio_stutter..OHOS.AudioStandard.DataTransferMonitorParam;
 sequenceable audio_interrupt_info..OHOS.AudioStandard.InterruptEventInternal;
+sequenceable audio_engine_callback_types..OHOS.AudioStandard.AudioOutputPipeInfo;
+sequenceable audio_engine_callback_types..OHOS.AudioStandard.AudioInputPipeInfo;
 
 interface IStandardAudioService {
     [ipccode 0] void GetAudioParameter([in] String key, [out] String value);
@@ -42,7 +44,7 @@ interface IStandardAudioService {
     void SetMicrophoneMute([in] boolean isMute);
     void SetAudioScene([in] int audioScene, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag);
     void UpdateActiveDeviceRoute([in] int type, [in] int flag, [in] int a2dpOffloadFlag);
-    void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] String deviceName);
+    void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] String deviceName, [in] String networkId);
     void UpdateDualToneState([in] boolean enable, [in] int sessionId, [in] String dupSinkName);
     void GetTransactionId([in] int deviceType, [in] int deviceRole, [out] unsigned long transactionId);
     void SetParameterCallback([in] IRemoteObject object);
@@ -133,8 +135,8 @@ interface IStandardAudioService {
     void StartGroup([in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
     void StopGroup([in] int workgroupId);
     void SetBtHdiInvalidState();
-    void SetKaraokeParameters([in] String parameters, [out] boolean ret);
-    void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
+    void SetKaraokeParameters([in] int deviceType, [in] String parameters, [out] boolean ret);
+    void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean ret);
     [oneway] void ImproveAudioWorkgroupPrio([in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] Map<int, int> threads);
     void SetRenderWhitelist([in] List<String> list);
@@ -142,10 +144,20 @@ interface IStandardAudioService {
     void AddCaptureInjector([in] unsigned int sinkPortidx, [out] String rate, [out] String format,
         [out] String channels, [out] String bufferSize);
     void RemoveCaptureInjector([in] unsigned int sinkPortidx);
+    void RegisterCallbackHandle([in] IRemoteObject object);
+    void GetCurrentOutputPipeChangeInfos([out] List<sharedptr<AudioOutputPipeInfo>> pipeChangeInfos);
+    void GetCurrentInputPipeChangeInfos([out] List<sharedptr<AudioInputPipeInfo>> pipeChangeInfos);
+    void SetCallbackHandleEnable([in] unsigned int callbackId, [in] boolean enable);
+    void ReleaseActiveDeviceRoute([in] int deviceType, [in] int deviceFlag, [in] String networkId);
+    void SetAuxiliarySinkEnable([in] boolean isEnabled);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode
     [ipccode 1000] void SetForegroundList([in] List<String> list);
     void GetVolumeDataCount([in] String sinkName, [out] long ret);
     void GetPrivacyTypeAudioServer([in] unsigned int sessionId, [out] int privacyType, [out] int ret);
+    void RegistAdapterManagerCallback([in] IRemoteObject object, [in] String networkId);
+    void UnRegistAdapterManagerCallback([in] String networkId);
+    void GetRemoteAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
+    [oneway] void RequestUserPrivacyAuthority([in] unsigned int sessionId);
 }

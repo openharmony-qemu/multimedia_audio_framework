@@ -44,6 +44,7 @@
 #define UEVENT_SWITCH_STATE     "SWITCH_STATE="
 #define UEVENT_HDI_NAME         "HID_NAME="
 #define UEVENT_ANAHS            "ANAHS="
+#define UEVENT_DEVPATH          "DEVPATH="
 #define UEVENT_ACTION_CHANGE    "change"
 #define UEVENT_TYPE_EXTCON      "extcon3"
 #define UEVENT_NAME_HEADSET     "headset"
@@ -58,7 +59,7 @@
 #define UEVENT_PLATFORM         "platform"
 #define UEVENT_INSERT           "INSERT"
 #define UEVENT_REMOVE           "REMOVE"
-#define UEVENT_ARR_SIZE 10
+#define UEVENT_ARR_SIZE 11
 #define UEVENT_POLL_WAIT_TIME 100
 #define WAIT_THREAD_END_TIME_MS 1
 
@@ -83,6 +84,7 @@ struct AudioPnpUevent {
     const char *hidName;
     const char *devName;
     const char *anahsName;
+    const char *devPath;
 };
 
 struct AudioEvent {

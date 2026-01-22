@@ -600,6 +600,7 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             return type;
         case DEVICE_TYPE_DP:
         case DEVICE_TYPE_HDMI:
+        case DEVICE_TYPE_REMOTE_DAUDIO:
             type = "_dp";
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -729,7 +730,7 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
         deviceTypeName += "_distributed";
     }
 
-    if (deviceType == DEVICE_TYPE_DP) {
+    if (deviceType == DEVICE_TYPE_DP || deviceType == DEVICE_TYPE_REMOTE_DAUDIO) {
         deviceTypeName += "_dp";
     }
     return type + deviceTypeName;
@@ -891,6 +892,7 @@ void VolumeDataMaintainer::SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor
         device = ringerDevice_;
     }
     volumeLevelMap_[device->GetName()][volumeType] = volumeLevel;
+    SaveVolumeUpdateStateToMap(device, volumeType, true);
     AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d]"\
         "Save volume to volumeLevelMap success, volumeLevel %{public}d",
         device->GetName().c_str(), volumeType, volumeLevel);
@@ -1012,9 +1014,11 @@ void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> 
         device = ringerDevice_;
     }
     muteStatusMap_[device->GetName()][volumeType] = muteStatus;
+    SaveVolumeUpdateStateToMap(device, volumeType, true);
     AUDIO_INFO_LOG("SaveMuteToMap device %{public}s streamType %{public}d muteStatus %{public}d",
         device->GetName().c_str(), streamType, muteStatus);
 }
+
 bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType)
 {
@@ -1178,6 +1182,26 @@ int32_t VolumeDataMaintainer::CheckMuteState(std::shared_ptr<AudioDeviceDescript
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     bool muteState = false;
     return audioSettingProvider.GetBoolValue(muteKey, muteState, "system");
+}
+
+void VolumeDataMaintainer::SaveVolumeUpdateStateToMap(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, bool state)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeForUpdateMutex_);
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    volumeUpdateStateMap_[device->GetName()][volumeType] = state;
+    AUDIO_INFO_LOG("set %{public}s stream %{public}d update state as %{public}d",
+        device->GetName().c_str(), volumeType, state);
+}
+
+bool VolumeDataMaintainer::LoadVolumeUpdateStateFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeForUpdateMutex_);
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return volumeUpdateStateMap_[device->GetName()][volumeType];
 }
 
 } // namespace AudioStandard

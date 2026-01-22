@@ -237,8 +237,8 @@ void AudioStreamCheckerCalculateFrameAfterStandbyFuzzTest()
     CheckerParam para;
     int64_t abnormalFrameNum = 0;
 
-    para.standbyStartTime = 0;
-    para.standbyStopTime = g_fuzzUtils.GetData<int64_t>();
+    para.abnormalStartTime = 0;
+    para.abnormalStopTime = g_fuzzUtils.GetData<int64_t>();
     para.lastUpdateTime = 0;
     para.isMonitorNoDataFrame = g_fuzzUtils.GetData<bool>();
     checker->streamConfig_.rendererInfo.rendererFlags = 0;

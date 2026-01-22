@@ -19,102 +19,12 @@
 #include <iostream>
 #include <map>
 #include "audio_effect.h"
-#include "audio_system_manager.h"
+#include "audio_policy_interface.h"
+#include "audio_stream_types.h"
 #include "audio_stream_change_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class DeviceChangeWithInfoCallback {
-public:
-    virtual ~DeviceChangeWithInfoCallback() = default;
-
-    virtual void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) = 0;
-
-    virtual void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason) = 0;
-};
-
-class AudioFormatUnsupportedErrorCallback {
-public:
-    virtual ~AudioFormatUnsupportedErrorCallback() = default;
-
-    /**
-     * Called when format unsupported error occurs
-     *
-     * @param errorCode ErrorCode information.
-     */
-    virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
-};
-
-class AudioClientTracker {
-public:
-    virtual ~AudioClientTracker() = default;
-
-    /**
-     * Mute Stream was controlled by system application
-     *
-     * @param streamSetStateEventInternal Contains the set even information.
-     */
-    virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
-
-    /**
-     * Unmute Stream was controlled by system application
-     *
-     * @param streamSetStateEventInternal Contains the set even information.
-     */
-    virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
-
-    /**
-     * Paused Stream was controlled by system application
-     *
-     * @param streamSetStateEventInternal Contains the set even information.
-     */
-    virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
-
-     /**
-     * Resumed Stream was controlled by system application
-     *
-     * @param streamSetStateEventInternal Contains the set even information.
-     */
-    virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) = 0;
-
-    /**
-     * Set low power volume was controlled by system application
-     *
-     * @param volume volume value.
-     */
-    virtual void SetLowPowerVolumeImpl(float volume) = 0;
-
-    /**
-     * Get low power volume was controlled by system application
-     *
-     * @param volume volume value.
-     */
-    virtual void GetLowPowerVolumeImpl(float &volume) = 0;
-
-    /**
-     * Set Stream into a specified Offload state
-     *
-     * @param state power state.
-     * @param isAppBack app state.
-     */
-    virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) = 0;
-
-    /**
-     * Unset Stream out of Offload state
-     *
-     */
-    virtual void UnsetOffloadModeImpl() = 0;
-
-    /**
-     * Get single stream was controlled by system application
-     *
-     * @param volume volume value.
-     */
-    virtual void GetSingleStreamVolumeImpl(float &volume) = 0;
-};
-
 class AudioStreamManager {
 public:
     AudioStreamManager() = default;

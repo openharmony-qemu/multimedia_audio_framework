@@ -16,7 +16,6 @@
 #ifndef ST_ROUTER_BASE_H
 #define ST_ROUTER_BASE_H
 
-#include "audio_system_manager.h"
 #include "audio_device_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_log.h"
@@ -94,7 +93,7 @@ public:
     }
 
     std::shared_ptr<AudioDeviceDescriptor> GetPairDevice(std::shared_ptr<AudioDeviceDescriptor> &targetDevice,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList)
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceList, AudioDeviceUsage audioDevUsage)
     {
         for (auto &device : deviceList) {
             if (device->deviceRole_ != targetDevice->deviceRole_ ||
@@ -108,7 +107,8 @@ public:
             if (!device->exceptionFlag_ && device->isEnable_ &&
                 (device->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
                 device->connectState_ != SUSPEND_CONNECTED) &&
-                device->connectState_ != VIRTUAL_CONNECTED) {
+                device->connectState_ != VIRTUAL_CONNECTED &&
+                IsDeviceUsageSupported(audioDevUsage, device)) {
                 return std::move(device);
             }
             AUDIO_WARNING_LOG("unavailable device state, type[%{public}d] connectState[%{public}d] " \

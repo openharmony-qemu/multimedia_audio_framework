@@ -31,7 +31,7 @@ public:
     AudioSuiteManagerThread() : running_(false)
     {}
     ~AudioSuiteManagerThread();
-    void ActivateThread(IAudioSuiteManagerThread *audioSuiteManager);
+    void ActivateThread(IAudioSuiteManagerThread *audioSuiteManager, const std::string &threadName);
     void DeactivateThread();
     void Run();
     void Notify();
@@ -45,8 +45,8 @@ public:
     }
 
 private:
-    std::atomic<bool> running_;
-    std::atomic<bool> recvSignal_;
+    std::atomic<bool> running_ = false;
+    std::atomic<bool> recvSignal_ = false;
     IAudioSuiteManagerThread *m_audioSuiteManager = nullptr;
     std::condition_variable condition_;
     std::mutex mutex_;

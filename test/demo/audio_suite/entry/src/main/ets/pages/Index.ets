@@ -24,7 +24,7 @@ class TitleTextModifier implements AttributeModifier<TextAttribute> {
 struct Index {
   @Provide('pageInfos') pageInfos: NavPathStack = new NavPathStack()
 
-  // 判断是否是横屏
+  // Determine whether it is in landscape mode
   @StorageLink('isHorizontalScreen') isHorizontalScreen: boolean = false;
 
   private scrollerIndex: Scroller = new Scroller();
@@ -51,7 +51,7 @@ struct Index {
         : true;
   };
 
-  // 设置状态栏的背景色
+  // Set the background color of the status bar
   setSystemBarProperties() {
     let windowClass: window.Window | undefined = undefined;
     window.getLastWindow(getContext(), (err: BusinessError, data) => {

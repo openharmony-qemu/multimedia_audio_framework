@@ -827,6 +827,12 @@ napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env env, napi_callback
             "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
 
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
+
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
         "getVolumeByStream", streamUsage);
 
@@ -867,6 +873,12 @@ napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env env, napi_callb
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
+
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
 
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
         "getMinVolumeByStream", streamUsage);
@@ -909,6 +921,12 @@ napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env env, napi_callb
             "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
 
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
+
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
         "getMaxVolumeByStream", streamUsage);
 
@@ -949,6 +967,12 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_cal
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
+
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
 
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
         "isSystemMutedForStream", streamUsage);
@@ -999,6 +1023,12 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, nap
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of deviceType must be enum DeviceType"),
         "get deviceType failed");
+
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
 
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
         "getVolumeInUnitOfDbByStream", streamUsage);
@@ -1065,6 +1095,12 @@ napi_value NapiAudioVolumeManager::GetAudioVolumeTypeByStreamUsage(napi_env env,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
             "parameter verification failed: The param of streamUsage must be enum StreamUsage"),
         "get volType failed");
+
+#ifndef MULTI_ALARM_LEVEL
+    if ((streamUsage == STREAM_USAGE_ANNOUNCEMENT) || (streamUsage == STREAM_USAGE_EMERGENCY)) {
+        streamUsage = STREAM_USAGE_ALARM;
+    }
+#endif
 
     NapiDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
         "getAudioVolumeTypeByStreamUsage", streamUsage);
@@ -1827,6 +1863,13 @@ void NapiAudioVolumeManager::UnregisterVolumeDegreeChangeCallback(napi_env env, 
     CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
 
     if (callback != nullptr) {
+        napi_valuetype handler = napi_undefined;
+        if (napi_typeof(env, callback, &handler) != napi_ok || handler != napi_function) {
+            AUDIO_ERR_LOG("On type mismatch for parameter 1");
+            NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
+                "incorrect parameter types: The type of callback must be function");
+            return;
+        }
         cb->RemoveCallbackReference(env, callback);
     }
     if (callback == nullptr || cb->GetVolumeKeyEventCbListSize() == 0) {

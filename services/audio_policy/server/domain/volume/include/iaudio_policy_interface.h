@@ -23,7 +23,7 @@
 #include "audio_stream_removed_callback.h"
 #include "audio_volume_config.h"
 #include "volume_data_maintainer.h"
-#include "audio_manager_base.h"
+#include "audio_device_descriptor.h"
 #include "audio_pipe_info.h"
 #include "istandard_audio_service.h"
 
@@ -149,6 +149,8 @@ public:
 
     virtual void UpdateVolumeForStreams() = 0;
 
+    virtual void UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream) = 0;
+
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
     virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
@@ -164,6 +166,8 @@ public:
     virtual bool IsVolumeUnadjustable() = 0;
 
     virtual void GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos) = 0;
+
+    virtual int32_t SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume) = 0;
 
     virtual void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume) = 0;
 
@@ -310,6 +314,9 @@ public:
     virtual void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId) = 0;
     virtual void updateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
+    virtual void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute) = 0;
+    virtual void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress) = 0;
+    virtual void SetMuteFromRemote(std::string networkId, bool mute) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

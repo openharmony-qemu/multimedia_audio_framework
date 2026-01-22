@@ -48,11 +48,6 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
-    int32_t CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-        uint64_t &replyBytesEc) override;
-
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -65,15 +60,12 @@ public:
 
     int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
 
-    int32_t UpdateActiveDevice(DeviceType inputDevice) override;
-    void RegistCallback(uint32_t type, IAudioSourceCallback *callback) override;
-
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    void DumpInfo(std::string &dumpString) override;
+    void SetInvalidState(void) override;
 
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
+    void DumpInfo(std::string &dumpString) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
@@ -86,6 +78,7 @@ private:
     int32_t CreateCapture(void);
     void DestroyCapture(void);
     void CheckUpdateState(char *frame, size_t replyBytes);
+    bool IsValidState();
 
 private:
     static constexpr uint32_t DEEP_BUFFER_CAPTURE_PERIOD_SIZE = 4096;
@@ -96,11 +89,11 @@ private:
 
     const std::string deviceNetworkId_ = "";
     IAudioSourceAttr attr_ = {};
-    SourceCallbackWrapper callback_ = {};
     std::atomic<bool> sourceInited_ = false;
     std::atomic<bool> captureInited_ = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
+    std::atomic<bool> validState_ = true;
     uint32_t hdiCaptureId_ = 0;
     std::mutex createCaptureMutex_;
     sptr<RemoteIAudioCapture> audioCapture_ = nullptr;

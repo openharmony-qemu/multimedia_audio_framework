@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,6 +33,7 @@
 #include "securec.h"
 
 #include "audio_info.h"
+#include "audio_stream_info.h"
 #include "audio_common_utils.h"
 
 #define AUDIO_MS_PER_SECOND 1000
@@ -54,6 +55,10 @@ namespace AudioStandard {
 const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
 const uint32_t AUDIO_ID = 1041;
+constexpr uint32_t BASE_HEX = 16;
+static constexpr int32_t DEFAULT_FAST_SPAN_SIZE_INT_IN_MS = 5;
+static constexpr float DEFAULT_FAST_SPAN_SIZE_FLOAT_IN_MS = 5.0;
+static constexpr float ULTRA_FAST_PERIOD_TIME_IN_MS = 2.5;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -83,6 +88,12 @@ public:
 
     static size_t CalculatePcmSizeFromDurationCeiling(std::chrono::nanoseconds duration,
         uint32_t sampleRate, uint32_t bytesPerSample);
+};
+
+class AudioTypeUtils {
+public:
+    static StreamUsage GetStreamUsageByStreamType(AudioStreamType streamType);
+    static HdiAdapterType HalNameToType(std::string halName);
 };
 
 class Trace {
@@ -382,6 +393,14 @@ auto SafeGetMap(const std::unordered_map<Key, std::shared_ptr<T>>& map, Key key)
     return (it != map.end() && it->second) ? it->second : nullptr;
 }
 
+template <typename Key, typename T>
+auto SafeGetMap(const std::map<Key, std::shared_ptr<T>>& map, Key key)
+    -> std::shared_ptr<T>
+{
+    auto it = map.find(key);
+    return (it != map.end() && it->second) ? it->second : nullptr;
+}
+
 std::string GetTime();
 std::string GetField(const std::string &src, const char* field, const char sep);
 int32_t GetFormatByteSize(int32_t format);
@@ -435,6 +454,7 @@ public:
     void ShowTimestamp(bool isRenderer);
     void ShowBluetoothTimestamp();
     void UpdateClientTime(bool isRenderer, std::string &timestamp);
+    void UpdateRendererInServerTime(std::string &timestamp);
     void UpdateSinkOrSourceTime(bool isRenderer, std::string &timestamp);
     void UpdateDspTime(std::string dspTime);
 
@@ -446,6 +466,7 @@ private:
     LatencyMonitor() = default;
 
     std::string rendererMockTime_ = "";
+    std::string rendererInServerDetectedTime_ = "";
     std::string sinkDetectedTime_ = "";
     std::string dspDetectedTime_ = "";
     std::string capturerDetectedTime_ = "";
@@ -584,6 +605,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_UNPROCESS = 13,
     HDI_CAPTURE_OFFSET_ULTRASONIC = 14,
     HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
+    HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT = 16,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -599,14 +621,19 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_DP = 10,
     HDI_RENDER_OFFSET_USB = 11,
     HDI_RENDER_OFFSET_VOIP_FAST = 12,
-    HDI_RENDER_OFFSET_EAC3 = 13,
+    HDI_RENDER_OFFSET_HWDECODING = 13,
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
     HDI_RENDER_OFFSET_HEARING_AID = 15,
+    HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 
 void CloseFd(int fd);
+
+bool IsHWDecodingType(AudioEncodingType type);
+
+std::string EncodingTypeStr(AudioEncodingType type);
 
 int32_t CheckSupportedParams(const AudioStreamInfo &info);
 
@@ -615,8 +642,6 @@ std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
-
-std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
 
 uint32_t PcmFormatToBits(AudioSampleFormat format);
 std::string ConvertToStringForFormat(const AudioSampleFormat format);
@@ -627,6 +652,11 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
 
 std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
 
+float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
+
+uint64_t HexStrToNum(const std::string &str);
+
+void BindBigAndMidCore();
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,6 +47,15 @@ public:
     virtual int32_t OnEndpointStatusChange(HdiDeviceStatus status) = 0;
 };
 
+struct AudioEndpointConfig {
+    AudioDeviceDescriptor deviceInfo;
+    AudioStreamInfo streamInfo;
+    std::string adapterName;
+    AudioMode audioMode;
+    AudioStreamType streamType;
+    bool isUltraFast;
+};
+
 class AudioEndpoint : public IProcessStatusListener {
 public:
     static constexpr int32_t MAX_LINKED_PROCESS = 6; // 6
@@ -66,9 +75,9 @@ public:
         STOPPED   // sink stoped
     };
 
-    static std::shared_ptr<AudioEndpoint> CreateEndpoint(EndpointType type, uint64_t id,
-        const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo);
-    static std::string GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag);
+    static std::shared_ptr<AudioEndpoint> CreateEndpoint(const bool isVoipStream,
+        const AudioEndpointConfig &endpointConfig);
+    static std::string GenerateEndpointKey(const AudioDeviceDescriptor &deviceInfo, int32_t endpointFlag);
 
     virtual std::string GetEndpointName() = 0;
 
@@ -115,8 +124,7 @@ protected:
     AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
 
 private:
-    virtual bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo,
-                        AudioStreamType streamType) = 0;
+    virtual bool Config(const AudioEndpointConfig &endpointConfig) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

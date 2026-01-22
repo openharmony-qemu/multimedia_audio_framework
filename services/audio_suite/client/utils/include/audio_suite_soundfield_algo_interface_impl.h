@@ -48,7 +48,7 @@ struct SoundFieldAlgoApi {
 
 class AudioSuiteSoundFieldAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    explicit AudioSuiteSoundFieldAlgoInterfaceImpl(NodeCapability &nc);
+    explicit AudioSuiteSoundFieldAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteSoundFieldAlgoInterfaceImpl();
 
     int32_t Init() override;

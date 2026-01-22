@@ -30,6 +30,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "adapter/i_device_manager.h"
+#include "audio_stream_enum.h"
 
 using namespace OHOS::HDI::Audio_Bluetooth;
 
@@ -73,6 +74,8 @@ int32_t BluetoothAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     if (audioSrcClock_ != nullptr) {
         audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
     }
+    InitPipeInfo(hdiCaptureId_, HDI_ADAPTER_TYPE_A2DP, AUDIO_INPUT_FLAG_NORMAL,
+        { DEVICE_TYPE_BLUETOOTH_A2DP_IN });
     return SUCCESS;
 }
 
@@ -92,6 +95,7 @@ void BluetoothAudioCaptureSource::DeInit(void)
     audioCapture_ = nullptr;
     AUDIO_INFO_LOG("update validState:true");
     validState_ = true;
+    DeinitPipeInfo();
 }
 
 bool BluetoothAudioCaptureSource::IsInited(void)
@@ -143,6 +147,7 @@ int32_t BluetoothAudioCaptureSource::Start(void)
         return ERR_NOT_STARTED;
     }
     started_ = true;
+    ChangePipeStatus(PIPE_STATUS_RUNNING);
     return SUCCESS;
 }
 
@@ -246,25 +251,6 @@ int32_t BluetoothAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestB
     return SUCCESS;
 }
 
-int32_t BluetoothAudioCaptureSource::CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-    uint64_t &replyBytesEc)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-std::string BluetoothAudioCaptureSource::GetAudioParameter(const AudioParamKey key, const std::string &condition)
-{
-    return "";
-}
-
-void BluetoothAudioCaptureSource::SetAudioParameter(
-    const AudioParamKey key, const std::string &condition, const std::string &value)
-{
-    AUDIO_WARNING_LOG("not support");
-    return;
-}
-
 int32_t BluetoothAudioCaptureSource::SetVolume(float left, float right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
@@ -352,20 +338,10 @@ float BluetoothAudioCaptureSource::GetMaxAmplitude(void)
 int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("update validState:%{public}s", (audioScene == AUDIO_SCENE_DEFAULT) ? "true" : "false");
+    std::lock_guard<std::mutex> lock(statusMutex_);
     validState_ = (audioScene == AUDIO_SCENE_DEFAULT);
+    started_ = validState_ ? started_ : false;
     return SUCCESS;
-}
-
-int32_t BluetoothAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
-void BluetoothAudioCaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
 }
 
 int32_t BluetoothAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size)
@@ -571,6 +547,7 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     if (!started_) {
         AUDIO_ERR_LOG("not start, invalid state");
         callback_.OnCaptureState(false);
+        ChangePipeStatus(PIPE_STATUS_STANDBY);
         return ERR_OPERATION_FAILED;
     }
     int32_t ret = audioCapture_->control.Stop(reinterpret_cast<AudioHandle>(audioCapture_));
@@ -578,6 +555,7 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     started_ = false;
     paused_ = false;
     callback_.OnCaptureState(false);
+    ChangePipeStatus(PIPE_STATUS_STANDBY);
     return SUCCESS;
 }
 
@@ -588,11 +566,5 @@ bool BluetoothAudioCaptureSource::IsValidState(void)
     }
     return validState_;
 }
-
-void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
-{
-    AUDIO_INFO_LOG("not support");
-}
-
 } // namespace AudioStandard
 } // namespace OHOS

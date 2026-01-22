@@ -43,6 +43,9 @@ ohos_fuzztest("AudioServiceServerSrcEnhanceFuzzTest") {
   deps = [
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service_static",
     "../../../services/audio_service:audio_service_static",
@@ -76,6 +79,12 @@ ohos_fuzztest("AudioServiceServerSrcEnhanceFuzzTest") {
   }
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
   }
 }
 

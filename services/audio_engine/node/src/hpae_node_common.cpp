@@ -131,6 +131,30 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"multichannel", PIPE_TYPE_OUT_MULTICHANNEL},
 };
 
+static std::map<HpaeSessionState, RendererState> g_hapeToRendererStateMap = {
+    {HPAE_SESSION_INVALID, RENDERER_INVALID},
+    {HPAE_SESSION_NEW, RENDERER_NEW},
+    {HPAE_SESSION_PREPARED, RENDERER_PREPARED},
+    {HPAE_SESSION_RUNNING, RENDERER_RUNNING},
+    {HPAE_SESSION_PAUSING, RENDERER_PAUSED},
+    {HPAE_SESSION_PAUSED, RENDERER_PAUSED},
+    {HPAE_SESSION_STOPPING, RENDERER_STOPPED},
+    {HPAE_SESSION_STOPPED, RENDERER_STOPPED},
+    {HPAE_SESSION_RELEASED, RENDERER_RELEASED},
+};
+
+static std::map<HpaeSessionState, CapturerState> g_hapeToCapturerStateMap = {
+    {HPAE_SESSION_INVALID, CAPTURER_INVALID},
+    {HPAE_SESSION_NEW, CAPTURER_NEW},
+    {HPAE_SESSION_PREPARED, CAPTURER_PREPARED},
+    {HPAE_SESSION_RUNNING, CAPTURER_RUNNING},
+    {HPAE_SESSION_PAUSING, CAPTURER_PAUSED},
+    {HPAE_SESSION_PAUSED, CAPTURER_PAUSED},
+    {HPAE_SESSION_STOPPING, CAPTURER_STOPPED},
+    {HPAE_SESSION_STOPPED, CAPTURER_STOPPED},
+    {HPAE_SESSION_RELEASED, CAPTURER_RELEASED},
+};
+
 static long StringToNum(const std::string &str)
 {
     char *endptr;
@@ -186,7 +210,7 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled)
 {
     if (isCollaborationEnabled) {
-        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
             nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
@@ -291,14 +315,14 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
     if (g_formatFromParserStrToEnum.find(audioModuleInfo.format) == g_formatFromParserStrToEnum.end()) {
-        AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
+        AUDIO_ERR_LOG("openaudioport failed,format:%s not supported", audioModuleInfo.format.c_str());
         return ERROR;
     }
     sinkInfo.deviceNetId = audioModuleInfo.networkId;
     sinkInfo.deviceClass = audioModuleInfo.className;
     sinkInfo.busAddress = audioModuleInfo.busAddress;
     sinkInfo.suspendTime = audioModuleInfo.suspendIdleTimeout;
-    AUDIO_INFO_LOG("HpaeManager::deviceNetId: %{public}s, deviceClass: %{public}s, suspend_time: %{public}u",
+    AUDIO_INFO_LOG("HpaeManager::deviceNetId: %s, deviceClass: %s, suspend_time: %{public}u",
         sinkInfo.deviceNetId.c_str(),
         sinkInfo.deviceClass.c_str(),
         sinkInfo.suspendTime);
@@ -558,6 +582,24 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
     nodeInfo.encoding = streamInfo.encoding;
+}
+
+RendererState ConvertHpaeToRendererState(HpaeSessionState state)
+{
+    auto it = g_hapeToRendererStateMap.find(state);
+    if (it != g_hapeToRendererStateMap.end()) {
+        return it->second;
+    }
+    return RENDERER_INVALID;
+}
+
+CapturerState ConvertHpaeToCapturerState(HpaeSessionState state)
+{
+    auto it = g_hapeToCapturerStateMap.find(state);
+    if (it != g_hapeToCapturerStateMap.end()) {
+        return it->second;
+    }
+    return CAPTURER_INVALID;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

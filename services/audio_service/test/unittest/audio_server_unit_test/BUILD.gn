@@ -37,6 +37,7 @@ ohos_unittest("audio_server_unit_test") {
     "../../../../../services/audio_service/server/include",
     "../../../../../services/audio_policy/client/include",
     "../../../../../services/audio_engine/manager/include",
+    "../../../../../frameworks/native/hdiadapter_new/include",
   ]
 
   configs = [ "../../../../../services/audio_service:audio_service_config" ]
@@ -56,6 +57,7 @@ ohos_unittest("audio_server_unit_test") {
     "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service",
+    "../../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   external_deps = [
@@ -63,6 +65,7 @@ ohos_unittest("audio_server_unit_test") {
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gtest",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
@@ -71,4 +74,13 @@ ohos_unittest("audio_server_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }

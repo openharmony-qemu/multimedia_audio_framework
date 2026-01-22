@@ -41,6 +41,8 @@ ohos_shared_library("audio_utils") {
   sources = [
     "./src/async_action_handler.cpp",
     "./src/audio_channel_blend.cpp",
+    "./src/audio_format_utils.cpp",
+    "./src/audio_sink_latency_fetcher.cpp",
     "./src/audio_performance_monitor.cpp",
     "./src/audio_speed.cpp",
     "./src/audio_utils.cpp",
@@ -48,6 +50,8 @@ ohos_shared_library("audio_utils") {
     "./src/dfx_utils.cpp",
     "./src/volume_ramp.cpp",
     "./src/xperf_adapter.cpp",
+    "./src/audio_bundle_manager.cpp",
+    "./src/volume_utils.cpp",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_shared" ]

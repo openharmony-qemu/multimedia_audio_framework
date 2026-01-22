@@ -64,5 +64,30 @@ HWTEST_F(AudioRecoveryDeviceUnitTest, AudioRecoveryDeviceUnitTest_003, TestSize.
         excludedDevices);
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+* @tc.name  : Test AudioRecoveryDevice ExcludeOutputDevicesInner Branch.
+* @tc.number: ExcludeOutputDevicesInner_001.
+* @tc.desc  : Test ExcludeOutputDevicesInner when audioDevUsage is not ALL_MEDIA_DEVICES.
+*/
+HWTEST_F(AudioRecoveryDeviceUnitTest, ExcludeOutputDevicesInner_001, TestSize.Level4)
+{
+    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceRole_ = OUTPUT_DEVICE;
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    deviceDesc->macAddress_ = "00:11:22:33:44:55";
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    audioDeviceDescriptors.push_back(deviceDesc);
+
+    auto result = audioRecoveryDevice->ExcludeOutputDevicesInner(
+        AudioDeviceUsage::CALL_OUTPUT_DEVICES,
+        audioDeviceDescriptors
+    );
+
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

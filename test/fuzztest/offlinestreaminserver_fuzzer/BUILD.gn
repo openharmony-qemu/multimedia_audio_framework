@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("OfflineStreamInServerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_route"
+  module_out_path = "audio_framework/audio_framework_route/concurrent"
   fuzz_config_file = "../offlinestreaminserver_fuzzer"
 
   include_dirs = [
@@ -45,6 +45,7 @@ ohos_fuzztest("OfflineStreamInServerFuzzTest") {
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",

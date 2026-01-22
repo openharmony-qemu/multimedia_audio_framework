@@ -38,7 +38,12 @@ struct GeneralVoiceChangeInfo {
     std::string inputFileName;
     std::string outputFileName;
     std::string compareFileName;
-    AudioGeneralVoiceChangeType gnerralVoiceType;
+    AudioGeneralVoiceChangeType generalVoiceType;
+};
+
+struct GeneralVoiceParameter {
+    std::string value;
+    std::string name;
 };
 
 static std::string g_outputNodeTestDir = "/data/audiosuite/vb/";
@@ -68,10 +73,20 @@ static GeneralVoiceChangeInfo g_info[] = {
     {"vb_input_48000_2_S16LE.pcm", "out10.pcm", "voice_morph_output_war_sframe.pcm", GENERAL_VOICE_CHANGE_TYPE_WAR},
 };
 
+static GeneralVoiceParameter g_setparameter[] = {
+    {std::to_string(static_cast<int32_t>(GENERAL_VOICE_CHANGE_TYPE_SEASONED)), "AudioPureVoiceChangeOption"},
+    {std::to_string(static_cast<int32_t>(GENERAL_VOICE_CHANGE_TYPE_SEASONED) +
+                    static_cast<int32_t>(GENERAL_VOICE_CHANGE_TYPE_SEASONED)),
+        "AudioGeneralVoiceChangeType"},
+};
+
 class AudioSuiteGeneralVoiceChangeNodeTest : public testing::Test {
 public:
     void SetUp() override
     {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
     }
     void TearDown() override
     {
@@ -81,11 +96,11 @@ public:
 static bool RunGeneralVoiceChangeTest(
     const GeneralVoiceChangeInfo &info, const std::string &inputFilePath, const std::string &outputFilePath)
 {
-    AudioSuiteGeneralVoiceChangeNode vb;
-    vb.Init();
-    std::string value = std::to_string(static_cast<int32_t>(info.gnerralVoiceType));
+    auto node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    node->Init();
+    std::string value = std::to_string(static_cast<int32_t>(info.generalVoiceType));
     std::string name = "AudioGeneralVoiceChangeType";
-    int32_t ret = vb.SetOptions(name, value);
+    int32_t ret = node->SetOptions(name, value);
     EXPECT_EQ(ret, SUCCESS);
 
     std::vector<AudioSuitePcmBuffer *> inputs;
@@ -113,7 +128,7 @@ static bool RunGeneralVoiceChangeTest(
         inputs.clear();
         inputs.push_back(buffer);
         AudioSuitePcmBuffer *outPcmbuffer = nullptr;
-        outPcmbuffer = vb.SignalProcess(inputs);
+        outPcmbuffer = node->SignalProcess(inputs);
         EXPECT_TRUE(outPcmbuffer != nullptr);
         uint8_t *data = outPcmbuffer->GetPcmData();
         if (data != nullptr) {
@@ -123,13 +138,13 @@ static bool RunGeneralVoiceChangeTest(
             }
         }
     }
-    ret = vb.SetOptions(name, value);
+    ret = node->SetOptions(name, value);
     EXPECT_EQ(ret, SUCCESS);
 
     file.close();
     outFile.close();
     delete buffer;
-    vb.DeInit();
+    node->DeInit();
     return true;
 }
 
@@ -159,10 +174,44 @@ HWTEST_F(AudioSuiteGeneralVoiceChangeNodeTest, testAudioSuiteGeneralVoiceChangeN
 
 HWTEST_F(AudioSuiteGeneralVoiceChangeNodeTest, testAudioSuiteGeneralVoiceChangeNodeDeInit001, TestSize.Level0)
 {
-    AudioSuiteGeneralVoiceChangeNode vb;
-    vb.algoInterface_ = nullptr;
-    int32_t ret = vb.DeInit();
+    auto node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    node->algoInterface_ = nullptr;
+    int32_t ret = node->DeInit();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioSuiteGeneralVoiceChangeNodeTest, AudioSuiteGeneralVoiceChangeNodeSetOptionTest001, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    node->Init();
+    int32_t ret;
+ 
+    size_t count = sizeof(g_setparameter) / sizeof(g_setparameter[0]);
+    for (size_t idx = 0; idx < count; idx++) {
+        ret = node->SetOptions(g_setparameter[idx].name, g_setparameter[idx].value);
+        EXPECT_EQ(ret, ERROR);
+    }
+}
+ 
+HWTEST_F(AudioSuiteGeneralVoiceChangeNodeTest, AudioSuiteGeneralVoiceChangeNodeGetOptionTest001, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteGeneralVoiceChangeNode>();
+    node->Init();
+    std::string value = std::to_string(static_cast<int32_t>(GENERAL_VOICE_CHANGE_TYPE_SEASONED));
+    std::string name = "AudioGeneralVoiceChangeType";
+    int32_t ret = node->GetOptions(name, value);
+    EXPECT_EQ(ret, ERROR);
+ 
+    ret = node->SetOptions(name, value);
+    EXPECT_EQ(ret, SUCCESS);
+ 
+    std::string getValue;
+    ret = node->GetOptions(name, getValue);
+    EXPECT_EQ(getValue, value);
+ 
+    std::string getName = "AudioPureVoiceChangeOption";
+    ret = node->GetOptions(getName, getValue);
+    EXPECT_EQ(ret, ERROR);
 }
 
 }  // namespace

@@ -44,13 +44,14 @@ NapiAudioCapturerStateCallback::~NapiAudioCapturerStateCallback()
 void NapiAudioCapturerStateCallback::SaveCallbackReference(napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    std::string taskName = "NapiAudioCapturerStateCallback::destroy";
     napi_ref callback = nullptr;
     const int32_t refCount = ARGS_ONE;
     napi_status status = napi_create_reference(env_, args, refCount, &callback);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "NapiAudioCapturerStateCallback: creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
     CHECK_AND_RETURN_LOG(cb != nullptr, "NapiAudioCapturerStateCallback: creating callback failed");
 
     capturerStateCallback_ = cb;

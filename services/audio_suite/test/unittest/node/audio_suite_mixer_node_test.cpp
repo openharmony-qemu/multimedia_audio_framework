@@ -30,6 +30,7 @@
 #include "audio_suite_output_node.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_limiter.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -63,7 +64,11 @@ public:
 };
 
 void AudioSuiteMixerTest::SetUp()
-{}
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void AudioSuiteMixerTest::TearDown()
 {}
@@ -77,7 +82,8 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNode, TestSize.Level0)
 
 HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
 {
-    AudioSuiteMixerNode mixer;
+    auto node = std::make_shared<AudioSuiteMixerNode>();
+    node->Init();
 
     std::ifstream file1(g_fileNameOne, std::ios::binary | std::ios::ate);
     std::ifstream file2(g_fileNameTwo, std::ios::binary | std::ios::ate);
@@ -90,7 +96,6 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
 
     
     std::ofstream outProcessedFile(g_outFilename, std::ios::binary);
-    mixer.Init();
     AudioSuitePcmBuffer buffer1(PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
     AudioSuitePcmBuffer buffer2(PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
     uint32_t dataSize = buffer1.GetDataSize();
@@ -105,7 +110,7 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
         }
         std::vector<AudioSuitePcmBuffer *> inputs = {&buffer1, &buffer2};
 
-        outProcessedFile.write(reinterpret_cast<const char *>((mixer.SignalProcess(inputs))->GetPcmData()),
+        outProcessedFile.write(reinterpret_cast<const char *>((node->SignalProcess(inputs))->GetPcmData()),
             dataSize);
         inputs.clear();
     }

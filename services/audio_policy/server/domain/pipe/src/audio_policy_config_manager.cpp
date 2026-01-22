@@ -59,12 +59,13 @@ static AudioSamplingRate SelectMatchingSampleRate(const std::list<std::shared_pt
     AudioSamplingRate sampleRate)
 {
     CHECK_AND_RETURN_RET_LOG(!matchInfos.empty(), AudioSamplingRate::SAMPLE_RATE_8000, "matchInfos is empty");
+    AudioSamplingRate selectResult = AudioSamplingRate::SAMPLE_RATE_8000;
     for (auto &streamProp : matchInfos) {
-        CHECK_AND_RETURN_RET(!(streamProp && streamProp->sampleRate_ >= sampleRate),
-            static_cast<AudioSamplingRate>(streamProp->sampleRate_));
+        CHECK_AND_CONTINUE(streamProp != nullptr);
+        selectResult = static_cast<AudioSamplingRate>(streamProp->sampleRate_);
+        CHECK_AND_RETURN_RET(selectResult < sampleRate, selectResult);
     }
-    return matchInfos.back() != nullptr ? static_cast<AudioSamplingRate>(matchInfos.back()->sampleRate_) :
-        AudioSamplingRate::SAMPLE_RATE_8000;
+    return selectResult;
 }
 
 bool AudioPolicyConfigManager::Init(bool isRefresh)
@@ -203,6 +204,11 @@ void AudioPolicyConfigManager::OnHasEarpiece()
         }
     }
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
+}
+
+void AudioPolicyConfigManager::OnSupportUltraFast(bool supportUltraFast)
+{
+    supportUltraFast_ = supportUltraFast;
 }
 
 static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &deviceStreamInfo,
@@ -441,6 +447,11 @@ bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::
 bool AudioPolicyConfigManager::GetHasEarpiece()
 {
     return hasEarpiece_;
+}
+
+bool AudioPolicyConfigManager::GetUltraFastFlag()
+{
+    return supportUltraFast_;
 }
 
 bool AudioPolicyConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
@@ -690,6 +701,69 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
     return false;
 }
 
+#ifdef MULTI_BUS_ENABLE
+void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+                                                 std::shared_ptr<PipeStreamPropInfo> &info,
+                                                 const std::vector<std::string> &busAddresses)
+{
+    // Vehicle system scenario enter
+    CHECK_AND_RETURN_LOG(desc != nullptr && !busAddresses.empty(), "StreamDesc is null, none streamDrop");
+
+    auto newDeviceDesc = desc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_LOG(newDeviceDesc != nullptr, "DeviceDesc is null, none streamDrop");
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+    CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
+    AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d", deviceInfo->type_, deviceInfo->role_);
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
+    CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
+
+    std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap;
+    for (const auto &pipeName : deviceInfo->supportPipes_) {
+        std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfoPtr->GetPipeInfoByName(pipeName);
+        if (pipeInfo != nullptr) {
+            pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
+        }
+    }
+
+    auto findPipe = [&pipeInfoMap](const std::string &busAddress) -> std::shared_ptr<AdapterPipeInfo> {
+        auto it = pipeInfoMap.find(busAddress);
+        if (it != pipeInfoMap.end()) {
+            return it->second;
+        }
+        return nullptr;
+    };
+
+    for (const auto &busAddress : busAddresses) {
+        // First, locate the pipe based on the busAddress name,
+        // then check whether the stream information matches the PipeStreamPropInfo under the pipe.
+        std::shared_ptr<AdapterPipeInfo> pipeInfo = findPipe(busAddress);
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+
+        AudioStreamInfo temp = desc->streamInfo_;
+        UpdateBasicStreamInfo(desc, pipeInfo, temp);
+
+        AUDIO_INFO_LOG(
+            "Bus: %{public}s, AudioStreamInfo: samplingRate[%{public}d], format[%{public}d], channels[%{public}d].",
+            busAddress.c_str(), temp.samplingRate, temp.format, temp.channels);
+        if (MatchStreamPropInfo(info, pipeInfo, temp)) {
+            AUDIO_INFO_LOG("Pipe stream prop info match success: %{public}s.", busAddress.c_str());
+            return;
+        }
+    }
+
+    AUDIO_INFO_LOG("Find streamPropInfo failed, choose first pipe.");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = findPipe(busAddresses[0]);
+    if (!pipeInfo || pipeInfo->streamPropInfos_.empty()) {
+        AUDIO_ERR_LOG("Failed to find pipe with bus: %{public}s.", busAddresses[0].c_str());
+        return;
+    }
+    info = pipeInfo->streamPropInfos_.front();
+}
+#endif
+
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
@@ -699,9 +773,13 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
-    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(),
-        "Find no support pipe for stream %{public}u, route %{public}u",
-        desc->GetSessionId(), desc->GetRoute());
+    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find no support pipe for stream %{public}u, "
+        "route %{public}u", desc->GetSessionId(), desc->GetRoute());
+
+    if (desc->routeFlag_ & AUDIO_OUTPUT_FLAG_HWDECODING) {
+        info = pipeIt->second->streamPropInfos_.front();
+        return;
+    }
 
     AudioStreamInfo temp = desc->streamInfo_;
     UpdateBasicStreamInfo(desc, pipeIt->second, temp);
@@ -839,7 +917,7 @@ void AudioPolicyConfigManager::SortStreamPropInfosBySampleRate(
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipe(
-    std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
+    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo matchStreamInfo)
 {
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
     CHECK_AND_RETURN_RET(info && !info->dynamicStreamPropInfos_.empty(), nullptr);
@@ -847,12 +925,6 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
     AUDIO_INFO_LOG("use dynamic streamProp");
 
     SortStreamPropInfosBySampleRate(info->dynamicStreamPropInfos_);
-    AudioStreamInfo matchStreamInfo = streamInfo;
-    // for audiovivid, need convert to 5.1.2 channelLayout
-    if (streamInfo.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
-        matchStreamInfo.channels = CHANNEL_8;
-        matchStreamInfo.channelLayout = CH_LAYOUT_5POINT1POINT2;
-    }
 
     std::list<std::shared_ptr<PipeStreamPropInfo>> matchInfos;
     std::function<bool(std::shared_ptr<PipeStreamPropInfo>)> limitFunc;
@@ -891,6 +963,30 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
         GetSuitableStreamPropInfo(matchStreamInfo.format, matchStreamInfo.samplingRate, info->dynamicStreamPropInfos_);
 }
 
+std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipeForViVid(
+    std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(info != nullptr && !info->dynamicStreamPropInfos_.empty(), nullptr, "info is null");
+    std::vector<std::pair<AudioChannel, AudioChannelLayout>> channelLayouts = {
+        {CHANNEL_12, CH_LAYOUT_7POINT1POINT4},
+        {CHANNEL_8, CH_LAYOUT_5POINT1POINT2}
+    };
+    AudioStreamInfo matchStreamInfo = streamInfo;
+    for (auto layout : channelLayouts) {
+        // first match channelLayout
+        for (auto &streamProp : info->dynamicStreamPropInfos_) {
+            CHECK_AND_CONTINUE(streamProp != nullptr);
+            if (streamProp->channelLayout_ == layout.second) {
+                matchStreamInfo.channels = layout.first;
+                matchStreamInfo.channelLayout = layout.second;
+                AUDIO_INFO_LOG("match layout as %{public}llx", static_cast<unsigned long long>(layout.second));
+                return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+            }
+        }
+    }
+    return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+}
+
 bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
     std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo)
 {
@@ -907,9 +1003,18 @@ bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPro
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
 {
-    std::shared_ptr<PipeStreamPropInfo> propInfo = GetDynamicStreamPropInfoFromPipe(info, streamInfo);
-    CHECK_AND_RETURN_RET(propInfo == nullptr, propInfo);
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, nullptr, "info is nullptr");
+    // use dynamic streamprop
+    if (!info->dynamicStreamPropInfos_.empty()) {
+        if (streamInfo.encoding == AudioEncodingType::ENCODING_AUDIOVIVID) {
+            return GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo);
+        } else {
+            AudioStreamInfo matchStreamInfo = streamInfo;
+            return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
+        }
+    }
 
+    // use xml config streamprop
     AudioSampleFormat format = streamInfo.format;
     uint32_t sampleRate = static_cast<uint32_t>(streamInfo.samplingRate);
     AudioChannel channels = streamInfo.channels;

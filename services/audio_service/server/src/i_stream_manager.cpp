@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 #endif
 #include "hpae_adapter_manager.h"
 #include "pro_audio_stream_manager.h"
+#include "hw_decoding_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,12 +30,15 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
         case DIRECT_PLAYBACK:
             static ProAudioStreamManager directManager(DIRECT_PLAYBACK);
             return directManager;
-        case EAC3_PLAYBACK:
-            static ProAudioStreamManager eac3Manager(EAC3_PLAYBACK);
-            return eac3Manager;
         case VOIP_PLAYBACK:
             static ProAudioStreamManager voipManager(VOIP_PLAYBACK);
             return voipManager;
+        case HWDECODING_PLAYBACK:
+            static HWDecodingStreamManager hwDecodingManger;
+            return hwDecodingManger;
+        case AUDIO_VIVID_3DA_DIRECT_PLAYBACK:
+            static ProAudioStreamManager cabin3DADirectManager(AUDIO_VIVID_3DA_DIRECT_PLAYBACK);
+            return cabin3DADirectManager;
         case PLAYBACK:
         default:
 #ifdef SUPPORT_OLD_ENGINE

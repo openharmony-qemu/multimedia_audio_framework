@@ -295,6 +295,17 @@ public:
         return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
     }
 
+    int32_t StartPlaybackCapture() override
+    {
+        return 0;
+    }
+ 
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override
+    {
+        return;
+    }
+
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
     {
         return sharedAudioCapturer_->SetInterruptEventCallbackType(callbackType);

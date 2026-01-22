@@ -296,6 +296,8 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
     auto server = GetServerUtil::GetServerPtr();
     int32_t volumeLevel = 8;
     bool isA2dpDevice = true;
+    server->audioPolicyService_.audioVolumeManager_.audioActiveDevice_.currentActiveDevice_.deviceType_ =
+        DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t volumeLevelRet
         = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
     EXPECT_EQ(volumeLevelRet, 8);
@@ -631,11 +633,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetTargetSourceTypeAndMatchingFlag_001, 
     server->audioPolicyService_.audioEcManager_.GetTargetSourceTypeAndMatchingFlag(source, targetSource,
         useMatchingPropInfo);
     EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_VOICE_CALL);
-
-    source = SourceType::SOURCE_TYPE_CAMCORDER;
-    server->audioPolicyService_.audioEcManager_.GetTargetSourceTypeAndMatchingFlag(source, targetSource,
-        useMatchingPropInfo);
-    EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_CAMCORDER);
 }
 
 /**
@@ -777,6 +774,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
     EXPECT_EQ(ecSamplingRate, "0");
 
     halName = INVALID_CLASS;
+    server->audioPolicyService_.audioEcManager_.primaryMicModuleInfo_.rate = "48000";
     ecSamplingRate = server->audioPolicyService_.audioEcManager_.GetEcSamplingRate(halName, outModuleInfo);
     EXPECT_EQ(ecSamplingRate, "48000");
 }

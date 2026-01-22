@@ -46,7 +46,9 @@ enum AudioBufferHolder : uint32_t {
     // Server buffer shared with hdi and has sync info
     AUDIO_SERVER_ONLY_WITH_SYNC,
     // Independent stream
-    AUDIO_SERVER_INDEPENDENT
+    AUDIO_SERVER_INDEPENDENT,
+    // StaticRenderer Mode, shared from soundpool
+    AUDIO_APP_SHARED
 };
 
 enum StreamStatus : uint32_t {
@@ -60,6 +62,11 @@ enum StreamStatus : uint32_t {
     STREAM_RELEASED,
     STREAM_STAND_BY,
     STREAM_INVALID
+};
+
+enum BufferPosition : uint32_t {
+    BUFFER_IN_CLIENT = 0,
+    BUFFER_IN_SERVER
 };
 
 /**
@@ -91,12 +98,27 @@ struct BasicBufferInfo {
     std::atomic<uint64_t> timeStamp;
 
     std::atomic<float> streamVolume;
+     
+    std::atomic<uint32_t> beginDurationMs;
+    std::atomic<uint32_t> durationMs;
     std::atomic<float> duckFactor;
+    std::atomic<float> oldDuckFactor;
+    std::atomic<float> lastEventFactor;
+    std::atomic<uint32_t> lastEventTime;
+
     std::atomic<float> muteFactor;
     std::atomic<RestoreStatus> restoreStatus = NO_NEED_FOR_RESTORE;
     std::atomic<bool> isNeedStop = false;
 
     RestoreInfo restoreInfo;
+
+    // only for static renderer
+    std::atomic<bool> isStatic;
+    std::atomic<int64_t> clientLastProcessTime;
+    std::atomic<bool> isFirstFrame;
+
+    std::atomic<uint64_t> bufferEndCallbackSendTimes;
+    std::atomic<bool> needSendLoopEndCallback;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -173,7 +195,7 @@ public:
     bool SetStreamVolume(float streamVolume);
 
     float GetDuckFactor();
-    bool SetDuckFactor(float duckFactor);
+    bool SetDuckFactor(float duckFactor, uint32_t durationMs);
 
     float GetMuteFactor();
     bool SetMuteFactor(float muteFactor);
@@ -211,6 +233,8 @@ public:
     int32_t GetAllWritableBuffer(RingBufferWrapper &buffer);
     int32_t GetAllReadableBuffer(RingBufferWrapper &buffer);
 
+    int32_t GetRawBuffer(uint32_t size, BufferDesc &bufferDesc);
+
     int64_t GetLastWrittenTime();
     void SetLastWrittenTime(int64_t time);
 
@@ -233,6 +257,24 @@ public:
     void WakeFutex(uint32_t wakeVal = IS_READY);
 
     RestoreStatus GetRestoreStatus();
+
+    // for sharedbuffer in static mode
+    void IncreaseBufferEndCallbackSendTimes();
+    void DecreaseBufferEndCallbackSendTimes();
+    void ResetBufferEndCallbackSendTimes();
+    void SetIsNeedSendLoopEndCallback(bool value);
+    void SetIsFirstFrame(bool value);
+
+    bool IsNeedSendBufferEndCallback();
+    bool IsNeedSendLoopEndCallback();
+    bool IsFirstFrame();
+
+    void SetStaticMode(bool state);
+    bool GetStaticMode();
+    std::shared_ptr<AudioSharedMemory> GetSharedMem();
+
+    bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
+
 private:
     int32_t SizeCheck();
 
@@ -245,6 +287,8 @@ private:
     void InitBasicBufferInfo();
 
     void WakeFutexIfNeed(uint32_t wakeVal = IS_READY);
+
+    float GetFactorFromRamp();
 
     uint32_t sessionId_ = 0;
 
@@ -307,7 +351,7 @@ public:
     bool SetStreamVolume(float streamVolume);
 
     float GetDuckFactor();
-    bool SetDuckFactor(float duckFactor);
+    bool SetDuckFactor(float duckFactor, uint32_t durationMs);
 
     float GetMuteFactor();
     bool SetMuteFactor(float muteFactor);

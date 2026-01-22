@@ -120,12 +120,9 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         }
         SplitStreamType splitStreamType = outputData->GetSplitStreamType();
         AudioStreamType type = outputData->GetAudioStreamType();
-        // navigation not send empty
-        if (type == STREAM_NAVIGATION && !outputData->IsValid()) {
-            AUDIO_WARNING_LOG("navigation not send empty chunk");
-            continue;
-        }
-        StreamUsage usage = outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN;
+        StreamUsage usage = (!outputData->IsValid() && (type == STREAM_MUSIC || type == STREAM_MOVIE))
+            ? STREAM_USAGE_UNKNOWN : outputData->GetAudioStreamUsage();
+
         audioRendererSink_->UpdateStreamInfo(splitStreamType, type, usage);
         ConvertFromFloat(
             GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
@@ -366,9 +363,9 @@ StreamManagerState HpaeRemoteSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeRemoteSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    HILOG_COMM_INFO("Sink[%{public}s] state change:[%{public}s]-->[%{public}s]",
-        GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
-        ConvertStreamManagerState2Str(sinkState).c_str());
+    HILOG_COMM_INFO("[SetSinkState]Sink"
+        "[%{public}s] state change: [%{public}s]-->[%{public}s]", GetDeviceClass().c_str(),
+        ConvertStreamManagerState2Str(state_).c_str(), ConvertStreamManagerState2Str(sinkState).c_str());
         state_ = sinkState;
         return SUCCESS;
 }

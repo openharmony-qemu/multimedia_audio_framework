@@ -28,6 +28,7 @@
 #include "audio_stream_info.h"
 #include "hpae_info.h"
 #include "audio_engine_log.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,18 +42,7 @@ static constexpr float EPSILON = 1e-6f;
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
     isInnerCapturerOrInjector_ = !GetDeviceClass().compare(0, strlen(INNER_CAPTURER_SINK), INNER_CAPTURER_SINK) ||
-        GetDeviceName() == VIRTUAL_INJECTOR;
-    auto audioVolume = AudioVolume::GetInstance();
-    float curSystemGain = 1.0f;
-    if (isInnerCapturerOrInjector_) {
-        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
-    } else {
-        struct VolumeValues volumes;
-        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
-    }
-    audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
-    audioVolume->Monitor(GetSessionId(), true);
-    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
+        GetDeviceClass() == VIRTUAL_INJECTOR;
     AUDIO_INFO_LOG(
         "SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
 #ifdef ENABLE_HIDUMP_DFX
@@ -129,6 +119,21 @@ bool HpaeGainNode::SetClientVolume(float gain)
     return true;
 }
 
+void HpaeGainNode::ResetVolume()
+{
+    auto audioVolume = AudioVolume::GetInstance();
+    float curSystemGain = 1.0f;
+    if (isInnerCapturerOrInjector_) {
+        curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
+    } else {
+        struct VolumeValues volumes;
+        curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
+    }
+    audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
+    audioVolume->Monitor(GetSessionId(), true);
+    AUDIO_INFO_LOG("curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
+}
+
 float HpaeGainNode::GetClientVolume()
 {
     return curGain_;
@@ -179,12 +184,13 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
         AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+        auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
         statusCallback->OnFadeDone(GetSessionId()); // if operation is stop or pause, callback
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade out fail");
         return;
     }
     // do fade in
@@ -195,8 +201,9 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
             return;
         }
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+        auto ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState_ = false;
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
     }
 }
 
@@ -213,6 +220,18 @@ void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
     }
 }
 
+uint32_t HpaeGainNode::CalcRemainDurationMs(uint32_t duration, uint32_t frameLen, float *curSysGain, float *preSysGain)
+{
+    uint32_t remainDurationMs = 0;
+    uint32_t spaneInFrameMs = (frameLen * 1000u) / GetSampleRate();
+    uint32_t times = duration / spaneInFrameMs;
+    if (times > 0) {
+        *curSysGain = (*curSysGain - *preSysGain) / times + *preSysGain;
+        remainDurationMs = duration - spaneInFrameMs;
+    }
+    return remainDurationMs;
+}
+
 void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount)
 {
     struct VolumeValues volumes;
@@ -220,23 +239,28 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     AudioVolume *audioVolume = AudioVolume::GetInstance();
     float curSystemGain = 1.0f;
     float preSystemGain = 1.0f;
+    uint32_t durationMs = 0;
+    uint32_t remainDurationMs = 0;
     if (isInnerCapturerOrInjector_) {
         curSystemGain = audioVolume->GetStreamVolume(GetSessionId());
         preSystemGain = audioVolume->GetHistoryVolume(GetSessionId());
+        durationMs = audioVolume->GetDurationMs(GetSessionId());
     } else {
         curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
         preSystemGain = volumes.volumeHistory;
+        durationMs = volumes.durationMs;
     }
+
+    remainDurationMs = CalcRemainDurationMs(durationMs, frameLen, &curSystemGain, &preSystemGain);
+    
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeGainNode::DoGain, curSystemGain: " +
-        std::to_string(curSystemGain) + ", preSystemGain: " + std::to_string(preSystemGain));
+        std::to_string(curSystemGain) + ", preSystemGain: " + std::to_string(preSystemGain)+ ", durationMs" +
+        std::to_string(durationMs));
     CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
-    AUDIO_DEBUG_LOG(
-        "curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f deviceClass :%{public}s",
-        curSystemGain,
-        preSystemGain,
-        systemStepGain,
-        GetDeviceClass().c_str());
+    AUDIO_DEBUG_LOG("curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f " \
+        "durationMs: %{public}u deviceClass :%{public}s", curSystemGain, preSystemGain, systemStepGain,
+        durationMs, GetDeviceClass().c_str());
     if (audioVolume->IsSameVolume(0.0f, curSystemGain) && audioVolume->IsSameVolume(0.0f, preSystemGain)) {
         SilenceData(input);
         input->SetBufferSilence(true);
@@ -250,7 +274,7 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
         input->SetBufferSilence(false);
     }
     if (fabs(curSystemGain - preSystemGain) > EPSILON) {
-        audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
+        audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain, remainDurationMs);
         audioVolume->Monitor(GetSessionId(), true);
     }
 }
@@ -276,8 +300,8 @@ uint32_t HpaeGainNode::GetFadeLength(uint32_t &byteLength, HpaePcmBuffer *input)
             break;
         }
         case FadeType::DEFAULT_FADE: {
+            byteLength = input->DataSize();
             index = fadeInState_ ? GetFadeInLength(byteLength, input) : index;
-            byteLength = index == 0 ? input->DataSize() : byteLength;
             AUDIO_DEBUG_LOG("[%{public}d]: default fade length in Bytes: %{public}u", GetSessionId(), byteLength);
             break;
         }
@@ -294,8 +318,9 @@ uint32_t HpaeGainNode::GetFadeInLength(uint32_t &byteLength, HpaePcmBuffer *inpu
     size_t length = input->DataSize() / sizeof(float);
     for (size_t i = 0; i < length; ++i) {
         if (fabs(data[i]) > EPSILON) {
-            byteLength = input->DataSize() - i * sizeof(float);
-            index = i * sizeof(float);
+            CHECK_AND_BREAK_LOG(GetChannelCount() > 0, "channel is zero!");
+            index = i / GetChannelCount() * GetChannelCount() * sizeof(float);
+            byteLength = input->DataSize() - index;
             break;
         }
     }

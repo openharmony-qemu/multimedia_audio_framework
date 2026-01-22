@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -105,14 +105,14 @@ void SetDefaultOutputDeviceFuzzTest()
     coreServiceProviderWrapper.SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 
-void GetAdapterNameBySessionIdFuzzTest()
+void GetModuleNameBySessionIdFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     auto coreServiceWorker = std::make_unique<AudioCoreService::EventEntry>(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     uint32_t sessionID = GetData<uint32_t>();
     std::string name = "abc";
-    coreServiceProviderWrapper.GetAdapterNameBySessionId(sessionID, name);
+    coreServiceProviderWrapper.GetModuleNameBySessionId(sessionID, name);
 }
 
 void GetProcessDeviceInfoBySessionIdFuzzTest()
@@ -124,7 +124,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     AudioDeviceDescriptor deviceInfo;
     bool reload = GetData<bool>();
     AudioStreamInfo info;
-    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, reload);
+    bool isUltraFast = false;
+    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, isUltraFast, reload);
 }
 
 void GenerateSessionIdFuzzTest()
@@ -141,7 +142,7 @@ TestFuncs g_testFuncs[] = {
     UpdateSessionOperationFuzzTest,
     ReloadCaptureSessionFuzzTest,
     SetDefaultOutputDeviceFuzzTest,
-    GetAdapterNameBySessionIdFuzzTest,
+    GetModuleNameBySessionIdFuzzTest,
     GetProcessDeviceInfoBySessionIdFuzzTest,
     GenerateSessionIdFuzzTest,
 };

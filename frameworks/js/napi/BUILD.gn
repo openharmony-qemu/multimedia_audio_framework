@@ -105,6 +105,9 @@ ohos_shared_library("audio") {
     "../../../services/audio_policy:audio_foundation",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../native/audiocapturer:audio_capturer",
     "../../native/audiorenderer:audio_renderer",
     "../../native/audioloopback:audio_loopback",
@@ -118,6 +121,10 @@ ohos_shared_library("audio") {
     sources += [ "audiorenderer/napi_toneplayer.cpp" ]
 
     deps += [ "../../native/toneplayer:audio_toneplayer" ]
+  }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
   external_deps = [

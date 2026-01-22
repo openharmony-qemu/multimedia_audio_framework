@@ -19,18 +19,25 @@ import {
     GeneralVoiceChangeType,
     PureVoiceChangeGenderOption,
     PureVoiceChangeType,
+    ClockWise,
+    SpaceRender,
+    SpaceRenderMode,
+    SpaceRenderModeMap,
+    ClockWiseMap,
+    SpacePosition
 } from "../../utils/importSongs/InterfaceInfo";
 import { JSON, util } from '@kit.ArkTS';
 import { Logger } from '../../utils/Logger';
+import { SpaceRenderPositionView } from '../common/SpaceRender';
 import { AlertDialog } from '@kit.ArkUI';
 import audioNapi from 'libentry.so';
 
 const TAG: string = 'AudioEditTestApp_CheckNodeDialog';
 
-// 均衡
+// Balance
 @Component
 struct EqualizerComponent {
-    // 均衡频带
+    // Balanced frequency band
     @Link balanceBandGains: number[];
     onCancel?: () => void;
     onAgree?: () => void;
@@ -89,7 +96,7 @@ struct EqualizerComponent {
     }
 }
 
-// 声场
+// sound field
 @Component
 struct FieldComponent {
     @Link selectedSoundFiled: SoundFiledType;
@@ -177,7 +184,7 @@ struct FieldComponent {
     }
 }
 
-// 环境
+// environment
 @Component
 struct EnvironmentComponent {
     @Link selectedEnvironment: EnvironmentType;
@@ -263,7 +270,7 @@ struct EnvironmentComponent {
     }
 }
 
-// 降噪
+// deaden
 @Component
 struct NoiseReductionComponent {
     onCancel?: () => void;
@@ -286,7 +293,7 @@ struct NoiseReductionComponent {
     }
 }
 
-// 美化
+// beautify
 @Component
 struct VoiceBeautifierComponent {
     @Link selectedVoiceBeautifier: VoiceBeautifierType;
@@ -368,7 +375,7 @@ struct VoiceBeautifierComponent {
     }
 }
 
-// 音源分离
+// Audio source separation
 @Component
 struct AudioSeparationComponent {
     @Link selectedAudioSeparation: AudioSeparationType;
@@ -458,12 +465,343 @@ struct AudioSeparationComponent {
     }
 }
 
-// 音速音调
+// Spatial Rendering
+@Component
+struct SpaceRenderComponent {
+  @Prop spaceRenderPara: SpaceRender;
+  onCancel?: () => void;
+  onAgree?: (spaceRenderState: SpaceRender) => void;
+
+  // Independent status per line
+  @State fixedPositionOpen: boolean = false
+  @State dynamicRenderOpen: boolean = false
+  @State extensionOpen: boolean = false
+  @State spaceRenderState: SpaceRender = {
+    mode: this.spaceRenderPara.mode ?? SpaceRenderMode.CLOSE,
+    fixedPosition: {
+      x: this.spaceRenderPara.fixedPosition?.x ?? 0,
+      y: this.spaceRenderPara.fixedPosition?.y ?? 0,
+      z: this.spaceRenderPara.fixedPosition?.z ?? 0
+    },
+    dynamicPosition: {
+      x: this.spaceRenderPara.dynamicPosition?.x ?? 0,
+      y: this.spaceRenderPara.dynamicPosition?.y ?? 0,
+      z: this.spaceRenderPara.dynamicPosition?.z ?? 0
+    },
+    singleWeekCycleTime: this.spaceRenderPara.singleWeekCycleTime ?? 2,
+    clockWise: this.spaceRenderPara.clockWise ?? ClockWise.CLOCK_WISE,
+    expansionRadius: this.spaceRenderPara.expansionRadius ?? 1,
+    expansionAngle: this.spaceRenderPara.expansionAngle ?? 1
+  };
+
+  scroller: Scroller = new Scroller();
+
+  private getFormattedCoords(): string {
+    let x = 0, y = 0, z = 0;
+
+    if (this.spaceRenderState.mode === SpaceRenderMode.FIXED_POSITION && this.spaceRenderState.fixedPosition) {
+      x = this.spaceRenderState.fixedPosition.x;
+      y = this.spaceRenderState.fixedPosition.y;
+      z = this.spaceRenderState.fixedPosition.z;
+    } else if (this.spaceRenderState.mode === SpaceRenderMode.DYNAMIC_RENDER && this.spaceRenderState.dynamicPosition) {
+      x = this.spaceRenderState.dynamicPosition.x;
+      y = this.spaceRenderState.dynamicPosition.y;
+      z = this.spaceRenderState.dynamicPosition.z;
+    }
+
+    return `x=${x.toFixed(2)}, y=${y.toFixed(2)}, z=${z.toFixed(2)}`;
+  }
+
+  build() {
+    Scroll(this.scroller) {
+      Column() {
+        // First Line: Fixed Positioning
+        Row() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text("固定摆位")
+              .height(50)
+              .padding({ left: 10 })
+              .fontSize(16)
+              .textAlign(TextAlign.Start)
+              .backgroundColor(0xFFFFFF)
+
+            Toggle({ type: ToggleType.Switch, isOn: this.spaceRenderState.mode === 0 })
+              .onClick((value) => {
+                if (this.spaceRenderState.mode === 0) {
+                  this.spaceRenderState.mode = -1;
+                } else {
+                  this.spaceRenderState.mode = 0;
+                }
+              })
+          }
+        }
+        .backgroundColor(0xFFFFFF)
+        .margin($r('app.float.margin_5'))
+
+        // This line of content is displayed only when the button is turned on
+        if (this.spaceRenderState.mode === 0) {
+          this.RenderView()
+        }
+
+        // Second Line: Dynamic Rendering
+        Row() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text("动态渲染")
+              .height(50)
+              .padding({ left: 10 })
+              .fontSize(16)
+              .textAlign(TextAlign.Start)
+              .backgroundColor(0xFFFFFF)
+            Toggle({ type: ToggleType.Switch, isOn: this.spaceRenderState.mode === 1 })
+              .onClick((value) => {
+                if (this.spaceRenderState.mode === 1) {
+                  this.spaceRenderState.mode = -1;
+                } else {
+                  this.spaceRenderState.mode = 1;
+                }
+              })
+          }
+        }
+        .backgroundColor(0xFFFFFF)
+        .margin($r('app.float.margin_5'))
+
+        if (this.spaceRenderState.mode === 1) {
+          this.RenderView()
+          Column() {
+            Flex({
+              direction: FlexDirection.Row,
+              justifyContent: FlexAlign.SpaceBetween,
+              alignItems: ItemAlign.Center
+            }) {
+              Text('单周环绕时间')
+                .fontSize(14)
+                .margin({ left: $r('app.float.margin_10') })
+              Text(`${this.spaceRenderState.singleWeekCycleTime}`)
+                .fontSize(14)
+                .margin({ right: $r('app.float.margin_10') })
+            }
+            .margin({ top: $r('app.float.margin_10') })
+
+            Row() {
+              Slider({
+                value: this.spaceRenderState.singleWeekCycleTime,
+                min: 2,
+                max: 40,
+                style: SliderStyle.OutSet
+              })
+                .onChange((value: number) => {
+                  this.spaceRenderState.singleWeekCycleTime = value;
+                })
+            }
+          }
+          .backgroundColor(0xFFFFFF)
+          .margin($r('app.float.margin_5'))
+          .borderRadius(15)
+
+          Row() {
+            Radio({
+              value: 'Radio1',
+              group: 'radioGroup',
+              indicatorType: RadioIndicatorType.DOT
+            })
+              .margin({ left: $r('app.float.margin_10') })
+              .checked(this.spaceRenderState.clockWise === undefined ||
+                this.spaceRenderState.clockWise === ClockWise.CLOCK_WISE)
+              .onChange((isChecked: boolean) => {
+                if (isChecked) {
+                  this.spaceRenderState.clockWise = ClockWise.CLOCK_WISE;
+                }
+              })
+            Text('顺时针')
+              .fontSize(14)
+            Radio({
+              value: 'Radio2',
+              group: 'radioGroup',
+              indicatorType: RadioIndicatorType.DOT
+            })
+              .margin({ left: $r('app.float.margin_10') })
+              .checked(this.spaceRenderState.clockWise === ClockWise.Counter_Clock_Wise)
+              .onChange((isChecked: boolean) => {
+                if (isChecked) {
+                  this.spaceRenderState.clockWise = ClockWise.Counter_Clock_Wise;
+                }
+              })
+            Text('逆时针')
+              .fontSize(14)
+          }
+          .width('100%')
+          .margin({ bottom: $r('app.float.margin_10') })
+          .justifyContent(FlexAlign.Start)
+        }
+
+        // Line 3: Expansion
+        Row() {
+          Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+            Text("扩展")
+              .height(50)
+              .padding({ left: 10 })
+              .fontSize(16)
+              .textAlign(TextAlign.Start)
+              .backgroundColor(0xFFFFFF)
+            Toggle({ type: ToggleType.Switch, isOn: this.spaceRenderState.mode === 2 })
+              .onClick((value) => {
+                if (this.spaceRenderState.mode === 2) {
+                  this.spaceRenderState.mode = -1;
+                } else {
+                  this.spaceRenderState.mode = 2;
+                }
+              })
+          }
+        }
+        .backgroundColor(0xFFFFFF)
+        .margin($r('app.float.margin_5'))
+
+        if (this.spaceRenderState.mode === 2) {
+          Column() {
+            Flex({
+              direction: FlexDirection.Row,
+              justifyContent: FlexAlign.SpaceBetween,
+              alignItems: ItemAlign.Center
+            }) {
+              Text('扩展半径')
+                .fontSize(14)
+                .margin({ left: $r('app.float.margin_10') })
+              Text(`${this.spaceRenderState.expansionRadius}`)
+                .fontSize(14)
+                .margin({ right: $r('app.float.margin_10') })
+            }
+            .margin({ top: $r('app.float.margin_10') })
+
+            Row() {
+              Slider({
+                value: this.spaceRenderState.expansionRadius,
+                min: 1.0,
+                max: 5.0,
+                style: SliderStyle.OutSet
+              })
+                .onChange((value: number) => {
+                  if (parseInt(value.toFixed(1)) === 0) {
+                    this.spaceRenderState.expansionRadius = 0.1;
+                  } else {
+                    this.spaceRenderState.expansionRadius = Math.round(value);
+                  }
+                })
+            }
+          }
+          .backgroundColor(0xFFFFFF)
+          .margin($r('app.float.margin_5'))
+          .borderRadius(15)
+
+          Column() {
+            Flex({
+              direction: FlexDirection.Row,
+              justifyContent: FlexAlign.SpaceBetween,
+              alignItems: ItemAlign.Center
+            }) {
+              Text('扩展角度')
+                .fontSize(14)
+                .margin({ left: $r('app.float.margin_10') })
+              Text(`${this.spaceRenderState.expansionAngle}`)
+                .fontSize(14)
+                .margin({ right: $r('app.float.margin_10') })
+            }
+            .margin({ top: $r('app.float.margin_10') })
+
+            Row() {
+              Slider({
+                value: this.spaceRenderState.expansionAngle,
+                min: 1,
+                max: 360,
+                style: SliderStyle.OutSet
+              })
+                .onChange((value: number) => {
+                  this.spaceRenderState.expansionAngle = value;
+                })
+            }
+          }
+          .backgroundColor(0xFFFFFF)
+          .margin($r('app.float.margin_5'))
+          .borderRadius(15)
+        }
+
+        Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+          Button('取消')
+            .margin({ left: $r('app.float.margin_10') })
+            .backgroundColor(0xFFFFFF)
+            .fontColor(Color.Black)
+            .onClick(() => {
+              if (this.onCancel) {
+                this.onCancel()
+              }
+            })
+          Button('确定')
+            .margin({ right: $r('app.float.margin_10') })
+            .backgroundColor(0xFFFFFF)
+            .fontColor(Color.Black)
+            .onClick(() => {
+              if (this.onAgree) {
+                this.onAgree(this.spaceRenderState);
+              }
+            })
+        }.margin({ top: $r('app.float.margin_10') })
+      }
+      .padding($r('app.float.padding_10'))
+    }
+  }
+
+  @Builder
+  RenderView() {
+    Column() {
+      Row() {
+        Column() {
+          Text('正视图')
+            .fontSize(14)
+        }
+        .width('50%')
+        Column() {
+          Text('俯视图')
+            .fontSize(14)
+        }
+        .width('50%')
+      }
+      .margin({ top: $r('app.float.margin_10'), bottom: $r('app.float.margin_10') })
+      Row() {
+        Column() {
+          Text(this.getFormattedCoords())
+            .fontSize(14)
+            .fontColor('#ffffff')
+            .fontWeight(FontWeight.Bold)
+            .background('#2C3E50')  // Dark blue gray, modern
+            .borderRadius(8)
+            .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+            .width('auto')
+            .textAlign(TextAlign.Center)
+            .shadow({ color: '#00000020', radius: 4, offsetX: 0, offsetY: 2 })
+            .margin({ bottom: 8 })
+        }
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+      }
+      .justifyContent(FlexAlign.Center)
+      .alignItems(VerticalAlign.Center)
+      .width('100%')
+
+      Row() {
+        SpaceRenderPositionView({
+          spaceRender: this.spaceRenderState
+        })
+      }
+      .margin({ bottom: $r('app.float.margin_10') })
+    }
+  }
+}
+
+// Sonic pitch
 @Component
 struct SoundSpeedToneComponent {
-  // 音速
+  // Sound Speed
   @Link soundSpeed: number;
-  // 音调
+  // Sound Tone
   @Link soundTone: number;
   onCancel?: () => void;
   onAgree?: () => void;
@@ -926,23 +1264,33 @@ struct EffectNodeDialog {
     @Link mixerList: Array<Node>;
     @Link inputList: SongInfo[];
     @Link nodeList: Map<string, SongInfo>;
-    // 均衡频带
+    // Balanced frequency band
     @State balanceBandGains: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    //声场数据，默认是无
+    // Sound field data, default is none
     @State selectedSoundFiled: SoundFiledType = SoundFiledType.SOUND_FIELD_CLOSE;
-    //环境数据，默认是无
+    // Environmental data, default is none
     @State selectedEnvironment: EnvironmentType = EnvironmentType.ENVIRONMENT_TYPE_CLOSE;
-    //美化数据，默认是普通
+    // Beautify data, default is normal
     @State selectedVoiceBeautifier: VoiceBeautifierType = VoiceBeautifierType.VOICE_BEAUTIFIER_TYPE_NORMAL;
-    //降噪数据，默认是无
+    // Noise reduction data, default is none
     @State selectedNoiseReduction: number = -1;
-    //音源分离，默认为人声
+    // Audio source separation, default is vocals.
     @State selectedAudioSeparation: AudioSeparationType = AudioSeparationType.AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
-    // 音速
+    // Spatial Rendering
+    @State spaceRenderPara: SpaceRender = {
+        mode: SpaceRenderMode.CLOSE,
+        fixedPosition: {x: 0, y: 0, z: 0},
+        dynamicPosition: {x: 0, y: 0, z: 0},
+        singleWeekCycleTime: 2,
+        clockWise: ClockWise.CLOCK_WISE,
+        expansionRadius: 1,
+        expansionAngle: 1
+    };
+    // soundSpeed
     @State soundSpeed: number = 1.0;
-    // 音调
+    // soundTone
     @State soundTone: number = 1.0;
-    // 实时播放（音源分离）
+    // Real-time playback (audio source separation)
     @Consume isSeparation: boolean = false;
     @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
     @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
@@ -976,7 +1324,7 @@ struct EffectNodeDialog {
                             return;
                         }
 
-                        //添加效果节点到混音台---数据处理
+                        // Adding effect nodes to the mixer --- Data processing
                         let node: Node = {
                             id: equalizerId,
                             type: this.selectedEffectNode,
@@ -995,7 +1343,7 @@ struct EffectNodeDialog {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
-                        // 调用napi的底层效果节点
+                        // Underlying effect node for calling NAPI
                         const nodeId = util.generateRandomUUID(true);
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
@@ -1010,7 +1358,7 @@ struct EffectNodeDialog {
                             });
                             return;
                         }
-                        //添加效果节点到混音台---数据处理
+                        // Adding effect nodes to the mixer --- Data processing
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
@@ -1029,7 +1377,7 @@ struct EffectNodeDialog {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
-                        // 调用napi的底层效果节点
+                        // Underlying effect node for calling NAPI
                         const nodeId = util.generateRandomUUID(true);
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
@@ -1044,7 +1392,7 @@ struct EffectNodeDialog {
                             });
                             return;
                         }
-                        //添加效果节点到混音台---数据处理
+                        // Adding effect nodes to the mixer --- Data processing
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
@@ -1062,9 +1410,9 @@ struct EffectNodeDialog {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
-                        // 调用napi的底层效果节点
+                        // Underlying effect node for calling NAPI
 
-                        //添加效果节点到混音台---数据处理
+                        // Adding effect nodes to the mixer --- Data processing
                         const nodeId = util.generateRandomUUID(true);
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
@@ -1096,7 +1444,7 @@ struct EffectNodeDialog {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
-                        // 调用napi的底层效果节点
+                        // Underlying effect node for calling NAPI
                         let voiceBeautifierId = util.generateRandomUUID(true);
                         Logger.error(TAG, `-----${this.selectedNode}`)
                         let result = -1;
@@ -1113,7 +1461,7 @@ struct EffectNodeDialog {
                             });
                             return;
                         }
-                        //添加效果节点到混音台---数据处理
+                        // Adding effect nodes to the mixer --- Data processing
                         let node: Node = {
                             id: voiceBeautifierId,
                             type: this.selectedEffectNode,
@@ -1132,7 +1480,7 @@ struct EffectNodeDialog {
                         this.controllerTwo?.close();
                     },
                     onAgree: () => {
-                        // 调用napi的底层效果节点
+                        // Underlying effect node for calling NAPI
                         const nodeId = util.generateRandomUUID(true);
                         let result = -1;
                         if (this.isCurrentMulPipeline) {
@@ -1148,7 +1496,7 @@ struct EffectNodeDialog {
                             this.isSeparation = false;
                             return;
                         }
-                        //添加效果节点到混音台---数据处理
+                        // Adding effect nodes to the mixer --- Data processing
                         let node: Node = {
                             id: nodeId,
                             type: this.selectedEffectNode,
@@ -1159,6 +1507,89 @@ struct EffectNodeDialog {
 
                         this.controllerTwo?.close();
                         this.isSeparation = true;
+                    }
+                })
+            } else if (this.selectedEffectNode === NodeType.SPACE_RENDER) {
+                SpaceRenderComponent({
+                    spaceRenderPara: this.spaceRenderPara,
+                    onCancel: () => {
+                        this.controllerTwo?.close();
+                    },
+                    onAgree: (spaceRenderState: SpaceRender) => {
+                        // Underlying effect node for calling NAPI
+                        const nodeId = util.generateRandomUUID(true);
+                        if (spaceRenderState.mode === -1) {
+                        this.getUIContext().showAlertDialog({
+                            message: `请选择一种模式`,
+                            autoCancel: true
+                        });
+                        return;
+                        }
+                        if (spaceRenderState.mode === 0) {
+                        let result = audioNapi.StartFixedPositionEffect(spaceRenderState.fixedPosition?.x,
+                            spaceRenderState.fixedPosition?.y, spaceRenderState.fixedPosition?.z, nodeId,
+                            this.currentInputId, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: `添加空间渲染节点失败`,
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        }
+                        if (spaceRenderState.mode === 1) {
+                            let result = audioNapi.StartDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
+                                spaceRenderState.dynamicPosition?.y, spaceRenderState.dynamicPosition?.z,
+                                spaceRenderState.singleWeekCycleTime, Number(spaceRenderState.clockWise), nodeId,
+                                this.currentInputId, this.selectedNode);
+                            if (result !== 0) {
+                                this.getUIContext().showAlertDialog({
+                                    message: `添加空间渲染节点失败`,
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                        }
+                        if (spaceRenderState.mode === 2) {
+                        let result =
+                            audioNapi.StartExpandEffect(spaceRenderState.expansionRadius, spaceRenderState.expansionAngle,
+                            nodeId, this.currentInputId, this.selectedNode);
+                        if (result !== 0) {
+                            this.getUIContext().showAlertDialog({
+                                message: `添加空间渲染节点失败`,
+                                autoCancel: true
+                            });
+                            return;
+                        }
+                        }
+
+                        this.spaceRenderPara = {
+                        mode: spaceRenderState.mode ?? SpaceRenderMode.CLOSE,
+                        fixedPosition: {
+                            x: spaceRenderState.fixedPosition?.x ?? 0,
+                            y: spaceRenderState.fixedPosition?.y ?? 0,
+                            z: spaceRenderState.fixedPosition?.z ?? 0
+                        },
+                        dynamicPosition: {
+                            x: spaceRenderState.dynamicPosition?.x ?? 0,
+                            y: spaceRenderState.dynamicPosition?.y ?? 0,
+                            z: spaceRenderState.dynamicPosition?.z ?? 0
+                        },
+                        singleWeekCycleTime: spaceRenderState.singleWeekCycleTime ?? 2,
+                        clockWise: spaceRenderState.clockWise ?? ClockWise.CLOCK_WISE,
+                        expansionRadius: spaceRenderState.expansionRadius ?? 1,
+                        expansionAngle: spaceRenderState.expansionAngle ?? 1
+                        };
+
+                        let node: Node = {
+                            id: nodeId,
+                            type: this.selectedEffectNode,
+                            color: ColorMap.get(this.selectedEffectNode),
+                            spaceRender: this.spaceRenderPara
+                        }
+                        this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
+
+                        this.controllerTwo?.close();
                     }
                 })
             } else if (this.selectedEffectNode === NodeType.SOUND_SPEED_TONE) {
@@ -1172,7 +1603,7 @@ struct EffectNodeDialog {
                         let soundSpeedToneId = util.generateRandomUUID(true);
                         let result = audioNapi.setSoundSpeedTone(this.currentInputId, soundSpeedToneId, this.soundSpeed, this.soundTone, this.selectedNode);
                         if (result !== 0) {
-                            // 音速音调效果节点设置失败
+                            // Sonic pitch effect node setup failed
                             this.getUIContext().showAlertDialog({
                                 message: '设置音速音调失败',
                                 confirm: {
@@ -1185,7 +1616,7 @@ struct EffectNodeDialog {
                             });
                             return;
                         }
-                        //添加效果节点到混音台---数据处理
+                        // Adding effect nodes to the mixer --- Data processing
                         let node: Node = {
                             id: soundSpeedToneId,
                             type: this.selectedEffectNode,
@@ -1217,7 +1648,7 @@ struct EffectNodeDialog {
                             id: nodeId,
                             type: this.selectedEffectNode,
                             color: ColorMap.get(this.selectedEffectNode),
-                            environmentType: this.selectedEnvironment
+                            generalVoiceChangeType: this.generalVoiceChangeType
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
 
@@ -1246,7 +1677,9 @@ struct EffectNodeDialog {
                             id: nodeId,
                             type: this.selectedEffectNode,
                             color: ColorMap.get(this.selectedEffectNode),
-                            environmentType: this.selectedEnvironment
+                            pureVoiceChangeGender : this.pureVoiceGender,
+                            pureVoiceChangeType : this.pureVoiceChangeType,
+                            pureVoiceChangePitch : this.pureVoiceSoundTone,
                         }
                         this.isLeft ? this.addEffectNodeToInputList(node) : this.addEffectNodeToMixerList(node);
 
@@ -1269,7 +1702,7 @@ struct EffectNodeDialog {
 
     addEffectNodeToInputList(node: Node) {
         if (this.inputList.find((item: SongInfo) => item?.nodeId === this.selectedNode)) {
-            //如果长按+号的节点是输入节点，则把新添加的效果节点加入到对应的nodes中
+            // If the node with the long-pressed "+" is an input node, then add the newly added effect node to the corresponding nodes
             let songInfo = this.nodeList.get(this.selectedNode);
             if (songInfo) {
                 let index = (songInfo.nodes ?? []).findIndex(node => node.id === this.selectedNode);
@@ -1280,12 +1713,12 @@ struct EffectNodeDialog {
                 Logger.error(TAG, `${this.nodeList.get(songInfo?.nodeId ?? '')?.nodes?.length} --- `);
             }
         } else {
-            //如果长按+号的节点是效果节点
+            // If the node that is long-pressed with the "+" sign is an effect node
             const inputId = this.currentInputId;
             if (inputId) {
                 let songInfo = this.nodeList.get(inputId);
                 if (songInfo) {
-                    // 新增的效果节点插入到长按的按钮后边
+                    // The newly added effect node is inserted after the long-pressed button.
                     let index = (songInfo.nodes ?? []).findIndex(node => node.id === this.selectedNode);
                     songInfo.nodes?.splice(index + 1, 0, node);
                     this.nodeList.set(inputId, songInfo);
@@ -1296,7 +1729,7 @@ struct EffectNodeDialog {
     }
 }
 
-//"?"的弹窗
+// "?" pop-up window
 @CustomDialog
 struct NodeDetailDialog {
     @Prop nodeType: NodeType;
@@ -1312,7 +1745,17 @@ struct NodeDetailDialog {
     private environmentType = '-';
     private voiceBeautifierType = '-';
     private audioSeparation = '-';
-    //input节点参数
+    private spaceRenderPara: SpaceRender = {
+        mode: SpaceRenderMode.CLOSE,
+        fixedPosition: {x: 0, y: 0, z: 0},
+        dynamicPosition: {x: 0, y: 0, z: 0},
+        singleWeekCycleTime: 2,
+        clockWise: ClockWise.CLOCK_WISE,
+        expansionRadius: 1,
+        expansionAngle: 1
+    };
+
+    // Parameters of the input node
     private songName = '';
     private singerName = '';
     private channels = -1;
@@ -1324,7 +1767,7 @@ struct NodeDetailDialog {
         let leftNode: SongInfo | undefined =
             this.inputList.find(node => node?.nodeId === this.selectedNode);
         if (this.isLeft) {
-            //当前是输入节点
+            // Current is input node
             if (leftNode) {
                 let inputNode = this.nodeList.get(this.selectedNode);
                 if (inputNode) {
@@ -1335,10 +1778,10 @@ struct NodeDetailDialog {
                     this.bitsPerSample = inputNode.bitsPerSample ?? -1;
                 }
             } else {
-                //当前是效果节点
+                // Current is the effect node
                 let leftEffectNode: Node | undefined =
                     this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id === this.selectedNode)
-                //在这里添加getOption的逻辑,入参仅为nodeId
+                // Add the logic for getOption here, with the input parameter being only nodeId.
                 if (leftEffectNode) {
                     let type = audioNapi.getOptions(leftEffectNode.id)
                     if (leftEffectNode?.type === NodeType.EQ) {
@@ -1355,11 +1798,38 @@ struct NodeDetailDialog {
                         this.voiceBeautifierType = VoiceBeautifierMap.get(parseInt(type) as VoiceBeautifierType) ?? '-';
                     } else if (leftEffectNode?.type === NodeType.SEPARATION) {
                         this.audioSeparation = AudioSeparationMap.get(leftEffectNode.audioSeparationType) ?? '-';
+                    } else if (leftEffectNode?.type === NodeType.SPACE_RENDER) {
+                        this.spaceRenderPara = leftEffectNode.spaceRender ?? this.spaceRenderPara;
+                        if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.FIXED_POSITION) {
+                            let result = audioNapi.GetFixedPositionParams(leftEffectNode.id);
+                            Logger.info(TAG, `result is ${result.x} ${result.y} ${result.z}`);
+                            this.spaceRenderPara.fixedPosition = {
+                                x: result.x,
+                                y: result.y,
+                                z: result.z
+                            }
+                        } else if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.DYNAMIC_RENDER) {
+                            let result = audioNapi.GetDynamicRenderParams(leftEffectNode.id);
+                            Logger.info(TAG,
+                                `result is ${result.x} ${result.y} ${result.z} ${result.surroundTime} ${result.surroundDirection}`);
+                            this.spaceRenderPara.dynamicPosition = {
+                                x: result.x,
+                                y: result.y,
+                                z: result.z
+                            }
+                            this.spaceRenderPara.singleWeekCycleTime = result.surroundTime;
+                            this.spaceRenderPara.clockWise = result.surroundDirection;
+                        } else if (leftEffectNode.spaceRender?.mode === SpaceRenderMode.EXPAND) {
+                            let result = audioNapi.GetExpandParams(leftEffectNode.id);
+                            Logger.info(TAG, `result is ${result.extRadius} ${result.extAngle}`);
+                            this.spaceRenderPara.expansionRadius = result.extRadius;
+                            this.spaceRenderPara.expansionAngle = result.extAngle;
+                        }
                     }
                 }
             }
         } else {
-            //右侧初始化赋值
+            // Right Initialization Assignment
             let type = audioNapi.getOptions(mixerNode?.id)
             if (mixerNode?.type === NodeType.EQ) {
                 try {
@@ -1375,6 +1845,33 @@ struct NodeDetailDialog {
                 this.voiceBeautifierType = VoiceBeautifierMap.get(parseInt(type) as VoiceBeautifierType) ?? '-';
             } else if (mixerNode?.type === NodeType.SEPARATION) {
                 this.audioSeparation = AudioSeparationMap.get(mixerNode.audioSeparationType) ?? '-';
+            } else if (mixerNode?.type === NodeType.SPACE_RENDER) {
+                this.spaceRenderPara = mixerNode.spaceRender ?? this.spaceRenderPara;
+                if (mixerNode.spaceRender?.mode === SpaceRenderMode.FIXED_POSITION) {
+                    let result = audioNapi.GetFixedPositionParams(mixerNode.id);
+                    Logger.info(TAG, `result is ${result.x} ${result.y} ${result.z}`);
+                    this.spaceRenderPara.fixedPosition = {
+                        x: result.x,
+                        y: result.y,
+                        z: result.z
+                    }
+                } else if (mixerNode.spaceRender?.mode === SpaceRenderMode.DYNAMIC_RENDER) {
+                    let result = audioNapi.GetDynamicRenderParams(mixerNode.id);
+                    Logger.info(TAG,
+                        `result is ${result.x} ${result.y} ${result.z} ${result.surroundTime} ${result.surroundDirection}`);
+                    this.spaceRenderPara.dynamicPosition = {
+                        x: result.x,
+                        y: result.y,
+                        z: result.z
+                    }
+                    this.spaceRenderPara.singleWeekCycleTime = result.surroundTime;
+                    this.spaceRenderPara.clockWise = result.surroundDirection;
+                } else if (mixerNode.spaceRender?.mode === SpaceRenderMode.EXPAND) {
+                    let result = audioNapi.GetExpandParams(mixerNode.id);
+                    Logger.info(TAG, `result is ${result.extRadius} ${result.extAngle}`);
+                    this.spaceRenderPara.expansionRadius = result.extRadius;
+                    this.spaceRenderPara.expansionAngle = result.extAngle;
+                }
             }
         }
     }
@@ -1485,6 +1982,50 @@ struct NodeDetailDialog {
                     }
                 }.padding({ top: $r('app.float.padding_20') })
             }
+            if (this.nodeType === NodeType.SPACE_RENDER) {
+                Column() {
+                    Text('空间渲染参数：')
+                        .fontWeight(FontWeight.Bold)
+                    Row() {
+                        Text(`模式: ${SpaceRenderModeMap.get(this.spaceRenderPara.mode)}`)
+                    }
+
+                    if (this.spaceRenderPara.mode === SpaceRenderMode.FIXED_POSITION) {
+                        Row() {
+                            Text(`x: ${this.spaceRenderPara.fixedPosition?.x ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`y: ${this.spaceRenderPara.fixedPosition?.y ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`z: ${this.spaceRenderPara.fixedPosition?.z ?? '-'}`)
+                        }
+                    } else if (this.spaceRenderPara.mode === SpaceRenderMode.DYNAMIC_RENDER) {
+                        Row() {
+                            Text(`x: ${this.spaceRenderPara.dynamicPosition?.x ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`y: ${this.spaceRenderPara.dynamicPosition?.y ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`z: ${this.spaceRenderPara.dynamicPosition?.z ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`单周环绕时间: ${this.spaceRenderPara.singleWeekCycleTime ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`旋转方向: ${ClockWiseMap.get(this.spaceRenderPara.clockWise) ?? '-'}`)
+                        }
+                    } else if (this.spaceRenderPara.mode === SpaceRenderMode.EXPAND) {
+                        Row() {
+                            Text(`扩展半径: ${this.spaceRenderPara.expansionRadius ?? '-'}`)
+                        }
+                        Row() {
+                            Text(`扩展角度: ${this.spaceRenderPara.expansionAngle ?? '-'}`)
+                        }
+                    }
+                }
+            }
             Button('确定')
                 .onClick(() => {
                     if (this.nodeDetailController != undefined) {
@@ -1496,7 +2037,7 @@ struct NodeDetailDialog {
     }
 }
 
-//"*"的弹窗
+// "*" pop-up window
 @CustomDialog
 struct SetNodeDialog {
     @Prop isLeft: boolean;
@@ -1506,20 +2047,30 @@ struct SetNodeDialog {
     @Link mixerList: Array<Node>;
     @Link inputList: SongInfo[];
     @Link nodeList: Map<string, SongInfo>;
-    // 均衡频带
+    // Balanced frequency band
     @State balanceBandGains: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    //声场数据，默认是无
+    // Sound field data, default is none.
     @State selectedSoundFiled: SoundFiledType = SoundFiledType.SOUND_FIELD_CLOSE;
-    //环境数据，默认是无
+    // Environmental data, default is none.
     @State selectedEnvironment: EnvironmentType = EnvironmentType.ENVIRONMENT_TYPE_CLOSE;
-    //美化数据，默认是普通
+    // Beautify data, default is normal
     @State selectedVoiceBeautifier: VoiceBeautifierType = VoiceBeautifierType.VOICE_BEAUTIFIER_TYPE_NORMAL;
-    //音源分离
+    // selectedAudioSeparation
     @State selectedAudioSeparation: AudioSeparationType = AudioSeparationType.AUDIO_NODE_HUMAN_SOUND_OUTPORT_TYPE;
-    // 音速
+    // soundSpeed
     @State soundSpeed: number = 1.0;
-    // 音调
+    // soundTone
     @State soundTone: number = 1.0;
+    // Spatial Rendering
+    @State spaceRenderPara: SpaceRender = {
+        mode: SpaceRenderMode.CLOSE,
+        fixedPosition: {x: 0, y: 0, z: 0},
+        dynamicPosition: {x: 0, y: 0, z: 0},
+        singleWeekCycleTime: 2,
+        clockWise: ClockWise.CLOCK_WISE,
+        expansionRadius: 1,
+        expansionAngle: 1
+    };
     @State generalVoiceChangeType: GeneralVoiceChangeType = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CLOSE;
     @State pureVoiceGender: PureVoiceChangeGenderOption = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE;
     @State pureVoiceChangeType: PureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE;
@@ -1531,7 +2082,7 @@ struct SetNodeDialog {
             this.inputList.find(node => node?.nodeId === this.selectedNode) || undefined
         if (this.isLeft) {
             let inputNode = this.nodeList.get(this.selectedNode);
-            //左侧的效果节点修改
+            // Modification of the effect node on the left side
             if (!inputNode) {
                 let leftEffectNode: Node | undefined =
                     this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id === this.selectedNode)
@@ -1558,6 +2109,7 @@ struct SetNodeDialog {
                     if (leftEffectNode?.soundTone !== undefined) {
                         this.soundTone = leftEffectNode.soundTone;
                     }
+                    this.spaceRenderPara = leftEffectNode?.spaceRender ?? this.spaceRenderPara;
                 }
             }
         } else {
@@ -1578,6 +2130,7 @@ struct SetNodeDialog {
             if (node?.audioSeparationType !== undefined) {
                 this.selectedAudioSeparation = node.audioSeparationType;
             }
+            this.spaceRenderPara = node?.spaceRender ?? this.spaceRenderPara;
         }
     }
 
@@ -1591,7 +2144,7 @@ struct SetNodeDialog {
                             this.setNodeController?.close();
                         },
                         onAgree: () => {
-                            //修改效果节点---数据处理
+                            // Modification Effect Node --- Data Processing
                             const node = this.isLeft ?
                                 this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id ===
                                 this.selectedNode) :
@@ -1627,7 +2180,7 @@ struct SetNodeDialog {
                             this.setNodeController?.close();
                         },
                         onAgree: () => {
-                            //修改效果节点---数据处理
+                            // Modification Effect Node --- Data Processing
                             const node = this.isLeft ?
                                 this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id ===
                                 this.selectedNode) :
@@ -1661,7 +2214,7 @@ struct SetNodeDialog {
                             this.setNodeController?.close();
                         },
                         onAgree: () => {
-                            //修改效果节点---数据处理
+                            // Modification Effect Node --- Data Processing
                             const node = this.isLeft ?
                                 this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id ===
                                 this.selectedNode) :
@@ -1695,7 +2248,7 @@ struct SetNodeDialog {
                             this.setNodeController?.close();
                         },
                         onAgree: () => {
-                            // 调用napi的底层效果节点
+                            // Underlying effect node for calling NAPI
                             const node = this.isLeft ?
                                 this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id ===
                                 this.selectedNode) :
@@ -1713,10 +2266,10 @@ struct SetNodeDialog {
                                 }
                             }
 
-                            //修改效果节点---数据处理
+                            // Modification Effect Node --- Data Processing
                             if (this.isLeft) {
                                 let inputNode = this.nodeList.get(this.selectedNode);
-                                //左侧的效果节点修改
+                                // Modification of the effect node on the left side
                                 if (!inputNode) {
                                     let leftEffectNode: Node | undefined =
                                         this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id ===
@@ -1744,14 +2297,14 @@ struct SetNodeDialog {
                             this.setNodeController?.close();
                         },
                         onAgree: () => {
-                        //修改效果节点---数据处理
+                        // Modification Effect Node --- Data Processing
                         const node = this.isLeft ? this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id === this.selectedNode) :
                             this.mixerList.find(node => node.id === this.selectedNode);
                         if (node) {
                             let result =
                                 audioNapi.setSoundSpeedTone(this.currentInputId, this.selectedNode, this.soundSpeed, this.soundTone);
                             if (result !== 0) {
-                            // 音速音调效果节点设置失败
+                            // Sonic pitch effect node setup failed
                             this.getUIContext().showAlertDialog({
                                 message: '修改音速音调失败',
                                 autoCancel: true
@@ -1765,6 +2318,86 @@ struct SetNodeDialog {
                             });
                         }
                         this.setNodeController?.close();
+                        }
+                    })
+                } else if (this.nodeType === NodeType.SPACE_RENDER) {
+                    SpaceRenderComponent({
+                        spaceRenderPara: this.spaceRenderPara,
+                        onCancel: () => {
+                            this.setNodeController?.close();
+                        },
+                        onAgree: (spaceRenderState: SpaceRender) => {
+                            if (spaceRenderState.mode === -1) {
+                                this.getUIContext().showAlertDialog({
+                                    message: `请选择一种模式`,
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+                            const node = this.isLeft ?
+                                this.nodeList.get(this.currentInputId)?.nodes?.find(node => node.id === this.selectedNode) :
+                                this.mixerList.find(node => node.id === this.selectedNode);
+                            if (node) {
+                                if (spaceRenderState.mode === 0) {
+                                    let result = audioNapi.ResetFixedPositionEffect(spaceRenderState.fixedPosition?.x,
+                                        spaceRenderState.fixedPosition?.y, spaceRenderState.fixedPosition?.z, this.selectedNode);
+                                    if (result !== 0) {
+                                        this.getUIContext().showAlertDialog({
+                                            message: `添加空间渲染节点失败`,
+                                            autoCancel: true
+                                        });
+                                        return;
+                                    }
+                                } else if (spaceRenderState.mode === 1) {
+                                    let result = audioNapi.ResetDynamicRenderEffect(spaceRenderState.dynamicPosition?.x,
+                                        spaceRenderState.dynamicPosition?.y, spaceRenderState.dynamicPosition?.z,
+                                        spaceRenderState.singleWeekCycleTime, Number(spaceRenderState.clockWise),
+                                        this.selectedNode);
+                                    if (result !== 0) {
+                                        this.getUIContext().showAlertDialog({
+                                            message: `添加空间渲染节点失败`,
+                                            autoCancel: true
+                                        });
+                                        return;
+                                    }
+                                } else if (spaceRenderState.mode === 2) {
+                                    let result =
+                                        audioNapi.ResetExpandEffect(spaceRenderState.expansionRadius,
+                                        spaceRenderState.expansionAngle, this.selectedNode);
+                                    if (result !== 0) {
+                                        this.getUIContext().showAlertDialog({
+                                            message: `添加空间渲染节点失败`,
+                                            autoCancel: true
+                                        });
+                                        return;
+                                    }
+                                }
+                                node.spaceRender = {
+                                    mode: spaceRenderState.mode ?? SpaceRenderMode.CLOSE,
+                                    fixedPosition: {
+                                        x: spaceRenderState.fixedPosition?.x ?? 0,
+                                        y: spaceRenderState.fixedPosition?.y ?? 0,
+                                        z: spaceRenderState.fixedPosition?.z ?? 0
+                                    },
+                                    dynamicPosition: {
+                                        x: spaceRenderState.dynamicPosition?.x ?? 0,
+                                        y: spaceRenderState.dynamicPosition?.y ?? 0,
+                                        z: spaceRenderState.dynamicPosition?.z ?? 0
+                                    },
+                                    singleWeekCycleTime: spaceRenderState.singleWeekCycleTime ?? 2,
+                                    clockWise: spaceRenderState.clockWise ?? ClockWise.CLOCK_WISE,
+                                    expansionRadius: spaceRenderState.expansionRadius ?? 1,
+                                    expansionAngle: spaceRenderState.expansionAngle ?? 1
+                                };
+                            } else {
+                                this.getUIContext().showAlertDialog({
+                                    message: 'not find node in nodeList or mixerList',
+                                    autoCancel: true
+                                });
+                                return;
+                            }
+
+                            this.setNodeController?.close();
                         }
                     })
                 } else if (this.nodeType === NodeType.GENERAL_VOICE_CHANGE) {
@@ -1816,36 +2449,36 @@ struct SetNodeDialog {
 @CustomDialog
 @Component
 export struct CheckNodeDialog {
-    //传入的数据
-    //区分混音台左边区域和右边区域
+    // Incoming data
+    // Distinguish between the left and right sections of the mixing console
     @Prop isLeft: boolean;
-    //当前选中的节点类型
+    // Currently selected node type
     @Prop nodeType: NodeType;
-    //当前选中的节点ID
+    // Currently selected node ID
     @Prop selectedNode: string;
-    //混音台右边数据列表
+    // Data list on the right side of the mixing console
     @Link mixerList: Array<Node>;
-    //混音台左边输入节点列表
+    // Mixing console left input node list
     @Link inputList: SongInfo[];
-    //混音台左边节点列表
+    // Mixing console left node list
     @Link nodeList: Map<string, SongInfo>;
     @Link isPlayRealTime: boolean;
-    //创建管线，工作模式
+    // Create pipeline, working mode
     @Link param: number;
-    //当前音轨的inputId
+    // Current audio track's inputId
     @State currentInputId: string = '';
-    //组件本身数据
+    // Component data
     private nodes: Array<NodeType> = [];
     private select: number | number[] = 0;
     @State selectedEffectNode: NodeType = NodeType.EQ;
 
     aboutToAppear(): void {
         this.currentInputId = this.findInputId();
-        //获取当前设配支持的效果节点列表
+        // Get the list of effect nodes supported by the current device
         let nodeType: number[] = audioNapi.getEffectNodeList();
         this.nodes = nodeType
-            .map(num => NumberToNodeTypeMap.get(num)) // 将数字转换为 NodeType
-            .filter(type => type !== undefined) as NodeType[]; // 过滤掉 undefined 值
+            .map(num => NumberToNodeTypeMap.get(num)) // Convert numbers to NodeType
+            .filter(type => type !== undefined) as NodeType[]; // Filter out undefined values
     }
 
     effectNodeDialog: CustomDialogController | null = new CustomDialogController({
@@ -1882,7 +2515,9 @@ export struct CheckNodeDialog {
         })
     })
     controller?: CustomDialogController;
-    // 若尝试在CustomDialog中传入多个其他的Controller，以实现在CustomDialog中打开另一个或另一些CustomDialog，那么此处需要将指向自己的controller放在所有controller的后面
+    // If you attempt to pass multiple other controllers into the CustomDialog to open another
+    // or some other CustomDialogs within the CustomDialog,
+    // then you need to place the controller that points to itself at the end of all the controllers.
     cancel: () => void = () => {
     }
     confirm: () => void = () => {
@@ -1914,11 +2549,11 @@ export struct CheckNodeDialog {
         return '';
     }
 
-    //"+"的弹窗
+    // "+" pop-up window
     selectNodeHandle() {
-        // 根据 param 过滤可选节点类型
+        // Filter optional node types based on param
         let filteredNodes: NodeType[] = this.nodes;
-        // 默认：全部显示（兼容旧逻辑）
+        // Default: Show All (compatible with old logic)
         filteredNodes = this.nodes;
         this.getUIContext().showTextPickerDialog({
             range: filteredNodes,
@@ -1927,9 +2562,10 @@ export struct CheckNodeDialog {
             defaultPickerItemHeight: 40,
             onAccept: (value: TextPickerResult) => {
                 Logger.info(TAG, `selectNodeHandle onAccept, value: ${JSON.stringify(value)}`);
-                // 设置select为按下确定按钮时候的选中项index，这样当弹窗再次弹出时显示选中的是上一次确定的选项
+                // Set `select` to the index of the selected item when the confirm button is pressed,
+                // so that when the pop-up appears again, it displays the option that was previously confirmed.
                 this.select = value.index;
-                // 点击确定后，被选到的文本数据展示到页面
+                // After clicking OK, the selected text data is displayed on the page
                 this.selectedEffectNode = value.value as NodeType;
 
                 this.effectNodeDialog?.open();
@@ -1943,7 +2579,7 @@ export struct CheckNodeDialog {
         })
     }
 
-    //"-"的弹窗
+    // "-" pop-up window
     deleteNodeHandle() {
         this.getUIContext().showAlertDialog(
             {
@@ -1975,7 +2611,7 @@ export struct CheckNodeDialog {
                                     });
                                     return;
                                 }
-                                //如果点击输入节点的-号,则把inputList和nodeList都要处理
+                                // If you click the "-" button on the input node, both inputList and nodeList need to be processed
                                 this.nodeList.delete(this.selectedNode);
                                 const index = this.inputList.findIndex(item => item?.nodeId === this.selectedNode);
                                 if (index !== -1) {
@@ -1985,7 +2621,7 @@ export struct CheckNodeDialog {
                                 const inputId = this.findInputId();
                                 let songInfo = this.nodeList.get(inputId);
                                 if (songInfo) {
-                                    // 删除对应节点
+                                    // Delete the corresponding node
                                     let index = songInfo.nodes?.findIndex(node => node.id === this.selectedNode);
                                     if (index !== -1) {
                                         let result = audioNapi.deleteNode(this.selectedNode);
@@ -2080,6 +2716,6 @@ export struct CheckNodeDialog {
                 }
             }.margin({ bottom: 10 })
         }.borderRadius(10)
-        // 如果需要使用border属性或cornerRadius属性，请和borderRadius属性一起使用。
+        // If you need to use the border property or cornerRadius property, use them together with the borderRadius property
     }
 }

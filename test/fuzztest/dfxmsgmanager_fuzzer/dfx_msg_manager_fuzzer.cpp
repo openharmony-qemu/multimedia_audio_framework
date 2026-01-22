@@ -173,7 +173,7 @@ void HandleToHiSysEventFuzzTest()
     dfxMsgManager.HandleToHiSysEvent(msg);
 }
 
-void GetAdapterNameBySessionIdFuzzTest()
+void GetModuleNameBySessionIdFuzzTest()
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     DfxMessage msg;
@@ -338,7 +338,7 @@ TestFuncs g_testFuncs[] = {
     ProcessInnerFuzzTest,
     EnqueueFuzzTest,
     HandleToHiSysEventFuzzTest,
-    GetAdapterNameBySessionIdFuzzTest,
+    GetModuleNameBySessionIdFuzzTest,
     WriteInterruptMsgFuzzTest,
     WritePlayAudioStatsEventFuzzTest,
     OnHandleFuzzTest,

@@ -78,7 +78,7 @@ ohos_unittest("audio_policy_manager_listener_unit_test") {
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "distributed_notification_service:ans_innerkits",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -108,6 +108,9 @@ ohos_unittest("audio_policy_manager_listener_unit_test") {
     "../../../../audio_policy:audio_policy_client",
     "../../../../audio_policy:audio_policy_service_static",
     "../../../../audio_service:audio_client",
+    "../../../../audio_service:audio_engine_manager",
+    "../../../../audio_service:audio_policy_manager",
+    "../../../../audio_service:audio_stream_client",
     "../../../../audio_service:audio_common",
   ]
 }
@@ -162,7 +165,7 @@ ohos_unittest("audio_spatialization_state_change_listener_unit_test") {
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "distributed_notification_service:ans_innerkits",
-    "drivers_interface_audio:libaudio_proxy_5.0",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "eventhandler:libeventhandler",
     "googletest:gmock",
     "hdf_core:libhdf_host",
@@ -195,6 +198,9 @@ ohos_unittest("audio_spatialization_state_change_listener_unit_test") {
     "../../../../audio_policy:audio_policy_client",
     "../../../../audio_policy:audio_policy_service_static",
     "../../../../audio_service:audio_client",
+    "../../../../audio_service:audio_engine_manager",
+    "../../../../audio_service:audio_policy_manager",
+    "../../../../audio_service:audio_stream_client",
     "../../../../audio_service:audio_common",
   ]
 }

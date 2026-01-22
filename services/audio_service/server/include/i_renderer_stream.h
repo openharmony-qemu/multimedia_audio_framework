@@ -21,9 +21,11 @@
 #include "i_stream.h"
 #include "audio_stream_info.h"
 #include "i_hpae_soft_link.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
+typedef std::chrono::high_resolution_clock::time_point TimePoint;
 class IWriteCallback {
 public:
     virtual int32_t OnWriteData(size_t length) = 0;
@@ -35,6 +37,7 @@ class IStreamCallback {
 public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
     virtual bool OnQueryUnderrun() { return false; };
+    virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos){};
 };
 
 class IRendererStream : public IStream {
@@ -76,6 +79,13 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
     virtual void BlockStream() noexcept = 0;
+    virtual void SetSendDataEnabled(bool enabled) = 0;
+
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) = 0;
+    virtual int32_t RegisterSinkLatencyFetcher(const std::function<int32_t (uint32_t &)> &fetcher)
+    {
+        return ERR_NOT_SUPPORTED;
+    }
 };
 
 struct CaptureInfo {

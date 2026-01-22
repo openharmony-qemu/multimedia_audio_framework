@@ -27,9 +27,11 @@
 #include "sink/bluetooth_audio_render_sink.h"
 #include "sink/fast_audio_render_sink.h"
 #include "sink/file_audio_render_sink.h"
+#include "sink/cabin_audio_render_sink.h"
 #include "sink/multichannel_audio_render_sink.h"
 #include "sink/offload_audio_render_sink.h"
 #include "sink/direct_audio_render_sink.h"
+#include "sink/auxiliary_sink.h"
 #include "source/audio_capture_source.h"
 #include "source/bluetooth_audio_capture_source.h"
 #include "source/wakeup_audio_capture_source.h"
@@ -56,13 +58,18 @@ HdiAdapterFactory &HdiAdapterFactory::GetInstance(void)
     return instance;
 }
 
+std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateAuxiliarySink(void)
+{
+    return std::make_shared<AuxiliarySink>();
+}
+
 std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t renderId)
 {
     IdHandler &idHandler = IdHandler::GetInstance();
     CHECK_AND_RETURN_RET(idHandler.CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
     uint32_t type = idHandler.ParseType(renderId);
     std::string info = idHandler.ParseInfo(renderId);
-    AUDIO_INFO_LOG("Type: %{public}u, info: %{public}s", type, info.c_str());
+    AUDIO_INFO_LOG("Type: %{public}u", type);
 
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     switch (type) {
@@ -84,8 +91,11 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
         case HDI_ID_TYPE_OFFLOAD:
             sink = std::make_shared<OffloadAudioRenderSink>();
             break;
-        case HDI_ID_TYPE_EAC3:
+        case HDI_ID_TYPE_HWDECODE:
             sink = std::make_shared<DirectAudioRenderSink>();
+            break;
+        case HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT:
+            sink = std::make_shared<CabinAudioRenderSink>();
             break;
 #ifdef FEATURE_DISTRIBUTE_AUDIO
         case HDI_ID_TYPE_REMOTE:

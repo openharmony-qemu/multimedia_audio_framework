@@ -46,10 +46,7 @@ AudioInputNode::~AudioInputNode()
 
 int32_t AudioInputNode::Init()
 {
-    if (outputStream_ == nullptr) {
-        outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        CHECK_AND_RETURN_RET_LOG(outputStream_ != nullptr, ERR_INVALID_OPERATION, "Create OutputPort is null");
-    }
+    outputStream_.SetOutputPort(GetSharedInstance());
     uint32_t doubleFrame = 2;
     PcmBufferFormat inPcmFormat = GetAudioNodeInPcmFormat();
     if (GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025) {
@@ -82,7 +79,7 @@ int32_t AudioInputNode::Flush()
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
     convert_.Reset();
-    outputStream_->resetResampleCfg();
+    outputStream_.ResetResampleCfg();
     return SUCCESS;
 }
 
@@ -98,14 +95,13 @@ int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
     return ERROR;
 }
 
-std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> AudioInputNode::GetOutputPort()
+OutputPort<AudioSuitePcmBuffer*>* AudioInputNode::GetOutputPort()
 {
-    return outputStream_;
+    return &outputStream_;
 }
 
 int32_t AudioInputNode::DoProcess()
 {
-    CHECK_AND_RETURN_RET(outputStream_ != nullptr, ERR_INVALID_PARAM, "outputStream is null");
     CHECK_AND_RETURN_RET(GetDataFromUser() == SUCCESS, ERR_WRITE_FAILED, "Get data from user fail");
     CHECK_AND_RETURN_RET(GeneratePushBuffer() == SUCCESS, ERR_WRITE_FAILED, "Get data from buffer fail");
     return SUCCESS;
@@ -173,7 +169,7 @@ int32_t AudioInputNode::GetDataFromUser()
             CHECK_AND_RETURN_RET_LOG(ConverPcmData != nullptr, ERR_INVALID_PARAM, "convert pcm format fail");
 
             int32_t ret = cachedBuffer_.PushData(ConverPcmData->GetPcmData(), ConverPcmData->GetDataSize());
-            AUDIO_INFO_LOG("222 GetDataFromUser needSize:%{public}u, inPcmDataSize:%{public}u, times:%{public}u.",
+            AUDIO_DEBUG_LOG("GetDataFromUser needSize:%{public}u, inPcmDataSize:%{public}u, times:%{public}u.",
                 needSize, ConverPcmData->GetDataSize(), times);
 
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Push data to cache fail, ret = %{public}d", ret);
@@ -197,7 +193,7 @@ int32_t AudioInputNode::GeneratePushBuffer()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get data from cachedBuffer fail");
 
     outPcmData_.SetIsFinished(GetAudioNodeDataFinishedFlag() && (cachedBuffer_.GetSize() == 0));
-    outputStream_->WriteDataToOutput(&outPcmData_);
+    outputStream_.WriteDataToOutput(&outPcmData_);
     return SUCCESS;
 }
 

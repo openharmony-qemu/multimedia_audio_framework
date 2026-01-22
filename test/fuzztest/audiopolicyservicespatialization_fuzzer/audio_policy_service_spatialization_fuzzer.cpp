@@ -19,6 +19,7 @@
 #include <memory>
 #include "audio_spatialization_service.h"
 #include "audio_policy_server.h"
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {

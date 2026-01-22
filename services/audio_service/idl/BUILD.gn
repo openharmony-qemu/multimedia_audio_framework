@@ -19,6 +19,7 @@ audio_policy_idl_location = "${audio_framework_root}/services/audio_policy/idl"
 
 idl_gen_interface("audio_service_idl_callback") {
   sources = [
+    "IAudioEngineCallbackHandle.idl",
     "IAudioWorkgroupCallback.idl",
     "IIpcStreamListener.idl",
     "IProcessCb.idl",

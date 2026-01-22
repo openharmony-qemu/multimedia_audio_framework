@@ -42,7 +42,8 @@ namespace AudioStandard {
 
 void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    HILOG_COMM_INFO("Set audio scene start %{public}d, lastScene %{public}d", audioScene, audioScene_);
+    HILOG_COMM_INFO("[SetAudioScenePre]Set audio scene start %{public}d, lastScene %{public}d",
+        audioScene, audioScene_);
     lastAudioScene_ = audioScene_;
     audioScene_ = audioScene;
     if (lastAudioScene_ != AUDIO_SCENE_DEFAULT && audioScene_ == AUDIO_SCENE_DEFAULT) {
@@ -50,6 +51,9 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "SetAudioScenePre");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
             std::make_shared<AudioDeviceDescriptor>());
+        std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevices =
+            AudioStateManager::GetAudioStateManager().GetExcludedDevices(CALL_OUTPUT_DEVICES);
+        AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(CALL_OUTPUT_DEVICES, unexcludedDevices);
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::UpdateAudioScene(audioScene_);
         Bluetooth::AudioHfpManager::DisconnectSco();
@@ -67,6 +71,13 @@ bool AudioSceneManager::IsStreamActive(AudioStreamType streamType) const
         GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
 
     return streamCollector_.IsStreamActive(streamType);
+}
+
+bool AudioSceneManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) const
+{
+    CHECK_AND_RETURN_RET(streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
+        GetAudioScene(true) != AUDIO_SCENE_PHONE_CALL, true);
+    return streamCollector_.IsStreamActiveByStreamUsage(streamUsage);
 }
 
 bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const

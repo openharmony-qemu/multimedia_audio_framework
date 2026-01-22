@@ -16,13 +16,10 @@
 #ifndef ST_AUDIO_USR_SELECT_MANAGER_H
 #define ST_AUDIO_USR_SELECT_MANAGER_H
 
-#include "audio_system_manager.h"
-
 #include "audio_device_manager.h"
 #include "audio_stream_descriptor.h"
 
 #include "ipc_skeleton.h"
-
 #include <shared_mutex>
 #include <unordered_map>
 #include <list>
@@ -62,7 +59,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetSelectedInputDeviceByUid(int32_t uid);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid);
     std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
-    void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info);
+    void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info, bool mcFlag = false);
     void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
 
 private:
@@ -71,16 +68,21 @@ private:
 
     std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         SourceType sourceType, BluetoothAndNearlinkPreferredRecordCategory category);
-    std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice();
+    std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice(int32_t index);
     int32_t GetIdFromRecordDeviceInfoList(int32_t uid);
     void UpdateRecordDeviceInfoForStartInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForSelectInner(int32_t index, RecordDeviceInfo info);
+    void UpdateRecordDeviceInfoForSystemSelectInner(int32_t index, RecordDeviceInfo info, bool mcFlag);
     void UpdateRecordDeviceInfoForPreferInner(int32_t index, RecordDeviceInfo info);
     void UpdateRecordDeviceInfoForStopInner(int32_t index);
+    bool IsSourceTypeSupportedByMC(SourceType type);
+    bool HasMCSourceTypeStreamRunning();
 
     std::mutex mutex_;
     std::vector<RecordDeviceInfo> recordDeviceInfoList_;
     std::map<int32_t, AppIsBackState> appIsBackStatesMap_;
+    bool mcSelectedFlag_ = false;
+    std::shared_ptr<AudioDeviceDescriptor> mcInputPreferred_ = std::make_shared<AudioDeviceDescriptor>();
 };
 
 } // namespace AudioStandard

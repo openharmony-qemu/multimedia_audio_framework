@@ -31,6 +31,8 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
+    bool ret = CheckStreamUsage(perDev_, streamUsage);
+    CHECK_AND_RETURN_RET(ret, make_shared<AudioDeviceDescriptor>());
     vector<shared_ptr<AudioDeviceDescriptor>> mediaDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_OUTPUT_DEVICES, perDev_)) {
@@ -39,7 +41,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredMediaRenderDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairDevice(perDev_, mediaDevices);
+        return RouterBase::GetPairDevice(perDev_, mediaDevices, MEDIA_OUTPUT_DEVICES);
     }
 }
 
@@ -56,7 +58,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredCallRenderDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairDevice(perDev_, callDevices);
+        return RouterBase::GetPairDevice(perDev_, callDevices, CALL_OUTPUT_DEVICES);
     }
 }
 
@@ -74,7 +76,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredCallCaptureDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairDevice(perDev_, callDevices);
+        return RouterBase::GetPairDevice(perDev_, callDevices, CALL_INPUT_DEVICES);
     }
 }
 
@@ -143,13 +145,24 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
     } else {
         int32_t audioId = perDev_->deviceId_;
         AUDIO_INFO_LOG(" PreferredRecordCaptureDevice audioId is %{public}d", audioId);
-        return RouterBase::GetPairDevice(perDev_, recordDevices);
+        return RouterBase::GetPairDevice(perDev_, recordDevices, MEDIA_INPUT_DEVICES);
     }
 }
 
 shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     return make_shared<AudioDeviceDescriptor>();
+}
+
+bool UserSelectRouter::CheckStreamUsage(shared_ptr<AudioDeviceDescriptor> desc, StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is nullptr");
+    CHECK_AND_RETURN_RET(desc->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX, true);
+    vector<StreamUsage> allowedUsages = {
+        STREAM_USAGE_MUSIC, STREAM_USAGE_MOVIE, STREAM_USAGE_GAME, STREAM_USAGE_AUDIOBOOK, STREAM_USAGE_NAVIGATION
+    };
+    auto iter = find(allowedUsages.begin(), allowedUsages.end(), streamUsage);
+    return iter != allowedUsages.end();
 }
 
 } // namespace AudioStandard

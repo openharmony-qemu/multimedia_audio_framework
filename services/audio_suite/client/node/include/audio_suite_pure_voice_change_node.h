@@ -35,7 +35,6 @@ public:
 protected:
     AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
     std::vector<AudioSuitePcmBuffer*>& ReadDoubleProcessNodePreOutputData();
-    AudioSuitePcmBuffer* splitDataInHalf(const std::vector<AudioSuitePcmBuffer *> &inputs);
 
 private:
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterfaceImpl_;

@@ -99,6 +99,11 @@ public:
     void OnMarkReached(const int64_t &framePosition) override {};
 };
 
+class StaticBufferEventCallbackTest : public StaticBufferEventCallback {
+public:
+    void OnStaticBufferEvent(StaticBufferEventId eventId) override {}
+};
+
 class IpcStreamTest : public IIpcStream {
 public:
     virtual ~IpcStreamTest() = default;
@@ -123,6 +128,8 @@ public:
 
     virtual int32_t Drain(bool stopFlag) override { return 0; }
 
+    virtual int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override { return 0; }
+
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
@@ -139,6 +146,7 @@ public:
     }
 
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
 
@@ -203,6 +211,10 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
 
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
+
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
+
+    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {
@@ -1986,5 +1998,23 @@ HWTEST(CapturerInClientUnitTest, IsRestoreNeeded_001, TestSize.Level4)
         ohAudioBufferBase_.basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
     EXPECT_EQ(testCapturerClient->IsRestoreNeeded(), true);
 }
+
+/**
+ * @tc.name  : CapturerInClient_Static_Unused_apis
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInClient_Static_Unused_apis
+ * @tc.desc  : Test CapturerInClient CapturerInClient_Static_Unused_apis
+ */
+HWTEST(CapturerInClientUnitTest, StaticMode_001, TestSize.Level4)
+{
+    auto testCapturerClient = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(testCapturerClient);
+    EXPECT_EQ(testCapturerClient->SetLoopTimes(10), ERR_INCORRECT_MODE);
+    testCapturerClient->SetStaticBufferInfo();
+    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
+    EXPECT_EQ(testCapturerClient->SetStaticBufferEventCallback(callback), ERR_INCORRECT_MODE);
+    EXPECT_EQ(testCapturerClient->SetStaticTriggerRecreateCallback([](){return;}), ERR_INCORRECT_MODE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -40,11 +40,22 @@ public:
     virtual void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {}
 };
 
+class PreferredDeviceSetCallbackTest : public PreferredDeviceSetCallback {
+public:
+    virtual ~PreferredDeviceSetCallbackTest() = default;
+    virtual void OnPreferredDeviceSet(PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller) {}
+};
+
 class ConcreteDeviceChangeWithInfoCallback : public DeviceChangeWithInfoCallback {
     void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReasonExt reason) override {}
     void OnRecreateStreamEvent(
         const uint32_t sessionId, const int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason) override {}
+};
+
+class ConcreteAudioManagerDeviceInfoUpdateCallback : public AudioManagerDeviceInfoUpdateCallback {
+    void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction) {};
 };
 
 class AudioPolicyManagerDeviceUnitTest : public testing::Test {

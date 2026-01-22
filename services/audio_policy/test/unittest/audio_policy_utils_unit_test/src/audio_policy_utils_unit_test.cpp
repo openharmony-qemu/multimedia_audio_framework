@@ -429,7 +429,9 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
     audioPolicyUtilsTest_->isBTReconnecting_ = true;
 
-    int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(descs);
+    int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(D_ALL_DEVICES, descs);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(MEDIA_INPUT_DEVICES, descs);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -524,6 +526,25 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_020, TestSize.Level1)
     type = DeviceType::DEVICE_TYPE_SPEAKER;
     ret = audioPolicyUtilsTest_->IsWirelessDevice(type);
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_021
+ * @tc.desc  : Test GetSourcePortName
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_021, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+
+    std::string ret = audioPolicyUtilsTest_->GetSourcePortName(deviceType, routeFlag);
+    EXPECT_EQ(ret, PRIMARY_MIC);
 }
 
 /**

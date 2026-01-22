@@ -15,7 +15,7 @@ Node g_defaultNode;
 
 NodeManager::NodeManager(OH_AudioSuitePipeline *audioSuitePipeLine) : audioSuitePipeLine(audioSuitePipeLine)
 {
-    // 初始化代码
+    // initialization code
     OH_LOG_Print(LOG_APP,
         LOG_INFO,
         GLOBAL_RESMGR,
@@ -68,7 +68,7 @@ OH_AudioSuite_Result NodeManager::createNode(
         TAG,
         "NodeManagerTest createNode OH_AudioSuiteEngine_CreateNode result:%{public}d",
         static_cast<int>(result));
-    // 构造节点结构体并存储
+    // Construct node structure and store it
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         Node node;
         node.id = nodeId;
@@ -156,7 +156,7 @@ OH_AudioSuite_Result NodeManager::moveNode(
 
 OH_AudioSuite_Result NodeManager::connect(const std::string &fromId, const std::string &toId)
 {
-    // 检查是否有该节点
+    // Check if this node exists.
     if (nodes.find(fromId) == nodes.end() || nodes.find(toId) == nodes.end()) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "NodeManagerTest connect:Node ID not found");
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
@@ -172,7 +172,7 @@ OH_AudioSuite_Result NodeManager::connect(const std::string &fromId, const std::
     Node preNode = nodes[fromId];
     Node nextNode = nodes[toId];
 
-    // 连接之前需要停止管线
+    // The pipeline needs to be stopped before connection.
     result = stopPipelineState();
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
@@ -213,7 +213,7 @@ OH_AudioSuite_Result NodeManager::disconnect(const std::string &fromId, const st
     Node preNode = nodes[fromId];
     Node nextNode = nodes[toId];
 
-    // 解连接之前需要停止管线
+    // The pipeline needs to be stopped before disconnection.
     result = stopPipelineState();
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
         return result;
@@ -234,7 +234,7 @@ OH_AudioSuite_Result NodeManager::disconnect(const std::string &fromId, const st
 
 void NodeManager::DisconnectAll(const std::string &nodeId)
 {
-    // todo:混音节点需要解开所有连接
+    // todo:The mixing node needs to disconnect all connections.
     nodes[nodeId].nextNodeId = "";
     nodes[nodeId].preNodeIds.clear();
 }
@@ -254,7 +254,7 @@ const Node &NodeManager::GetNodeById(const std::string &nodeId) const
     }
 }
 
-//获取均衡器类型
+// Get the equalizer type
 std::string GetEqualizerOptions(const Node &node)
 {
     OH_EqualizerFrequencyBandGains type;
@@ -274,7 +274,7 @@ std::string GetEqualizerOptions(const Node &node)
     return oss.str();
 }
 
-//获取声音美化类型
+// Get voice beautification type
 std::string GetVoiceBeautifierOptions(const Node &node)
 {
     OH_VoiceBeautifierType type;
@@ -296,7 +296,7 @@ std::string GetVoiceBeautifierOptions(const Node &node)
     }
 }
 
-//获取声场类型
+// Acquire sound field type
 std::string GetSoundFieldOptions(const Node &node)
 {
     OH_SoundFieldType type;
@@ -318,7 +318,7 @@ std::string GetSoundFieldOptions(const Node &node)
     }
 }
 
-//获取环境类型
+// Obtains the environment type
 std::string GetEnvironmentEffectOptions(const Node &node)
 {
     OH_EnvironmentType type;
@@ -416,7 +416,7 @@ OH_AudioSuite_Result NodeManager::insertAfter(
 OH_AudioSuite_Result NodeManager::insertNode(
     const std::string &sourceNodeId, const std::string &targetNodeId, Direction direction)
 {
-    // direction为BEFORE，即插入到targetNodeId之前
+    // direction is BEFORE, meaning it is inserted before targetNodeId
     if (!IsValidNode(sourceNodeId) || !IsValidNode(targetNodeId)) {
         return OH_AudioSuite_Result::AUDIOSUITE_ERROR_INVALID_PARAM;
     }
@@ -434,7 +434,7 @@ OH_AudioSuite_Result NodeManager::insertNode(
     }
 }
 
-// 节点编排前（连接或者解连接）需要pipeline状态为stopped
+// Before node orchestration (connecting or disconnecting), the pipeline status must be stopped
 OH_AudioSuite_Result NodeManager::stopPipelineState()
 {
     OH_AudioSuite_Result result;

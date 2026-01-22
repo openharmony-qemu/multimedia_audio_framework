@@ -50,12 +50,6 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
 
@@ -66,25 +60,15 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
-    int32_t GetAudioScene(void) override;
-
-    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
-    void ResetActiveDeviceForDisconnect(DeviceType device) override;
-
-    int32_t SetPaPower(int32_t flag) override;
-    int32_t SetPriPaPower(void) override;
-
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
+    void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -101,6 +85,8 @@ private:
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
 
+    bool IsValidState();
+
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -113,11 +99,11 @@ private:
 
     const std::string deviceNetworkId_ = "";
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     std::atomic<bool> sinkInited_ = false;
     std::atomic<bool> renderInited_ = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
+    std::atomic<bool> validState_ = true;
     float leftVolume_ = 0;
     float rightVolume_ = 0;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;

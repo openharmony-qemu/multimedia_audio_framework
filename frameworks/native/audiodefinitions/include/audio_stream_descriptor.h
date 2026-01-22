@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -58,6 +58,7 @@ public:
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
     int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
+    AudioStreamInfo ecStreamInfo_ = {};
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
@@ -124,7 +125,7 @@ public:
         streamAction_ = action;
     }
 
-    void SetBunduleName(std::string &bundleName);
+    void SetBundleName(std::string &bundleName);
 
     std::string GetBundleName()
     {
@@ -200,6 +201,10 @@ public:
         return callerPid_ == pid && callerUid_ == uid;
     }
 
+    bool IsSamePid(int32_t pid) const
+    {
+        return callerPid_ == pid;
+    }
     bool IsNoRunningOffload() const
     {
         return IsRouteOffload() && !IsRunning();
@@ -246,6 +251,15 @@ public:
             return DEVICE_TYPE_NONE;
         }
         return newDeviceDescs_[0]->getType();
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetMainNewDeviceDesc()
+    {
+        std::lock_guard<std::mutex> lock(lock_);
+        if (newDeviceDescs_.size() < 1 || newDeviceDescs_[0] == nullptr) {
+            return nullptr;
+        }
+        return newDeviceDescs_[0];
     }
 
     bool IsA2dpOffloadStream()
@@ -300,6 +314,16 @@ public:
         return false;
     }
 
+    void SetUltraFastFlag(const bool ultraFastFlag)
+    {
+        ultraFastStream_ = ultraFastFlag;
+    }
+
+    bool GetUltraFastFlag() const
+    {
+        return ultraFastStream_;
+    }
+
     int32_t GetRealUid() const;
 
 private:
@@ -313,6 +337,7 @@ private:
     void DumpDeviceAttrs(std::string &dumpString);
 
     std::mutex lock_;
+    bool ultraFastStream_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -54,6 +54,9 @@ public:
     int32_t SetSyncId(int32_t syncId) override;
     uint32_t GetHdiLatency() override;
     uint64_t GetLatency(HpaeProcessorType sceneType) override;
+    void NotifyStreamChangeToSink(StreamChangeType change,
+        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID) override;
+    int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;

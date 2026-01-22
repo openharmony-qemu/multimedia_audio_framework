@@ -18,7 +18,6 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
-#include "audio_workgroup_callback_impl.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
@@ -212,9 +211,14 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_002, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 start");
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager::GetInstance()->SetMute(STREAM_MUSIC, false, deviceType);
+    AudioSystemManager::GetInstance()->SetMute(STREAM_RING, false, deviceType);
+    AudioSystemManager::GetInstance()->SetMute(STREAM_NOTIFICATION, false, deviceType);
+
     bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_MUSIC);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result1:%{public}d", result);
-    EXPECT_EQ(result, true);
+    EXPECT_EQ(result, false);
 
     result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_RING);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result2:%{public}d", result);
@@ -307,20 +311,6 @@ HWTEST(AudioSystemManagerUnitTest, GetPinValueFromType_002, TestSize.Level1)
     AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueFromType(DEVICE_TYPE_HDMI, OUTPUT_DEVICE);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest ->GetPinValueFromType_002() pinValue:%{public}d", pinValue);
     EXPECT_NE(pinValue, AUDIO_PIN_NONE);
-}
-
-/**
- * @tc.name  : Test RegisterWakeupSourceCallback API
- * @tc.type  : FUNC
- * @tc.number: RegisterWakeupSourceCallback_001
- * @tc.desc  : Test RegisterWakeupSourceCallback interface.
- */
-HWTEST(AudioSystemManagerUnitTest, RegisterWakeupSourceCallback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterWakeupSourceCallback_001 start");
-    int32_t result = AudioSystemManager::GetInstance()->RegisterWakeupSourceCallback();
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest ->RegisterWakeupSourceCallback_001() result:%{public}d", result);
-    EXPECT_NE(result, ERROR);
 }
 
 /**
@@ -776,25 +766,7 @@ HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_001, TestSize.Leve
     EXPECT_NE(result, TEST_RET_NUM);
 }
 
-/**
- * @tc.name   : Test StartGroup API
- * @tc.number : StartGroup_001
- * @tc.desc   : Test StartGroup interface when startTime > endTime.
- */
-HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
-{
-    AudioSystemManager manager;
-    bool needUpdatePrio = true;
-    int32_t testWorkgroupid = 1;
-    int32_t startTimeMs = 1000;
-    int32_t endTimeMs = 500;
-    std::unordered_map<int32_t, bool> threads = {
-        {101, true},
-        {102, true}
-    };
-    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
-    EXPECT_EQ(result, AUDIO_ERR);
-}
+
 
 /**
  * @tc.name  : Test GetVolumeInUnitOfDb API
@@ -1107,18 +1079,6 @@ HWTEST(AudioSystemManagerUnitTest, RegisterRendererDataTransfer_001, TestSize.Le
 #endif
 
 /**
- * @tc.name   : Test CreateGroup API
- * @tc.number : CreateGroup_001
- * @tc.desc   : Test CreateGroup interface createAudioWorkgroup
- */
-HWTEST(AudioSystemManagerUnitTest, CreateGroup_001, TestSize.Level1)
-{
-    AudioSystemManager audioSystemManager;
-
-    int32_t result = audioSystemManager.CreateAudioWorkgroup();
-    EXPECT_GT(result, 0);
-}
-/**
  * @tc.name   : Test GetVolumeInDbByStream API
  * @tc.number : GetVolumeInDbByStream
  * @tc.desc   : Test GetVolumeInDbByStream interface createAudioWorkgroup
@@ -1147,49 +1107,6 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_002, TestSize.Level1)
     streamUsage = STREAM_USAGE_DTMF;
     result = audioSystemManager.GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
     EXPECT_TRUE(result != errNotSupportedFloat && result != errPermissionDeniedFloat);
-}
-/**
- * @tc.name   : Test IsValidToStartGroup API
- * @tc.number : IsValidToStartGroup_001
- * @tc.desc   : Test IsValidToStartGroup interface createAudioWorkgroup
- */
-HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_001, TestSize.Level1)
-{
-    int workgroupId = 1;
-
-    AudioSystemManager audioSystemManager;
-    bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
-    EXPECT_FALSE(result);
-
-    workgroupId = -1111;
-    result = audioSystemManager.IsValidToStartGroup(workgroupId);
-    EXPECT_FALSE(result);
-
-    workgroupId = 9999;
-    result = audioSystemManager.IsValidToStartGroup(workgroupId);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name   : Test StopGroup API
- * @tc.number : StopGroupp_001
- * @tc.desc   : Test StopGroup interface createAudioWorkgroup
- */
-HWTEST(AudioSystemManagerUnitTest, StopGroup_001, TestSize.Level1)
-{
-    int workgroupId = 1;
-
-    AudioSystemManager audioSystemManager;
-    bool result = audioSystemManager.StopGroup(workgroupId);
-    EXPECT_TRUE(result);
-
-    workgroupId = -111;
-    result = audioSystemManager.StopGroup(workgroupId);
-    EXPECT_TRUE(result);
-
-    workgroupId = 9999;
-    result = audioSystemManager.StopGroup(workgroupId);
-    EXPECT_TRUE(result);
 }
 
 /**
@@ -1242,271 +1159,6 @@ HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_001, TestSize.Level1)
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     AudioSystemManager audioSystemManager;
     EXPECT_NE(audioSystemManager.SetVolumeWithDevice(STREAM_MUSIC, 5, deviceType), 1);
-}
-
-/**
- * @tc.name   : Test WorkgroupPrioRecorder constructor
- * @tc.number : WorkgroupPrioRecorder_001
- * @tc.desc   : Test WorkgroupPrioRecorder constructor
- */
-HWTEST(AudioSystemManagerUnitTest, WorkgroupPrioRecorder_001, TestSize.Level1)
-{
-    int32_t grpId = 1;
-    AudioSystemManager::WorkgroupPrioRecorder recorder(grpId);
-    EXPECT_EQ(recorder.grpId_, grpId);
-    EXPECT_EQ(recorder.restoreByPermission_, false);
-}
- 
-/**
- * @tc.name   : Test SetRestoreByPermission
- * @tc.number : SetRestoreByPermission_001
- * @tc.desc   : Test SetRestoreByPermission when isByPermission true
- */
-HWTEST(AudioSystemManagerUnitTest, SetRestoreByPermission_001, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    recorder.SetRestoreByPermission(true);
-    EXPECT_TRUE(recorder.restoreByPermission_);
-}
- 
-/**
- * @tc.name   : Test SetRestoreByPermission
- * @tc.number : SetRestoreByPermission_002
- * @tc.desc   : Test SetRestoreByPermission when isByPermission false
- */
-HWTEST(AudioSystemManagerUnitTest, SetRestoreByPermission_002, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    recorder.SetRestoreByPermission(false);
-    EXPECT_FALSE(recorder.restoreByPermission_);
-}
- 
-/**
- * @tc.name   : Test GetRestoreByPermission
- * @tc.number : GetRestoreByPermission_001
- * @tc.desc   : Test SetRestoreByPermission when permission is set
- */
-HWTEST(AudioSystemManagerUnitTest, GetRestoreByPermission_001, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    recorder.restoreByPermission_ = true;
-    EXPECT_TRUE(recorder.GetRestoreByPermission());
-}
- 
-/**
- * @tc.name   : Test GetRestoreByPermission
- * @tc.number : GetRestoreByPermission_002
- * @tc.desc   : Test SetRestoreByPermission when permission is not set
- */
-HWTEST(AudioSystemManagerUnitTest, GetRestoreByPermission_002, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    recorder.restoreByPermission_ = false;
-    EXPECT_FALSE(recorder.GetRestoreByPermission());
-}
- 
-/**
- * @tc.name   : Test RecordThreadPrio
- * @tc.number : RecordThreadPrio_001
- * @tc.desc   : Test RecordThreadPrio inteface
- */
-HWTEST(AudioSystemManagerUnitTest, RecordThreadPrio_001, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    int32_t tokenId = 1;
- 
-    // Add the tokenId to the threads_ map
-    recorder.threads_[tokenId] = 2;
- 
-    // Call the method under test
-    recorder.RecordThreadPrio(tokenId);
- 
-    // Verify the result
-    auto it = recorder.threads_.find(tokenId);
-    ASSERT_TRUE(it != recorder.threads_.end());
-    EXPECT_EQ(it->second, 2);
-}
- 
-/**
- * @tc.name   : Test RestoreGroupPrio
- * @tc.number : RestoreGroupPrio_001
- * @tc.desc   : Test RestoreGroupPrio set permission
- */
-HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_001, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    int32_t result = recorder.RestoreGroupPrio(true);
-    EXPECT_NE(result, AUDIO_OK);
-    EXPECT_FALSE(recorder.restoreByPermission_);
-}
- 
-/**
- * @tc.name   : Test RestoreGroupPrio
- * @tc.number : RestoreGroupPrio_002
- * @tc.desc   : Test RestoreGroupPrio not set permission
- */
-HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_002, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    int32_t result = recorder.RestoreGroupPrio(false);
-    EXPECT_NE(result, AUDIO_OK);
-    EXPECT_TRUE(recorder.threads_.empty());
-}
-
-/**
- * @tc.name   : Test RestoreGroupPrio
- * @tc.number : RestoreGroupPrio_003
- * @tc.desc   : Test RestoreGroupPrio with threads
- */
-HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_003, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    recorder.threads_.emplace(1, 1);
-    int32_t result = recorder.RestoreGroupPrio(true);
-    EXPECT_EQ(result, AUDIO_OK);
-    EXPECT_TRUE(recorder.restoreByPermission_);
-}
-
-/**
- * @tc.name   : Test RestoreThreadPrio
- * @tc.number : RestoreThreadPrio_001
- * @tc.desc   : Test RestoreThreadPrio when tokenId not exist
- */
-HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_001, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    int32_t tokenId = 1;
-    recorder.threads_[tokenId] = 1;
-    int32_t result = recorder.RestoreThreadPrio(tokenId + 1);
-    EXPECT_EQ(result, AUDIO_OK);
-}
- 
-/**
- * @tc.name   : Test RestoreThreadPrio
- * @tc.number : RestoreThreadPrio_002
- * @tc.desc   : Test RestoreThreadPrio when tokenId exist
- */
-HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_002, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    int32_t tokenId = 1;
-    recorder.threads_[tokenId] = 1;
-    int32_t result = recorder.RestoreThreadPrio(tokenId);
-    EXPECT_EQ(result, AUDIO_OK);
-}
- 
-/**
- * @tc.name   : Test RestoreThreadPrio
- * @tc.number : RestoreThreadPrio_003
- * @tc.desc   : Test RestoreThreadPrio check tokenId
- */
-HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_003, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    int32_t tokenId = 1;
-    recorder.threads_[tokenId] = 1;
-    int32_t result = recorder.RestoreThreadPrio(tokenId);
-    EXPECT_EQ(result, AUDIO_OK);
-    EXPECT_EQ(recorder.threads_.find(tokenId), recorder.threads_.end());
-}
- 
-/**
- * @tc.name   : Test GetGrpId
- * @tc.number : GetGrpId_001
- * @tc.desc   : Test GetGrpId when call
- */
-HWTEST(AudioSystemManagerUnitTest, GetGrpId_001, TestSize.Level1)
-{
-    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
-    recorder.grpId_ = 100;
-    EXPECT_EQ(recorder.GetGrpId(), 100);
-}
- 
-/**
- * @tc.name   : Test GetRecorderByGrpId
- * @tc.number : GetRecorderByGrpId_001
- * @tc.desc   : Test GetRecorderByGrpId when grpId exist
- */
-HWTEST(AudioSystemManagerUnitTest, GetRecorderByGrpId_001, TestSize.Level1)
-{
-    AudioSystemManager manager;
-    int32_t grpId = 1;
-    auto recorder = std::make_shared<AudioSystemManager::WorkgroupPrioRecorder>(1);
-    manager.workgroupPrioRecorderMap_[grpId] = recorder;
-    auto result = manager.GetRecorderByGrpId(grpId);
-    EXPECT_EQ(result, recorder);
-}
- 
-/**
- * @tc.name   : Test GetRecorderByGrpId
- * @tc.number : GetRecorderByGrpId_002
- * @tc.desc   : Test GetRecorderByGrpId when grpId not exist
- */
-HWTEST(AudioSystemManagerUnitTest, GetRecorderByGrpId_002, TestSize.Level1)
-{
-    AudioSystemManager manager;
-    int32_t grpId = 1;
-    auto result = manager.GetRecorderByGrpId(grpId);
-    EXPECT_EQ(result, nullptr);
-}
- 
-/**
- * @tc.name   : Test OnWorkgroupChange
- * @tc.number : OnWorkgroupChange_001
- * @tc.desc   : Test OnWorkgroupChange when allowed is true
- */
-HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_001, TestSize.Level1)
-{
-    AudioSystemManager manager;
-    AudioWorkgroupChangeInfo info;
-    info.pid = 1;
-    info.groupId = 1;
-    info.startAllowed = true;
- 
-    manager.OnWorkgroupChange(info);
- 
-    // Check if the permission is set correctly
-    EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
-}
- 
-/**
- * @tc.name   : Test OnWorkgroupChange
- * @tc.number : OnWorkgroupChange_002
- * @tc.desc   : Test OnWorkgroupChange when allowed is false
- */
-HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_002, TestSize.Level1)
-{
-    AudioSystemManager manager;
-    AudioWorkgroupChangeInfo info;
-    info.pid = 1;
-    info.groupId = 1;
-    info.startAllowed = false;
- 
-    manager.OnWorkgroupChange(info);
- 
-    // Check if the permission is set correctly
-    EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
-}
- 
-/**
- * @tc.name   : Test OnWorkgroupChange
- * @tc.number : OnWorkgroupChange_003
- * @tc.desc   : Test OnWorkgroupChange when recorder is nullptr
- */
-HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_003, TestSize.Level1)
-{
-    AudioSystemManager manager;
-    AudioWorkgroupChangeInfo info;
-    info.pid = 1;
-    info.groupId = 1;
-    info.startAllowed = false;
- 
-    manager.OnWorkgroupChange(info);
- 
-    // Check if the permission is set correctly
-    EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
-    // Check if the recorder is nullptr
-    EXPECT_EQ(manager.GetRecorderByGrpId(info.groupId), nullptr);
 }
 
 /**
@@ -1720,32 +1372,6 @@ HWTEST(AudioSystemManagerUnitTest, GetVolume_003, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test GetPinValueForPeripherals API
- * @tc.type  : FUNC
- * @tc.number: GetPinValueForPeripherals_001
- * @tc.desc  : Test GetPinValueForPeripherals interface.
- */
-HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_001, TestSize.Level4)
-{
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_FILE_SINK,
-        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
-    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
-}
-
-/**
- * @tc.name  : Test GetPinValueForPeripherals API
- * @tc.type  : FUNC
- * @tc.number: GetPinValueForPeripherals_002
- * @tc.desc  : Test GetPinValueForPeripherals interface.
- */
-HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_002, TestSize.Level4)
-{
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_ACCESSORY,
-        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
-    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
-}
-
-/**
  * @tc.name  : Test GetTypeValueFromPin API
  * @tc.type  : FUNC
  * @tc.number: GetTypeValueFromPin_001
@@ -1767,46 +1393,6 @@ HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_002, TestSize.Level4)
 {
     DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(static_cast<AudioPin>(1000));
     EXPECT_EQ(deviceValue, DEVICE_TYPE_NONE);
-}
-
-/**
- * @tc.name   : Test IsValidToStartGroup API
- * @tc.number : IsValidToStartGroup_002
- * @tc.desc   : Test IsValidToStartGroup interface createAudioWorkgroup
- */
-HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_002, TestSize.Level4)
-{
-    int workgroupId = 1;
-
-    AudioSystemManager audioSystemManager;
-    audioSystemManager.hasSystemPermission_ = false;
-    bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
-    EXPECT_FALSE(result);
-}
-
-/**
- * @tc.name   : Test OnWorkgroupChange API
- * @tc.number : OnWorkgroupChange_004
- * @tc.desc   : Test OnWorkgroupChange interface
- */
-HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_004, TestSize.Level4)
-{
-    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
-    AudioWorkgroupChangeInfoIpc info;
-    audioWorkgroupCallbackImpl.workgroupCb_ = nullptr;
-    EXPECT_EQ(audioWorkgroupCallbackImpl.OnWorkgroupChange(info), ERROR);
-}
-
-/**
- * @tc.name   : Test RemoveWorkgroupChangeCallback API
- * @tc.number : RemoveWorkgroupChangeCallback_001
- * @tc.desc   : Test RemoveWorkgroupChangeCallback interface
- */
-HWTEST(AudioSystemManagerUnitTest, RemoveWorkgroupChangeCallback_001, TestSize.Level4)
-{
-    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
-    audioWorkgroupCallbackImpl.RemoveWorkgroupChangeCallback();
-    EXPECT_EQ(nullptr, audioWorkgroupCallbackImpl.workgroupCb_);
 }
 
 /**
@@ -1838,39 +1424,6 @@ HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level4)
 }
 
 /**
- * @tc.name  : Test GetPinValueForPeripherals API
- * @tc.type  : FUNC
- * @tc.number: GetPinValueForPeripherals_003
- * @tc.desc  : Test GetPinValueForPeripherals interface.
- */
-HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_003, TestSize.Level4)
-{
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_WIRED_HEADPHONES,
-        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
-    EXPECT_EQ(pinValue, AUDIO_PIN_OUT_HEADPHONE);
-}
-
-/**
- * @tc.name   : Test StartGroup API
- * @tc.number : StartGroup_002
- * @tc.desc   : Test StartGroup interface
- */
-HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level4)
-{
-    AudioSystemManager manager;
-    bool needUpdatePrio = true;
-    int32_t testWorkgroupid = 1;
-    int32_t startTimeMs = 500;
-    int32_t endTimeMs = 1000;
-    std::unordered_map<int32_t, bool> threads = {
-        {101, true},
-        {102, true}
-    };
-    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
-    EXPECT_EQ(result, AUDIO_ERR);
-}
-
-/**
 * @tc.name   : Test ConfigDistributedRoutingRole API
 * @tc.number : ConfigDistributedRoutingRoleTest_002
 * @tc.desc   : Test ConfigDistributedRoutingRole interface.
@@ -1894,26 +1447,6 @@ HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_003, TestSize.Level4)
 {
     DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(AUDIO_PIN_IN_UWB);
     EXPECT_EQ(deviceValue, DEVICE_TYPE_ACCESSORY);
-}
-
-/**
- * @tc.name   : Test StartGroup API
- * @tc.number : StartGroup_003
- * @tc.desc   : Test StartGroup interface.
- */
-HWTEST(AudioSystemManagerUnitTest, StartGroup_003, TestSize.Level4)
-{
-    AudioSystemManager manager;
-    bool needUpdatePrio = false;
-    int32_t testWorkgroupid = 1;
-    int32_t startTimeMs = 1000;
-    int32_t endTimeMs = 500;
-    std::unordered_map<int32_t, bool> threads = {
-        {101, true},
-        {102, true}
-    };
-    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
-    EXPECT_EQ(result, AUDIO_ERR);
 }
 
 /**

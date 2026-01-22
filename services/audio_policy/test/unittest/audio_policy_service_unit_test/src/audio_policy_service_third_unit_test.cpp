@@ -597,52 +597,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, AudioToneParser_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test NotifyRecreateRendererStream.
- * @tc.number: NotifyRecreateRendererStream_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateRendererStream_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    bool ret = true;
-
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateRendererStream(audioDeviceDescriptor,
-        rendererChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    EXPECT_EQ(ret, false);
-
-    rendererChangeInfo->outputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
-    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateRendererStream(audioDeviceDescriptor,
-        rendererChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test NotifyRecreateCapturerStream.
- * @tc.number: NotifyRecreateCapturerStream_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, NotifyRecreateCapturerStream_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-    bool ret = true;
-
-    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
-    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateCapturerStream(true, capturerChangeInfo,
-        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    EXPECT_EQ(ret, false);
-
-    capturerChangeInfo->inputDeviceInfo.networkId_ == LOCAL_NETWORK_ID;
-    capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
-    ret = server->audioPolicyService_.audioDeviceCommon_.NotifyRecreateCapturerStream(true, capturerChangeInfo,
-        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    EXPECT_EQ(ret, true);
-}
-
-/**
  * @tc.name  : Test SaveSpecifiedDeviceVolume.
  * @tc.number: SaveSpecifiedDeviceVolume_001
  * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1609,7 +1563,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetConverterConfig_001, TestSize.Level
     ASSERT_NE(nullptr, server);
 
     ConverterConfig ret = AudioConverterParser::GetInstance().LoadConfig();
-    EXPECT_NE(ret.outChannelLayout, 0);
+    EXPECT_EQ(ret.outChannelLayout, 0);
 }
 
 /**

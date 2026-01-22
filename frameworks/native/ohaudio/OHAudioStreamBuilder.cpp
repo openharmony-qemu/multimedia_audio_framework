@@ -86,6 +86,22 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetEncodingType(OH_AudioStreamBuilde
     return audioStreamBuilder->SetEncodingType(type);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetPlaybackCaptureMode(OH_AudioStreamBuilder *builder,
+    uint32_t mode)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+ 
+    if (mode != AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT && mode != AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA &&
+        mode != AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF &&
+        mode != (AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF | AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA)) {
+        AUDIO_WARNING_LOG("Invalid param: playbackCapture mode:%{public}d", mode);
+        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+ 
+    return audioStreamBuilder->SetPlaybackCaptureMode(mode);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_SetLatencyMode(OH_AudioStreamBuilder *builder,
     OH_AudioStream_LatencyMode latencyMode)
 {
@@ -216,7 +232,8 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBui
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
 
-    if (privacy != AUDIO_STREAM_PRIVACY_TYPE_PUBLIC && privacy != AUDIO_STREAM_PRIVACY_TYPE_PRIVATE) {
+    if (privacy != AUDIO_STREAM_PRIVACY_TYPE_PUBLIC && privacy != AUDIO_STREAM_PRIVACY_TYPE_PRIVATE &&
+        privacy != AUDIO_STREAM_PRIVACY_TYPE_SHARED) {
         AUDIO_ERR_LOG("Invalid param: privacy type");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
@@ -440,9 +457,17 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OHAudioStreamBuilder::SetPlaybackCaptureMode(uint32_t mode)
+{
+    modernInnerCapturer_ = true;
+    sourceType_ = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    playbackCaptureMode_ = mode;
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
 {
-    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID,
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID && !modernInnerCapturer_,
         AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, invalid type input");
 
     sourceType_ = type;
@@ -544,6 +569,40 @@ void OHAudioStreamBuilder::ConfigureCapturer(OHAudioCapturer *audioCapturer)
         capturerFastStatusChangeCallback_, capturerFastStatusChangeUserData_);
 }
 
+void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig &config,
+    uint32_t mode)
+{
+    std::vector<StreamUsage> &usages = config.filterOptions.usages;
+    if (mode & AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA) {
+        config.isModernInnerCapturer = true;
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MEDIA);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MUSIC);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MOVIE);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
+    } else {
+        config.isModernInnerCapturer = true;
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MEDIA);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MUSIC);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_MOVIE);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_GAME);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_AUDIOBOOK);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_MESSAGE);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_NAVIGATION);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_ALARM);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_NOTIFICATION);
+        usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_ASSISTANT);
+    }
+ 
+    if (mode & AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF) {
+        config.filterOptions.pids.push_back(getpid());
+        config.filterOptions.pidFilterMode = FilterMode::EXCLUDE;
+    }
+}
+
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer)
 {
     AUDIO_INFO_LOG("Generate OHAudioCapturer");
@@ -566,6 +625,10 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         streamInfo,
         capturerInfo
     };
+
+    if (modernInnerCapturer_) {
+        InitPlaybackCaptureConfig(options.playbackCaptureConfig, playbackCaptureMode_);
+    }
 
     OHAudioCapturer *audioCapturer = new OHAudioCapturer();
     if (audioCapturer->Initialize(options)) {

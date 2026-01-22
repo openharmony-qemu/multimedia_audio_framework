@@ -194,33 +194,6 @@ HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_007, TestSize.Level1)
 
 /**
  * @tc.name   : Test FileSink API
- * @tc.number : FileSinkUnitTest_008
- * @tc.desc   : Test file sink set/get audio scene
- */
-HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_008, TestSize.Level1)
-{
-    EXPECT_TRUE(sink_ && sink_->IsInited());
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = sink_->GetAudioScene();
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name   : Test FileSink API
- * @tc.number : FileSinkUnitTest_009
- * @tc.desc   : Test file sink update active device
- */
-HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_009, TestSize.Level1)
-{
-    EXPECT_TRUE(sink_ && sink_->IsInited());
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name   : Test FileSink API
  * @tc.number : FileSinkUnitTest_010
  * @tc.desc   : Test file sink update apps uid
  */

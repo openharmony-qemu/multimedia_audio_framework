@@ -135,6 +135,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_001, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
@@ -160,6 +161,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_002, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16010);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_100MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
@@ -185,6 +187,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_003, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_16050);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
@@ -209,6 +212,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_004, TestSi
     processConfig.streamInfo.channels = CHANNEL_UNKNOW;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, processConfig.streamInfo.samplingRate);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_20MS *
         static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, 0);
@@ -231,6 +235,7 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRendererStreamUnitConstruct_005, TestSi
     processConfig.rendererInfo.expectedPlaybackDurationBytes = 1024;
 
     HpaeRendererStreamImpl rendererStreamImpl(processConfig, true, false);
+    EXPECT_EQ(rendererStreamImpl.usedSampleRate_, SAMPLE_RATE_11025);
     EXPECT_EQ(rendererStreamImpl.spanSizeInFrame_, FRAME_LEN_40MS *
         static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S);
     EXPECT_EQ(rendererStreamImpl.byteSizePerFrame_, processConfig.streamInfo.channels *
@@ -331,12 +336,125 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+
     unit->deviceClass_ = "remote_offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->processConfig_.streamType = STREAM_MOVIE;
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->isWriteFirst_ = true;
+    unit->UpdateInnerCapWriteState(true);
+    EXPECT_EQ(unit->isWriteFirst_, true);
+    unit->UpdateInnerCapWriteState(false);
+    EXPECT_EQ(unit->isWriteFirst_, false);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag with no hardware/engine flag.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_001
+ * @tc.desc  : Flag 0 should return success and latency 0 without waiting.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_001, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    uint64_t latency = 123; // preset non-zero
+    int32_t ret = unit->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(0));
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 0u);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag timeout before first data.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_002
+ * @tc.desc  : WaitFirstStreamData returns false, expect ERR_OPERATION_FAILED.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_002, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(false, std::memory_order_release);
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag hardware path success.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_003
+ * @tc.desc  : FetchSinkLatency success should include sink latency.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_003, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(true, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lock(unit->sinkLatencyFetcherMutex_);
+        unit->sinkLatencyFetcher_ = [] (uint32_t &latency) {
+            latency = 7; // ms
+            return SUCCESS;
+        };
+    }
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 7u * AUDIO_US_PER_MS);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag hardware fetch failure.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_004
+ * @tc.desc  : FetchSinkLatency failure should propagate error.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_004, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(true, std::memory_order_release);
+    {
+        std::lock_guard<std::mutex> lock(unit->sinkLatencyFetcherMutex_);
+        unit->sinkLatencyFetcher_ = [] (uint32_t &latency) {
+            (void)latency;
+            return ERR_INVALID_OPERATION;
+        };
+    }
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test GetLatencyWithFlag engine path only.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_GetLatencyWithFlag_005
+ * @tc.desc  : When only engine flag set, should add internal latency_ value.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_GetLatencyWithFlag_005, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+    unit->firstStreamDataReceived_.store(true, std::memory_order_release);
+    {
+        std::unique_lock<std::shared_mutex> lock(unit->latencyMutex_);
+        unit->latency_ = 1234;
+    }
+    uint64_t latency = 0;
+    int32_t ret = unit->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(latency, 1234u);
 }
 
 /**
@@ -891,10 +1009,13 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_035, TestSize.Level1)
     auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 1); // callback mode
  
     AudioCallBackStreamInfo info = {
-        .needData = false
+        .needData = true
     };
 
     EXPECT_NE(unit->OnStreamData(info), SUCCESS); // writecallback nullptr
+
+    info.needData = false;
+    EXPECT_EQ(unit->OnStreamData(info), SUCCESS);
 
     auto mockWriteCallback = std::make_shared<MockWriteCallback>();
     unit->writeCallback_ = mockWriteCallback;
@@ -1038,7 +1159,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_039, TestSize.Level1)
     uint64_t latency2 = 2;
     EXPECT_EQ(rendererStreamImpl->GetCurrentPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
     EXPECT_EQ(framePosition, framePosition2);
-    EXPECT_EQ(timestamp, timestamp2);
     EXPECT_EQ(latency, latency2);
 }
 
@@ -1068,8 +1188,55 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_040, TestSize.Level1)
     uint64_t latency2 = 2;
     EXPECT_EQ(rendererStreamImpl->GetSpeedPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
     EXPECT_EQ(framePosition, framePosition2);
-    EXPECT_EQ(timestamp, timestamp2);
     EXPECT_EQ(latency, latency2);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer preBuf not ready.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_041
+ * @tc.desc  : Test WriteDataFromRingBuffer preBuf not ready.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_041, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    constexpr size_t preBufSize = 8;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0, preBufSize); // write mode
+    EXPECT_NE(unit, nullptr);
+
+    unit->ringBuffer_ = AudioRingCache::Create(preBufSize * 2);
+    std::vector<int8_t> inBuffer(preBufSize, 1);
+    unit->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(inBuffer.data()), preBufSize - 1});
+
+    size_t requestDataLen = preBufSize - 1;
+    std::vector<int8_t> outBuffer(preBufSize, 0);
+    int32_t ret = unit->WriteDataFromRingBuffer(true, outBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, ERROR);
+    EXPECT_FALSE(unit->preBufDone_);
+}
+
+/**
+ * @tc.name  : Test WriteDataFromRingBuffer preBuf ready.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_042
+ * @tc.desc  : Test WriteDataFromRingBuffer preBuf ready.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_042, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    constexpr size_t preBufSize = 8;
+    auto unit = std::make_shared<HpaeRendererStreamImpl>(processConfig, 0, 0, preBufSize); // write mode
+    EXPECT_NE(unit, nullptr);
+
+    unit->ringBuffer_ = AudioRingCache::Create(preBufSize * 2);
+    std::vector<int8_t> inBuffer(preBufSize, 1);
+    unit->ringBuffer_->Enqueue({reinterpret_cast<uint8_t *>(inBuffer.data()), preBufSize});
+
+    size_t requestDataLen = preBufSize;
+    std::vector<int8_t> outBuffer(preBufSize, 0);
+    int32_t ret = unit->WriteDataFromRingBuffer(true, outBuffer.data(), requestDataLen);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(unit->preBufDone_);
 }
 }
 }

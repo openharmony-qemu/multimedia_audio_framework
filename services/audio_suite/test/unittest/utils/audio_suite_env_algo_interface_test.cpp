@@ -19,6 +19,7 @@
 #include <cstring>
 #include <algorithm>
 #include "audio_suite_env_algo_interface_impl.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -33,7 +34,11 @@ public:
 };
 
 void AudioSuiteEnvAlgoInterfaceImplTest::SetUp()
-{}
+{
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+}
 
 void AudioSuiteEnvAlgoInterfaceImplTest::TearDown()
 {}
@@ -42,7 +47,7 @@ const size_t FRAME_LEN = 1920;
 
 HWTEST_F(AudioSuiteEnvAlgoInterfaceImplTest, AudioSuiteEnvAlgoInterfaceImplTest, TestSize.Level0)
 {
-    NodeCapability nc;
+    NodeParameter nc;
     nc.soName = "libimedia_sws.z.so";
     nc.soPath = "/system/lib64/";
     AudioSuiteEnvAlgoInterfaceImpl envAlgo(nc);

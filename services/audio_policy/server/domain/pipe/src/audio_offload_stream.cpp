@@ -44,7 +44,7 @@ void AudioOffloadStream::SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_
     }
 
     CHECK_AND_RETURN_LOG(offloadAdapter < OFFLOAD_IN_ADAPTER_SIZE, "Invalid offload adapter");
-    AUDIO_INFO_LOG("Set offload session: %{public}u", sessionId);
+    HILOG_COMM_INFO("[SetOffloadStatus]Set offload session: %{public}u", sessionId);
     offloadSessionIdMap_[offloadAdapter] = sessionId;
     SetOffloadStatusInternal(sessionId, offloadAdapter);
 }
@@ -96,7 +96,7 @@ void AudioOffloadStream::HandlePowerStateChanged(PowerMgr::PowerState state)
 // must be called with offloadMutex_ lock
 void AudioOffloadStream::SetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter)
 {
-    AUDIO_INFO_LOG("Set offload enable for stream: %{public}u", sessionId);
+    HILOG_COMM_INFO("[SetOffloadStatusInternal]Set offload enable for stream: %{public}u", sessionId);
 
     // Offload stream need:
     // 1) Set offload enabled and current power state to renderer stream in audioservice
@@ -111,7 +111,7 @@ void AudioOffloadStream::SetOffloadStatusInternal(uint32_t sessionId, OffloadAda
 // must be called with offloadMutex_ lock
 void AudioOffloadStream::UnsetOffloadStatusInternal(uint32_t sessionId, OffloadAdapter offloadAdapter)
 {
-    AUDIO_INFO_LOG("Unset offload enable for stream: %{public}u", sessionId);
+    HILOG_COMM_INFO("[UnsetOffloadStatusInternal]Unset offload enable for stream: %{public}u", sessionId);
 
     AudioServerProxy::GetInstance().UnsetOffloadModeProxy(sessionId);
     audioPolicyManager_.ResetOffloadSessionId(offloadAdapter);

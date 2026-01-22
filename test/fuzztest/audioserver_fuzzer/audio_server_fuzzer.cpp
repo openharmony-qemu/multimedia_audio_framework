@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <fuzzer/FuzzedDataProvider.h>
-#include "audio_manager_base.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "message_parcel.h"
@@ -101,7 +100,7 @@ const vector<HdiIdType> g_testHdiIdTypes = {
     HDI_ID_TYPE_FILE,
     HDI_ID_TYPE_BLUETOOTH,
     HDI_ID_TYPE_OFFLOAD,
-    HDI_ID_TYPE_EAC3,
+    HDI_ID_TYPE_HWDECODE,
     HDI_ID_TYPE_MULTICHANNEL,
     HDI_ID_TYPE_WAKEUP,
     HDI_ID_TYPE_ACCESSORY,
@@ -1352,15 +1351,17 @@ void AudioServerGetHapBuildApiVersionFuzzTest()
 void AudioServerResetRecordConfigFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ResetRecordConfig(config);
+    audioServerPtr->ResetRecordConfig(config, filterConfig);
 }
 
 void AudioServerResetProcessConfigFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ResetProcessConfig(config);
+    audioServerPtr->ResetProcessConfig(config, filterConfig);
 }
 
 void AudioServerCheckStreamInfoFormatFuzzTest()
@@ -1746,6 +1747,7 @@ void AudioServerSetActiveOutputDeviceFuzzTest()
 void AudioServerResetRecordConfigSourceTypeFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
@@ -1753,17 +1755,18 @@ void AudioServerResetRecordConfigSourceTypeFuzzTest()
         return;
     }
     config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
-    audioServerPtr->ResetRecordConfig(config);
+    audioServerPtr->ResetRecordConfig(config, filterConfig);
 }
 
 void AudioServerResetProcessConfigCallerUidFuzzTest()
 {
     AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig;
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     config.callerUid = provider.ConsumeIntegral<int32_t>();
-    audioServerPtr->ResetProcessConfig(config);
+    audioServerPtr->ResetProcessConfig(config, filterConfig);
 }
 
 void AudioServerCheckStreamInfoFormatNotContainFuzzTest()
@@ -1956,6 +1959,106 @@ void PipeInfoGuardSetReleaseFlagFuzzTest()
     pipeinfoGuard.SetReleaseFlag(provider.ConsumeIntegral<int32_t>() % NUM_2);
 }
 
+void OnStartExpansion()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    audioServerPtr->OnStartExpansion();
+}
+
+void GetPcmDumpParameter()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    audioServerPtr->GetPcmDumpParameter(subKeys, result);
+    audioServerPtr->GetEffectLiveParameter(subKeys, result);
+}
+
+void SetIORoutesForRemote()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    DeviceType type = DEVICE_TYPE_INVALID;
+    DeviceFlag flag = NONE_DEVICES_FLAG;
+    std::vector<DeviceType> deviceTypes;
+    std::string networkId = "LocalDevice";
+    audioServerPtr->SetIORoutesForRemote(type, flag, deviceTypes, networkId);
+}
+
+void ReleaseActiveDeviceRoute()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    DeviceType type = DEVICE_TYPE_INVALID;
+    DeviceFlag flag = NONE_DEVICES_FLAG;
+    std::vector<DeviceType> deviceTypes;
+    std::string networkId = "LocalDevice";
+    audioServerPtr->ReleaseActiveDeviceRoute(type, flag, networkId);
+}
+
+void OnHdiRouteStateChange()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    bool enable = provider.ConsumeBool();
+    std::string networkId = "LocalDevice";
+    audioServerPtr->OnHdiRouteStateChange(networkId, enable);
+}
+
+void RegisterSinkLatencyFetcher()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t renderId = provider.ConsumeIntegral<uint32_t>();
+    audioServerPtr->RegisterSinkLatencyFetcher(renderId);
+}
+
+void RequestUserPrivacyAuthority()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
+    audioServerPtr->RequestUserPrivacyAuthority(sessionId);
+}
+
+void UnRegistAdapterManagerCallback()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = "LocalDevice";
+    audioServerPtr->UnRegistAdapterManagerCallback(networkId);
+}
+
+void OnAdapterParamChange()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = provider.ConsumeRandomLengthString();
+    AudioParamKey key = PARAM_KEY_STATE;
+    std::string cond = provider.ConsumeRandomLengthString();
+    std::string value = provider.ConsumeRandomLengthString();
+    audioServerPtr->OnAdapterParamChange(networkId, key, cond, value);
+}
+
+void GetRemoteAudioParameter()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string networkId = provider.ConsumeRandomLengthString();
+    AudioParamKey key = PARAM_KEY_STATE;
+    std::string cond = provider.ConsumeRandomLengthString();
+    std::string value = provider.ConsumeRandomLengthString();
+    audioServerPtr->GetRemoteAudioParameter(networkId, key, cond, value);
+}
+
 TestFuncs g_testFuncs[] = {
     AudioServerDumpTest,
     AudioServerGetUsbParameterTest,
@@ -2070,6 +2173,17 @@ TestFuncs g_testFuncs[] = {
     DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest,
     DataTransferStateChangeCallbackInnerImplReportEventFuzzTest,
     PipeInfoGuardSetReleaseFlagFuzzTest,
+    GetPcmDumpParameter,
+    SetIORoutesForRemote,
+    OnHdiRouteStateChange,
+    RegisterSinkLatencyFetcher,
+    RequestUserPrivacyAuthority,
+    UnRegistAdapterManagerCallback,
+    OnAdapterParamChange,
+    GetRemoteAudioParameter,
+    AudioServerCheckMaxLoopbackInstancesFuzzTest,
+    ReleaseActiveDeviceRoute,
+    OnStartExpansion,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

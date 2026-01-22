@@ -103,6 +103,7 @@ private:
     void SetSessionState(uint32_t sessionId, HpaeSessionState state);
     void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode);
     bool CheckIsStreamRunning();
+    void StopOuputNode();
 private:
     std::shared_ptr<HpaeSinkVirtualOutputNode> sinkOutputNode_ = nullptr;
     std::shared_ptr<HpaeVirtualProcessCluster> sceneCluster_ = nullptr;

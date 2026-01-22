@@ -18,6 +18,7 @@
 #include <parcel.h>
 #include <audio_stream_info.h>
 #include <audio_buffer_desc.h>
+#include <audio_info.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,6 +44,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
     StreamUsage streamUsage;                        // stream type
     DataTransferStateChangeType stateChangeType;
     bool isBackground;
+    AudioMode audioMode;
     int32_t badDataRatio[MAX_DATATRANS_TYPE];
 
     AudioRendererDataTransferStateChangeInfo() = default;
@@ -52,7 +54,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
         bool ret =  parcel.WriteInt32(clientPid) && parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(sessionId) && parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
             parcel.WriteUint32(static_cast<int32_t>(stateChangeType)) &&
-            parcel.WriteBool(isBackground);
+            parcel.WriteBool(isBackground) && parcel.WriteInt32(static_cast<int32_t>(audioMode));
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             ret = ret && parcel.WriteInt32(badDataRatio[i]);
@@ -73,6 +75,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
         info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         info->stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
         info->isBackground = parcel.ReadBool();
+        info->audioMode = static_cast<AudioMode>(parcel.ReadInt32());
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             info->badDataRatio[i] = parcel.ReadInt32();
@@ -115,6 +118,26 @@ struct DataTransferMonitorParam : public Parcelable {
         param->badFramesRatio = parcel.ReadInt32();
         return param;
     }
+};
+
+class AudioRendererDataTransferStateChangeCallback {
+public:
+    virtual ~AudioRendererDataTransferStateChangeCallback() = default;
+
+    virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
+
+    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
+};
+
+class DataTransferStateChangeCallbackInner {
+public:
+    virtual ~DataTransferStateChangeCallbackInner() = default;
+    
+    virtual void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) = 0;
+
+    virtual void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

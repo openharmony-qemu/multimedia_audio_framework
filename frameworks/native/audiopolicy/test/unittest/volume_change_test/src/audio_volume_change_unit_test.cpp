@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
+#include "audio_unit_test.h"
 #include "audio_system_manager.h"
 
 #include "audio_volume_change_unit_test.h"
@@ -145,6 +146,8 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_001, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
 {
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     int result;
     int callBackSetResult;
     std::string testCaseName("volumeChange_test_002");
@@ -169,6 +172,7 @@ HWTEST_F(AudioVolumeChangeUnitTest,  volumeChange_test_002, TestSize.Level1)
         EXPECT_STREQ(g_callbackName.c_str(), testCaseName.c_str());
     }
     g_audioManagerInstance->UnregisterVolumeKeyEventCallback(getpid());
+    MockNative::Resume();
 }
 
 /*

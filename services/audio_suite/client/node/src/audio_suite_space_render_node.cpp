@@ -19,25 +19,18 @@
 #include "audio_suite_space_render_node.h"
 #include <fstream>
 #include "audio_utils.h"
+#include "audio_suite_log.h"
  
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
  
 namespace {
-static constexpr AudioSamplingRate SPACE_RENDER_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat SPACE_RENDER_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel SPACE_RENDER_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 }  // namespace
 
 AudioSuiteSpaceRenderNode::AudioSuiteSpaceRenderNode()
-    : AudioSuiteProcessNode(NODE_TYPE_SPACE_RENDER,
-          AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_CHANNEL_COUNT},
-              SPACE_RENDER_ALGO_SAMPLE_FORMAT, SPACE_RENDER_ALGO_SAMPLE_RATE}),
-    outPcmBuffer_(PcmBufferFormat{
-        SPACE_RENDER_ALGO_SAMPLE_RATE, SPACE_RENDER_ALGO_CHANNEL_COUNT,
-          SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(NODE_TYPE_SPACE_RENDER)
 {
 }
 
@@ -54,13 +47,29 @@ int32_t AudioSuiteSpaceRenderNode::Init()
         AUDIO_ERR_LOG("AudioSuiteSpaceRenderNode::Init failed, already inited");
         return ERROR;
     }
- 
+    
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
+
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SPACE_RENDER,
-        nodeCapability);
+        nodeParameter);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ CreateAlgoInterface failed");
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
+    SetAudioNodeFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
+
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
+        SPACE_RENDER_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::Init end");
     return SUCCESS;

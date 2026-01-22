@@ -32,6 +32,7 @@
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_detect_soundbox",
           "audio_framework_feature_wireless_default_exclude",
+          "audio_framework_feature_exclude_indirect_usb_input_device",
           "audio_framework_feature_opensl_es",
           "audio_framework_suport_svsession_manager",
           "audio_framework_feature_support_os_account",
@@ -43,7 +44,9 @@
           "audio_framework_feature_low_latency",
           "audio_framework_feature_device_manager",
           "audio_framework_feature_mutesink_enable",
-          "audio_framework_feature_audiosuite_support"
+          "audio_framework_feature_audiosuite_support",
+          "audio_framework_feature_multi_alarm_level",
+          "audio_framework_feature_multi_bus"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
@@ -58,6 +61,7 @@
             "bundle_framework",
             "background_task_mgr",
             "c_utils",
+            "cJSON",
             "cellular_data",
             "common_event_service",
             "config_policy",
@@ -97,18 +101,16 @@
             "libxml2",
             "cJSON",
             "opensles",
-            "openssl",
             "qos_manager",
             "media_foundation",
             "runtime_core",
             "usb_manager",
             "ringtone_library",
             "frame_aware_sched",
-            "window_manager"
+            "window_manager",
+            "call_manager"
           ],
-          "third_party": [
-            "openssl"
-          ]
+          "third_party": []
         },
         "build": {
           "group_type": {
@@ -173,7 +175,8 @@
               "header": {
                 "header_files": [
                   "audio_general_manager.h",
-                  "./audiomanager/include/audio_anahs_manager.h"
+                  "./audiomanager/include/audio_anahs_manager.h",
+                  "./audiocommon/include/audio_device_capability.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
               }
@@ -195,7 +198,6 @@
                 "header_files": [
                   "audio_system_manager.h",
                   "audio_stream_manager.h",
-                  "resource_manager_adapter.h",
                   "audio_group_manager.h",
                   "./audiocommon/include/audio_info.h",
                   "./audiocommon/include/audio_stream_change_info.h"
@@ -217,6 +219,52 @@
                 "header_base": [
                     "//foundation/multimedia/audio_framework/interfaces/inner_api/native"
                  ]
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_policy_manager",
+              "header": {
+                "header_files": [
+                  "audio_stream_manager.h",
+                  "./audiocommon/include/audio_stream_types.h",
+                  "./audiocommon/include/audio_zone_types.h",
+                  "./audiocommon/include/audio_interrupt_types.h",
+                  "./audiocommon/include/audio_spatialization_types.h",
+                  "audio_group_manager.h",
+                  "audio_volume_client_manager.h",
+                  "audio_devices_client_manager.h",
+                  "audio_interrupt_client_manager.h",
+                  "audio_system_client_policy_manager.h",
+                  "audio_routing_client_manager.h",
+                  "audio_session_client_manager.h",
+                  "audio_spatialization_manager.h",
+                  "./audiocommon/include/audio_info.h",
+                  "./audiocommon/include/audio_stream_change_info.h"
+                ],
+                "header_base": [
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
+                ]
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_engine_manager",
+              "header": {
+                "header_files": [
+                  "audio_engine_client_manager.h",
+                  "audio_system_client_engine_manager.h",
+                  "audio_asr_client_manager.h",
+                  "audio_stream_client_manager.h",
+                  "audio_workgroup_client_manager.h",
+                  "audio_wakeup_client_manager.h",
+                  "./audiocommon/include/audio_info.h",
+                  "./audiocommon/include/audio_stream_types.h",
+                  "./audiocommon/include/audio_stream_change_info.h"
+                ],
+                "header_base": [
+                    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiomanager/include"
+                ]
               }
             },
             {
@@ -308,6 +356,16 @@
                   "audio_suite_manager.h"
                 ],
                 "header_base": "//foundation/multimedia/audio_framework/frameworks/native/audiosuite/include"
+              }
+            },
+            {
+              "type": "none",
+              "name": "//foundation/multimedia/audio_framework/services/audio_engine:audio_engine_plugins",
+              "header": {
+                "header_files": [
+                  "audio_proresampler_process.h"
+                ],
+                "header_base": "//foundation/multimedia/audio_framework/services/audio_engine/plugin/resample/include"
               }
             }
           ],

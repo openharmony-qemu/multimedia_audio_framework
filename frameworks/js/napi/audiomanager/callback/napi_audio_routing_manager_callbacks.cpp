@@ -61,11 +61,11 @@ void NapiAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(napi_va
 {
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
-
+    std::string taskName = "NapiAudioPreferredOutputDeviceChangeCallback::destroy";
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
-    callback_ = std::make_shared<AutoRef>(env_, callbackRef);
+    callback_ = std::make_shared<AutoRef>(env_, callbackRef, taskName);
 }
 
 void NapiAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
@@ -173,12 +173,12 @@ void NapiAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(napi_val
 {
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
-
+    std::string taskName = "NapiAudioPreferredInputDeviceChangeCallback::destroy";
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callbackRef != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
 
-    callback_ = std::make_shared<AutoRef>(env_, callbackRef);
+    callback_ = std::make_shared<AutoRef>(env_, callbackRef, taskName);
 }
 
 void NapiAudioPreferredInputDeviceChangeCallback::CreatePreferredInTsfn(napi_env env)

@@ -69,6 +69,10 @@ ohos_shared_library("audio_engine_utils") {
   part_name = "audio_framework"
 }
 
+config("audio_engine_plugins_config") {
+  include_dirs = [ "plugin/resample/include" ]
+}
+
 ohos_shared_library("audio_engine_plugins") {
   stack_protector_ret = true
   sanitize = {
@@ -92,6 +96,8 @@ ohos_shared_library("audio_engine_plugins") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "plugin/channel_converter/include",
   ]
+
+  public_configs = [ ":audio_engine_plugins_config" ]
 
   cflags = [
     "-Wall",
@@ -209,7 +215,7 @@ ohos_shared_library("audio_engine_node") {
   part_name = "audio_framework"
 }
 
-ohos_shared_library("audio_engine_manager") {
+ohos_shared_library("hpae_engine_manager") {
   stack_protector_ret = true
   sanitize = {
     cfi = true

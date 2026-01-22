@@ -23,7 +23,7 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
+#include "audio_device_descriptor.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
 #include "audio_adapter_info.h"
@@ -126,6 +126,9 @@ private:
     uint32_t GetMaxPriorityForInputPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t sessionId,
         AudioStreamDescriptor &maxRunningDesc, AudioStreamDescriptor &maxRemainingDesc);
     bool IsPipeInSourceStrategyMap(std::shared_ptr<AudioPipeInfo> pipeInfo, uint64_t sessionId);
+    std::pair<SourceType, uint32_t> GetTargetSessionForEc();
+    bool IsSourceTypeValidForEc(SourceType sourceType);
+    bool IsSessionIdValidForEc(uint32_t sessionId);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;

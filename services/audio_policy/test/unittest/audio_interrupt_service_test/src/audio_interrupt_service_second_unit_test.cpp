@@ -62,6 +62,16 @@ public:
         return SUCCESS;
     }
 
+    ErrCode OnCheckMediaControllerBundle(const std::string& bundleName, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnQueryIsForceGetZoneDevice(const std::string& bundleName, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
     ErrCode OnCheckVKBInfo(const std::string& bundleName, bool& isValid) override
     {
         return SUCCESS;
@@ -1149,26 +1159,26 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_040, TestSize.
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
     ASSERT_NE(audioInterruptService, nullptr);
-    SourceType existSourceType, incomingSourceType;
-    incomingSourceType = SOURCE_TYPE_INVALID;
-    existSourceType = SOURCE_TYPE_INVALID;
-    AudioStreamType existStreamType = STREAM_ALARM;
-    AudioStreamType incomingStreamType = STREAM_ALARM;
+    AudioFocusType existAudioFocusType;
+    AudioFocusType incomingAudioFocusType;
+    incomingAudioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    existAudioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    incomingAudioFocusType.streamType = STREAM_ALARM;
     string bundleName = "test";
     std::string currentBundleName = "currentTest";
     AudioFocusEntry focusEntry;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
-    incomingSourceType = SOURCE_TYPE_VOICE_CALL;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
-    existSourceType = SOURCE_TYPE_MIC;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
+    incomingAudioFocusType.sourceType = SOURCE_TYPE_VOICE_CALL;
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
+    existAudioFocusType.sourceType = SOURCE_TYPE_MIC;
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
     sptr<IStandardAudioPolicyManagerListener> listener(new IStandardAudioPolicyManagerListenerStub());
     audioInterruptService->queryBundleNameListCallback_ = listener;
-    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, existStreamType,
-        incomingStreamType, currentBundleName, bundleName, focusEntry);
+    audioInterruptService->UpdateMicFocusStrategy(existAudioFocusType, incomingAudioFocusType,
+        currentBundleName, bundleName, focusEntry);
 }
 
 /**
@@ -1807,6 +1817,8 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_067, TestSize.
     EXPECT_EQ(ret, true);
     audioInterruptService->mutedGameSessionId_.insert(streamId);
     audioInterruptZone->audioFocusInfoList.clear();
+    ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
+    EXPECT_EQ(ret, false);
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, PAUSE});
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
     ret = audioInterruptService->AudioInterruptIsActiveInFocusList(zoneId, streamId);
@@ -1853,7 +1865,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_068, TestSize.
  * @tc.number: ActivateAudioInterruptCoreProcedure01
  * @tc.desc  : Test ActivateAudioInterruptCoreProcedure
  */
-HWTEST_F(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedure01, TestSize.Level1)
+HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedure01, TestSize.Level1)
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
 

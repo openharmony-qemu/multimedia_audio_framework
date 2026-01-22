@@ -33,6 +33,7 @@ config("audio_suite_public_config") {
     "../audio_engine/plugin/channel_converter/include/",
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiosuite/include",
+    "../../interfaces/inner_api/native/audiomanager/include",
   ]
 
   cflags_cc = [
@@ -83,6 +84,8 @@ audio_ohos_library("audio_suite") {
       "client/node/src/audio_suite_nr_node.cpp",
       "client/node/src/audio_suite_soundfield_node.cpp",
       "client/node/src/audio_suite_tempo_pitch_node.cpp",
+      "client/node/src/audio_suite_channel.cpp",
+      "client/node/src/audio_suite_node.cpp",
       "client/node/src/audio_suite_space_render_node.cpp",
       "client/utils/src/audio_suite_manager_thread.cpp",
       "client/utils/src/audio_suite_common.cpp",
@@ -112,6 +115,10 @@ audio_ohos_library("audio_suite") {
       "../../frameworks/native/audioschedule:audio_schedule",
       "../audio_service:audio_common",
       "../../frameworks/native/audioutils:audio_xml_utils",
+      "../audio_service:audio_client",
+      "../audio_service:audio_engine_manager",
+      "../audio_service:audio_policy_manager",
+      "../audio_service:audio_stream_client",
     ]
 
     external_deps = [

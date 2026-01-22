@@ -112,6 +112,11 @@ uint32_t AudioSuitePcmBuffer::GetDataSize()
     return dataByteSize_;
 }
 
+uint32_t AudioSuitePcmBuffer::GetDataDuration()
+{
+    return duration_;
+}
+
 uint8_t *AudioSuitePcmBuffer::GetPcmData()
 {
     return pcmDataBuffer_.data();

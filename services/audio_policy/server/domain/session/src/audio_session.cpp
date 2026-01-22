@@ -236,6 +236,7 @@ int32_t AudioSession::Deactivate()
 
     streamsInSession_.clear();
     needToFetch_ = false;
+    isMuteSuggestionEnabled_ = false;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
     return SUCCESS;
@@ -434,18 +435,20 @@ StreamUsage AudioSession::GetSessionStreamUsage()
     return GetStreamUsageInner();
 }
 
-StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice(const uint32_t streamId)
+StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice()
 {
     StreamUsage streamUsage = GetStreamUsageInner();
     if (streamUsage != StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION) {
         return streamUsage;
     }
-    for (auto &iter : streamsInSession_) {
-        if (iter.streamId == streamId && iter.audioFocusType.streamType == STREAM_RING) {
-            AUDIO_INFO_LOG("get audio session stream usage for device is stream ring");
+    
+    for (const auto& iter : streamsInSession_) {
+        if (iter.audioFocusType.streamType == STREAM_RING) {
+            AUDIO_INFO_LOG("pid [%{public}d] ringtone exists", callerPid_);
             return iter.streamUsage;
         }
     }
+
     return streamUsage;
 }
 
@@ -473,6 +476,16 @@ void AudioSession::MarkSystemApp(void)
 bool AudioSession::IsSystemApp(void) const
 {
     return isSystemApp_;
+}
+
+void AudioSession::EnableMuteSuggestionWhenMixWithOthers(bool enable)
+{
+    isMuteSuggestionEnabled_ = enable;
+}
+
+bool AudioSession::IsMuteSuggestionWhenMixEnabled()
+{
+    return isMuteSuggestionEnabled_;
 }
 
 } // namespace AudioStandard

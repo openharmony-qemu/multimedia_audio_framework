@@ -94,23 +94,6 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetSelectedInputDe
 
 /**
 * @tc.name  : Test AudioUsrSelectManager.
-* @tc.number: AudioUsrSelectManager_GetSelectedInputDeviceByUid_002
-* @tc.desc  : Test GetSelectedInputDeviceByUid interface.
-*/
-HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_GetSelectedInputDeviceByUid_002, TestSize.Level1)
-{
-    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
-    int32_t uid = 123;
-    auto desc = audioUsrSelectManager.GetSelectedInputDeviceByUid(uid);
-    EXPECT_EQ(desc->deviceId_, 2);
-
-    AudioDeviceManager::GetAudioDeviceManager().connectedDevices_.clear();
-    desc = audioUsrSelectManager.GetSelectedInputDeviceByUid(uid);
-    EXPECT_EQ(desc->deviceType_, DeviceType(0));
-}
-
-/**
-* @tc.name  : Test AudioUsrSelectManager.
 * @tc.number: AudioUsrSelectManager_JudgeFinalSelectDevice_001
 * @tc.desc  : Test JudgeFinalSelectDevice interface.
 */

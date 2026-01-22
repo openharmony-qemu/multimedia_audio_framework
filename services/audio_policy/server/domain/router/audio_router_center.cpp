@@ -167,6 +167,17 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
     return false;
 }
 
+bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamUsage streamUsage)
+{
+    auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
+    const bool isRingScene = (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
+    const bool isAlarmUsage = (streamUsage == STREAM_USAGE_ALARM);
+    const bool isRingtoneRunning =
+        (streamCollector.IsStreamRunning(STREAM_USAGE_RINGTONE) ||
+        streamCollector.IsStreamRunning(STREAM_USAGE_VOICE_RINGTONE));
+    return isRingScene && isAlarmUsage && isRingtoneRunning;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(
     FetchDeviceInfo info, RouterType &routerType, const RouterType &bypassType,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
@@ -174,7 +185,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     StreamUsage streamUsage = info.streamUsage;
     int32_t clientUID = info.clientUID;
     FetchDeviceInfo bak = {
-        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC
+        streamUsage, streamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, info.privacyType
     };
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
@@ -211,8 +222,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         int32_t audioId_ = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
         descs[0]->routerType_ = routerType;
-        HILOG_COMM_INFO("[%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
-            "id:[%{public}d], router:%{public}d ", info.caller.c_str(), streamUsage,
+        HILOG_COMM_INFO("[FetchOutputDevicesInner][%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], "
+            "1st type:[%{public}d], id:[%{public}d], router:%{public}d ", info.caller.c_str(), streamUsage,
             clientUID, descs.size(), type, audioId_, routerType);
     }
     return descs;
@@ -223,7 +234,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, STREAM_USAGE_INVALID);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, streamUsage);
     if (zoneId != 0) {
         vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
@@ -289,8 +300,7 @@ void AudioRouterCenter::DealRingRenderRouters(std::vector<std::shared_ptr<AudioD
             desc = FetchCallRenderDevice(info.streamUsage, info.clientUID, routerType);
         }
         descs.push_back(move(desc));
-    } else if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
-        info.streamUsage == STREAM_USAGE_ALARM) {
+    } else if (IsAlarmFollowRingStrategy(audioScene, info.streamUsage)) {
         AUDIO_INFO_LOG("alarm follow ring strategy, replace usage alarm to ringtone");
         descs = FetchRingRenderDevices(STREAM_USAGE_RINGTONE, info.clientUID, routerType);
     } else {

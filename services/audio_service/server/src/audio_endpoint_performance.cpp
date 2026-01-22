@@ -22,6 +22,7 @@
 
 #include <string>
 #include <memory>
+#include "policy_handler.h"
 
 #include "audio_service_log.h"
 #include "manager/hdi_adapter_manager.h"
@@ -111,6 +112,10 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
         return;
     }
     if (std::abs(vol - 0) <= std::numeric_limits<float>::epsilon()) {
+        if (PolicyHandler::GetInstance().GetActiveOutPutDevice() == DEVICE_TYPE_NEARLINK) {
+            return;
+        }
+
         if (zeroVolumeState_ == INACTIVE) {
             zeroVolumeStartTime_ = ClockTime::GetCurNano();
             zeroVolumeState_ = IN_TIMING;

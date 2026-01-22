@@ -49,6 +49,13 @@ class ClientUnderrunCallBack {
     virtual void OnUnderrun(size_t posInFrames) = 0;
 };
 
+class AudioFirstFrameCallback {
+public:
+    virtual ~AudioFirstFrameCallback() = default;
+
+    virtual void OnFirstFrameWriting() = 0;
+};
+
 class AudioProcessInClient {
 public:
     static constexpr int32_t PROCESS_VOLUME_MAX = 1 << 16; // 0 ~ 65536
@@ -134,7 +141,8 @@ public:
     virtual void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
         uint32_t code) = 0;
 
-    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) = 0;
+    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method,
+        ThreadPriorityConfig threadPriority) = 0;
 
     virtual bool GetStopFlag() const = 0;
 
@@ -147,6 +155,21 @@ public:
     virtual bool IsRestoreNeeded() = 0;
 
     virtual void GetKeepRunning(bool &keepRunning) = 0;
+
+    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
+
+    virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
+
+    virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
+
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
+
+    virtual int32_t SetStaticRenderRate(AudioRendererRate renderRate) = 0;
+
+    virtual int32_t SetFirstFrameWritingCallback(
+        const std::shared_ptr<AudioFirstFrameCallback> &callback) = 0;
+
+    virtual void SetIsFirstFrame(bool value) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

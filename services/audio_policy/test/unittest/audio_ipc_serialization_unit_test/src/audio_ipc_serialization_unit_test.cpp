@@ -1148,7 +1148,7 @@ HWTEST(AudioIpcSerializationUnitTest, AudioSharedMemory_001, TestSize.Level1)
     Parcel parcel;
     size_t mapSize = 100;
     std::string name = "test";
-    auto sharedMemory = AudioSharedMemory::CreateFormLocal(mapSize, name);
+    auto sharedMemory = AudioSharedMemory::CreateFromLocal(mapSize, name);
     ASSERT_NE(sharedMemory, nullptr);
 
     EXPECT_TRUE(sharedMemory->Marshalling(parcel));

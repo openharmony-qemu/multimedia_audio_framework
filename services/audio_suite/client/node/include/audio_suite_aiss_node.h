@@ -16,7 +16,6 @@
 #ifndef AUDIO_SUITE_AISS_NODE_H
 #define AUDIO_SUITE_AISS_NODE_H
 
-#include "audio_log.h"
 #include "audio_suite_process_node.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
 #include "audio_suite_pcm_buffer.h"

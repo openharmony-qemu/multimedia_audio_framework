@@ -16,14 +16,14 @@
 #define MICROPHONE_DESCRIPTOR_H
 
 #include <parcel.h>
-#include "audio_device_info.h"
 #include "audio_info.h"
+#include "audio_device_info.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
 class MicrophoneDescriptor;
 class MicrophoneDescriptor : public Parcelable {
-    friend class AudioSystemManager;
 public:
     int32_t micId_;
     DeviceType deviceType_;

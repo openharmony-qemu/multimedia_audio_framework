@@ -67,6 +67,10 @@ T GetData()
 static int32_t WriteDataCallback(OH_AudioNode *audioNode, void *userData,
     void *audioData, int32_t audioDataSize, bool *finished)
 {
+    (void)audioNode;
+    (void)userData;
+    (void)audioData;
+    (void)audioDataSize;
     if (finished != nullptr) {
         *finished = true;
     }
@@ -269,6 +273,31 @@ void AudioSuiteEngineSetVoiceBeautifierTypeFuzzTest()
     OH_AudioSuiteEngine_SetVoiceBeautifierType(audioNode[nodeIndex], voiceBeautifierType);
 }
 
+void AudioSuiteEngineSetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed = GetData<float>();
+    float pitch = GetData<float>();
+    OH_AudioSuiteEngine_SetTempoAndPitch(audioNode[nodeIndex], speed, pitch);
+}
+
+void AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_PureVoiceChangeOption option;
+    option.optionGender = GetData<OH_AudioSuite_PureVoiceChangeGenderOption>();
+    option.optionType = GetData<OH_AudioSuite_PureVoiceChangeType>();
+    option.pitch = GetData<float>();
+    OH_AudioSuiteEngine_SetPureVoiceChangeOption(audioNode[nodeIndex], option);
+}
+
+void AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_GeneralVoiceChangeType changeType = GetData<OH_AudioSuite_GeneralVoiceChangeType>();
+    OH_AudioSuiteEngine_SetGeneralVoiceChangeType(audioNode[nodeIndex], changeType);
+}
+
 void AudioSuiteEngineGetEqualizerFrequencyBandGainsFuzzTest()
 {
     uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
@@ -297,6 +326,80 @@ void AudioSuiteEngineGetVoiceBeautifierTypeFuzzTest()
     OH_AudioSuiteEngine_GetVoiceBeautifierType(audioNode[nodeIndex], &voiceBeautifierType);
 }
 
+void AudioSuiteEngineGetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed;
+    float pitch;
+    OH_AudioSuiteEngine_GetTempoAndPitch(audioNode[nodeIndex], &speed, &pitch);
+}
+
+void AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_PureVoiceChangeOption option;
+    OH_AudioSuiteEngine_GetPureVoiceChangeOption(audioNode[nodeIndex], &option);
+}
+
+void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_GeneralVoiceChangeType changeType;
+    OH_AudioSuiteEngine_GetGeneralVoiceChangeType(audioNode[nodeIndex], &changeType);
+}
+
+void AudioSuiteEngineSetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderPositionParams spaceRenderPosition;
+    spaceRenderPosition.x = GetData<float>();
+    spaceRenderPosition.y = GetData<float>();
+    spaceRenderPosition.z = GetData<float>();
+    OH_AudioSuiteEngine_SetSpaceRenderPositionParams(audioNode[nodeIndex], spaceRenderPosition);
+}
+ 
+void AudioSuiteEngineGetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderPositionParams spaceRenderPosition;
+    OH_AudioSuiteEngine_GetSpaceRenderPositionParams(audioNode[nodeIndex], &spaceRenderPosition);
+}
+ 
+void AudioSuiteEngineSetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderRotationParams spaceRenderRotation;
+    spaceRenderRotation.x = GetData<float>();
+    spaceRenderRotation.y = GetData<float>();
+    spaceRenderRotation.z = GetData<float>();
+    spaceRenderRotation.surroundTime = GetData<int32_t>();
+    spaceRenderRotation.surroundDirection = GetData<OH_AudioSuite_SurroundDirection>();
+    OH_AudioSuiteEngine_SetSpaceRenderRotationParams(audioNode[nodeIndex], spaceRenderRotation);
+}
+ 
+void AudioSuiteEngineGetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderRotationParams spaceRenderRotation;
+    OH_AudioSuiteEngine_GetSpaceRenderRotationParams(audioNode[nodeIndex], &spaceRenderRotation);
+}
+ 
+void AudioSuiteEngineSetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderExtensionParams spaceRenderExtension;
+    spaceRenderExtension.extRadius = GetData<float>();
+    spaceRenderExtension.extAngle = GetData<int32_t>();
+    OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(audioNode[nodeIndex], spaceRenderExtension);
+}
+ 
+void AudioSuiteEngineGetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeIndex = GetData<uint32_t>() % MAX_NODE_NUM;
+    OH_AudioSuite_SpaceRenderExtensionParams spaceRenderExtension;
+    OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(audioNode[nodeIndex], &spaceRenderExtension);
+}
+
 vector g_testFuncs = {
     AudioSuiteEngineCreateEngineFuzzTest,
     AudioSuiteEngineDestroyEngineFuzzTest,
@@ -322,10 +425,22 @@ vector g_testFuncs = {
     AudioSuiteEngineSetSoundFieldTypeFuzzTest,
     AudioSuiteEngineSetEnvironmentTypeFuzzTest,
     AudioSuiteEngineSetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineSetTempoAndPitchFuzzTest,
+    AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest,
     AudioSuiteEngineGetEqualizerFrequencyBandGainsFuzzTest,
     AudioSuiteEngineGetSoundFieldTypeFuzzTest,
     AudioSuiteEngineGetEnvironmentTypeFuzzTest,
     AudioSuiteEngineGetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineGetTempoAndPitchFuzzTest,
+    AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest,
+    AudioSuiteEngineSetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteEngineGetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteEngineSetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteEngineGetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteEngineSetSpaceRenderExtensionParamsFuzzTest,
+    AudioSuiteEngineGetSpaceRenderExtensionParamsFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -806,5 +806,26 @@ HWTEST_F(AudioInterruptServiceUnitTest, AudioInterruptStrategy_001, TestSize.Lev
     EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_MUTE);
 }
 
+void AudioInterruptServiceUnitTest::ThreadRun()
+{
+    printf("Thread is running\n");
+}
+
+/**
+* @tc.name  : Test ShouldCallbackToClient_008
+* @tc.number: ShouldCallbackToClient_008
+* @tc.desc  : Test ShouldCallbackToClient_008
+*/
+HWTEST_F(AudioInterruptServiceUnitTest, ShouldCallbackToClient_008, TestSize.Level4)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService_, nullptr);
+
+    audioInterruptService->stopFuture_ = std::async(std::launch::async,
+        &AudioInterruptServiceUnitTest::ThreadRun, this);
+    bool ret = audioInterruptService->stopFuture_.valid();
+    EXPECT_EQ(ret, true);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -26,6 +26,8 @@
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "audio_utils.h"
+#include "app_bundle_manager.h"
+#include "media_monitor_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -41,17 +43,41 @@ namespace {
         {EQUALIZER_PRESET_FULL, "full"},
         {EQUALIZER_PRESET_BRIGHT, "bright"},
     };
+    static const std::unordered_set<DeviceType> g_deviceMaybeSupportedSet = {
+        DEVICE_TYPE_USB_HEADSET,
+        DEVICE_TYPE_USB_ARM_HEADSET,
+    };
 }
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
+    // This is just to pre-validate potential errors, with the actual audio protection
+    // implemented where the recording stream is truly created.
     Security::AccessToken::AccessTokenID tokenId = appInfo.appTokenId;
     tokenId = (tokenId == Security::AccessToken::INVALID_TOKENID) ? IPCSkeleton::GetCallingTokenID() : tokenId;
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
-        nullptr, "Permission denied [tid:%{public}d]", tokenId);
-    static std::shared_ptr<AudioLoopback> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
-    return instance;
+    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, nullptr,
+        "Permission denied [tid:%{public}d]", tokenId);
+    if (mode == LOOPBACK_HARDWARE) {
+        static std::shared_ptr<AudioLoopbackPrivate> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
+        return instance;
+    }
+    AUDIO_ERR_LOG("Invalid mode");
+    return nullptr;
+}
+
+void AudioLoopbackPrivate::ReportAudioLoopbackException(const AudioLoopbackReportInfo &info)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::LOOPBACK_EXCEPTION,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("APP_UID", info.appUid);
+    bean->Add("APP_NAME", info.appName);
+    bean->Add("RENDER_DEVICE_TYPE", static_cast<int32_t>(info.renderDeviceType));
+    bean->Add("CAPTURE_DEVICE_TYPE", static_cast<int32_t>(info.captureDeviceType));
+    bean->Add("ERROR_SCOPE", static_cast<int32_t>(info.errScope));
+    bean->Add("ERROR_TYPE", static_cast<int32_t>(info.errType));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo)
@@ -72,6 +98,7 @@ AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo
     rendererOptions_ = GenerateRendererConfig();
     capturerOptions_ = GenerateCapturerConfig();
     InitStatus();
+    GetValidDevice();
 }
 
 AudioLoopback::~AudioLoopback() = default;
@@ -79,6 +106,7 @@ AudioLoopback::~AudioLoopback() = default;
 AudioLoopbackPrivate::~AudioLoopbackPrivate()
 {
     AUDIO_INFO_LOG("~AudioLoopbackPrivate");
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     CHECK_AND_RETURN_LOG(currentState_ == LOOPBACK_STATE_RUNNING, "AudioLoopback not Running");
     currentState_ = LOOPBACK_STATE_DESTROYING;
@@ -86,27 +114,52 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
     DestroyAudioLoopbackInner();
 }
 
+void AudioLoopbackPrivate::GetValidDevice()
+{
+    for (auto type : g_deviceMaybeSupportedSet) {
+        CHECK_AND_CONTINUE(AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_, type));
+        validDevice.insert(type);
+    }
+}
+
+AudioLoopbackReportInfo AudioLoopbackPrivate::GetReportInfo(AudioLoopbackErrorScope scope,
+    AudioLoopbackErrorType type)
+{
+    AudioLoopbackReportInfo info = {
+        .appUid = appInfo_.appUid,
+        .appName = AppBundleManager::GetSelfBundleName(appInfo_.appUid),
+        .renderDeviceType = activeOutputDevice_,
+        .captureDeviceType = activeInputDevice_,
+        .errScope = scope,
+        .errType = type,
+    };
+    return info;
+}
+
 bool AudioLoopbackPrivate::Enable(bool enable)
 {
     Trace trace("AudioLoopbackPrivate::Enable");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     if (!IsAudioLoopbackSupported()) {
-        HILOG_COMM_INFO("AudioLoopback not support");
+        HILOG_COMM_INFO("[Enable]AudioLoopback not support");
+        ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::PLATFORM, ERROR_PLATFORM_NOT_SUPPORT));
         return false;
     }
     AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
     if (enable) {
         CHECK_AND_RETURN_RET_LOG(GetCurrentState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
         InitStatus();
-        if (!CheckDeviceSupport()) {
-            HILOG_COMM_INFO("Device not support");
+        auto ret = CheckDeviceSupport();
+        if (ret != DEFAULT_OK) {
+            HILOG_COMM_INFO("[Enable]Device not support");
+            ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::DEVICE, ret));
             return false;
         }
         CreateAudioLoopback();
         currentState_ = LOOPBACK_STATE_PREPARED;
         UpdateStatus();
         if (GetCurrentState() != LOOPBACK_STATE_RUNNING) {
-            HILOG_COMM_INFO("AudioLoopback Enable failed");
+            HILOG_COMM_INFO("[Enable]AudioLoopback Enable failed");
             return false;
         }
     } else {
@@ -149,7 +202,7 @@ AudioLoopbackStatus AudioLoopbackPrivate::StateToStatus(AudioLoopbackState state
     if (state == LOOPBACK_STATE_RUNNING) {
         return LOOPBACK_AVAILABLE_RUNNING;
     }
-    bool ret = CheckDeviceSupport();
+    bool ret = CheckDeviceSupport() == DEFAULT_OK;
     if (!ret) {
         return LOOPBACK_UNAVAILABLE_DEVICE;
     }
@@ -163,7 +216,7 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
 {
     Trace trace("AudioLoopbackPrivate::SetVolume");
     if (volume < 0.0 || volume > 1.0) {
-        HILOG_COMM_INFO("SetVolume with invalid volume");
+        HILOG_COMM_INFO("[SetVolume]with invalid volume");
         return ERR_INVALID_PARAM;
     }
     std::lock_guard<std::mutex> lock(loopbackMutex_);
@@ -219,9 +272,9 @@ AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
 
 bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)
 {
-    bool ret = AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters);
+    bool ret = AudioPolicyManager::GetInstance().SetKaraokeParameters(activeOutputDevice_, parameters);
     if (!ret) {
-        HILOG_COMM_INFO("SetKaraokeParameters failed");
+        HILOG_COMM_INFO("[SetKaraokeParameters]failed");
     }
     return ret;
 }
@@ -245,11 +298,14 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     Trace trace("AudioLoopbackPrivate::CreateAudioLoopback");
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_, appInfo_);
     if (audioRenderer_ == nullptr) {
-        HILOG_COMM_INFO("CreateRenderer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateRenderer failed");
+        ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::STREAM, ERROR_RENDER_CREATE_FAIL));
         return;
     }
     if (!audioRenderer_->IsFastRenderer()) {
-        HILOG_COMM_INFO("CreateFastRenderer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateFastRenderer failed");
+        ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::STREAM,
+            ERROR_RENDER_CREATE_FAST_STREAM_FAIL));
         return;
     }
 
@@ -257,14 +313,17 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
     if (audioCapturer_ == nullptr) {
-        HILOG_COMM_INFO("CreateCapturer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateCapturer failed");
+        ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::STREAM, ERROR_CAPTURE_CREATE_FAIL));
         return;
     }
 
     AudioCapturerInfo capturerInfo;
     audioCapturer_->GetCapturerInfo(capturerInfo);
     if (capturerInfo.capturerFlags != STREAM_FLAG_FAST) {
-        HILOG_COMM_INFO("CreateFastCapturer failed");
+        HILOG_COMM_INFO("[CreateAudioLoopback]CreateFastCapturer failed");
+        ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::STREAM,
+            ERROR_CAPTURE_CREATE_FAST_STREAM_FAIL));
         return;
     }
 
@@ -278,12 +337,14 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
 void AudioLoopbackPrivate::StartAudioLoopback()
 {
     if (!audioRenderer_->Start()) {
-        HILOG_COMM_INFO("audioRenderer Start failed");
+        HILOG_COMM_INFO("[StartAudioLoopback]audioRenderer Start failed");
+        ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::STREAM, ERROR_RENDER_START_FAIL));
         return;
     }
     rendererState_ = RENDERER_RUNNING;
     if (!audioCapturer_->Start()) {
-        HILOG_COMM_INFO("audioCapturer Start failed");
+        HILOG_COMM_INFO("[StartAudioLoopback]audioCapturer Start failed");
+        ReportAudioLoopbackException(GetReportInfo(AudioLoopbackErrorScope::STREAM, ERROR_CAPTURE_START_FAIL));
         return;
     }
     capturerState_ = CAPTURER_RUNNING;
@@ -357,14 +418,23 @@ AudioCapturerOptions AudioLoopbackPrivate::GenerateCapturerConfig()
 bool AudioLoopbackPrivate::IsAudioLoopbackSupported()
 {
     Trace trace("AudioLoopbackPrivate::IsAudioLoopbackSupported");
-    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_);
+    return !validDevice.empty();
 }
 
-bool AudioLoopbackPrivate::CheckDeviceSupport()
+AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
 {
-    isRendererUsb_ = AudioPolicyManager::GetInstance().GetActiveOutputDevice() == DEVICE_TYPE_USB_HEADSET;
-    isCapturerUsb_ = AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_HEADSET;
-    return isRendererUsb_ && isCapturerUsb_;
+    // hifi  usb // enable
+    activeOutputDevice_ = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+    activeInputDevice_ = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    CHECK_AND_RETURN_RET_LOG(activeOutputDevice_ == activeInputDevice_, ERROR_DEVICE_MISMATCH,
+        "outputdevice dismatch inputdevice, output = %{public}u, input = %{public}u",
+        activeOutputDevice_, activeInputDevice_);
+    isRendererUsb_ = validDevice.find(activeOutputDevice_) != validDevice.end();
+    isCapturerUsb_ = validDevice.find(activeInputDevice_) != validDevice.end();
+    CHECK_AND_RETURN_RET_LOG(isRendererUsb_ && isCapturerUsb_, ERROR_DEVICE_NOT_SUPPORT,
+        "device not support, output = %{public}u, input = %{public}u",
+        activeOutputDevice_, activeInputDevice_);
+    return DEFAULT_OK;
 }
 
 bool AudioLoopbackPrivate::EnableLoopback()
@@ -374,7 +444,8 @@ bool AudioLoopbackPrivate::EnableLoopback()
     std::string parameters = "";
     for (auto &param : karaokeParams_) {
         parameters = param.first + "=" + param.second + ";";
-        CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), false,
+        auto ret = SetKaraokeParameters(parameters);
+        CHECK_AND_RETURN_RET_LOG(ret, false,
             "EnableLoopback failed");
     }
     return true;
@@ -411,7 +482,7 @@ void AudioLoopbackPrivate::RendererCallbackImpl::OnStateChange(
 void AudioLoopbackPrivate::RendererCallbackImpl::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason __attribute__((unused)) reason)
 {
-    parent_.isRendererUsb_ = (deviceInfo.deviceType_ == DEVICE_TYPE_USB_HEADSET);
+    parent_.isRendererUsb_ = parent_.activeOutputDevice_ == AudioPolicyManager::GetInstance().GetActiveOutputDevice();
     parent_.UpdateStatus();
 }
 
@@ -419,6 +490,10 @@ void AudioLoopbackPrivate::RendererCallbackImpl::OnFastStatusChange(FastStatus s
 {
     parent_.rendererFastStatus_ = status;
     parent_.UpdateStatus();
+    if (status != FASTSTATUS_FAST) {
+        ReportAudioLoopbackException(parent_.GetReportInfo(AudioLoopbackErrorScope::STREAM,
+            ERROR_RENDER_FALL_BACK_NORMAL));
+    }
 }
 
 AudioLoopbackPrivate::CapturerCallbackImpl::CapturerCallbackImpl(AudioLoopbackPrivate &parent)
@@ -432,7 +507,7 @@ void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const CapturerSta
 
 void AudioLoopbackPrivate::CapturerCallbackImpl::OnStateChange(const AudioDeviceDescriptor &deviceInfo)
 {
-    parent_.isCapturerUsb_ = (deviceInfo.deviceType_ == DEVICE_TYPE_USB_HEADSET);
+    parent_.isCapturerUsb_ = parent_.activeInputDevice_ == AudioPolicyManager::GetInstance().GetActiveInputDevice();
     parent_.UpdateStatus();
 }
 
@@ -440,6 +515,10 @@ void AudioLoopbackPrivate::CapturerCallbackImpl::OnFastStatusChange(FastStatus s
 {
     parent_.capturerFastStatus_ = status;
     parent_.UpdateStatus();
+    if (status != FASTSTATUS_FAST) {
+        ReportAudioLoopbackException(parent_.GetReportInfo(AudioLoopbackErrorScope::STREAM,
+            ERROR_CAPTURE_FALL_BACK_NORMAL));
+    }
 }
 
 void AudioLoopbackPrivate::InitializeCallbacks()
@@ -479,7 +558,7 @@ void AudioLoopbackPrivate::UpdateStatus()
         newState = EnableLoopback() ? LOOPBACK_STATE_RUNNING : LOOPBACK_STATE_DESTROYED;
     }
     if (newState != oldState) {
-        HILOG_COMM_WARN("UpdateState: %{public}d -> %{public}d", oldState, newState);
+        HILOG_COMM_WARN("[UpdateStatus]UpdateState: %{public}d -> %{public}d", oldState, newState);
         if (newState == LOOPBACK_STATE_DESTROYED) {
             currentState_ = LOOPBACK_STATE_DESTROYING;
             auto self = shared_from_this();

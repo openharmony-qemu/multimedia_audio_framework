@@ -17,7 +17,6 @@
 #define AUDIO_STREAM_COLLECTOR_H
 
 #include "iaudio_policy_client.h"
-#include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"
 #include "audio_ability_manager.h"
@@ -31,6 +30,12 @@ const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
     STREAM_USAGE_MOVIE,
     STREAM_USAGE_GAME,
     STREAM_USAGE_AUDIOBOOK
+};
+
+struct StartStreamInfo {
+    int32_t uid;
+    int32_t pid;
+    uint32_t sessionId;
 };
 
 class AudioStreamCollector {
@@ -58,6 +63,8 @@ public:
     int32_t UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
+    void GetPlayingMediaRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
+    int32_t CapturerMutedFlagChange(const uint32_t sessionId, bool muteFlag);
     int32_t GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos);
     void RegisteredTrackerClientDied(int32_t uid, int32_t pid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
@@ -66,8 +73,9 @@ public:
     void HandleForegroundUnmute(int32_t uid, int32_t pid);
     void HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession);
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
-    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia);
+    void HandleStartStreamMuteState(StartStreamInfo startStreamInfo, bool mute, bool skipMedia, bool &silentControl);
     bool IsStreamActive(AudioStreamType volumeType);
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();
     int32_t GetRunningStream(AudioStreamType certainType = STREAM_DEFAULT, int32_t certainChannelCount = 0);
@@ -82,6 +90,7 @@ public:
     AudioStreamType GetStreamType(int32_t sessionId);
     int32_t GetChannelCount(int32_t sessionId);
     int32_t GetUid(int32_t sessionId);
+    bool GetBackMuteBySessionId(int32_t sessionId);
     void GetRendererStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioRendererChangeInfo &rendererInfo);
     void GetCapturerStreamInfo(AudioStreamChangeInfo &streamChangeInfo, AudioCapturerChangeInfo &capturerInfo);
     int32_t GetPipeType(const int32_t sessionId, AudioPipeType &pipeType);
@@ -95,7 +104,6 @@ public:
     StreamUsage GetLastestRunningCallStreamUsage();
     std::vector<uint32_t> GetAllRendererSessionIDForUID(int32_t uid);
     std::vector<uint32_t> GetAllCapturerSessionIDForUID(int32_t uid);
-    std::vector<int32_t> GetPlayingMediaSessionIdList();
     int32_t ResumeStreamState();
     bool HasVoipRendererStream(bool isFirstCreate = true);
     bool ChangeVoipCapturerStreamToNormal();
@@ -150,7 +158,7 @@ private:
     bool IsTransparentCapture(const uint32_t clientUid);
     void ResetRingerModeMute(RendererState rendererState, StreamUsage streamUsage);
     void PostReclaimMemoryTask();
-    void ReclaimMem();
+    void ReclaimMem(const std::string &reclaimContent);
     bool CheckAudioStateIdle();
     std::atomic_bool isActivatedMemReclaiTask_ = false;
     std::mutex clearMemoryMutex_;

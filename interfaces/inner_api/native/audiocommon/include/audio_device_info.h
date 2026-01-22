@@ -250,6 +250,7 @@ enum DmDeviceType {
     DM_DEVICE_TYPE_PENCIL = 0xA07,
     DM_DEVICE_TYPE_UWB = 0x06C,
     DM_DEVICE_TYPE_NEARLINK_SCO = 0x032,
+    DM_DEVICE_TYPE_WIFI_SOUNDBOX = 0xA,
 };
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
@@ -387,10 +388,20 @@ enum SleSelectState {
     USER_SELECT_SLE = 2,
 };
 
+enum VolumeControlMode {
+    DEFAULT_MODE = 0,
+    LOCAL_MODE = DEFAULT_MODE,
+    PASS_THROUGH_MODE = 1,
+    HILINK_MODE = 2,
+};
+
 struct VolumeBehavior : public Parcelable {
     bool isReady = false;
     bool isVolumeControlDisabled = false;
     std::string databaseVolumeName = "";
+    VolumeControlMode controlMode = LOCAL_MODE;
+    int32_t controlInitVolume = 0;
+    bool controlInitMute = false;
 
     VolumeBehavior(bool isReady_, bool isVolumeControlDisabled_, std::string databaseVolumeName_)
         : isReady(isReady_), isVolumeControlDisabled(isVolumeControlDisabled_), databaseVolumeName(databaseVolumeName_)
@@ -401,7 +412,10 @@ struct VolumeBehavior : public Parcelable {
     {
         return parcel.WriteBool(isReady) &&
             parcel.WriteBool(isVolumeControlDisabled) &&
-            parcel.WriteString(databaseVolumeName);
+            parcel.WriteString(databaseVolumeName) &&
+            parcel.WriteInt32(static_cast<int32_t>(controlMode)) &&
+            parcel.WriteInt32(controlInitVolume) &&
+            parcel.WriteBool(controlInitMute);
     }
 
     static VolumeBehavior *Unmarshalling(Parcel &parcel)
@@ -414,6 +428,9 @@ struct VolumeBehavior : public Parcelable {
         info->isReady = parcel.ReadBool();
         info->isVolumeControlDisabled = parcel.ReadBool();
         info->databaseVolumeName = parcel.ReadString();
+        info->controlMode = static_cast<VolumeControlMode>(parcel.ReadInt32());
+        info->controlInitVolume = parcel.ReadInt32();
+        info->controlInitMute = parcel.ReadBool();
         return info;
     }
 
@@ -422,6 +439,9 @@ struct VolumeBehavior : public Parcelable {
         isReady = parcel.ReadBool();
         isVolumeControlDisabled = parcel.ReadBool();
         databaseVolumeName = parcel.ReadString();
+        controlMode = static_cast<VolumeControlMode>(parcel.ReadInt32());
+        controlInitVolume = parcel.ReadInt32();
+        controlInitMute = parcel.ReadBool();
     }
 };
 
@@ -466,7 +486,9 @@ public:
         SET_AUDIO_SCENE = 1001,
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
         DISTRIBUTED_DEVICE_UNAVAILABLE = 1003,
-        SET_INPUT_DEVICE = 1004
+        SET_INPUT_DEVICE = 1004,
+        CALL_OR_RING_TO_DEFAULT = 1005,
+        COLLABORATIVE_STATE_CHANGE = 1006,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -530,6 +552,11 @@ public:
         return reason_ == ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
     }
 
+    bool IsCallOrRingToDefault() const
+    {
+        return reason_ == ExtEnum::CALL_OR_RING_TO_DEFAULT;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(reason_));
@@ -543,6 +570,11 @@ public:
         }
         info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
         return info;
+    }
+
+    bool IsCollaborativeStateChange() const
+    {
+        return reason_ == ExtEnum::COLLABORATIVE_STATE_CHANGE;
     }
 
 private:

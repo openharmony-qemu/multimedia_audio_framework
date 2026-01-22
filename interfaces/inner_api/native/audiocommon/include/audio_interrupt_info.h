@@ -86,7 +86,9 @@ enum InterruptHint {
     INTERRUPT_HINT_UNDUCK,
     INTERRUPT_HINT_MUTE,
     INTERRUPT_HINT_UNMUTE,
-    INTERRUPT_HINT_EXIT_STANDALONE
+    INTERRUPT_HINT_EXIT_STANDALONE,
+    INTERRUPT_HINT_MUTE_SUGGESTION,
+    INTERRUPT_HINT_UNMUTE_SUGGESTION,
 };
 
 enum InterruptForceType {
@@ -287,6 +289,7 @@ enum InterruptEventCallbackType {
     INTERRUPT_EVENT_CALLBACK_DEFAULT = 2
 };
 
+// This structure has compatibility constraints with the cast and cannot be modified arbitrarily.
 class AudioInterrupt : public Parcelable {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;

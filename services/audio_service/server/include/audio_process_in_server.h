@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,6 +29,8 @@
 #include "audio_stream_checker.h"
 #include "audio_proresampler.h"
 #include "format_converter.h"
+#include "audio_static_buffer_processor.h"
+#include "audio_static_buffer_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,7 +56,7 @@ private:
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
 public:
 
-    enum HandleRendererDataType {
+    enum HandleRendererDataType : uint32_t {
         NONE_ACTION = 0,
         CONVERT_TO_F32_ACTION = 0x1,
         RESAMPLE_ACTION = 0x10,
@@ -99,7 +101,7 @@ public:
     int32_t RegisterProcessCb(const sptr<IRemoteObject>& object) override;
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
-        uint32_t method) override;
+        uint32_t method, uint32_t threadPriority) override;
 
     int32_t SetRebuildFlag() override;
 
@@ -113,6 +115,8 @@ public:
     AudioStreamInfo GetStreamInfo() override;
     uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
+    StreamUsage GetUsage() override;
+    SourceType GetSource() override;
     AudioProcessConfig GetAudioProcessConfig() override;
     void EnableStandby() override;
 
@@ -171,6 +175,10 @@ public:
     void UpdateStreamInfo() override;
 
     void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
+
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t SetStaticRenderRate(uint32_t renderRate) override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -180,7 +188,7 @@ private:
     void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
-    void InitRendererStream(uint32_t spanTime,
+    void InitRendererStream(float spanTime,
         const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
     void InitCapturerStream(uint32_t spanSizeInByte,
         const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
@@ -204,6 +212,11 @@ private:
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
+
+    int32_t CreateServerBuffer();
+    int32_t ProcessAndSetStaticBuffer();
+    void MarkStaticFadeOut(bool isRefresh);
+    void MarkStaticFadeIn();
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -222,7 +235,6 @@ private:
     std::atomic<StreamStatus> *streamStatus_ = nullptr;
     std::mutex statusLock_;
 
-    uint32_t clientTid_ = 0;
     std::string clientBundleName_;
 
     uint32_t totalSizeInframe_ = 0;
@@ -241,9 +253,9 @@ private:
     std::unique_ptr<uint8_t []> f32BufferNew_ = nullptr;
     std::unique_ptr<uint8_t []> convertedBufferNew_ = nullptr;
 
-    FormatKey dataToServerKey_;
-    FormatKey clientToResampleKey_;
-    int32_t handleRendererDataType_ = NONE_ACTION;
+    FormatKey dataToServerKey_ = {};
+    FormatKey clientToResampleKey_ = {};
+    uint32_t handleRendererDataType_ = NONE_ACTION;
     
     std::string dumpFileName_;
     FILE *dumpFile_ = nullptr;
@@ -278,6 +290,10 @@ private:
     std::string logUtilsTag_ = "";
 
     mutable int64_t volumeDataCount_ = 0;
+
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

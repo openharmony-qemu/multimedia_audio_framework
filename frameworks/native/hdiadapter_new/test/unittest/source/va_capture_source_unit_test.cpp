@@ -28,293 +28,134 @@ class VACaptureSourceUnitTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
-    virtual void SetUp() {}
-    virtual void TearDown() {}
+    virtual void SetUp();
+    virtual void TearDown();
 
-    void InitPrimarySource();
-    void DeInitPrimarySource();
-    void InitUsbSource();
-    void DeInitUsbSource();
 protected:
-    static uint32_t primaryId_;
-    static uint32_t usbId_;
-    static std::shared_ptr<IAudioCaptureSource> primarySource_;
-    static std::shared_ptr<IAudioCaptureSource> usbSource_;
+    static uint32_t id_;
+    static std::shared_ptr<IAudioCaptureSource> source_;
     static IAudioSourceAttr attr_;
 };
 
-uint32_t VACaptureSourceUnitTest::primaryId_ = 0;
-uint32_t VACaptureSourceUnitTest::usbId_ = 0;
-std::shared_ptr<IAudioCaptureSource> VACaptureSourceUnitTest::primarySource_ = nullptr;
-std::shared_ptr<IAudioCaptureSource> VACaptureSourceUnitTest::usbSource_ = nullptr;
+uint32_t VACaptureSourceUnitTest::id_ = HDI_INVALID_ID;
+std::shared_ptr<IAudioCaptureSource> VACaptureSourceUnitTest::source_ = nullptr;
 IAudioSourceAttr VACaptureSourceUnitTest::attr_ = {};
 
 void VACaptureSourceUnitTest::SetUpTestCase()
 {
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    primaryId_ = manager.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
-    usbId_ = manager.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
+    id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VA, HDI_ID_INFO_VA, true);
 }
 
 void VACaptureSourceUnitTest::TearDownTestCase()
 {
-    HdiAdapterManager::GetInstance().ReleaseId(primaryId_);
-    HdiAdapterManager::GetInstance().ReleaseId(usbId_);
+    HdiAdapterManager::GetInstance().ReleaseId(id_);
 }
 
-void VACaptureSourceUnitTest::InitPrimarySource()
+void VACaptureSourceUnitTest::SetUp()
 {
-    primarySource_ = HdiAdapterManager::GetInstance().GetCaptureSource(primaryId_, true);
-    if (primarySource_ == nullptr) {
+    source_ = HdiAdapterManager::GetInstance().GetCaptureSource(id_, true);
+    if (source_ == nullptr) {
         return;
     }
-    const uint32_t kTestRate = 48000;
-    const uint32_t kTestChannel = 2;
-    const uint64_t kTestChannelLayout = 3;
-    attr_.adapterName  = "primary";
-    attr_.sampleRate = kTestRate;
-    attr_.channel = kTestChannel;
-    attr_.format = SAMPLE_S16LE;
-    attr_.channelLayout = kTestChannelLayout;
-    attr_.deviceType = DEVICE_TYPE_MIC;
-    attr_.openMicSpeaker = 1;
-    primarySource_->Init(attr_);
 }
 
-void VACaptureSourceUnitTest::DeInitPrimarySource()
+void VACaptureSourceUnitTest::TearDown()
 {
-    if (primarySource_ && primarySource_->IsInited()) {
-        primarySource_->DeInit();
+    if (source_ && source_->IsInited()) {
+        source_->DeInit();
     }
-    primarySource_ = nullptr;
+    source_ = nullptr;
 }
 
-void VACaptureSourceUnitTest::InitUsbSource()
+/**
+ * @tc.name   : Test VASource API
+ * @tc.number : VACaptureSourceUnitTest_001
+ * @tc.desc   : Test va source create
+ */
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_001, TestSize.Level1)
 {
-    usbSource_ = HdiAdapterManager::GetInstance().GetCaptureSource(usbId_, true);
-    if (usbSource_ == nullptr) {
-        return;
+    EXPECT_TRUE(source_);
+}
+
+/**
+ * @tc.name   : Test BluetoothSource API
+ * @tc.number : VACaptureSourceUnitTest_002
+ * @tc.desc   : Test va source deinit
+ */
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_002, TestSize.Level1)
+{
+    EXPECT_TRUE(source_);
+    if (source_->IsInited()) {
+        source_->DeInit();
     }
-    const uint32_t kTestChannel = 2;
-    attr_.adapterName = "usb";
-    attr_.channel = kTestChannel;
-    usbSource_->Init(attr_);
-}
-
-void VACaptureSourceUnitTest::DeInitUsbSource()
-{
-    if (usbSource_ && usbSource_->IsInited()) {
-        usbSource_->DeInit();
-    }
-    usbSource_ = nullptr;
+    EXPECT_FALSE(source_->IsInited());
 }
 
 /**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_001
- * @tc.desc   : Test primary source create
+ * @tc.name   : Test BluetoothSource API
+ * @tc.number : BluetoothSourceUnitTest_003
+ * @tc.desc   : Test bluetooth source start, stop, resume, pause, flush, reset
  */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_001, TestSize.Level1)
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_003, TestSize.Level1)
 {
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ != nullptr);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_002
- * @tc.desc   : Test primary source init
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_002, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_003
- * @tc.desc   : Test primary source deinit
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_003, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    primarySource_->DeInit();
-    int32_t ret = primarySource_->Init(attr_);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = primarySource_->Init(attr_);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_TRUE(primarySource_->IsInited());
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_004
- * @tc.desc   : Test primary source start, stop, resume, pause, flush, reset
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_004, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    int32_t ret = primarySource_->Start();
-    EXPECT_EQ(ret, SUCCESS);
-    ret = primarySource_->Stop();
-    EXPECT_EQ(ret, SUCCESS);
-    ret = primarySource_->Start();
-    EXPECT_EQ(ret, SUCCESS);
-    ret = primarySource_->Resume();
-    EXPECT_EQ(ret, SUCCESS);
-    ret = primarySource_->Pause();
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-    ret = primarySource_->Flush();
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-    ret = primarySource_->Reset();
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-    ret = primarySource_->Stop();
-    EXPECT_EQ(ret, SUCCESS);
-    DeInitPrimarySource();
-}
-
-/**
-* @tc.name   : Test SetDmDeviceType API
-* @tc.number : PrimarySourceUnitTest_0015
-* @tc.desc   : Test SetDmDeviceType
-*/
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_0015, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    int32_t ret = primarySource_->Start();
-    EXPECT_EQ(ret, SUCCESS);
-    
-    int32_t ret2 = primarySource_->Start();
-    EXPECT_EQ(ret2, SUCCESS);
-
-    int32_t ret3 = primarySource_->Stop();
-    EXPECT_EQ(ret3, SUCCESS);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_005
- * @tc.desc   : Test primary source get param
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_005, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    std::string param = primarySource_->GetAudioParameter(USB_DEVICE, "");
-    EXPECT_EQ(param, "");
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_006
- * @tc.desc   : Test primary source set volume
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_006, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    int32_t ret = primarySource_->SetVolume(1.0f, 1.0f);
+    EXPECT_TRUE(source_);
+    int32_t ret = source_->Start();
     EXPECT_NE(ret, SUCCESS);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_007
- * @tc.desc   : Test primary source set/get mute
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_007, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    int32_t ret = primarySource_->SetMute(false);
+    ret = source_->Stop();
+    EXPECT_NE(ret, SUCCESS);
+    ret = source_->Resume();
     EXPECT_EQ(ret, SUCCESS);
-    bool mute = false;
-    ret = primarySource_->GetMute(mute);
+    ret = source_->Pause();
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_FALSE(mute);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_008
- * @tc.desc   : Test primary source get transaction id
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_008, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    uint64_t transId = primarySource_->GetTransactionId();
-    EXPECT_NE(transId, 0);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_009
- * @tc.desc   : Test primary source get max amplitude
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_009, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    float maxAmplitude = primarySource_->GetMaxAmplitude();
-    EXPECT_EQ(maxAmplitude, 0.0f);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_010
- * @tc.desc   : Test primary source set audio scene
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_010, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    ret = source_->Flush();
     EXPECT_EQ(ret, SUCCESS);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_012
- * @tc.desc   : Test primary source update apps uid
- */
-HWTEST_F(VACaptureSourceUnitTest, PrimarySourceUnitTest_012, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    vector<int32_t> appsUid;
-    int32_t ret = primarySource_->UpdateAppsUid(appsUid);
+    ret = source_->Reset();
     EXPECT_EQ(ret, SUCCESS);
-    DeInitPrimarySource();
 }
 
 /**
- * @tc.name   : Test SetDmDeviceType API
- * @tc.number : SetDmDeviceType_001
- * @tc.desc   : Test SetDmDeviceType
+ * @tc.name   : Test DirectSink API
+ * @tc.number : BluetoothSourceUnitTest_004
+ * @tc.desc   : Test bluetooth source set/get volume
  */
-HWTEST_F(VACaptureSourceUnitTest, SetDmDeviceType_001, TestSize.Level1)
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_004, TestSize.Level1)
 {
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    primarySource_->UpdateActiveDevice(DEVICE_TYPE_MIC);
-    primarySource_->SetDmDeviceType(DM_DEVICE_TYPE_DEFAULT, DEVICE_TYPE_MIC);
-    primarySource_->SetDmDeviceType(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_MIC);
-    DeInitPrimarySource();
+    EXPECT_TRUE(source_);
+    int32_t ret = source_->SetVolume(0.0f, 0.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    float left;
+    float right;
+    ret = source_->GetVolume(left, right);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test BluetoothSource API
+ * @tc.number : BluetoothSourceUnitTest_005
+ * @tc.desc   : Test bluetooth source set/get mute
+ */
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_005, TestSize.Level1)
+{
+    EXPECT_TRUE(source_);
+    int32_t ret = source_->SetMute(false);
+    EXPECT_EQ(ret, SUCCESS);
+    bool isMute;
+    ret = source_->GetMute(isMute);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test BluetoothSource API
+ * @tc.number : BluetoothSourceUnitTest_006
+ * @tc.desc   : Test bluetooth source set invalid state
+ */
+HWTEST_F(VACaptureSourceUnitTest, VACaptureSourceUnitTest_006, TestSize.Level1)
+{
+    EXPECT_TRUE(source_);
+    source_->SetInvalidState();
+    (void)source_->Init(attr_);
+    source_->DeInit();
+    EXPECT_FALSE(source_->IsInited());
 }
 
 } // namespace AudioStandard

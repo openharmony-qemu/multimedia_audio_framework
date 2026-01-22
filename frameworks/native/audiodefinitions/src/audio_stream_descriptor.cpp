@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -96,6 +96,7 @@ void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
     streamDesc.oldDeviceDescs_ = oldDeviceDescs_;
     streamDesc.newDeviceDescs_ = newDeviceDescs_;
     streamDesc.bundleName_ = bundleName_;
+    streamDesc.ultraFastStream_ = ultraFastStream_;
 }
 
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
@@ -120,7 +121,9 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         preferredInputDevice.Marshalling(parcel) &&
         WriteDeviceDescVectorToParcel(parcel, oldDeviceDescs_) &&
         WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_) &&
-        parcel.WriteInt32(oldOriginalFlag_);
+        parcel.WriteInt32(oldOriginalFlag_) &&
+        ecStreamInfo_.Marshalling(parcel) &&
+        parcel.WriteBool(ultraFastStream_);
 }
 
 AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
@@ -151,6 +154,8 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->UnmarshallingDeviceDescVector(parcel, info->oldDeviceDescs_);
     info->UnmarshallingDeviceDescVector(parcel, info->newDeviceDescs_);
     info->oldOriginalFlag_ = parcel.ReadInt32();
+    info->ecStreamInfo_.UnmarshallingSelf(parcel);
+    info->ultraFastStream_ = parcel.ReadBool();
 
     return info;
 }
@@ -185,7 +190,7 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
     }
 }
 
-void AudioStreamDescriptor::SetBunduleName(std::string &bundleName)
+void AudioStreamDescriptor::SetBundleName(std::string &bundleName)
 {
     AUDIO_INFO_LOG("Bundle name: %{public}s", bundleName.c_str());
     bundleName_ = bundleName;
@@ -232,6 +237,9 @@ void AudioStreamDescriptor::DumpRendererStreamAttrs(std::string &dumpString)
     AppendFormat(dumpString, "    - OriginalFlag: %d RendererFlags: %d\n",
         rendererInfo_.originalFlag, rendererInfo_.rendererFlags);
     AppendFormat(dumpString, "    - OffloadAllowed: %d\n", rendererInfo_.isOffloadAllowed);
+    if (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+        AppendFormat(dumpString, "    - UltralFastStream: %d\n", ultraFastStream_);
+    }
 }
 
 void AudioStreamDescriptor::DumpCapturerStreamAttrs(std::string &dumpString)

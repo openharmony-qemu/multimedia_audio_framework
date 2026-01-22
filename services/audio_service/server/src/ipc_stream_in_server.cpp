@@ -61,7 +61,7 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
     sptr<IpcStreamInServer> streamInServer = sptr<IpcStreamInServer>::MakeSptr(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
+        HILOG_COMM_ERROR("[IpcStreamInServer::Create]IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
             ret, config.appInfo.appUid); // waiting for review: add uid.
         streamInServer = nullptr;
     }
@@ -77,9 +77,13 @@ IpcStreamInServer::~IpcStreamInServer()
 {
     AUDIO_INFO_LOG("~IpcStreamInServer(), uid: %{public}d", config_.appInfo.appUid); // waiting for review: add uid.
     // 1. Avoid unexpected release in proRenderStreamImpl working thread
-    // 2. Avoid RendererInServer destructor from AudioService weak_ptr, may cause deadlock in UpdateSessionOperation
+    // 2. Avoid RendererInServer/CapturerInServer destructor from AudioService weak_ptr,
+    // may cause deadlock in UpdateSessionOperation
     if (rendererInServer_) {
         rendererInServer_->Release();
+    }
+    if (capturerInServer_) {
+        capturerInServer_->Release();
     }
 }
 
@@ -120,9 +124,11 @@ std::shared_ptr<CapturerInServer> IpcStreamInServer::GetCapturer()
 int32_t IpcStreamInServer::ConfigRenderer()
 {
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
-    CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "Create RendererInServer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET(rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[ConfigRenderer]Create RendererInServer failed"));
     int32_t ret = rendererInServer_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init RendererInServer failed!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[ConfigRenderer]Init RendererInServer failed!"));
     return SUCCESS;
 }
 
@@ -280,6 +286,15 @@ int32_t IpcStreamInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptur
 #else
     return ERROR;
 #endif
+}
+
+int32_t IpcStreamInServer::RequestHandleData(uint64_t syncFramePts, uint32_t size)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->RequestHandleData(syncFramePts, size);
+    }
+    AUDIO_ERR_LOG("failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
 }
 
 int32_t IpcStreamInServer::GetAudioTime(uint64_t &framePos, uint64_t &timestamp)
@@ -497,20 +512,21 @@ int32_t IpcStreamInServer::SetMute(bool isMute)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
+int32_t IpcStreamInServer::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->SetDuckFactor(duckFactor);
+        return rendererInServer_->SetDuckFactor(duckFactor, durationMs);
     }
     AUDIO_ERR_LOG("mode is not playback or renderer is null");
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
+int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+    uint32_t threadPriority)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), threadPriority, bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
     return SUCCESS;
@@ -574,6 +590,33 @@ int32_t IpcStreamInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
         return ERR_OPERATION_FAILED;
     }
     return rendererInServer_->SetAudioHapticsSyncId(audioHapticsSyncId);
+}
+
+int32_t IpcStreamInServer::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->SetLoopTimes(bufferLoopTimes);
+}
+
+int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->GetStaticBufferInfo(staticBufferInfo);
+}
+
+int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "GetLatencyWithFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(flag));
 }
 } // namespace AudioStandard
 } // namespace OHOS

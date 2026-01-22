@@ -108,6 +108,23 @@ HWTEST(AudioUtilsUnitTest, Trace_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test EncodingTypeStr  API
+* @tc.type  : FUNC
+* @tc.number: EncodingTypeStr_001
+* @tc.desc  : Test EncodingTypeStr API
+*/
+HWTEST(AudioUtilsUnitTest, EncodingTypeStr_001, TestSize.Level1)
+{
+    AudioEncodingType type = ENCODING_PCM;
+    std::string result = EncodingTypeStr(type);
+    EXPECT_EQ(result, "PCM");
+
+    type = ENCODING_INVALID;
+    result = EncodingTypeStr(type);
+    EXPECT_EQ(result, "INVALID");
+}
+
+/**
 * @tc.name  : Test PermissionUtil API
 * @tc.type  : FUNC
 * @tc.number: PermissionUtil_001
@@ -1210,14 +1227,14 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_006, TestSize.Level0
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetSourceName_007
-* @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return SOURCE_TYPE_LIVE
-*             when sourceType is others
+* @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT
+*             when sourceType is SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT
 */
 HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_007, TestSize.Level0)
 {
-    SourceType sourceType = SOURCE_TYPE_MAX;
+    SourceType sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
-    EXPECT_EQ(sourceName, "UNKNOWN");
+    EXPECT_EQ(sourceName, "SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT");
 }
 
 /**
@@ -3503,5 +3520,31 @@ HWTEST(AudioUtilsUnitTest, GenerateAppsUidStr_001, TestSize.Level1)
     ret = GenerateAppsUidStr(appsUid);
     EXPECT_NE(ret, "");
 }
+
+/**
+ * @tc.name  : Test ConvertAudioRenderRateToSpeed API with normal rate
+ * @tc.type  : FUNC
+ * @tc.number: ConvertAudioRenderRateToSpeed_001
+ * @tc.desc  : Test ConvertAudioRenderRateToSpeed API with RENDER_RATE_NORMAL
+ */
+HWTEST(AudioUtilsUnitTest, ConvertAudioRenderRateToSpeed_001, TestSize.Level1)
+{
+    AudioRendererRate renderRate = RENDER_RATE_NORMAL;
+    float ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 1.0f);
+
+    renderRate = RENDER_RATE_DOUBLE;
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 2.0f);
+
+    renderRate = RENDER_RATE_HALF;
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 0.5f);
+
+    renderRate = static_cast<AudioRendererRate>(999);
+    ret = ConvertAudioRenderRateToSpeed(renderRate);
+    EXPECT_FLOAT_EQ(ret, 1.0f);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

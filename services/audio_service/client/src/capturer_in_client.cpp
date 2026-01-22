@@ -38,19 +38,18 @@
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
-#include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
+#include "app_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -110,9 +109,6 @@ int32_t CapturerInClientInner::OnOperationHandled(Operation operation, int64_t r
     }
 
     if (operation == RESTORE_SESSION) {
-        if (audioStreamTracker_ && audioStreamTracker_.get()) {
-            audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
-        }
         return SUCCESS;
     }
 
@@ -202,25 +198,34 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const std::shared_ptr<AudioClientTracker> &proxyObj,
     const AudioPlaybackCaptureConfig &config)
 {
-    HILOG_COMM_INFO("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d, stream type:"
-        " %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format, eStreamType_,
-        info.encoding);
+    HILOG_COMM_INFO("[SetAudioStreamInfo]AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, "
+        "format: %{public}d, stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels,
+        info.format, eStreamType_, info.encoding);
     AudioXCollie guard("CapturerInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
 
-    CHECK_AND_RETURN_RET_LOG(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
-        ERROR_INVALID_PARAM, "GetByteSizePerFrame failed with invalid params");
-
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"));
+    } else {
+        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
+    }
+    
     if (state_ != NEW) {
         AUDIO_INFO_LOG("State is %{public}d, not new, release existing stream and recreate.", state_.load());
         int32_t ret = DeinitIpcStream();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "release existing stream failed.");
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]release existing stream failed."));
     }
 
     streamParams_ = info; // keep it for later use
     paramsIsSet_ = true;
     int32_t initRet = InitIpcStream(config);
-    CHECK_AND_RETURN_RET_LOG(initRet == SUCCESS, initRet, "Init stream failed: %{public}d", initRet);
+    CHECK_AND_CALL_FUNC_RETURN_RET(initRet == SUCCESS, initRet,
+        HILOG_COMM_ERROR("[SetAudioStreamInfo]Init stream failed: %{public}d", initRet));
     state_ = PREPARED;
     logUtilsTag_ = "[" + std::to_string(sessionId_) + "]NormalCapturer";
 
@@ -429,7 +434,11 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.appInfo.appTokenId = appTokenId_;
     config.appInfo.appFullTokenId = fullTokenId_;
 
-    config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+    if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
+    } else {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+    }
     config.streamInfo.encoding = static_cast<AudioEncodingType>(streamParams_.encoding);
     config.streamInfo.format = static_cast<AudioSampleFormat>(streamParams_.format);
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(streamParams_.samplingRate);
@@ -505,7 +514,8 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     AudioProcessConfig config = ConstructConfig();
 
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
+    CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     int32_t errorCode = 0;
     sptr<IRemoteObject> ipcProxy = nullptr;
     gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
@@ -696,6 +706,12 @@ float CapturerInClientInner::GetLoudnessGain()
 }
 
 int32_t CapturerInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR;
+}
+
+int32_t CapturerInClientInner::SetBackMute(bool backMute)
 {
     AUDIO_WARNING_LOG("only for renderer");
     return ERROR;
@@ -1112,10 +1128,6 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
         return false;
     }
 
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, RUNNING, clientPid_, capturerInfo_);
-    }
-
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Start();
     if (ret != SUCCESS) {
@@ -1152,6 +1164,45 @@ bool CapturerInClientInner::StartAudioStream(StateChangeCmdType cmdType, AudioSt
     AUDIO_INFO_LOG("Start SUCCESS, sessionId: %{public}d, uid: %{public}d", sessionId_, clientUid_);
     UpdateTracker("RUNNING");
     return true;
+}
+
+void CapturerInClientInner::SetPlaybackCaptureStartStateCallback(
+    const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    playbackCaptureStartCallback_ = callback;
+}
+ 
+int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
+    if (gasp == nullptr) {
+        AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
+        return ERROR;
+    }
+    gasp->RequestUserPrivacyAuthority(sessionId);
+ 
+    std::unique_lock<std::mutex> waitLock(callServerMutex_);
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return notifiedOperation_ == USER_PRIVACY_AUTHORITY; // will be false when got notified.
+    });
+    Operation operation = notifiedOperation_;
+    int64_t result = notifiedResult_;
+    waitLock.unlock();
+ 
+    std::unique_lock<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
+    if (operation != USER_PRIVACY_AUTHORITY) {
+        AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
+            (!stopWaiting ? "timeout" : "no timeout"), operation, result);
+        playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(START_STATE_FAILED);
+        return ERROR;
+    }
+    playbackCaptureStartCallback_->OnPlaybackCaptureStartResult(
+        static_cast<PlaybackCaptureStartState>(notifiedResult_));
+    lock.unlock();
+ 
+    return SUCCESS;
 }
 
 bool CapturerInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
@@ -1478,7 +1529,8 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
+            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
+            METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
         needSetThreadPriority_ = false;
     }
 
@@ -1832,11 +1884,6 @@ RestoreStatus CapturerInClientInner::SetRestoreStatus(RestoreStatus restoreStatu
 void CapturerInClientInner::FetchDeviceForSplitStream()
 {
     AUDIO_INFO_LOG("Fetch input device for split stream %{public}u", sessionId_);
-    if (audioStreamTracker_ && audioStreamTracker_.get()) {
-        audioStreamTracker_->FetchInputDeviceForTrack(sessionId_, state_, clientPid_, capturerInfo_);
-    } else {
-        AUDIO_WARNING_LOG("Tracker is nullptr, fail to split stream %{public}u", sessionId_);
-    }
     SetRestoreStatus(NO_NEED_FOR_RESTORE);
 }
 
@@ -1885,6 +1932,13 @@ int32_t CapturerInClientInner::SetRebuildFlag()
     return ipcStream_->SetRebuildFlag();
 }
 
+int32_t CapturerInClientInner::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
+{
+    (void)latency;
+    (void)flag;
+    return ERR_NOT_SUPPORTED;
+}
+
 bool CapturerInClientInner::IsRestoreNeeded()
 {
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "buffer null");
@@ -1899,6 +1953,39 @@ bool CapturerInClientInner::IsRestoreNeeded()
     }
 
     return false;
+}
+
+int32_t CapturerInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERR_INCORRECT_MODE;
+}
+
+void CapturerInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInfo)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+}
+
+int32_t CapturerInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERR_INCORRECT_MODE;
+}
+
+int32_t CapturerInClientInner::SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc)
+{
+    AUDIO_WARNING_LOG("not supported in capturer");
+    return ERR_INCORRECT_MODE;
+}
+
+const std::string CapturerInClientInner::GetBundleName()
+{
+    return bundleName;
+}
+
+void CapturerInClientInner::SetBundleName(std::string &name)
+{
+    bundleName = name;
 }
 } // namespace AudioStandard
 } // namespace OHOS

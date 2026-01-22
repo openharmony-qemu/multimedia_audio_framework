@@ -300,6 +300,13 @@ void AudioPolicyClientHolder::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent
     audioPolicyClient_->OnVolumeDegreeEvent(volumeEvent);
 }
 
+void AudioPolicyClientHolder::OnPreferredDeviceSet(PreferredType preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnPreferredDeviceSet(preferredType, deviceDesc, uid, caller);
+}
+
 void AudioPolicyClientHolder::OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");

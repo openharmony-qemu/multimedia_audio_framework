@@ -20,6 +20,7 @@
 #include "util/callback_wrapper.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "common/hdi_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -104,6 +105,33 @@ void SinkCallbackWrapper::OnRenderSinkStateChange(uint32_t uniqueId, bool starte
             continue;
         }
         cb.second->OnRenderSinkStateChange(uniqueId, started);
+    }
+}
+
+void SinkCallbackWrapper::OnOutputPipeChange(AudioPipeChangeType changeType,
+    std::shared_ptr<AudioOutputPipeInfo> &changedPipeInfo)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnOutputPipeChange(changeType, changedPipeInfo);
+    }
+    for (auto &cb : rawCbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnOutputPipeChange(changeType, changedPipeInfo);
+    }
+}
+
+void SinkCallbackWrapper::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnHdiRouteStateChange(networkId, enable);
+    }
+    for (auto &cb : rawCbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnHdiRouteStateChange(networkId, enable);
     }
 }
 
@@ -203,6 +231,20 @@ void SourceCallbackWrapper::OnWakeupClose(void)
             continue;
         }
         cb.second->OnWakeupClose();
+    }
+}
+
+void SourceCallbackWrapper::OnInputPipeChange(AudioPipeChangeType changeType,
+    std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo)
+{
+    std::scoped_lock lock(cbMtx_, rawCbMtx_);
+    for (auto &cb : cbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnInputPipeChange(changeType, changedPipeInfo);
+    }
+    for (auto &cb : rawCbs_) {
+        CHECK_AND_CONTINUE(cb.second != nullptr);
+        cb.second->OnInputPipeChange(changeType, changedPipeInfo);
     }
 }
 

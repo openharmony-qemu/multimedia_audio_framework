@@ -26,7 +26,6 @@
 #include <dlfcn.h>
 #include "audio_suite_algo_interface.h"
 #include "imedia_api.h"
-#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,7 +47,7 @@ struct EnvAlgoApi {
 
 class AudioSuiteEnvAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    explicit AudioSuiteEnvAlgoInterfaceImpl(NodeCapability &nc);
+    explicit AudioSuiteEnvAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteEnvAlgoInterfaceImpl();
 
     int32_t Init() override;

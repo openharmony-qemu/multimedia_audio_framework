@@ -365,126 +365,6 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DisconnectNodes(OH_AudioNode *sourceAud
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(
-    OH_AudioNode *audioNode, OH_EqualizerFrequencyBandGains frequencyBandGains)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetEqualizerFrequencyBandGains node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetEqualizerFrequencyBandGains suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetEqualizerFrequencyBandGains(node, frequencyBandGains);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFieldType(OH_AudioNode *audioNode, OH_SoundFieldType soundFieldType)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetSoundFieldType node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSoundFieldType suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetSoundFieldType(node, soundFieldType);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetEnvironmentType(OH_AudioNode *audioNode, OH_EnvironmentType environmentType)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "SetEnvironmentType node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetEnvironmentType suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetEnvironmentType(node, environmentType);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetVoiceBeautifierType(
-    OH_AudioNode *audioNode, OH_VoiceBeautifierType voiceBeautifierType)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetVoiceBeautifierType node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetVoiceBeautifierType suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetVoiceBeautifierType(node, voiceBeautifierType);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_GetEnvironmentType(
-    OH_AudioNode *audioNode, OH_EnvironmentType *environmentType)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEnvironmentType node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(environmentType != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEnvironmentType environmentType is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetEnvironmentType suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetEnvironmentType(node, environmentType);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFieldType(
-    OH_AudioNode *audioNode, OH_SoundFieldType *soundFieldType)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSoundFiledType node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(soundFieldType != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSoundFiledType soundFieldType is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetSoundFiledType suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetSoundFiledType(node, soundFieldType);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(
-    OH_AudioNode *audioNode, OH_EqualizerFrequencyBandGains *frequencyBandGains)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEqualizerFrequencyBandGains node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(frequencyBandGains != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetEqualizerFrequencyBandGains frequencyBandGains is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetEqualizerFrequencyBandGains suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetEqualizerFrequencyBandGains(node, frequencyBandGains);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
-    OH_AudioNode *audioNode, OH_VoiceBeautifierType *voiceBeautifierType)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetVoiceBeautifierType node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(voiceBeautifierType != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetVoiceBeautifierType voiceBeautifierType is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetVoiceBeautifierType suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetVoiceBeautifierType(node, voiceBeautifierType);
-    return ConvertError(error);
-}
-
 OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported)
 {
     AUDIO_INFO_LOG("IsNodeTypeSupported enter.");
@@ -500,188 +380,165 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type n
     return ConvertError(error);
 }
 
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderPositionParams(
-    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderPositionParams position)
+template <typename Getter, typename... ParamTypes>
+OH_AudioSuite_Result TemplateGetter(
+    OH_AudioNode *audioNode, Getter getter, const char *getterName, ParamTypes*... params)
 {
     OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetSpaceRenderPositionParams node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSpaceRenderPositionParams suiteEngine is nullptr");
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s node is nullptr", getterName);
+    for (auto param : {params...}) {
+        CHECK_AND_RETURN_RET_LOG(
+            param != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s param is nullptr", getterName);
+    }
 
-    int32_t error = suiteEngine->SetSpaceRenderPositionParams(node, position);
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(
+        suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "%{public}s suiteEngine is nullptr", getterName);
+    CHECK_AND_RETURN_RET_LOG(
+        getter != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s getter is nullptr", getterName);
+    int32_t error = (suiteEngine->*getter)(node, params...);
     return ConvertError(error);
+}
+
+template <typename Setter, typename... ParamTypes>
+OH_AudioSuite_Result TemplateSetter(
+    OH_AudioNode *audioNode, Setter setter, const char *setterName, ParamTypes... params)
+{
+    OHAudioNode *node = ConvertAudioNode(audioNode);
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "%{public}s node is nullptr", setterName);
+    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(
+        suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "%{public}s suiteEngine is nullptr", setterName);
+    int32_t error = (suiteEngine->*setter)(node, params...);
+    return ConvertError(error);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetEnvironmentType(
+    OH_AudioNode *audioNode, OH_EnvironmentType *environmentType)
+{
+    return TemplateGetter(audioNode, &OHAudioSuiteEngine::GetEnvironmentType, "GetEnvironmentType", environmentType);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetSoundFieldType(
+    OH_AudioNode *audioNode, OH_SoundFieldType *soundFieldType)
+{
+    return TemplateGetter(audioNode, &OHAudioSuiteEngine::GetSoundFieldType, "GetSoundFieldType", soundFieldType);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetEqualizerFrequencyBandGains(
+    OH_AudioNode *audioNode, OH_EqualizerFrequencyBandGains *frequencyBandGains)
+{
+    return TemplateGetter(audioNode,
+        &OHAudioSuiteEngine::GetEqualizerFrequencyBandGains, "GetEqualizerFrequencyBandGains", frequencyBandGains);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetVoiceBeautifierType(
+    OH_AudioNode *audioNode, OH_VoiceBeautifierType *voiceBeautifierType)
+{
+    return TemplateGetter(
+        audioNode, &OHAudioSuiteEngine::GetVoiceBeautifierType, "GetVoiceBeautifierType", voiceBeautifierType);
 }
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderPositionParams(
-    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderPositionParams* position)
+    OH_AudioNode *audioNode, OH_AudioSuite_SpaceRenderPositionParams *position)
 {
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSpaceRenderPositionParams node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(position != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSpaceRenderPositionParams position is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetSpaceRenderPositionParams suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetSpaceRenderPositionParams(node, position);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderRotationParams(
-    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderRotationParams rotation)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetSpaceRenderRotationParams node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSpaceRenderRotationParams suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetSpaceRenderRotationParams(node, rotation);
-    return ConvertError(error);
+    return TemplateGetter(
+        audioNode, &OHAudioSuiteEngine::GetSpaceRenderPositionParams, "GetSpaceRenderPositionParams", position);
 }
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderRotationParams(
-    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderRotationParams* rotation)
+    OH_AudioNode *audioNode, OH_AudioSuite_SpaceRenderRotationParams *rotation)
 {
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSpaceRenderRotationParams node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(rotation != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSpaceRenderRotationParams rotation is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetSpaceRenderRotationParams suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetSpaceRenderRotationParams(node, rotation);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(
-    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderExtensionParams extension)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetSpaceRenderExtensionParams node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetSpaceRenderExtensionParams suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetSpaceRenderExtensionParams(node, extension);
-    return ConvertError(error);
+    return TemplateGetter(
+        audioNode, &OHAudioSuiteEngine::GetSpaceRenderRotationParams, "GetSpaceRenderRotationParams", rotation);
 }
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetSpaceRenderExtensionParams(
-    OH_AudioNode* audioNode, OH_AudioSuite_SpaceRenderExtensionParams* extension)
+    OH_AudioNode *audioNode, OH_AudioSuite_SpaceRenderExtensionParams *extension)
 {
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSpaceRenderExtensionParams node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(extension != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetSpaceRenderExtensionParams extension is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetSpaceRenderExtensionParams suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetSpaceRenderExtensionParams(node, extension);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetTempoAndPitch(OH_AudioNode* audioNode, float speed, float pitch)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetTempoAndPitch node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetTempoAndPitch suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetTempoAndPitch(node, speed, pitch);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_GetTempoAndPitch(OH_AudioNode* audioNode, float* speed, float* pitch)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetTempoAndPitch node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(speed != nullptr && pitch != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetTempoAndPitch parameter is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetTempoAndPitch suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetTempoAndPitch(node, speed, pitch);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetPureVoiceChangeOption(
-    OH_AudioNode* audioNode, OH_AudioSuite_PureVoiceChangeOption option)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetPureVoiceChangeOption node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetPureVoiceChangeOption suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetPureVoiceChangeOption(node, option);
-    return ConvertError(error);
+    return TemplateGetter(
+        audioNode, &OHAudioSuiteEngine::GetSpaceRenderExtensionParams, "GetSpaceRenderExtensionParams", extension);
 }
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetPureVoiceChangeOption(
-    OH_AudioNode* audioNode, OH_AudioSuite_PureVoiceChangeOption* option)
+    OH_AudioNode *audioNode, OH_AudioSuite_PureVoiceChangeOption *option)
 {
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetPureVoiceChangeOption node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(option != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetPureVoiceChangeOption option is nullptr");
-
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetPureVoiceChangeOption suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->GetPureVoiceChangeOption(node, option);
-    return ConvertError(error);
-}
-
-OH_AudioSuite_Result OH_AudioSuiteEngine_SetGeneralVoiceChangeType(
-    OH_AudioNode* audioNode, OH_AudioSuite_GeneralVoiceChangeType type)
-{
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM,
-        "SetGeneralVoiceChangeType node is nullptr");
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "SetGeneralVoiceChangeType suiteEngine is nullptr");
-
-    int32_t error = suiteEngine->SetGeneralVoiceChangeType(node, type);
-    return ConvertError(error);
+    return TemplateGetter(audioNode, &OHAudioSuiteEngine::GetPureVoiceChangeOption, "GetPureVoiceChangeOption", option);
 }
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetGeneralVoiceChangeType(
-    OH_AudioNode* audioNode, OH_AudioSuite_GeneralVoiceChangeType* type)
+    OH_AudioNode *audioNode, OH_AudioSuite_GeneralVoiceChangeType *type)
 {
-    OHAudioNode *node = ConvertAudioNode(audioNode);
-    CHECK_AND_RETURN_RET_LOG(node != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetGeneralVoiceChangeType node is nullptr");
-    CHECK_AND_RETURN_RET_LOG(type != nullptr,
-        AUDIOSUITE_ERROR_INVALID_PARAM, "GetGeneralVoiceChangeType type is nullptr");
+    return TemplateGetter(audioNode, &OHAudioSuiteEngine::GetGeneralVoiceChangeType, "GetGeneralVoiceChangeType", type);
+}
 
-    OHAudioSuiteEngine *suiteEngine = OHAudioSuiteEngine::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(suiteEngine != nullptr,
-        AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "GetGeneralVoiceChangeType suiteEngine is nullptr");
+OH_AudioSuite_Result OH_AudioSuiteEngine_GetTempoAndPitch(
+    OH_AudioNode *audioNode, float *speed, float *pitch)
+{
+    return TemplateGetter(audioNode, &OHAudioSuiteEngine::GetTempoAndPitch, "GetTempoAndPitch", speed, pitch);
+}
 
-    int32_t error = suiteEngine->GetGeneralVoiceChangeType(node, type);
-    return ConvertError(error);
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetEnvironmentType(OH_AudioNode *audioNode, OH_EnvironmentType environmentType)
+{
+    return TemplateSetter(audioNode, &OHAudioSuiteEngine::SetEnvironmentType, "SetEnvironmentType", environmentType);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSoundFieldType(OH_AudioNode *audioNode, OH_SoundFieldType soundFieldType)
+{
+    return TemplateSetter(audioNode, &OHAudioSuiteEngine::SetSoundFieldType, "SetSoundFieldType", soundFieldType);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetEqualizerFrequencyBandGains(
+    OH_AudioNode *audioNode, OH_EqualizerFrequencyBandGains frequencyBandGains)
+{
+    return TemplateSetter(audioNode,
+        &OHAudioSuiteEngine::SetEqualizerFrequencyBandGains, "SetEqualizerFrequencyBandGains", frequencyBandGains);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetVoiceBeautifierType(
+    OH_AudioNode *audioNode, OH_VoiceBeautifierType voiceBeautifierType)
+{
+    return TemplateSetter(
+        audioNode, &OHAudioSuiteEngine::SetVoiceBeautifierType, "SetVoiceBeautifierType", voiceBeautifierType);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderPositionParams(
+    OH_AudioNode *audioNode, OH_AudioSuite_SpaceRenderPositionParams position)
+{
+    return TemplateSetter(
+        audioNode, &OHAudioSuiteEngine::SetSpaceRenderPositionParams, "SetSpaceRenderPositionParams", position);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderRotationParams(
+    OH_AudioNode *audioNode, OH_AudioSuite_SpaceRenderRotationParams rotation)
+{
+    return TemplateSetter(
+        audioNode, &OHAudioSuiteEngine::SetSpaceRenderRotationParams, "SetSpaceRenderRotationParams", rotation);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetSpaceRenderExtensionParams(
+    OH_AudioNode *audioNode, OH_AudioSuite_SpaceRenderExtensionParams extension)
+{
+    return TemplateSetter(
+        audioNode, &OHAudioSuiteEngine::SetSpaceRenderExtensionParams, "SetSpaceRenderExtensionParams", extension);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetPureVoiceChangeOption(
+    OH_AudioNode *audioNode, OH_AudioSuite_PureVoiceChangeOption option)
+{
+    return TemplateSetter(audioNode, &OHAudioSuiteEngine::SetPureVoiceChangeOption, "SetPureVoiceChangeOption", option);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetGeneralVoiceChangeType(
+    OH_AudioNode *audioNode, OH_AudioSuite_GeneralVoiceChangeType type)
+{
+    return TemplateSetter(audioNode, &OHAudioSuiteEngine::SetGeneralVoiceChangeType, "SetGeneralVoiceChangeType", type);
+}
+
+OH_AudioSuite_Result OH_AudioSuiteEngine_SetTempoAndPitch(
+    OH_AudioNode *audioNode, float speed, float pitch)
+{
+    return TemplateSetter(audioNode, &OHAudioSuiteEngine::SetTempoAndPitch, "SetTempoAndPitch", speed, pitch);
 }
 
 namespace OHOS {
@@ -699,10 +556,13 @@ static const float SPACE_RENDER_MIN_CART_POINT_DISTANCE = -5.0f;
 static const float SPACE_RENDER_MAX_CART_POINT_DISTANCE = 5.0f;
 static const float SPACE_RENDER_MIN_TIME = 2.0f;
 static const float SPACE_RENDER_MAX_TIME = 40.0f;
-static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 1;
+static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 0;
 static const int SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
 static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
 static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
+static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
+static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
+static const float AUDIO_VOICE_MORPHING_PITCH_DEFAULT = 0.0f;
 
 int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
     void *audioData, int32_t audioDataSize, bool *finished)
@@ -729,12 +589,12 @@ OHAudioSuiteEngine *OHAudioSuiteEngine::GetInstance()
     return &manager;
 }
 
-int32_t OHAudioSuiteEngine::CreateEngine()
+int32_t OHAudioSuiteEngine::CreateEngine() const
 {
     return IAudioSuiteManager::GetAudioSuiteManager().Init();
 }
 
-int32_t OHAudioSuiteEngine::DestroyEngine()
+int32_t OHAudioSuiteEngine::DestroyEngine() const
 {
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine DeInit failed, ret = %{public}d.", ret);
@@ -774,7 +634,7 @@ int32_t OHAudioSuiteEngine::DestroyPipeline(OHAudioSuitePipeline *audioPipeline)
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline)
+int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline) const
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "StartPipeline failed, audioPipeline is nullptr.");
@@ -785,7 +645,7 @@ int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline)
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline)
+int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline) const
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "StopPipeline failed, audioPipeline is nullptr.");
@@ -1006,452 +866,373 @@ int32_t OHAudioSuiteEngine::DisConnectNodes(OHAudioNode *srcNode, OHAudioNode *d
     return ret;
 }
 
+int32_t OHAudioSuiteEngine::ValidateNode(OHAudioNode* node, AudioNodeType expectedType, const char* funcName)
+{
+    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "%{public}s failed, node is nullptr.", funcName);
+    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
+        "%{public}s failed, node does not exist.", funcName);
+    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == expectedType, ERR_NOT_SUPPORTED,
+        "%{public}s failed, node type = %{public}d must be %{public}d type.", funcName,
+        static_cast<int32_t>(node->GetNodeType()), static_cast<int32_t>(expectedType));
+    return SUCCESS;
+}
+
+template <typename T>
+int32_t OHAudioSuiteEngine::SetAudioNodeProperty(OHAudioNode* node, T value, AudioNodeType nodeType,
+                                                 std::function<int32_t(uint32_t, T)> setter, const char* funcName)
+{
+    int32_t valid = ValidateNode(node, nodeType, funcName);
+    CHECK_AND_RETURN_RET_LOG(valid == SUCCESS, valid, "node operation is invalid");
+    uint32_t nodeId = node->GetNodeId();
+    int32_t ret = setter(nodeId, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s failed, ret = %{public}d.", funcName, ret);
+    return SUCCESS;
+}
+
+template <typename T>
+int32_t OHAudioSuiteEngine::GetAudioNodeProperty(OHAudioNode* node, T* outValue, AudioNodeType nodeType,
+                                                 std::function<int32_t(uint32_t, T&)> getter, const char* funcName)
+{
+    int32_t valid = ValidateNode(node, nodeType, funcName);
+    CHECK_AND_RETURN_RET_LOG(valid == SUCCESS, valid, "node operation is invalid");
+    CHECK_AND_RETURN_RET_LOG(outValue != nullptr, ERR_INVALID_PARAM, "node set point is nullptr");
+    uint32_t nodeId = node->GetNodeId();
+    T value;
+    int32_t ret = getter(nodeId, value);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s failed, ret = %{public}d.", funcName, ret);
+    *outValue = value;
+    return SUCCESS;
+}
+
 int32_t OHAudioSuiteEngine::SetEqualizerFrequencyBandGains(
     OHAudioNode *node, OH_EqualizerFrequencyBandGains frequencyBandGains)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
-        "SetEqualizerFrequencyBandGains failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node),
-        ERR_AUDIO_SUITE_NODE_NOT_EXIST, "SetEqualizerFrequencyBandGains node is not exist");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED,
-        "SetEqualizerFrequencyBandGains failed, node type = %d{public}d must is EQUALIZER type.",
-        static_cast<int32_t>(node->GetNodeType()));
+    auto setter = [](uint32_t nodeId, OH_EqualizerFrequencyBandGains value) {
+        AudioEqualizerFrequencyBandGains audioGains;
+        size_t ohGainsNum = sizeof(value.gains) / sizeof(value.gains[0]);
+        size_t gainsNum = sizeof(audioGains.gains) / sizeof(audioGains.gains[0]);
+        for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
+            audioGains.gains[idx] = value.gains[idx];
+            CHECK_AND_RETURN_RET_LOG((audioGains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) &&
+                                         (audioGains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX),
+                ERR_INVALID_PARAM, "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.",
+                audioGains.gains[idx]);
+        }
+        return IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, audioGains);
+    };
+    return SetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER,
+                                std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains)>(setter), __func__);
+}
 
-    uint32_t nodeId = node->GetNodeId();
-    AudioEqualizerFrequencyBandGains audioGains;
-    size_t ohGainsNum = sizeof(frequencyBandGains.gains) / sizeof(frequencyBandGains.gains[0]);
-    size_t gainsNum = sizeof(audioGains.gains) / sizeof(audioGains.gains[0]);
-
-    for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
-        audioGains.gains[idx] = frequencyBandGains.gains[idx];
-        CHECK_AND_RETURN_RET_LOG((audioGains.gains[idx] >= EQ_FREQUENCY_BAND_GAINS_MIN) &&
-            (audioGains.gains[idx] <= EQ_FREQUENCY_BAND_GAINS_MAX), ERR_INVALID_PARAM,
-            "SetEqualizerFrequencyBandGains failed, input value %{public}d not in -10, 10.", audioGains.gains[idx]);
-    }
-
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetEqualizerFrequencyBandGains(nodeId, audioGains);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEqualizerFrequencyBandGains failed, ret = %{public}d.", ret);
-    return ret;
+int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(
+    OHAudioNode *node, OH_EqualizerFrequencyBandGains *frequencyBandGains)
+{
+    auto getter = [](uint32_t nodeId, OH_EqualizerFrequencyBandGains& value) {
+        AudioEqualizerFrequencyBandGains frequency = {
+            .gains = {0}
+        };
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEqualizerFrequencyBandGains(nodeId, frequency);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEqualizerFrequencyBandGains failed, ret = %{public}d.", ret);
+        size_t ohGainsNum = sizeof(value.gains) / sizeof(value.gains[0]);
+        size_t gainsNum = sizeof(frequency.gains) / sizeof(frequency.gains[0]);
+        for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
+            value.gains[idx] = frequency.gains[idx];
+        }
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, frequencyBandGains, NODE_TYPE_EQUALIZER,
+                                std::function<int32_t(uint32_t, OH_EqualizerFrequencyBandGains&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSoundFieldType(
     OHAudioNode *node, OH_SoundFieldType soundFieldType)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
-        "SetSoundFieldType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SOUND_FIELD, ERR_NOT_SUPPORTED, "SetSoundFieldType "
-        "failed, node type = %d{public}d must is SOUND_FIELD type.", static_cast<int32_t>(node->GetNodeType()));
-
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetSoundFieldType(
-        nodeId, static_cast<SoundFieldType>(soundFieldType));
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSoundFieldType failed, ret = %{public}d.", ret);
-    return ret;
+    auto setter = [](uint32_t nodeId, OH_SoundFieldType value) {
+        return IAudioSuiteManager::GetAudioSuiteManager().SetSoundFieldType(
+            nodeId, static_cast<SoundFieldType>(value));
+    };
+    return SetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD,
+                                std::function<int32_t(uint32_t, OH_SoundFieldType)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetEnvironmentType(
     OHAudioNode *node, OH_EnvironmentType environmentType)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetEnvironmentType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_ENVIRONMENT_EFFECT, ERR_NOT_SUPPORTED,
-        "SetEnvironmentType failed, node type = %d{public}d must is ENVIRONMENT_EFFECT type.",
-        static_cast<int32_t>(node->GetNodeType()));
-
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetEnvironmentType(
-        nodeId, static_cast<EnvironmentType>(environmentType));
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetEnvironmentType failed, ret = %{public}d.", ret);
-    return ret;
+    auto setter = [](uint32_t nodeId, OH_EnvironmentType value) {
+        return IAudioSuiteManager::GetAudioSuiteManager().SetEnvironmentType(
+            nodeId, static_cast<EnvironmentType>(value));
+    };
+    return SetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT,
+                                std::function<int32_t(uint32_t, OH_EnvironmentType)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetVoiceBeautifierType(
     OHAudioNode *node, OH_VoiceBeautifierType voiceBeautifierType)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetVoiceBeautifierType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_VOICE_BEAUTIFIER, ERR_NOT_SUPPORTED,
-        "SetVoiceBeautifierType failed, node type = %d{public}d must is VOICE_BEAUTIFIER type.",
-        static_cast<int32_t>(node->GetNodeType()));
-
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(
-        nodeId, static_cast<VoiceBeautifierType>(voiceBeautifierType));
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetVoiceBeautifierType failed, ret = %{public}d.", ret);
-    return ret;
+    auto setter = [](uint32_t nodeId, OH_VoiceBeautifierType value) {
+        return IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(
+            nodeId, static_cast<VoiceBeautifierType>(value));
+    };
+    return SetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER,
+                                std::function<int32_t(uint32_t, OH_VoiceBeautifierType)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderPositionParams(
     OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams position)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        node != nullptr, ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SPACE_RENDER, ERR_NOT_SUPPORTED,
-        "SetSpaceRenderPositionParams failed, node type = %{public}d must be space render type.",
-        static_cast<int32_t>(node->GetNodeType()));
-
-    CHECK_AND_RETURN_RET_LOG(
-        position.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
-    CHECK_AND_RETURN_RET_LOG(
-        position.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
-    CHECK_AND_RETURN_RET_LOG(
-        position.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && position.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-        ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
-
-    uint32_t nodeId = node->GetNodeId();
-    AudioSpaceRenderPositionParams positionParams;
-    positionParams.x = position.x;
-    positionParams.y = position.y;
-    positionParams.z = position.z;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams(
-        nodeId, positionParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderPositionParams failed, ret = %{public}d.", ret);
-    return ret;
+    auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderPositionParams value) {
+        CHECK_AND_RETURN_RET_LOG(
+            value.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
+                value.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE &&
+                value.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+            ERR_INVALID_PARAM, "SetSpaceRenderPositionParams failed, point distance must be in the -5.0f~5.0f");
+        AudioSpaceRenderPositionParams positionParams;
+        positionParams.x = value.x;
+        positionParams.y = value.y;
+        positionParams.z = value.z;
+        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams(nodeId, positionParams);
+    };
+    return SetAudioNodeProperty(node, position, NODE_TYPE_SPACE_RENDER,
+        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderPositionParams)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderPositionParams(
-    OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams* position)
+    OHAudioNode *node, OH_AudioSuite_SpaceRenderPositionParams *position)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        node != nullptr, ERR_INVALID_PARAM, "GetSpaceRenderPositionParams failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(position != nullptr, ERR_INVALID_PARAM,
-        "GetSpaceRenderPositionParams failed, position is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_SPACE_RENDER),
-        ERR_NOT_SUPPORTED, "GetSpaceRenderPositionParams failed, node type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    AudioSpaceRenderPositionParams positionParams;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderPositionParams(
-        nodeId, positionParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        ret, "GetSpaceRenderPositionParams failed, ret = %{public}d.", ret);
-
-    position->x = positionParams.x;
-    position->y = positionParams.y;
-    position->z = positionParams.z;
-
-    return SUCCESS;
+    auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderPositionParams &value) {
+        AudioSpaceRenderPositionParams positionParams;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderPositionParams(
+            nodeId, positionParams);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderPositionParams failed, ret = %{public}d.", ret);
+        value.x = positionParams.x;
+        value.y = positionParams.y;
+        value.z = positionParams.z;
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, position, NODE_TYPE_SPACE_RENDER,
+        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderPositionParams&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderRotationParams(
     OHAudioNode *node, OH_AudioSuite_SpaceRenderRotationParams rotation)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        node != nullptr, ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SPACE_RENDER, ERR_NOT_SUPPORTED,
-        "SetSpaceRenderRotationParams failed, node type = %{public}d must be space render type.",
-        static_cast<int32_t>(node->GetNodeType()));
-
-    CHECK_AND_RETURN_RET_LOG(
-        rotation.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
-    CHECK_AND_RETURN_RET_LOG(
-        rotation.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
-    CHECK_AND_RETURN_RET_LOG(
-        rotation.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && rotation.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
-        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
-    CHECK_AND_RETURN_RET_LOG(
-        rotation.surroundTime >= SPACE_RENDER_MIN_TIME && rotation.surroundTime <= SPACE_RENDER_MAX_TIME,
-        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f");
-    CHECK_AND_RETURN_RET_LOG(
-        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW ||
-        rotation.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW,
-        ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1");
-
-    uint32_t nodeId = node->GetNodeId();
-    AudioSpaceRenderRotationParams rotationParams;
-    rotationParams.x = rotation.x;
-    rotationParams.y = rotation.y;
-    rotationParams.z = rotation.z;
-    rotationParams.surroundTime = rotation.surroundTime;
-    rotationParams.surroundDirection = static_cast<AudioSurroundDirection>(rotation.surroundDirection);
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderRotationParams(
-        nodeId, rotationParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderRotationParams failed, ret = %{public}d.", ret);
-    return ret;
+    auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderRotationParams value) {
+        CHECK_AND_RETURN_RET_LOG(
+            value.x >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.x <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+            ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+        CHECK_AND_RETURN_RET_LOG(
+            value.y >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.y <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+            ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+        CHECK_AND_RETURN_RET_LOG(
+            value.z >= SPACE_RENDER_MIN_CART_POINT_DISTANCE && value.z <= SPACE_RENDER_MAX_CART_POINT_DISTANCE,
+            ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, point distance must be in the -5.0f~5.0f");
+        CHECK_AND_RETURN_RET_LOG(
+            value.surroundTime >= SPACE_RENDER_MIN_TIME && value.surroundTime <= SPACE_RENDER_MAX_TIME,
+            ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, time must be in the 2.0f~40.0f");
+        CHECK_AND_RETURN_RET_LOG(
+            value.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW ||
+            value.surroundDirection == OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW,
+            ERR_INVALID_PARAM, "SetSpaceRenderRotationParams failed, surround direction must be 0 or 1");
+        AudioSpaceRenderRotationParams rotationParams;
+        rotationParams.x = value.x;
+        rotationParams.y = value.y;
+        rotationParams.z = value.z;
+        rotationParams.surroundTime = value.surroundTime;
+        rotationParams.surroundDirection = static_cast<AudioSurroundDirection>(value.surroundDirection);
+        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderRotationParams(nodeId, rotationParams);
+    };
+    return SetAudioNodeProperty(node, rotation, NODE_TYPE_SPACE_RENDER,
+        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderRotationParams)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderRotationParams(
     OHAudioNode* node, OH_AudioSuite_SpaceRenderRotationParams* rotation)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        node != nullptr, ERR_INVALID_PARAM, "GetSpaceRenderRotationParams failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(rotation != nullptr, ERR_INVALID_PARAM,
-        "GetSpaceRenderRotationParams failed, rotation is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_SPACE_RENDER),
-        ERR_NOT_SUPPORTED, "GetSpaceRenderRotationParams failed, node type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    AudioSpaceRenderRotationParams rotationParams;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderRotationParams(
-        nodeId, rotationParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        ret, "GetSpaceRenderRotationParams failed, ret = %{public}d.", ret);
-
-    rotation->x = rotationParams.x;
-    rotation->y = rotationParams.y;
-    rotation->z = rotationParams.z;
-    rotation->surroundTime = rotationParams.surroundTime;
-    rotation->surroundDirection = static_cast<OH_AudioSuite_SurroundDirection>(rotationParams.surroundDirection);
-
-    return SUCCESS;
+    auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderRotationParams& value) {
+        AudioSpaceRenderRotationParams rotationParams;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderRotationParams(
+            nodeId, rotationParams);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderRotationParams failed, ret = %{public}d.", ret);
+        value.x = rotationParams.x;
+        value.y = rotationParams.y;
+        value.z = rotationParams.z;
+        value.surroundTime = rotationParams.surroundTime;
+        value.surroundDirection = static_cast<OH_AudioSuite_SurroundDirection>(rotationParams.surroundDirection);
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, rotation, NODE_TYPE_SPACE_RENDER,
+        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderRotationParams&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetSpaceRenderExtensionParams(
     OHAudioNode* node, OH_AudioSuite_SpaceRenderExtensionParams extension)
 {
-    CHECK_AND_RETURN_RET_LOG(
-        node != nullptr, ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_SPACE_RENDER, ERR_NOT_SUPPORTED,
-        "SetSpaceRenderExtensionParams failed, node type = %{public}d must be space render type.",
-        static_cast<int32_t>(node->GetNodeType()));
-
-    CHECK_AND_RETURN_RET_LOG(
-        extension.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && extension.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
-        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
-    CHECK_AND_RETURN_RET_LOG(
-        extension.extAngle >= SPACE_RENDER_MIN_EXPAND_ANGLE && extension.extAngle <= SPACE_RENDER_MAX_EXPAND_ANGLE,
-        ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Angle must be in the 1~360");
-
-    uint32_t nodeId = node->GetNodeId();
-    AudioSpaceRenderExtensionParams extensionParams;
-    extensionParams.extAngle = extension.extAngle;
-    extensionParams.extRadius = extension.extRadius;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderExtensionParams(
-        nodeId, extensionParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetSpaceRenderExtensionParams failed, ret = %{public}d.", ret);
-    return ret;
+    auto setter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderExtensionParams value) {
+        CHECK_AND_RETURN_RET_LOG(
+            value.extRadius >= SPACE_RENDER_MIN_EXPAND_RADIUS && value.extRadius <= SPACE_RENDER_MAX_EXPAND_RADIUS,
+            ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Radius must be in the 1.0f~5.0f");
+        CHECK_AND_RETURN_RET_LOG(
+            value.extAngle > SPACE_RENDER_MIN_EXPAND_ANGLE && value.extAngle < SPACE_RENDER_MAX_EXPAND_ANGLE,
+            ERR_INVALID_PARAM, "SetSpaceRenderExtensionParams failed, Angle must be in the (1, 360).");
+        AudioSpaceRenderExtensionParams extensionParams;
+        extensionParams.extAngle = value.extAngle;
+        extensionParams.extRadius = value.extRadius;
+        return IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderExtensionParams(nodeId, extensionParams);
+    };
+    return SetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER,
+        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderExtensionParams)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetSpaceRenderExtensionParams(
     OHAudioNode *node, OH_AudioSuite_SpaceRenderExtensionParams *extension)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
-        "GetSpaceRenderExtensionParams failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(extension != nullptr, ERR_INVALID_PARAM,
-        "GetSpaceRenderExtensionParams failed, extension is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_SPACE_RENDER),
-        ERR_NOT_SUPPORTED, "GetSpaceRenderExtensionParams failed, node type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    AudioSpaceRenderExtensionParams extensionParams;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(
-        nodeId, extensionParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        ret, "GetSpaceRenderExtensionParams failed, ret = %{public}d.", ret);
-
-    extension->extRadius = extensionParams.extRadius;
-    extension->extAngle = extensionParams.extAngle;
-
-    return SUCCESS;
+    auto getter = [](uint32_t nodeId, OH_AudioSuite_SpaceRenderExtensionParams &value) {
+        AudioSpaceRenderExtensionParams extensionParams;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(
+            nodeId, extensionParams);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSpaceRenderExtensionParams failed, ret = %{public}d.", ret);
+        value.extRadius = extensionParams.extRadius;
+        value.extAngle = extensionParams.extAngle;
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, extension, NODE_TYPE_SPACE_RENDER,
+        std::function<int32_t(uint32_t, OH_AudioSuite_SpaceRenderExtensionParams&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetTempoAndPitch(OHAudioNode* node, float speed, float pitch)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetTempoAndPitch failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_TEMPO_PITCH, ERR_NOT_SUPPORTED,
-        "SetTempoAndPitch failed, node type = %{public}d must be tempo and pitch type.",
-        static_cast<int32_t>(node->GetNodeType()));
     CHECK_AND_RETURN_RET_LOG(speed >= SPEED_RATE_MIN && speed <= SPEED_RATE_MAX,
         ERR_INVALID_PARAM, "SetTempoAndPitch failed, speed must be in the 0.5~10.0");
     CHECK_AND_RETURN_RET_LOG(pitch >= PITCH_RATE_MIN && pitch <= PITCH_RATE_MAX,
         ERR_INVALID_PARAM, "SetTempoAndPitch failed, pitch must be in the 0.1~5.0");
-
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, speed, pitch);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetTempoAndPitch failed, ret = %{public}d.", ret);
-    return ret;
+    struct TempoAndPitch {
+        float speed;
+        float pitch;
+    } value = {speed, pitch};
+    std::function<int32_t(uint32_t, TempoAndPitch)> setter =
+        [](uint32_t nodeId, TempoAndPitch value) -> int32_t {
+            return IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, value.speed, value.pitch);
+        };
+    return SetAudioNodeProperty(node, value, NODE_TYPE_TEMPO_PITCH, setter, "SetTempoAndPitch");
 }
 
 int32_t OHAudioSuiteEngine::GetTempoAndPitch(OHAudioNode* node, float* speed, float* pitch)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetTempoAndPitch failed, node is nullptr.");
     CHECK_AND_RETURN_RET_LOG(speed != nullptr && pitch != nullptr, ERR_INVALID_PARAM,
         "GetTempoAndPitch failed, parameter is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_TEMPO_PITCH),
-        ERR_NOT_SUPPORTED, "GetTempoAndPitch failed, node type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    float speedValue;
-    float pitchValue;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(
-        nodeId, speedValue, pitchValue);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        ret, "GetTempoAndPitch failed, ret = %{public}d.", ret);
-    *speed = speedValue;
-    *pitch = pitchValue;
-
+    struct TempoAndPitch {
+        float speed;
+        float pitch;
+    };
+    std::function<int32_t(uint32_t, TempoAndPitch&)> getter =
+        [](uint32_t nodeId, TempoAndPitch& value) -> int32_t {
+            return IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(
+                nodeId, value.speed, value.pitch);
+        };
+    TempoAndPitch result = {1.0f, 1.0f};
+    int32_t ret = GetAudioNodeProperty(node, &result, NODE_TYPE_TEMPO_PITCH, getter, "GetTempoAndPitch");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetTempoAndPitch failed, ret = %{public}d.", ret);
+    *speed = result.speed;
+    *pitch = result.pitch;
     return SUCCESS;
 }
 
-int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option)
+int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
+    OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetPureVoiceChangeOption failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_PURE_VOICE_CHANGE, ERR_NOT_SUPPORTED,
-        "SetPureVoiceChangeOption failed, node type = %{public}d must be pure voice change type.",
-        static_cast<int32_t>(node->GetNodeType()));
-
-    uint32_t nodeId = node->GetNodeId();
-    AudioPureVoiceChangeOption optionParams;
-    optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(option.optionGender);
-    optionParams.optionType = static_cast<AudioPureVoiceChangeType>(option.optionType);
-    optionParams.pitch = static_cast<float>(option.pitch);
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, optionParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetPureVoiceChangeOption failed, ret = %{public}d.", ret);
-    return ret;
+    CHECK_AND_RETURN_RET_LOG(
+        (option.pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && option.pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) ||
+            option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT,
+        ERR_INVALID_PARAM,
+        "SetPureVoicePitch failed, pitch must be in the 0.3f~3.0f and 0.0f");
+    auto setter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption value) {
+        AudioPureVoiceChangeOption optionParams;
+        optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(value.optionGender);
+        optionParams.optionType = static_cast<AudioPureVoiceChangeType>(value.optionType);
+        optionParams.pitch = static_cast<float>(value.pitch);
+        return IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, optionParams);
+    };
+    return SetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE,
+        std::function<int32_t(uint32_t, OH_AudioSuite_PureVoiceChangeOption)>(setter), __func__);
 }
 
-int32_t OHAudioSuiteEngine::GetPureVoiceChangeOption(OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption* option)
+int32_t OHAudioSuiteEngine::GetPureVoiceChangeOption(
+    OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption* option)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetPureVoiceChangeOption failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(option != nullptr, ERR_INVALID_PARAM,
-        "GetPureVoiceChangeOption failed, option is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_PURE_VOICE_CHANGE),
-        ERR_NOT_SUPPORTED, "GetPureVoiceChangeOption failed, node type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    AudioPureVoiceChangeOption optionParams;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetPureVoiceChangeOption(nodeId, optionParams);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPureVoiceChangeOption failed, ret = %{public}d.", ret);
-
-    option->optionGender = static_cast<OH_AudioSuite_PureVoiceChangeGenderOption>(optionParams.optionGender);
-    option->optionType = static_cast<OH_AudioSuite_PureVoiceChangeType>(optionParams.optionType);
-
-    return SUCCESS;
+    auto getter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption& value) {
+        AudioPureVoiceChangeOption optionParams;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetPureVoiceChangeOption(nodeId, optionParams);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPureVoiceChangeOption failed, ret = %{public}d.", ret);
+        value.optionGender = static_cast<OH_AudioSuite_PureVoiceChangeGenderOption>(optionParams.optionGender);
+        value.optionType = static_cast<OH_AudioSuite_PureVoiceChangeType>(optionParams.optionType);
+        value.pitch = static_cast<float>(optionParams.pitch);
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, option, NODE_TYPE_PURE_VOICE_CHANGE,
+        std::function<int32_t(uint32_t, OH_AudioSuite_PureVoiceChangeOption&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::SetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType type)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "SetGeneralVoiceChangeType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_GENERAL_VOICE_CHANGE, ERR_NOT_SUPPORTED,
-        "SetGeneralVoiceChangeType failed, node type = %{public}d must be general voice change type.",
-        static_cast<int32_t>(node->GetNodeType()));
-
-    uint32_t nodeId = node->GetNodeId();
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().SetGeneralVoiceChangeType(
-        nodeId, static_cast<AudioGeneralVoiceChangeType>(type));
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetGeneralVoiceChangeType failed, ret = %{public}d.", ret);
-    return ret;
+    auto setter = [](uint32_t nodeId, OH_AudioSuite_GeneralVoiceChangeType value) {
+        return IAudioSuiteManager::GetAudioSuiteManager().SetGeneralVoiceChangeType(
+            nodeId, static_cast<AudioGeneralVoiceChangeType>(value));
+    };
+    return SetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE,
+        std::function<int32_t(uint32_t, OH_AudioSuite_GeneralVoiceChangeType)>(setter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetGeneralVoiceChangeType(OHAudioNode* node, OH_AudioSuite_GeneralVoiceChangeType* type)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetGeneralVoiceChangeType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(type != nullptr, ERR_INVALID_PARAM,
-        "GetGeneralVoiceChangeType failed, type is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_GENERAL_VOICE_CHANGE),
-        ERR_NOT_SUPPORTED, "GetGeneralVoiceChangeType failed, node type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-    AudioGeneralVoiceChangeType typeParam;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetGeneralVoiceChangeType(nodeId, typeParam);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetGeneralVoiceChangeType failed, ret = %{public}d.", ret);
-    *type = static_cast<OH_AudioSuite_GeneralVoiceChangeType>(typeParam);
-    return SUCCESS;
+    auto getter = [](uint32_t nodeId, OH_AudioSuite_GeneralVoiceChangeType& value) {
+        AudioGeneralVoiceChangeType typeParam;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetGeneralVoiceChangeType(nodeId, typeParam);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetGeneralVoiceChangeType failed, ret = %{public}d.", ret);
+        value = static_cast<OH_AudioSuite_GeneralVoiceChangeType>(typeParam);
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, type, NODE_TYPE_GENERAL_VOICE_CHANGE,
+        std::function<int32_t(uint32_t, OH_AudioSuite_GeneralVoiceChangeType&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetEnvironmentType(OHAudioNode *node, OH_EnvironmentType *environmentType)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetEnvironmentType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(environmentType != nullptr, ERR_INVALID_PARAM,
-        "GetEnvironmentType failed, environmentType is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_ENVIRONMENT_EFFECT),
-        ERR_NOT_SUPPORTED, "GetEnvironmentType failed, enable type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    EnvironmentType environment = AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEnvironmentType(nodeId, environment);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEnvironmentType failed, ret = %{public}d.", ret);
-
-    *environmentType = static_cast<OH_EnvironmentType>(environment);
-    return ret;
-}
-
-int32_t OHAudioSuiteEngine::GetSoundFiledType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
-{
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetSoundFiledType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(soundFieldType != nullptr, ERR_INVALID_PARAM,
-        "GetSoundFiledType failed, soundFieldType is nullptr.");
-    CHECK_AND_RETURN_RET_LOG((node->GetNodeType() == NODE_TYPE_SOUND_FIELD),
-        ERR_NOT_SUPPORTED, "GetSoundFiledType failed, enable type %{public}d not support option.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    SoundFieldType soundField = AUDIO_SUITE_SOUND_FIELD_CLOSE;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSoundFiledType(nodeId, soundField);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFiledType failed, ret = %{public}d.", ret);
-
-    *soundFieldType = static_cast<OH_SoundFieldType>(soundField);
-    return ret;
-}
-
-int32_t OHAudioSuiteEngine::GetEqualizerFrequencyBandGains(OHAudioNode *node,
-    OH_EqualizerFrequencyBandGains *frequencyBandGains)
-{
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM,
-        "GetEqualizerFrequencyBandGains failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(frequencyBandGains != nullptr, ERR_INVALID_PARAM,
-        "GetEqualizerFrequencyBandGains failed, frequencyBandGains is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_EQUALIZER, ERR_NOT_SUPPORTED,
-        "GetEqualizerFrequencyBandGains failed, node type = %d{public}d must is EQUALIZER type.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    AudioEqualizerFrequencyBandGains frequency = {
-        .gains = {0}
+    auto getter = [](uint32_t nodeId, OH_EnvironmentType& value) {
+        EnvironmentType environment = AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEnvironmentType(nodeId, environment);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetEnvironmentType failed, ret = %{public}d.", ret);
+        value = static_cast<OH_EnvironmentType>(environment);
+        return SUCCESS;
     };
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetEqualizerFrequencyBandGains(
-        nodeId, frequency);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-        ret, "GetEqualizerFrequencyBandGains failed, ret = %{public}d.", ret);
+    return GetAudioNodeProperty(node, environmentType, NODE_TYPE_ENVIRONMENT_EFFECT,
+                                std::function<int32_t(uint32_t, OH_EnvironmentType&)>(getter), __func__);
+}
 
-    size_t ohGainsNum = sizeof(frequencyBandGains->gains) / sizeof(frequencyBandGains->gains[0]);
-    size_t gainsNum = sizeof(frequency.gains) / sizeof(frequency.gains[0]);
-    for (uint32_t idx = 0; idx < (ohGainsNum < gainsNum ? ohGainsNum : gainsNum); idx++) {
-        frequencyBandGains->gains[idx] = frequency.gains[idx];
-    }
-
-    return ret;
+int32_t OHAudioSuiteEngine::GetSoundFieldType(OHAudioNode *node, OH_SoundFieldType *soundFieldType)
+{
+    auto getter = [](uint32_t nodeId, OH_SoundFieldType& value) {
+        SoundFieldType soundField = AUDIO_SUITE_SOUND_FIELD_CLOSE;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetSoundFieldType(nodeId, soundField);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetSoundFieldType failed, ret = %{public}d.", ret);
+        value = static_cast<OH_SoundFieldType>(soundField);
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, soundFieldType, NODE_TYPE_SOUND_FIELD,
+                                std::function<int32_t(uint32_t, OH_SoundFieldType&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::GetVoiceBeautifierType(OHAudioNode *node,
     OH_VoiceBeautifierType *voiceBeautifierType)
 {
-    CHECK_AND_RETURN_RET_LOG(node != nullptr, ERR_INVALID_PARAM, "GetVoiceBeautifierType failed, node is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(IsNodeExists(node), ERR_AUDIO_SUITE_NODE_NOT_EXIST,
-                             "OHAudioSuiteEngine::The node does not exist.");
-    CHECK_AND_RETURN_RET_LOG(voiceBeautifierType != nullptr, ERR_INVALID_PARAM,
-        "GetVoiceBeautifierType failed, voiceBeautifierType is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(node->GetNodeType() == NODE_TYPE_VOICE_BEAUTIFIER, ERR_NOT_SUPPORTED,
-        "GetVoiceBeautifierType failed, node type = %d{public}d must is VOICE_BEAUTIFIER type.",
-        static_cast<int32_t>(node->GetNodeType()));
-    uint32_t nodeId = node->GetNodeId();
-
-    VoiceBeautifierType voiceBeautifier = AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR;
-    int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetVoiceBeautifierType(nodeId, voiceBeautifier);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed, ret = %{public}d.", ret);
-
-    *voiceBeautifierType = static_cast<OH_VoiceBeautifierType>(voiceBeautifier);
-    return ret;
+    auto getter = [](uint32_t nodeId, OH_VoiceBeautifierType& value) {
+        VoiceBeautifierType voiceBeautifier = AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR;
+        int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().GetVoiceBeautifierType(nodeId, voiceBeautifier);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetVoiceBeautifierType failed, ret = %{public}d.", ret);
+        value = static_cast<OH_VoiceBeautifierType>(voiceBeautifier);
+        return SUCCESS;
+    };
+    return GetAudioNodeProperty(node, voiceBeautifierType, NODE_TYPE_VOICE_BEAUTIFIER,
+                                std::function<int32_t(uint32_t, OH_VoiceBeautifierType&)>(getter), __func__);
 }
 
 int32_t OHAudioSuiteEngine::IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported)

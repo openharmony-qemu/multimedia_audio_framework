@@ -29,6 +29,7 @@
 #include "format_converter.h"
 #include "audio_service.h"
 #include "audio_mute_factor_manager.h"
+#include "audio_sink_latency_fetcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,6 +37,7 @@ constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
 constexpr int32_t AUDIO_DEFAULT_LATENCY_US = 160000;
 constexpr int32_t AUDIO_FRAME_WORK_LATENCY_US = 40000;
+constexpr uint32_t DEFAULT_SINK_LATENCY_MS = 40;
 constexpr int32_t FADING_MS = 20; // 20ms
 constexpr int16_t STEREO_CHANNEL_COUNT = 2;
 constexpr int16_t HDI_STEREO_CHANNEL_LAYOUT = 3;
@@ -77,6 +79,7 @@ NoneMixEngine::~NoneMixEngine()
     if (sink && sink->IsInited()) {
         sink->Stop();
         sink->DeInit();
+        SinkLatencyFetcherManager::GetInstance().RemoveFetcherById(renderId_);
     }
     HdiAdapterManager::GetInstance().ReleaseId(renderId_);
     isStart_ = false;
@@ -98,6 +101,7 @@ int32_t NoneMixEngine::Init(const AudioDeviceDescriptor &type, bool isVoip)
         if (sink && sink->IsInited()) {
             sink->Stop();
             sink->DeInit();
+            SinkLatencyFetcherManager::GetInstance().RemoveFetcherById(renderId_);
         }
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
     }
@@ -134,8 +138,11 @@ int32_t NoneMixEngine::Stop()
 {
     AUDIO_INFO_LOG("Enter");
     int32_t ret = SUCCESS;
+    CHECK_AND_RETURN_RET(playbackThread_ != nullptr, ret);
     if (!isStart_) {
         AUDIO_INFO_LOG("already stopped");
+        playbackThread_->Stop();
+        playbackThread_ = nullptr;
         return ret;
     }
     AudioXCollie audioXCollie(
@@ -144,7 +151,7 @@ int32_t NoneMixEngine::Stop()
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
-    if (playbackThread_) {
+    {
         startFadein_ = false;
         startFadeout_ = true;
         // wait until fadeout complete
@@ -188,8 +195,10 @@ int32_t NoneMixEngine::StopAudioSink()
 int32_t NoneMixEngine::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Enter");
+    CHECK_AND_RETURN_RET(playbackThread_ != nullptr, SUCCESS);
     if (!isStart_) {
         AUDIO_INFO_LOG("already stopped");
+        playbackThread_->Pause();
         return SUCCESS;
     }
     if (isStandby) {
@@ -202,7 +211,7 @@ int32_t NoneMixEngine::Pause(bool isStandby)
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     writeCount_ = 0;
-    if (playbackThread_) {
+    {
         startFadein_ = false;
         startFadeout_ = true;
         // wait until fadeout complete
@@ -339,6 +348,7 @@ int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &strea
         if (result == SUCCESS) {
             stream_ = stream;
             isInit_ = true;
+            RegisterSinkLatencyFetcherToStreamIfNeeded();
         }
         return result;
     } else if (stream->GetStreamIndex() != stream_->GetStreamIndex()) {
@@ -513,8 +523,9 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
     if (ret != SUCCESS) {
         return ret;
     }
-    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
-    float volume = mdmMute ? 0.0f : 1.0f;
+    RegisterSinkLatencyFetcher(renderId_);
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float volume = 1.0f * mdmMuteFactor;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
@@ -529,6 +540,7 @@ int32_t NoneMixEngine::SwitchSink(const AudioStreamInfo &streamInfo, bool isVoip
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     if (sink != nullptr) {
         sink->DeInit();
+        SinkLatencyFetcherManager::GetInstance().RemoveFetcherById(renderId_);
     }
     isVoip_ = isVoip;
     return InitSink(streamInfo);
@@ -553,6 +565,37 @@ uint64_t NoneMixEngine::GetLatency() noexcept
     }
     AUDIO_INFO_LOG("latency value:%{public}" PRId64 " ns", latency_);
     return latency_;
+}
+
+void NoneMixEngine::RegisterSinkLatencyFetcher(uint32_t renderId)
+{
+    SinkLatencyFetcherManager::GetInstance().RegisterProvider(renderId, [] (uint32_t renderId, uint32_t &latency)
+        -> int32_t {
+        latency = DEFAULT_SINK_LATENCY_MS; // preset default latency in ms from hdi provider
+        std::shared_ptr<IAudioRenderSink> audioRendererSink =
+            HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
+        CHECK_AND_RETURN_RET_LOG(audioRendererSink != nullptr, ERR_INVALID_OPERATION,
+            "audioRendererSink is null, renderId %{public}u", renderId);
+        int32_t ret = audioRendererSink->GetLatency(latency);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_LATENCY_DEFAULT_VALUE,
+            "GetLatency failed, renderId %{public}u ret %{public}d, use default", renderId, ret);
+        return SUCCESS;
+    });
+    auto fetcher = SinkLatencyFetcherManager::GetInstance().EnsureFetcher(renderId);
+    CHECK_AND_RETURN_LOG(fetcher, "sinkLatencyFetcher is null, renderId %{public}u", renderId);
+    uint32_t dummyLatency = 0;
+    int32_t ret = fetcher(dummyLatency);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS,
+        "Preload sink latency failed, renderId %{public}u, ret %{public}d", renderId, ret);
+    sinkLatencyFetcher_ = fetcher;
+}
+
+void NoneMixEngine::RegisterSinkLatencyFetcherToStreamIfNeeded()
+{
+    CHECK_AND_RETURN(stream_ != nullptr);
+    auto fetcher = sinkLatencyFetcher_;
+    CHECK_AND_RETURN(fetcher);
+    stream_->RegisterSinkLatencyFetcher(fetcher);
 }
 } // namespace AudioStandard
 } // namespace OHOS

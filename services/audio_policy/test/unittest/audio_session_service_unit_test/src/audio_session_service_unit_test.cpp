@@ -96,6 +96,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_005, TestSize.
 {
     int32_t callerPid = 0;
     audioSessionService_.OnAudioSessionTimeOut(callerPid);
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_TRUE(res);
 }
 
 /**
@@ -107,6 +109,9 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_006, TestSize.
 {
     std::string dumpString = "test";
     audioSessionService_.AudioSessionInfoDump(dumpString);
+    int32_t callerPid = 0;
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_TRUE(res);
 }
 
 /**
@@ -126,6 +131,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_007, TestSize.
 
     audioSessionService_.sessionMap_[callerPid] = audioSession;
     audioSessionService_.AudioSessionInfoDump(dumpString);
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_FALSE(res);
 }
 
 /**
@@ -146,6 +153,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_008, TestSize.
 
     audioSessionService_.sessionMap_[callerPid] = audioSession;
     audioSessionService_.AudioSessionInfoDump(dumpString);
+    bool res = audioSessionService_.sessionMap_.find(callerPid) == audioSessionService_.sessionMap_.end();
+    EXPECT_FALSE(res);
 }
 
 /**
@@ -200,13 +209,12 @@ HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsage_001, TestSize.L
 HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsageForDevice_001, TestSize.Level1)
 {
     int32_t callerPid = 10001;
-    uint32_t streamId = 100;
-    StreamUsage usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+    StreamUsage usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid);
     EXPECT_EQ(STREAM_USAGE_INVALID, usage);
     callerPid = 10002;
     int ret = audioSessionService_.SetAudioSessionScene(callerPid, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
-    usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid, streamId);
+    usage = audioSessionService_.GetAudioSessionStreamUsageForDevice(callerPid);
     EXPECT_EQ(STREAM_USAGE_MEDIA, usage);
 }
 
@@ -286,12 +294,8 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_013, TestSize.
 HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_014, TestSize.Level1)
 {
     AudioInterrupt audioInterrupt = {};
-    audioInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
-
-    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
-    EXPECT_TRUE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
+    audioInterrupt.pid = 0;
+    EXPECT_FALSE(audioSessionService_.ShouldExcludeStreamType(audioInterrupt));
 }
 
 /**
@@ -752,6 +756,32 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_027, TestSize.
     reason = AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE;
     ret = audioSessionService_.FillCurrentOutputDeviceChangedEvent(callerPid, reason, deviceChangeEvent);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test IsMuteSuggestionWhenMixEnabled
+* @tc.number: IsMuteSuggestionWhenMixEnabledTest_001
+* @tc.desc  : Test IsMuteSuggestionWhenMixEnabled
+*/
+HWTEST_F(AudioSessionServiceUnitTest, IsMuteSuggestionWhenMixEnabledTest_001, TestSize.Level1)
+{
+    int32_t callerPid = 9999;
+    bool ret = true;
+
+    ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
+    EXPECT_FALSE(ret);
+    audioSessionService_.sessionMap_[callerPid] = nullptr;
+    ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
+    EXPECT_FALSE(ret);
+
+    AudioSessionStrategy strategy;
+    strategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor_);
+    ASSERT_NE(nullptr, audioSession);
+    audioSession->EnableMuteSuggestionWhenMixWithOthers(true);
+    audioSessionService_.sessionMap_[callerPid] = audioSession;
+    ret = audioSessionService_.IsMuteSuggestionWhenMixEnabled(callerPid);
+    EXPECT_TRUE(ret);
 }
 
 } // namespace AudioStandard

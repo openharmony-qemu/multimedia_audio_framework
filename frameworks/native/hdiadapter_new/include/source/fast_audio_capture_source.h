@@ -19,7 +19,7 @@
 #include "source/i_audio_capture_source.h"
 #include <iostream>
 #include <cstring>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
 
@@ -40,12 +40,6 @@ public:
     int32_t Pause(void) override;
     int32_t Flush(void) override;
     int32_t Reset(void) override;
-    int32_t CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes) override;
-    int32_t CaptureFrameWithEc(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
-        uint64_t &replyBytesEc) override;
-
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
-    void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -59,14 +53,11 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
 
     int32_t UpdateActiveDevice(DeviceType inputDevice) override;
-    void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void DumpInfo(std::string &dumpString) override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -84,6 +75,7 @@ private:
     int32_t DoSetInputRoute(DeviceType inputDevice);
 
     // low latency
+    void EnableSyncInfo(const int32_t syncInfoSize);
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
     int32_t StopInner();
@@ -101,7 +93,6 @@ private:
 #endif
 
     IAudioSourceAttr attr_ = {};
-    SourceCallbackWrapper callback_ = {};
     bool sourceInited_ = false;
     bool started_ = false;
     bool paused_ = false;

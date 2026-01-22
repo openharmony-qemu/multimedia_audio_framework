@@ -20,7 +20,7 @@
 
 #include "hdf_device_desc.h"
 #include "hdf_types.h"
-#include "v5_0/audio_types.h"
+#include "v6_0/audio_types.h"
 #include "audio_pnp_param.h"
 
 namespace OHOS {
@@ -44,6 +44,9 @@ private:
     static int32_t SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent);
+#ifdef USB_ENABLE
+    static int32_t AudioDetectUsbSoundCard(const AudioPnpUevent &audioPnpUevent);
+#endif
     static int32_t AudioAnahsDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnpUevent);
     static int32_t SetAudioAnahsEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);

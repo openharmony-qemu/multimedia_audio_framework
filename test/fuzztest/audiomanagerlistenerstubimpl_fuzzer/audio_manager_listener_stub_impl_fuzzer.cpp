@@ -48,6 +48,11 @@ public:
     {
         return;
     }
+
+    void OnHdiRouteStateChange(const std::string &networkId, bool enable) override
+    {
+        return;
+    }
 };
 
 void SetWakeupSourceCallbackFuzzTest()
@@ -112,6 +117,16 @@ void RemoveDataTransferStateChangeCallbackFuzzTest()
     audioManagerListenerStubImpl.RemoveDataTransferStateChangeCallback(cb);
 }
 
+void OnHdiRouteStateChangeFuzzTest()
+{
+    AudioManagerListenerStubImpl audioManagerListenerStubImpl;
+    std::shared_ptr<AudioParameterCallbackFuzz> callback = std::make_shared<AudioParameterCallbackFuzz>();
+    audioManagerListenerStubImpl.SetParameterCallback(callback);
+    std::string networkId = "abc";
+    bool enable = g_fuzzUtils.GetData<bool>();
+    audioManagerListenerStubImpl.OnHdiRouteStateChange(networkId, enable);
+}
+
 vector<TestFuncs> g_testFuncs = {
     SetWakeupSourceCallbackFuzzTest,
     OnCapturerStateFuzzTest,
@@ -120,6 +135,7 @@ vector<TestFuncs> g_testFuncs = {
     OnDataTransferStateChangeFuzzTest,
     AddDataTransferStateChangeCallbackFuzzTest,
     RemoveDataTransferStateChangeCallbackFuzzTest,
+    OnHdiRouteStateChangeFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS

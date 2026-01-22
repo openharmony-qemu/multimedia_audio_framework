@@ -21,7 +21,7 @@
 #include "audio_manager_listener_stub.h"
 #include "message_parcel.h"
 #include "iaudio_policy_client.h"
-
+#include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
 
 namespace OHOS {
@@ -31,6 +31,10 @@ const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
 const int32_t LIMITSIZE = 4;
+static const uint8_t* RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 AudioPolicyServer* GetServerPtr()
@@ -53,7 +57,7 @@ AudioPolicyServer* GetServerPtr()
     return &server;
 }
 
-void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
+void AudioVolumeFuzzTest(FuzzedDataProvider& fdp)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -73,7 +77,7 @@ void AudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->IsStreamActive(streamType);
 }
 
-void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
+void AudioDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -118,7 +122,7 @@ void AudioDeviceFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->TriggerFetchDevice();
 }
 
-void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
+void AudioInterruptFuzzTest(FuzzedDataProvider& fdp)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -161,7 +165,7 @@ void AudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->GetAudioFocusInfoList(focusInfoList);
 }
 
-void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
+void AudioPolicyFuzzTest(FuzzedDataProvider& fdp)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -183,7 +187,7 @@ void AudioPolicyFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->RegisterClientDeathRecipient(object, id);
 }
 
-void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
+void AudioPolicyOtherFuzzTest(FuzzedDataProvider& fdp)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -227,7 +231,7 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->InjectInterruption(networkId, event);
 }
 
-void AudioSessionFuzzTest(const uint8_t *rawData, size_t size)
+void AudioSessionFuzzTest(FuzzedDataProvider& fdp)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -240,7 +244,7 @@ void AudioSessionFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->DeactivateAudioSession();
 }
 
-void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
+void AudioVolumeKeyCallbackStub(FuzzedDataProvider& fdp)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -266,39 +270,51 @@ void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
     MessageOption option;
     listener->OnRemoteRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
 }
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
+    AudioVolumeFuzzTest,
+    AudioDeviceFuzzTest,
+    AudioInterruptFuzzTest,
+    AudioPolicyFuzzTest,
+    AudioPolicyOtherFuzzTest,
+    AudioVolumeKeyCallbackStub,
+    AudioSessionFuzzTest,
+});
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return;
+    }
+    RAW_DATA = data;
+    g_dataSize = size;
+    g_pos = 0;
+}
+void Init()
+{
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::AudioStandard::GetServerPtr();
+    OHOS::AudioStandard::Init();
     return 0;
 }
-
-OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::] = {
-    OHOS::AudioStandard::AudioVolumeFuzzTest,
-    OHOS::AudioStandard::AudioDeviceFuzzTest,
-    OHOS::AudioStandard::AudioInterruptFuzzTest,
-    OHOS::AudioStandard::AudioPolicyFuzzTest,
-    OHOS::AudioStandard::AudioPolicyOtherFuzzTest,
-    OHOS::AudioStandard::AudioVolumeKeyCallbackStub,
-    OHOS::AudioStandard::AudioSessionFuzzTest
-};
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    /* Run your code on data */
-    if (data == nullptr || size <= 1) {
-        return 0;
-    }
-    uint32_t funcSize = sizeof(g_testPtrs) / sizeof(g_testPtrs[0]);
-    uint8_t firstByte = *data % funcSize;
-    if (firstByte >= funcSize) {
+    if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
     data = data + 1;
     size = size - 1;
-    g_testPtrs[firstByte](data, size);
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
     return 0;
 }

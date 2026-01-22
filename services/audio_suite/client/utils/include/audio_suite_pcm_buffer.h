@@ -16,7 +16,6 @@
 #ifndef AUDIO_SUITE_PCM_BUFFER_H
 #define AUDIO_SUITE_PCM_BUFFER_H
 
-#include "hpae_pcm_process.h"
 #include "audio_stream_info.h"
 #include "audio_suite_common.h"
 
@@ -85,6 +84,7 @@ public:
     uint32_t GetFrameLen();
     uint32_t GetSampleCount();
     uint32_t GetDataSize();
+    uint32_t GetDataDuration();
     uint8_t *GetPcmData();
     bool GetIsFinished();
     void SetIsFinished(bool value);

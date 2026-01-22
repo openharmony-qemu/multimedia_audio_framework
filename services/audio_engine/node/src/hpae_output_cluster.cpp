@@ -231,6 +231,13 @@ int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
     return hpaeSinkOutputNode_->UpdateAppsUid(appsUid);
 }
 
+void HpaeOutputCluster::NotifyStreamChangeToSink(StreamChangeType change,
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
+{
+    CHECK_AND_RETURN(hpaeSinkOutputNode_ != nullptr);
+    hpaeSinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+}
+
 int32_t HpaeOutputCluster::SetPriPaPower(void)
 {
     return hpaeSinkOutputNode_->RenderSinkSetPriPaPower();
@@ -255,6 +262,13 @@ uint64_t HpaeOutputCluster::GetLatency(HpaeProcessorType sceneType)
 int32_t HpaeOutputCluster::SetSyncId(int32_t syncId)
 {
     return hpaeSinkOutputNode_->RenderSinkSetSyncId(syncId);
+}
+
+int32_t HpaeOutputCluster::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(hpaeSinkOutputNode_ != nullptr, ERROR,
+        "sinkOutputNode is null");
+    return hpaeSinkOutputNode_->SetAuxiliarySinkEnable(isEnabled);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

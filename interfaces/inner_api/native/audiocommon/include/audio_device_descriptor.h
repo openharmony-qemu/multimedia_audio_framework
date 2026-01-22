@@ -26,9 +26,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
-inline bool IsUsb(DeviceType type)
+inline bool IsUsb(DeviceType deviceType)
 {
-    return type == DEVICE_TYPE_USB_HEADSET || type == DEVICE_TYPE_USB_ARM_HEADSET;
+    return deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
 }
 
 inline bool IsNearlinkDevice(DeviceType deviceType)
@@ -41,11 +41,16 @@ inline bool IsNearlinkDevice(DeviceType deviceType)
  *         different sets of audio devices and their roles
  */
 class AudioDeviceDescriptor : public Parcelable {
-friend class AudioSystemManager;
 public:
     enum {
         AUDIO_DEVICE_DESCRIPTOR,
         DEVICE_INFO,
+    };
+
+    enum class AudioParametersKey {
+        SAMPLE_RATE,
+        FORMAT,
+        SUPPORT_MMAP,
     };
 
     class ClientInfo {
@@ -79,6 +84,16 @@ public:
 
     DeviceRole getRole() const;
 
+    int32_t GetDeviceId() const;
+
+    std::string GetMacAddress() const;
+
+    uint32_t GetDeviceSupportMmap() const;
+
+    std::list<DeviceStreamInfo> GetAudioStreamInfo() const;
+
+    void ParseAudioParameters(const std::string &audioParameters);
+
     DeviceCategory GetDeviceCategory() const;
 
     bool IsAudioDeviceDescriptor() const;
@@ -95,6 +110,10 @@ public:
 
     void SetDeviceCapability(const std::list<DeviceStreamInfo> &audioStreamInfo, int32_t channelMask,
         int32_t channelIndexMasks = 0);
+
+    void SetExtraDeviceInfo(const DStatusInfo &statusInfo, bool hasSystemPermission);
+
+    void SetDeviceSupportMmap(const uint32_t deviceSupportMmap);
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
@@ -117,6 +136,8 @@ public:
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
+
+    void BuildCapabilitiesFromDeviceStreamInfo();
 
     void Dump(std::string &dumpString);
 
@@ -171,6 +192,8 @@ private:
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
         int32_t apiVersion, bool isSupportedNearlink = true) const;
+    
+    uint32_t ParseArmUsbAudioParameters(const std::string &audioParameters, AudioParametersKey key);
 public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
@@ -184,7 +207,9 @@ public:
     std::string networkId_;
     uint16_t dmDeviceType_{0};
     std::string displayName_;
+    std::string model_ = "unknown";
     std::list<DeviceStreamInfo> audioStreamInfo_;
+    std::list<AudioStreamInfo> capabilities_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     ConnectState connectState_ = CONNECTED;
     DeviceUsage deviceUsage_ = ALL_USAGE;
@@ -209,6 +234,10 @@ public:
     VolumeBehavior volumeBehavior_;
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
+    std::string dmDeviceInfo_ = "";
+
+private:
+    uint32_t deviceSupportMmap_ = 1;
 
 private:
     bool IsOutput()

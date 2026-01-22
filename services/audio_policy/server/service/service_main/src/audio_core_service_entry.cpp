@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,6 +18,7 @@
 
 #include "audio_core_service.h"
 
+#include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_server_proxy.h"
 
@@ -27,6 +28,8 @@ namespace {
 static constexpr int64_t WAIT_LOAD_DEFAULT_DEVICE_TIME_MS = 200; // 200ms
 static constexpr int32_t RETRY_TIMES = 25;
 static constexpr uint32_t TIMEOUT_CORE_ENTRY_S = 20;
+static constexpr int64_t SERVICE_READY_TIMEOUT_MS = 5000; // 5s
+static constexpr int32_t SERVICE_READY_WAIT_LIMIT = 5;
 }
 
 static const char *SessionOperationToString(SessionOperation operation)
@@ -75,9 +78,35 @@ void AudioCoreService::EventEntry::RegistCoreService()
     AUDIO_INFO_LOG("Result:%{public}d", ret);
 }
 
-int32_t AudioCoreService::EventEntry::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+int32_t AudioCoreService::EventEntry::WaitForServiceReady()
 {
+    CHECK_AND_RETURN_RET(!serviceReady_.load(), SUCCESS);
+    std::unique_lock<std::mutex> readyLock(serviceReadyMutex_);
+    CHECK_AND_RETURN_RET_LOG(serviceReadyWaitCount_ < SERVICE_READY_WAIT_LIMIT,
+        ERR_RETRY_IN_CLIENT, "let client retry");
+    serviceReadyWaitCount_++;
+    bool isReady = serviceReadyCV_.wait_for(readyLock,
+        std::chrono::milliseconds(SERVICE_READY_TIMEOUT_MS),
+        [this]() { return serviceReady_.load(); });
+    serviceReadyWaitCount_--;
+    CHECK_AND_RETURN_RET_LOG(isReady, ERR_OPERATION_FAILED, "timeout waiting for service connected");
+    return SUCCESS;
+}
+
+void AudioCoreService::EventEntry::NotifyServiceReady()
+{
+    {
+        std::lock_guard<std::mutex> readyLock(serviceReadyMutex_);
+        serviceReady_.store(true);
+    }
+    serviceReadyCV_.notify_all();
+}
+
+int32_t AudioCoreService::EventEntry::CreateRendererClient(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
+{
+    int32_t waitRet = WaitForServiceReady();
+    CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
     return SUCCESS;
@@ -86,6 +115,8 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
 int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
+    int32_t waitRet = WaitForServiceReady();
+    CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
     return SUCCESS;
@@ -99,7 +130,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
+    HILOG_COMM_INFO("[UpdateSessionOperation]withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
         sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
@@ -127,15 +158,21 @@ std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t ses
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
+std::string AudioCoreService::EventEntry::GetModuleNameBySessionId(uint32_t sessionId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetModuleNameBySessionId(sessionId);
+}
+
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool isReloadProcess)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock
-        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
+    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
 }
 
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
@@ -230,6 +267,7 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     // load hdi-effect-model
     AudioServerProxy::GetInstance().LoadHdiEffectModelProxy();
     AudioServerProxy::GetInstance().NotifyAudioPolicyReady();
+    NotifyServiceReady();
 }
 
 void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex serviceIndex)
@@ -328,8 +366,9 @@ void AudioCoreService::EventEntry::OnDeviceInfoUpdated(
     AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_WARNING_LOG("withlock mac[%{public}s] type[%{public}d] command: %{public}d category[%{public}d] " \
-        "connectState[%{public}d] isEnable[%{public}d]", GetEncryptAddr(desc.macAddress_).c_str(),
+    HILOG_COMM_WARN("[OnDeviceInfoUpdated]withlock mac[%{public}s] type[%{public}d] command: %{public}d "
+        "category[%{public}d] connectState[%{public}d] isEnable[%{public}d]",
+        GetEncryptAddr(desc.macAddress_).c_str(),
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     coreService_->OnDeviceInfoUpdated(desc, command);
 }
@@ -521,15 +560,6 @@ std::vector<sptr<VolumeGroupInfo>> AudioCoreService::EventEntry::GetVolumeGroupI
     return infos;
 }
 
-void AudioCoreService::EventEntry::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-}
-
-void AudioCoreService::EventEntry::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-}
-
 int32_t AudioCoreService::EventEntry::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -646,6 +676,7 @@ void AudioCoreService::EventEntry::OnCheckActiveMusicTime(const std::string &rea
 
 int32_t AudioCoreService::EventEntry::CaptureConcurrentCheck(uint32_t sessionId)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERROR, "coreService_ is nullptr");
     return coreService_->CaptureConcurrentCheck(sessionId);
 }
@@ -656,6 +687,14 @@ void AudioCoreService::EventEntry::HandleDeviceConfigChanged(const std::shared_p
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "Injector::coreService_ is nullptr");
     coreService_->HandleDeviceConfigChanged(selectedAudioDevice);
+}
+
+void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType,
+    bool enable)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->NotifyRemoteRouteStateChange(networkId, deviceType, enable);
 }
 }
 }

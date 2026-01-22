@@ -65,6 +65,7 @@ protected:
     int32_t GetAudioFocusInfoList(const int32_t zoneId, AudioFocusList &focusInfoList);
     int32_t GetAudioFocusInfoList(const int32_t zoneId, const std::string &deviceTag,
         AudioFocusList &focusInfoList);
+    void UpdateContextForAudioZone(const int32_t zoneId, const AudioZoneContext &context);
 
 private:
     bool CheckAudioInterruptZonePermission();

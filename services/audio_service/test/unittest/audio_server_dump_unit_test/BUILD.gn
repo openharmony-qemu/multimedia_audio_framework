@@ -91,6 +91,14 @@ ohos_unittest("audio_server_dump_unit_test") {
 
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
+
+  if (audio_framework_feature_call_manager_enable) {
+    external_deps += [
+      "call_manager:tel_call_manager_api",
+      "ability_base:want",
+    ]
+    defines += [ "FEATURE_CALL_MANAGER" ]
+  }
 }
 
 ohos_unittest("audio_server_hpae_dump_unit_test") {
@@ -138,7 +146,7 @@ ohos_unittest("audio_server_hpae_dump_unit_test") {
     "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service_static",
-    "../../../../audio_engine:audio_engine_manager",
+    "../../../../audio_engine:hpae_engine_manager",
   ]
 
   external_deps = [

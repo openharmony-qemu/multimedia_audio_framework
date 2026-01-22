@@ -123,6 +123,8 @@ public:
 
     virtual int32_t Drain(bool stopFlag) override { return 0; }
 
+    virtual int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override { return 0; }
+
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
@@ -139,6 +141,7 @@ public:
     }
 
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
+    virtual int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
 
@@ -182,9 +185,10 @@ public:
 
     virtual int32_t SetMute(bool isMute) override { return (isMute ? SUCCESS : ERROR); }
 
-    virtual int32_t SetDuckFactor(float duckFactor) override { return 0; }
+    virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
-    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override
+    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+        uint32_t threadPriority) override
     {
         return 0;
     }
@@ -203,6 +207,10 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
 
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
+
+    virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
+
+    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {
@@ -410,7 +418,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = NEW;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(capturerInClientInner->state_, PREPARED);
 }
 
 /**
@@ -478,7 +486,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = INVALID;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(capturerInClientInner->state_, PREPARED);
 }
 
 /**

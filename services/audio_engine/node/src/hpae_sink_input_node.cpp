@@ -215,6 +215,7 @@ OutputPort<HpaePcmBuffer *> *HpaeSinkInputNode::GetOutputPort()
 bool HpaeSinkInputNode::RegisterWriteCallback(const std::weak_ptr<IStreamCallback> &callback)
 {
     writeCallback_ = callback;
+    OnStreamInfoChange(false);
     return true;
 }
 // reset historyBuffer
@@ -243,9 +244,9 @@ bool HpaeSinkInputNode::Drain()
 
 int32_t HpaeSinkInputNode::SetState(HpaeSessionState renderState)
 {
-    HILOG_COMM_INFO("Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
-        GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
-        ConvertSessionState2Str(renderState).c_str());
+    HILOG_COMM_INFO("[SetState]Sink[%{public}s]->Session[%{public}u - %{public}d] state change:"
+        "[%{public}s]-->[%{public}s]", GetDeviceClass().c_str(), GetSessionId(), GetStreamType(),
+        ConvertSessionState2Str(state_).c_str(), ConvertSessionState2Str(renderState).c_str());
     state_ = renderState;
     return SUCCESS;
 }
@@ -272,6 +273,13 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     AUDIO_INFO_LOG("rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     OnStreamInfoChange(false);
+}
+
+void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
+{
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    writeCallback->OnNotifyHdiData(hdiPos);
 }
 
 void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
@@ -319,9 +327,11 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     // offload enable, never force data
     bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
+    OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), latency);
+        callbackData = nodeCallback->GetOffloadCallbackData();
     }
     latency += GetLatency();
     streamInfo_ = {
@@ -334,7 +344,9 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
         .needData = needData,
-        .forceData = forceData
+        .forceData = forceData,
+        .writePos_ = callbackData.writePos_,
+        .isWriteFirst_ = callbackData.isFlush_
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);

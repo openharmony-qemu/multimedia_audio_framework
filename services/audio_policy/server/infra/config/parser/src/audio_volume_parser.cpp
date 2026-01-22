@@ -37,7 +37,9 @@ AudioVolumeParser::AudioVolumeParser()
         {"ACCESSIBILITY", STREAM_ACCESSIBILITY},
         {"ULTRASONIC", STREAM_ULTRASONIC},
         {"SYSTEM", STREAM_SYSTEM},
-        {"APP", STREAM_APP}
+        {"APP", STREAM_APP},
+        {"ANNOUNCEMENT", STREAM_ANNOUNCEMENT},
+        {"EMERGENCY", STREAM_EMERGENCY}
     };
 
     audioDeviceMap_ = {

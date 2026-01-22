@@ -62,7 +62,7 @@ void NapiAudioSessionAvailableDeviceChangeCallback::SaveSessionAvailbleDeviceCha
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callbackRef = nullptr;
     const int32_t refCount = ARGS_ONE;
-
+    std::string taskName = "NapiAudioSessionAvailableDeviceChangeCallback::destroy";
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it).first->cb_);
         CHECK_AND_RETURN_LOG(!isSameCallback,
@@ -72,7 +72,7 @@ void NapiAudioSessionAvailableDeviceChangeCallback::SaveSessionAvailbleDeviceCha
     napi_status status = napi_create_reference(env_, callback, refCount, &callbackRef);
     CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
         "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callbackRef, taskName);
     availableDeviceChangeCbList_.push_back({cb, usage});
     AUDIO_INFO_LOG("SaveSessionAvailbleDeviceChange callback ref success, usage [%{public}d], list size [%{public}zu]",
         usage, availableDeviceChangeCbList_.size());
@@ -119,6 +119,7 @@ void NapiAudioSessionAvailableDeviceChangeCallback::OnAvailableDeviceChange(
             availableDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
         }
     }
+    std::lock_guard<std::mutex> lock(mutex_);
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); it++) {
         if (usage == (*it).second) {
             std::unique_ptr<AudioSessionAvailbleDeviceJsCallback> cb =

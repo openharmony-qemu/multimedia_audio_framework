@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,7 @@ namespace AudioStandard {
 class AudioPipeManager {
 public:
     AudioPipeManager();
-    ~AudioPipeManager();
+    virtual ~AudioPipeManager();
 
     static std::shared_ptr<AudioPipeManager> GetPipeManager()
     {
@@ -44,11 +44,12 @@ public:
     void Assign(std::shared_ptr<AudioPipeInfo> dst, std::shared_ptr<AudioPipeInfo> src);
     bool IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo);
 
-    const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
+    virtual const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
+    std::string GetModuleNameBySessionId(uint32_t sessionId);
     std::shared_ptr<AudioDeviceDescriptor> GetProcessDeviceInfoBySessionId(uint32_t sessionId,
         AudioStreamInfo &streamInfo);
 
@@ -82,11 +83,13 @@ public:
     void UpdateRingAndVoipStreamStatus(const AudioScene audioScene);
     void UpdateRingAndVoipStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &ringDeviceDescs,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &voipDeviceDescs);
+    bool CheckRingAndVoipStreamRunning();
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescForAudioScene(const AudioScene audioScene);
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetRingAndVoipDescMap();
     bool IsModemStreamDeviceChanged(std::shared_ptr<AudioDeviceDescriptor> &deviceDescs);
     std::shared_ptr<AudioPipeInfo> GetNormalSourceInfo(bool isEcFeatureEnable);
     std::vector<uint32_t> GetStreamIdsByUidAndPid(int32_t uid, int32_t pid);
+    std::vector<uint32_t> GetStreamIdsByPid(int32_t pid);
     void UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllCapturerStreamDescs();
@@ -96,11 +99,16 @@ public:
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
+    bool HasRunningStream();
+    bool HasFastOutputPipe();
+    bool IsStreamUltraFast(uint32_t sessionId);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
     bool IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInfo);
     std::shared_ptr<AudioPipeInfo> GetPipeByModuleAndFlag(const std::string moduleName, const uint32_t routeFlag);
+    AudioStreamInfo DecideStreamInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo,
+        const std::shared_ptr<AudioDeviceDescriptor> deviceDesc);
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemCommunicationIdMap_{};
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};

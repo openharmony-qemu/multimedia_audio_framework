@@ -60,7 +60,7 @@ constexpr int32_t BASE_AUDIO_ERR_OFFSET = -ErrCodeOffset(SUBSYS_AUDIO, MODULE_AU
 const int32_t  SUCCESS = 0;
 
 /** Fail */
-const int32_t  ERROR = BASE_AUDIO_ERR_OFFSET;
+const int32_t  ERROR = BASE_AUDIO_ERR_OFFSET; // base is 62980096
 
 /** Status error */
 const int32_t  ERR_ILLEGAL_STATE = BASE_AUDIO_ERR_OFFSET - 1;
@@ -198,11 +198,23 @@ const int32_t ERR_AUDIO_SUITE_UNSUPPORT_CONNECT = BASE_AUDIO_ERR_OFFSET - 45;
 /** The number of created pipelines or nodes exceeds the system specification. */
 const int32_t ERR_AUDIO_SUITE_CREATED_EXCEED_SYSTEM_LIMITS = BASE_AUDIO_ERR_OFFSET - 46;
 
+/** latency fetcher returns a default value without caching */
+const int32_t ERR_LATENCY_DEFAULT_VALUE = BASE_AUDIO_ERR_OFFSET - 47;
+
 /** Audio suite function timed out during execution. */
 const int32_t ERR_AUDIO_SUITE_TIMEOUT = BASE_AUDIO_ERR_OFFSET - 47;
 
+/** no memory to allocate */
+const int32_t ERR_NO_MEMORY = BASE_AUDIO_ERR_OFFSET - 48;
+
+/** object init failed */
+const int32_t ERR_INIT_FAILED = BASE_AUDIO_ERR_OFFSET - 49;
+
+/** Ipc related error */
+const int32_t ERR_IPC = BASE_AUDIO_ERR_OFFSET - 100;
+
 /** Unknown error */
-const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
+const int32_t ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 
 /** success but not continue */
 const int32_t SUCCESS_BUT_NOT_CONTINUE = BASE_AUDIO_ERR_OFFSET - 300;

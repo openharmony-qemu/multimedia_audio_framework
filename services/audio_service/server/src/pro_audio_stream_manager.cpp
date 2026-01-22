@@ -16,7 +16,6 @@
 #define LOG_TAG "ProAudioStreamManager"
 #endif
 
-#include "pro_audio_stream_manager.h"
 #include <sstream>
 #include <atomic>
 #include "audio_service_log.h"
@@ -28,6 +27,8 @@
 #include "none_mix_engine.h"
 #include "audio_utils.h"
 #include "core_service_handler.h"
+#include "pro_audio_stream_manager.h"
+#include "cabin_playback_engine.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +39,8 @@ ProAudioStreamManager::ProAudioStreamManager(ManagerType type)
 {
     if (type == EAC3_PLAYBACK) {
         playbackEngine_ = std::make_unique<DirectPlayBackEngine>();
+    } else if (type == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) {
+        playbackEngine_ = std::make_unique<CabinPlayBackEngine>();
     } else {
         playbackEngine_ = std::make_unique<NoneMixEngine>();
     }
@@ -89,7 +92,8 @@ int32_t ProAudioStreamManager::StartRender(uint32_t streamIndex)
     }
     currentRender = rendererStreamMap_[streamIndex];
     int32_t result = currentRender->Start();
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Failed to start rendererStream");
+    CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
+        HILOG_COMM_ERROR("[StartRender]Failed to start rendererStream"));
     if (playbackEngine_) {
         playbackEngine_->Start();
     }

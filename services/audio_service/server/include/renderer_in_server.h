@@ -24,9 +24,12 @@
 #include "i_stream_manager.h"
 #include "audio_effect.h"
 #include "audio_ring_cache.h"
+#include "audio_utils.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
 #include "player_dfx_writer.h"
+#include "audio_static_buffer_processor.h"
+#include "audio_static_buffer_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,22 +42,27 @@ struct RendererLatestInfoForWorkgroup {
     float streamVolume;
     float systemVolume;
 };
-
+class RendererInServer;
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
-    explicit StreamCallbacks(uint32_t streamIndex);
+    explicit StreamCallbacks(uint32_t streamIndex, std::weak_ptr<RendererInServer> renderer);
     virtual ~StreamCallbacks();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
     int32_t GetAvailableSize(size_t &length) override;
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
+    void SetFirstWriteDataFlag(bool isFirstWriteDataFlag);
+private:
+    bool CheckIsWriteFirst() const noexcept;
 private:
     uint32_t streamIndex_ = 0;
+    std::weak_ptr<RendererInServer> renderer_;
     int32_t recoveryAntiShakeBufferCount_ = 0;
     FILE *dumpDupOut_ = nullptr;
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
+    std::atomic<bool> isFirstWriteDataFlag_ = true;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
@@ -106,6 +114,7 @@ public:
     int32_t Init();
     int32_t ConfigServerBuffer();
     int32_t InitBufferStatus();
+    int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size);
     int32_t UpdateWriteIndex();
     BufferDesc DequeueBuffer(size_t length);
     void VolumeHandle(BufferDesc &desc);
@@ -124,13 +133,12 @@ public:
     int32_t EnableDualTone(const std::string &dupSinkName);
     int32_t DisableDualTone();
 
-    void GetEAC3ControlParam();
     int32_t GetStreamManagerType() const noexcept;
     int32_t SetSilentModeAndMixWithOthers(bool on);
     int32_t SetClientVolume();
     int32_t SetLoudnessGain(float loudnessGain);
     int32_t SetMute(bool isMute);
-    int32_t SetDuckFactor(float duckFactor);
+    int32_t SetDuckFactor(float duckFactor, uint32_t durationMs);
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false);
     int32_t SetSourceDuration(int64_t duration);
 
@@ -158,6 +166,12 @@ public:
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
     void RemoveIdForInjector();
     int32_t SetTarget(RenderTarget target, int32_t &ret);
+
+    int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
+    int32_t SetLoopTimes(int64_t bufferLoopTimes);
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
+    bool IsWriteFirst() const noexcept;
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -165,6 +179,7 @@ private:
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(BufferDesc &bufferDesc);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
+    int32_t ConfigFixedSizeBuffer();
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void OtherStreamEnqueue(const BufferDesc &bufferDesc);
     void DoFadingOut(RingBufferWrapper& bufferDesc);
@@ -183,6 +198,7 @@ private:
     void ReConfigDupStreamCallback();
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
+    int32_t PauseDuringStandby();
     void StartStreamByType();
     void RecordStandbyTime(bool isStandby, bool isStart);
     int32_t FlushOhAudioBuffer();
@@ -205,6 +221,8 @@ private:
     void UpdateStreamInfo();
     void RemoveStreamInfo();
     void OnWriteDataFinish();
+    void InitLatencyMeasurement();
+    void DetectLatency(uint8_t *inputData, size_t requestDataLen);
     void PauseInner();
     void InitDupBufferInner(int32_t innerCapId);
     void ClearInnerCapBufferForInject();
@@ -216,6 +234,13 @@ private:
 
     int32_t WriteData(int8_t *inputData, size_t requestDataLen);
     void PauseDirectStream();
+
+    int32_t CreateServerBuffer();
+    int32_t ProcessAndSetStaticBuffer();
+    int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
+    void MarkStaticFadeOut(bool isRefresh);
+    void MarkStaticFadeIn();
+    void HandleIsWriteFirst(bool isWriteFirst);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -247,6 +272,7 @@ private:
     std::optional<std::string> dupSinkName_ = std::nullopt;
     uint32_t dualToneStreamIndex_ = 0;
     std::shared_ptr<IRendererStream> dualToneStream_ = nullptr;
+    std::atomic<size_t> writeCount_ = 0;
 
     std::weak_ptr<IStreamListener> streamListener_;
     size_t engineTotalSizeInFrame_ = 0;
@@ -266,7 +292,6 @@ private:
     std::mutex updateIndexLock_;
     int64_t startedTime_ = 0;
     int64_t pausedTime_ = 0;
-    int64_t stopedTime_ = 0;
     int64_t flushedTime_ = 0;
     int64_t drainedTime_ = 0;
     uint32_t underrunCount_ = 0;
@@ -279,6 +304,7 @@ private:
     FILE *dumpC2S_ = nullptr; // client to server dump file
     std::string dumpFileName_ = "";
     ManagerType managerType_;
+    bool isHWDecodingType_ = false;
     std::mutex fadeoutLock_;
     int32_t fadeoutFlag_ = 0;
     std::time_t startMuteTime_ = 0;
@@ -319,6 +345,13 @@ private:
     bool isDataLinkConnected_ = true;
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;
+
+    AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
+    std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
+    std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
+    std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
+    bool isWriteFirst_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

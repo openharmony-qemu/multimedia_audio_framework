@@ -18,6 +18,7 @@
 #include "audio_suite_eq_algo_interface_impl.h"
 #include "audio_suite_nr_algo_interface_impl.h"
 #include "audio_suite_aiss_algo_interface_impl.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -25,7 +26,10 @@ using namespace AudioSuite;
 using namespace testing::ext;
 namespace {
 HWTEST(AudioSuiteAlgoInterface, CreateAlgoInterfaceTest, TestSize.Level0) {
-    NodeCapability nc;
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+    NodeParameter nc;
     auto eqAlgo = AudioSuiteAlgoInterface::CreateAlgoInterface(
         AlgoType::AUDIO_NODE_TYPE_EQUALIZER, nc);
     EXPECT_NE(eqAlgo, nullptr);

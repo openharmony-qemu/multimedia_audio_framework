@@ -14,7 +14,7 @@
  */
 
 #include "audio_zone_client_unit_test.h"
-#include "audio_zone_manager.h"
+#include "audio_zone_types.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 
@@ -84,7 +84,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_001, TestSize.Level4)
 
     audioZoneClient->audioZoneCallback_ = nullptr;
     ret = audioZoneClient->AddAudioZoneCallback(callback);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
 /**

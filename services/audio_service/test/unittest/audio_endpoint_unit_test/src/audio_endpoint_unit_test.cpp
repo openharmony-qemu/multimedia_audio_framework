@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -62,7 +62,17 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
         std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(deviceInfo, streamInfo, clientConfig.streamType)) {
+    std::string adapterName = "";
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = streamInfo,
+        .adapterName = adapterName,
+        .audioMode = clientConfig.audioMode,
+        .streamType = clientConfig.streamType,
+        .isUltraFast = isUltraFast
+    };
+    if (!audioEndpoint->Config(endpointConfig)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -78,7 +88,17 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
         std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config.audioMode);
     audioEndpoint->injector_ = *MockAudioInjector::GetMockInstance();
-    if (!audioEndpoint->Config(deviceInfo, audioStreamInfo, config.streamType)) {
+    std::string adapterName = "";
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    if (!audioEndpoint->Config(endpointConfig)) {
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -142,8 +162,17 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_001, TestSize.Level1
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::shared_ptr<AudioEndpoint> audioEndpoint =
-        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
+    std::string adapterName = "";
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     EXPECT_NE(nullptr, audioEndpoint);
 }
 
@@ -192,8 +221,17 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::shared_ptr<AudioEndpoint> audioEndpoint =
-        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+    std::string adapterName = "";
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     EXPECT_NE(nullptr, audioEndpoint);
 }
 
@@ -210,8 +248,17 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::shared_ptr<AudioEndpoint> audioEndpoint =
-        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo, audioStreamInfo);
+    std::string adapterName = "";
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
     EXPECT_NE(nullptr, audioEndpoint);
 
     int32_t ret = audioEndpoint->EnableFastInnerCap(1);
@@ -527,7 +574,17 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    result = audioEndpointInner->Config(deviceInfo, audioStreamInfo, config.streamType);
+    std::string adapterName = "";
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    result = audioEndpointInner->Config(endpointConfig);
     EXPECT_FALSE(result);
 
     processStream->SetInnerCapState(true, 1);
@@ -1213,6 +1270,27 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_006, TestSize.Level1)
     EXPECT_EQ(AudioEndpointInner::INACTIVE, audioEndpointInner->zeroVolumeState_);
 
     HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastRenderId_);
+}
+
+/*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_007
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_REMOTE;
+    PolicyHandler::GetInstance().SetActiveOutputDevice(DEVICE_TYPE_NEARLINK);
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
+
+    PolicyHandler::GetInstance().SetActiveOutputDevice(DEVICE_TYPE_SPEAKER);
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::INACTIVE;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
 }
 
 /*
@@ -2127,6 +2205,155 @@ HWTEST_F(AudioEndpointUnitTest, CheckJank_003, TestSize.Level1)
     audioEndpointInner->lastWriteTime_ = 0;
     audioEndpointInner->CheckJank(0);
     EXPECT_GT(audioEndpointInner->lastWriteTime_, currentTime);
+}
+
+/**
+ * @tc.name: AsyncGetPosTime_001
+ * @tc.number: AsyncGetPosTime_001
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
+    
+    bool initialIsStarted = audioEndpointInner->isStarted_;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
+    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
+}
+
+/**
+ * @tc.name: AsyncGetPosTime_002
+ * @tc.number: AsyncGetPosTime_002
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::RUNNING;
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
+    
+    bool initialIsStarted = audioEndpointInner->isStarted_;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
+}
+
+/**
+ * @tc.name: AsyncGetPosTime_003
+ * @tc.number: AsyncGetPosTime_003
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
+    audioEndpointInner->isStarted_ = false;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
+}
+
+/**
+ * @tc.name: AsyncGetPosTime_004
+ * @tc.number: AsyncGetPosTime_004
+ * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
+ */
+HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    
+    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() + 1000000;
+    
+    audioEndpointInner->stopUpdateThread_ = false;
+    
+    std::thread notifier([audioEndpointInner]() {
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+        
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        {
+            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
+            audioEndpointInner->stopUpdateThread_ = true;
+            audioEndpointInner->updateThreadCV_.notify_all();
+        }
+    });
+    
+    audioEndpointInner->AsyncGetPosTime();
+    
+    notifier.join();
+    
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

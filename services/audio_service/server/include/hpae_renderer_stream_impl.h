@@ -17,7 +17,10 @@
 #define HPAE_RENDERER_STREAM_IMPL_H
 
 #include <mutex>
+#include <condition_variable>
 #include <shared_mutex>
+#include <atomic>
+#include <future>
 #include "i_renderer_stream.h"
 #include "audio_ring_cache.h"
 
@@ -43,7 +46,8 @@ class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererS
                                public IStreamCallback,
                                public IRendererStream {
 public:
-    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode = true);
+    HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode = true,
+        size_t preBufSizeInBytes = 0);
     ~HpaeRendererStreamImpl();
     int32_t InitParams(const std::string &deviceName = "");
     int32_t Start() override;
@@ -97,6 +101,10 @@ public:
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
 
     bool OnQueryUnderrun() override;
+    void SetSendDataEnabled(bool enabled) override;
+
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
@@ -104,15 +112,29 @@ private:
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
     uint32_t GetSinkLatency(); // unit ms
+    int32_t GetSinkLatencyInner(uint32_t &sinkLatency);
+    static int32_t GetSinkLatencyInner(const std::string &deviceClass, const std::string &deviceNetId,
+        uint32_t &sinkLatency);
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
     void OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
+    bool WaitFirstStreamData();
+    void NotifyFirstStreamData();
+    int32_t FetchSinkLatency(uint32_t &sinkLatency);
+    void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
+    int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
+    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
+        std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
+    uint64_t GetOffloadLatency();
+    bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
+    void UpdateInnerCapWriteState(bool isWriteFirst);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
     State state_ = INVALID;
+    std::future<void> offloadVolumeRmap_;
 
     size_t byteSizePerFrame_ = 0;
     size_t spanSizeInFrame_ = 0;
@@ -127,7 +149,7 @@ private:
     // Only for debug
     int32_t abortFlag_ = 0;
     // offload
-    bool offloadEnable_ = false;
+    std::atomic<bool> offloadEnable_ = false;
     std::atomic<int32_t> offloadStatePolicy_ = OFFLOAD_DEFAULT;
     // offload end
     float clientVolume_ = 1.0f;
@@ -143,6 +165,9 @@ private:
     std::atomic<uint64_t> lastPrintTimestamp_ = 0;
     std::atomic<int64_t> lastLogTimestampArr_[TIMESTAMP_TAG_NUM];
 
+    std::mutex sinkLatencyFetcherMutex_;
+    std::function<int32_t (uint32_t &)> sinkLatencyFetcher_;
+
     std::string deviceClass_;
     std::string deviceNetId_;
     // record latency
@@ -152,6 +177,8 @@ private:
     bool isMoveAble_ = true;
     std::unique_ptr<AudioRingCache> ringBuffer_ = nullptr; // used by write buffer mode
     FILE *dumpEnqueueIn_ = nullptr;
+    const size_t preBufSizeInBytes_ = 0;
+    std::atomic<bool> preBufDone_ = false;
     // buffer mode, write or callback end
 
     std::atomic<size_t> mutePaddingFrames_ = 0;
@@ -159,6 +186,18 @@ private:
 
     std::unordered_map<int32_t, PositionData> currentPositionData;
     std::unordered_map<int32_t, PositionData> speedPositionData;
+
+    uint32_t usedSampleRate_ = 0;
+
+    std::mutex firstStreamDataMutex_;
+    std::condition_variable firstStreamDataCv_;
+    std::atomic<bool> firstStreamDataReceived_ = false;
+    std::atomic<bool> sendDataEnabled_ = true;
+
+    std::pair<uint64_t, TimePoint> hdiPos_ = std::make_pair(0, std::chrono::high_resolution_clock::now());
+    uint64_t writePos_ = 0;
+    float speed_ = 1.0f;
+    bool isWriteFirst_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

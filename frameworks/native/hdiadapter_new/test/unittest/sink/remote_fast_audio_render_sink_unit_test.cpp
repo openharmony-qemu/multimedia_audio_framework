@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/remote_fast_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -141,26 +142,23 @@ HWTEST_F(RemoteFastAudioRenderSinkUnitTest, RemoteFastSinkUnitTest_004, TestSize
 /**
  * @tc.name   : Test RemoteFastSink API
  * @tc.number : RemoteFastSinkUnitTest_005
- * @tc.desc   : Test remote fast sink set audio scene
+ * @tc.desc   : Test remote fast sink set invalid state
  */
 HWTEST_F(RemoteFastAudioRenderSinkUnitTest, RemoteFastSinkUnitTest_005, TestSize.Level1)
 {
-    EXPECT_TRUE(sink_);
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
-    EXPECT_EQ(ret, SUCCESS);
-}
+    std::shared_ptr<RemoteFastAudioRenderSink> sink = std::make_shared<RemoteFastAudioRenderSink>("test");
+    sink->SetInvalidState();
+    sink->sinkInited_.store(true);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
 
-/**
- * @tc.name   : Test RemoteFastSink API
- * @tc.number : RemoteFastSinkUnitTest_006
- * @tc.desc   : Test remote fast sink update active device
- */
-HWTEST_F(RemoteFastAudioRenderSinkUnitTest, RemoteFastSinkUnitTest_006, TestSize.Level1)
-{
-    EXPECT_TRUE(sink_);
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->UpdateActiveDevice(deviceTypes);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    sink->renderInited_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    sink->validState_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 } // namespace AudioStandard

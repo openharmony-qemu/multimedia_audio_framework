@@ -20,6 +20,7 @@
 #include "audio_suite_base.h"
 #include "audio_suite_tempo_pitch_api.h"
 #include "audio_effect.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -48,7 +49,7 @@ static constexpr int32_t ALGO_PARAM_LENGTH = 2;
 
 class AudioSuiteTempoPitchAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    AudioSuiteTempoPitchAlgoInterfaceImpl(NodeCapability &nc);
+    AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteTempoPitchAlgoInterfaceImpl();
 
     int32_t TempoInit(std::string soName);
@@ -73,20 +74,9 @@ private:
     AudioEffectHandle pitchAlgoHandle_ = nullptr;
 
     std::vector<int16_t> tempDataOut_;
+    AudioSuiteLibraryManager algoLibrary_;
 
-    std::vector<float> ParseStringToFloatArray(const std::string &str, char delimiter)
-    {
-        std::vector<float> params;
-        std::string token;
-        std::istringstream iss(str);
-
-        while (std::getline(iss, token, delimiter)) {
-            if (!token.empty()) {
-                params.push_back(std::stof(token));
-            }
-        }
-        return params;
-    }
+    std::vector<float> ParseStringToFloatArray(const std::string &str, char delimiter);
 };
 
 }  // namespace AudioSuite

@@ -43,23 +43,23 @@ export function MixingConsoleBuilder() {
 @Component
 export struct MixingConsole {
     pageInfos: NavPathStack = new NavPathStack();
-    // 主标题样式修改器
+    // Main Title Style Modifier
     @State mainTitleModifier: MainTitleTextModifier = new MainTitleTextModifier();
     private symbolModifier: SymbolGlyphModifier =
         new SymbolGlyphModifier($r('sys.symbol.chevron_backward')).fontColor([$r('app.color.index_title_text_color')]);
-    // 判断是否是横屏
+    // Determine whether it is in landscape mode
     @StorageLink('isHorizontalScreen') isHorizontalScreen: boolean = false;
 
     @State param: NavigationParams = { mode: 0, pipelineCascadMode: 0 };
     @State paramMode: number = 0;
     @State inputList: SongInfo[] = [];
-    private MAX_TRACKS: number = 5; // 最大音轨数
+    private MAX_TRACKS: number = 5; // Maximum number of audio tracks
     @State nodeList: Map<string, SongInfo> = new Map();
     private wavBuffer: ArrayBuffer = new ArrayBuffer(0);
     private fd: number = -1;
-    // 是否录制
+    // Record or not?
     @State g_isRecord: boolean = false;
-    // 导出中
+    // Exporting...
     @State isExported: boolean = false;
     @State mixerList: Array<Node> = [];
     @State mixerNode: Node = {
@@ -72,26 +72,26 @@ export struct MixingConsole {
         type: NodeType.OUTPUT,
         color: ColorMap[NodeType.OUTPUT]
     }
-    // 是否播放
+    // Play or not?
     @State isPlay: boolean = false;
     @State isPlayRealTime: boolean = false;
-    // 实时播放（音源分离）
+    // Real-time playback (audio source separation)
     @Provide isSeparation: boolean = false;
     @State voiceType: string = NodeType.SEPARATION;
-    // 导出样式
+    // Export Style
     @State newAudioFileName: string = '';
     @State audioFormate: string = '.wav';
     @State sampleRate: number = -1;
     @State channels: number = -1;
     @State bitsPerSample: number = -1;
-    // 节点操作弹窗参数
+    // Node Operation Pop-up Parameters
     @State isLeft: boolean = true;
     @State selectedNode: string = '';
     @State nodeType: NodeType = NodeType.INPUT;
     @State finished: boolean = false;
-    // 是否管线级联
+    // Pipeline cascaded or not
     @State isPipelineCascad: boolean = false;
-    // 管线级联
+    // Pipeline cascading
     @StorageLink('pipelineCascadMap') pipelineCascadMap: Map<string, OutSong> = new Map();
     @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
     @StorageLink('currentPipelineId') currentPipelineId: string = '';
@@ -101,11 +101,11 @@ export struct MixingConsole {
         Logger.info(TAG, 'aboutToAppear');
         let context = this.getUIContext()?.getHostContext() as common.UIAbilityContext;
         window.getLastWindow(context).then((windowClass) => {
-            // 设置屏幕横屏
+            // Set screen to landscape mode
             windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION_LANDSCAPE);
         });
         this.isPlayRealTime = false;
-        // 初始化空列表（保留5个空位）
+        // Initialize an empty list (reserve 5 empty slots)
         this.inputList = Array(this.MAX_TRACKS).fill(null);
         
         audioNapi.registerFinishedCallback((result: boolean) => {
@@ -152,14 +152,14 @@ export struct MixingConsole {
 
     aboutToDisappear(): void {
         Logger.info(TAG, 'aboutToDisappear');
-        // 销毁播放器
+        // Destroy the player
         try {
             let result = audioNapi.audioRendererDestory();
             Logger.info(TAG, `audioRendererDestory result: ${result}`);
         } catch (e) {
             Logger.info(TAG, `audioRendererDestory error: ${JSON.stringify(e)}`);
         }
-        // 销毁管线， 销毁引擎
+        // Destroy the pipelines, destroy the engines.
         try {
             let result = audioNapi.audioEditDestory();
             Logger.info(TAG, `audioEditDestory result: ${result}`);
@@ -172,7 +172,7 @@ export struct MixingConsole {
         });
     }
 
-    // 设置弹窗
+    // Set up pop-up window
     dialogControllerSet: CustomDialogController | null = new CustomDialogController({
         builder: SetFormatDialog({
             newAudioFileName: this.newAudioFileName,
@@ -191,7 +191,7 @@ export struct MixingConsole {
         maskColor: $r('app.color.mixing_console_mask_color'),
     });
 
-    // 查看效果节点信息弹窗
+    // View Effect Node Information Pop-up Window
     checkNodeDialogController: CustomDialogController | null = new CustomDialogController({
         builder: CheckNodeDialog({
             isLeft: this.isLeft,
@@ -211,7 +211,7 @@ export struct MixingConsole {
         }),
     });
 
-    // 添加output节点弹窗
+    // Add Output Node Pop-up Window
     addOutputDialogController: CustomDialogController = new CustomDialogController({
         builder: AlertDialog({
             primaryTitle: '添加OUTPUT节点',
@@ -237,18 +237,18 @@ export struct MixingConsole {
                         .width('30')
                         .height('30')
                         .onClick(() => {
-                            // 弹窗，导出的音频格式
+                            // Pop-up, exported audio format
                             this.dialogControllerSet?.open();
                         })
 
                 }
                 Row() {
-                    // 保存
+                    // save
                     Image($r('app.media.ic_save'))
                         .width('30')
                         .height('30')
                         .onClick(() => {
-                            // 在管线级联页面进行渲染
+                            // Rendering on the pipeline cascade page
                             if (this.param.pipelineCascadMode === PIPELINECASCADMODE_1 || this.param.pipelineCascadMode === PIPELINECASCADMODE_2) {
                                 this.pipelineCascadMap.set(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || '', {
                                     pipelineId: this.param.pipelineId ?? '',
@@ -286,13 +286,13 @@ export struct MixingConsole {
                                 Logger.info(TAG,
                                     `taskpool onClick save mixingConsole start, param.mode: ${this.param.mode}, length: ${(value as ArrayBuffer).byteLength}`);
                                 this.SaveBuffer(value as ArrayBuffer);
-                                // 将buffer的map中的 totalWriteAudioDataSize 置为 0
+                                // Set the totalWriteAudioDataSize in the buffer's map to 0
                                 audioNapi.resetTotalWriteAudioDataSize();
                             });
                         })
                 }.visibility(this.param.mode === 1 ? Visibility.Visible : Visibility.None)
                 Row() {
-                    // 人声
+                    // (human) voice
                     Button($r('app.string.human_voice'), { type: ButtonType.Normal, stateEffect: true })
                         .backgroundColor($r('app.color.index_audio_clip_card'))
                         .fontColor(this.voiceType !== NodeType.VOICE ? $r('app.color.index_title_text_color') :
@@ -307,7 +307,7 @@ export struct MixingConsole {
                                 audioNapi.setSeparationMode(0);
                             }
                         })
-                    // 伴奏
+                    // Accompaniment
                     Button($r('app.string.accompaniment'), { type: ButtonType.Normal, stateEffect: true })
                         .backgroundColor($r('app.color.index_audio_clip_card'))
                         .fontColor(this.voiceType !== NodeType.ACCOMPANIMENT ? $r('app.color.index_title_text_color') :
@@ -322,7 +322,7 @@ export struct MixingConsole {
                                 audioNapi.setSeparationMode(1);
                             }
                         })
-                    // 录制
+                    // Recording
                     Image(this.g_isRecord ? $r('app.media.ic_record_circle_2') : $r('app.media.ic_record_circle'))
                         .width('30')
                         .height('30')
@@ -332,7 +332,7 @@ export struct MixingConsole {
                             this.g_isRecord = !this.g_isRecord;
                             audioNapi.setIsRecord(this.g_isRecord);
                         })
-                    // 播放
+                    // Play
                     Image(!this.isPlay ? $r('app.media.ic_record_playing') : $r('app.media.ic_record_paused'))
                         .width('30')
                         .height('30')
@@ -354,16 +354,16 @@ export struct MixingConsole {
                             }
                             this.isPlayRealTime = true;
                             this.isPlay = !this.isPlay;
-                            // 播放
+                            // Play
                             if (this.isPlay) {
-                                // 初始化 Renderer
+                                // initialize Renderer
                                 audioNapi.audioRendererInit();
-                                // 点击播放，才开始 AudioRenderer
+                                // Click to play, then start AudioRenderer
                                 audioNapi.audioRendererStart();
                             } else {
-                                // 暂停
+                                // Pause
                                 audioNapi.audioRendererStop();
-                                // 将buffer的map中的 totalWriteAudioDataSize 置为 0
+                                // Set the totalWriteAudioDataSize in the buffer's map to 0.
                                 audioNapi.resetTotalWriteAudioDataSize();
                             }
                         })
@@ -379,7 +379,7 @@ export struct MixingConsole {
             .backgroundColor($r('app.color.index_audio_clip_card'))
 
             Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween }) {
-                // 左侧
+                // Left side
                 Column() {
                     ForEach(this.inputList, (info: SongInfo, index: number) => {
                         Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start }) {
@@ -397,7 +397,7 @@ export struct MixingConsole {
                                         const inputId: string = util.generateRandomUUID(true);
                                         Logger.info(TAG, `inputId: ${inputId}`);
                                         importSingleSong(this.nodeList, inputId).then((songMap: Map<string, SongInfo>) => {
-                                            // 将input节点也要加入到nodes里边
+                                            // Add the input node to the nodes as well.
                                             let inputInfo: Node = {
                                                 id: inputId,
                                                 type: NodeType.INPUT,
@@ -407,14 +407,14 @@ export struct MixingConsole {
                                             nodesArray.push(inputInfo);
                                             let tmpInfo: SongInfo = songMap.entries().next().value;
                                             tmpInfo.nodes = nodesArray;
-                                            // 将导入的音频文件存在nodeList中
+                                            // Store the imported audio files in nodeList.
                                             for (let value of songMap.values()) {
                                                 Logger.error(TAG, `${value.nodeId} --- ${inputId}`);
                                                 if (value.nodeId === inputId) {
                                                     this.inputList[index] = value;
                                                     this.getPcmFileBuffer(this.inputList[index]);
                                                     if (this.wavBuffer.byteLength !== 0) {
-                                                        // 管线级联
+                                                        // Pipeline cascading
                                                         if (this.param.pipelineCascadMode !== 0 && this.param.pipelineCascadMode !== 3) {
                                                             if (!this.param.pipelineId || this.param.pipelineId === '') {
                                                                 this.getUIContext().showAlertDialog({
@@ -448,7 +448,7 @@ export struct MixingConsole {
 
                                             Logger.error(TAG, `Node list size: ${this.nodeList.size}`);
                                             Logger.error(TAG, `input list size: ${this.inputList.length}`);
-                                            // 超过一个输入就增加混音节点
+                                            // Add a mixing node for each additional input.
                                             if (this.nodeList.size > 1 && this.mixerNode.id === '') {
                                                 Logger.info(TAG, 'LEFT ADD');
                                                 const mixerNodeId = util.generateRandomUUID(true);
@@ -472,7 +472,7 @@ export struct MixingConsole {
 
                 Blank().width(1).backgroundColor($r('app.color.index_audio_clip_card'))
 
-                // 右侧
+                // Right side
                 Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.Center, alignItems: ItemAlign.Center }) {
                     Row() {
                         if (this.nodeList.size > 1) {
@@ -529,7 +529,7 @@ export struct MixingConsole {
             }
             this.paramMode = this.param.mode;
             Logger.info(TAG, `this.param.mode is ${this.param.mode}`);
-            // 工作模式
+            // Work Mode
             if (this.param.mode !== 0 && this.param.pipelineCascadMode !== 1 && this.param.pipelineCascadMode !== 2) {
                 try {
                     let result = audioNapi.audioEditNodeInit(this.param.mode);
@@ -538,10 +538,10 @@ export struct MixingConsole {
                     Logger.error(TAG, `audioEditNodeInit error: ${JSON.stringify(e)}`);
                 }
             } else {
-                // 弹出小弹窗
+                // Pop-up window
                Logger.info(TAG, `this.param.mode is invalid :${this.param.mode}`);
             }
-            // 管线级联
+            // Pipeline cascading
             if (this.param.pipelineCascadMode === PIPELINECASCADMODE_3 && this.pipelineCascadMap.size > 0) {
                 this.pipelineCascadMap.forEach((value, key) => {
                     const inputId: string = util.generateRandomUUID(true);
@@ -587,7 +587,7 @@ export struct MixingConsole {
             if (type !== NodeType.INPUT) {
                 this.checkNodeDialogController?.open();
             } else {
-                //提前copy一份nodes数据
+                // Copy a copy of the nodes data in advance
                 let nodesArray = this.nodeList.get(nodeId)?.nodes ?? [];
                 importSingleSong(this.nodeList, nodeId).then((songMap: Map<string, SongInfo>) => {
                     Logger.error(TAG, `---- nodesArray length is ${nodesArray.length}`);
@@ -605,10 +605,10 @@ export struct MixingConsole {
                         }
                         Logger.error(TAG, `nodesArray length is ${nodesArray.length}`);
                         songInfo.nodes = nodesArray;
-                        //获取音频的相关参数
+                        // get audio parameters
                         this.getPcmFileBuffer(songInfo);
                         if(this.wavBuffer.byteLength !== 0) {
-                            // 管线级联
+                            // Pipeline cascading
                             if (this.param.pipelineCascadMode !== 0 && this.param.pipelineCascadMode !== 3) {
                                 if (!this.param.pipelineId || this.param.pipelineId === '') {
                                     this.getUIContext().showAlertDialog({
@@ -671,6 +671,8 @@ export struct MixingConsole {
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
                     .borderRadius(5)
+                    .maxLines(isLeft ? 1 : 2)
+                    .textOverflow({ overflow: isLeft ? TextOverflow.Ellipsis : TextOverflow.None })
             }
         } else if (type) {
             Text(type)
@@ -680,6 +682,8 @@ export struct MixingConsole {
                 .textAlign(TextAlign.Center)
                 .backgroundColor(ColorMap.get(type))
                 .borderRadius(5)
+                .maxLines(isLeft ? 1 : 2)
+                .textOverflow({ overflow: isLeft ? TextOverflow.Ellipsis : TextOverflow.None })
         }   else{
             Text("+")
                 .height(isLeft ? '80%' : '20%')
@@ -697,11 +701,11 @@ export struct MixingConsole {
             let file  = fs.openSync(path, fs.OpenMode.READ_ONLY | fs.OpenMode.CREATE);
             let fsStat  = fs.statSync(path);
             Logger.info(TAG, `failSize : ${fsStat.size}`);
-            // 不要删 --- let buffer = audioNapi.getFileBuffer(file.fd, fsStat.size);
+            // Don't delete --- let buffer = audioNapi.getFileBuffer(file.fd, fsStat.size);
             let buffer = new ArrayBuffer(fsStat.size);
             let readOption: ReadOptions = {
-                offset: 0, // 期望读取文件的位置。可选，默认从当前位置开始读
-                length: fsStat.size // 每次期望读取数据的长度。可选，默认缓冲区长度
+                offset: 0, // The expected position to read the file from. Optional, defaults to reading from the current position
+                length: fsStat.size // The length of data expected to be read each time. Optional, default buffer length
             }
             fs.readSync(file.fd, buffer, readOption);
             Logger.info(TAG, `getPcmFileBuffer buffer length: ${buffer.byteLength}`);
@@ -724,7 +728,7 @@ export struct MixingConsole {
             if(pcmBuffer.byteLength === 0) {
                 Logger.info(TAG, 'SaveBuffer error');
             }
-            // picker选择器，保存PCM文件
+            // Picker selector, save PCM file
             let documentSaveOptions = new picker.DocumentSaveOptions();
             if(this.newAudioFileName ===  ''){
                 this.newAudioFileName = getDateStringWithTimeStamp(new Date().getTime());
@@ -734,7 +738,7 @@ export struct MixingConsole {
             let newFileNames = `${this.newAudioFileName}${this.audioFormate}`;
             Logger.info(TAG, `SaveBuffer newFileNames is: ${newFileNames}`);
             documentSaveOptions.newFileNames = [newFileNames];
-            let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为UIAbilityContext
+            let context = getContext() as common.Context; // Please ensure that getContext(this) returns a result of UIAbilityContext
             let documentPicker = new picker.DocumentViewPicker(context);
             documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
                 if(err){
@@ -745,11 +749,11 @@ export struct MixingConsole {
                 Logger.info(TAG, 
                     'DocumentViewPicker.save successfully, documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
                 let filePath = documentSaveResult;
-                // cdocumentSaveResult数组中只有一个路径
+                // There is only one path in the cdocumentSaveResult array
                 let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
                 Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
                 if(this.audioFormate === '.wav') {
-                    // 处理wav
+                    // Processing WAV
                     let wavBuffer = this.writeWavFileHeader(pcmBuffer);
                     let writeLen = fs.writeSync(file.fd, wavBuffer);
                     Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
@@ -771,52 +775,52 @@ export struct MixingConsole {
         const viewWavHeader = new Uint8Array(wavHeaderBuffer);
         const viewPcm = new Uint8Array(pcmBuffer);
 
-        // 创建一个新的 ArrayBuffer， 大小为两个原始缓冲区之和
+        // Create a new ArrayBuffer with a size equal to the sum of the two original buffers
         const resultBuffer = new ArrayBuffer(viewWavHeader.byteLength + viewPcm.byteLength);
         const resultView = new Uint8Array(resultBuffer);
 
-        // 将两个视图的数据复制到新的视图中
+        // Copy the data from two views into a new view
         resultView.set(viewWavHeader);
         resultView.set(viewPcm, viewWavHeader.length);
 
         return resultBuffer;
     }
 
-    // 定义写 wav 头文件信息的方法
+    // Define the method for writing WAV header file information
     writeWavFileHeader(pcmBuffer: ArrayBuffer): ArrayBuffer {
         Logger.info(TAG,
             `writeWavFileHeader sampleRate: ${this.sampleRate} --- channels: ${this.channels} --- bitsPerSample: ${this.bitsPerSample}`);
         const header = new ArrayBuffer(44);
         const dv = new DataView(header);
-        // 写入 RIFF 块
+        // Write to RIFF block
         this.writeString(dv, 0, 'RIFF');
         let totalDataLen = pcmBuffer.byteLength + 44;
         dv.setUint32(4, totalDataLen, true);
         this.writeString(dv, 8, 'WAVE');
-        // 写入 fmt 块
+        // Write to fmt block
         this.writeString(dv, 12, 'fmt ');
-        // fmt块大小
+        // fmt block size
         dv.setUint32(16, 16, true);
-        // 格式类别
+        // Format Category
         if (this.bitsPerSample === 32 && this.bitsPerSampleMode === BitsPerSampleMode.FLOAT) {
             dv.setUint16(20, 3, true);
         } else {
             dv.setUint16(20, 1, true);
         }
-        // 声道数
+        // Number of audio channels
         dv.setUint16(22, this.channels, true);
-        // 采样率
+        // sampleRate
         dv.setUint32(24, this.sampleRate, true);
-        // 比特率
+        // byteRate
         let byteRate = this.bitsPerSample * this.sampleRate * this.channels / 8;
         dv.setUint32(28, byteRate, true);
-        // 每个采样点的字节数
+        // Number of bytes per sampling point
         dv.setUint16(32, this.channels * this.bitsPerSample / 8, true);
-        // 位深
+        // Bit depth
         dv.setUint16(34, this.bitsPerSample, true);
-        // 写入data块
+        // writing data block
         this.writeString(dv, 36, 'data');
-        // 数据库大小 
+        // Database size 
         dv.setUint32(40, pcmBuffer.byteLength, true);
 
         let resultBuffer = this.concatArrayBuffer(header, pcmBuffer);

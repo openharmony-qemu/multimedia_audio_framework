@@ -44,11 +44,6 @@ public:
         TYPE_LIVE = 17
     };
 
-    enum RenderTarget {
-        NORMAL_PLAYBACK = 0,
-        INJECT_TO_VOICE_COMMUNICATION_CAPTURE = 1
-    };
-
     enum AudioJsVolumeType {
         VOLUMETYPE_DEFAULT = -1,
         VOICE_CALL = 0,
@@ -101,6 +96,8 @@ public:
         USAGE_ULTRASONIC = 16,
         USAGE_VIDEO_COMMUNICATION = 17,
         USAGE_VOICE_CALL_ASSISTANT = 21,
+        USAGE_ANNOUNCEMENT = 22,
+        USAGE_EMERGENCY = 23,
         USAGE_MAX = 100
     };
 
@@ -114,7 +111,6 @@ public:
     static bool IsLegalCapturerType(int32_t type);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
     static bool IsLegalInputArgumentRingMode(int32_t ringMode);
-    static bool IsLegalRenderTarget(int32_t target);
     static OHOS::AudioStandard::AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
     static OHOS::AudioStandard::AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode);
     static OHOS::AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode);

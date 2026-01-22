@@ -200,7 +200,7 @@ HWTEST_F(RendererInServerExtUnitTest, InnerCaptureOtherStream_001, TestSize.Leve
     captureInfo.dupStream = nullptr;
     int32_t innerCapId = 1;
     uint32_t streamIndex_ = 0;
-    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex_);
+    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex_, server);
     server->innerCapIdToDupStreamCallbackMap_.insert({innerCapId, streamCallbacks});
     server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() = AudioRingCache::Create(length);
     
@@ -737,11 +737,11 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetDuckFactor_001, TestSiz
     ASSERT_TRUE(server != nullptr);
 
     float duckFactor = -0.5f;
-    auto ret = server->SetDuckFactor(duckFactor);
+    auto ret = server->SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     duckFactor = 2.0f;
-    ret = server->SetDuckFactor(duckFactor);
+    ret = server->SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -772,7 +772,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetDuckFactor_002, TestSiz
     server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
 
     float duckFactor = 0.5f;
-    auto ret = server->SetDuckFactor(duckFactor);
+    auto ret = server->SetDuckFactor(duckFactor, 0);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1095,7 +1095,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_005, Tes
 HWTEST_F(RendererInServerExtUnitTest, StreamCallbacksOnWriteData_002, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     auto inputData = new int8_t [10] {1, 2, 3};
@@ -1437,36 +1437,6 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetEAC3ControlParam
- * @tc.type  : FUNC
- * @tc.number: GetEAC3ControlParam_001
- * @tc.desc  : Test GetEAC3ControlParam API
- */
-HWTEST_F(RendererInServerExtUnitTest, GetEAC3ControlParam_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    int32_t eac3TestFlag = 1;
-    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
-    rendererInServer->GetEAC3ControlParam();
-    EXPECT_NE(rendererInServer->managerType_, EAC3_PLAYBACK);
-}
-
-/**
- * @tc.name  : Test GetEAC3ControlParam
- * @tc.type  : FUNC
- * @tc.number: GetEAC3ControlParam_002
- * @tc.desc  : Test GetEAC3ControlParam API
- */
-HWTEST_F(RendererInServerExtUnitTest, GetEAC3ControlParam_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, rendererInServer);
-    int32_t eac3TestFlag = 0;
-    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
-    rendererInServer->GetEAC3ControlParam();
-    EXPECT_NE(rendererInServer->managerType_, EAC3_PLAYBACK);
-}
-
-/**
  * @tc.name  : Test GetPlaybackManager
  * @tc.type  : FUNC
  * @tc.number: GetPlaybackManager_001
@@ -1499,6 +1469,18 @@ HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_002, TestSize.Level1)
 HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_003, TestSize.Level1)
 {
     IStreamManager &manager = IStreamManager::GetPlaybackManager(VOIP_PLAYBACK);
+    EXPECT_NE(&manager, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackManager
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackManager_004
+ * @tc.desc  : Test GetPlaybackManager API
+ */
+HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_004, TestSize.Level1)
+{
+    IStreamManager &manager = IStreamManager::GetPlaybackManager(AUDIO_VIVID_3DA_DIRECT_PLAYBACK);
     EXPECT_NE(&manager, nullptr);
 }
 

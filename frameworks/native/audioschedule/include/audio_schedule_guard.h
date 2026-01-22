@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioScheduleGuard {
 public:
-    AudioScheduleGuard(pid_t pid, pid_t tid, const std::string &bundleName = "audio_server");
+    AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPriority, const std::string &bundleName = "audio_server");
 
     AudioScheduleGuard(const AudioScheduleGuard&) = delete;
 
@@ -52,15 +52,16 @@ private:
 class SharedAudioScheduleGuard {
 public:
     static std::shared_ptr<SharedAudioScheduleGuard> Create(
-        pid_t pid, pid_t tid, const std::string &bundleName = "audio_server");
+        pid_t pid, pid_t tid, uint32_t threadPriority, const std::string &bundleName = "audio_server");
 
     SharedAudioScheduleGuard(const SharedAudioScheduleGuard&) = delete;
     SharedAudioScheduleGuard(SharedAudioScheduleGuard&&) = delete;
     SharedAudioScheduleGuard operator=(const SharedAudioScheduleGuard&) = delete;
     SharedAudioScheduleGuard& operator=(SharedAudioScheduleGuard&&) = delete;
 
-    SharedAudioScheduleGuard(pid_t pid, pid_t tid, const std::string &bundleName = "audio_server")
-        : guard_(pid, tid, bundleName), pid_(pid), tid_(tid) {};
+    SharedAudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPriority,
+        const std::string &bundleName = "audio_server")
+        : guard_(pid, tid, threadPriority, bundleName), pid_(pid), tid_(tid) {};
 
     ~SharedAudioScheduleGuard();
 private:

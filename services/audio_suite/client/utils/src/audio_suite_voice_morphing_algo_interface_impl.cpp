@@ -35,9 +35,9 @@ const std::string voiceMorphingMode = "VoiceBeautifierType";
 const std::string generalVoiceChangeMode = "AudioGeneralVoiceChangeType";
 }  // namespace
 
-AudioSuiteVoiceMorphingAlgoInterfaceImpl::AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeCapability &nc)
+AudioSuiteVoiceMorphingAlgoInterfaceImpl::AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeParameter &nc)
 {
-    nodeCapability = nc;
+    nodeParameter_ = nc;
 }
 
 AudioSuiteVoiceMorphingAlgoInterfaceImpl::~AudioSuiteVoiceMorphingAlgoInterfaceImpl()
@@ -63,7 +63,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::ApplyAndWaitReady(void)
 {
     AUDIO_INFO_LOG("start load vm algo so");
 
-    std::string soPath = nodeCapability.soPath + nodeCapability.soName;
+    std::string soPath = nodeParameter_.soPath + nodeParameter_.soName;
     libHandle_ = algoLibrary_.LoadLibrary(soPath);
     CHECK_AND_RETURN_RET_LOG(libHandle_ != nullptr, ERROR, "LoadLibrary failed with path: %{private}s", soPath.c_str());
 
@@ -156,7 +156,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::SetParameter(
 int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     std::vector<uint8_t *> &audioInputs, std::vector<uint8_t *> &audioOutputs)
 {
-    AUDIO_INFO_LOG("start apply vm algorithm");
+    AUDIO_DEBUG_LOG("start apply vm algorithm");
 
     if (audioInputs.empty() || audioOutputs.empty()) {
         AUDIO_ERR_LOG("Apply para check fail, input or output list is empty");

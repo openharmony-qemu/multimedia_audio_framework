@@ -57,6 +57,9 @@ public:
     ~InputNodeRequestDataCallBackTestImpl() = default;
     int32_t OnRequestDataCallBack(void *audioData, int32_t audioDataSize, bool *finished) override
     {
+        (void)audioData;
+        (void)audioDataSize;
+        (void)finished;
         return 0;
     }
 };
@@ -202,6 +205,31 @@ void AudioSuiteManagerSetVoiceBeautifierTypeFuzzTest()
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetVoiceBeautifierType(nodeId, voiceBeautifierType);
 }
 
+void AudioSuiteEngineSetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed = GetData<float>();
+    float pitch = GetData<float>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetTempoAndPitch(nodeId, speed, pitch);
+}
+
+void AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioPureVoiceChangeOption option;
+    option.optionGender = GetData<AudioSuite::AudioPureVoiceChangeGenderOption>();
+    option.optionType = GetData<AudioSuite::AudioPureVoiceChangeType>();
+    option.pitch = GetData<float>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetPureVoiceChangeOption(nodeId, option);
+}
+
+void AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioGeneralVoiceChangeType changeType = GetData<AudioSuite::AudioGeneralVoiceChangeType>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetGeneralVoiceChangeType(nodeId, changeType);
+}
+
 void AudioSuiteManagerGetEqFrequencyBandGainsModeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
@@ -213,7 +241,7 @@ void AudioSuiteManagerGetSoundFieldTypeFuzzTest()
 {
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::SoundFieldType soundFieldType;
-    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSoundFiledType(nodeId, soundFieldType);
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSoundFieldType(nodeId, soundFieldType);
 }
 
 void AudioSuiteManagerGetEnvironmentTypeFuzzTest()
@@ -228,6 +256,28 @@ void AudioSuiteManagerGetVoiceBeautifierTypeFuzzTest()
     uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
     AudioSuite::VoiceBeautifierType voiceBeautifierType;
     AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetVoiceBeautifierType(nodeId, voiceBeautifierType);
+}
+
+void AudioSuiteEngineGetTempoAndPitchFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    float speed;
+    float pitch;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetTempoAndPitch(nodeId, speed, pitch);
+}
+
+void AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioPureVoiceChangeOption option;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetPureVoiceChangeOption(nodeId, option);
+}
+
+void AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioGeneralVoiceChangeType changeType;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetGeneralVoiceChangeType(nodeId, changeType);
 }
 
 void AudioSuiteRenderFrameFuzzTest()
@@ -261,6 +311,58 @@ void AudioSuiteMultiRenderFrameFuzzTest()
         &responseSize, &finishedFlag);
 }
 
+void AudioSuiteManagerSetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioSpaceRenderPositionParams spaceRenderPosition;
+    spaceRenderPosition.x = GetData<float>();
+    spaceRenderPosition.y = GetData<float>();
+    spaceRenderPosition.z = GetData<float>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderPositionParams(nodeId, spaceRenderPosition);
+}
+ 
+void AudioSuiteManagerGetSpaceRenderPositionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioSpaceRenderPositionParams spaceRenderPosition;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderPositionParams(nodeId, spaceRenderPosition);
+}
+ 
+void AudioSuiteManagerSetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioSpaceRenderRotationParams spaceRenderRotation;
+    spaceRenderRotation.x = GetData<float>();
+    spaceRenderRotation.y = GetData<float>();
+    spaceRenderRotation.z = GetData<float>();
+    spaceRenderRotation.surroundTime = GetData<int32_t>();
+    spaceRenderRotation.surroundDirection = GetData<AudioSuite::AudioSurroundDirection>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderRotationParams(nodeId, spaceRenderRotation);
+}
+ 
+void AudioSuiteManagerGetSpaceRenderRotationParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioSpaceRenderRotationParams spaceRenderRotation;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderRotationParams(nodeId, spaceRenderRotation);
+}
+ 
+void AudioSuiteManagerSetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioSpaceRenderExtensionParams spaceRenderExtension;
+    spaceRenderExtension.extRadius = GetData<float>();
+    spaceRenderExtension.extAngle = GetData<int32_t>();
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().SetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
+}
+ 
+void AudioSuiteManagerGetSpaceRenderExtensionParamsFuzzTest()
+{
+    uint32_t nodeId = GetData<uint32_t>() % MAX_NODE_NUM;
+    AudioSuite::AudioSpaceRenderExtensionParams spaceRenderExtension;
+    AudioSuite::IAudioSuiteManager::GetAudioSuiteManager().GetSpaceRenderExtensionParams(nodeId, spaceRenderExtension);
+}
+
 vector g_testFuncs = {
     AudioSuiteManagerInitFuzzTest,
     AudioSuiteManagerDeInitFuzzTest,
@@ -281,12 +383,24 @@ vector g_testFuncs = {
     AudioSuiteManagerSetSoundFieldTypeFuzzTest,
     AudioSuiteManagerSetEnvironmentTypeFuzzTest,
     AudioSuiteManagerSetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineSetTempoAndPitchFuzzTest,
+    AudioSuiteEngineSetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineSetGeneralVoiceChangeTypeFuzzTest,
     AudioSuiteManagerGetEqFrequencyBandGainsModeFuzzTest,
     AudioSuiteManagerGetSoundFieldTypeFuzzTest,
     AudioSuiteManagerGetEnvironmentTypeFuzzTest,
     AudioSuiteManagerGetVoiceBeautifierTypeFuzzTest,
+    AudioSuiteEngineGetTempoAndPitchFuzzTest,
+    AudioSuiteEngineGetPureVoiceChangeOptionFuzzTest,
+    AudioSuiteEngineGetGeneralVoiceChangeTypeFuzzTest,
     AudioSuiteRenderFrameFuzzTest,
     AudioSuiteMultiRenderFrameFuzzTest,
+    AudioSuiteManagerSetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteManagerGetSpaceRenderPositionParamsFuzzTest,
+    AudioSuiteManagerSetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteManagerGetSpaceRenderRotationParamsFuzzTest,
+    AudioSuiteManagerSetSpaceRenderExtensionParamsFuzzTest,
+    AudioSuiteManagerGetSpaceRenderExtensionParamsFuzzTest,
 };
 
 } // namespace AudioStandard

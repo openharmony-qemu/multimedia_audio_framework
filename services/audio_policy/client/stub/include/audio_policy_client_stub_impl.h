@@ -19,14 +19,13 @@
 #include "audio_policy_client_stub.h"
 #include "audio_device_info.h"
 #include "audio_session_manager.h"
-#include "audio_system_manager.h"
 #include "audio_interrupt_info.h"
 #include "audio_group_manager.h"
 #include "audio_routing_manager.h"
 #include "audio_spatialization_manager.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_policy_interface.h"
-#include "audio_stream_manager.h"
+#include "audio_stream_types.h"
 #include "audio_collaborative_manager.h"
 
 namespace OHOS {
@@ -155,6 +154,9 @@ public:
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &cb);
     int32_t RemoveCollaborationEnabledChangeForCurrentDeviceCallback();
     size_t GetCollaborationEnabledChangeForCurrentDeviceCallbackSize() const;
+    int32_t AddPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    int32_t RemovePreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
+    size_t GetPreferredDeviceSetCallbackSize() const;
     int32_t AddAdaptiveSpatialRenderingEnabledChangeCallback(
         const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &cb);
     int32_t RemoveAdaptiveSpatialRenderingEnabledChangeCallback();
@@ -204,9 +206,12 @@ public:
     int32_t OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent) override;
     int32_t OnSystemVolumeChange(const VolumeEvent &volumeEvent) override;
     int32_t OnCollaborationEnabledChangeForCurrentDevice(bool enabled) override;
+    int32_t OnPreferredDeviceSet(int32_t preferredType, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        int32_t uid, const std::string &caller) override;
     int32_t OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         bool enabled) override;
+
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);
@@ -257,6 +262,7 @@ private:
         std::shared_ptr<HeadTrackingDataRequestedChangeCallback>> headTrackingDataRequestedChangeCallbackMap_;
     std::vector<std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback>>
         collaborationEnabledChangeForCurrentDeviceCallbackList_;
+    std::vector<std::shared_ptr<PreferredDeviceSetCallback>> preferredDeviceSetCallbackList_;
     mutable std::mutex focusInfoChangeMutex_;
     mutable std::mutex rendererStateChangeMutex_;
     mutable std::mutex capturerStateChangeMutex_;
@@ -287,6 +293,7 @@ private:
     mutable std::mutex streamVolumeChangeMutex_;
     mutable std::mutex systemVolumeChangeMutex_;
     mutable std::mutex collaborationEnabledChangeForCurrentDeviceMutex_;
+    mutable std::mutex preferredDeviceSetMutex_;
     mutable std::mutex adaptiveSpatialRenderingEnabledChangeMutex_;
 };
 } // namespace AudioStandard

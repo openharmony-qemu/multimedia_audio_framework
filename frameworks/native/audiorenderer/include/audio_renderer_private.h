@@ -43,6 +43,7 @@ class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_fro
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const override;
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override;
     AudioPrivacyType GetAudioPrivacyType() override;
     int32_t SetParams(const AudioRendererParams params) override;
@@ -160,9 +161,13 @@ public:
     void ResetFirstFrameState() override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
     bool IsVirtualKeyboard(const int32_t flags);
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
+    int32_t SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback);
+    bool IsRendererFlagsSupportStatic(const int32_t rendererFlags);
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
@@ -178,11 +183,13 @@ public:
     }
 
     AudioRendererInfo rendererInfo_ = {CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC, 0};
+    bool isHWDecodingType_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     AudioSessionStrategy originalStrategy_ = { AudioConcurrencyMode::INVALID };
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
     mutable bool isStillZeroStreamVolume_ = false;
+    StaticBufferInfo staticBufferInfo_{};
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
 
@@ -196,9 +203,10 @@ protected:
 
 private:
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
-    int32_t AsyncCheckAudioRenderer(std::string callingFunc);
+    int32_t AsyncCheckAudioRenderer(std::string callingFunc, bool needWait = false);
     int32_t CheckAudioRenderer(std::string callingFunc);
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
+    bool WaitSwitchStreamIfNeeded(bool needWait = false);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
@@ -211,7 +219,7 @@ private:
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     bool SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
-    void InitSwitchInfo(IAudioStream::StreamClass targetClass, IAudioStream::SwitchInfo &info);
+    void InitSwitchInfo(IAudioStream::SwitchInfo &info);
     bool SwitchToTargetStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo);
     bool FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
         IAudioStream::SwitchInfo &info);
@@ -228,10 +236,10 @@ private:
     void WriteUnderrunEvent() const;
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
-    bool IsAllowedStartBackground(StreamUsage streamUsage, bool &silentControl);
+    bool IsAllowedStartBackground(uint32_t sessionId, StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
-    RendererState GetStatusInner();
+    RendererState GetStatusInner() const;
     void SetAudioPrivacyTypeInner(AudioPrivacyType privacyType);
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
     float GetVolumeInner() const;
@@ -252,6 +260,8 @@ private:
     void SetInSwitchingFlag(bool inSwitchingFlag);
     void UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
+    int32_t GetCurrentBackMuteStatus(bool &backMute);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -288,7 +298,6 @@ private:
 
     std::vector<uint32_t> usedSessionId_ = {};
     mutable std::mutex silentModeAndMixWithOthersMutex_;
-    std::mutex setStreamCallbackMutex_;
     std::mutex setParamsMutex_;
     std::mutex rendererPolicyServiceDiedCbMutex_;
     int64_t framesAlreadyWritten_ = 0;

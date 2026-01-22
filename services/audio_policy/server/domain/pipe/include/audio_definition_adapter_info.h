@@ -147,7 +147,6 @@ public:
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
     uint32_t suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
-    int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
     bool supportEncodingEac3_ = false;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
@@ -237,6 +236,7 @@ public:
     void UnregisterAdapter(AudioAdapterType type);
     void RegisterStreamProperty(
         AudioAdapterType adapterType, std::string pipeName, std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps);
+    AudioPin DecideAudioPin(DeviceType type, DeviceRole role);
 
     std::weak_ptr<AdapterPipeInfo> pipeInfo_;
     std::list<std::string> supportDevices_ {};

@@ -262,7 +262,7 @@ void SetDuckFactorFuzzTest()
     }
     auto basicInfo = std::make_shared<BasicBufferInfo>();
     ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
-    ohAudioBufferBase->SetDuckFactor(g_fuzzUtils.GetData<float>());
+    ohAudioBufferBase->SetDuckFactor(g_fuzzUtils.GetData<float>(), 0);
     ohAudioBufferBase->GetDuckFactor();
 }
 

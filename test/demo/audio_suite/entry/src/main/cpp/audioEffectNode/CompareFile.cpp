@@ -9,7 +9,7 @@
 static const int GLOBAL_RESMGR = 0xFF00; // domain parameter for hilog
 static const char *TAG = "[AudioEditTestApp_CompareFile_cpp]";
 
-// 比较文件长度
+// Compare File Lengths
 bool ValidateFileLength(std::ifstream& file1, std::ifstream& file2)
 {
     if (!file1.is_open() || !file2.is_open()) {
@@ -38,10 +38,10 @@ bool ValidateFileLength(std::ifstream& file1, std::ifstream& file2)
     return true;
 }
 
-// 比较文件内容
+// Compare File Contents
 bool CompareFileContent(std::ifstream& file1, std::ifstream& file2)
 {
-    const size_t bufferSize = 4096; // 4KB 缓冲区
+    const size_t bufferSize = 4096; // 4KB buffer
     char buffer1[bufferSize];
     char buffer2[bufferSize];
 

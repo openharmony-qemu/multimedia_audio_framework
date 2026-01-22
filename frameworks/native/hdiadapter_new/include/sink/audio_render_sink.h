@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include "ctime"
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "audio_performance_monitor.h"
 #include "adapter/i_device_manager.h"
@@ -47,9 +47,6 @@ public:
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
     int64_t GetVolumeDataCount() override;
 
-    int32_t SuspendRenderSink(void) override;
-    int32_t RestoreRenderSink(void) override;
-
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
@@ -69,7 +66,6 @@ public:
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
     void ResetActiveDeviceForDisconnect(DeviceType device) override;
 
     int32_t SetPaPower(int32_t flag) override;
@@ -78,9 +74,8 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    void SetAddress(const std::string &address) override;
-
     void DumpInfo(std::string &dumpString) override;
+
     // for a2dp_offload connection state
     int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
 
@@ -89,6 +84,7 @@ public:
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
     void HandleDeviceCallback(const bool state);
 
+    bool IsInA2dpOffload() override;
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -107,7 +103,6 @@ private:
     int32_t DoSetOutputRoute(std::vector<DeviceType> &outputDevices);
     int32_t InitRender(void);
     void InitLatencyMeasurement(void);
-    void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
@@ -146,7 +141,6 @@ private:
     uint32_t renderId_ = HDI_INVALID_ID;
     const std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     bool sinkInited_ = false;
     bool renderInited_ = false;
     bool started_ = false;
@@ -192,7 +186,7 @@ private:
     std::string address_ = "";
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
-    std::mutex sinkMutex_;
+
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;
 

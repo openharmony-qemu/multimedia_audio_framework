@@ -40,6 +40,12 @@ AudioZoneBindKey::AudioZoneBindKey(int32_t uid)
 {
 }
 
+AudioZoneBindKey::AudioZoneBindKey(int32_t uid, StreamUsage streamUsage)
+    : uid_(uid),
+      usage_(streamUsage)
+{
+}
+
 AudioZoneBindKey::AudioZoneBindKey(int32_t uid, const std::string &deviceTag)
     : uid_(uid),
       deviceTag_(deviceTag)
@@ -161,6 +167,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
         keys.push_back(temp);
     };
     pushBack(AudioZoneBindKey(uid, "", streamTag));
+    pushBack(AudioZoneBindKey(uid, usage));
     pushBack(AudioZoneBindKey(uid));
     pushBack(AudioZoneBindKey(uid, deviceTag));
     pushBack(AudioZoneBindKey(INVALID_UID, "", "", usage));
@@ -245,8 +252,6 @@ void AudioZone::BindByKey(const AudioZoneBindKey &key)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (auto itKey = keys_.begin(); itKey != keys_.end();) {
-        CHECK_AND_RETURN_LOG(!itKey->IsContain(key), "exist low key %{public}s to %{public}s for zone %{public}d",
-            itKey->GetString().c_str(), key.GetString().c_str(), zoneId_);
         if (key.IsContain(*itKey)) {
             AUDIO_INFO_LOG("erase high key %{public}s to %{public}s for zone %{public}d",
                 itKey->GetString().c_str(), key.GetString().c_str(), zoneId_);
@@ -306,9 +311,11 @@ int32_t AudioZone::AddDeviceDescriptor(const std::vector<std::shared_ptr<AudioDe
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectDevices;
             AudioConnectedDevice::GetInstance().GetAllConnectedDeviceByType(device->networkId_,
                 device->deviceType_, device->macAddress_, device->deviceRole_, connectDevices);
-            devices_.emplace_back(std::make_pair(device, connectDevices.size() != 0));
+            std::shared_ptr<AudioDeviceDescriptor> target =
+                connectDevices.size() != 0 ? connectDevices.front() : device;
+            devices_.emplace_back(std::make_pair(target, connectDevices.size() != 0));
             AUDIO_INFO_LOG("add device %{public}d,%{public}d,%{public}s to zone %{public}d",
-                device->deviceType_, device->deviceId_, device->deviceName_.c_str(), zoneId_);
+                target->deviceType_, target->deviceId_, target->deviceName_.c_str(), zoneId_);
         }
     }
     return SUCCESS;
@@ -535,6 +542,18 @@ bool AudioZone::CheckExistUidInZone()
         }
     }
     return false;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioZone::GetDeviceDescriptor(DeviceType type, std::string networkId)
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    for (const auto &it : devices_) {
+        if (it.second && it.first->deviceType_ == type &&
+            it.first->networkId_ == networkId) {
+            return it.first;
+        }
+    }
+    return nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -25,7 +25,6 @@
 #include "audio_group_handle.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
-#include "audio_system_manager.h"
 #include "audio_errors.h"
 #include "audio_device_manager.h"
 #include "audio_affinity_manager.h"
@@ -33,6 +32,7 @@
 #include "audio_a2dp_device.h"
 #include "audio_iohandle_map.h"
 #include "audio_connected_device.h"
+#include "audio_stream_change_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,6 +53,8 @@ public:
         bool isSameDevice = false, StreamUsage streamUsage = STREAM_USAGE_INVALID);
     void NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         SourceType sourceType = SOURCE_TYPE_INVALID);
+    void NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
+    void NotifyUserDisSelectionEventToRemote(std::shared_ptr<AudioDeviceDescriptor> desc);
 
     bool UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
@@ -79,13 +81,15 @@ public:
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
         const std::string &deviceName = "", std::string networkId = LOCAL_NETWORK_ID);
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
-        const std::string &deviceName = "");
+        const std::string &deviceName = "", const std::string &networkId = LOCAL_NETWORK_ID);
+    void ReleaseActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag, const std::string &networkId);
     bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateStreamDeviceMap(std::string source);
     bool IsDeviceInActiveOutputDevices(DeviceType type, bool isRemote);
     bool IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetAdjustVolumeForZone(int32_t zoneId);
+    int32_t GetAdjustVolumeZoneId();
 
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(StreamUsage streamUsage);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(AudioStreamType streamType);

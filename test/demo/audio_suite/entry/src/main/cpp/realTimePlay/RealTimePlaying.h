@@ -13,20 +13,21 @@ extern OH_AudioRenderer *audioRenderer;
 
 extern OH_AudioStreamBuilder *rendererBuilder;
 
-// 实时播放，一次渲染是否完成
+// Real-time playback   if the rendering completed in one go
 extern bool g_playFinishedFlag;
 
 extern char *g_playAudioData;
 
 extern int32_t g_playDataSize;
 
-// 是否录制
+// Record or not?
 extern bool g_isRecord;
 
-// 实时播放，用于保存音频数据，具体大小根据需要保存的文件大小而变化
+// Real-time playback, used for saving audio data
+// with the specific size varying according to the size of the file to be saved
 extern char *g_playTotalAudioData;
 
-// 实时播放需要保存的音频总大小
+// Total size of audio to be saved for real-time playback
 extern int32_t g_playResultTotalSize;
 
 extern OH_AudioDataArray* g_play_ohAudioDataArray;

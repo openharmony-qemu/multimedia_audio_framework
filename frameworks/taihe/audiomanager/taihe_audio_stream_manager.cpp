@@ -81,6 +81,12 @@ array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(Strea
 {
     std::vector<AudioEffectMode> emptyResult;
     int32_t streamUsage = usage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (streamUsage == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        streamUsage == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        streamUsage = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage)) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
             "parameter verification failed: The param of usage must be enum StreamUsage");
@@ -120,6 +126,12 @@ bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)
 bool AudioStreamManagerImpl::IsStreamActive(StreamUsage streamUsage)
 {
     int32_t usage = streamUsage.get_value();
+#ifndef MULTI_ALARM_LEVEL
+    if (usage == OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT ||
+        usage == OHOS::AudioStandard::STREAM_USAGE_EMERGENCY) {
+        usage = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+    }
+#endif
     if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(usage)) {
         AUDIO_ERR_LOG("get streamUsage failed: %{public}d", usage);
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,

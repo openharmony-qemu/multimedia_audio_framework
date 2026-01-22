@@ -6,7 +6,8 @@
             "libpath": "libaudio_service.z.so",
             "run-on-create": true,
             "distributed": false,
-            "dump_level": 1
+            "dump_level": 1,
+            "min_hdi_proxy_version": ["libaudio_proxy_6.0.z.so", "libeffect_proxy_1.0.z.so", "libdaudio_proxy_1.0.z.so"]
         }
     ]
 }

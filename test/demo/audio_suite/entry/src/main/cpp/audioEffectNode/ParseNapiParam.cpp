@@ -4,7 +4,7 @@
 
 #include "ParseNapiParam.h"
 
-// 解析 napi 字符串参数
+// Parsing napi string parameters
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
 {
     size_t size;
@@ -13,7 +13,7 @@ napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
         return status;
     }
 
-    result.resize(size + 1); // 包含结尾的空字符
+    result.resize(size + 1); // Contains ending null characters
     status = napi_get_value_string_utf8(env, value, const_cast<char *>(result.data()), size + 1, nullptr);
 
     return status;

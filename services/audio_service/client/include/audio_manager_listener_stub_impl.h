@@ -19,7 +19,7 @@
 #include <thread>
 
 #include "audio_policy_interface.h"
-#include "audio_system_manager.h"
+#include "audio_stream_types.h"
 #include "standard_audio_server_manager_listener_stub.h"
 
 namespace OHOS {
@@ -28,6 +28,7 @@ class AudioManagerListenerStubImpl : public StandardAudioServerManagerListenerSt
 public:
     int32_t OnAudioParameterChange(const std::string &networkId, int32_t key, const std::string& condition,
         const std::string& value) override;
+    int32_t OnHdiRouteStateChange(const std::string &networkId, bool enable) override;
     int32_t OnCapturerState(bool isActive) override;
     int32_t OnWakeupClose() override;
     int32_t OnDataTransferStateChange(int32_t callbackId,

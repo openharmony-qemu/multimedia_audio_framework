@@ -1002,6 +1002,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_003, TestSize.
     rendererChangeInfo5->clientUID = 1001;
     rendererChangeInfo5->clientPid = 2001;
     rendererChangeInfo5->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererChangeInfo2->sessionId = 11111;
     auto rendererChangeInfo6 = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo6->clientUID = 1001;
     rendererChangeInfo6->clientPid = 2001;
@@ -1015,8 +1016,11 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_003, TestSize.
 
     int32_t uid = 1001;
     int32_t pid = 2001;
-    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(uid, pid, true, true));
-    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(uid, pid, true, false));
+    uint32_t sessionId = 11111;
+    bool silentControl = false;
+    StartStreamInfo startStreamInfo = {uid, pid, sessionId};
+    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(startStreamInfo, true, true, silentControl));
+    EXPECT_NO_THROW(collector.HandleStartStreamMuteState(startStreamInfo, true, false, silentControl));
 }
 
 /**
@@ -1059,15 +1063,17 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_004, TestSize.
 
     int32_t uid = 1001;
     int32_t pid = 2001;
+    bool silentControl = false;
+    StartStreamInfo startStreamInfo = {uid, pid, sessionId};
     auto mockAudioClientTracker = std::make_shared<MockAudioClientTracker>();
     EXPECT_CALL(*mockAudioClientTracker, MuteStreamImpl(_)).Times(1);
     EXPECT_CALL(*mockAudioClientTracker, UnmuteStreamImpl(_)).Times(2);
     collector.clientTracker_.insert(std::make_pair(sessionId, mockAudioClientTracker));
-    collector.HandleStartStreamMuteState(uid, pid, true, false);
+    collector.HandleStartStreamMuteState(startStreamInfo, true, false, silentControl);
     EXPECT_TRUE(rendererChangeInfo1->backMute);
     rendererChangeInfo1->backMute = false;
 
-    collector.HandleStartStreamMuteState(uid, pid, false, false);
+    collector.HandleStartStreamMuteState(startStreamInfo, false, false, silentControl);
     EXPECT_FALSE(rendererChangeInfo2->backMute);
 }
 
@@ -1179,7 +1185,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, PostReclaimMemoryTask_001, TestSize.Level
     system::SetParameter("persist.ace.testmode.enabled", "1");
     collector.activatedReclaimMemory_ = true;
     collector.PostReclaimMemoryTask();
-    collector.ReclaimMem();
+    collector.ReclaimMem("1");
     collector.isActivatedMemReclaiTask_ = true;
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
     EXPECT_NE(rendererChangeInfo, nullptr);

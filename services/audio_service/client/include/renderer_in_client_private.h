@@ -16,15 +16,14 @@
 #define RENDERER_IN_CLIENT_PRIVATE_H
 
 #include <optional>
-
+#include <thread>
+#include <mutex>
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
-#include "audio_manager_base.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -34,8 +33,7 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
-#include "audio_policy_manager.h"
-#include "audio_spatialization_manager.h"
+#include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
 
@@ -59,6 +57,9 @@ public:
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+    void SetPlaybackCaptureStartStateCallback(
+        const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -82,6 +83,7 @@ public:
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
+    int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -224,6 +226,13 @@ public:
     int32_t SetRenderTarget(RenderTarget renderTarget) override;
     RenderTarget GetRenderTarget() override;
     bool IsRestoreNeeded() override;
+    void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) override;
+    int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
+    int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    const std::string GetBundleName() override;
+    void SetBundleName(std::string &name) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -234,6 +243,14 @@ private:
     int32_t DeinitIpcStream();
 
     int32_t InitIpcStream();
+
+    void InitDFXOperaiton();
+
+    bool GetHWDecodingTime(Timestamp &timestamp, Timestamp::Timestampbase base);
+
+    int32_t GetRawBuffer(BufferDesc &bufDesc);
+
+    int32_t WriteRawBuffer(BufferDesc &bufferDesc);
 
     const AudioProcessConfig ConstructConfig();
 
@@ -250,6 +267,7 @@ private:
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
+    void WriteAudioVividDirect(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     bool IsMutePlaying();
     void MonitorMutePlay(bool isPlayEnd);
@@ -286,7 +304,7 @@ private:
 
     int32_t SetSpeedInner(float speed);
 
-    void WaitForBufferNeedWrite();
+    void WaitForBufferNeedOperate();
 
     void UpdatePauseReadIndex();
 
@@ -301,6 +319,20 @@ private:
     void RecordDropPosition(size_t dataLength);
 
     void GetRendererFirstFrameWritingCallback(IAudioStream::SwitchInfo& info);
+
+    bool CheckStaticAndOperate();
+
+    void CheckOperations();
+
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
+
+    void CheckFrozenStateInStaticMode();
+
+    int32_t CallStartWhenInStandby();
+
+    void NotifyStopWaiting();
+
+    void UpdateStopState();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -310,6 +342,8 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
+    std::vector<uint8_t> outPackedBuf_;
+    size_t outPackedLen_ = 0;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
     AudioRendererInfo rendererInfo_ = {};
@@ -322,6 +356,8 @@ private:
     RenderTarget renderTarget_ = NORMAL_PLAYBACK;
     AudioStreamParams curStreamParams_ = {0}; // in plan next: replace it with AudioRendererParams
     AudioStreamParams streamParams_ = {0};
+
+    bool isHWDecodingType_ = false;
 
     // for data process
     bool isBlendSet_ = false;
@@ -393,6 +429,12 @@ private:
     sptr<IIpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
+    // for static audio renderer
+    std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    std::function<void()> sendStaticRecreateFunc_ = nullptr;
+    StaticBufferInfo staticBufferInfo_{};
+    std::mutex staticBufferMutex_;
+
     // buffer handle
     std::mutex writeMutex_; // used for prevent multi thread call write
 
@@ -435,6 +477,7 @@ private:
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
+    bool backMute_ = false;
 
     // for getAudioTimeStampInfo
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair_ = {
@@ -473,10 +516,17 @@ private:
     bool isUpEvent_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
-    bool loudVolumeModeEnable_ = false;
+    int32_t loudVolumeSupportMode_ = 0;
 
     uint64_t lastFlushReadIndex_ = 0;
     uint64_t lastSpeedFlushReadIndex_ = 0;
+
+    enum LoudVolumeSupportType {
+        LOUD_VOLUME_NOT_SUPPORT = 0,
+        LOUD_VOLUME_SUPPORT,
+        LOUD_VOLUME_SUPPORT_ONLY_MUSIC,
+        LOUD_VOLUME_SUPPORT_ONLY_VOICE,
+    };
 
     enum {
         STATE_CHANGE_EVENT = 0,
@@ -513,6 +563,8 @@ private:
     std::optional<pid_t> lastCallStartByUserTid_ = std::nullopt;
 
     std::function<uid_t()> uidGetter_ = [] { return getuid(); };
+
+    std::string bundleName = "";
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

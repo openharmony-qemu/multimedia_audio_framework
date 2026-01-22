@@ -27,11 +27,13 @@
 #include "core_service_handler.h"
 #include "policy_handler.h"
 #include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
 const char* PRO_INNER_CAPTURER_SOURCE = "Speaker";
 const char* PRO_DUAL_PLAYBACK_SINK = "Speaker";
+static constexpr uint64_t DUAL_STREAM_PREBUF_TIME_MS = 60;
 
 HpaeAdapterManager::HpaeAdapterManager(ManagerType type)
 {
@@ -53,9 +55,10 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
     std::string deviceName = "";
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "get devicename err: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERROR_INVALID_PARAM,
+        HILOG_COMM_ERROR("[CreateRender]get devicename err: %{public}d", ret));
     if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK) {
-        deviceName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+        deviceName = CoreServiceHandler::GetInstance().GetModuleNameBySessionId(sessionId);
     }
     if (deviceName == "") {
         AUDIO_INFO_LOG("sink name is null");
@@ -64,7 +67,8 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     deviceName = originDeviceName.has_value() ? std::string(originDeviceName.value()) : deviceName;
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(rendererStream != nullptr, ERR_DEVICE_INIT,
+        HILOG_COMM_ERROR("[CreateRender]Failed to init pa stream!"));
     SetHighResolution(processConfig, sessionId);
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -91,12 +95,8 @@ int32_t HpaeAdapterManager::ReleaseRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Release [%{public}d] type render:[%{public}u]", managerType_, streamIndex);
     std::unique_lock<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    std::shared_ptr<IRendererStream> currentRender = rendererStreamMap_[streamIndex];
+    auto currentRender = SafeGetMap(rendererStreamMap_, static_cast<int32_t>(streamIndex));
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
     rendererStreamMap_[streamIndex] = nullptr;
     rendererStreamMap_.erase(streamIndex);
     AUDIO_INFO_LOG("rendererStreamMap_.size() : %{public}zu", rendererStreamMap_.size());
@@ -132,49 +132,37 @@ int32_t HpaeAdapterManager::StartRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter StartRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return rendererStreamMap_[streamIndex]->Start();
+    auto currentRender = SafeGetMap(rendererStreamMap_, static_cast<int32_t>(streamIndex));
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    return currentRender->Start();
 }
 
 int32_t HpaeAdapterManager::StartRenderWithSyncId(uint32_t streamIndex, const int32_t &syncId)
 {
     AUDIO_DEBUG_LOG("Enter StartRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return syncId > 0 ? rendererStreamMap_[streamIndex]->StartWithSyncId(syncId) :
-        rendererStreamMap_[streamIndex]->Start();
+    auto currentRender = SafeGetMap(rendererStreamMap_, static_cast<int32_t>(streamIndex));
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    return syncId > 0 ? currentRender->StartWithSyncId(syncId) :
+        currentRender->Start();
 }
 
 int32_t HpaeAdapterManager::StopRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter StopRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    return rendererStreamMap_[streamIndex]->Stop();
+    auto currentRender = SafeGetMap(rendererStreamMap_, static_cast<int32_t>(streamIndex));
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    return currentRender->Stop();
 }
 
 int32_t HpaeAdapterManager::PauseRender(uint32_t streamIndex, bool isStandby)
 {
     AUDIO_DEBUG_LOG("Enter PauseRender");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = rendererStreamMap_.find(streamIndex);
-    if (it == rendererStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
-    rendererStreamMap_[streamIndex]->Pause();
+    auto currentRender = SafeGetMap(rendererStreamMap_, static_cast<int32_t>(streamIndex));
+    CHECK_AND_RETURN_RET_LOG(currentRender != nullptr, SUCCESS, "No matching stream");
+    currentRender->Pause();
     return SUCCESS;
 }
 
@@ -234,12 +222,13 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
 
     std::string deviceName = "";
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "get devicename err: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERROR_INVALID_PARAM,
+        HILOG_COMM_ERROR("[CreateRender]get devicename err: %{public}d", ret));
     SourceType &sourceType = processConfig.capturerInfo.sourceType;
     if (sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE &&
         sourceType != SOURCE_TYPE_REMOTE_CAST &&
         sourceType != SOURCE_TYPE_WAKEUP) {
-        deviceName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+        deviceName = CoreServiceHandler::GetInstance().GetModuleNameBySessionId(sessionId);
     }
     if (deviceName == "") {
         AUDIO_INFO_LOG("source name is null");
@@ -247,7 +236,8 @@ int32_t HpaeAdapterManager::CreateCapturer(AudioProcessConfig processConfig, std
     }
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<ICapturerStream> capturerStream = CreateCapturerStream(processConfig, deviceName);
-    CHECK_AND_RETURN_RET_LOG(capturerStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    CHECK_AND_CALL_FUNC_RETURN_RET(capturerStream != nullptr, ERR_DEVICE_INIT,
+        HILOG_COMM_ERROR("[CreateCapturer]Failed to init pa stream"));
     capturerStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
     capturerStreamMap_[sessionId] = capturerStream;
@@ -267,16 +257,11 @@ int32_t HpaeAdapterManager::ReleaseCapturer(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter ReleaseCapturer");
     std::lock_guard<std::mutex> lock(streamMapMutex_);
-    auto it = capturerStreamMap_.find(streamIndex);
-    if (it == capturerStreamMap_.end()) {
-        AUDIO_WARNING_LOG("No matching stream");
-        return SUCCESS;
-    }
+    auto currentCapture = SafeGetMap(capturerStreamMap_, static_cast<int32_t>(streamIndex));
+    CHECK_AND_RETURN_RET_LOG(currentCapture != nullptr, SUCCESS, "No matching stream");
 
-    if (capturerStreamMap_[streamIndex]->Release() < 0) {
-        AUDIO_WARNING_LOG("Release stream %{public}d failed", streamIndex);
-        return ERR_OPERATION_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(currentCapture->Release() == SUCCESS, ERR_OPERATION_FAILED,
+        "Release stream %{public}d failed", streamIndex);
 
     capturerStreamMap_[streamIndex] = nullptr;
     capturerStreamMap_.erase(streamIndex);
@@ -292,6 +277,7 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     bool isCallbackMode = true;
     bool isMoveAble = true;
+    size_t preBufSizeInBytes = 0;
     if (managerType_ == DUP_PLAYBACK) {
         // todo check
         processConfig.isInnerCapturer = true;
@@ -300,11 +286,16 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     } else if (managerType_ == DUAL_PLAYBACK) {
         isCallbackMode = false;
         isMoveAble = false;
+        uint32_t sampleRate = processConfig.streamInfo.customSampleRate == 0 ?
+            processConfig.streamInfo.samplingRate : processConfig.streamInfo.customSampleRate;
+        size_t byteSizePerFrame = processConfig.streamInfo.channels *
+            static_cast<size_t>(Util::GetSamplePerFrame(processConfig.streamInfo.format));
+        preBufSizeInBytes = DUAL_STREAM_PREBUF_TIME_MS * sampleRate * byteSizePerFrame / AUDIO_MS_PER_S;
     }
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
-        std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode);
+        std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode, preBufSizeInBytes);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream failed!");
+        HILOG_COMM_ERROR("[CreateRendererStream]Create rendererStream Failed");
         return nullptr;
     }
     return rendererStream;

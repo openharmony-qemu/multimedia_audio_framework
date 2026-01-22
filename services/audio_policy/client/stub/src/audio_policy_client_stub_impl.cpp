@@ -356,6 +356,50 @@ int32_t AudioPolicyClientStubImpl::OnDeviceInfoUpdate(const DeviceChangeAction &
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::OnPreferredDeviceSet(int32_t preferredType,
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller)
+{
+    std::lock_guard<std::mutex> lockCbMap(preferredDeviceSetMutex_);
+    for (auto callback : preferredDeviceSetCallbackList_) {
+        if (callback != nullptr) {
+            callback->OnPreferredDeviceSet(static_cast<PreferredType>(preferredType), deviceDesc, uid, caller);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::AddPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(preferredDeviceSetMutex_);
+    preferredDeviceSetCallbackList_.push_back(callback);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemovePreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(preferredDeviceSetMutex_);
+
+    preferredDeviceSetCallbackList_.erase(
+        std::remove_if(
+            preferredDeviceSetCallbackList_.begin(),
+            preferredDeviceSetCallbackList_.end(),
+            [&callback](const std::shared_ptr<PreferredDeviceSetCallback> &cb) {
+                return cb == callback || cb == nullptr;
+            }),
+        preferredDeviceSetCallbackList_.end());
+    
+    AUDIO_INFO_LOG("remove preferred device set cb");
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetPreferredDeviceSetCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(preferredDeviceSetMutex_);
+    return preferredDeviceSetCallbackList_.size();
+}
+
 int32_t AudioPolicyClientStubImpl::OnMicrophoneBlocked(const MicrophoneBlockedInfo &blockedInfo)
 {
     int32_t size = static_cast<int32_t>(blockedInfo.devices.size());

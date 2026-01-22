@@ -23,7 +23,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_errors.h"
 
@@ -48,6 +47,7 @@
 #include "audio_router_map.h"
 #include "audio_a2dp_offload_manager.h"
 #include "audio_spatialization_service.h"
+#include "audio_device_capability.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -86,6 +86,10 @@ public:
     void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     uint32_t GetPaIndexByPortName(const std::string &portName);
     void TriggerDeviceInfoUpdatedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devChangeDesc);
+    void NotifyPreferredDeviceSet(PreferredType preferredType,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
+    void UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor &device);
+
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -172,6 +176,13 @@ private:
         const SinkInput &sinkInput);
     void WriteInputDeviceChangedSysEvents(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const SourceOutput &sourceOutput);
+    void HandleDistributedDeviceDisConnected(DStatusInfo &statusInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
+        AudioStreamDeviceChangeReasonExt &reason, AudioDeviceDescriptor &deviceDesc);
+    bool CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort);
+    void UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
+        AudioStreamDeviceChangeReasonExt &reason);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

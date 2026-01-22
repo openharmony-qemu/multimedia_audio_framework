@@ -23,6 +23,7 @@
 #include "audio_utils.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "sle_audio_operation_callback_stub_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -366,15 +367,16 @@ int32_t AudioPolicyManager::UnsetDeviceInfoUpdateCallback(const int32_t clientId
     std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> &cb)
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::UnsetDeviceInfoUpdateCallback");
+    int32_t ret = SUCCESS;
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
         audioPolicyClientStubCB_->RemoveDeviceInfoUpdateCallback(cb);
         if (audioPolicyClientStubCB_->GetDeviceInfoUpdateCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_SET_DEVICE_INFO_UPDATE].isEnable = false;
-            SetClientCallbacksEnable(CALLBACK_SET_DEVICE_INFO_UPDATE, false);
+            ret = SetClientCallbacksEnable(CALLBACK_SET_DEVICE_INFO_UPDATE, false);
         }
     }
-    return SUCCESS;
+    return ret;
 }
 
 int32_t AudioPolicyManager::SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
@@ -464,7 +466,6 @@ int32_t AudioPolicyManager::UnsetPreferredInputDeviceChangeCallback(
     }
     return SUCCESS;
 }
-
 
 int32_t AudioPolicyManager::RegisterDeviceChangeWithInfoCallback(
     const uint32_t sessionID, const std::weak_ptr<DeviceChangeWithInfoCallback> &callback)
@@ -622,27 +623,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPolicyManager::GetActiveBluetoothDev
     return descs;
 }
 
-void AudioPolicyManager::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp != nullptr) {
-        gsp->FetchOutputDeviceForTrack(streamChangeInfo, reason);
-    } else {
-        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-    }
-}
-
-void AudioPolicyManager::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp != nullptr) {
-        gsp->FetchInputDeviceForTrack(streamChangeInfo);
-    } else {
-        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-    }
-}
-
 int32_t AudioPolicyManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -750,6 +730,46 @@ int32_t AudioPolicyManager::SetSleAudioOperationCallback(const std::shared_ptr<S
     }
 
     return gsp->SetSleAudioOperationCallback(object);
+}
+
+int32_t AudioPolicyManager::RegisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddPreferredDeviceSetCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetPreferredDeviceSetCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_DEVICE_SET, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterPreferredDeviceSetCallback(
+    const std::shared_ptr<PreferredDeviceSetCallback> &callback)
+{
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemovePreferredDeviceSetCallback(callback);
+        if (audioPolicyClientStubCB_->GetPreferredDeviceSetCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_PREFERRED_DEVICE_SET].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_DEVICE_SET, false);
+        }
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

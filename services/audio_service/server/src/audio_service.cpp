@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,14 +47,17 @@ static const int32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
+static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t BLOCK_HIBERNATE_CALLBACK_IN_MS = 5000; // 5s
 static const uint32_t RECHECK_SINK_STATE_IN_US = 300000; // 300ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
-static const int32_t RENDERER_STREAM_CNT_PER_UID_LIMIT = 40;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
+#ifdef FEATURE_CALL_MANAGER
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
+#endif
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -86,6 +89,12 @@ AudioService::AudioService()
 
 AudioService::~AudioService()
 {
+#ifdef FEATURE_CALL_MANAGER
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ != nullptr) {
+        callManager_->UnInit();
+    }
+#endif
     AUDIO_INFO_LOG("~AudioService()");
 }
 
@@ -176,6 +185,9 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
 
 int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
+    if (isSwitchStream && endpoint->GetDeviceInfo().deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS;
+    }
     if (endpoint->GetEndpointType() == AudioEndpoint::EndpointType::TYPE_VOIP_MMAP) {
         return isRecord ? VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME : VOIP_ENDPOINT_RELEASE_DELAY_TIME;
     }
@@ -853,11 +865,22 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     AudioStreamInfo audioStreamInfo;
-    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo, isUltraFast);
+    std::string adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(config.originalSessionId);
     std::lock_guard<std::mutex> lock(processListMutex_);
-    std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-        audioStreamInfo, IsEndpointTypeVoip(config, deviceInfo));
-    CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        GetAudioEndpointForDevice(endpointConfig, IsEndpointTypeVoip(config, deviceInfo));
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioEndpoint != nullptr, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]no endpoint found for the process"));
     // if reuse endpoint should keep samplerate same
     audioStreamInfo.samplingRate = audioEndpoint->GetAudioStreamInfo().samplingRate;
 
@@ -865,19 +888,23 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    CHECK_AND_RETURN_RET_LOG(audioStreamInfo.samplingRate > 0, nullptr, "Sample rate in server is invalid.");
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioStreamInfo.samplingRate > 0, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]Sample rate in server is invalid."));
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
-    CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
+    CHECK_AND_CALL_FUNC_RETURN_RET(process != nullptr, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]AudioProcessInServer create failed."));
     process->SetKeepRunning(config.rendererInfo.keepRunning);
     uint32_t sessionId = process->GetSessionId();
     CheckFastSessionMuteState(sessionId, process);
 
     int32_t ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]ConfigProcessBuffer failed"));
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "LinkProcessToEndpoint failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, nullptr,
+        HILOG_COMM_ERROR("[GetAudioProcess]LinkProcessToEndpoint failed"));
     linkedPairedList_.push_back(std::make_pair(process, audioEndpoint));
     allProcessInServer_[sessionId] = process;
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -909,11 +936,13 @@ int32_t AudioService::LinkProcessToEndpoint(sptr<AudioProcessInServer> process,
         AUDIO_ERR_LOG("LinkProcessStream failed, erase endpoint %{public}s", endpointToErase.c_str());
         return ERR_OPERATION_FAILED;
     }
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "LinkProcessStream to endpoint %{public}s failed",
-        endpoint->GetEndpointName().c_str());
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[LinkProcessToEndpoint]LinkProcessStream to endpoint %{public}s failed",
+        endpoint->GetEndpointName().c_str()));
 
     ret = process->AddProcessStatusListener(endpoint);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "AddProcessStatusListener failed");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED,
+        HILOG_COMM_ERROR("[LinkProcessToEndpoint]AddProcessStatusListener failed"));
 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     if (releasingEndpointSet_.count(endpoint->GetEndpointName())) {
@@ -960,12 +989,12 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
 }
 
 AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config,
-    AudioStreamInfo &streamInfo, bool isReloadProcess)
+    AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess)
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
-        deviceInfo, streamInfo, isReloadProcess);
+        deviceInfo, streamInfo, isUltraFast, isReloadProcess);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
             " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
@@ -979,7 +1008,8 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
                 streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
             }
         } else {
-            AUDIO_INFO_LOG("Fast stream use format:%{public}d", streamInfo.format);
+            AUDIO_INFO_LOG("Fast stream use rate:%{public}d format:%{public}d", streamInfo.samplingRate,
+                streamInfo.format);
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;
@@ -1028,8 +1058,7 @@ bool AudioService::IsSameAudioStreamInfoNotIncludeSample(AudioStreamInfo &newStr
 }
 
 // must be called with processListMutex_ lock hold
-ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
-    const std::string &deviceKey, AudioStreamInfo &streamInfo, int32_t endpointFlag)
+ReuseEndpointType AudioService::GetReuseEndpointType(const std::string &deviceKey, const AudioStreamInfo &streamInfo)
 {
     if (endpointList_.find(deviceKey) == endpointList_.end()) {
         return ReuseEndpointType::CREATE_ENDPOINT;
@@ -1043,13 +1072,13 @@ ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &devi
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
-std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-    const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream)
+std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(const AudioEndpointConfig &endpointConfig,
+    bool isVoipStream)
 {
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
-    std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo, endpointFlag);
+    std::string deviceKey = AudioEndpoint::GenerateEndpointKey(endpointConfig.deviceInfo, endpointFlag);
+    ReuseEndpointType type = GetReuseEndpointType(deviceKey, endpointConfig.streamInfo);
     std::shared_ptr<AudioEndpoint> endpoint = nullptr;
 
     switch (type) {
@@ -1065,16 +1094,15 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
             [[fallthrough]];
         }
         case ReuseEndpointType::CREATE_ENDPOINT: {
-            CheckBeforeRecordEndpointCreate(clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
-            endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
-                AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo, streamInfo);
+            CheckBeforeRecordEndpointCreate(endpointConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
+            endpoint = AudioEndpoint::CreateEndpoint(isVoipStream, endpointConfig);
             CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
             AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
             endpointList_[deviceKey] = endpoint;
             break;
         }
         default:
-            AUDIO_ERR_LOG("Create mmap AudioEndpoint failed.");
+            HILOG_COMM_ERROR("[GetAudioEndpointForDevice]Create mmap AudioEndpoint failed.");
             break;
     }
 
@@ -1481,21 +1509,20 @@ bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t app
         appUseNumMap_.emplace(appUid, initValue);
     }
 
-    if (appUseNumMap_[appUid] >= RENDERER_STREAM_CNT_PER_UID_LIMIT) {
+    if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
+        --appUseNumMap_[appUid]; // actual created stream num is stream num decrease one
         int32_t mostAppUid = INVALID_APP_UID;
         int32_t mostAppNum = INVALID_APP_CREATED_AUDIO_STREAM_NUM;
         GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
             Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_STREAM_EXHAUSTED_STATS,
-            Media::MediaMonitor::EventType::FREQUENCY_AGGREGATION_EVENT);
+            Media::MediaMonitor::EventType::FAULT_EVENT);
         bean->Add("CLIENT_UID", mostAppUid);
         bean->Add("TIMES", mostAppNum);
+        bean->Add("EXCEEDED_SCENE", "SingleApp");
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-        AUDIO_WARNING_LOG("Current audio renderer stream num is greater than the renderer stream num limit per uid");
-    }
-
-    if (appUseNumMap_[appUid] > maxStreamCntPerUid) {
-        --appUseNumMap_[appUid]; // actual created stream num is stream num decrease one
+        HILOG_COMM_WARN("[IsExceedingMaxStreamCntPerUid]Current audio renderer stream num is greater "
+            "than the renderer stream num limit per uid");
         return true;
     }
     return false;
@@ -1878,6 +1905,34 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
+}
+
+void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+#ifdef FEATURE_CALL_MANAGER
+    std::lock_guard lock(callManagerMutex_);
+    if (callManager_ == nullptr) {
+        callManager_ = DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+        callManager_->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+    }
+    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        int32_t ret = callManager_->NotifyVoIPAudioStreamStart(uid);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+    }
+#endif
+}
+
+int32_t AudioService::RequestUserPrivacyAuthority(uint32_t sessionId)
+{
+    std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
+    std::unique_lock<std::mutex> lock(capturerMapMutex_);
+    if (allCapturerMap_.count(sessionId)) {
+        capturerInServer = allCapturerMap_[sessionId].lock();
+    }
+    lock.unlock();
+    CHECK_AND_RETURN_RET_LOG(capturerInServer != nullptr, ERROR, "sessionid not in allCapturerMap");
+ 
+    return capturerInServer->RequestUserPrivacyAuthority();
 }
 } // namespace AudioStandard
 } // namespace OHOS

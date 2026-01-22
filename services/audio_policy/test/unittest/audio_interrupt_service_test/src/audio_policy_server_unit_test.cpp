@@ -1217,7 +1217,9 @@ HWTEST(AudioPolicyUnitTest, MaxOrMinVolumeOption_001, TestSize.Level1)
     int32_t volLevel = 20;
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC;
-    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus);
+    bool result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus, 0);
+    EXPECT_FALSE(result);
+    result = ptrAudioPolicyServer->MaxOrMinVolumeOption(volLevel, keyType, streamInFocus, 1);
     EXPECT_FALSE(result);
 }
 
@@ -1678,22 +1680,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_051, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     ret = ptrAudioPolicyServer->SetRingerMode(60);
     EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_052
-* @tc.desc  : Test ArgInfoDump.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_052, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    std::string dumpString;
-    std::queue<std::u16string> argQue;
-    server->OnStart();
-    server->ArgInfoDump(dumpString, argQue);
 }
 
 /**
@@ -2257,35 +2243,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_086, TestSize.Level1)
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RUNNING;
     ret = server->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_087
-* @tc.desc  : Test FetchOutputDeviceForTrack.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_087, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-    server->FetchOutputDeviceForTrack(streamChangeInfo, reason);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_088
-* @tc.desc  : Test FetchInputDeviceForTrack.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_088, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    server->FetchInputDeviceForTrack(streamChangeInfo);
 }
 
 /**
@@ -3754,6 +3711,33 @@ HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_003, TestSize.Level1)
 
     constexpr int32_t UID_MCU = 7500;
     EXPECT_FALSE(server->VerifyBluetoothPermission(UID_MCU));
+}
+
+/**
+* @tc.name  : Test GetSystemSoundPath.
+* @tc.number: GetSystemSoundPath_001
+* @tc.desc  : Test GetSystemSoundPath.
+*/
+HWTEST(AudioPolicyUnitTest, GetSystemSoundPath_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string ret = "";
+    server->GetSystemSoundPath(0, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(1, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(2, ret);
+    EXPECT_NE(ret, "");
+
+    ret = "";
+    server->GetSystemSoundPath(-1, ret);
+    EXPECT_EQ(ret, "");
 }
 } // AudioStandard
 } // OHOS

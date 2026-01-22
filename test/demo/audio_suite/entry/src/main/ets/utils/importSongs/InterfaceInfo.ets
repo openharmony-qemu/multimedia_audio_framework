@@ -31,6 +31,11 @@ export interface Node {
   audioSeparationType?: AudioSeparationType;
   soundSpeed?: number;
   soundTone?: number;
+  generalVoiceChangeType?: GeneralVoiceChangeType;
+  pureVoiceChangeType?: PureVoiceChangeType;
+  pureVoiceChangeGender?: PureVoiceChangeGenderOption;
+  pureVoiceChangePitch?: number;
+  spaceRender?: SpaceRender;
 }
 
 export interface  OutSong {
@@ -45,7 +50,7 @@ export interface  OutSong {
   isRendererFinished?: boolean,
 }
 
-// 定义接口
+// Define Interface
 export interface NavigationParams {
   mode: number;
   pipelineCascadMode: number;
@@ -123,23 +128,23 @@ export const ColorMap = new Map<NodeType, BackColor>([
 
 export enum SoundFiledType {
   /**
-   * 无
+   * None
    */
   SOUND_FIELD_CLOSE = 0,
   /**
-   * 前置
+   * Front
    */
   SOUND_FIELD_FRONT_FACING = 1,
   /**
-   * 宏大
+   * Grandeur
    */
   SOUND_FIELD_GRAND = 2,
   /**
-   * 聆听
+   * Listen
    */
   SOUND_FIELD_NEAR = 3,
   /**
-   * 宽广
+   * Broad
    */
   SOUND_FIELD_WIDE = 4,
 }
@@ -290,7 +295,7 @@ export const AudioSeparationMap = new Map<AudioSeparationType | undefined, strin
   [AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE, '伴奏']
 ])
 
-// 定义映射表：数字 -> NodeType
+// Define mapping table: numbers -> NodeType
 export const NumberToNodeTypeMap = new Map<number, NodeType>([
   [201, NodeType.EQ],
   [202, NodeType.NR],
@@ -303,6 +308,46 @@ export const NumberToNodeTypeMap = new Map<number, NodeType>([
   [210, NodeType.GENERAL_VOICE_CHANGE],
   [211, NodeType.SOUND_SPEED_TONE]
 ]);
+
+export interface SpaceRender {
+  mode: SpaceRenderMode;
+  fixedPosition?: SpacePosition;
+  dynamicPosition?: SpacePosition;
+  singleWeekCycleTime?: number;
+  clockWise?: ClockWise;
+  expansionRadius?: number;
+  expansionAngle?: number;
+}
+
+export interface SpacePosition {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export enum SpaceRenderMode {
+  CLOSE = -1,
+  FIXED_POSITION = 0,
+  DYNAMIC_RENDER = 1,
+  EXPAND = 2
+}
+
+export const SpaceRenderModeMap = new Map<SpaceRenderMode, string>([
+  [SpaceRenderMode.CLOSE, '无模式'],
+  [SpaceRenderMode.FIXED_POSITION, '固定摆位'],
+  [SpaceRenderMode.DYNAMIC_RENDER, '动态渲染'],
+  [SpaceRenderMode.EXPAND, '扩展']
+])
+
+export enum ClockWise {
+  CLOCK_WISE = 0,
+  Counter_Clock_Wise = 1
+}
+
+export const ClockWiseMap = new Map<ClockWise, string>([
+  [ClockWise.CLOCK_WISE, '顺时针'],
+  [ClockWise.Counter_Clock_Wise, '逆时针']
+])
 
 export const OFFLINEPIPELINE = 1;
 
@@ -322,7 +367,7 @@ export const outputNodeSongNameMap = new Map<number, string>([
   [PIPELINECASCADMODE_3, 'OUTPUT 3'],
 ]);
 
-// 位深类型
+// Bit-depth type
 export enum BitsPerSampleMode {
   INT = 0,
   FLOAT = 1,

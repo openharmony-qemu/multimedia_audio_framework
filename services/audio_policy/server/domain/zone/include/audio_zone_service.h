@@ -38,6 +38,7 @@ public:
     
     int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid);
     void ReleaseAudioZone(int32_t zoneId);
+    void UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context);
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     int32_t GetAudioZoneByName(std::string name);
@@ -48,6 +49,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
     void MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t UpdateDeviceFromGlobalForAllZone(std::shared_ptr<AudioDeviceDescriptor> device);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(DeviceType type, std::string networkId);
 
     int32_t RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
     void UnRegisterAudioZoneClient(pid_t clientPid);
@@ -56,6 +58,8 @@ public:
 
     int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid);
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
+    int32_t AddUidUsagesToAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
+    int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
     int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
@@ -64,6 +68,7 @@ public:
     bool IsZoneDeviceVisible();
     int32_t FindAudioZoneByUid(int32_t uid);
     int32_t FindAudioZone(int32_t uid, StreamUsage usage);
+    virtual std::string FindAudioZoneNameByUid(int32_t uid);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId);
@@ -95,11 +100,12 @@ public:
     const std::string GetZoneStringDescriptor(int32_t zoneId);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     bool CheckZoneExist(int32_t zoneId);
-    int32_t FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate);
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool CheckExistUidInAudioZone();
+
+    AudioScene GetAudioSceneFromAllZones();
 
 private:
     AudioZoneService() = default;
@@ -115,8 +121,7 @@ private:
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
         const std::string &streamTag, const StreamUsage &usage);
-    int32_t RemoveKeyFromAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag, const StreamUsage &usage);
+    int32_t RemoveKeysFromAudioZone(int32_t zoneId, const std::vector<AudioZoneBindKey> &bindKeys);
     int32_t FindAudioZoneByKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
         const StreamUsage &usage);
     bool CheckIsZoneValid(int32_t zoneId);

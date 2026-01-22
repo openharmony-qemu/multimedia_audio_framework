@@ -22,12 +22,14 @@
 #include "audio_suite_channel.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_capabilities.h"
+#include "audio_suite_perf.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 class AudioSuiteProcessNode : public AudioNode {
 public:
+    AudioSuiteProcessNode(AudioNodeType nodeType);
     AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat audioFormat);
     virtual ~AudioSuiteProcessNode() = default;
     int32_t DoProcess() override;
@@ -50,21 +52,30 @@ public:
         return AudioNode::GetAudioNodeInfo().audioFormat.audioChannelInfo.numChannels;
     }
 
-    virtual std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> GetOutputPort() override
+    virtual OutputPort<AudioSuitePcmBuffer*>* GetOutputPort() override
     {
-        if (!outputStream_) {
-            outputStream_ = std::make_shared<OutputPort<AudioSuitePcmBuffer*>>(GetSharedInstance());
-        }
-        return outputStream_;
+        return &outputStream_;
     }
 
 protected:
-    std::shared_ptr<OutputPort<AudioSuitePcmBuffer*>> outputStream_;
-    std::shared_ptr<InputPort<AudioSuitePcmBuffer*>> inputStream_;
+    OutputPort<AudioSuitePcmBuffer *> outputStream_;
+    InputPort<AudioSuitePcmBuffer *> inputStream_;
     virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
-    NodeCapability nodeCapability;
+    NodeParameter nodeParameter;
+    // for dfx
+    void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
+    void CheckEffectNodeOvertimeCount();
+    int32_t InitOutputStream();
+    bool isOutputPortInit_ = false;
+    uint32_t pcmDurationMs_ = 0;
+
+private:
+    // for dfx
+    int32_t signalProcessTotalCount_ = 0;
+    std::array<int32_t, RTF_OVERTIME_LEVELS> rtfOvertimeCounters_{};
+    int32_t rtfOver100Count_ = 0;
 };
 
 }

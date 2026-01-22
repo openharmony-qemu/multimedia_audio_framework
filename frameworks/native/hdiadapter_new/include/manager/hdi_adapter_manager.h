@@ -27,6 +27,7 @@
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
 #include "util/kv_pair.h"
+#include "audio_engine_callback_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,7 @@ public:
 
     std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);
     std::shared_ptr<IAudioCaptureSource> GetCaptureSource(uint32_t captureId, bool tryCreate = false);
+    std::shared_ptr<IAudioRenderSink> GetAuxiliarySink();
 
     int32_t LoadAdapter(HdiDeviceManagerType type, const std::string &adapterName);
     void UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force = false);
@@ -87,6 +89,9 @@ public:
 
     void DumpInfo(std::string &dumpString);
 
+    int32_t GetCurrentOutputPipeChangeInfos(std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos);
+    int32_t GetCurrentInputPipeChangeInfos(std::vector<std::shared_ptr<AudioInputPipeInfo>> &pipeChangeInfos);
+
 private:
     HdiAdapterManager() = default;
     ~HdiAdapterManager();
@@ -102,6 +107,8 @@ private:
     void DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> sink, uint32_t type);
 
     void ProcessIdUseCount(uint32_t id, bool isResident, bool tryCreate);
+
+    void SetRemoteHdiInvalidState(HdiDeviceManagerType type, bool force);
 
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;

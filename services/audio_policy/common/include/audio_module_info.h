@@ -75,6 +75,7 @@ static const char* ACCESSORY_SOURCE = "accessory_mic";
 static const char* VIRTUAL_AUDIO = "virtual_audio";
 static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
 static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
+static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
 }
 
 enum NodeName {
@@ -102,12 +103,6 @@ enum ClassType {
     TYPE_ACCESSORY,
     TYPE_HEARING_AID,
     TYPE_INVALID
-};
-
-enum AudioPipeRole {
-    PIPE_ROLE_OUTPUT = 0,
-    PIPE_ROLE_INPUT,
-    PIPE_ROLE_NONE,
 };
 
 struct AudioModuleInfo {

@@ -16,9 +16,7 @@
 #ifndef AUDIO_WORKGROUP_CALLBACK_PROXY_H
 #define AUDIO_WORKGROUP_CALLBACK_PROXY_H
 
-#include "iremote_proxy.h"
 #include "audio_workgroup.h"
-#include "audio_system_manager.h"
 #include "iaudio_workgroup_callback.h"
 
 namespace OHOS {

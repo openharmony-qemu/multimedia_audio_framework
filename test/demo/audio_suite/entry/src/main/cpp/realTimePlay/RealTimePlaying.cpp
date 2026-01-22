@@ -41,7 +41,7 @@ uint32_t g_separationMode = -1;
 OH_AudioSuite_Result ProcessPipeline()
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG, "audioEditTest ProcessPipeline start");
-    // 获取管线状态
+    // Get pipeline status
     OH_AudioSuite_PipelineState pipeLineState;
     OH_AudioSuite_Result result = OH_AudioSuiteEngine_GetPipelineState(g_audioSuitePipeline, &pipeLineState);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
@@ -51,7 +51,7 @@ OH_AudioSuite_Result ProcessPipeline()
         return result;
     }
 
-    // 启动管线
+    // Start the pipeline
     if (pipeLineState != OH_AudioSuite_PipelineState::AUDIOSUITE_PIPELINE_RUNNING) {
         result = OH_AudioSuiteEngine_StartPipeline(g_audioSuitePipeline);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
@@ -92,7 +92,7 @@ OH_AudioSuite_Result OneRenDerFrame(int32_t audioDataSize, int32_t *writeSize)
             "audioEditTest OH_AudioSuiteEngine_RenderFrame result is %{public}d", static_cast<int>(result));
         return result;
     }
-    // 每次保存一次获取的buffer值
+    // Save the obtained buffer value each time
     g_playAudioData = (char *)malloc(*writeSize);
     if (g_playAudioData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
@@ -136,7 +136,7 @@ OH_AudioSuite_Result OneMulRenDerFrame(int32_t audioDataSize, int32_t *writeSize
             static_cast<int>(result));
         return result;
     }
-    // 每次保存一次获取的buffer值 ...
+    // Save the obtained buffer value each time
     g_playAudioData = (char *)malloc(*writeSize);
     if (g_separationMode == ARG_0) {
         std::copy(static_cast<char *>(g_playOhAudioDataArray->audioDataArray[ARG_0]),
@@ -170,13 +170,13 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
     if (!g_playFinishedFlag) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "OneRenDerFrame g_multiRenderFrameFlag: %{public}s", g_multiRenderFrameFlag ? "true" : "false");
-        // 是否有音源分离节点
+        // If there a source separation node
         if (!g_multiRenderFrameFlag) {
             OneRenDerFrame(audioDataSize, &writeSize);
         } else {
             OneMulRenDerFrame(audioDataSize, &writeSize);
         }
-        // 每次保存一次获取的buffer值
+        // Save the obtained buffer value each time
         if (audioDataSize != 0 && g_isRecord == true) {
             int32_t copySize = std::min(audioDataSize, writeSize);
             std::copy(g_playAudioData, g_playAudioData + copySize,
@@ -184,7 +184,7 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
             g_playResultTotalSize += copySize;
         }
     }
-    // 播放音频数据
+    // Playing audio data
     int32_t copySize = std::min(audioDataSize, writeSize);
     if (g_playAudioData != nullptr && copySize > 0) {
         std::copy(g_playAudioData, g_playAudioData + copySize, static_cast<char *>(audioData));
@@ -192,9 +192,9 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
     free(g_playAudioData);
     g_playAudioData = nullptr;
     if (g_playFinishedFlag) {
-        // 停止播放
+        // Stop playing
         OH_AudioRenderer_Stop(audioRenderer);
-        // 停止管线
+        // Stop pipeline
         ResetAllIsResetTotalWriteAudioDataSize();
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, REAL_TIME_PLAYING_TAG,
             "audioEditTest PlayAudioRendererOnWriteData g_playResultTotalSize is %{public}d", g_playResultTotalSize);
@@ -214,12 +214,12 @@ OH_AudioData_Callback_Result PlayAudioRendererOnWriteData(OH_AudioRenderer *rend
 void ReleaseExistingResources()
 {
     if (audioRenderer) {
-        // 释放播放器实例
+        // Releasing a Player Instance
         OH_AudioRenderer_Release(audioRenderer);
         audioRenderer = nullptr;
     }
     if (rendererBuilder) {
-        // 释放构造器
+        // Release Constructor
         OH_AudioStreamBuilder_Destroy(rendererBuilder);
         rendererBuilder = nullptr;
     }

@@ -23,6 +23,9 @@
 #include "common/hdi_adapter_type.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#ifdef ENABLE_HOOK_PCM
+#include "hpae_pcm_dumper.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,6 +64,9 @@ public:
     void UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId);
     uint32_t GetCaptureId() const;
     void SetInjectState(bool isInjecting);
+    void NotifyStreamChangeToSource(StreamChangeType change,
+        uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID);
+
 private:
     int32_t GetCapturerSourceAdapter(
         const std::string &deviceClass, const SourceType &sourceType, const std::string &info);
@@ -69,6 +75,13 @@ private:
     void DoProcessMicInner(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
     void ReadDataFromSource(const HpaeSourceBufferType &bufferType, uint64_t &replyBytes);
     void PushDataToBuffer(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes);
+    void UpdateSourceInputMapCancatMicEc();
+    void SetConcatMicEcFlag(HpaeNodeInfo &nodeInfo);
+    void ConCatMicEcAndPushData(const uint64_t &replyBytes, const uint64_t replyBytesEc);
+    void DoProcessInnerMicAndEc(const uint64_t &replyBytes, const uint64_t replyBytesEc);
+    void DumpInput(HpaeSourceBufferType &micType, HpaeSourceBufferType &ecType,
+        const uint64_t &replyBytes, const uint64_t &replyBytesEc);
+    void DumpOutput(HpaeSourceBufferType &micType);
 
 private:
     std::shared_ptr<IAudioCaptureSource> audioCapturerSource_ = nullptr;
@@ -93,6 +106,12 @@ private:
 
     bool isInjecting_ = false; // mark injecting state
     HpaeBackoffController backoffController_;
+    bool concatMicEcFlag_ = false;
+    std::vector<char> concatDataBuffer_;
+#ifdef ENABLE_HOOK_PCM
+    std::unordered_map<HpaeSourceBufferType, std::unique_ptr<HpaePcmDumper>> inputPcmDumperMap_;
+    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
+#endif
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

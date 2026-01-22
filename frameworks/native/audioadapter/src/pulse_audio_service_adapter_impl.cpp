@@ -70,7 +70,9 @@ static const unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM
     {"wakeup", STREAM_WAKEUP},
     {"voice_message", STREAM_VOICE_MESSAGE},
     {"navigation", STREAM_NAVIGATION},
-    {"camcorder", STREAM_CAMCORDER}
+    {"camcorder", STREAM_CAMCORDER},
+    {"announcement", STREAM_ANNOUNCEMENT},
+    {"emergency", STREAM_EMERGENCY}
 };
 
 PulseAudioServiceAdapterImpl::~PulseAudioServiceAdapterImpl() = default;

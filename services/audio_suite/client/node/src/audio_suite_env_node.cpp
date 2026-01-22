@@ -17,24 +17,19 @@
 #endif
 
 #include "audio_suite_env_node.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
-static constexpr AudioSamplingRate ENV_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat ENV_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel ENV_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout ENV_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 const std::string setEnvMode = "EnvironmentType";
 }  // namespace
 
 AudioSuiteEnvNode::AudioSuiteEnvNode()
-    : AudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT,
-          AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, ENV_ALGO_CHANNEL_COUNT}, ENV_ALGO_SAMPLE_FORMAT, ENV_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(PcmBufferFormat{
-          ENV_ALGO_SAMPLE_RATE, ENV_ALGO_CHANNEL_COUNT, ENV_ALGO_CHANNEL_LAYOUT, ENV_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(NODE_TYPE_ENVIRONMENT_EFFECT)
 {}
 
 AudioSuiteEnvNode::~AudioSuiteEnvNode()
@@ -50,9 +45,23 @@ int32_t AudioSuiteEnvNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEnvNode::Init failed, already inited");
         return ERROR;
     }
-    envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeCapability);
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
+    envAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEnvAlgoInterfaceImpl>(nodeParameter);
     int32_t ret = envAlgoInterfaceImpl_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "envAlgoInterfaceImpl Init failed");
+    SetAudioNodeFormat(AudioFormat{{ENV_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
+    
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
+        ENV_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEnvNode::Init end");
     return SUCCESS;

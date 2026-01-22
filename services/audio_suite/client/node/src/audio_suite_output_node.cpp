@@ -62,7 +62,7 @@ int32_t AudioOutputNode::Connect(const std::shared_ptr<AudioNode> &preNode)
         return ERR_INVALID_PARAM;
     }
 
-    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort().get());
+    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
 
     if (preNode->GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
         preNodeOutputNum_ = AUDIO_SEPARATION_NODE_OUTPUT_NUM;

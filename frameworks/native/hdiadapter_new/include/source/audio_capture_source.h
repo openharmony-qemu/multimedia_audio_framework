@@ -21,7 +21,7 @@
 #include <cstring>
 #include <mutex>
 #include <thread>
-#include "v5_0/iaudio_manager.h"
+#include "v6_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include "util/audio_running_lock.h"
 #include "util/ring_buffer_handler.h"
@@ -66,13 +66,10 @@ public:
 
     int32_t UpdateActiveDevice(DeviceType inputDevice) override;
     int32_t UpdateSourceType(SourceType sourceType) override;
-    void RegistCallback(uint32_t type, IAudioSourceCallback *callback) override;
-    void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback) override;
 
     int32_t UpdateAppsUid(const int32_t appsUid[PA_MAX_OUTPUTS_PER_SOURCE], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    void SetAddress(const std::string &address) override;
     int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
 
@@ -103,6 +100,14 @@ private:
     void CheckLatencySignal(uint8_t *frame, size_t replyBytes);
     void CheckUpdateState(char *frame, size_t replyBytes);
     bool IsNonblockingSource(const std::string &adapterName);
+    int32_t ValidateParameters(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        uint64_t &replyBytesEc) const;
+    void ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo);
+    void SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyBytesEc, const AudioCaptureFrameInfo &frameInfo);
+    int32_t CheckFrameInfoLen(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        AudioCaptureFrameInfo &frameInfo);
+    void ProcessCapFrame(FrameDesc *fdesc, uint64_t &replyBytes, FrameDesc *fdescEc,
+        AudioCaptureFrameInfo &frameInfo);
     int32_t NonblockingStart(void);
     int32_t NonblockingStop(void);
     int32_t NonblockingCaptureFrameWithEc(FrameDesc *fdescEc, uint64_t &replyBytesEc);
@@ -137,7 +142,6 @@ private:
     const std::string halName_ = "";
     IAudioSourceAttr attr_ = {};
     std::mutex callbackMutex_;
-    SourceCallbackWrapper callback_ = {};
     bool sourceInited_ = false;
     bool captureInited_ = false;
     std::atomic<bool> started_ = false;
@@ -172,6 +176,8 @@ private:
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    FILE *ecDumpFile_ = nullptr;
+    std::string ecDumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     std::atomic<bool> muteState_ = false;

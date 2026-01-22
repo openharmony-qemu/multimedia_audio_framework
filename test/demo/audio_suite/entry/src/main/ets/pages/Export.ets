@@ -27,30 +27,30 @@ class RadioParam {
   public isChecked: boolean = false;
   public label: string = '';
   public onChange: VoidCallback = () => {
-  }; // 点击单选框
+  }; // Click the radio button
 }
 
 @Component
 export struct Export {
   pageInfos: NavPathStack = new NavPathStack();
   scroller: Scroller = new Scroller();
-  // 主标题样式修改器
+  // Main Title Style Modifier
   @State mainTitleModifier: MainTitleTextModifier = new MainTitleTextModifier();
   private symbolModifier: SymbolGlyphModifier = new SymbolGlyphModifier($r('sys.symbol.chevron_backward')).fontColor([$r('app.color.index_title_text_color')])
   @StorageLink('playList') playList: Map<string, SongInfo> = new Map();
   @StorageLink('songWaveList') songWaveList: Map<string, SongInfo> = new Map();
   private newAudioFileName: string = '';
   private audioFormate: string = '.wav';
-  // 采样率
+  // sampleRate
   private sampleRate: number = 8000;
   private sampleRates: number[] =
     [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200, 96000, 176400, 192000];
-  // 通道
+  // channels
   private channels: number = 1;
-  // 位深
+  // bit depth
   private bitsPerSample: number = 16;
   private bitsPerSamples: number[] = [8, 16, 24, 32];
-  // 导出中
+  // Exporting...
   @State isExported: boolean = false;
 
   aboutToAppear(): void {
@@ -280,7 +280,7 @@ export struct Export {
       if (pcmBuffer.byteLength === 0) {
         Logger.info(TAG, 'SaveBuffer error');
       }
-      // picker选择器, 保存PCM文件
+      // Picker selector, save PCM file
       let documentSaveOptions = new picker.DocumentSaveOptions();
       if (this.newAudioFileName === '') {
         this.newAudioFileName = getDateStringWithTimeStamp(new Date().getTime());
@@ -290,7 +290,7 @@ export struct Export {
       let newFileNames = `${this.newAudioFileName}${this.audioFormate}`;
       Logger.info(TAG, `SaveBuffer newFileNames is: ${newFileNames}`);
       documentSaveOptions.newFileNames = [newFileNames];
-      let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为 UIAbilityContext
+      let context = getContext() as common.Context; // Please ensure that getContext(this) returns a result of UIAbilityContext
       let documentPicker = new picker.DocumentViewPicker(context);
       documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
         if (err) {
@@ -301,21 +301,30 @@ export struct Export {
         Logger.info(TAG,
           'DocumentViewPicker.save successfully, documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
         let filePath = documentSaveResult;
-        // documentSaveResult数组中只有一个路径
-        let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
-        if (this.audioFormate === '.wav') {
-          // 处理wav
-          let wavBuffer = this.writeWavFileHeader(pcmBuffer);
-          let writeLen = fs.writeSync(file.fd, wavBuffer);
-          Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
-          fs.closeSync(file);
-        } else {
-          // 处理pcm
-          let writeLen = fs.writeSync(file.fd, pcmBuffer);
-          Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
-          fs.closeSync(file);
-        }
+        // There is only one path in the documentSaveResult array
+        try {
+          let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+          Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
+          try {
+            if (this.audioFormate === '.wav') {
+              // Processing WAV
+              let wavBuffer = this.writeWavFileHeader(pcmBuffer);
+              let writeLen = fs.writeSync(file.fd, wavBuffer);
+              Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
+              fs.closeSync(file);
+            } else {
+              // Processing PCM
+              let writeLen = fs.writeSync(file.fd, pcmBuffer);
+              Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
+              fs.closeSync(file);
+            }
+          } catch (e) {
+            fs.closeSync(file);
+            Logger.error(TAG, `SavePcmBuffer writeLen error: ${e}`);
+          }
+        } catch (e) {
+          Logger.error(TAG, `SaveBuffer filePath error: ${e}`);
+        } 
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
@@ -331,12 +340,12 @@ export struct Export {
       if (pcmBuffer.byteLength === 0) {
         Logger.info(TAG, 'SaveBuffer error');
       }
-      // picker选择器, 保存PCM文件
+      // Picker selector, save PCM file
       let documentSaveOptions = new picker.DocumentSaveOptions();
       let newFileNames = `tap_output${this.audioFormate}`;
       Logger.info(TAG, `SaveBuffer newFileNames is: ${newFileNames}`);
       documentSaveOptions.newFileNames = [newFileNames];
-      let context = getContext() as common.Context; // 请确保 getContext(this) 返回结果为 UIAbilityContext
+      let context = getContext() as common.Context; // Please ensure that getContext(this) returns a result of UIAbilityContext
       let documentPicker = new picker.DocumentViewPicker(context);
       documentPicker.save(documentSaveOptions, (err: BusinessError, documentSaveResult: Array<string>) => {
         if (err) {
@@ -347,20 +356,27 @@ export struct Export {
         Logger.info(TAG,
           'DocumentViewPicker.save successfully, documentSaveResult uri: ' + JSON.stringify(documentSaveResult));
         let filePath = documentSaveResult;
-        // documentSaveResult数组中只有一个路径
-        let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
-        Logger.info(TAG, `SaveBuffer filePath : ${filePath}`);
-        if (this.audioFormate === '.wav') {
-          // 处理wav
-          let wavBuffer = this.writeWavFileHeader(pcmBuffer);
-          let writeLen = fs.writeSync(file.fd, wavBuffer);
-          Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
-          fs.closeSync(file);
-        } else {
-          // 处理pcm
-          let writeLen = fs.writeSync(file.fd, pcmBuffer);
-          Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
-          fs.closeSync(file);
+        // There is only one path in the documentSaveResult array
+        try {
+          let file = fs.openSync(documentSaveResult[0], fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
+          Logger.info(TAG, `SaveTapBuffer filePath : ${filePath}`);
+          try {
+            if (this.audioFormate === '.wav') {
+              // Processing WAV
+              let wavBuffer = this.writeWavFileHeader(pcmBuffer);
+              let writeLen = fs.writeSync(file.fd, wavBuffer);
+              Logger.info(TAG, `SaveWavBuffer writeLen : ${writeLen}`);
+            } else {
+              // Processing PCM
+              let writeLen = fs.writeSync(file.fd, pcmBuffer);
+              Logger.info(TAG, `SavePcmBuffer writeLen : ${writeLen}`);
+            }
+          } catch (e) {
+            fs.closeSync(file);
+            Logger.error(TAG, `SaveWavBuffer writeLen error: ${e}`);
+          }
+        } catch (e) {
+          Logger.error(TAG, `SaveTapBuffer filePath error: ${e}`);
         }
       })
     } catch (e) {
@@ -378,53 +394,53 @@ export struct Export {
     const viewWavHeader = new Uint8Array(wavHeaderBuffer);
     const viewPcm = new Uint8Array(pcmBuffer);
 
-    // 创建一个新的 ArrayBuffer, 大小为两个原始缓冲区之和
+    // Create a new ArrayBuffer with a size equal to the sum of the two raw buffers
     const resultBuffer = new ArrayBuffer(viewWavHeader.byteLength + viewPcm.byteLength);
     const resultView = new Uint8Array(resultBuffer);
 
-    // 将两个视图的数据复制到新的视图中
+    // Copy the data from two views into a new view
     resultView.set(viewWavHeader);
     resultView.set(viewPcm, viewWavHeader.length);
 
     return resultBuffer;
   }
 
-  // 定义写 wav 头文件信息的方法
+  // Define the method for writing WAV header file information
   writeWavFileHeader(pcmBuffer: ArrayBuffer): ArrayBuffer {
     Logger.info(TAG,
       `writeWavFileHeader sampleRate : ${this.sampleRate} --- channels : ${this.channels} --- bitsPerSample : ${this.bitsPerSample}`);
     const header = new ArrayBuffer(44);
     const dv = new DataView(header);
-    // 写入RIFF快
+    // Writing RIFF Blocks
     this.writeString(dv, 0, 'RIFF');
     let totalDataLen = pcmBuffer.byteLength + 44;
     dv.setUint32(4, totalDataLen, true);
     this.writeString(dv, 8, 'WAVE');
-    // 写入 fmt 快
+    // writing fmt block
     this.writeString(dv, 12, 'fmt ');
-    // fmt快大小
+    // fmt block size
     dv.setUint32(16, 16, true);
-    // 格式类别（1 - int， 3 - IEEE 浮点数）
+    // Format category (1 - int, 3 - IEEE floating point)
     if (this.bitsPerSample === 32) {
       dv.setUint16(20, 3, true);
     } else {
       dv.setUint16(20, 1, true);
     }
 
-    // 声道数
+    // Number of audio channels
     dv.setUint16(22, this.channels, true);
-    // 采样率
+    // sampling fraction
     dv.setUint32(24, this.sampleRate, true);
-    // 比特率
+    // bit rate
     let byteRate = this.bitsPerSample * this.sampleRate * this.channels / 8;
     dv.setUint32(28, byteRate, true);
-    // 每个采样点的字节数
+    // Number of bytes per sampling point
     dv.setUint16(32, this.channels * this.bitsPerSample / 8, true);
-    // 位深
+    // bit depth
     dv.setUint16(34, this.bitsPerSample, true);
-    // 写入data 快
+    // writing data block
     this.writeString(dv, 36, 'data');
-    // 数据快大小
+    // data block size
     dv.setUint32(40, pcmBuffer.byteLength, true);
 
     let resultBuffer = this.concatArrayBuffer(header, pcmBuffer);

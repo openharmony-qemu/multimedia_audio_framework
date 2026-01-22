@@ -1,0 +1,315 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <iostream>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include "audio_info.h"
+#include "audio_policy_server.h"
+#include "audio_policy_service.h"
+#include "audio_device_info.h"
+#include "audio_utils.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "access_token.h"
+#include "audio_channel_blend.h"
+#include "volume_ramp.h"
+#include "audio_speed.h"
+#include "audio_policy_utils.h"
+#include "audio_stream_descriptor.h"
+#include "i_hpae_manager.h"
+#include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
+#include "bluetooth_host.h"
+#include <fuzzer/FuzzedDataProvider.h>
+using namespace std;
+
+namespace OHOS {
+namespace AudioStandard {
+const int32_t SYSTEM_ABILITY_ID = 3009;
+const bool RUN_ON_CREATE = false;
+bool g_hasServerInit = false;
+static const uint8_t* RAW_DATA = nullptr;
+static size_t g_dataSize = 0;
+static size_t g_pos;
+const size_t THRESHOLD = 10;
+const int32_t DEVICE_COUNT = 4;
+const int32_t COUNT = 8;
+static int32_t NUM_2 = 2;
+typedef void (*TestFuncs)();
+
+class RemoteObjectFuzzTestStub : public IRemoteObject {
+public:
+    RemoteObjectFuzzTestStub() : IRemoteObject(u"IRemoteObject") {}
+    int32_t GetObjectRefCount() { return 0; };
+    int SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) { return 0; };
+    bool AddDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
+    bool RemoveDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
+    int Dump(int fd, const std::vector<std::u16string> &args) { return 0; };
+
+    DECLARE_INTERFACE_DESCRIPTOR(u"RemoteObjectFuzzTestStub");
+};
+
+class AudioClientTrackerFuzzTest : public AudioClientTracker {
+    public:
+        virtual ~AudioClientTrackerFuzzTest() = default;
+        virtual void MuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+        virtual void UnmuteStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+        virtual void PausedStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+        virtual void ResumeStreamImpl(const StreamSetStateEventInternal &streamSetStateEventInternal) {};
+        virtual void SetLowPowerVolumeImpl(float volume) {};
+        virtual void GetLowPowerVolumeImpl(float &volume) {};
+        virtual void GetSingleStreamVolumeImpl(float &volume) {};
+        virtual void SetOffloadModeImpl(int32_t state, bool isAppBack) {};
+        virtual void UnsetOffloadModeImpl() {};
+    };
+
+const vector<DeviceFlag> g_testDeviceFlags = {
+    NONE_DEVICES_FLAG,
+    OUTPUT_DEVICES_FLAG,
+    INPUT_DEVICES_FLAG,
+    ALL_DEVICES_FLAG,
+    DISTRIBUTED_OUTPUT_DEVICES_FLAG,
+    DISTRIBUTED_INPUT_DEVICES_FLAG,
+    ALL_DISTRIBUTED_DEVICES_FLAG,
+    ALL_L_D_DEVICES_FLAG,
+    DEVICE_FLAG_MAX
+};
+
+const vector<AudioStreamDeviceChangeReason> g_testReasons = {
+    AudioStreamDeviceChangeReason::UNKNOWN,
+    AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
+    AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE,
+    AudioStreamDeviceChangeReason::OVERRODE,
+};
+
+const vector<StreamSetState> g_testStreamSetStates = {
+    STREAM_PAUSE,
+    STREAM_RESUME,
+    STREAM_MUTE,
+    STREAM_UNMUTE,
+};
+
+vector<InterruptHint> g_testInterruptHints = {
+    INTERRUPT_HINT_NONE,
+    INTERRUPT_HINT_RESUME,
+    INTERRUPT_HINT_PAUSE,
+    INTERRUPT_HINT_STOP,
+    INTERRUPT_HINT_DUCK,
+    INTERRUPT_HINT_UNDUCK,
+    INTERRUPT_HINT_MUTE,
+    INTERRUPT_HINT_UNMUTE,
+    INTERRUPT_HINT_EXIT_STANDALONE
+};
+
+vector<AudioParamKey> g_testAudioParamKeys = {
+    NONE,
+    VOLUME,
+    INTERRUPT,
+    PARAM_KEY_STATE,
+    A2DP_SUSPEND_STATE,
+    BT_HEADSET_NREC,
+    BT_WBS,
+    A2DP_OFFLOAD_STATE,
+    GET_DP_DEVICE_INFO,
+    GET_PENCIL_INFO,
+    GET_UWB_INFO,
+    USB_DEVICE,
+    PERF_INFO,
+    MMI,
+    PARAM_KEY_LOWPOWER,
+};
+
+template<class T>
+uint32_t GetArrLength(T& arr)
+{
+    if (arr == nullptr) {
+        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
+        return 0;
+    }
+    return sizeof(arr) / sizeof(arr[0]);
+}
+
+template<class T>
+T GetData()
+{
+    T object {};
+    size_t objectSize = sizeof(object);
+    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
+        return object;
+    }
+    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
+    if (ret != EOK) {
+        return {};
+    }
+    g_pos += objectSize;
+    return object;
+}
+
+sptr<AudioPolicyServer> GetServerPtr()
+{
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (!g_hasServerInit && server != nullptr) {
+        IdHandler::GetInstance();
+        HdiAdapterManager::GetInstance();
+        HPAE::IHpaeManager::GetHpaeManager().Init();
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+#endif
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        g_hasServerInit = true;
+    }
+    return server;
+}
+
+void AudioPolicyServerGetMinVolumeDegree(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t volumeType = GetData<int32_t>();
+    int32_t deviceType = GetData<int32_t>();
+    int32_t volumeDegree = GetData<int32_t>();
+    server->GetMinVolumeDegree(volumeType, deviceType, volumeDegree);
+}
+
+void AudioPolicyServerGetSystemVolumeDegree(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t streamType = GetData<int32_t>();
+    int32_t uid = GetData<int32_t>();
+    int32_t volumeDegree = GetData<int32_t>();
+    server->GetSystemVolumeDegree(streamType, uid, volumeDegree);
+}
+
+void AudioPolicyServerSetSystemVolumeDegree(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t streamType = GetData<int32_t>();
+    int32_t volumeDegree = GetData<int32_t>();
+    int32_t volumeFlag = GetData<int32_t>();
+    int32_t uid = GetData<int32_t>();
+    server->SetSystemVolumeDegree(streamType, volumeDegree, volumeFlag, uid);
+}
+
+void AudioPolicyServerRestoreDistributedDeviceInfo(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    server->RestoreDistributedDeviceInfo();
+}
+
+void AudioPolicyServerIsIntelligentNoiseReductionEnabledForCurrentDevice(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t sourceType = GetData<int32_t>();
+    bool result = GetData<bool>();
+    server->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType, result);
+}
+
+void AudioPolicyServerForceSelectDevice(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t deviceType = GetData<int32_t>();
+    std::string macAddress = "ForceSelectDevice";
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    if (audioRendererFilter == nullptr) {
+        return;
+    }
+    audioRendererFilter->uid = GetData<int32_t>();
+    audioRendererFilter->rendererInfo.rendererFlags = GetData<int32_t>();
+    server->ForceSelectDevice(deviceType, macAddress, audioRendererFilter);
+}
+
+void AudioPolicyServerSelectPrivateDevice(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t deviceType = GetData<int32_t>();
+    std::string macAddress = "SelectPrivateDevice";
+    server->SelectPrivateDevice(deviceType, macAddress);
+}
+
+void AudioPolicyServerForceVolumeKeyControlType(FuzzedDataProvider& fdp)
+{
+    auto server = GetServerPtr();
+    CHECK_AND_RETURN(server != nullptr);
+    int32_t volumeType = GetData<int32_t>();
+    int32_t duration = GetData<int32_t>();
+    int32_t ret = GetData<int32_t>();
+    server->ForceVolumeKeyControlType(volumeType, duration, ret);
+}
+
+void Test(FuzzedDataProvider& fdp)
+{
+    auto func = fdp.PickValueInArray({
+    AudioPolicyServerGetMinVolumeDegree,
+    AudioPolicyServerGetSystemVolumeDegree,
+    AudioPolicyServerSetSystemVolumeDegree,
+    AudioPolicyServerRestoreDistributedDeviceInfo,
+    AudioPolicyServerIsIntelligentNoiseReductionEnabledForCurrentDevice,
+    AudioPolicyServerForceSelectDevice,
+    AudioPolicyServerSelectPrivateDevice,
+    AudioPolicyServerForceVolumeKeyControlType,
+    });
+    func(fdp);
+}
+void Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return;
+    }
+    RAW_DATA = data;
+    g_dataSize = size;
+    g_pos = 0;
+}
+void Init()
+{
+}
+} // namespace AudioStandard
+
+void OnStop()
+{
+    Bluetooth::BluetoothHost::GetDefaultHost().Close();
+}
+} // namesapce OHOS
+
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    if (size < OHOS::AudioStandard::THRESHOLD) {
+        return 0;
+    }
+    OHOS::AudioStandard::Init(data, size);
+    FuzzedDataProvider fdp(data, size);
+    OHOS::AudioStandard::Test(fdp);
+    OHOS::OnStop();
+    return 0;
+}
+extern "C" int LLVMFuzzerInitialize(const uint8_t* data, size_t size)
+{
+    OHOS::AudioStandard::Init();
+    return 0;
+}

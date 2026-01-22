@@ -117,10 +117,16 @@ public:
     static napi_status GetRendererInfo(const napi_env &env, AudioRendererInfo *rendererInfo, napi_value in);
     static napi_status SetRendererInfo(const napi_env &env, const AudioRendererInfo &rendererInfo, napi_value &result);
     static napi_status GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in);
+    static napi_status GetEcStreamInfo(const napi_env &env, AudioStreamInfo *ecStreamInfo, napi_value in);
     static napi_status SetStreamInfo(const napi_env &env, const AudioStreamInfo &streamInfo, napi_value &result);
     static napi_status SetTimeStampInfo(const napi_env &env, const Timestamp &timestamp, napi_value &result);
     static napi_status SetValueInt32Element(const napi_env &env, const std::string &fieldStr,
         const std::vector<int32_t> &values, napi_value &result);
+    static napi_status ToJsAudioStreamInfo(const napi_env &env, const AudioStreamInfo &info, napi_value &result);
+    static napi_status ToJsAudioStreamInfosArray(const napi_env &env,
+        const std::list<AudioStreamInfo> &capabilities, napi_value &result);
+    static napi_status SetJsAudioStreamInfos(const napi_env &env,
+        const std::list<AudioStreamInfo> &capabilities, napi_value &result);
     static napi_status SetDeviceDescriptor(const napi_env &env, const AudioDeviceDescriptor &deviceInfo,
         napi_value &result);
     static napi_status SetDeviceDescriptors(const napi_env &env,

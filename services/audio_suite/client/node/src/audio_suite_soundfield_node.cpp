@@ -19,14 +19,12 @@
 #include <unordered_map>
 #include "audio_suite_soundfield_node.h"
 #include "audio_utils.h"
+#include "audio_suite_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 namespace {
-static constexpr AudioSamplingRate SOUNDFIELD_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
-static constexpr AudioSampleFormat SOUNDFIELD_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel SOUNDFIELD_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout SOUNDFIELD_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 
 static const std::unordered_map<SoundFieldType, iMedia_Surround_PARA> soundFieldParaMap = {
@@ -38,14 +36,7 @@ static const std::unordered_map<SoundFieldType, iMedia_Surround_PARA> soundField
 }
 
 AudioSuiteSoundFieldNode::AudioSuiteSoundFieldNode()
-    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_SOUND_FIELD,
-          AudioFormat{{SOUNDFIELD_ALGO_CHANNEL_LAYOUT, SOUNDFIELD_ALGO_CHANNEL_COUNT},
-              SOUNDFIELD_ALGO_SAMPLE_FORMAT,
-              SOUNDFIELD_ALGO_SAMPLE_RATE}),
-      outPcmBuffer_(PcmBufferFormat{SOUNDFIELD_ALGO_SAMPLE_RATE,
-          SOUNDFIELD_ALGO_CHANNEL_COUNT,
-          SOUNDFIELD_ALGO_CHANNEL_LAYOUT,
-          SOUNDFIELD_ALGO_SAMPLE_FORMAT})
+    : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_SOUND_FIELD)
 {}
 
 AudioSuiteSoundFieldNode::~AudioSuiteSoundFieldNode()
@@ -56,13 +47,28 @@ AudioSuiteSoundFieldNode::~AudioSuiteSoundFieldNode()
 int32_t AudioSuiteSoundFieldNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init begin");
+    if (!isOutputPortInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
+        isOutputPortInit_ = true;
+    }
 
     algoInterface_ =
-        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD, nodeCapability);
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SOUND_FIELD, nodeParameter);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create soundField algoInterface");
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init soundField algorithm");
+
+    SetAudioNodeFormat(AudioFormat{{SOUNDFIELD_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
+
+    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
+        nodeParameter.outChannels,
+        SOUNDFIELD_ALGO_CHANNEL_LAYOUT,
+        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
+    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
 
     AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init end");
     return SUCCESS;

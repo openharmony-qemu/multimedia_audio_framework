@@ -31,7 +31,9 @@ enum ManagerType : int32_t {
     DIRECT_PLAYBACK,
     VOIP_PLAYBACK,
     EAC3_PLAYBACK,
+    HWDECODING_PLAYBACK,
     RECORDER,
+    AUDIO_VIVID_3DA_DIRECT_PLAYBACK,
 };
 
 class IStreamManager {

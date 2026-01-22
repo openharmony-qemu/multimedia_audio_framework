@@ -138,7 +138,7 @@ int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &confi
 int32_t MockPolicyProvider::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
 {
     size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
-    policyVolumeMap_ = AudioSharedMemory::CreateFormLocal(mapSize, "MockVolumeMap");
+    policyVolumeMap_ = AudioSharedMemory::CreateFromLocal(mapSize, "MockVolumeMap");
     buffer = policyVolumeMap_;
     return SUCCESS;
 }
@@ -362,7 +362,7 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->UpdatePosition();
 
     std::string name = "fuzz_test";
-    ipcStream->RegisterThreadPriority(0, name, METHOD_START);
+    ipcStream->RegisterThreadPriority(0, name, METHOD_START, THREAD_PRIORITY_QOS_7);
     bool ret = false;
     uint32_t sessionId = 0;
     ipcStream->GetAudioSessionID(sessionId);
@@ -399,7 +399,7 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->SetSilentModeAndMixWithOthers(false);
     ipcStream->SetClientVolume();
     ipcStream->SetMute(false);
-    ipcStream->SetDuckFactor(volume);
+    ipcStream->SetDuckFactor(volume, 0);
     ipcStream->Stop();
     ipcStream->Release(false);
 }

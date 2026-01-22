@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioManagerListenerCallback"
 #endif
 
-#include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "audio_manager_listener.h"
 
@@ -37,6 +36,12 @@ void AudioManagerListenerCallback::OnAudioParameterChange(const std::string netw
     if (listener_ != nullptr) {
         listener_->OnAudioParameterChange(networkId, key, condition, value);
     }
+}
+
+void AudioManagerListenerCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
+{
+    CHECK_AND_RETURN(listener_ != nullptr);
+    listener_->OnHdiRouteStateChange(networkId, enable);
 }
 
 void AudioManagerListenerCallback::OnCapturerState(bool isActive)

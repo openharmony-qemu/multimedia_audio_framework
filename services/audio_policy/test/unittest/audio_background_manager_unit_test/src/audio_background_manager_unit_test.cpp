@@ -80,9 +80,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_003, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(0, pid, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(0, pid, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -104,9 +105,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_004, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, 1, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, 1, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -129,9 +131,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_005, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, 1, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, 1, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -156,9 +159,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_006, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -184,9 +188,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_007, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -212,9 +217,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_008, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -240,9 +246,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_009, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -268,9 +275,10 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_010, TestSize.Leve
     audioBackgroundManagerTest_->appStatesMap_.clear();
     audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
 
+    uint32_t sessionId = 0;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     bool silentControl = false;
-    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, streamUsage, silentControl);
+    bool ret = audioBackgroundManagerTest_->IsAllowedPlayback(1, pid, sessionId, streamUsage, silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -1141,46 +1149,6 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_044, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test WriteAppStateChangeSysEvent API
- * @tc.type  : FUNC
- * @tc.number: AudioBackgroundManager_045
- * @tc.desc  : Test WriteAppStateChangeSysEvent
- */
-HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_045, TestSize.Level1)
-{
-    AudioBackgroundManager* audioBackgroundManagerTest_ = nullptr;
-    audioBackgroundManagerTest_ = &AudioBackgroundManager::GetInstance();
-    ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
-
-    int32_t pid = 0;
-    AppState appState;
-    appState.isFreeze = 1;
-    appState.isBack = 1;
-    appState.hasSession = 1;
-    appState.hasBackTask = 1;
-    appState.isBinder = 1;
-
-    audioBackgroundManagerTest_->appStatesMap_.clear();
-    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), true);
-
-    audioBackgroundManagerTest_->WriteAppStateChangeSysEvent(pid, appState, 1);
-    sleep(1000);
-
-    audioBackgroundManagerTest_->RecoryAppState();
-    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.size(), 1);
-
-    auto it = audioBackgroundManagerTest_->appStatesMap_.find(pid);
-    EXPECT_EQ(it != audioBackgroundManagerTest_->appStatesMap_.end(), true);
-
-    AppState recoryState = it->second;
-    EXPECT_EQ(appState.isFreeze, recoryState.isFreeze);
-    EXPECT_EQ(appState.isBack, recoryState.isBack);
-    EXPECT_EQ(appState.hasSession, recoryState.hasSession);
-    EXPECT_EQ(appState.hasBackTask, recoryState.hasBackTask);
-    EXPECT_EQ(appState.isBinder, recoryState.isBinder);
-}
-
-/**
  * @tc.name  : Test FindKeyInMap API
  * @tc.type  : FUNC
  * @tc.number: AudioBackgroundManager_046
@@ -1230,17 +1198,18 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_047, TestSize.Leve
 
     AppState &appStateRef = audioBackgroundManagerTest_->appStatesMap_[pid];
     appStateRef.isSystem = false;
-    int32_t streamUsage = BACKGROUND_MUTE_STREAM_USAGE[0];
+    uint32_t sessionId = 0;
+    StreamUsage streamUsage = BACKGROUND_MUTE_STREAM_USAGE[0];
     bool silentControl = false;
-    int32_t result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, streamUsage, silentControl);
+    int32_t result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     EXPECT_TRUE(result);
 
     streamUsage = STREAM_USAGE_ALARM;
-    result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, streamUsage, silentControl);
+    result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     EXPECT_TRUE(result);
 
     appStateRef.hasSession = true;
-    result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, streamUsage, silentControl);
+    result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     EXPECT_TRUE(result);
 }
 } // namespace AudioStandard

@@ -14,6 +14,7 @@
  */
 
 #include "renderer_in_server_unit_test.h"
+#include "parameter.h"
 
 using namespace testing::ext;
 
@@ -245,6 +246,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerConfigServerBuffer_002, TestS
         testStreamInfo.customSampleRate / AUDIO_US_PER_S);
     EXPECT_EQ(SUCCESS, ret);
 }
+
 
 /**
  * @tc.name  : Test InitBufferStatus API
@@ -932,6 +934,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_007, TestSize.Level
     EXPECT_EQ(SUCCESS, ret);
 }
 
+
 /**
  * @tc.name  : Test ResolveBuffer API
  * @tc.type  : FUNC
@@ -1201,6 +1204,29 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_009, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test Start API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStart_010
+ * @tc.desc  : Test Start and OnStatusUpdate in OPERATION_PAUSED when standByEnable_ true with managerType is
+ * AUDIO_VIVID_3DA_DIRECT_PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStart_010, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_SPEAKER, AUDIO_FLAG_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->standByEnable_ = false;
+    rendererInServer->managerType_ = AUDIO_VIVID_3DA_DIRECT_PLAYBACK;
+
+    ret = rendererInServer->Start();
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
  * @tc.name  : Test Pause API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerPause_001
@@ -1333,6 +1359,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_001, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
+    rendererInServer->offloadEnable_ = true;
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
@@ -1354,6 +1381,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_002, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
+    rendererInServer->offloadEnable_ = false;
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(SUCCESS, ret);
@@ -2342,7 +2370,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableDualTone_005, TestSize.
 HWTEST_F(RendererInServerUnitTest, RendererInServerOnWriteData_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     int32_t ret = streamCallbacks->OnWriteData(TEST_LENGTH);
@@ -2643,7 +2671,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerSetDuckFactor_001, TestSize.L
     EXPECT_NE(nullptr, rendererInServer);
 
     float duck = 0.2f;
-    int32_t ret = rendererInServer->SetDuckFactor(duck);
+    int32_t ret = rendererInServer->SetDuckFactor(duck, 0);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -3383,6 +3411,10 @@ HWTEST_F(RendererInServerUnitTest, HandleOperationStarted_001, TestSize.Level1)
     rendererInServer->standByEnable_ = true;
     rendererInServer->HandleOperationStarted();
     EXPECT_EQ(rendererInServer->status_, I_STATUS_STARTED);
+
+    rendererInServer->isHWDecodingType_ = true;
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

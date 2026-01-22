@@ -48,6 +48,7 @@ public:
     void SetExtraSceneType(const std::string &extraSceneType);
     void SetFoldState(const std::string &foldState);
     void SetLidState(const std::string &lidState);
+    void SetSystemLoadState(const std::string &systemLoadState);
     void SetEffectCurrSceneType(AudioEffectScene currSceneType);
     void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     void SetSpatializationEnabled(bool enabled);
@@ -81,6 +82,8 @@ public:
     void updateDumpName();
     void SetAbsVolumeStateToEffectChain(const bool absVolumeState);
     void SetEarphoneProduct(AudioEarphoneProduct earphoneProduct);
+    void SetOutdoorMode(const std::string &outdoorModle);
+    void SetSuperLoudnessMode(const std::string &superLoudnessMode);
     bool IsEffectChainFading();
 private:
     AudioEffectConfig GetIoBufferConfig();
@@ -99,6 +102,7 @@ private:
     uint32_t extraEffectChainType_ = 0;
     uint32_t foldState_ = 0;
     uint32_t lidState_ = 0;
+    uint32_t systemLoadState_ = 0;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
     std::vector<AudioEffectHandle> standByEffectHandles_;
@@ -125,6 +129,8 @@ private:
     std::vector<float> effectBuffer_;
     bool absVolumeState_ = true;
     AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
+    int32_t outdoorModle_ = 0;
+    int32_t superLoudnessMode_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

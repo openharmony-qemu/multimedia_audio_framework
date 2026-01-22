@@ -74,6 +74,8 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
 
+    int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override;
+
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override;
 
     int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
@@ -117,9 +119,10 @@ public:
 
     int32_t SetMute(bool isMute) override;
 
-    int32_t SetDuckFactor(float duckFactor) override;
+    int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override;
 
-    int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override;
+    int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+        uint32_t threadPriority) override;
 
     int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce = false) override;
 
@@ -135,7 +138,15 @@ public:
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
     int32_t SetTarget(int32_t target, int32_t &ret) override;
+
     int32_t SetRebuildFlag() override;
+
+    int32_t SetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
+
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override; // for static renderer only
+
+    int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override;
+
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();

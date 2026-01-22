@@ -71,10 +71,12 @@ public:
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
-    StreamUsage GetAudioSessionStreamUsageForDevice(const uint32_t streamId);
+    StreamUsage GetAudioSessionStreamUsageForDevice();
     bool IsBackGroundApp(void);
     void MarkSystemApp(void);
     bool IsSystemApp(void) const;
+    void EnableMuteSuggestionWhenMixWithOthers(bool enable);
+    bool IsMuteSuggestionWhenMixEnabled();
 
 private:
     StreamUsage GetStreamUsageInner();
@@ -102,6 +104,7 @@ private:
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
     AudioDeviceManager &deviceManager_;
     bool isSystemApp_ {false};
+    bool isMuteSuggestionEnabled_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

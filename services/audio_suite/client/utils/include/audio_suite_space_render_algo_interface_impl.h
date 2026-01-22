@@ -18,7 +18,6 @@
 
 #include "audio_suite_algo_interface.h"
 #include "audio_hms_space_render_api.h"
-#include "audio_suite_log.h"
 #include <utility>
 #include <dlfcn.h>
 
@@ -44,7 +43,7 @@ struct SpaceRenderAlgoApi {
 
 class AudioSuiteSpaceRenderAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
-    explicit AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeCapability &nc);
+    explicit AudioSuiteSpaceRenderAlgoInterfaceImpl(NodeParameter &nc);
     ~AudioSuiteSpaceRenderAlgoInterfaceImpl();
  
     int32_t Init() override;
@@ -60,6 +59,7 @@ private:
     SpaceRenderParam spaceRenderParam_ = {SPACE_RENDER_MODE_STATIC,
         {0.0f, 0.0f, 0.0f}, 0.0f, SPACE_RENDER_ROTATION_MODE_CW, 0.0f, 0};
     std::vector<char> spaceRenderHandle_;
+    AudioSuiteLibraryManager algoLibrary_;
 
     int SetPositionParameter(const std::string &paramValue);
     int SetExtensionParameter(const std::string &paramValue);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,6 +51,7 @@ static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
+static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 
 class AudioServiceUnitTest : public testing::Test {
 public:
@@ -63,6 +64,7 @@ public:
 class AudioParameterCallbackTest : public AudioParameterCallback {
     virtual void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
         const std::string& condition, const std::string& value) {}
+    virtual void OnHdiRouteStateChange(const std::string &networkId, bool enable) {}
 };
 
 void AudioServiceUnitTest::SetUpTestCase(void)
@@ -695,10 +697,11 @@ HWTEST(AudioServiceUnitTest, AudioServiceGetDeviceInfoForProcess_001, TestSize.L
     config.audioMode = AUDIO_MODE_PLAYBACK;
     AudioDeviceDescriptor deviceinfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamInfo info;
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info);
+    bool isUltraFast = false;
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast);
     EXPECT_NE(deviceinfo.deviceRole_, INPUT_DEVICE);
     config.audioMode = AUDIO_MODE_RECORD;
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info);
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast);
     EXPECT_NE(deviceinfo.deviceRole_, OUTPUT_DEVICE);
 }
 
@@ -1720,6 +1723,44 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_003, TestSize.Level1)
     EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
     ret = audioService->GetReleaseDelayTime(endpoint, isSwitchStream, true);
     EXPECT_EQ(ret, A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME);
+}
+
+/**
+ * @tc.name  : Test GetReleaseDelayTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetReleaseDelayTime_003
+ * @tc.desc  : Test GetReleaseDelayTime interface.
+ */
+HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
+    AudioProcessConfig clientConfig = {};
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP,
+        123, clientConfig.audioMode);
+    EXPECT_NE(nullptr, endpoint);
+    bool isSwitchStream;
+
+    isSwitchStream = true;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    
+    isSwitchStream = true;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+
+    isSwitchStream = false;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+
+    isSwitchStream = false;
+    endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }
 
 /**
@@ -3018,7 +3059,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
     bool reload = false;
     AudioStreamInfo info;
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo =
+        AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast, reload);
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
@@ -3039,7 +3082,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
     bool reload = false;
     AudioStreamInfo info;
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo =
+        AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast, reload);
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
@@ -3060,7 +3105,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
     config.audioMode = AUDIO_MODE_RECORD;
     bool reload = false;
     AudioStreamInfo info;
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
+    bool isUltraFast = false;
+    AudioDeviceDescriptor deviceInfo =
+        AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, isUltraFast, reload);
 
     EXPECT_EQ(deviceInfo.deviceId_, 1);
     EXPECT_EQ(deviceInfo.networkId_, LOCAL_NETWORK_ID);

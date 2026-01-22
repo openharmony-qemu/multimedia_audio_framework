@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -325,7 +325,7 @@ void IpcStreamInServerSetDuckFactorFuzzTest()
     shared_ptr<IpcStreamInServer> ipcStreamInServerRet = CreateIpcStreamInServer();
     CHECK_AND_RETURN(ipcStreamInServerRet != nullptr);
     float duckFactor = g_fuzzUtils.GetData<float>();
-    ipcStreamInServerRet->SetDuckFactor(duckFactor);
+    ipcStreamInServerRet->SetDuckFactor(duckFactor, 0);
 }
 
 void IpcStreamInServerRegisterThreadPriorityFuzzTest()
@@ -335,7 +335,7 @@ void IpcStreamInServerRegisterThreadPriorityFuzzTest()
     int32_t tid = g_fuzzUtils.GetData<int32_t>();
     std::string bundleName = "testBundleName";
     uint32_t method = g_fuzzUtils.GetData<uint32_t>();
-    ipcStreamInServerRet->RegisterThreadPriority(tid, bundleName, method);
+    ipcStreamInServerRet->RegisterThreadPriority(tid, bundleName, method, THREAD_PRIORITY_QOS_7);
 }
 
 void IpcStreamInServerSetDefaultOutputDeviceFuzzTest()

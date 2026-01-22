@@ -46,7 +46,7 @@ bool AudioVolumeUtils::LoadConfig()
     return parser->LoadConfig(streamVolumeInfos_);
 }
 
-int32_t AudioVolumeUtils::GetDefaultVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+int32_t AudioVolumeUtils::GetDefaultVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, DEFAULT_VOLUME_LEVEL, "desc is null");
@@ -75,7 +75,8 @@ int32_t AudioVolumeUtils::GetDefaultVolumeLevel(const std::shared_ptr<AudioDevic
     }
     return defaultVolumeLevel;
 }
-void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+
+void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
@@ -83,7 +84,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(const std::shared_ptr<Aud
         bool ret = LoadConfig();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
     }
-
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
@@ -108,9 +109,10 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(const std::shared_ptr<Aud
     volumeLevel = deviceVolumeInfoIt->defaultLevel;
 }
 
-void AudioVolumeUtils::GetDefaultVolumeLevelForDPsDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+void AudioVolumeUtils::GetDefaultVolumeLevelForDPsDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (Util::IsDualToneStreamType(volumeType)) {
         std::shared_ptr<AudioDeviceDescriptor> tmp = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER);
@@ -121,9 +123,10 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForDPsDevice(const std::shared_ptr<A
     volumeLevel = maxVolumeLevel >= DP_DEFAULT_VOLUME_LEVEL ? DP_DEFAULT_VOLUME_LEVEL : maxVolumeLevel;
 }
 
-void AudioVolumeUtils::GetDefaultVolumeLevelForDistributedDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+void AudioVolumeUtils::GetDefaultVolumeLevelForDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (Util::IsDualToneStreamType(volumeType)) {
         std::shared_ptr<AudioDeviceDescriptor> tmp = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER);
@@ -133,9 +136,10 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForDistributedDevice(const std::shar
     volumeLevel = GetMaxVolumeLevel(desc, streamType);
 }
 
-void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (Util::IsDualToneStreamType(volumeType)) {
         std::shared_ptr<AudioDeviceDescriptor> tmp = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER);
@@ -146,7 +150,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(const std::share
     volumeLevel = static_cast<int32_t>(std::ceil(maxVolumeLevel * HEARING_AID_MAX_VOLUME_PROP));
 }
 
-int32_t AudioVolumeUtils::GetMaxVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+int32_t AudioVolumeUtils::GetMaxVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, MAX_VOLUME_LEVEL, "desc is null");
@@ -155,7 +159,8 @@ int32_t AudioVolumeUtils::GetMaxVolumeLevel(const std::shared_ptr<AudioDeviceDes
     GetMaxVolumeLevelFromConfig(desc, volumeType, maxVolumeLevel);
     return maxVolumeLevel;
 }
-void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+
+void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
@@ -163,7 +168,7 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDe
         bool ret = LoadConfig();
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
     }
-
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
@@ -188,7 +193,7 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(const std::shared_ptr<AudioDe
     volumeLevel = deviceVolumeInfoIt->maxLevel;
 }
 
-int32_t AudioVolumeUtils::GetMinVolumeLevel(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+int32_t AudioVolumeUtils::GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, MIN_VOLUME_LEVEL, "desc is null");
@@ -198,7 +203,7 @@ int32_t AudioVolumeUtils::GetMinVolumeLevel(const std::shared_ptr<AudioDeviceDes
     return minVolumeLevel;
 }
 
-void AudioVolumeUtils::GetMinVolumeLevelFromConfig(const std::shared_ptr<AudioDeviceDescriptor> &desc,
+void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
@@ -207,6 +212,7 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(const std::shared_ptr<AudioDe
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "LoadConfig failed");
     }
 
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
     AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (!DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.contains(desc->deviceType_)) {
         CHECK_AND_RETURN(streamVolumeInfos_.contains(internalVolumeType) &&
@@ -231,7 +237,7 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(const std::shared_ptr<AudioDe
     volumeLevel = deviceVolumeInfoIt->minLevel;
 }
 
-bool AudioVolumeUtils::IsDistributedDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+bool AudioVolumeUtils::IsDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is null");
     if (desc->deviceType_ == DEVICE_TYPE_SPEAKER && desc->networkId_ != LOCAL_NETWORK_ID) {
@@ -243,7 +249,7 @@ bool AudioVolumeUtils::IsDistributedDevice(const std::shared_ptr<AudioDeviceDesc
     return false;
 }
 
-bool AudioVolumeUtils::IsDeviceWithSafeVolume(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+bool AudioVolumeUtils::IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is null");
     switch (desc->deviceType_) {

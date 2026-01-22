@@ -17,6 +17,7 @@
 #include "audio_policy_manager_device_unit_test.h"
 #include "audio_utils.h"
 #include "audio_device_status.h"
+#include "audio_unit_test.h"
 
 using namespace testing::ext;
 
@@ -223,6 +224,22 @@ HWTEST(AudioPolicyManagerDevice, UnregisterDeviceChangeWithInfoCallback_001, Tes
 
 /**
  * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: RegisterPreferredDeviceSetCallback_001.
+ * @tc.desc  : Test RegisterPreferredDeviceSetCallback && UnregisterPreferredDeviceSetCallback.
+ */
+HWTEST(AudioPolicyManagerDevice, RegisterPreferredDeviceSetCallback_001, TestSize.Level1)
+{
+    auto &policyManager = AudioPolicyManager::GetInstance();
+    int32_t ret = 0;
+    auto cb = std::make_shared<PreferredDeviceSetCallbackTest>();
+    ret = policyManager.RegisterPreferredDeviceSetCallback(cb);
+    EXPECT_NE(ret, SUCCESS);
+    ret = policyManager.UnregisterPreferredDeviceSetCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
  * @tc.number: GetAvailableDevices_001.
  * @tc.desc  : Test GetAvailableDevices().
  */
@@ -230,6 +247,104 @@ HWTEST(AudioPolicyManagerDevice, GetAvailableDevices_001, TestSize.Level1)
 {
     auto &policyManager = AudioPolicyManager::GetInstance();
     ASSERT_EQ((policyManager.GetAvailableDevices(MEDIA_INPUT_DEVICES)).size(), 1);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: UnsetDeviceInfoUpdateCallback_001.
+ * @tc.desc  : Test UnsetDeviceInfoUpdateCallback().
+ */
+HWTEST(AudioPolicyManagerDevice, UnsetDeviceInfoUpdateCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    int32_t clientId = 1;
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> cb =
+        std::make_shared<ConcreteAudioManagerDeviceInfoUpdateCallback>();
+    audioPolicyManager->audioPolicyClientStubCB_ = nullptr;
+    int32_t ret = audioPolicyManager->UnsetDeviceInfoUpdateCallback(clientId, cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: UnsetDeviceInfoUpdateCallback_002.
+ * @tc.desc  : Test UnsetDeviceInfoUpdateCallback().
+ */
+HWTEST(AudioPolicyManagerDevice, UnsetDeviceInfoUpdateCallback_002, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    int32_t clientId = 1;
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> cb =
+        std::make_shared<ConcreteAudioManagerDeviceInfoUpdateCallback>();
+    audioPolicyManager->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    audioPolicyManager->audioPolicyClientStubCB_->deviceInfoUpdateCallbackList_.clear();
+    audioPolicyManager->UnsetDeviceInfoUpdateCallback(clientId, cb);
+
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> cb1 = nullptr;
+    audioPolicyManager->audioPolicyClientStubCB_->deviceInfoUpdateCallbackList_.push_back(cb1);
+
+    auto ret = audioPolicyManager->UnsetDeviceInfoUpdateCallback(clientId, cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: UnsetPreferredInputDeviceChangeCallback_003.
+ * @tc.desc  : Test SetPreferredInputDeviceChangeCallback && UnsetPreferredInputDeviceChangeCallback.
+ */
+HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_003, TestSize.Level1)
+{
+    auto &policyManager = AudioPolicyManager::GetInstance();
+    int32_t ret = 0;
+    auto captureInfo = AudioCapturerInfo();
+    policyManager.isAudioPolicyClientRegisted_.store(false);
+    policyManager.SetPreferredInputDeviceChangeCallback(
+        captureInfo, std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>());
+    ASSERT_EQ(ret, SUCCESS);
+    policyManager.UnsetPreferredInputDeviceChangeCallback(
+        std::make_shared<AudioPreferredInputDeviceChangeCallbackTest>());
+    ASSERT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: SetDeviceInfoUpdateCallback_001.
+ * @tc.desc  : Test SetDeviceInfoUpdateCallback().
+ */
+HWTEST(AudioPolicyManagerDevice, SetDeviceInfoUpdateCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager != nullptr);
+
+    audioPolicyManager->audioPolicyClientStubCB_ = nullptr;
+    audioPolicyManager->isAudioPolicyClientRegisted_.store(false);
+
+    int32_t clientId = 1;
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> cb =
+        std::make_shared<ConcreteAudioManagerDeviceInfoUpdateCallback>();
+    int32_t ret = audioPolicyManager->SetDeviceInfoUpdateCallback(clientId, cb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: RegisterPreferredDeviceSetCallback_002.
+ * @tc.desc  : Test RegisterPreferredDeviceSetCallback && UnregisterPreferredDeviceSetCallback.
+ */
+HWTEST(AudioPolicyManagerDevice, RegisterPreferredDeviceSetCallback_002, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto &policyManager = AudioPolicyManager::GetInstance();
+    auto cb = std::make_shared<PreferredDeviceSetCallbackTest>();
+    policyManager.RegisterPreferredDeviceSetCallback(cb);
+    auto ret = policyManager.UnregisterPreferredDeviceSetCallback(cb);
+    EXPECT_EQ(ret, SUCCESS);
+    MockNative::Resume();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -17,6 +17,7 @@ package OHOS.AudioStandard;
 
 sequenceable OHOS.IRemoteObject;
 sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
+sequenceable audio_info..OHOS.AudioStandard.StaticBufferInfo;
 
 interface IAudioProcess {
     [ipccode 0] void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer, [out] unsigned int spanSizeInFrame);
@@ -29,7 +30,8 @@ interface IAudioProcess {
     [oneway] void RequestHandleInfoAsync(); // default
     void Release([in] boolean isSwitchStream); // isSwitchStream = false
     void RegisterProcessCb([in] IRemoteObject object);
-    void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
+    void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method,
+        [in] unsigned int threadPriority); // BoostTriggerMethod method
     void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] boolean skipForce); // DeviceType defaultOutputDevice
     void SetSilentModeAndMixWithOthers([in] boolean on);
     void SetSourceDuration([in] long duration);
@@ -39,4 +41,7 @@ interface IAudioProcess {
     void SetRebuildFlag();
     void GetServerKeepRunning([out] boolean keepRunning);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
+    void SetLoopTimes([in] long bufferLoopTimes);
+    void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
+    void SetStaticRenderRate([in] unsigned int renderRate);
 }

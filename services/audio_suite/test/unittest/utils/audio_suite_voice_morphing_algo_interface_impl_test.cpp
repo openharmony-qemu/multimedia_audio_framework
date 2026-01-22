@@ -37,11 +37,14 @@ public:
     void TearDown(void);
 
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 
 void AudioSuiteVbAlgoInterfaceImplUnitTest::SetUp(void)
 {
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
     std::filesystem::remove("/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm");
     nc.soName = "libaudio_voice_morph_bgm.z.so";
     nc.soPath = "/system/lib64/";

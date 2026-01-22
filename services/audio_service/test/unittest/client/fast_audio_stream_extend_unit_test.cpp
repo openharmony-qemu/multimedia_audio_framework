@@ -90,6 +90,12 @@ public:
     MOCK_METHOD(bool, IsRestoreNeeded, (), (override));
     MOCK_METHOD(void, SetRebuildFlag, (), (override));
     MOCK_METHOD(void, GetKeepRunning, (bool &keepRunning), (override));
+
+    MOCK_METHOD(int32_t, GetStaticBufferInfo, (StaticBufferInfo &staticBufferInfo), (override));
+    MOCK_METHOD(int32_t, SetStaticBufferEventCallback, (std::shared_ptr<StaticBufferEventCallback), (override));
+    MOCK_METHOD(int32_t, SetStaticTriggerRecreateCallback, (std::function<void()> sendStaticRecreateFunc), (override));
+    MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
+    MOCK_METHOD(int32_t, SetStaticRenderRate, (AudioRendererRate renderRate), (override));
 };
 
 class FastSystemStreamExtUnitTest : public testing::Test {
@@ -1938,6 +1944,55 @@ HWTEST_F(FastSystemStreamExtUnitTest, RestoreAudioStream_008, TestSize.Level1)
 
     fastAudioStream->state_ = STOPPING;
     EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
+}
+
+/**
+ * @tc.name  : FastAudioStream_GetLatencyWithFlag_HardwareOnly
+ * @tc.type  : FUNC
+ * @tc.number: FastAudioStream_GetLatencyWithFlag_001
+ * @tc.desc  : Verify hardware flag returns latency.
+ */
+HWTEST_F(FastSystemStreamExtUnitTest, FastAudioStream_GetLatencyWithFlag_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    uint64_t latency = 0;
+    int32_t ret = stream_->GetLatencyWithFlag(latency, LATENCY_FLAG_HARDWARE);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : FastAudioStream_GetLatencyWithFlag_EngineOnly
+ * @tc.type  : FUNC
+ * @tc.number: FastAudioStream_GetLatencyWithFlag_002
+ * @tc.desc  : Verify engine flag returns latency.
+ */
+HWTEST_F(FastSystemStreamExtUnitTest, FastAudioStream_GetLatencyWithFlag_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    uint64_t latency = 0;
+    int32_t ret = stream_->GetLatencyWithFlag(latency, LATENCY_FLAG_ENGINE);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : FastAudioStream_GetLatencyWithFlag_All
+ * @tc.type  : FUNC
+ * @tc.number: FastAudioStream_GetLatencyWithFlag_003
+ * @tc.desc  : Verify hardware+engine flags return latency.
+ */
+HWTEST_F(FastSystemStreamExtUnitTest, FastAudioStream_GetLatencyWithFlag_003, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    uint64_t latency = 0;
+    int32_t ret = stream_->GetLatencyWithFlag(latency,
+        static_cast<LatencyFlag>(LATENCY_FLAG_ENGINE | LATENCY_FLAG_HARDWARE));
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

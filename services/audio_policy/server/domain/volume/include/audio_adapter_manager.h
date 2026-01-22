@@ -162,6 +162,8 @@ public:
 
     void UpdateVolumeForStreams();
 
+    void UpdateVolumeForStream(std::shared_ptr<AudioStreamDescriptor> targetStream);
+
     int32_t MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName);
 
     int32_t MoveSourceOutputByIndexOrName(uint32_t sourceOutputId, uint32_t sourceIndex, std::string sourceName);
@@ -207,6 +209,8 @@ public:
     bool IsUseNonlinearAlgo() { return useNonlinearAlgo_; }
 
     void SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volume);
+
+    int32_t SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume);
 
     bool IsAbsVolumeScene() const;
 
@@ -347,6 +351,17 @@ public:
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
     void updateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
+    void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
+    void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
+    void SetMuteFromRemote(std::string networkId, bool mute);
+
+    class RemoteVolumeCallback : public AudioParameterCallback {
+        void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
+            const std::string& condition, const std::string& value) override;
+        
+        void OnHdiRouteStateChange(const std::string& networkId, bool enable) override {};
+    };
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -356,7 +371,7 @@ private:
     static constexpr int32_t DP_DEFAULT_VOLUME_LEVEL = 25;
     static constexpr int32_t APP_MAX_VOLUME_LEVEL = 100;
     static constexpr int32_t APP_MIN_VOLUME_LEVEL = 0;
-    static constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 25;
+    static constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 100;
     static constexpr int32_t CONST_FACTOR = 100;
     static constexpr int32_t DEFAULT_SAFE_VOLUME_TIMEOUT = 1140;
     static constexpr int32_t CONVERT_FROM_MS_TO_SECONDS = 1000;
@@ -388,7 +403,6 @@ private:
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
-    bool LoadVolumeMap(std::shared_ptr<AudioDeviceDescriptor> &device);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);
@@ -447,7 +461,7 @@ private:
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
-    void UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> &device, AudioVolumeType volumeType);
+    void UpdateVolumeForLowLatency(std::shared_ptr<AudioDeviceDescriptor> device, AudioVolumeType volumeType);
     bool IsDistributedVolumeType(AudioStreamType streamType);
     void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
     void UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -470,6 +484,14 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetPrimarySinkExist(bool isPrimarySinkExist);
     int32_t StopAudioPort(std::string oldSinkName);
+    void DealDoNotDisturbStatus();
+    void DealDoNotDisturbStatusWhiteList();
+    void UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDeviceDescriptor> device);
+    void SendVolumeKeyEventCbWithUpdateUi(AudioStreamType streamType,
+        std::shared_ptr<AudioDeviceDescriptor> device);
+    void RegistAdapterManagerCallback(std::string networkId);
+    void SetRemoteVolumeForPassThroughDevice(std::shared_ptr<AudioDeviceDescriptor> device, int32_t volumeLevel);
+    void UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -541,6 +563,7 @@ private:
     bool isLoaded_ = false;
     bool isAllCopyDone_ = false;
     bool isNeedConvertSafeTime_ = false;
+    bool isDataShareReady_ = false;
     sptr<IStandardAudioService> audioServerProxy_ = nullptr;
     std::optional<uint32_t> offloadSessionID_[OFFLOAD_IN_ADAPTER_SIZE] = {};
     std::mutex audioVolumeMutex_;
@@ -557,6 +580,7 @@ private:
     std::atomic<bool> isCastingConnect_ = false;
     std::mutex ringerNoMuteDeviceMutex_;
     std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
+    std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -598,6 +622,8 @@ public:
             STREAM_ULTRASONIC,
             STREAM_SYSTEM,
             STREAM_VOICE_CALL_ASSISTANT,
+            STREAM_ANNOUNCEMENT,
+            STREAM_EMERGENCY,
             STREAM_ALL
         };
         for (auto &volumeType : volumeList) {

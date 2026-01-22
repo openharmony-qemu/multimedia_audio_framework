@@ -53,7 +53,6 @@ public:
     int32_t RestoreRenderSink(void) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
-    std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -66,24 +65,12 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
-    int32_t GetAudioScene(void) override;
-
-    int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
-    void RegistCallback(uint32_t type, IAudioSinkCallback *callback) override;
-    void ResetActiveDeviceForDisconnect(DeviceType device) override;
-
-    int32_t SetPaPower(int32_t flag) override;
-    int32_t SetPriPaPower(void) override;
-
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
-
-    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) override;
 
@@ -99,7 +86,6 @@ private:
     int32_t CreateRender(void);
     int32_t InitRender(void);
     void InitLatencyMeasurement(void);
-    void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
@@ -140,7 +126,6 @@ private:
     const std::string halName_ = "";
     AdapterType sinkType_ = ADAPTER_TYPE_BLUETOOTH;
     IAudioSinkAttr attr_ = {};
-    SinkCallbackWrapper callback_ = {};
     bool sinkInited_ = false;
     int32_t sinkInitCount_ = 0;
     bool started_ = false;
@@ -179,7 +164,6 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     AudioSampleFormat audioSampleFormat_ = SAMPLE_S16LE;
-    std::mutex sinkMutex_;
 
     // low latency
     int32_t bufferFd_ = INVALID_FD;

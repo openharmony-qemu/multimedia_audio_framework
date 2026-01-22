@@ -1408,9 +1408,8 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    if (audioRendererForVoip == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoip);
+
     shared_ptr<AudioRendererCallbackTest> audioRendererCB = make_shared<AudioRendererCallbackTest>();
     int32_t ret = audioRendererForVoip->SetRendererCallback(audioRendererCB);
     EXPECT_EQ(SUCCESS, ret);
@@ -1429,9 +1428,8 @@ HWTEST(AudioRendererUnitTest, SetVoipInterruptVoiceCall_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
-    if (audioRendererForVoiceCall == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
     EXPECT_EQ(true, isStartedforVoiceCall);
@@ -1462,9 +1460,8 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoice.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoiceCall = AudioRenderer::Create(rendererOptionsForVoice);
-    if (audioRendererForVoiceCall == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoiceCall);
+
     audioRendererForVoiceCall->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoiceCall = audioRendererForVoiceCall->Start();
     EXPECT_EQ(true, isStartedforVoiceCall);
@@ -1479,9 +1476,8 @@ HWTEST(AudioRendererUnitTest, SetVoiceCallInterruptVoip_001, TestSize.Level1)
     rendererOptionsForVoip.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     unique_ptr<AudioRenderer> audioRendererForVoip = AudioRenderer::Create(rendererOptionsForVoip);
-    if (audioRendererForVoip == nullptr) {
-        return ;
-    }
+    ASSERT_NE(nullptr, audioRendererForVoip);
+    
     audioRendererForVoip->SetInterruptMode(INDEPENDENT_MODE);
     bool isStartedforVoip = audioRendererForVoip->Start();
     EXPECT_EQ(false, isStartedforVoip);
@@ -1642,6 +1638,134 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetSwitchInfo
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_001
+ * @tc.desc  : Test SetSwitchInfo interface. in static mode
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::SwitchInfo switchInfo;
+    shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> periodPositionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPeriodPositionCallbackTest> capturerPeriodPositionCB =
+        std::make_shared<CapturerPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPositionCallbackTest> capturerPositionCB = std::make_shared<CapturerPositionCallbackTest>();
+    switchInfo.renderPositionCb = positionCB;
+    switchInfo.renderPeriodPositionCb = periodPositionCB;
+    switchInfo.capturePeriodPositionCb = capturerPeriodPositionCB;
+    switchInfo.capturePositionCb = capturerPositionCB;
+    switchInfo.frameMarkPosition = 1;
+    switchInfo.framePeriodNumber = 1;
+    switchInfo.rendererInfo.isStatic = true;
+    switchInfo.staticBufferEventCallback = std::make_shared<StaticBufferEventCallbackTest>();
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    audioRendererPrivate->SetSwitchInfo(switchInfo, audioStream);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
+ * @tc.name  : Test SetSwitchInfo
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_002
+ * @tc.desc  : Test SetSwitchInfo interface. in static mode
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::SwitchInfo switchInfo;
+    shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> periodPositionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPeriodPositionCallbackTest> capturerPeriodPositionCB =
+        std::make_shared<CapturerPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPositionCallbackTest> capturerPositionCB = std::make_shared<CapturerPositionCallbackTest>();
+    switchInfo.renderPositionCb = positionCB;
+    switchInfo.renderPeriodPositionCb = periodPositionCB;
+    switchInfo.capturePeriodPositionCb = capturerPeriodPositionCB;
+    switchInfo.capturePositionCb = capturerPositionCB;
+    switchInfo.frameMarkPosition = 1;
+    switchInfo.framePeriodNumber = 1;
+    switchInfo.rendererInfo.isStatic = true;
+    switchInfo.staticBufferEventCallback = nullptr;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    audioRendererPrivate->SetSwitchInfo(switchInfo, audioStream);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
+ * @tc.name  : Test SetSwitchInfo
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_003
+ * @tc.desc  : Test SetSwitchInfo interface. in static mode
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::SwitchInfo switchInfo;
+    shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> periodPositionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPeriodPositionCallbackTest> capturerPeriodPositionCB =
+        std::make_shared<CapturerPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPositionCallbackTest> capturerPositionCB = std::make_shared<CapturerPositionCallbackTest>();
+    switchInfo.renderPositionCb = positionCB;
+    switchInfo.renderPeriodPositionCb = periodPositionCB;
+    switchInfo.capturePeriodPositionCb = capturerPeriodPositionCB;
+    switchInfo.capturePositionCb = capturerPositionCB;
+    switchInfo.frameMarkPosition = 1;
+    switchInfo.framePeriodNumber = 1;
+    switchInfo.rendererInfo.isStatic = false;
+    switchInfo.staticBufferEventCallback = nullptr;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    audioRendererPrivate->SetSwitchInfo(switchInfo, audioStream);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
+ * @tc.name  : Test SetSwitchInfo
+ * @tc.number: Audio_Renderer_SetSwitchInfo_static_004
+ * @tc.desc  : Test SetSwitchInfo interface. in static mode
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::SwitchInfo switchInfo;
+    shared_ptr<RendererPositionCallbackTest> positionCB = std::make_shared<RendererPositionCallbackTest>();
+    shared_ptr<RendererPeriodPositionCallbackTest> periodPositionCB =
+        std::make_shared<RendererPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPeriodPositionCallbackTest> capturerPeriodPositionCB =
+        std::make_shared<CapturerPeriodPositionCallbackTest>();
+    shared_ptr<CapturerPositionCallbackTest> capturerPositionCB = std::make_shared<CapturerPositionCallbackTest>();
+    switchInfo.renderPositionCb = positionCB;
+    switchInfo.renderPeriodPositionCb = periodPositionCB;
+    switchInfo.capturePeriodPositionCb = capturerPeriodPositionCB;
+    switchInfo.capturePositionCb = capturerPositionCB;
+    switchInfo.frameMarkPosition = 1;
+    switchInfo.framePeriodNumber = 1;
+    switchInfo.rendererInfo.isStatic = false;
+    switchInfo.staticBufferEventCallback = std::make_shared<StaticBufferEventCallbackTest>();
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, appInfo.appPid);
+    audioRendererPrivate->SetSwitchInfo(switchInfo, audioStream);
+    ASSERT_NE(nullptr, audioRendererPrivate);
+}
+
+/**
  * @tc.name  : Test AudioRendererPrivate
  * @tc.number: SetAudioInterrupt
  * @tc.desc  : Test SetAudioInterrupt API
@@ -1790,10 +1914,9 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_ShouldSetRendererFlags_WhenRenderer
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     IAudioStream::SwitchInfo info;
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
-    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    audioRendererPrivate->InitSwitchInfo(info);
     EXPECT_EQ(info.rendererInfo.rendererFlags, AUDIO_FLAG_NORMAL);
 }
 
@@ -1807,10 +1930,9 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_ShouldSetRendererFlags_WhenRenderer
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::FAST_STREAM;
     IAudioStream::SwitchInfo info;
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_MMAP;
-    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    audioRendererPrivate->InitSwitchInfo(info);
     EXPECT_EQ(info.rendererInfo.rendererFlags, AUDIO_FLAG_MMAP);
 }
 
@@ -1872,8 +1994,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_001, TestS
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+    uint32_t sessionId = -1;
     bool silentControl = false;
-    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
+    auto ret = audioRenderer->IsAllowedStartBackground(sessionId, audioRenderer->rendererInfo_.streamUsage,
+        silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -1892,8 +2016,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_IsAllowedStartBackground_002, TestS
     audioRenderer->appInfo_.appUid = -1;
     audioRenderer->appInfo_.appPid = -1;
     audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    uint32_t sessionId = -1;
     bool silentControl = false;
-    auto ret = audioRenderer->IsAllowedStartBackground(audioRenderer->rendererInfo_.streamUsage, silentControl);
+    auto ret = audioRenderer->IsAllowedStartBackground(sessionId, audioRenderer->rendererInfo_.streamUsage,
+        silentControl);
     EXPECT_EQ(ret, true);
 }
 
@@ -2533,6 +2659,10 @@ HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_002, TestSi
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 
     flag = AUDIO_OUTPUT_FLAG_DIRECT | AUDIO_OUTPUT_FLAG_VOIP;
+    streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
+    EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
+
+    flag = AUDIO_OUTPUT_FLAG_HWDECODING;
     streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 }

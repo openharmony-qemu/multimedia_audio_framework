@@ -161,6 +161,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_004, TestSize.Level1)
     sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
     EXPECT_EQ(sRet, PIPE_PRIMARY_OUTPUT);
 
+    deviceType = DEVICE_TYPE_NEARLINK;
+    sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
+    EXPECT_EQ(sRet, PIPE_PRIMARY_OUTPUT);
+
     role = ROLE_SOURCE;
     deviceType = DEVICE_TYPE_WIRED_HEADSET;
     sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
@@ -171,6 +175,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_004, TestSize.Level1)
     EXPECT_EQ(sRet, PIPE_PRIMARY_INPUT);
 
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
+    EXPECT_EQ(sRet, PIPE_PRIMARY_INPUT);
+
+    deviceType = DEVICE_TYPE_NEARLINK_IN;
     sRet = ecManager.GetPipeNameByDeviceForEc(role, deviceType);
     EXPECT_EQ(sRet, PIPE_PRIMARY_INPUT);
 
@@ -349,19 +357,184 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_011, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioEcManager.
-* @tc.number: AudioEcManager_012
-* @tc.desc  : Test UpdateArmModuleInfo interface.
-*/
-HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_012, TestSize.Level1)
+ * @tc.name  : Test UpdateArmModuleInfo API with valid parameters
+ * @tc.type  : FUNC
+ * @tc.number: AudioEcManagerUpdateArmModuleInfo_001
+ * @tc.desc  : Test UpdateArmModuleInfo interface with valid device descriptor.
+ */
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_001, TestSize.Level1)
 {
-    std::string address = "00:11:22:33:44";
-    DeviceRole role = INPUT_DEVICE;
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    // Create valid AudioDeviceDescriptor
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    streamInfo.samplingRate = {AudioSamplingRate::SAMPLE_RATE_48000};
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    std::list<DeviceStreamInfo> streamInfos = {streamInfo};
+    deviceDesc->audioStreamInfo_ = streamInfos;
+    
     AudioModuleInfo moduleInfo;
-    auto ecManager = std::make_shared<AudioEcManager>();
-    ASSERT_TRUE(ecManager != nullptr);
+    moduleInfo.channels = "2";
+    
+    ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    
+    EXPECT_EQ(moduleInfo.rate, "48000");
+    EXPECT_EQ(moduleInfo.format, "AUDIO_SAMPLE_FORMAT_PCM_16Q");
+    EXPECT_FALSE(moduleInfo.bufferSize.empty());
+}
 
-    ecManager->UpdateArmModuleInfo(address, role, moduleInfo);
+/**
+ * @tc.name  : Test UpdateArmModuleInfo API with null device descriptor
+ * @tc.type  : FUNC
+ * @tc.number: AudioEcManagerUpdateArmModuleInfo_002
+ * @tc.desc  : Test UpdateArmModuleInfo interface with null device descriptor.
+ */
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_002, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "44100";
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2";
+    
+    // Save original values
+    std::string originalRate = moduleInfo.rate;
+    std::string originalFormat = moduleInfo.format;
+    std::string originalChannels = moduleInfo.channels;
+    
+    // Pass null pointer, function should return directly without modifying moduleInfo
+    ecManager.UpdateArmModuleInfo(nullptr, moduleInfo);
+    
+    EXPECT_EQ(moduleInfo.rate, originalRate);
+    EXPECT_EQ(moduleInfo.format, originalFormat);
+    EXPECT_EQ(moduleInfo.channels, originalChannels);
+}
+
+/**
+ * @tc.name  : Test UpdateArmModuleInfo API with empty stream info
+ * @tc.type  : FUNC
+ * @tc.number: AudioEcManagerUpdateArmModuleInfo_003
+ * @tc.desc  : Test UpdateArmModuleInfo interface with empty stream info.
+ */
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_003, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    // Create AudioDeviceDescriptor without setting AudioStreamInfo
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "44100";
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2";
+    
+    // Save original values
+    std::string originalRate = moduleInfo.rate;
+    std::string originalFormat = moduleInfo.format;
+    std::string originalChannels = moduleInfo.channels;
+    
+    ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    
+    // Since AudioStreamInfo is empty, function should return directly without modifying moduleInfo
+    EXPECT_EQ(moduleInfo.rate, originalRate);
+    EXPECT_EQ(moduleInfo.format, originalFormat);
+    EXPECT_EQ(moduleInfo.channels, originalChannels);
+}
+
+/**
+ * @tc.name  : Test UpdateArmModuleInfo API with empty sampling rate
+ * @tc.type  : FUNC
+ * @tc.number: AudioEcManagerUpdateArmModuleInfo_004
+ * @tc.desc  : Test UpdateArmModuleInfo interface with empty sampling rate.
+ */
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_004, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    // Create AudioDeviceDescriptor but set empty samplingRate
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    // Don't set samplingRate, keep it empty
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    std::list<DeviceStreamInfo> streamInfos = {streamInfo};
+    deviceDesc->audioStreamInfo_ = streamInfos;
+    
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "44100";
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2";
+    
+    // Save original values
+    std::string originalRate = moduleInfo.rate;
+    std::string originalFormat = moduleInfo.format;
+    std::string originalChannels = moduleInfo.channels;
+    
+    ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    
+    // Since samplingRate is empty, function should return directly without modifying moduleInfo
+    EXPECT_EQ(moduleInfo.rate, originalRate);
+    EXPECT_EQ(moduleInfo.format, originalFormat);
+    EXPECT_EQ(moduleInfo.channels, originalChannels);
+}
+
+/**
+ * @tc.name  : Test UpdateArmModuleInfo API with different sampling rates and formats
+ * @tc.type  : FUNC
+ * @tc.number: AudioEcManagerUpdateArmModuleInfo_005
+ * @tc.desc  : Test UpdateArmModuleInfo interface with different sampling rates and formats.
+ */
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_005, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    // Test with different sampling rate
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    streamInfo.samplingRate = {AudioSamplingRate::SAMPLE_RATE_44100};  // Different sampling rate
+    streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    std::list<DeviceStreamInfo> streamInfos = {streamInfo};
+    deviceDesc->audioStreamInfo_ = streamInfos;
+    
+    AudioModuleInfo moduleInfo;
+    moduleInfo.channels = "1";  // Different channel count
+    
+    ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    
+    EXPECT_EQ(moduleInfo.rate, "44100");
+    EXPECT_EQ(moduleInfo.format, "s24le");
+    EXPECT_FALSE(moduleInfo.bufferSize.empty());
+    
+    // Verify buffer size calculation is correct (44100 * 1 * 3 * 20 / 1000 = 2646)
+    uint32_t expectedBufferSize = 44100 * 1 * 3 * 20 / 1000;
+    EXPECT_EQ(moduleInfo.bufferSize, std::to_string(expectedBufferSize));
+}
+
+/**
+ * @tc.name  : Test UpdateArmModuleInfo API with buffer size calculation
+ * @tc.type  : FUNC
+ * @tc.number: AudioEcManagerUpdateArmModuleInfo_006
+ * @tc.desc  : Test UpdateArmModuleInfo interface buffer size calculation.
+ */
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_006, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    streamInfo.samplingRate = {AudioSamplingRate::SAMPLE_RATE_96000};
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    std::list<DeviceStreamInfo> streamInfos = {streamInfo};
+    deviceDesc->audioStreamInfo_ = streamInfos;
+    
+    AudioModuleInfo moduleInfo;
+    moduleInfo.channels = "4";
+    
+    ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
+    
+    EXPECT_EQ(moduleInfo.rate, "96000");
+    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_FALSE(moduleInfo.bufferSize.empty());
 }
 
 /**
@@ -479,37 +652,6 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_018, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioEcManager.
-* @tc.number: AudioEcManager_019
-* @tc.desc  : Test PrepareAndOpenNormalSource interface.
-*/
-HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_019, TestSize.Level1)
-{
-    EXPECT_EQ(ParseAudioFormat("AUDIO_FORMAT_PCM_16_BIT"), "s16le");
-    EXPECT_EQ(ParseAudioFormat("AUDIO_FORMAT_PCM_24_BIT"), "s24le");
-    EXPECT_EQ(ParseAudioFormat("AUDIO_FORMAT_PCM_32_BIT"), "s32le");
-    EXPECT_EQ(ParseAudioFormat(""), "s16le");
-}
-
-/**
-* @tc.name  : Test AudioEcManager.
-* @tc.number: AudioEcManager_020
-* @tc.desc  : Test GetUsbModuleInfo interface.
-*/
-HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_020, TestSize.Level1)
-{
-    AudioModuleInfo moduleInfo;
-
-    moduleInfo.role = "sink";
-    string deviceInfo = "sink_rate:1;sink_format:AUDIO_FORMAT_PCM_16_BIT";
-    GetUsbModuleInfo(deviceInfo, moduleInfo);
-    EXPECT_EQ(moduleInfo.rate, "1");
-
-    moduleInfo.channels = "2";
-    GetUsbModuleInfo(deviceInfo, moduleInfo);
-}
-
-/**
-* @tc.name  : Test AudioEcManager.
 * @tc.number: AudioEcManager_021
 * @tc.desc  : Test GetTargetSourceTypeAndMatchingFlag interface.
 */
@@ -537,56 +679,186 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_021, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioEcManager.
-* @tc.number: AudioEcManager_022
-* @tc.desc  : Test ActivateArmDevice interface.
+* @tc.name  : Test AudioEcManager ActivateArmDevice with multiple modules.
+* @tc.number: AudioEcManager_ActivateArmDevice_002
+* @tc.desc  : Test ActivateArmDevice interface with multiple modules in the list.
 */
-HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_022, TestSize.Level1)
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_002, TestSize.Level1)
 {
-    AudioEcManager& ecManager(AudioEcManager::GetInstance());
-
-    const std::string badAddress{"bad address"};
-    const std::string goodAddress{"address=card=2;device=0 role=0"};
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::string inputAddress = "card=2;device=0";
+    deviceDesc->macAddress_ = inputAddress;
+    deviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
     ecManager.isEcFeatureEnable_ = true;
-
-    ecManager.ActivateArmDevice(badAddress, DeviceRole::INPUT_DEVICE);
-    EXPECT_NE(ecManager.activeArmInputAddr_, badAddress);
-
-    ecManager.ActivateArmDevice(badAddress, DeviceRole::OUTPUT_DEVICE);
-    EXPECT_NE(ecManager.activeArmOutputAddr_, badAddress);
-
-    std::list<AudioModuleInfo> moduleInfoList{};
-    ecManager.audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
-    if (moduleInfoList.empty()) {
-        AudioModuleInfo testModuleInfo1{.role = "sink", .name="m1"};
-        AudioModuleInfo testModuleInfo2{.role = "source", .name="m2"};
-        std::list<AudioModuleInfo> testModules{testModuleInfo1, testModuleInfo2};
-        ecManager.audioConfigManager_.deviceClassInfo_.insert(
-            std::make_pair(ClassType::TYPE_USB, testModules));
-
-        ecManager.ActivateArmDevice(goodAddress, DeviceRole::OUTPUT_DEVICE);
-        ecManager.ActivateArmDevice(goodAddress, DeviceRole::INPUT_DEVICE);
-        ecManager.activeArmOutputAddr_ = {};
-        ecManager.activeArmInputAddr_ = {};
-
-        ecManager.PresetArmIdleInput(goodAddress);
-        ecManager.isEcFeatureEnable_ = false;
-        ecManager.ActivateArmDevice(goodAddress, DeviceRole::INPUT_DEVICE);
-    }
+    ecManager.activeArmInputAddr_ = "";
+    
+    // Setup multiple modules - one matching role, one not matching
+    AudioModuleInfo sinkModule{.role = "sink", .name = "usb_sink_module", .rate = "48000"};
+    AudioModuleInfo sourceModule{.role = "source", .name = "usb_source_module", .rate = "48000"};
+    std::list<AudioModuleInfo> multiModuleList{sinkModule, sourceModule};
+    ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = multiModuleList;
+    
+    ecManager.ActivateArmDevice(deviceDesc);
+    EXPECT_EQ(ecManager.activeArmInputAddr_, inputAddress);
+    EXPECT_EQ(ecManager.usbSourceModuleInfo_.name, "usb_source_module");
 }
 
 /**
-* @tc.name  : Test AudioEcManager.
-* @tc.number: AudioEcManager_023
-* @tc.desc  : Test GetUsbModuleInfo interface.
+* @tc.name  : Test AudioEcManager ActivateArmDevice with different roles.
+* @tc.number: AudioEcManager_ActivateArmDevice_003
+* @tc.desc  : Test ActivateArmDevice interface with different device roles.
 */
-HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_023, TestSize.Level4)
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_003, TestSize.Level1)
 {
-    AudioModuleInfo moduleInfo;
-    moduleInfo.role = "source";
-    string deviceInfo = "source_rate:1;source_format:AUDIO_FORMAT_PCM_16_BIT";
-    GetUsbModuleInfo(deviceInfo, moduleInfo);
-    EXPECT_EQ(moduleInfo.rate, "1");
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    // Test with INPUT_DEVICE role
+    auto inputDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::string inputAddress = "card=2;device=0";
+    inputDeviceDesc->macAddress_ = inputAddress;
+    inputDeviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    ecManager.isEcFeatureEnable_ = true;
+    ecManager.activeArmInputAddr_ = "";
+    
+    AudioModuleInfo inputModule{.role = "source", .name = "input_module", .rate = "44100"};
+    std::list<AudioModuleInfo> inputModuleList{inputModule};
+    ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = inputModuleList;
+    
+    ecManager.ActivateArmDevice(inputDeviceDesc);
+    EXPECT_EQ(ecManager.activeArmInputAddr_, inputAddress);
+    
+    // Test with OUTPUT_DEVICE role
+    ecManager.activeArmOutputAddr_ = "";
+    auto outputDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::string outputAddress = "card=2;device=0";
+    outputDeviceDesc->macAddress_ = outputAddress;
+    outputDeviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    AudioModuleInfo outputModule{.role = "sink", .name = "output_module", .rate = "48000"};
+    std::list<AudioModuleInfo> outputModuleList{outputModule};
+    ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = outputModuleList;
+    
+    ecManager.ActivateArmDevice(outputDeviceDesc);
+    EXPECT_EQ(ecManager.activeArmOutputAddr_, outputAddress);
+    EXPECT_EQ(ecManager.usbSinkModuleInfo_.name, "output_module");
+}
+
+/**
+* @tc.name  : Test AudioEcManager ActivateArmDevice with no matching modules.
+* @tc.number: AudioEcManager_ActivateArmDevice_004
+* @tc.desc  : Test ActivateArmDevice interface when no modules match the device role.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_004, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    auto inputDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::string inputAddress = "card=2;device=0";
+    inputDeviceDesc->macAddress_ = inputAddress;
+    inputDeviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    ecManager.isEcFeatureEnable_ = true;
+    ecManager.activeArmInputAddr_ = "";
+    
+    // Setup module list with only sink modules (no source modules for input device)
+    AudioModuleInfo sinkModule{.role = "sink", .name = "sink_module", .rate = "48000"};
+    std::list<AudioModuleInfo> moduleList{sinkModule};
+    ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = moduleList;
+    
+    // This should not crash but also not update the usbSourceModuleInfo_ since no matching role exists
+    ecManager.ActivateArmDevice(inputDeviceDesc);
+    EXPECT_EQ(ecManager.activeArmInputAddr_, inputAddress);
+}
+
+/**
+* @tc.name  : Test AudioEcManager ActivateArmDevice with mixed role modules.
+* @tc.number: AudioEcManager_ActivateArmDevice_005
+* @tc.desc  : Test ActivateArmDevice interface with modules of mixed roles.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_005, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    auto inputDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::string inputAddress = "card=2;device=0";
+    inputDeviceDesc->macAddress_ = inputAddress;
+    inputDeviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    ecManager.isEcFeatureEnable_ = true;
+    ecManager.activeArmInputAddr_ = "";
+    
+    // Setup module list with both sink and source modules
+    AudioModuleInfo sinkModule{.role = "sink", .name = "sink_module", .rate = "48000"};
+    AudioModuleInfo sourceModule{.role = "source", .name = "source_module", .rate = "48000"};
+    std::list<AudioModuleInfo> mixedModuleList{sinkModule, sourceModule};
+    ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = mixedModuleList;
+    
+    ecManager.ActivateArmDevice(inputDeviceDesc);
+    EXPECT_EQ(ecManager.activeArmInputAddr_, inputAddress);
+    EXPECT_EQ(ecManager.usbSourceModuleInfo_.name, "source_module");
+}
+
+/**
+* @tc.name  : Test AudioEcManager ActivateArmDevice with EC disabled and output device.
+* @tc.number: AudioEcManager_ActivateArmDevice_006
+* @tc.desc  : Test ActivateArmDevice interface with EC feature disabled for output device.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_006, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    auto outputDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::string outputAddress = "card=2;device=0";
+    outputDeviceDesc->macAddress_ = outputAddress;
+    outputDeviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    ecManager.isEcFeatureEnable_ = false;
+    ecManager.activeArmOutputAddr_ = "";
+    
+    // Setup module list with sink role
+    AudioModuleInfo outputModule{.role = "sink", .name = "output_module_no_ec", .rate = "48000"};
+    std::list<AudioModuleInfo> outputModuleList{outputModule};
+    ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = outputModuleList;
+    
+    ecManager.ActivateArmDevice(outputDeviceDesc);
+    EXPECT_EQ(ecManager.activeArmOutputAddr_, outputAddress);
+    // When EC is disabled, usbSinkModuleInfo_ should still be set for output devices
+    EXPECT_EQ(ecManager.usbSinkModuleInfo_.name, "output_module_no_ec");
+}
+
+/**
+* @tc.name  : Test AudioEcManager ActivateArmDevice with existing IO handle.
+* @tc.number: AudioEcManager_ActivateArmDevice_007
+* @tc.desc  : Test ActivateArmDevice interface when there's an existing IO handle for input device.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_007, TestSize.Level1)
+{
+    AudioEcManager& ecManager = AudioEcManager::GetInstance();
+    
+    // First, add an IO handle to simulate existing handle
+    AudioIOHandle testHandle = 12345;
+    ecManager.audioIOHandleMap_.AddIOHandleInfo("existing_module", testHandle);
+    
+    auto inputDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::string inputAddress = "card=2;device=0";
+    inputDeviceDesc->macAddress_ = inputAddress;
+    inputDeviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    
+    ecManager.isEcFeatureEnable_ = true;
+    ecManager.activeArmInputAddr_ = "";
+    
+    // Setup module list with source role
+    AudioModuleInfo inputModule{.role = "source", .name = "existing_module", .rate = "48000"};
+    std::list<AudioModuleInfo> inputModuleList{inputModule};
+    ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = inputModuleList;
+    
+    ecManager.ActivateArmDevice(inputDeviceDesc);
+    EXPECT_EQ(ecManager.activeArmInputAddr_, inputAddress);
+    EXPECT_EQ(ecManager.usbSourceModuleInfo_.name, "existing_module");
 }
 
 /**
@@ -610,10 +882,10 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_024, TestSize.Level4)
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_025, TestSize.Level4)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     ecManager.isEcFeatureEnable_ = false;
     ecManager.usbSourceModuleInfo_.role = "";
-    const std::string goodAddress{"address=card=2;device=0 role=0"};
-    ecManager.PresetArmIdleInput(goodAddress);
+    ecManager.PresetArmIdleInput(deviceDesc);
     EXPECT_TRUE(ecManager.usbSourceModuleInfo_.role.empty());
 }
 
