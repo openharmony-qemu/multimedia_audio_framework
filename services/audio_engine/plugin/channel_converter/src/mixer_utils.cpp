@@ -502,7 +502,7 @@ static int32_t SetUpGeneralMixingTableInner(float (&coeffTable)[MAX_CHANNELS][MA
         srcChannelInfo = outChannelInfo;
     }
     if (dstChannelInfo.numChannels > MAX_CHANNELS) {
-        return ERR_INVALID_PARAM;
+        return MIX_ERR_INVALID_ARG;
     }
     // Get position map of dst channels in dstChMsk
     std::map<uint64_t, uint32_t> channelPosMap;
