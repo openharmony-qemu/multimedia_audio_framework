@@ -3495,8 +3495,7 @@ int32_t AudioServer::RegistAdapterManagerCallback(const sptr<IRemoteObject>& obj
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
-    auto callbackPtr = std::shared_ptr<IAudioSinkCallback>(this);
-    deviceManager->RegistAdapterManagerCallback(networkId.c_str(), callbackPtr);
+    deviceManager->RegistAdapterManagerCallback(networkId.c_str(), this);
     return SUCCESS;
 }
 
