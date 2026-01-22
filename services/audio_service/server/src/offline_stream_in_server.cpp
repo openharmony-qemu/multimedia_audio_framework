@@ -102,7 +102,6 @@ int32_t OfflineStreamInServer::ReleaseOfflineEffectChain()
 
 int32_t OfflineStreamInServer::AllocSharedMemory(uint32_t inSize, uint32_t outSize)
 {
-    std::lock_guard<std::mutex> lock(offlineChainMutex_);
     CHECK_AND_RETURN_RET_LOG(inSize < MAXIMUM_BUFFER_SIZE && outSize < MAXIMUM_BUFFER_SIZE,
         ERR_INVALID_PARAM, "alloc %{public}u inBuf or %{public}u outBuf out of range", inSize, outSize);
     serverBufferIn_ = AudioSharedMemory::CreateFromLocal(inSize, OFFLINE_SERVER_BUFFER_IN);
