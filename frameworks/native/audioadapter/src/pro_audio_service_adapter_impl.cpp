@@ -631,6 +631,7 @@ void ProAudioServiceAdapterImpl::LoadCollaborationConfig()
 void ProAudioServiceAdapterImpl::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
     AUDIO_INFO_LOG("Enter");
+    Trace trace("SetOutputDeviceSink");
     lock_guard<mutex> lock(lock_);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOutputDeviceSink_ = false;
