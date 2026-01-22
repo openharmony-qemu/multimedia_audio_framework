@@ -639,6 +639,107 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_019, TestSize.Level
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
     EXPECT_NE(result->deviceType_, desc->deviceType_);
 }
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: PrivacyPriorityRouter_020
+ * @tc.desc  : Test GetRingRenderDevices interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_020, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    desc->deviceUsage_ = VOICE;
+    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
+    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
+    EXPECT_EQ(2, router.GetRingRenderDevices(STREAM_USAGE_VOICE_RINGTONE, 1).size());
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: PrivacyPriorityRouter_021
+ * @tc.desc  : Test GetRingRenderDevices interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_021, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->deviceType_ = DEVICE_TYPE_MIC;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    desc->deviceUsage_ = VOICE;
+    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
+    AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
+    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
+
+    EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_VOICE_RINGTONE, 1).size());
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: PrivacyPriorityRouter_022
+ * @tc.desc  : Test GetRingRenderDevices interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_022, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    desc->deviceUsage_ = MEDIA;
+    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.push_back(desc);
+    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
+    EXPECT_EQ(2, router.GetRingRenderDevices(STREAM_USAGE_ALARM, 1).size());
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: PrivacyPriorityRouter_023
+ * @tc.desc  : Test GetRingRenderDevices interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_023, TestSize.Level1)
+{
+    PrivacyPriorityRouter router;
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    desc->deviceUsage_ = MEDIA;
+    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
+    AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.push_back(desc);
+    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
+    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
+    EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_MUSIC, 1).size());
+}
 } // namespace AudioStandard
 } // namespace OHOS
  
