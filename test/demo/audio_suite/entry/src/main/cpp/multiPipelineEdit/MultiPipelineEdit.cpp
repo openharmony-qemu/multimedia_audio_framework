@@ -199,37 +199,32 @@ OH_AudioSuite_Result GetRenderFrameOutput(char *&firData, size_t frameSize, size
     return result;
 }
 
-void UpdateAudioBuffers(bool &multiRenderFrameFlag, char *&firstAudioBuffer, char *&secondAudioBuffer,
-                        size_t &firstBufferSize, size_t &secondBufferSize, char *&firAudioData, char *&secAudioData) 
+void UpdateAudioBuffers(char* firAudioData, char* secAudioData) 
 {
-    std::copy(static_cast<const char *>(firAudioData), static_cast<const char *>(firAudioData) + firstBufferSize,
-              static_cast<char *>(firstAudioBuffer));
+    std::copy(static_cast<const char*>(firAudioData),
+              static_cast<const char*>(firAudioData) + g_threadPipelineManager->firstBufferSize,
+              static_cast<char*>(g_threadPipelineManager->firstAudioBuffer));
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                 "audioEditTest renDerFrame std::copy "
-                 "firBuff: %{public}p, firstBufferSize:%{public}zu",
-                 firstAudioBuffer, firstBufferSize);
-    if (multiRenderFrameFlag) {
-        FreeBuffer(&secondAudioBuffer);
-        secondAudioBuffer = (char *)malloc(secondBufferSize);
-        std::copy(static_cast<const char *>(secAudioData), static_cast<const char *>(secAudioData) + secondBufferSize,
-                  static_cast<char *>(secondAudioBuffer));
+                 "audioEditTest renDerFrame std::copy firBuff: %{public}p, firstBufferSize:%{public}zu",
+                 g_threadPipelineManager->firstAudioBuffer, g_threadPipelineManager->firstBufferSize);
+
+    if (g_threadPipelineManager->multiRenderFrameFlag) {
+        FreeBuffer(&g_threadPipelineManager->secondAudioBuffer);
+        g_threadPipelineManager->secondAudioBuffer = (char*)malloc(g_threadPipelineManager->secondBufferSize);
+        std::copy(static_cast<const char*>(secAudioData),
+                  static_cast<const char*>(secAudioData) + g_threadPipelineManager->secondBufferSize,
+                  static_cast<char*>(g_threadPipelineManager->secondAudioBuffer));
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
-                     "audioEditTest renDerFrame "
-                     "std::copy secBuff: %{public}p, g_totalSize:%{public}zu",
-                     secondAudioBuffer, secondBufferSize);
-        multiRenderFrameFlag = false;
+                     "audioEditTest renDerFrame std::copy secBuff: %{public}p, g_totalSize:%{public}zu",
+                     g_threadPipelineManager->secondAudioBuffer, g_threadPipelineManager->secondBufferSize);
+        g_threadPipelineManager->multiRenderFrameFlag = false;
     }
 }
 
-OH_AudioSuite_Result MultiPipelineRenderFrame() {
-    OH_AudioSuitePipeline *threadPipeline = g_threadPipelineManager->audioSuitePipeline;
-    bool &multiRenderFrameFlag = g_threadPipelineManager->multiRenderFrameFlag;
-    char *&firstAudioBuffer = g_threadPipelineManager->firstAudioBuffer;
-    char *&secondAudioBuffer = g_threadPipelineManager->secondAudioBuffer;
-    size_t &firstBufferSize = g_threadPipelineManager->firstBufferSize;
-    size_t &secondBufferSize = g_threadPipelineManager->secondBufferSize;
+OH_AudioSuite_Result MultiPipelineRenderFrame() 
+{
+    OH_AudioSuitePipeline* threadPipeline = g_threadPipelineManager->audioSuitePipeline;
     OH_AudioFormat threadAudioFormatOutput = g_threadPipelineManager->audioFormatOutput;
-    bool &finishedFlag = g_threadPipelineManager->renderFrameFinishFlag;
 
     OH_AudioSuite_Result result = StartPipelineAndCheckState(threadPipeline);
     if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
@@ -237,30 +232,35 @@ OH_AudioSuite_Result MultiPipelineRenderFrame() {
         return result;
     }
     
-    char *firAudioData = (char *)malloc(1024 * 1024 * 100);
-    char *secAudioData = (char *)malloc(1024 * 1024 * 100);
+    char* firAudioData = (char*)malloc(1024 * 1024 * 100);
+    char* secAudioData = (char*)malloc(1024 * 1024 * 100);
     
     int32_t bitsPerSample = GetBitsPerSample(threadAudioFormatOutput.sampleFormat);
     int32_t frameSize =
         20 * threadAudioFormatOutput.samplingRate * threadAudioFormatOutput.channelCount / 1000 * bitsPerSample / 8;
     
-    if (multiRenderFrameFlag) {
-        result = GetMultiRenderFrameOutput(firAudioData, secAudioData, firstBufferSize,
-                                           secondBufferSize, finishedFlag);
+    if (g_threadPipelineManager->multiRenderFrameFlag) {
+        result = GetMultiRenderFrameOutput(firAudioData, secAudioData, 
+                                         g_threadPipelineManager->firstBufferSize,
+                                         g_threadPipelineManager->secondBufferSize, 
+                                         g_threadPipelineManager->renderFrameFinishFlag);
     } else {
-        result = GetRenderFrameOutput(firAudioData, frameSize, firstBufferSize, finishedFlag);
+        result = GetRenderFrameOutput(firAudioData, frameSize, 
+                                    g_threadPipelineManager->firstBufferSize, 
+                                    g_threadPipelineManager->renderFrameFinishFlag);
     }
+    
     if (result == OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
-        FreeBuffer(&firstAudioBuffer);
-        firstAudioBuffer = (char *)malloc(firstBufferSize);
-        if (firstAudioBuffer == nullptr) {
+        FreeBuffer(&g_threadPipelineManager->firstAudioBuffer);
+        g_threadPipelineManager->firstAudioBuffer = (char*)malloc(g_threadPipelineManager->firstBufferSize);
+        if (g_threadPipelineManager->firstAudioBuffer == nullptr) {
             FreeBuffer(&firAudioData);
             FreeBuffer(&secAudioData);
             return OH_AudioSuite_Result::AUDIOSUITE_ERROR_SYSTEM;
         }
-        UpdateAudioBuffers(multiRenderFrameFlag, firstAudioBuffer, secondAudioBuffer, firstBufferSize,
-                           secondBufferSize,firAudioData, secAudioData);
+        UpdateAudioBuffers(firAudioData, secAudioData);
     }
+    
     FreeBuffer(&firAudioData);
     FreeBuffer(&secAudioData);
     return result;
@@ -655,7 +655,7 @@ int32_t MultiWriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *au
 OH_AudioSuite_Result MultiSetParamsAndWriteData(OH_AudioNodeBuilder *builder, std::string inputId,
                                                 OH_AudioNode_Type type)
 {
-    OH_AudioSuite_Result result = 
+    OH_AudioSuite_Result result =
         OH_AudioSuiteNodeBuilder_SetFormat(builder, g_threadPipelineManager->audioFormatInput);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                  "audioEditTest OH_AudioNodeBuilder_SetFormat result is %{public}d", static_cast<int>(result));
@@ -952,7 +952,8 @@ static bool GetWavDataPosition(FILE* file, uint32_t& dataOffset, uint32_t& dataL
     return false;
 }
 
-void InitAudioParams(InputAudioParams &params, FILE *&inputFile, uint32_t &offset, uint32_t &length) {
+void InitAudioParams(InputAudioParams &params, FILE *&inputFile, uint32_t &offset, uint32_t &length)
+{
     if (GetWavDataPosition(inputFile, offset, length)) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG,
                      "file name  %{public}s, Data offset: %{public}u, length: %{public}u", params.fileName.c_str(),
