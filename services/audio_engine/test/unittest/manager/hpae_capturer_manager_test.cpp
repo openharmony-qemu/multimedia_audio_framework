@@ -1742,6 +1742,7 @@ HWTEST_F(HpaeCapturerManagerTest, TriggerAppsUidUpdate_001, TestSize.Level2)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
+    sourceInfo.deviceClass = "remote";
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(SUCCESS, capturerManager->Init());
     WaitForMsgProcessing(capturerManager);

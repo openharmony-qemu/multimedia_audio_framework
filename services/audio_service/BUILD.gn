@@ -22,6 +22,16 @@ import("../../window_manager.gni")
 
 audio_framework_root = "../.."
 
+sanitize_init = {
+  cfi = true
+  cfi_cross_dso = true
+  cfi_vcall_icall_only = true
+  debug = false
+  integer_overflow = false
+  ubsan = true
+  boundary_sanitize = true
+}
+
 group("audio_service_packages") {
   deps = [
     ":audio_common",
@@ -162,6 +172,7 @@ config("audio_client_public_config") {
   include_dirs = [
     "client/include",
     "common/include",
+    "server/include",
     "../audio_policy/common/include",
     "../audio_policy/client/interface",
     "../audio_policy/client/proxy/include",
@@ -189,119 +200,11 @@ config("audio_client_public_config") {
   if (sonic_enable == true) {
     cflags += [ "-DSONIC_ENABLE" ]
   }
-
   external_deps = []
-
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
   }
-
-  if (target_cpu == "arm") {
-    cflags += [ "-DBINDER_IPC_32BIT" ]
-  }
-}
-
-config("audio_sasdk_public_config") {
-  include_dirs = [ "../../interfaces/inner_api/native/audiosasdk/include" ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-  ]
-
-  if (target_cpu == "arm") {
-    cflags += [ "-DBINDER_IPC_32BIT" ]
-  }
-}
-
-ohos_shared_library("audio_client") {
-  branch_protector_ret = "pac_ret"
-  install_enable = true
-  sources = [
-    "client/src/audio_collaborative_manager.cpp",
-    "client/src/audio_combine_denoising_manager.cpp",
-    "client/src/audio_effect_manager.cpp",
-    "client/src/audio_engine_client_manager.cpp",
-    "client/src/audio_group_manager.cpp",
-    "client/src/audio_manager_listener_stub_impl.cpp",
-    "client/src/audio_manager_util.cpp",
-    "client/src/audio_process_in_client.cpp",
-    "client/src/audio_routing_manager.cpp",
-    "client/src/audio_session_manager.cpp",
-    "client/src/audio_service_proxy.cpp",
-    "client/src/audio_spatial_channel_converter.cpp",
-    "client/src/audio_spatialization_manager.cpp",
-    "client/src/audio_devices_client_manager.cpp",
-    "client/src/audio_type_convert.cpp",
-    "client/src/audio_system_client_engine_manager.cpp",
-    "client/src/audio_system_client_policy_manager.cpp",
-    "client/src/audio_asr_client_manager.cpp",
-    "client/src/audio_interrupt_client_manager.cpp",
-    "client/src/audio_stream_client_manager.cpp",
-    "client/src/audio_stream_manager.cpp",
-    "client/src/audio_stream_tracker.cpp",
-    "client/src/audio_system_manager.cpp",
-    "client/src/audio_workgroup_client_manager.cpp",
-    "client/src/audio_wakeup_client_manager.cpp",
-    "client/src/audio_volume_client_manager.cpp",
-    "client/src/audio_workgroup_callback_impl.cpp",
-    "client/src/capturer_in_client.cpp",
-    "client/src/i_audio_stream.cpp",
-    "client/src/ipc_stream_listener_impl.cpp",
-    "client/src/microphone_descriptor.cpp",
-    "client/src/offline_stream_in_client.cpp",
-    "client/src/renderer_in_client.cpp",
-    "client/src/renderer_in_client_public.cpp",
-    "client/src/audio_focus_info_change_callback_impl.cpp",
-  ]
-
-  if (audio_framework_feature_low_latency) {
-    sources += [ "client/src/fast_audio_stream.cpp" ]
-  }
-
-  public_configs = [
-    ":audio_client_public_config",
-    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
-    "${audio_framework_root}/services/audio_service/idl:audio_policy_sa_idl_config",
-  ]
-
-  deps = [
-    ":audio_common",
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../frameworks/native/audiodefinitions:audio_definitions",
-    "../../frameworks/native/audioqosmanager:audio_qosmanager",
-    "../../frameworks/native/audioutils:audio_utils",
-    "../audio_policy:audio_foundation",
-    "../audio_policy:audio_policy_client",
-  ]
-
-  include_dirs = [ "server/include" ]
-
-  external_deps = [
-    "ability_base:want",
-    "bounds_checking_function:libsec_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "eventhandler:libeventhandler",
-    "frame_aware_sched:rtg_interface",
-    "hicollie:libhicollie",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "init:libbegetutil",
-    "ipc:ipc_single",
-    "libxml2:libxml2",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-    "qos_manager:qos",
-  ]
-
-  public_external_deps = [
-    "c_utils:utils",
-    "pulseaudio:sonic",
-  ]
-
+  
   defines = []
   if (audio_framework_feature_power_manager) {
     external_deps += [ "power_manager:powermgr_client" ]
@@ -331,6 +234,241 @@ ohos_shared_library("audio_client") {
   if (audio_framework_feature_multi_alarm_level) {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
+
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+}
+
+config("audio_sasdk_public_config") {
+  include_dirs = [ "../../interfaces/inner_api/native/audiosasdk/include" ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+  ]
+
+  if (target_cpu == "arm") {
+    cflags += [ "-DBINDER_IPC_32BIT" ]
+  }
+}
+
+ohos_shared_library("audio_stream_client") {
+  branch_protector_ret = "pac_ret"
+  sanitize = sanitize_init
+
+  sources = [
+    "client/src/audio_process_in_client.cpp",
+    "client/src/audio_spatial_channel_converter.cpp",
+    "client/src/audio_stream_tracker.cpp",
+    "client/src/capturer_in_client.cpp",
+    "client/src/i_audio_stream.cpp",
+    "client/src/ipc_stream_listener_impl.cpp",
+    "client/src/offline_stream_in_client.cpp",
+    "client/src/renderer_in_client.cpp",
+    "client/src/renderer_in_client_public.cpp",
+  ]
+
+  if (audio_framework_feature_low_latency) {
+    sources += [ "client/src/fast_audio_stream.cpp" ]
+  }
+
+  public_configs = [
+    ":audio_client_public_config",
+  ]
+
+  deps = [
+    ":audio_common",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_foundation",
+    "../audio_policy:audio_policy_client",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "eventhandler:libeventhandler",
+    "frame_aware_sched:rtg_interface",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "c_utils:utils",
+  ]
+
+  version_script = "../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("audio_policy_manager") {
+  branch_protector_ret = "pac_ret"
+  install_enable = true
+  sanitize = sanitize_init
+
+  sources = [
+    "client/src/audio_collaborative_manager.cpp",
+    "client/src/audio_combine_denoising_manager.cpp",
+    "client/src/audio_effect_manager.cpp",
+    "client/src/audio_group_manager.cpp",
+    "client/src/audio_routing_client_manager.cpp",
+    "client/src/audio_session_client_manager.cpp",
+    "client/src/audio_spatialization_manager.cpp",
+    "client/src/audio_devices_client_manager.cpp",
+    "client/src/audio_system_client_policy_manager.cpp",
+    "client/src/audio_interrupt_client_manager.cpp",
+    "client/src/audio_volume_client_manager.cpp",
+    "client/src/audio_focus_info_change_callback_impl.cpp",
+    "client/src/audio_type_convert.cpp",
+    "client/src/audio_stream_manager.cpp",
+  ]
+
+  public_configs = [
+    ":audio_client_public_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_policy_sa_idl_config",
+  ]
+
+  deps = [
+    ":audio_common",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_foundation",
+    "../audio_policy:audio_policy_client",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "eventhandler:libeventhandler",
+    "frame_aware_sched:rtg_interface",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "c_utils:utils",
+  ]
+
+  version_script = "../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("audio_engine_manager") {
+  branch_protector_ret = "pac_ret"
+  install_enable = true
+  sanitize = sanitize_init
+  sources = [
+    "client/src/audio_engine_client_manager.cpp",
+    "client/src/audio_manager_listener_stub_impl.cpp",
+    "client/src/audio_service_proxy.cpp",
+    "client/src/audio_system_client_engine_manager.cpp",
+    "client/src/audio_asr_client_manager.cpp",
+    "client/src/audio_stream_client_manager.cpp",
+    "client/src/audio_workgroup_client_manager.cpp",
+    "client/src/audio_wakeup_client_manager.cpp",
+    "client/src/audio_workgroup_callback_impl.cpp",
+  ]
+
+  public_configs = [
+    ":audio_client_public_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
+  ]
+
+  deps = [
+    ":audio_common",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_foundation",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "bounds_checking_function:libsec_shared",
+    "eventhandler:libeventhandler",
+    "frame_aware_sched:rtg_interface",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "c_utils:utils",
+    "qos_manager:qos",
+  ]
+
+  version_script = "../../audio_framework.versionscript"
+  innerapi_tags = [ "platformsdk" ]
+  cflags = [ "-Os" ]
+  cflags_cc = cflags
+
+  subsystem_name = "multimedia"
+  part_name = "audio_framework"
+}
+
+ohos_shared_library("audio_client") {
+  branch_protector_ret = "pac_ret"
+  install_enable = true
+  sources = [
+    "client/src/audio_routing_manager.cpp",
+    "client/src/audio_system_manager.cpp",
+    "client/src/audio_session_manager.cpp",
+    "client/src/audio_stream_manager.cpp",
+    "client/src/audio_group_manager.cpp",
+    "client/src/audio_session_client_manager.cpp",
+  ]
+
+  public_configs = [
+    ":audio_client_public_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
+    "${audio_framework_root}/services/audio_service/idl:audio_policy_sa_idl_config",
+  ]
+
+  deps = [
+    ":audio_common",
+    ":audio_engine_manager",
+    ":audio_policy_manager",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../frameworks/native/audiodefinitions:audio_definitions",
+    "../../frameworks/native/audioutils:audio_utils",
+    "../audio_policy:audio_foundation",
+    "../audio_policy:audio_policy_client",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "eventhandler:libeventhandler",
+    "frame_aware_sched:rtg_interface",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "c_utils:utils",
+  ]
+
 
   version_script = "../../audio_framework.versionscript"
   innerapi_tags = [ "platformsdk" ]
@@ -486,7 +624,7 @@ audio_ohos_library("audio_process_service") {
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../audio_engine:audio_engine_manager",
+    "../audio_engine:hpae_engine_manager",
     "../audio_engine:audio_engine_plugins",
     "../audio_engine:audio_engine_utils",
     "../audio_policy:audio_foundation",
@@ -609,7 +747,7 @@ audio_ohos_library("audio_service") {
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/audioutils:audio_xml_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../audio_engine:audio_engine_manager",
+    "../audio_engine:hpae_engine_manager",
   ]
 
   external_deps = [
@@ -775,6 +913,9 @@ ohos_executable("audio_process_client_test") {
 
   deps = [
     ":audio_client",
+    ":audio_engine_manager",
+    ":audio_policy_manager",
+    ":audio_stream_client",
     "../audio_policy:audio_foundation",
     "./../../frameworks/native/audioutils:audio_utils",
   ]
@@ -829,6 +970,9 @@ ohos_executable("audio_faststream_playback_test") {
 
   deps = [
     ":audio_client",
+    ":audio_engine_manager",
+    ":audio_policy_manager",
+    ":audio_stream_client",
     "../../frameworks/native/audiocapturer:audio_capturer",
     "../../frameworks/native/audiorenderer:audio_renderer",
     "../../frameworks/native/audioutils:audio_utils",
@@ -865,6 +1009,9 @@ ohos_executable("audio_engine_client_manager_test") {
 
   deps = [
     ":audio_client",
+    ":audio_engine_manager",
+    ":audio_policy_manager",
+    ":audio_stream_client",
     "../../frameworks/native/audioutils:audio_utils",
   ]
 

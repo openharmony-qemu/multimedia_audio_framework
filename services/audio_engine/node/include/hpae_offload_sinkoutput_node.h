@@ -135,7 +135,7 @@ private:
     HpaeBackoffController backoffController_;
 
     bool needUnLock_ = false;
-    IOffloadCallback *offloadCallback_;
+    IOffloadCallback *offloadCallback_ = nullptr;
     bool isFlush_ = false;
 };
 

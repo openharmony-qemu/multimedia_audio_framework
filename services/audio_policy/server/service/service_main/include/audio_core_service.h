@@ -192,7 +192,6 @@ public:
         int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
-        std::shared_ptr<AudioDeviceDescriptor> GetDeviceBySessionId(uint32_t sessionId) override;
 private:
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
@@ -370,7 +369,6 @@ private:
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
-    std::shared_ptr<AudioDeviceDescriptor> GetDeviceBySessionId(uint32_t sessionId);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);

@@ -30,6 +30,7 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr uint32_t HISTORY_INTERVAL_S = 7;  // 7s buffer for rewind
+const std::string REMOTE_DEVICE_CLASS = "remote";
 }
 
 HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
@@ -986,6 +987,8 @@ bool HpaeOffloadRendererManager::IsBypassSpatializationForStereo()
 
 void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
+    CHECK_AND_RETURN_LOG(sinkInfo_.deviceClass == REMOTE_DEVICE_CLASS,
+        "Not remote, no need trigger appsUid update");
     auto request = [this, sessionId]() {
         appsUid_.clear();
         if (curNode_ != nullptr &&

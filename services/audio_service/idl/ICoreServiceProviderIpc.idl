@@ -63,5 +63,4 @@ interface ICoreServiceProviderIpc {
     void OnCheckActiveMusicTime([in] String reason);
     [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
     void GetModuleNameBySessionId([in] unsigned int sessionID, [out] String name);
-    void GetDeviceBySessionId([in] unsigned int sessionId, [out] sharedptr<AudioDeviceDescriptor> deviceDesc);
 }

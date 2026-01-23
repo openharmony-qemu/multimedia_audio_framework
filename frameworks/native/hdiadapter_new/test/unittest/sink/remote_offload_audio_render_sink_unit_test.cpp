@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/remote_offload_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -181,9 +182,31 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_007, Te
 /**
  * @tc.name   : Test OffloadSink API
  * @tc.number : RemoteOffloadSinkUnitTest_008
- * @tc.desc   : Test remote offload sink update app uid
+ * @tc.desc   : Test remote offload sink set invalid state
  */
 HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_008, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sink->SetInvalidState();
+    sink->sinkInited_.store(true);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    sink->renderInited_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    sink->validState_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : Test OffloadSink API
+ * @tc.number : RemoteOffloadSinkUnitTest_009
+ * @tc.desc   : Test remote offload sink update app uid
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_009, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
     std::vector<int32_t> appsUid = {};
@@ -199,5 +222,6 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_008, Te
     ret = sink_->Stop();
     EXPECT_EQ(ret, SUCCESS);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

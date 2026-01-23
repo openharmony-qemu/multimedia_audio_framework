@@ -33,6 +33,7 @@ namespace AudioStandard {
 namespace HPAE {
 const std::string DEFAULT_DEVICE_CLASS = "primary";
 const std::string DEFAULT_DEVICE_NETWORKID = "LocalDevice";
+const std::string REMOTE_DEVICE_CLASS = "remote";
 
 HpaeCapturerManager::HpaeCapturerManager(HpaeSourceInfo &sourceInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sourceInfo_(sourceInfo)
@@ -1120,6 +1121,8 @@ int32_t HpaeCapturerManager::RemoveCaptureInjector(const std::shared_ptr<OutputN
 
 void HpaeCapturerManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
+    CHECK_AND_RETURN_LOG(sourceInfo_.deviceClass == REMOTE_DEVICE_CLASS,
+        "Not remote, no need trigger appsUid update");
     auto request = [this, sessionId]() {
         appsUid_.clear();
         sessionsId_.clear();

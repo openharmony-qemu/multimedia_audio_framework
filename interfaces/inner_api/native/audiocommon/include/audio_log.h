@@ -65,6 +65,15 @@
         }                                              \
     } while (0)
 
+#define CHECK_AND_CALL_FUNC_RETURN_LOG(cond, func, fmt, ...) \
+    do {                                               \
+        if (!(cond)) {                                 \
+            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
+            func;                                      \
+            return;                                    \
+        }                                              \
+    } while (0)
+
 #define CHECK_AND_RETURN_RET_LOG(cond, ret, fmt, ...)  \
     do {                                               \
         if (!(cond)) {                                 \

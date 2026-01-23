@@ -3671,11 +3671,5 @@ bool AudioCoreService::IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor>
     AUDIO_INFO_LOG("Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
     return true;
 }
-
-std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetDeviceBySessionId(uint32_t sessionId)
-{
-    AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
-    return pipeManager_->GetDeviceBySessionId(sessionId);
-}
 } // namespace AudioStandard
 } // namespace OHOS

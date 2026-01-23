@@ -265,10 +265,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
     }
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
-    if (selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
-        audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
-            AudioStreamDeviceChangeReason::OVERRODE);
-    }
+    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+        AudioStreamDeviceChangeReason::OVERRODE);
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
     return SUCCESS;
 }
@@ -534,6 +532,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");
         AudioCoreService::GetCoreService()->NotifyRemoteDeviceStatusUpdate(desc);
     }
+    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+        AudioStreamDeviceChangeReason::OVERRODE);
     return SUCCESS;
 }
 
@@ -559,6 +559,8 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevicesInner(AudioDeviceUsage audioDev
                 deviceDescriptors.push_back(desc);
             }
         }
+    } else {
+        deviceDescriptors = audioDeviceDescriptors;
     }
     for (const auto &desc : deviceDescriptors) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "Invalid device descriptor");

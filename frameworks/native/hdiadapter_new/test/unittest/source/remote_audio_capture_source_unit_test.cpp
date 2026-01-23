@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "source/remote_audio_capture_source.h"
 
 using namespace testing::ext;
 
@@ -199,9 +200,31 @@ HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_008, TestSize.Le
 /**
  * @tc.name   : Test RemoteSource API
  * @tc.number : RemoteSourceUnitTest_009
- * @tc.desc   : Test remote source update app uid
+ * @tc.desc   : Test remote source set invalid state
  */
 HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_009, TestSize.Level1)
+{
+    std::shared_ptr<RemoteAudioCaptureSource> source = std::make_shared<RemoteAudioCaptureSource>("test");
+    source->SetInvalidState();
+    source->sourceInited_.store(true);
+    int32_t ret = source->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    source->captureInited_.store(true);
+    ret = source->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    source->validState_.store(true);
+    ret = source->Start();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : Test RemoteSource API
+ * @tc.number : RemoteSourceUnitTest_010
+ * @tc.desc   : Test remote source update app uid
+ */
+HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_010, TestSize.Level1)
 {
     EXPECT_TRUE(source_ && source_->IsInited());
     std::vector<int32_t> appsUid = {};
@@ -217,5 +240,6 @@ HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_009, TestSize.Le
     ret = source_->Stop();
     EXPECT_EQ(ret, SUCCESS);
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

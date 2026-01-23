@@ -87,6 +87,8 @@ public:
 
     void ReleaseActiveDevice(DeviceType type) override;
 
+    void SetInvalidState(void) override;
+
     void DumpInfo(std::string &dumpString) override;
 
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
@@ -98,6 +100,7 @@ private:
     void InitSplitStream(const char *splitStreamStr, std::vector<RemoteAudioCategory> &splitStreamVector);
     void InitAudioSampleAttr(RemoteAudioSampleAttributes &param, RemoteAudioCategory type);
     void InitDeviceDesc(RemoteAudioDeviceDescriptor &deviceDesc);
+    void InitDumpFile();
     int32_t CreateRender(RemoteAudioCategory type);
     void DestroyRender();
     int32_t DoSetOutputRoute(void);
@@ -112,6 +115,7 @@ private:
     void UpdateStreamType(const SplitStreamType splitStreamType, const AudioStreamType type);
     void UpdateStreamUsage(const SplitStreamType splitStreamType, const StreamUsage usage);
     int32_t NotifyHdiEvent(SplitStreamType splitStreamType, const std::string &key, const std::string &val);
+    bool IsValidState();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -133,6 +137,7 @@ private:
     std::atomic<bool> isThreadRunning_ = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
+    std::atomic<bool> validState_ = true;
 
     std::shared_ptr<std::thread> startThread_ = nullptr;
 

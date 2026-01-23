@@ -50,7 +50,7 @@ ohos_fuzztest("HpaeProresamplerFuzzTest") {
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../services/audio_service:audio_common",
     "../../../frameworks/native/audioclock:audio_clock",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_engine:audio_engine_node",
     "../../../services/audio_engine:audio_engine_utils",
     "../../../services/audio_engine:audio_engine_plugins",

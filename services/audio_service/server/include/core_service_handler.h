@@ -56,7 +56,6 @@ public:
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
     void OnCheckActiveMusicTime(const std::string &reason);
     int32_t CaptureConcurrentCheck(uint32_t sessionID);
-    std::shared_ptr<AudioDeviceDescriptor> GetDeviceBySessionId(uint32_t sessionId);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

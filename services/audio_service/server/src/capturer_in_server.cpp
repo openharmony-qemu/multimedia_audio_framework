@@ -537,6 +537,7 @@ int32_t CapturerInServer::Start()
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
         filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
         ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
+    stream_->TriggerAppsUidUpdate();
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -574,12 +575,6 @@ int32_t CapturerInServer::StartInner()
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
     AudioService::GetInstance()->NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
-
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = CoreServiceHandler::GetInstance().GetDeviceBySessionId(
-        streamIndex_);
-    if (deviceDesc != nullptr && deviceDesc->IsRemote()) {
-        stream_->TriggerAppsUidUpdate();
-    }
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);

@@ -60,7 +60,7 @@ ohos_fuzztest("AudioInterruptServiceMoreFuzzTest") {
     "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../../services/audio_engine:audio_engine_manager",
+    "../../../../services/audio_engine:hpae_engine_manager",
     "../../../../services/audio_policy:audio_policy_client_static",
     "../../../../services/audio_policy:audio_policy_service_static",
   ]

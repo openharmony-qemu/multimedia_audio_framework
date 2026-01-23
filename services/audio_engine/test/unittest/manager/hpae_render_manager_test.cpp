@@ -2779,6 +2779,7 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_001, TestSize.Level1)
     HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetBtSpeakerSinkInfo(sinkInfo);
+    sinkInfo.deviceClass = "remote";
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -2816,7 +2817,7 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceClass = "remote";
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
     sinkInfo.frameLen = FRAME_LENGTH_960;

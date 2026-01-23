@@ -155,13 +155,5 @@ int32_t CoreServiceProviderWrapper::CaptureConcurrentCheck(const uint32_t sessio
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->CaptureConcurrentCheck(sessionId);
 }
-
-int32_t CoreServiceProviderWrapper::GetDeviceBySessionId(uint32_t sessionId,
-    std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
-{
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    deviceDesc = coreServiceWorker_->GetDeviceBySessionId(sessionId);
-    return SUCCESS;
-}
 } // namespace AudioStandard
 } // namespace OHOS

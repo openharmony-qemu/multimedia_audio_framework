@@ -48,7 +48,6 @@ public:
     virtual int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) = 0;
     virtual void OnCheckActiveMusicTime(const std::string &reason) = 0;
     virtual int32_t CaptureConcurrentCheck(uint32_t sessionID) = 0;
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetDeviceBySessionId(uint32_t sessionId) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

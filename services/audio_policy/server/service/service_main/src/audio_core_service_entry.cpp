@@ -696,12 +696,5 @@ void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::strin
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     coreService_->NotifyRemoteRouteStateChange(networkId, deviceType, enable);
 }
-
-std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetDeviceBySessionId(uint32_t sessionId)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, nullptr, "coreService_ is nullptr");
-    return coreService_->GetDeviceBySessionId(sessionId);
-}
 }
 }

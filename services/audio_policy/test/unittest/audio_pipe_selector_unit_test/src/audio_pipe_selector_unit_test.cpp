@@ -1734,6 +1734,81 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     EXPECT_EQ(moduleInfo.rate, "8000");
 }
 
+#ifdef MULTI_BUS_ENABLE
+/**
+ * @tc.name: HandleFindBusPipe_001
+ * @tc.desc: Test that when busAddresses is empty, the function should return the end iterator of newPipeInfoList.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_001, TestSize.Level1)
+{
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    audioStreamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "bus1";
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->audioStreamInfo_ = audioStreamInfo;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    newPipeInfoList.push_back(pipeInfo);
+
+    auto busPipeIter = newPipeInfoList.end();
+    AudioPipeSelector::GetPipeSelector()->HandleFindBusPipe({"bus1"}, newPipeInfoList, nullptr, busPipeIter);
+    EXPECT_NE(busPipeIter, newPipeInfoList.end());
+}
+
+/**
+ * @tc.name: HandleFindBusPipe_002
+ * @tc.desc: Test that the function should find the corresponding pipe when the size of busAddresses is
+ * greater than 1 and there is a match.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_002, TestSize.Level1)
+{
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    audioStreamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "Speaker";
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->audioStreamInfo_ = audioStreamInfo;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    newPipeInfoList.push_back(pipeInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+
+    auto busPipeIter = newPipeInfoList.end();
+    AudioPipeSelector::GetPipeSelector()->HandleFindBusPipe({"Speaker", "MCH_Speaker"}, newPipeInfoList, streamDesc,
+                                                            busPipeIter);
+    EXPECT_NE(busPipeIter, newPipeInfoList.end());
+}
+#endif
+
 /**
 * @tc.name  : Test FindExistingPipe fast pipe condition - both conditions true
 * @tc.number: FindExistingPipe_001

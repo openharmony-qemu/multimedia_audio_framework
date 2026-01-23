@@ -178,13 +178,5 @@ int32_t CoreServiceHandler::CaptureConcurrentCheck(const uint32_t sessionID)
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     return iCoreServiceProvider_->CaptureConcurrentCheck(sessionID);
 }
-
-std::shared_ptr<AudioDeviceDescriptor> CoreServiceHandler::GetDeviceBySessionId(const uint32_t sessionId)
-{
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, nullptr, "iCoreServiceProvider_ is nullptr");
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    iCoreServiceProvider_->GetDeviceBySessionId(sessionId, deviceDesc);
-    return deviceDesc;
-}
 } // namespace AudioStandard
 } // namespace OHOS

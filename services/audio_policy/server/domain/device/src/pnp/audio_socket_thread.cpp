@@ -387,6 +387,9 @@ int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUe
 #ifdef USB_ENABLE
 int32_t AudioSocketThread::AudioDetectUsbSoundCard(const AudioPnpUevent &audioPnpUevent)
 {
+    if (!audioPnpUevent.devPath || !audioPnpUevent.subSystem || !audioPnpUevent.action) {
+        return HDF_ERR_INVALID_PARAM;
+    }
     CHECK_AND_RETURN_RET(strcmp(audioPnpUevent.subSystem, "sound") == 0, HDF_ERR_INVALID_PARAM);
     string devPath{audioPnpUevent.devPath};
     const char *strs[] {"/usb", "/sound/card", "/pcmC"};
