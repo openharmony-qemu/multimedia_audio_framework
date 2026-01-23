@@ -127,6 +127,7 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
     if (ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], inputId) != napi_ok ||
         ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], mixerId) != napi_ok ||
         ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], outputId) != napi_ok) {
+        delete[] argv;
         return nullptr;
     }
     setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
@@ -136,7 +137,7 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
     status = napi_get_value_bool(env, argv[ARG_5], &g_isPure);
     g_key = inputId;
     if (startTime > UINT_0) {
-        key = inputId + std::to_string(startTime);
+        g_key = inputId + std::to_string(startTime);
     }
     g_writeDataBufferMap[g_key] = std::vector<uint8_t>(BUFFER_SIZE);
     delete[] argv;
@@ -200,6 +201,7 @@ napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info)
     // create input node
     CreateInputNode(env, inputId, napiValue, result);
     ManageOutputNodes(env, inputId, outputId, mixerId, result);
+    delete[] argv;
     // restart pipeline
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
@@ -228,6 +230,7 @@ napi_value RealPlayRecordBuffer(napi_env env, napi_callback_info info)
     napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
     auto it = g_writeDataBufferMap.find(inputId);
     if (it == g_writeDataBufferMap.end()) {
+        delete[] argv;
         return nullptr;
     }
     napi_value napiValue = nullptr;
@@ -335,6 +338,7 @@ napi_value MixRecordBuffer(napi_env env, napi_callback_info info)
     // create input node
     CreateInputNode(env, inputId, napiValue, result);
     ManageOutputNodes(env, inputId, outputId, mixerId, result);
+    delete[] argv;
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 

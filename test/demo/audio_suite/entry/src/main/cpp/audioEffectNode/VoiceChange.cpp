@@ -98,6 +98,7 @@ napi_status getvoiceChangeModeParameters(napi_env env, napi_value *argv, int &vo
         LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG,
         "audioEditTest SetEquailizerMode equailizerMode: %{public}d, equailizerId: %{public}s, inputId: %{public}s",
         voiceChangeMode, VoiceChangeId.c_str(), inputId.c_str());
+    delete [] argv;    
     return status;
 }
 
@@ -157,6 +158,7 @@ napi_value StartGeneralVoiceChange(napi_env env, napi_callback_info info)
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG, "StartGeneralVoiceChange ERROR!");
         napi_create_int64(env, result, &ret);
+        delete [] argv;
         return ret;
     }
 
@@ -165,6 +167,7 @@ napi_value StartGeneralVoiceChange(napi_env env, napi_callback_info info)
         if (insertRes == (int)AudioSuiteResult::NODE_MANAGER_OPERATION_ERROR) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG, "addEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
+            delete [] argv;
             return ret;
         }
     } else {
@@ -172,12 +175,14 @@ napi_value StartGeneralVoiceChange(napi_env env, napi_callback_info info)
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG, "StartGeneralVoiceChange insertNode ERROR!");
             napi_create_int64(env, result, &ret);
+            delete [] argv;
             return ret;
         }
     }
 
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG, "StartGeneralVoiceChange: operation success");
+    delete [] argv;
     return ret;
 }
 
@@ -206,11 +211,13 @@ napi_value ResetGeneralVoiceChange(napi_env env, napi_callback_info info)
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG,
                      "SetGeneralVoiceChangeType ERROR---%{public}d", result);
         napi_create_int64(env, result, &ret);
+        delete [] argv;
         return ret;
     }
 
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG, "resetGeneralVoiceChangeEffect: operation success");
+    delete [] argv;
     return ret;
 }
 
