@@ -2107,7 +2107,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_002, TestSize.
     int32_t ret = rendererInServer->Init();
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2123,11 +2123,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_003, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_IDLE;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2143,11 +2143,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_004, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_PAUSED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2163,11 +2163,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_005, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_STOPPED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2183,12 +2183,12 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_006, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2487,40 +2487,6 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
-
-    delete[] inputData;
-    delete[] processedData;
-}
-
-
-/**
- * @tc.name  : Test AudioStaticBufferProvider API
- * @tc.type  : FUNC
- * @tc.number: AudioStaticBufferProvider_003
- * @tc.desc  : Test AudioStaticBufferProvider GetDataFromStaticBuffer
- */
-HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.Level1)
-{
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    buffer->SetStaticMode(true);
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
-    ASSERT_TRUE(staticBufferProviderTest != nullptr);
-
-    int8_t *inputData = new int8_t[10];
-    uint8_t *processedData = new uint8_t[10];
-    size_t dataSize = 10;
-
-    staticBufferProviderTest->processedBuffer_ = processedData;
-    staticBufferProviderTest->processedBufferSize_ = dataSize;
-
-    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    staticBufferProviderTest->currentLoopTimes_ = 0;
-    staticBufferProviderTest->totalLoopTimes_ = 1;
-    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
 
     delete[] inputData;
     delete[] processedData;

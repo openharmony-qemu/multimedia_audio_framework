@@ -28,7 +28,6 @@ group("audio_unit_test") {
     "../frameworks/js/napi/audiorenderer/toneplayer/test/unittest/tone_player_test:jsunittest",
     "../frameworks/native/audioadapter/test/unittest:pro_audio_service_adapter_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_capturer_unit_test",
-    "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:inner_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/multiple_capturer_test:multiple_audio_capturer_unit_test",
     "../frameworks/native/audioeffect/test/unittest/effect_unit_test:audio_effect_chain_manager_unit_test",
@@ -36,7 +35,6 @@ group("audio_unit_test") {
     "../frameworks/native/audioloopback/test/unittest:audio_loopback_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/group_manager_test:audio_group_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/manager_test:audio_manager_unit_test",
-
     # "../frameworks/native/audiopolicy/test/unittest/policy_test:audio_policy_unit_test",
     "../frameworks/native/audioclock:audioclock_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/routing_manager_test:audio_routing_manager_test",
@@ -169,15 +167,16 @@ group("audio_unit_test") {
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
         "../services/audio_service/test/unittest:audio_process_in_client_second_unit_test",
+        "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test",
+        "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_fast_renderer_unit_test",
+        "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
       ]
     }
   }
 
   if (audio_framework_feature_low_latency) {
     deps += [
-      "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_fast_renderer_unit_test",
       "../frameworks/native/audiorenderer/test/unittest/renderer_test:audio_renderer_unit_test",
-      "../services/audio_service/test/unittest:audio_process_in_server_unit_test",
       "../services/audio_service/test/unittest:audio_service_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_second_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",

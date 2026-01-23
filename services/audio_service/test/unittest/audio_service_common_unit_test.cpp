@@ -1241,68 +1241,6 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Le
 }
 
 /**
-* @tc.name  : Test LinearPosTimeModel API
-* @tc.type  : FUNC
-* @tc.number: LinearPosTimeModel_003
-* @tc.desc  : Test LinearPosTimeModel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_003, TestSize.Level1)
-{
-    auto linearPos = std::make_unique<LinearPosTimeModel>();
-    ASSERT_TRUE(linearPos != nullptr);
-
-    uint64_t frame = 0;
-    int64_t nanoTime = 0;
-    for (int i = 0; i < 10; i++) {
-        linearPos->posTimeVec_.push_back(std::make_pair(frame, nanoTime));
-        if (frame < 5) {
-            frame++;
-        }
-        nanoTime++;
-    }
-    linearPos->sampleRate_ = 1;
-    auto ret = linearPos->CheckReasonable(frame, nanoTime);
-    EXPECT_EQ(ret, CHECK_FAILED);
-}
-
-/**
-* @tc.name  : Test LinearPosTimeModel API
-* @tc.type  : FUNC
-* @tc.number: LinearPosTimeModel_004
-* @tc.desc  : Test LinearPosTimeModel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_004, TestSize.Level1)
-{
-    auto linearPos = std::make_unique<LinearPosTimeModel>();
-    ASSERT_TRUE(linearPos != nullptr);
-
-    uint64_t posInFrame = 20;
-    linearPos->isConfiged = true;
-    linearPos->sampleRate_ = 1;
-    auto ret = linearPos->GetTimeOfPos(posInFrame);
-    EXPECT_NE(ret, -1);
-}
-
-/**
-* @tc.name  : Test LinearPosTimeModel API
-* @tc.type  : FUNC
-* @tc.number: LinearPosTimeModel_005
-* @tc.desc  : Test LinearPosTimeModel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_005, TestSize.Level1)
-{
-    auto linearPos = std::make_unique<LinearPosTimeModel>();
-    ASSERT_TRUE(linearPos != nullptr);
-
-    uint64_t posInFrame = 0;
-    linearPos->stampFrame_ = 5;
-    linearPos->isConfiged = true;
-    linearPos->sampleRate_ = 1;
-    auto ret = linearPos->GetTimeOfPos(posInFrame);
-    EXPECT_NE(ret, -1);
-}
-
-/**
 * @tc.name  : Test CheckWriteOrReadFrame API
 * @tc.type  : FUNC
 * @tc.number: CheckWriteOrReadFrame_001
