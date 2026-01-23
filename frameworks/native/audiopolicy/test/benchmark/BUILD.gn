@@ -23,12 +23,7 @@ ohos_benchmarktest("BenchmarkAudioManagerTest") {
     "../../../../../interfaces/inner_api/native/audiocommon/include",
   ]
   sources = [ "benchmark_audiomanager_test.cpp" ]
-  deps = [
-    "../../../../../services/audio_service:audio_client",
-    "../../../../../services/audio_service:audio_engine_manager",
-    "../../../../../services/audio_service:audio_policy_manager",
-    "../../../../../services/audio_service:audio_stream_client",
-  ]
+  deps = [ "../../../../../services/audio_service:audio_client" ]
   external_deps = [ "ipc:ipc_core" ]
 }
 

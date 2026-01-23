@@ -42,8 +42,5 @@ ohos_unittest("audio_routing_manager_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_foundation",
     "../../../../../../services/audio_service:audio_client",
-    "../../../../../../services/audio_service:audio_engine_manager",
-    "../../../../../../services/audio_service:audio_policy_manager",
-    "../../../../../../services/audio_service:audio_stream_client",
   ]
 }

@@ -98,9 +98,6 @@ ohos_unittest("public_priority_router_unit_test") {
     "../../../../../audio_policy:audio_policy_client",
     "../../../../../audio_policy:audio_policy_service_static",
     "../../../../../audio_service:audio_client",
-    "../../../../../audio_service:audio_engine_manager",
-    "../../../../../audio_service:audio_policy_manager",
-    "../../../../../audio_service:audio_stream_client",
     "../../../../../audio_service:audio_common",
   ]
 
@@ -180,9 +177,6 @@ ohos_unittest("pair_device_router_unit_test") {
     "../../../../../audio_policy:audio_policy_client",
     "../../../../../audio_policy:audio_policy_service_static",
     "../../../../../audio_service:audio_client",
-    "../../../../../audio_service:audio_engine_manager",
-    "../../../../../audio_service:audio_policy_manager",
-    "../../../../../audio_service:audio_stream_client",
     "../../../../../audio_service:audio_common",
   ]
 
@@ -278,9 +272,6 @@ ohos_unittest("stream_filter_router_ext_unit_test") {
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_policy:audio_policy_service_static",
     "../../../../../../services/audio_service:audio_client",
-    "../../../../../../services/audio_service:audio_engine_manager",
-    "../../../../../../services/audio_service:audio_policy_manager",
-    "../../../../../../services/audio_service:audio_stream_client",
   ]
 
   defines = []
