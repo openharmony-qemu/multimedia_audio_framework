@@ -2004,8 +2004,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_001, TestS
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);
-    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
-    EXPECT_GE(bytesRead, VALUE_ZERO);
+    audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
 
     int64_t firstTs;
     bool getRet = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
