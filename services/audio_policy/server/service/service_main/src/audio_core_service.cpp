@@ -1,4 +1,4 @@
-/*
+c/*
  * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -517,7 +517,7 @@ bool AudioCoreService::RecordIsForcedNormal(std::shared_ptr<AudioStreamDescripto
     if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
         streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Forced normal casess");
+        AUDIO_INFO_LOG("Forced normal cases");
         return true;
     }
 
