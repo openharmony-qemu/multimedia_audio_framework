@@ -99,7 +99,7 @@ int32_t AudioCapturerOnReadData(OH_AudioCapturer *capturer, void *userData, void
     return 0;
 }
 
-void assembleStreamBuilder()
+void AssembleStreamBuilder()
 {
     OH_AudioStreamBuilder_Create(&builder, AUDIOSTREAM_TYPE_CAPTURER);
     ConvertFormat();
@@ -141,8 +141,9 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
     status = napi_get_value_int64(env, argv[ARG_4], &startTime);
     status = napi_get_value_bool(env, argv[ARG_5], &g_isPure);
     g_key = inputId;
-    if (startTime > UINT_0)
-        g_key = inputId.c_str() + std::to_string(startTime);
+    if (startTime > UINT_0) {
+        key = inputId.c_str() + std::to_string(startTime);
+    }
     g_writeDataBufferMap[g_key] = std::vector<uint8_t>(BUFFER_SIZE);
     delete[] argv;
 
@@ -157,7 +158,7 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
         g_file = nullptr;
     }
     g_file = fopen(g_filePath.c_str(), "wb");
-    assembleStreamBuilder();
+    AssembleStreamBuilder();
     return nullptr;
 }
 
