@@ -33,12 +33,7 @@ ohos_moduletest("audio_policy_module_test") {
 
   sources = [ "1.0/src/audio_policy_test.cpp" ]
 
-  deps = [
-    "../../../services/audio_service:audio_client",
-    "../../../services/audio_service:audio_engine_manager",
-    "../../../services/audio_service:audio_policy_manager",
-    "../../../services/audio_service:audio_stream_client",
-  ]
+  deps = [ "../../../services/audio_service:audio_client" ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libtokensetproc_shared",

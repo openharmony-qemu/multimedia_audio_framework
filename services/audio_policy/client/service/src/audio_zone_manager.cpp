@@ -16,7 +16,7 @@
 #define LOG_TAG "AudioZoneManager"
 #endif
 #include <mutex>
-#include "audio_zone_types.h"
+#include "audio_zone_manager.h"
 
 #include "audio_errors.h"
 #include "audio_log.h"

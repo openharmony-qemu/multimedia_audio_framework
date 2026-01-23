@@ -146,7 +146,7 @@ ohos_unittest("audio_server_hpae_dump_unit_test") {
     "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service_static",
-    "../../../../audio_engine:hpae_engine_manager",
+    "../../../../audio_engine:audio_engine_manager",
   ]
 
   external_deps = [

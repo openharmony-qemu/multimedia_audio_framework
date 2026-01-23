@@ -18,7 +18,6 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_session_manager.h"
-#include "audio_session_client_manager.h"
 
 using namespace testing::ext;
 
@@ -224,16 +223,16 @@ HWTEST(AudioSessionManagerUnitTest, AudioSessionManagerServiceDiedRestore_001, T
 {
     AudioSessionManagerServiceDiedRestore restore;
 
-    AudioSessionClientManager::GetInstance().restoreParams_.actions_.clear();
-    AudioSessionClientManager::GetInstance().setDefaultOutputDevice_ = false;
+    AudioSessionManager::GetInstance()->restoreParams_.actions_.clear();
+    AudioSessionManager::GetInstance()->setDefaultOutputDevice_ = false;
     restore.OnAudioPolicyServiceDied();
 
-    AudioSessionClientManager::GetInstance().setDefaultOutputDevice_ = true;
-    AudioSessionClientManager::GetInstance().setDeviceType_ = DEVICE_TYPE_DEFAULT;
-    AudioSessionClientManager::GetInstance().restoreParams_.RecordAudioSessionOpt(
+    AudioSessionManager::GetInstance()->setDefaultOutputDevice_ = true;
+    AudioSessionManager::GetInstance()->setDeviceType_ = DEVICE_TYPE_DEFAULT;
+    AudioSessionManager::GetInstance()->restoreParams_.RecordAudioSessionOpt(
         AudioSessionRestoreParams::OperationType::AUDIO_SESSION_ACTIVATE, 0);
     restore.OnAudioPolicyServiceDied();
-    EXPECT_EQ(AudioSessionClientManager::GetInstance().restoreParams_.actions_.size(), 1);
+    EXPECT_EQ(AudioSessionManager::GetInstance()->restoreParams_.actions_.size(), 1);
 }
 
 /**
@@ -246,15 +245,15 @@ HWTEST(AudioSessionManagerUnitTest, AudioSessionManagerServiceDiedRestore_002, T
 {
     ASSERT_NE(AudioSessionManager::GetInstance(), nullptr);
 
-    AudioSessionClientManager::GetInstance().restoreParams_.actions_.clear();
-    AudioSessionClientManager::GetInstance().setDefaultOutputDevice_ = false;
+    AudioSessionManager::GetInstance()->restoreParams_.actions_.clear();
+    AudioSessionManager::GetInstance()->setDefaultOutputDevice_ = false;
     AudioSessionManager::GetInstance()->DeactivateAudioSession();
-    AudioSessionClientManager::GetInstance().restoreParams_.RecordAudioSessionOpt(
+    AudioSessionManager::GetInstance()->restoreParams_.RecordAudioSessionOpt(
         AudioSessionRestoreParams::OperationType::AUDIO_SESSION_MUTE_SUGGESTION, 0);
 
     AudioSessionManagerServiceDiedRestore restore;
     restore.OnAudioPolicyServiceDied();
-    EXPECT_EQ(AudioSessionClientManager::GetInstance().restoreParams_.actions_.size(), 1);
+    EXPECT_EQ(AudioSessionManager::GetInstance()->restoreParams_.actions_.size(), 1);
 }
 
 } // namespace AudioStandard

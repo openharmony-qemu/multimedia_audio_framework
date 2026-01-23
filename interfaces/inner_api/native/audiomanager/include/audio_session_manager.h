@@ -22,6 +22,91 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+class AudioSessionRestoreParams {
+public:
+    enum class OperationType {
+        AUDIO_SESSION_ACTIVATE,
+        AUDIO_SESSION_SET_SCENE,
+        AUDIO_SESSION_MUTE_SUGGESTION,
+    };
+
+    struct AudioSessionAction {
+        OperationType type;
+        int32_t optValue;
+
+        AudioSessionAction(const OperationType type, const int32_t value)
+            : type(type), optValue(value) {}
+
+        ~AudioSessionAction() = default;
+    };
+
+    explicit AudioSessionRestoreParams() = default;
+
+    ~AudioSessionRestoreParams() = default;
+
+    void OnAudioSessionDeactive();
+    void OnAudioSessionStateChanged(AudioSessionStateChangeHint audioSessionStateChangeHint);
+    void RecordAudioSessionOpt(const OperationType type, const int32_t value);
+    bool RestoreParams(void);
+    void EnsureMuteAfterScene();
+
+private:
+    void DeduplicateLastOperation(OperationType type);
+
+private:
+    std::mutex actionsMutex_;
+    std::vector<std::unique_ptr<AudioSessionAction>> actions_;
+};
+
+class AudioSessionCallback {
+public:
+    virtual ~AudioSessionCallback() = default;
+    /**
+     * @brief OnAudioSessionDeactive will be executed when the audio session is deactivated be others.
+     *
+     * @param deactiveEvent the audio session deactive event info.
+     * @since 12
+     */
+    virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
+};
+
+class AudioSessionStateChangedCallback {
+public:
+    virtual ~AudioSessionStateChangedCallback() = default;
+    /**
+     * @brief The function will be executed when the audio session state changed.
+     *
+     * @param stateChangedEvent the audio session state changed event.
+     * @since 20
+     */
+    virtual void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) = 0;
+};
+
+class AudioSessionCurrentDeviceChangedCallback {
+public:
+    virtual ~AudioSessionCurrentDeviceChangedCallback() = default;
+    /**
+     * @brief
+     *
+     * @param deviceChangedEvent the audio session current device changed event.
+     * @since 20
+     */
+    virtual void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) = 0;
+};
+
+class AudioSessionCurrentInputDeviceChangedCallback {
+public:
+    virtual ~AudioSessionCurrentInputDeviceChangedCallback() = default;
+    /**
+     * @brief
+     *
+     * @param deviceChangedEvent the audio session current device changed event.
+     * @since 21
+     */
+    virtual void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent) = 0;
+};
+
 class AudioSessionManager {
 public:
     AudioSessionManager() = default;
@@ -274,7 +359,47 @@ public:
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
+
+private:
+    std::mutex setDefaultOutputDeviceMutex_;
+    bool setDefaultOutputDevice_ = false;
+    DeviceType setDeviceType_ = DEVICE_TYPE_INVALID;
+
+    // used by restore
+    std::mutex sessionManagerRestoreMutex_;
+    bool policyServerDiedCbRegistered_ = false;
+    std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> sessionManagerRestoreCb_ = nullptr;
+
+    AudioSessionRestoreParams restoreParams_;
 };
+
+class AudioSessionManagerServiceDiedRestore : public AudioSessionManagerPolicyServiceDiedCallback {
+public:
+    AudioSessionManagerServiceDiedRestore() = default;
+
+    void OnAudioPolicyServiceDied() override;
+
+    ~AudioSessionManagerServiceDiedRestore() = default;
+};
+
+class AudioSessionManagerStateCallback : public AudioSessionStateChangedCallback {
+public:
+    explicit AudioSessionManagerStateCallback() = default;
+
+    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) override;
+
+    ~AudioSessionManagerStateCallback() = default;
+};
+
+class AudioSessionManagerDeactivedCallback : public AudioSessionCallback {
+public:
+    explicit AudioSessionManagerDeactivedCallback() = default;
+
+    void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
+
+    ~AudioSessionManagerDeactivedCallback() = default;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_SESSION_MANAGER_H
