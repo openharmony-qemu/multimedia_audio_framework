@@ -105,7 +105,7 @@ HWTEST_F(AudioFastCapturerUnitTest, Audio_Fast_Capturer_GetOverflowCount_001, Te
                 // sleep time trigger underflow
                 if (count == 1) {
                     std::this_thread::sleep_for(20ms);
-                }  
+                }
                 count++;
                 BufferDesc bufDesc {};
                 bufDesc.buffer = nullptr;
@@ -114,6 +114,7 @@ HWTEST_F(AudioFastCapturerUnitTest, Audio_Fast_Capturer_GetOverflowCount_001, Te
                 EXPECT_NE(nullptr, bufDesc.buffer);
                 audioCapturer->Enqueue(bufDesc);
                 });
+
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
 
