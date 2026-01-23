@@ -17,7 +17,7 @@ struct InputAudioParams {
     std::string fileName;
 };
 
-struct AudioFormatParams{
+struct AudioFormatParams {
     int32_t sampleRate;
     int32_t channels;
     int32_t bitsPerSample;
