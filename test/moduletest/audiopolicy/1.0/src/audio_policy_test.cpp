@@ -14,6 +14,7 @@
  */
 
 #include "audio_errors.h"
+#include "audio_unit_test.h"
 #include "audio_system_manager.h"
 #include "audio_policy_test.h"
 
@@ -150,12 +151,15 @@ class AudioPolicySetVolumeTest : public AudioPolicyTest {};
 
 HWTEST_P(AudioPolicySetVolumeTest, SetVolume, TestSize.Level1)
 {
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     PolicyParam params = GetParam();
 
     AudioVolumeType volumeType
         = static_cast<AudioVolumeType>(params.streamType);
     float volume = params.volume;
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
+    MockNative::Resume();
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -171,6 +175,8 @@ class AudioPolicyGetVolumeTest : public AudioPolicyTest {};
 
 HWTEST_P(AudioPolicyGetVolumeTest, GetVolume, TestSize.Level1)
 {
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     PolicyParam params = GetParam();
     AudioVolumeType volumeType
         = static_cast<AudioVolumeType>(params.streamType);
@@ -178,6 +184,7 @@ HWTEST_P(AudioPolicyGetVolumeTest, GetVolume, TestSize.Level1)
 
     EXPECT_EQ(AUDIO_OK, AudioSystemManager::GetInstance()->SetVolume(volumeType, volume));
     EXPECT_EQ(volume, AudioSystemManager::GetInstance()->GetVolume(volumeType));
+    MockNative::Resume();
 }
 
 INSTANTIATE_TEST_SUITE_P(

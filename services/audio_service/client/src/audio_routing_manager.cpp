@@ -19,9 +19,9 @@
 #include "audio_errors.h"
 #include "audio_policy_manager.h"
 #include "audio_common_log.h"
-#include "iservice_registry.h"
 #include "system_ability_definition.h"
-
+#include "audio_type_convert.h"
+#include "audio_volume_client_manager.h"
 #include "audio_routing_manager.h"
 
 namespace OHOS {
@@ -33,16 +33,10 @@ AudioRoutingManager *AudioRoutingManager::GetInstance()
     return &audioRoutingManager;
 }
 
-int32_t AudioRoutingManager::GetCallingPid()
-{
-    return getpid();
-}
-
 int32_t AudioRoutingManager::SetMicStateChangeCallback(
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &callback)
 {
-    AudioSystemManager* audioSystemManager = AudioSystemManager::GetInstance();
-    std::shared_ptr<AudioGroupManager> groupManager = audioSystemManager->GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
+    auto groupManager = AudioVolumeClientManager::GetInstance().GetGroupManager(DEFAULT_VOLUME_GROUP_ID);
     CHECK_AND_RETURN_RET_LOG(groupManager != nullptr, ERR_INVALID_PARAM,
         "setMicrophoneMuteCallback falied, groupManager is null");
     return groupManager->SetMicStateChangeCallback(callback);
@@ -62,6 +56,36 @@ int32_t AudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(AudioCapture
     desc = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(captureInfo);
 
     return SUCCESS;
+}
+
+RecommendInputDevices AudioRoutingManager::GetRecommendInputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    AudioCapturerInfo captureInfo;
+    captureInfo.sourceType = SOURCE_TYPE_CAMCORDER;
+    GetPreferredInputDeviceForCapturerInfo(captureInfo, descs);
+
+    return ConvertRecommendInputDevices(descs);
+}
+
+RecommendInputDevices AudioRoutingManager::ConvertRecommendInputDevices(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    if (descs.size() == 0) {
+        return RecommendInputDevices::NO_UNAVAILABLE_DEVICE;
+    }
+
+    auto it = std::find_if(descs.begin(), descs.end(), [](const auto &desc) {
+        return desc && desc->deviceType_ == DEVICE_TYPE_MIC && desc->networkId_ == LOCAL_NETWORK_ID;
+    });
+    if (it != descs.end()) {
+        auto desc = *it;
+        descs.clear();
+        descs.push_back(desc);
+        return RecommendInputDevices::RECOMMEND_BUILT_IN_MIC;
+    } else {
+        return RecommendInputDevices::RECOMMEND_EXTERNAL_MIC;
+    }
 }
 
 int32_t AudioRoutingManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
@@ -133,7 +157,7 @@ int32_t AudioRoutingManager::RestoreOutputDevice(sptr<AudioRendererFilter> audio
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_INVALID_PARAM, "invalid parameter");
 
-    audioRendererFilter->streamType = AudioSystemManager::GetStreamType(
+    audioRendererFilter->streamType = AudioTypeConvert::GetStreamType(
         audioRendererFilter->rendererInfo.contentType, audioRendererFilter->rendererInfo.streamUsage);
 
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter->uid >= -1, ERR_INVALID_PARAM, "invalid uid.");
@@ -156,5 +180,13 @@ int32_t AudioRoutingManager::SetDeviceConnectionStatus(const std::shared_ptr<Aud
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is nullptr");
     return AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
 }
+
+int32_t AudioRoutingManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneName != "" && audioMixes.size() > 0, ERR_INVALID_PARAM,
+                             "zoneName is empty or audioMix is empty.");
+    return AudioPolicyManager::GetInstance().SetCustomAudioMix(zoneName, audioMixes);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -101,7 +101,7 @@ public:
     int32_t RegisterProcessCb(const sptr<IRemoteObject>& object) override;
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
-        uint32_t method) override;
+        uint32_t method, uint32_t threadPriority) override;
 
     int32_t SetRebuildFlag() override;
 
@@ -188,7 +188,7 @@ private:
     void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
-    void InitRendererStream(uint32_t spanTime,
+    void InitRendererStream(float spanTime,
         const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
     void InitCapturerStream(uint32_t spanSizeInByte,
         const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);

@@ -40,6 +40,8 @@ constexpr int64_t SLEEP_TIME = 1;
 constexpr int32_t RETRY_TIMES = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
 constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
+constexpr int32_t CREATE_RETRY_WAIT_TIME_MS = 500; // 500ms
+constexpr int32_t CREATE_MAX_RETRY_COUNT = 8;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
@@ -1511,7 +1513,14 @@ int32_t AudioPolicyManager::CreateRendererClient(std::shared_ptr<AudioStreamDesc
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    int32_t ret = gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    for (int32_t retrycount = 0; (ret == ERR_RETRY_IN_CLIENT) && (retrycount < CREATE_MAX_RETRY_COUNT);
+        retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(CREATE_RETRY_WAIT_TIME_MS));
+        ret = gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    }
+    return ret;
 }
 
 int32_t AudioPolicyManager::CreateCapturerClient(
@@ -1519,7 +1528,14 @@ int32_t AudioPolicyManager::CreateCapturerClient(
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+    int32_t ret = gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+    for (int32_t retrycount = 0; (ret == ERR_RETRY_IN_CLIENT) && (retrycount < CREATE_MAX_RETRY_COUNT);
+        retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(CREATE_RETRY_WAIT_TIME_MS));
+        ret = gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+    }
+    return ret;
 }
 
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
@@ -3102,22 +3118,22 @@ bool AudioPolicyManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return isSupport;
 }
 
-bool AudioPolicyManager::SetKaraokeParameters(const std::string &parameters)
+bool AudioPolicyManager::SetKaraokeParameters(const DeviceType deviceType, const std::string &parameters)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool ret = false;
-    gsp->SetKaraokeParameters(parameters, ret);
+    gsp->SetKaraokeParameters(deviceType, parameters, ret);
     return ret;
 }
 
-bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+bool AudioPolicyManager::IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType)
 {
     Trace trace("AudioPolicyManager::IsAudioLoopbackSupported");
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool support = false;
-    gsp->IsAudioLoopbackSupported(mode, support);
+    gsp->IsAudioLoopbackSupported(mode, deviceType, support);
     return support;
 }
 
@@ -3475,6 +3491,12 @@ int32_t AudioPolicyManager::UnregisterCollaborationEnabledForCurrentDeviceEventL
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetCustomAudioMix(zoneName, audioMixes);
+}
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

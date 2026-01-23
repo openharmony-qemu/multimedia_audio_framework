@@ -24,6 +24,7 @@
 #include "audio_suite_manager_callback.h"
 #include "audio_suite_pipeline.h"
 #include "audio_suite_base.h"
+#include "audio_suite_unittest_tools.h"
 
 
 using namespace OHOS;
@@ -36,7 +37,12 @@ namespace {
 
 class AudioSuiteEngineManagerUnitTest : public testing::Test {
 public:
-    void SetUp() {};
+    void SetUp()
+    {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+    };
     void TearDown() {};
 };
 
@@ -230,6 +236,16 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createPipelineTest, TestSize.Level0)
     EXPECT_EQ(engineManger.IsInit(), true);
 
     int32_t result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_REALTIME_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_REALTIME_MODE);
+    EXPECT_EQ(result, SUCCESS);
     for (size_t i = 1;i < engineManger.engineCfg_.maxPipelineNum_ + 3; ++i)
     {
         engineManger.pipelineMap_[i]=std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);

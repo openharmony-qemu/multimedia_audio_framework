@@ -40,11 +40,14 @@ public:
     void SetUp(void);
     void TearDown(void);
 private:
-    NodeCapability nc;
+    NodeParameter nc;
 };
 
 void AudioSuiteNrAlgoInterfaceImplUnitTest::SetUp(void)
 {
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
     nc.soName = "libimedia_vqe_ainr.z.so";
     nc.soPath = "/system/lib64/";
     std::filesystem::remove(g_outputPcmFilePath);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -136,12 +136,12 @@ HWTEST_F(AudioPipeInfoUnitTest, AllOutputRoute_001, TestSize.Level2)
 HWTEST_F(AudioPipeInfoUnitTest, AllInputRoute_001, TestSize.Level2)
 {
     testInputPipe_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-    EXPECT_EQ(true, testOutputPipe_->IsRouteNormal());
-    EXPECT_EQ(false, testOutputPipe_->IsRouteFast());
+    EXPECT_EQ(true, testInputPipe_->IsRouteNormal());
+    EXPECT_EQ(false, testInputPipe_->IsRouteFast());
 
     testInputPipe_->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
-    EXPECT_EQ(false, testOutputPipe_->IsRouteNormal());
-    EXPECT_EQ(true, testOutputPipe_->IsRouteFast());
+    EXPECT_EQ(false, testInputPipe_->IsRouteNormal());
+    EXPECT_EQ(true, testInputPipe_->IsRouteFast());
 }
 
 /**
@@ -247,6 +247,67 @@ HWTEST_F(AudioPipeInfoUnitTest, IsSameRole_001, TestSize.Level4)
     // Test different role case
     auto recordStream = AudioDefinitionsUnitTestUtil::GenerateCommonStream(AUDIO_MODE_RECORD);
     EXPECT_EQ(false, testOutputPipe_->IsSameRole(recordStream));
+}
+
+/**
+ * @tc.name   : AudioPipeInfo_UltraFastFlag_001
+ * @tc.number : UltraFastFlag_001
+ * @tc.desc   : Test SetUltraFastFlag/GetUltraFastFlag on default output pipe
+ */
+HWTEST_F(AudioPipeInfoUnitTest, UltraFastFlag_001, TestSize.Level2)
+{
+    // default value may be false, set to true and verify
+    testOutputPipe_->SetUltraFastFlag(true);
+    EXPECT_EQ(true, testOutputPipe_->GetUltraFastFlag());
+
+    // set back to false and verify
+    testOutputPipe_->SetUltraFastFlag(false);
+    EXPECT_EQ(false, testOutputPipe_->GetUltraFastFlag());
+}
+
+/**
+ * @tc.name   : AudioPipeInfo_DumpOutputAttrs_NoFast_001
+ * @tc.number : DumpOutputAttrs_NoFast_001
+ * @tc.desc   : Test DumpOutputAttrs when route is not fast
+ */
+HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_NoFast_001, TestSize.Level2)
+{
+    std::string dumpStr;
+    testOutputPipe_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    testOutputPipe_->SetUltraFastFlag(true);
+    dumpStr.clear();
+    testOutputPipe_->Dump(dumpStr);
+    EXPECT_EQ(std::string::npos, dumpStr.find("UltralFastPipe"));
+}
+
+/**
+ * @tc.name   : AudioPipeInfo_DumpOutputAttrs_FastTrue_001
+ * @tc.number : DumpOutputAttrs_FastTrue_001
+ * @tc.desc   : Test DumpOutputAttrs when route is fast and ultraFast flag is true
+ */
+HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_FastTrue_001, TestSize.Level2)
+{
+    std::string dumpStr;
+    testOutputPipe_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    testOutputPipe_->SetUltraFastFlag(true);
+    dumpStr.clear();
+    testOutputPipe_->Dump(dumpStr);
+    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastPipe: 1"));
+}
+
+/**
+ * @tc.name   : AudioPipeInfo_DumpOutputAttrs_FastFalse_001
+ * @tc.number : DumpOutputAttrs_FastFalse_001
+ * @tc.desc   : Test DumpOutputAttrs when route is fast and ultraFast flag is false
+ */
+HWTEST_F(AudioPipeInfoUnitTest, DumpOutputAttrs_FastFalse_001, TestSize.Level2)
+{
+    std::string dumpStr;
+    testOutputPipe_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    testOutputPipe_->SetUltraFastFlag(false);
+    dumpStr.clear();
+    testOutputPipe_->Dump(dumpStr);
+    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastPipe: 0"));
 }
 } // namespace AudioStandard
 } // namespace OHOS

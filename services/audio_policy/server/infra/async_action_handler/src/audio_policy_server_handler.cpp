@@ -24,6 +24,8 @@
 #include "audio_policy_client_holder.h"
 #include "audio_policy_manager_listener.h"
 #include "audio_bundle_manager.h"
+#include "audio_active_device.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -891,6 +893,27 @@ bool AudioPolicyServerHandler::IsForceGetDevByVolumeType(int32_t uid)
     return ret;
 }
 
+bool AudioPolicyServerHandler::IsForceGetZoneDevice(int32_t uid)
+{
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+    CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback_ != nullptr, false, "callback is nullptr");
+    bool ret = false;
+    audioClientInfoMgrCallback_->OnQueryIsForceGetZoneDevice(bundleName, ret);
+    return ret;
+}
+
+void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t clientPid,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    if (IsForceGetZoneDevice(pidUidMap_[clientPid])) {
+        int32_t zoneId = AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId();
+        if (zoneId > 0) {
+            deviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
+                STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
+        }
+    }
+}
+
 bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent)
 {
     CHECK_AND_RETURN_RET(volumeEvent.deviceType != DEVICE_TYPE_NONE, true);
@@ -1292,7 +1315,8 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
             if (clientCallbacksMap_.count(clientPid) > 0 &&
                 clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
-                CHECK_AND_RETURN_LOG(deviceDescs[0] != nullptr, "device is null.");
+                ValidatePreferredOutputDeviceCallback(clientPid, deviceDescs);
+                CHECK_AND_RETURN_LOG(deviceDescs.size() > 0 && deviceDescs[0] != nullptr, "device is null.");
                 deviceInfoStream << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
                 clientInfoStream << clientPid << ":" << rendererFilter.rendererInfo.streamUsage << ",";
                 it->second->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, deviceDescs);
@@ -1705,6 +1729,8 @@ void AudioPolicyServerHandler::HandleDeviceConfigChangedEvent(const AppExecFwk::
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     CHECK_AND_RETURN_LOG(eventContextObj->descriptor != nullptr, "EventContextObj->descriptor get nullptr");
+    CHECK_AND_RETURN_LOG(AudioCoreService::GetCoreService()->GetEventEntry() != nullptr,
+        "AudioCoreService GetEventEntry get nullptr");
     AudioCoreService::GetCoreService()->GetEventEntry()->HandleDeviceConfigChanged(eventContextObj->descriptor);
 }
 

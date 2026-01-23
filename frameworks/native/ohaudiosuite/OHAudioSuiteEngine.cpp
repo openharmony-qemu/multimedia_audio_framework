@@ -560,6 +560,9 @@ static const int SPACE_RENDER_MIN_EXPAND_ANGLE = 0;
 static const int SPACE_RENDER_MAX_EXPAND_ANGLE = 360;
 static const float SPACE_RENDER_MIN_EXPAND_RADIUS = 1.0f;
 static const float SPACE_RENDER_MAX_EXPAND_RADIUS = 5.0f;
+static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
+static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
+static const float AUDIO_VOICE_MORPHING_PITCH_DEFAULT = 0.0f;
 
 int32_t OHSuiteInputNodeRequestDataCallBack::OnRequestDataCallBack(
     void *audioData, int32_t audioDataSize, bool *finished)
@@ -586,12 +589,12 @@ OHAudioSuiteEngine *OHAudioSuiteEngine::GetInstance()
     return &manager;
 }
 
-int32_t OHAudioSuiteEngine::CreateEngine()
+int32_t OHAudioSuiteEngine::CreateEngine() const
 {
     return IAudioSuiteManager::GetAudioSuiteManager().Init();
 }
 
-int32_t OHAudioSuiteEngine::DestroyEngine()
+int32_t OHAudioSuiteEngine::DestroyEngine() const
 {
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DestroyEngine DeInit failed, ret = %{public}d.", ret);
@@ -631,7 +634,7 @@ int32_t OHAudioSuiteEngine::DestroyPipeline(OHAudioSuitePipeline *audioPipeline)
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline)
+int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline) const
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "StartPipeline failed, audioPipeline is nullptr.");
@@ -642,7 +645,7 @@ int32_t OHAudioSuiteEngine::StartPipeline(OHAudioSuitePipeline *audioPipeline)
     return ret;
 }
 
-int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline)
+int32_t OHAudioSuiteEngine::StopPipeline(OHAudioSuitePipeline *audioPipeline) const
 {
     CHECK_AND_RETURN_RET_LOG(audioPipeline != nullptr, ERR_INVALID_PARAM,
         "StopPipeline failed, audioPipeline is nullptr.");
@@ -1137,6 +1140,11 @@ int32_t OHAudioSuiteEngine::GetTempoAndPitch(OHAudioNode* node, float* speed, fl
 int32_t OHAudioSuiteEngine::SetPureVoiceChangeOption(
     OHAudioNode* node, OH_AudioSuite_PureVoiceChangeOption option)
 {
+    CHECK_AND_RETURN_RET_LOG(
+        (option.pitch >= AUDIO_VOICE_MORPHING_PITCH_MIN && option.pitch <= AUDIO_VOICE_MORPHING_PITCH_MAX) ||
+            option.pitch == AUDIO_VOICE_MORPHING_PITCH_DEFAULT,
+        ERR_INVALID_PARAM,
+        "SetPureVoicePitch failed, pitch must be in the 0.3f~3.0f and 0.0f");
     auto setter = [](uint32_t nodeId, OH_AudioSuite_PureVoiceChangeOption value) {
         AudioPureVoiceChangeOption optionParams;
         optionParams.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(value.optionGender);

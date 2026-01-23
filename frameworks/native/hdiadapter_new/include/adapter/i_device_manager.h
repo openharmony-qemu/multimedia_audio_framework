@@ -62,7 +62,7 @@ public:
         std::shared_ptr<IDeviceManagerCallback> callback) {}
 
     virtual void RegistAdapterManagerCallback(const std::string &adapterName,
-        std::shared_ptr<IAudioAdapterCallback> callback) {}
+        IAudioSinkCallback *callback) {}
 
     virtual void UnRegistRenderSinkCallback(const std::string &adapterName, uint32_t hdiRenderId) {}
     virtual void UnRegistCaptureSourceCallback(const std::string &adapterName, uint32_t hdiCaptureId) {}
@@ -82,6 +82,14 @@ public:
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) = 0;
 
     virtual void SetAudioScene(const AudioScene scene) = 0;
+
+    // only for auxiliarySink
+    virtual int32_t CreateCognitionStream(const std::string &adapterName, void *param,
+        int32_t &sinkId, void *buffer) { return ERR_NOT_SUPPORTED; }
+    virtual int32_t DestroyCognitionStream(const std::string &adapterName,
+        const int32_t &sinkId) { return ERR_NOT_SUPPORTED; }
+    virtual int32_t NotifyCognitionData(const std::string &adapterName, const int32_t &sinkId,
+        uint32_t size, uint32_t offset) { return ERR_NOT_SUPPORTED; }
 };
 
 } // namespace AudioStandard

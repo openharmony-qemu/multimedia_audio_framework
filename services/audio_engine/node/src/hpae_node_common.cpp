@@ -210,7 +210,7 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled)
 {
     if (isCollaborationEnabled) {
-        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
             nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
@@ -320,6 +320,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     }
     sinkInfo.deviceNetId = audioModuleInfo.networkId;
     sinkInfo.deviceClass = audioModuleInfo.className;
+    sinkInfo.busAddress = audioModuleInfo.busAddress;
     sinkInfo.suspendTime = audioModuleInfo.suspendIdleTimeout;
     AUDIO_INFO_LOG("HpaeManager::deviceNetId: %s, deviceClass: %s, suspend_time: %{public}u",
         sinkInfo.deviceNetId.c_str(),

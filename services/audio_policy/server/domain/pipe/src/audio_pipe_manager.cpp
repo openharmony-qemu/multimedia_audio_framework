@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,9 +21,11 @@
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
+namespace {
+constexpr int32_t DECIMAL = 10;
+}
 namespace OHOS {
 namespace AudioStandard {
-
 const uint32_t FIRST_SESSIONID = 100000;
 const uint32_t RING_SESSIONID = 1;
 const uint32_t VOIP_SESSIONID = 2;
@@ -182,8 +184,8 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedRecordPip
 
 bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
 {
-    AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
+        (routeFlag & AUDIO_OUTPUT_FLAG_HWDECODING) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
         (routeFlag & AUDIO_INPUT_FLAG_AI) ||
@@ -191,6 +193,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
         (routeFlag & AUDIO_INPUT_FLAG_ULTRASONIC) ||
         (routeFlag & AUDIO_INPUT_FLAG_VOICE_RECOGNITION) ||
         (routeFlag & AUDIO_INPUT_FLAG_RAW_AI)) {
+        AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
         return true;
     }
     return false;
@@ -263,7 +266,7 @@ AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPi
 {
     AudioStreamInfo streamInfo = pipeInfo->audioStreamInfo_;
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
-        const int &rate = std::stoi(pipeInfo->moduleInfo_.rate);
+        const auto &rate = static_cast<int32_t>(std::strtol(pipeInfo->moduleInfo_.rate.c_str(), nullptr, DECIMAL));
         if (rate > AudioSamplingRate::SAMPLE_RATE_96000) {
             streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
             return streamInfo;
@@ -675,6 +678,23 @@ std::vector<uint32_t> AudioPipeManager::GetStreamIdsByUidAndPid(int32_t uid, int
     return sessionIds;
 }
 
+std::vector<uint32_t> AudioPipeManager::GetStreamIdsByPid(int32_t pid)
+{
+    std::vector<uint32_t> sessionIds = {};
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipe : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
+        for (auto &streamDesc : pipe->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+            if (streamDesc->IsSamePid(pid)) {
+                sessionIds.push_back(streamDesc->sessionId_);
+            }
+        }
+    }
+    AUDIO_INFO_LOG("Session number of pid %{public}u: %{public}zu", pid, sessionIds.size());
+    return sessionIds;
+}
+
 void AudioPipeManager::UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs)
 {
@@ -786,6 +806,46 @@ bool AudioPipeManager::HasPrimarySink()
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         if (pipeInfo->adapterName_ == PRIMARY_CLASS) {
             return true;
+        }
+    }
+    return false;
+}
+
+bool AudioPipeManager::HasRunningStream()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE(desc->IsRunning());
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioPipeManager::HasFastOutputPipe()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if ((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool AudioPipeManager::IsStreamUltraFast(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_CONTINUE(desc->GetSessionId() == sessionId);
+            return desc->GetUltraFastFlag();
         }
     }
     return false;

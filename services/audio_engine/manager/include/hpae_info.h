@@ -111,6 +111,7 @@ struct HpaeSinkInfo {
     std::string lib;
     std::string filePath;
     std::string deviceName;
+    std::string busAddress;
     size_t frameLen = 0;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     AudioSampleFormat format = INVALID_WIDTH;
@@ -127,6 +128,7 @@ struct HpaeSinkInfo {
     uint32_t sinkLatency = 0;
     std::string splitMode;
     bool needEmptyChunk = true;
+    bool auxSinkEnable = false;
 };
 
 enum HpaeEcType {

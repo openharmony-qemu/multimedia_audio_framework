@@ -31,6 +31,7 @@ public:
     bool initMuteStatus_ = false;
     std::string deviceName_ = "";
     int32_t protocol_ = 0;
+    bool isSupportHiLinkControl_ = false;
 
     std::string GetJsonString() const;
     void FromJsonString(const std::string &jsonString);

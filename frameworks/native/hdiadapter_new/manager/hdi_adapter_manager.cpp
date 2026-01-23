@@ -114,6 +114,18 @@ void HdiAdapterManager::ReleaseId(uint32_t &id)
     DecRefCount(tempId);
 }
 
+std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetAuxiliarySink()
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    std::shared_ptr<IAudioRenderSink> auxiliarySink = fac.CreateAuxiliarySink();
+    if (auxiliarySink == nullptr) {
+        AUDIO_ERR_LOG("get auxiliarySink fail");
+        return nullptr;
+    }
+    AUDIO_INFO_LOG("get auxiliarySink success");
+    return auxiliarySink;
+}
+
 std::shared_ptr<IAudioRenderSink> HdiAdapterManager::GetRenderSink(uint32_t renderId, bool tryCreate)
 {
     IdHandler &idHandler = IdHandler::GetInstance();
@@ -173,6 +185,7 @@ int32_t HdiAdapterManager::LoadAdapter(HdiDeviceManagerType type, const std::str
 
 void HdiAdapterManager::UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force)
 {
+    SetRemoteHdiInvalidState(type, force);
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
     CHECK_AND_RETURN(deviceManager != nullptr);
     deviceManager->UnloadAdapter(adapterName, force);
@@ -435,6 +448,36 @@ void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool try
         return;
     }
     IncRefCount(id);
+}
+
+void HdiAdapterManager::SetRemoteHdiInvalidState(HdiDeviceManagerType type, bool force)
+{
+    CHECK_AND_RETURN(type == HDI_DEVICE_MANAGER_TYPE_REMOTE && force);
+    auto limitFunc = [](uint32_t id) -> bool {
+        std::string info = IdHandler::GetInstance().ParseInfo(id);
+        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE ||
+            IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_FAST ||
+            IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_OFFLOAD) {
+            return true;
+        }
+        return false;
+    };
+    auto sinkProcessFunc = [limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(renderId), SUCCESS);
+        CHECK_AND_RETURN_RET(sink != nullptr, SUCCESS);
+
+        sink->SetInvalidState();
+        return SUCCESS;
+    };
+    ProcessSink(sinkProcessFunc);
+    auto sourceProcessFunc = [limitFunc](uint32_t captureId, std::shared_ptr<IAudioCaptureSource> source) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(captureId), SUCCESS);
+        CHECK_AND_RETURN_RET(source != nullptr, SUCCESS);
+
+        source->SetInvalidState();
+        return SUCCESS;
+    };
+    ProcessSource(sourceProcessFunc);
 }
 
 int32_t HdiAdapterManager::GetCurrentOutputPipeChangeInfos(

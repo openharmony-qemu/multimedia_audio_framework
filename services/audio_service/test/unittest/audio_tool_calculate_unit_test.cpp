@@ -14,6 +14,7 @@
  */
 #include "gtest/gtest.h"
 #include "audio_tool_calculate.h"
+#include <numeric>
 #include "audio_errors.h"
 #include "audio_utils.h"
 
@@ -255,6 +256,58 @@ HWTEST_F(AudioToolCalculateUnitTest, SumAudioF32AbsPcmTest002, TestSize.Level1)
     num_samples = pcm.size() / channels;
     result = AudioToolCalculate::SumAudioF32AbsPcm(pcm.data(), num_samples, channels, split);
     EXPECT_LE(result[0], 3.7f);
+}
+
+/**
+ * @tc.name  : SafeAbsTest_001
+ * @tc.number: SafeAbsTest_001
+ * @tc.desc  : Test SafeAbs while input is uint
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SafeAbsTest_001, TestSize.Level1)
+{
+    std::vector<uint8_t> pcm = {0, 255}; // 255 for uint max
+    auto result = AudioToolCalculate::SumAudioU8AbsPcm(pcm.data(), pcm.size(), 1, 1);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], std::accumulate(pcm.begin(), pcm.end(), 0));
+}
+
+/**
+ * @tc.name  : SafeAbsTest_002
+ * @tc.number: SafeAbsTest_002
+ * @tc.desc  : Test SafeAbs while input is float
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SafeAbsTest_002, TestSize.Level1)
+{
+    std::vector<float> pcm = {-1.f, 1.f};
+    auto result = AudioToolCalculate::SumAudioF32AbsPcm(pcm.data(), pcm.size(), 1, 1);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_TRUE(std::abs(result[0] - 2.f) < 0.00001); // 2.f for sum pcm, 0.00001 for epsilon
+}
+
+/**
+ * @tc.name  : SafeAbsTest_003
+ * @tc.number: SafeAbsTest_003
+ * @tc.desc  : Test SafeAbs while input is singed int, int16_t->int32_t
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SafeAbsTest_003, TestSize.Level1)
+{
+    std::vector<int16_t> pcm = {std::numeric_limits<int16_t>::min(), 1};
+    auto result = AudioToolCalculate::SumAudioS16AbsPcm(pcm.data(), pcm.size(), 1, 1);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], static_cast<int32_t>(std::numeric_limits<int16_t>::max()) + 1 + 1); // sum_abs=(INT_MAX+1) + 1
+}
+
+/**
+ * @tc.name  : SafeAbsTest_004
+ * @tc.number: SafeAbsTest_004
+ * @tc.desc  : Test SafeAbs while input is singed int, int32_t->int64_t
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SafeAbsTest_004, TestSize.Level1)
+{
+    std::vector<int32_t> pcm = {std::numeric_limits<int32_t>::min(), 1};
+    auto result = AudioToolCalculate::SumAudioS32AbsPcm(pcm.data(), pcm.size(), 1, 1);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0], static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1 + 1); // sum_abs=(INT_MAX+1) + 1
 }
 }
 }

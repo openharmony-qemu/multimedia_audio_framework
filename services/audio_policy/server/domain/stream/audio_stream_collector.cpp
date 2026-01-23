@@ -155,6 +155,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->channelCount = streamChangeInfo.audioRendererChangeInfo.channelCount;
     rendererChangeInfo->appVolume = streamChangeInfo.audioRendererChangeInfo.appVolume;
     rendererChangeInfo->streamInfo = streamChangeInfo.audioRendererChangeInfo.streamInfo;
+    rendererChangeInfo->backMute = streamChangeInfo.audioRendererChangeInfo.backMute;
     audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERR_MEMORY_ALLOC_FAILED,
@@ -1374,6 +1375,24 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
     return result;
 }
 
+bool AudioStreamCollector::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    bool result = false;
+    for (auto &changeInfo: audioRendererChangeInfos_) {
+        if (changeInfo->rendererState != RENDERER_RUNNING) {
+            continue;
+        }
+        if ((changeInfo->rendererInfo).streamUsage == streamUsage) {
+            // An active stream has been found, return true directly.
+            AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                changeInfo->clientUID, changeInfo->sessionId);
+            return true;
+        }
+    }
+    return result;
+}
+
 bool AudioStreamCollector::CheckVoiceCallActive(int32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
@@ -1936,7 +1955,8 @@ void AudioStreamCollector::GetPlayingMediaRendererChangeInfos(
         STREAM_SPEECH,
         STREAM_NAVIGATION,
         STREAM_CAMCORDER,
-        STREAM_VOICE_MESSAGE
+        STREAM_VOICE_MESSAGE,
+        STREAM_VOICE_ASSISTANT
     };
     for (auto &changeInfo: audioRendererChangeInfos_) {
         if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&

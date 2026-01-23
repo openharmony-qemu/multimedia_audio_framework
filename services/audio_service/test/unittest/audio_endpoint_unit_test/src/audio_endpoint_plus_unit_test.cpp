@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1807,8 +1807,16 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_001, TestSize.Level4)
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    testEndpoint->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    testEndpoint->Config(endpointConfig);
 
     MockAudioProcessStream mockProcessStream;
     EXPECT_CALL(mockProcessStream, GetUsage()).WillOnce(Return(StreamUsage::STREAM_USAGE_MUSIC));
@@ -1833,8 +1841,16 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_002, TestSize.Level4)
     AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
-    int32_t pin = 0;
-    testEndpoint->Config(deviceInfo, audioStreamInfo, adapterName, pin, config.streamType);
+    bool isUltraFast = false;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    testEndpoint->Config(endpointConfig);
 
     MockAudioProcessStream mockProcessStream;
     EXPECT_CALL(mockProcessStream, GetSource()).WillOnce(Return(SourceType::SOURCE_TYPE_MIC));
@@ -1872,38 +1888,462 @@ HWTEST_F(AudioEndpointPlusUnitTest, InitSourceAttr_001, TestSize.Level1)
     EXPECT_EQ(attr.adapterName, "remote");
 }
 
-
 /*
  * @tc.name  : Test AudioEndpointInner API
  * @tc.type  : FUNC
  * @tc.number: InitSinkAttr_001
- * @tc.desc  : Test AudioEndpointInner::InitSinkAttr()
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with local network and USB device
  */
-HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level1)
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_001, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    // Set up dstStreamInfo_ for testing
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    endpointConfig.adapterName = "";
+    endpointConfig.isUltraFast = false;
+    audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+    EXPECT_EQ(attr.adapterName, "usb");
+    EXPECT_EQ(attr.sampleRate, SAMPLE_RATE_48000);
+    EXPECT_EQ(attr.channel, STEREO);
+    EXPECT_EQ(attr.format, SAMPLE_S16LE);
+    EXPECT_EQ(attr.deviceNetworkId, LOCAL_NETWORK_ID);
+    EXPECT_EQ(attr.deviceType, static_cast<int32_t>(DEVICE_TYPE_USB_ARM_HEADSET));
+    EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_MMAP);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_002
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with local network and speaker device
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_002, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    endpointConfig.adapterName = "";
+    endpointConfig.isUltraFast = false;
+    audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+    EXPECT_EQ(attr.adapterName, "primary");
+    EXPECT_EQ(attr.deviceNetworkId, LOCAL_NETWORK_ID);
+    EXPECT_EQ(attr.deviceType, static_cast<int32_t>(DEVICE_TYPE_SPEAKER));
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_003
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with remote network
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_003, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = "remote_network_id";
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    endpointConfig.adapterName = "";
+    endpointConfig.isUltraFast = false;
+    audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+    EXPECT_EQ(attr.adapterName, "remote");
+    EXPECT_EQ(attr.deviceNetworkId, "remote_network_id");
+    EXPECT_EQ(attr.deviceType, static_cast<int32_t>(DEVICE_TYPE_BLUETOOTH_A2DP));
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_004
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with DP adapter
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_004, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    endpointConfig.adapterName = "dp";
+    endpointConfig.isUltraFast = false;
+    audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+    EXPECT_EQ(attr.adapterName, "dp");
+    EXPECT_EQ(attr.pin, AUDIO_PIN_OUT_DP);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_005
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with ultra fast enabled
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_005, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    endpointConfig.adapterName = "";
+    endpointConfig.isUltraFast = true;
+    audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+
+    // Calculate expected period for ultra fast
+    int32_t expectedPeriod = static_cast<int32_t>(
+        static_cast<float>(static_cast<int32_t>(SAMPLE_RATE_48000) * STEREO * GetFormatByteSize(SAMPLE_S16LE)) *
+        ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
+
+    EXPECT_EQ(attr.period, expectedPeriod);
+    EXPECT_GT(attr.period, 0);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_006
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with VOIP_MMAP endpoint type
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_006, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    endpointConfig.adapterName = "";
+    endpointConfig.isUltraFast = false;
+    audioEndpointInner->endpointType_ = AudioEndpoint::TYPE_VOIP_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+    EXPECT_EQ(attr.audioStreamFlag, AUDIO_FLAG_VOIP_FAST);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_007
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with different stream formats
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_007, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    // Test different formats
+    struct FormatTestCase {
+        AudioSampleFormat format;
+        int expectedByteSize;
+    };
+    std::vector<FormatTestCase> testCases = {
+        {SAMPLE_S16LE, 2},
+        {SAMPLE_S24LE, 3},
+        {SAMPLE_S32LE, 4},
+    };
+
+    for (const auto& testCase : testCases) {
+        audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+        audioEndpointInner->dstStreamInfo_.channels = STEREO;
+        audioEndpointInner->dstStreamInfo_.format = testCase.format;
+
+        AudioEndpointConfig endpointConfig;
+        endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+        endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+        endpointConfig.adapterName = "";
+        endpointConfig.isUltraFast = true;
+        audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+        IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+
+        EXPECT_EQ(attr.format, testCase.format);
+
+        // Verify period calculation for ultra fast
+        int32_t expectedPeriod = static_cast<int32_t>(
+            static_cast<float>(static_cast<int32_t>(SAMPLE_RATE_48000) * STEREO * testCase.expectedByteSize) *
+            ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
+
+        EXPECT_EQ(attr.period, expectedPeriod);
+    }
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_008
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with address from device info
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_008, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    endpointConfig.adapterName = "";
+    endpointConfig.isUltraFast = false;
+    endpointConfig.deviceInfo.macAddress_ = "00:11:22:33:44:55";
+    audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+    EXPECT_EQ(attr.address, "00:11:22:33:44:55");
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_009
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with DP adapter and ultra fast
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_009, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    audioEndpointInner->dstStreamInfo_.channels = STEREO;
+    audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+    AudioEndpointConfig endpointConfig;
+    endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+    endpointConfig.adapterName = "dp";
+    endpointConfig.isUltraFast = true;
+    audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+    IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+
+    // Should have both DP adapter and ultra fast period
+    EXPECT_EQ(attr.adapterName, "dp");
+    EXPECT_EQ(attr.pin, AUDIO_PIN_OUT_DP);
+    int32_t sampleRate = 48000;
+    int32_t expectedPeriod = static_cast<int32_t>(
+        static_cast<float>(sampleRate * STEREO * GetFormatByteSize(SAMPLE_S16LE)) *
+        ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
+
+    EXPECT_EQ(attr.period, expectedPeriod);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: InitSinkAttr_010
+ * @tc.desc  : Test AudioEndpointInner::InitSinkAttr() with different channel counts
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, InitSinkAttr_010, TestSize.Level2)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    clientConfig.audioMode = AUDIO_MODE_PLAYBACK;
+
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    // Test different channel counts
+    struct ChannelTestCase {
+        AudioChannel channels;
+        int expectedChannelCount;
+    };
+    std::vector<ChannelTestCase> testCases = {
+        {MONO, 1},
+        {STEREO, 2},
+    };
+
+    for (const auto& testCase : testCases) {
+        audioEndpointInner->dstStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+        audioEndpointInner->dstStreamInfo_.channels = testCase.channels;
+        audioEndpointInner->dstStreamInfo_.format = SAMPLE_S16LE;
+
+        AudioEndpointConfig endpointConfig;
+        endpointConfig.deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+        endpointConfig.deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
+        endpointConfig.adapterName = "";
+        endpointConfig.isUltraFast = true;
+        audioEndpointInner->endpointType_= AudioEndpoint::TYPE_MMAP;
+
+        IAudioSinkAttr attr = audioEndpointInner->InitSinkAttr(endpointConfig);
+
+        EXPECT_EQ(attr.channel, testCase.channels);
+
+        // Verify period calculation includes channel count
+        int32_t expectedPeriod = static_cast<int32_t>(static_cast<float>(static_cast<int32_t>(SAMPLE_RATE_48000) *
+            testCase.expectedChannelCount * GetFormatByteSize(SAMPLE_S16LE)) * ULTRA_FAST_PERIOD_TIME_IN_MS /
+            static_cast<float>(MILLISECOND_PER_SECOND));
+
+        EXPECT_EQ(attr.period, expectedPeriod);
+    }
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateVolume_006
+ * @tc.desc  : Test CalculateVolume function with STREAM_SYSTEM_ENFORCED and valid volume
+ */
+ HWTEST_F(AudioEndpointPlusUnitTest, CalculateVolume_006, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
     uint64_t id = 123;
     AudioProcessConfig clientConfig = {};
     auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
     ASSERT_NE(audioEndpointInner, nullptr);
-    std::string adapterName = "";
-    int32_t pin = 0;
 
-    IAudioSinkAttr attr;
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    deviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    attr = audioEndpointInner->InitSinkAttr(deviceInfo, adapterName, pin);
-    EXPECT_EQ(attr.adapterName, "usb");
+    AudioStreamData dstStreamData;
+    std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        totalSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(processBuffer, nullptr);
 
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    attr = audioEndpointInner->InitSinkAttr(deviceInfo, adapterName, pin);
-    EXPECT_EQ(attr.adapterName, "primary");
+    MockAudioProcessStream mockProcessStream;
+    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(processBuffer->basicBufferInfo_, nullptr);
+    EXPECT_CALL(mockProcessStream, GetAudioStreamType())
+    .WillOnce(Return(STREAM_SYSTEM_ENFORCED));
 
-    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
-    attr = audioEndpointInner->InitSinkAttr(deviceInfo, adapterName, pin);
-    EXPECT_EQ(attr.adapterName, "remote");
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    audioEndpointInner->processList_.push_back(&mockProcessStream);
+    audioEndpointInner->deviceInfo_.networkId_ = LOCAL_NETWORK_ID;
+    audioEndpointInner->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    VolumeUtils::enforcedToneVolume_ = 0.5f;
+    int32_t targetVolume = static_cast<int32_t>(VolumeUtils::enforcedToneVolume_ * SHARED_VOLUME_MAX);
+    AudioEndpointInner::VolumeResult result = audioEndpointInner->CalculateVolume(0);
+    EXPECT_EQ(result.volumeStart, targetVolume);
+}
+
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateVolume_007
+ * @tc.desc  : Test CalculateVolume function with STREAM_SYSTEM_ENFORCED and invalid volume
+ */
+ HWTEST_F(AudioEndpointPlusUnitTest, CalculateVolume_007, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointInner = std::make_shared<AudioEndpointInner>(type, id, clientConfig.audioMode);
+    ASSERT_NE(audioEndpointInner, nullptr);
+
+    AudioStreamData dstStreamData;
+    std::vector<AudioStreamData> audioDataList = {dstStreamData};
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        totalSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(processBuffer, nullptr);
+
+    MockAudioProcessStream mockProcessStream;
+    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(processBuffer->basicBufferInfo_, nullptr);
+    EXPECT_CALL(mockProcessStream, GetAudioStreamType())
+    .WillOnce(Return(STREAM_SYSTEM_ENFORCED));
+
+    audioEndpointInner->processBufferList_.push_back(processBuffer);
+    audioEndpointInner->processList_.push_back(&mockProcessStream);
+    audioEndpointInner->deviceInfo_.networkId_ = LOCAL_NETWORK_ID;
+    audioEndpointInner->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    VolumeUtils::enforcedToneVolume_ = -1.0f;
+    int32_t targetVolume = -1;
+    AudioEndpointInner::VolumeResult result = audioEndpointInner->CalculateVolume(0);
+    EXPECT_NE(result.volumeStart, targetVolume);
 }
 } // namespace AudioStandard
 } // namespace OHOS

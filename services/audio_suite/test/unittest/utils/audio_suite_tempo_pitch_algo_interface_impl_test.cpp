@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 #include "audio_suite_tempo_pitch_algo_interface_impl.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -24,13 +25,18 @@ using namespace testing::ext;
 namespace {
 class AudioSuiteTempoPitchAlgoInterfaceImplTest : public testing::Test {
 public:
-    void SetUp(){};
+    void SetUp()
+    {
+    if (!AllNodeTypesSupported()) {
+        GTEST_SKIP() << "not support all node types, skip this test";
+    }
+    };
     void TearDown(){};
 };
 
 HWTEST_F(AudioSuiteTempoPitchAlgoInterfaceImplTest, DeinitTest, TestSize.Level0)
 {
-    NodeCapability nc;
+    NodeParameter nc;
     nc.soName = "libaudio_variable_speed.z.so,libaudio_pitch_change.z.so";
     nc.soPath = "/system/lib64/";
     std::shared_ptr<AudioSuiteTempoPitchAlgoInterfaceImpl> algoInterface =

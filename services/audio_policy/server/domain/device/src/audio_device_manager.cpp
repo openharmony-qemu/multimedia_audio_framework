@@ -98,6 +98,20 @@ void AudioDeviceManager::OnXmlParsingCompleted(
     }
 }
 
+bool AudioDeviceManager::CheckNearlinkInHQRecordingSupport(
+    const shared_ptr<AudioDeviceDescriptor> &devDesc, DeviceRole devRole, DeviceUsage devUsage)
+{
+    if (devDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN &&
+        devRole == INPUT_DEVICE &&
+        devUsage == MEDIA) {
+        if (!devDesc->highQualityRecordingSupported_) {
+            AUDIO_INFO_LOG("Nearlink In device not support HQ recording.");
+            return false;
+        }
+    }
+    return true;
+}
+
 bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc,
     AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage)
 {
@@ -120,6 +134,9 @@ bool AudioDeviceManager::DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor>
         AUDIO_INFO_LOG("bluetooth sco not support in media output scene");
         return false;
     }
+
+    CHECK_AND_RETURN_RET_LOG(CheckNearlinkInHQRecordingSupport(devDesc, devRole, devUsage),
+        false, "Nearlink In device not support HQ recording.");
 
     for (auto &devInfo : deviceList) {
         if ((devInfo.deviceType == devDesc->deviceType_) &&
@@ -367,6 +384,7 @@ bool AudioDeviceManager::IsConnectedDevices(const std::shared_ptr<AudioDeviceDes
             desc->networkId_ == devDesc->networkId_ &&
             desc->macAddress_ == devDesc->macAddress_;
     };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     bool isConnectedDevice = false;
     auto itr = find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (itr != connectedDevices_.end()) {
@@ -824,6 +842,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetCaptureDefaultDevice()
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(const int32_t deviceId)
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto it = std::find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [deviceId](auto &item) {
         return item->deviceId_ == deviceId;
     });
@@ -838,7 +857,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetActiveScoDevice(std::st
             "Device is nullptr");
         if (dev->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && dev->macAddress_ == scoMac
             && dev->deviceRole_ == role) {
-            return dev;
+            return make_shared<AudioDeviceDescriptor>(*dev);
         }
     }
     return make_shared<AudioDeviceDescriptor>();
@@ -899,7 +918,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetExistedDevice(
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &dev : connectedDevices_) {
         if (dev->IsSameDeviceInfo(*device)) {
-            return make_shared<AudioDeviceDescriptor>(dev);
+            return make_shared<AudioDeviceDescriptor>(*dev);
         }
     }
     return make_shared<AudioDeviceDescriptor>();
@@ -987,6 +1006,7 @@ void AudioDeviceManager::GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage
 VolumeBehavior AudioDeviceManager::GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("deviceType [%{public}d]", deviceType);
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     VolumeBehavior volumeBehavior;
     for (auto &desc : connectedDevices_) {
         if (desc->deviceType_ != deviceType || desc->networkId_ != networkId) {
@@ -1011,6 +1031,7 @@ int32_t AudioDeviceManager::SetDeviceVolumeBehavior(const std::string &networkId
 {
     AUDIO_INFO_LOG("SetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
         networkId.c_str(), deviceType);
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     remoteInfoNetworkId_ = networkId;
     remoteInfoDeviceType_ = deviceType;
     for (auto &desc : connectedDevices_) {
@@ -1118,7 +1139,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedD
         if (std::find(types.begin(), types.end(), desc->deviceType_) != types.end() &&
             desc->deviceRole_ == role &&
             desc->connectState_ != VIRTUAL_CONNECTED) {
-            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
+            audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
         }
     }
     return audioDeviceDescriptors;
@@ -1130,7 +1151,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetConnectedD
 
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
-        audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(desc));
+        audioDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
     }
     return audioDeviceDescriptors;
 }
@@ -1449,6 +1470,7 @@ bool AudioDeviceManager::IsVirtualConnectedDevice(const std::shared_ptr<AudioDev
             && desc->networkId_ == selectedDesc->networkId_
             && desc->macAddress_ == selectedDesc->macAddress_;
     };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     bool isVirtualDevice = false;
     auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isVirtual);
     if (itr != connectedDevices_.end()) {
@@ -1468,6 +1490,7 @@ int32_t AudioDeviceManager::UpdateDeviceDescDeviceId(std::shared_ptr<AudioDevice
             && desc->networkId_ == deviceDescriptor->networkId_
             && desc->macAddress_ == deviceDescriptor->macAddress_;
     };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != connectedDevices_.end(), ERROR, "Device not found");
     deviceDescriptor->deviceId_ = (*itr)->deviceId_;
@@ -1669,6 +1692,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(c
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
         return devDesc;
     }
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == selectedInputDeviceInfo_[sessionID].first) {
             AUDIO_WARNING_LOG("sessionid %{public}d has selected device", sessionID);
@@ -1704,13 +1728,13 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetOnlinePreferredInputDev
         AUDIO_WARNING_LOG("preferred input device has no mac address");
         for (const auto &dev : connectedDevices_) {
             if (dev->deviceType_ == deviceType) {
-                onlinePreferredInputDevice = dev;
+                onlinePreferredInputDevice = make_shared<AudioDeviceDescriptor>(*dev);
             }
         }
     } else {
         for (const auto &dev : connectedDevices_) {
             if (dev->deviceType_ == deviceType && dev->macAddress_ == mac) {
-                onlinePreferredInputDevice = dev;
+                onlinePreferredInputDevice = make_shared<AudioDeviceDescriptor>(*dev);
             }
         }
     }

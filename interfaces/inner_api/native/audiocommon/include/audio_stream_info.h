@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -107,6 +107,7 @@ enum AudioPipeType {
     PIPE_TYPE_IN_NORMAL_VOICE_RECOGNITION = 15,
     PIPE_TYPE_OUT_HWDECODING = 16,
     PIPE_TYPE_IN_NORMAL_RAW_AI = 17,
+    PIPE_TYPE_OUT_3DA_DIRECT = 18,
 };
 
 enum AudioPreloadType {
@@ -131,6 +132,7 @@ struct AudioStreamParams {
     uint8_t ecFormat = 0;
     uint8_t ecChannels = 0;
     uint64_t ecChannelLayout = 0ULL;
+    bool isUltraFast = false;
 };
 
 // sampling rate
@@ -161,7 +163,8 @@ enum AudioEncodingType {
     ENCODING_TRUE_HD = 4,
     ENCODING_DTS_HD = 5,
     ENCODING_DTS_X = 6,
-    ENCODING_AUDIOVIVID_DIRECT = 7
+    ENCODING_AUDIOVIVID_DIRECT = 7,
+    ENCODING_AUDIOVIVID_3DA_DIRECT = 8
 };
 
 enum DirectPlaybackMode {
@@ -521,6 +524,8 @@ struct AudioCallBackStreamInfo {
     std::string deviceNetId;
     bool needData = false;
     bool forceData = false;
+    uint64_t writePos_ = 0;
+    bool isWriteFirst_ = false;
 };
 
 struct AudioCallBackCapturerStreamInfo {

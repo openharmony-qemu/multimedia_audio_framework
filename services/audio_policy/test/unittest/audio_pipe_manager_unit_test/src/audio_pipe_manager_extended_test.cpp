@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -221,6 +221,373 @@ HWTEST_F(AudioPipeManagerExtendedUnitTest, AudioPipeManager_009, TestSize.Level4
     descs.push_back(std::make_shared<AudioStreamDescriptor>());
     sPipeManager_->UpdateOutputStreamDescsByIoHandle(id, descs);
     EXPECT_TRUE(pipeInfo->streamDescriptors_.empty());
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_001
+ * @tc.desc: Test HasRunningStream when curPipeList_ is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_001, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    // curPipeList_ should be empty by default
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_002
+ * @tc.desc: Test HasRunningStream when pipeInfo is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_002, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    // Add a nullptr pipeInfo to curPipeList_
+    pipeManager.curPipeList_.push_back(nullptr);
+
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_003
+ * @tc.desc: Test HasRunningStream when streamDescriptors_ is empty
+ * @tc.type: FUNC
+ */
+
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_003, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    // Create a pipeInfo with empty streamDescriptors_
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->streamDescriptors_.clear();
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_004
+ * @tc.desc: Test HasRunningStream when desc is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_004, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->streamDescriptors_.push_back(nullptr); // Add nullptr descriptor
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_005
+ * @tc.desc: Test HasRunningStream when desc->IsRunning() returns false
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_005, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->SetStatus(STREAM_STATUS_STOPPED);
+
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_006
+ * @tc.desc: Test HasRunningStream when desc->IsRunning() returns true
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_006, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->SetStatus(STREAM_STATUS_STARTED);
+
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(true, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_007
+ * @tc.desc: Test HasRunningStream with multiple pipeInfos, first has nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_007, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    // First pipeInfo is nullptr
+    pipeManager.curPipeList_.push_back(nullptr);
+
+    // Second pipeInfo has a running stream
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->SetStatus(STREAM_STATUS_STARTED);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(true, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasRunningStream_008
+ * @tc.desc: Test HasRunningStream with multiple descriptors, first is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasRunningStream_008, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    // First descriptor is nullptr
+    pipeInfo->streamDescriptors_.push_back(nullptr);
+
+    // Second descriptor is running
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->SetStatus(STREAM_STATUS_STARTED);
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasRunningStream();
+    EXPECT_EQ(true, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasFastOutputPipe_001
+ * @tc.desc: Test HasFastOutputPipe when curPipeList_ is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasFastOutputPipe_001, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    // curPipeList_ should be empty by default
+    bool result = pipeManager.HasFastOutputPipe();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasFastOutputPipe_002
+ * @tc.desc: Test HasFastOutputPipe when pipeInfo is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasFastOutputPipe_002, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    // Add a nullptr pipeInfo to curPipeList_
+    pipeManager.curPipeList_.push_back(nullptr);
+
+    bool result = pipeManager.HasFastOutputPipe();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasFastOutputPipe_003
+ * @tc.desc: Test HasFastOutputPipe when pipeInfo has no fast output flag
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasFastOutputPipe_003, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasFastOutputPipe();
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasFastOutputPipe_004
+ * @tc.desc: Test HasFastOutputPipe when pipeInfo has fast output flag
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasFastOutputPipe_004, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasFastOutputPipe();
+    EXPECT_EQ(true, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_HasFastOutputPipe_005
+ * @tc.desc: Test HasFastOutputPipe when pipeInfo has multiple flags including fast output
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, HasFastOutputPipe_005, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST | AUDIO_OUTPUT_FLAG_VOIP;
+    // Combining multiple flags, should still match
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.HasFastOutputPipe();
+    EXPECT_EQ(true, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_IsStreamUltraFast_001
+ * @tc.desc: Test IsStreamUltraFast when curPipeList_ is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_001, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    uint32_t sessionId = 1001;
+
+    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_IsStreamUltraFast_002
+ * @tc.desc: Test IsStreamUltraFast when pipeInfo is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_002, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    uint32_t sessionId = 1001;
+
+    pipeManager.curPipeList_.push_back(nullptr);
+
+    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_IsStreamUltraFast_003
+ * @tc.desc: Test IsStreamUltraFast when streamDescriptors_ is empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_003, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    uint32_t sessionId = 1001;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->streamDescriptors_.clear();
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_IsStreamUltraFast_004
+ * @tc.desc: Test IsStreamUltraFast when desc is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_004, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    uint32_t sessionId = 1001;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->streamDescriptors_.push_back(nullptr);
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_IsStreamUltraFast_005
+ * @tc.desc: Test IsStreamUltraFast when sessionId does not match
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_005, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    uint32_t targetSessionId = 1001;
+    uint32_t differentSessionId = 1002;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = differentSessionId;
+
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.IsStreamUltraFast(targetSessionId);
+    EXPECT_EQ(false, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_IsStreamUltraFast_006
+ * @tc.desc: Test IsStreamUltraFast when sessionId matches and ultraFast flag is true
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_006, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    uint32_t sessionId = 1001;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = sessionId;
+    streamDesc->SetUltraFastFlag(true);
+
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    EXPECT_EQ(true, result);
+}
+
+/**
+ * @tc.name: AudioPipeManager_IsStreamUltraFast_007
+ * @tc.desc: Test IsStreamUltraFast when sessionId matches and ultraFast flag is false
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_007, TestSize.Level1)
+{
+    AudioPipeManager pipeManager;
+    uint32_t sessionId = 1001;
+
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = sessionId;
+    streamDesc->SetUltraFastFlag(false);
+
+    pipeInfo->streamDescriptors_.push_back(streamDesc);
+    pipeManager.curPipeList_.push_back(pipeInfo);
+
+    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    EXPECT_EQ(false, result);
 }
 } // namespace AudioStandard
 } // namespace OHOS

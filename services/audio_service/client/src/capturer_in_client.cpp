@@ -38,19 +38,18 @@
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
-#include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
+#include "app_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -712,6 +711,12 @@ int32_t CapturerInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
     return ERROR;
 }
 
+int32_t CapturerInClientInner::SetBackMute(bool backMute)
+{
+    AUDIO_WARNING_LOG("only for renderer");
+    return ERROR;
+}
+
 bool CapturerInClientInner::GetMute()
 {
     AUDIO_WARNING_LOG("only for renderer");
@@ -1170,7 +1175,6 @@ void CapturerInClientInner::SetPlaybackCaptureStartStateCallback(
  
 int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     if (gasp == nullptr) {
         AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
@@ -1187,6 +1191,7 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     waitLock.unlock();
  
     std::unique_lock<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
     if (operation != USER_PRIVACY_AUTHORITY) {
         AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), operation, result);
@@ -1524,7 +1529,8 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AudioSystemManager::GetInstance()->GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
+            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
+            METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
         needSetThreadPriority_ = false;
     }
 

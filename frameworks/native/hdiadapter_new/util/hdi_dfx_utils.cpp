@@ -36,5 +36,14 @@ void HdiDfxUtils::DumpData(char *data, uint64_t &len, FILE *dumpFile, std::strin
     DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(data), len);
     AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(data), len);
 }
+
+void HdiDfxUtils::PrintSinkVolInfo(char *data, uint64_t &len, const IAudioSinkAttr &attr, std::string logUtilsTag,
+    int64_t &volumeDataCount)
+{
+    BufferDesc buffer = { reinterpret_cast<uint8_t*>(data), len, len };
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr.sampleRate), AudioEncodingType::ENCODING_PCM,
+        static_cast<AudioSampleFormat>(attr.format), static_cast<AudioChannel>(attr.channel));
+    VolumeTools::DfxOperation(buffer, streamInfo, logUtilsTag, volumeDataCount);
+}
 } // namespace AudioStandard
 } // namespace OHOS

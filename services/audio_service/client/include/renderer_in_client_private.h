@@ -16,15 +16,14 @@
 #define RENDERER_IN_CLIENT_PRIVATE_H
 
 #include <optional>
-
+#include <thread>
+#include <mutex>
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
 
-#include "audio_manager_base.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -34,8 +33,7 @@
 #include "callback_handler.h"
 #include "audio_speed.h"
 #include "audio_spatial_channel_converter.h"
-#include "audio_policy_manager.h"
-#include "audio_spatialization_manager.h"
+#include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
 
@@ -85,6 +83,7 @@ public:
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
+    int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -268,6 +267,7 @@ private:
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
+    void WriteAudioVividDirect(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     bool IsMutePlaying();
     void MonitorMutePlay(bool isPlayEnd);
@@ -329,6 +329,10 @@ private:
     void CheckFrozenStateInStaticMode();
 
     int32_t CallStartWhenInStandby();
+
+    void NotifyStopWaiting();
+
+    void UpdateStopState();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -338,6 +342,8 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
+    std::vector<uint8_t> outPackedBuf_;
+    size_t outPackedLen_ = 0;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
     AudioRendererInfo rendererInfo_ = {};
@@ -471,6 +477,7 @@ private:
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
+    bool backMute_ = false;
 
     // for getAudioTimeStampInfo
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair_ = {

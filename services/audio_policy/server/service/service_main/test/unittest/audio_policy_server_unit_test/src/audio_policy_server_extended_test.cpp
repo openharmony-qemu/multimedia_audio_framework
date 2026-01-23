@@ -164,6 +164,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_005, TestSize.Level4)
     audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
     audioPolicyServer_->coreService_->Init();
     audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
+    audioPolicyServer_->eventEntry_->NotifyServiceReady();
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     uint32_t flag = 1;
@@ -377,7 +378,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_016, TestSize.Level4)
     int32_t streamUsage = 1;
     bool silentControl = false;
     EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, sessionId, streamUsage,
-        isAllowed, silentControl), ERR_UNKNOWN);
+        isAllowed, silentControl), SUCCESS);
 
     streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MAX) + 1;
     EXPECT_EQ(audioPolicyServer_->IsAllowedPlayback(uid, pid, sessionId, streamUsage,

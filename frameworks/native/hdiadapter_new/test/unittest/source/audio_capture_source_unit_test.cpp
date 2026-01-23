@@ -381,9 +381,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_014, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_001, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    ASSERT_NE(source_, nullptr);
 
     uint64_t replyBytes = 0;
     std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
@@ -415,9 +413,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_001, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_002, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-    return;
-    }
+    ASSERT_NE(source_, nullptr);
 
     uint64_t replyBytes = 0;
     std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
@@ -447,9 +443,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_002, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    ASSERT_NE(source_, nullptr);
     attr_.adapterName = "primary";
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
@@ -496,9 +490,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_002, TestSize.Level1)
 {
     auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    ASSERT_NE(source_, nullptr);
     attr_.adapterName = "primary";
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
@@ -544,10 +536,8 @@ HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_002, TestSize.Level1)
 */
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_003, TestSize.Level1)
 {
-    auto source_ = std::make_shared(10004, "device001");
-    if (source_ == nullptr) {
-        return;
-    }
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
     attr_.adapterName = "primary";
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel

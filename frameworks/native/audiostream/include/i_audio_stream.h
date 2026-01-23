@@ -20,7 +20,7 @@
 #include "timestamp.h"
 #include "audio_capturer.h"
 #include "audio_renderer.h"
-#include "audio_stream_manager.h"
+#include "audio_stream_types.h"
 #include "audio_device_info.h"
 #include "audio_errors.h"
 
@@ -81,8 +81,7 @@ public:
         int32_t rendererFlags = AUDIO_FLAG_NORMAL;
 
         bool streamTrackerRegistered = false;
-        bool streamMuteFlag = false;
-
+        
         uint64_t frameMarkPosition = 0;
         uint64_t framePeriodNumber = 0;
 
@@ -118,6 +117,7 @@ public:
 
         StaticBufferInfo staticBufferInfo{};
         std::shared_ptr<StaticBufferEventCallback> staticBufferEventCallback;
+        bool backMute = false;
     };
 
     virtual ~IAudioStream() = default;
@@ -183,6 +183,7 @@ public:
     virtual int32_t SetDuckVolume(float volume) = 0;
     virtual float GetDuckVolume() = 0;
     virtual int32_t SetMute(bool mute, StateChangeCmdType cmdType) = 0;
+    virtual int32_t SetBackMute(bool backMute) = 0;
     virtual bool GetMute() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;

@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioManagerListenerCallback"
 #endif
 
-#include "audio_system_manager.h"
 #include "audio_service_log.h"
 #include "audio_manager_listener.h"
 

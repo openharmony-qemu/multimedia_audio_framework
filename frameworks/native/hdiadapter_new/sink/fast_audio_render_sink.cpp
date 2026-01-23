@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,7 +39,7 @@ FastAudioRenderSink::~FastAudioRenderSink()
 
 int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
-    AUDIO_INFO_LOG("init with format:%{public}d", attr.format);
+    AUDIO_INFO_LOG("Init with format:%{public}d, period:%{public}d", attr.format, attr.period);
     attr_ = attr;
     halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? "primary" : "voip";
     int32_t ret = CreateRender();
@@ -249,7 +249,7 @@ int32_t FastAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wri
 #endif
 }
 
-int64_t FastAudioRenderSink::GetVolumeDataCount()
+int32_t FastAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
     return 0;
@@ -474,7 +474,7 @@ void FastAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &para
     param.streamId = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ?
         static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP_FAST)) :
         static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_FAST));
-    param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
+    param.period = attr_.period == 0 ? DEEP_BUFFER_RENDER_PERIOD_SIZE : attr_.period;
     param.isBigEndian = false;
     param.isSignedData = true;
     param.stopThreshold = INT_MAX;
@@ -540,7 +540,8 @@ int32_t FastAudioRenderSink::CreateRender(void)
     InitDeviceDesc(deviceDesc);
 
     AUDIO_INFO_LOG("create render, type: %{public}d, rate: %{public}u, channel: %{public}u, format: %{public}u, "
-        "device: %{public}u", param.type, param.sampleRate, param.channelCount, param.format, attr_.deviceType);
+        "device: %{public}u, period: %{public}u", param.type, param.sampleRate, param.channelCount, param.format,
+        attr_.deviceType, param.period);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

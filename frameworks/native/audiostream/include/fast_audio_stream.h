@@ -59,6 +59,18 @@ private:
     std::shared_ptr<AudioCapturerReadCallback> captureCallback_ = nullptr;
 };
 
+class FastStaticFirstFrameCallbackImpl : public AudioFirstFrameCallback {
+public:
+    FastStaticFirstFrameCallbackImpl(const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback,
+        IAudioStream &audioStream) : staticFirstFrameCallback_(callback), audioStreamImpl_(audioStream) {};
+    virtual ~FastStaticFirstFrameCallbackImpl() = default;
+
+    void OnFirstFrameWriting() override;
+private:
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> staticFirstFrameCallback_ = nullptr;
+    IAudioStream &audioStreamImpl_;
+};
+
 class FastAudioStream : public IAudioStream,  public IHandler,
     public std::enable_shared_from_this<FastAudioStream>{
 public:
@@ -91,6 +103,7 @@ public:
     int32_t SetLoudnessGain(float loudnessGain) override;
     float GetLoudnessGain() override;
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
+    int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
     int32_t SetSourceDuration(int64_t duration) override;
     float GetVolume() override;
@@ -264,6 +277,7 @@ private:
     bool silentModeAndMixWithOthers_ = false;
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
     StateChangeCmdType muteCmd_ = CMD_FROM_CLIENT;
+    bool backMute_ = false;
 
     std::mutex streamCbMutex_;
     std::weak_ptr<AudioStreamCallback> streamCallback_;
@@ -289,6 +303,7 @@ private:
     // for static audio renderer
     StaticBufferInfo staticBufferInfo_;
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    std::shared_ptr<AudioFirstFrameCallback> procFirstFrameClientCb_ = nullptr;
 
     std::string bundleName = "";
 

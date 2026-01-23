@@ -16,23 +16,20 @@
 #ifndef ST_AUDIO_SERVER_H
 #define ST_AUDIO_SERVER_H
 
-#include <mutex>
+
 #include <condition_variable>
 #include <pthread.h>
-#include <unordered_map>
 
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "iremote_stub.h"
 #include "system_ability.h"
 
-#include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
 #ifdef SUPPORT_OLD_ENGINE
 #include "audio_server_dump.h"
 #endif
 #include "i_audio_server_hpae_dump.h"
-#include "audio_system_manager.h"
 #include "audio_inner_call.h"
 #include "common/hdi_adapter_info.h"
 #include "sink/i_audio_render_sink.h"
@@ -46,6 +43,7 @@
 #include "async_action_handler.h"
 #include "iaudio_engine_callback_handle.h"
 #include "audio_engine_callback_types.h"
+#include "audio_stream_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -191,7 +189,7 @@ public:
     int32_t GetMaxAmplitude(bool isOutputDevice, const std::string& deviceClass, int32_t sourceType,
         float& maxAmplitude) override;
 
-    int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount) override;
+    int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData) override;
 
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;
 
@@ -261,8 +259,8 @@ public:
     int32_t DestroyHdiPort(uint32_t id) override;
     int32_t SetDeviceConnectedFlag(bool flag) override;
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool& isSupported) override;
-    int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
-    int32_t IsAudioLoopbackSupported(int32_t mode, bool &isSupported) override;
+    int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
+    int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &isSupported) override;
     int32_t SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag) override;
     int32_t SetLatestMuteState(uint32_t sessionId, bool muteFlag) override;
     int32_t ForceStopAudioStream(int32_t audioType) override;
@@ -300,6 +298,7 @@ public:
         std::string condition, std::string value) override;
     int32_t GetRemoteAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
+    int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -433,6 +432,8 @@ private:
     int32_t CheckMaxLoopbackInstances(AudioMode audioMode);
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
+        std::vector<std::pair<std::string, std::string>> &result);
+    int32_t GetTaskIdParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
     sptr<IRemoteObject> CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
         std::shared_ptr<PipeInfoGuard> &pipeInfoGuard);

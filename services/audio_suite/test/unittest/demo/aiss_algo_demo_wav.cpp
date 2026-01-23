@@ -278,7 +278,7 @@ private:
 
 int main()
 {
-    NodeCapability nc;
+    NodeParameter nc;
     nc.soName = "libaudio_aiss_intergration.z.so";
     nc.soPath = "/system/lib64/";
     std::shared_ptr<AudioSuiteAlgoInterface> aissAlgoImpl =

@@ -113,8 +113,9 @@ struct BasicBufferInfo {
     RestoreInfo restoreInfo;
 
     // only for static renderer
-    std::atomic<bool> isStatic_;
-    std::atomic<int64_t> clientLastProcessTime_;
+    std::atomic<bool> isStatic;
+    std::atomic<int64_t> clientLastProcessTime;
+    std::atomic<bool> isFirstFrame;
 
     std::atomic<uint64_t> bufferEndCallbackSendTimes;
     std::atomic<bool> needSendLoopEndCallback;
@@ -262,16 +263,17 @@ public:
     void DecreaseBufferEndCallbackSendTimes();
     void ResetBufferEndCallbackSendTimes();
     void SetIsNeedSendLoopEndCallback(bool value);
+    void SetIsFirstFrame(bool value);
 
     bool IsNeedSendBufferEndCallback();
     bool IsNeedSendLoopEndCallback();
+    bool IsFirstFrame();
 
     void SetStaticMode(bool state);
     bool GetStaticMode();
     std::shared_ptr<AudioSharedMemory> GetSharedMem();
 
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
-    float GetVolumeFromOh();
 
 private:
     int32_t SizeCheck();
@@ -285,6 +287,8 @@ private:
     void InitBasicBufferInfo();
 
     void WakeFutexIfNeed(uint32_t wakeVal = IS_READY);
+
+    float GetFactorFromRamp();
 
     uint32_t sessionId_ = 0;
 

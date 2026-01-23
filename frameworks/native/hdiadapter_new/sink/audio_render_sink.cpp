@@ -127,7 +127,12 @@ int32_t AudioRenderSink::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpFileName_ = halName_ + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
+
+    std::string dumpFilePrefix = halName_;
+#ifdef MULTI_BUS_ENABLE
+    dumpFilePrefix = attr_.address;
+#endif
+    dumpFileName_ = dumpFilePrefix + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     logUtilsTag_ = "AudioSink" + halName_;
@@ -299,9 +304,10 @@ void AudioRenderSink::CheckJank()
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, stamp);
 }
 
-int64_t AudioRenderSink::GetVolumeDataCount()
+int32_t AudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value)

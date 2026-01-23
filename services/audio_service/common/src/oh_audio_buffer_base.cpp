@@ -24,26 +24,31 @@
 #include <memory>
 #include <sys/mman.h>
 #include "ashmem.h"
+#include <algorithm>
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "futex_tool.h"
 #include "audio_utils.h"
 #include "audio_parcel_helper.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 namespace {
-    static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
     static constexpr int MINFD = 2;
     static const int64_t STATIC_CLIENT_TIMEOUT_IN_MS = 2000; // 2s
+    const uint32_t MAX_DURATION_MS = 3000;
+    const uint32_t MAX_TIME_MS = 0xFFFFFFFF;
+    const float MIN_DUCK_FLOAT_VOLUME = 0.1f;
 }
 
 constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
+static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
@@ -510,6 +515,7 @@ float OHAudioBufferBase::GetStreamVolume()
 {
     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, MAX_FLOAT_VOLUME, "buffer is not inited!");
     float vol = basicBufferInfo_->streamVolume.load();
+    vol *= GetFactorFromRamp();
     if (vol < MIN_FLOAT_VOLUME) {
         AUDIO_WARNING_LOG("vol < 0.0, invalid volume! using 0.0 instead.");
         return MIN_FLOAT_VOLUME;
@@ -571,25 +577,32 @@ float OHAudioBufferBase::GetDuckFactor()
     return factor;
 }
 
-float OHAudioBufferBase::GetVolumeFromOh()
+float OHAudioBufferBase::GetFactorFromRamp()
 {
-    float volumeStream = GetStreamVolume();
-    uint32_t durationMs = basicBufferInfo_->durationMs.load();
-    uint32_t beginDurationMs = basicBufferInfo_->beginDurationMs.load();
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, MAX_FLOAT_VOLUME, "buffer is not inited!");
+    uint32_t durationMs = std::min(MAX_DURATION_MS, basicBufferInfo_->durationMs.load());
+    uint32_t beginDurationMs = std::min(MAX_TIME_MS, basicBufferInfo_->beginDurationMs.load());
+
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
- 
-    float oldDuckFactor = basicBufferInfo_->oldDuckFactor.load();
-    float duckFactor = basicBufferInfo_->duckFactor.load();
-    float lastEventFactor = basicBufferInfo_->lastEventFactor.load();
+    uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
+    currentTime = std::max(currentTime, beginDurationMs);
+    uint32_t lastEventTime = std::max(beginDurationMs,
+        std::min(basicBufferInfo_->lastEventTime.load(), currentTime));
+
+    float oldDuckFactor = std::max(MIN_DUCK_FLOAT_VOLUME,
+        std::min(MAX_FLOAT_VOLUME, basicBufferInfo_->oldDuckFactor.load()));
+    float duckFactor = std::max(MIN_DUCK_FLOAT_VOLUME,
+        std::min(MAX_FLOAT_VOLUME, basicBufferInfo_->duckFactor.load()));
+    float lastEventFactor = std::max(MIN_DUCK_FLOAT_VOLUME,
+        std::min(MAX_FLOAT_VOLUME, basicBufferInfo_->lastEventFactor.load()));
     float factor = duckFactor;
  
     if ((currentTime - beginDurationMs) < durationMs &&
-        !FLOAT_COMPARE_EQ(duckFactor, oldDuckFactor) && durationMs > 0) {
+        !IsVolumeSame(duckFactor, oldDuckFactor, AUDIO_VOLUME_EPSILON) && durationMs > 0) {
         float delta = duckFactor - oldDuckFactor;
         factor = lastEventFactor + delta *
-            static_cast<float>(currentTime - basicBufferInfo_->lastEventTime.load()) / static_cast<float>(durationMs);
+            static_cast<float>(currentTime - lastEventTime) / static_cast<float>(durationMs);
         if ((delta > 0 && factor > duckFactor) || (delta < 0 && factor < duckFactor)) {
             factor = duckFactor;
         }
@@ -598,8 +611,8 @@ float OHAudioBufferBase::GetVolumeFromOh()
     } else {
         basicBufferInfo_->lastEventFactor.store(duckFactor);
     }
- 
-    return volumeStream * factor * GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
+
+    return factor;
 }
  
 bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
@@ -611,7 +624,7 @@ bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
     }
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    uint32_t currentTime = tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+    uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
  
     float oldDuckFactor = basicBufferInfo_->duckFactor.load();
     basicBufferInfo_->oldDuckFactor.store(oldDuckFactor);
@@ -1097,8 +1110,9 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     // for static audio renderer
     basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
     basicBufferInfo_->needSendLoopEndCallback.store(false);
-    basicBufferInfo_->isStatic_.store(false);
-    basicBufferInfo_->clientLastProcessTime_.store(ClockTime::GetCurNano());
+    basicBufferInfo_->isStatic.store(false);
+    basicBufferInfo_->clientLastProcessTime.store(ClockTime::GetCurNano());
+    basicBufferInfo_->isFirstFrame.store(true);
 }
 
 void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
@@ -1117,14 +1131,14 @@ void OHAudioBufferBase::SetStaticMode(bool state)
 {
     CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
         HILOG_COMM_ERROR("[SetStaticMode]basicBufferInfo_ is null"));
-    basicBufferInfo_->isStatic_.store(state);
+    basicBufferInfo_->isStatic.store(state);
 }
 
 bool OHAudioBufferBase::GetStaticMode()
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, false,
         HILOG_COMM_ERROR("[GetStaticMode]basicBufferInfo_ is null"));
-    return basicBufferInfo_->isStatic_.load();
+    return basicBufferInfo_->isStatic.load();
 }
 
 std::shared_ptr<AudioSharedMemory> OHAudioBufferBase::GetSharedMem()
@@ -1176,16 +1190,28 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
     basicBufferInfo_->needSendLoopEndCallback.store(value);
 }
 
+void OHAudioBufferBase::SetIsFirstFrame(bool value)
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    basicBufferInfo_->isFirstFrame.store(value);
+}
+
+bool OHAudioBufferBase::IsFirstFrame()
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
+    return basicBufferInfo_->isFirstFrame;
+}
+
 // In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen,
 // clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.
 bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition)
 {
-    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), ERROR_ILLEGAL_STATE, "Not in static mode");
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
     Trace trace("CheckFrozenAndSetLastProcessTime" + std::to_string(bufferPosition));
     int64_t curTimestamp = ClockTime::GetCurNano();
 
     bool ret = false;
-    if (curTimestamp - basicBufferInfo_->clientLastProcessTime_.load() >
+    if (curTimestamp - basicBufferInfo_->clientLastProcessTime.load() >
         STATIC_CLIENT_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND) {
         if (bufferPosition == BUFFER_IN_CLIENT) {
             ret = GetStreamStatus()->load() == STREAM_STAND_BY;
@@ -1196,7 +1222,7 @@ bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPo
     }
 
     if (bufferPosition == BUFFER_IN_CLIENT) {
-        basicBufferInfo_->clientLastProcessTime_.store(curTimestamp);
+        basicBufferInfo_->clientLastProcessTime.store(curTimestamp);
     }
     return ret;
 }

@@ -96,12 +96,13 @@ public:
         devices_ = devices;
     }
 
-    void AddStream(uint32_t streamId, SourceType source, CapturerState state)
+    void AddStream(uint32_t streamId, SourceType source, CapturerState state, std::string bundleName = "")
     {
         CapturerStreamInfo info;
         info.streamId_ = streamId;
         info.source_ = source;
         info.state_ = state;
+        info.bundleName_ = bundleName;
         streams_[streamId] = info;
     }
 
@@ -171,7 +172,8 @@ private:
         for (auto &stream : streams) {
             ret = parcel.WriteUint32(stream.second.streamId_) &&
                 parcel.WriteInt32(stream.second.state_) &&
-                parcel.WriteInt32(stream.second.source_);
+                parcel.WriteInt32(stream.second.source_) &&
+                parcel.WriteString(stream.second.bundleName_);
             AUDIO_CHECK_AND_RETURN_RET(ret, false);
         }
         return true;
@@ -196,6 +198,7 @@ private:
             stream.streamId_ = parcel.ReadUint32();
             stream.state_ = static_cast<CapturerState>(parcel.ReadInt32());
             stream.source_ = static_cast<SourceType>(parcel.ReadInt32());
+            stream.bundleName_ = parcel.ReadString();
             streams_[stream.streamId_] = stream;
         }
     }

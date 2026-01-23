@@ -252,6 +252,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkFlush(void)
     ret = audioRendererSink_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
         "audioRendererSink_ flush failed, errCode is %{public}d", ret);
+    UpdateOffloadFlushStatus(true);
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t interval = timer.Elapsed();
@@ -357,6 +358,7 @@ void HpaeOffloadSinkOutputNode::StopStream()
     auto callback = GetNodeInfo().statusCallback.lock();
     CHECK_AND_RETURN_LOG(callback != nullptr, "HpaeOffloadSinkOutputNode::StopStream callback is null");
     OffloadReset();
+    NotifyHdiPos();
     callback->OnRewindAndFlush(rewindTime, hdiRealPos_);
 }
 
@@ -408,6 +410,8 @@ void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
     CHECK_AND_RETURN(GetStreamType() == STREAM_MOVIE || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD);
     speed_ = speed;
     audioRendererSink_->SetSpeed(speed);
+    UpdatePresentationPosition();
+    NotifyHdiPos();
 }
 
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)
@@ -517,6 +521,7 @@ int32_t HpaeOffloadSinkOutputNode::WriteFrameToHdi()
         setHdiBufferSizeNum_ = OFFLOAD_SET_BUFFER_SIZE_NUM;
         OffloadSetHdiVolume();
         SetSpeed(speed_);
+        UpdateOffloadFlushStatus(false);
         AUDIO_INFO_LOG("offload write pos: %{public}" PRIu64 " hdi pos: %{public}" PRIu64 " ",
             writePos_, hdiPos_.first);
     }
@@ -579,8 +584,9 @@ void HpaeOffloadSinkOutputNode::OffloadCallback(const RenderCallbackType type)
             if (isHdiFull_.load()) {
                 RunningLock(true);
                 UpdatePresentationPosition();
-                auto callback = GetNodeInfo().statusCallback.lock();
+                NotifyHdiPos();
                 isHdiFull_.store(false);
+                auto callback = GetNodeInfo().statusCallback.lock();
                 if (callback) {
                     callback->OnNotifyQueue();
                 }
@@ -613,11 +619,11 @@ int32_t HpaeOffloadSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &app
 }
 
 void HpaeOffloadSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state)
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
-    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
 }
 
 void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
@@ -630,6 +636,29 @@ void HpaeOffloadSinkOutputNode::OffloadNeedSleep(int32_t retType)
         return;
     }
     backoffController_.HandleResult(retType == SUCCESS);
+}
+
+void HpaeOffloadSinkOutputNode::UpdateOffloadFlushStatus(bool isFlush)
+{
+    isFlush_ = isFlush;
+}
+
+void HpaeOffloadSinkOutputNode::NotifyHdiPos()
+{
+    if (offloadCallback_ != nullptr) {
+        offloadCallback_->OnNotifyHdiData(hdiPos_);
+    }
+}
+
+void HpaeOffloadSinkOutputNode::RegisterOffloadCallback(IOffloadCallback *offloadCallback)
+{
+    offloadCallback_ = offloadCallback;
+}
+
+OffloadCallbackData HpaeOffloadSinkOutputNode::GetOffloadCallbackData() noexcept
+{
+    OffloadCallbackData data {isFlush_, writePos_};
+    return data;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

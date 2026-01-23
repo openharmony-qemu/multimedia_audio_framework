@@ -633,11 +633,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetTargetSourceTypeAndMatchingFlag_001, 
     server->audioPolicyService_.audioEcManager_.GetTargetSourceTypeAndMatchingFlag(source, targetSource,
         useMatchingPropInfo);
     EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_VOICE_CALL);
-
-    source = SourceType::SOURCE_TYPE_CAMCORDER;
-    server->audioPolicyService_.audioEcManager_.GetTargetSourceTypeAndMatchingFlag(source, targetSource,
-        useMatchingPropInfo);
-    EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_CAMCORDER);
 }
 
 /**
@@ -779,6 +774,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
     EXPECT_EQ(ecSamplingRate, "0");
 
     halName = INVALID_CLASS;
+    server->audioPolicyService_.audioEcManager_.primaryMicModuleInfo_.rate = "48000";
     ecSamplingRate = server->audioPolicyService_.audioEcManager_.GetEcSamplingRate(halName, outModuleInfo);
     EXPECT_EQ(ecSamplingRate, "48000");
 }

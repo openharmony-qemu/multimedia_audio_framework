@@ -277,7 +277,7 @@ void RemoteDeviceManager::RegistCaptureSourceCallback(const std::string &adapter
 }
 
 void RemoteDeviceManager::RegistAdapterManagerCallback(const std::string &adapterName,
-    std::shared_ptr<IAudioAdapterCallback> callback)
+    IAudioSinkCallback *callback)
 {
     std::lock_guard<std::mutex> mgrLock(managerMtx_);
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName, true);
@@ -312,12 +312,6 @@ void RemoteDeviceManager::UnRegistCaptureSourceCallback(const std::string &adapt
     wrapper->captureCallbacks_.erase(hdiCaptureId);
 }
 
-void RemoteDeviceManager::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
-{
-    AUDIO_INFO_LOG("in");
-    callback_.RegistCallback(type, callback);
-}
-
 void RemoteDeviceManager::UnRegistAdapterManagerCallback(const std::string &adapterName)
 {
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
@@ -327,6 +321,12 @@ void RemoteDeviceManager::UnRegistAdapterManagerCallback(const std::string &adap
     CHECK_AND_RETURN_LOG(adapterParamCallbacks_.count(adapterName) != 0,
         "callback not existed, adapterName: %{public}s", GetEncryptStr(adapterName).c_str());
     adapterParamCallbacks_.erase(adapterName);
+}
+
+void RemoteDeviceManager::RegistCallback(uint32_t type, IAudioSinkCallback *callback)
+{
+    AUDIO_INFO_LOG("in");
+    callback_.RegistCallback(type, callback);
 }
 
 void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *param, void *deviceDesc,
@@ -681,8 +681,10 @@ int32_t RemoteDeviceManager::HandleRouteEnableEvent(const std::string &adapterNa
     size_t routeEnableValPos = routeEnableKeyPos + routeEnableKey.length();
     CHECK_AND_RETURN_RET_LOG(routeEnableValPos < contentDesStr.length(), ERR_INVALID_PARAM,
         "not find daudio route enable value, contentDes: %{public}s", contentDesStr.c_str());
-    CHECK_AND_RETURN_RET_LOG(contentDesStr[routeEnableValPos] == ROUTE_ENABLE, ERR_INVALID_PARAM, "route unenable");
+    CHECK_AND_RETURN_RET_LOG(contentDesStr[routeEnableValPos] == ROUTE_ENABLE ||
+        contentDesStr[routeEnableValPos] == ROUTE_DISABLE, ERR_INVALID_PARAM, "invalid route state");
     bool enable = contentDesStr[routeEnableValPos] == ROUTE_ENABLE;
+    AUDIO_INFO_LOG("enable: %{public}d", enable);
     callback_.OnHdiRouteStateChange(adapterName, enable);
     return SUCCESS;
 }
@@ -757,7 +759,7 @@ int32_t RemoteDeviceManager::HandleAdapterParamChangeEvent(const std::string &ad
     std::shared_ptr<RemoteAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, ERR_INVALID_HANDLE, "adapter %{public}s is nullptr",
         GetEncryptStr(adapterName).c_str());
-    std::shared_ptr<IAudioAdapterCallback> adapterParamCallback = nullptr;
+    IAudioSinkCallback *adapterParamCallback = nullptr;
     {
         std::lock_guard<std::mutex> lock(adapterParamCallbackMtx_);
         AUDIO_INFO_LOG("exist %{public}zu renders in adapter", adapterParamCallbacks_.size());

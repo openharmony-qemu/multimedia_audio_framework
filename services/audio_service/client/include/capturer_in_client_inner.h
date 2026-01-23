@@ -34,13 +34,11 @@
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
-#include "audio_manager_base.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
-#include "audio_system_manager.h"
 #include "audio_process_config.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
@@ -87,6 +85,7 @@ public:
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
+    int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;

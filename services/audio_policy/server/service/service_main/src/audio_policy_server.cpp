@@ -196,6 +196,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     if (volumeApplyToAll_) {
         audioPolicyConfigManager_.SetNormalVoipFlag(true);
     }
+    VolumeUtils::InitEnforcedToneVolume();
 }
 
 static std::string TranslateKeyEvent(const int32_t keyType)
@@ -280,7 +281,9 @@ void AudioPolicyServer::Init()
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
-
+#ifdef USB_ENABLE
+    AudioUsbManager::GetInstance().SetObserver(eventEntry_);
+#endif
     // Init single async handler for different managers
     auto asyncHandler = std::make_shared<AsyncActionHandler>("OS_APAsyncActionHandler");
     coreService_->SetAsyncActionHandler(asyncHandler);
@@ -637,7 +640,13 @@ void AudioPolicyServer::TriggerMuteCheck()
 
     bool mutePlay = false;
     for (auto sinkName : deviceClassSet) {
-        int64_t volumeDataCount = AudioServerProxy::GetInstance().GetVolumeDataCount(sinkName);
+        int64_t volumeDataCount = 0;
+        int32_t ret = AudioServerProxy::GetInstance().GetVolumeDataCount(sinkName, volumeDataCount);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("sink:%{public}s GetVolumeDataCount failed", sinkName.c_str());
+            continue;
+        }
+
         if (volumeDataCount < SILENT_FRAME_LIMIT) {
             mutePlay = true;
             AUDIO_WARNING_LOG("sink:%{public}s running with mute data", sinkName.c_str());
@@ -2263,11 +2272,14 @@ int32_t AudioPolicyServer::IsStreamActive(int32_t streamType, bool &active)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsStreamActiveByStreamUsage(int32_t streamUsage, bool &active)
+int32_t AudioPolicyServer::IsStreamActiveByStreamUsage(int32_t streamUsageIn, bool &active)
 {
-    int32_t volumeType = static_cast<int32_t>(VolumeUtils::GetVolumeTypeFromStreamUsage(
-        static_cast<StreamUsage>(streamUsage)));
-    return IsStreamActive(volumeType, active);
+    StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
+    if (streamUsage < STREAM_USAGE_INVALID || streamUsage > STREAM_USAGE_MAX) {
+        return ERR_NOT_SUPPORTED;
+    }
+    active = audioSceneManager_.IsStreamActiveByStreamUsage(streamUsage);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support)
@@ -2747,6 +2759,7 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
         auto ret = audioStateManager_.SetAudioClientInfoMgrCallback(callback);
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ret, "audioPolicyServerHandler_ is nullptr");
         audioPolicyServerHandler_->SetAudioClientInfoMgrCallback(callback);
+        audioPolicyUtils_.SetAudioClientInfoMgrCallback(callback);
         return ret;
     } else {
         AUDIO_ERR_LOG("Client info manager callback is null");
@@ -3523,8 +3536,7 @@ void AudioPolicyServer::RemoteParameterCallback::OnAudioParameterChange(const st
 
 void AudioPolicyServer::RemoteParameterCallback::OnHdiRouteStateChange(const std::string &networkId, bool enable)
 {
-    CHECK_AND_RETURN_LOG(enable, "route unenable");
-    server_->eventEntry_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, true);
+    server_->eventEntry_->NotifyRemoteRouteStateChange(networkId, DEVICE_TYPE_SPEAKER, enable);
 }
 
 void AudioPolicyServer::RemoteParameterCallback::VolumeOnChange(const std::string networkId,
@@ -5087,10 +5099,17 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     }
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
-        IPCSkeleton::GetCallingUid(), callerPid, true);
-    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
-        static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
+    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
+        // If an audio zone is selected based on the scene type,
+        // then all audio streams of the audioSession must be selected to the corresponding audio zone,
+        // which is equivalent to binding the entire application to the audio zone.
+        AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, callerUid);
+    }
+    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d, "
+        "streamUsage:%{public}d", static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId, streamUsage);
 
     bool isStandalone = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
         IPCSkeleton::GetCallingUid(), true);
@@ -5116,9 +5135,14 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
-        IPCSkeleton::GetCallingUid(), callerPid, false);
-    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", callerPid, zoneId);
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
+    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
+        AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, callerUid);
+    }
+    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
+        callerPid, zoneId, streamUsage);
     return interruptService_->DeactivateAudioSession(zoneId, callerPid);
 }
 
@@ -5232,11 +5256,11 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
 
 int32_t AudioPolicyServer::SetVoiceRingtoneMute(bool isMute)
 {
-    constexpr int32_t foundationUid = 5523; // "uid" : "foundation"
+    constexpr int32_t callManagerUid = 1001; // "uid" : "call_manager"
     auto callerUid = IPCSkeleton::GetCallingUid();
     // This function can only be used by foundation
-    CHECK_AND_RETURN_RET_LOG(callerUid == foundationUid, ERROR,
-        "SetVoiceRingtoneMute callerUid is error: not foundation");
+    CHECK_AND_RETURN_RET_LOG(callerUid == callManagerUid, ERROR,
+        "SetVoiceRingtoneMute callerUid is error: not call_manager");
     AUDIO_INFO_LOG("Set VoiceRingtone is %{public}d", isMute);
     return audioVolumeManager_.SetVoiceRingtoneMute(isMute);
 }
@@ -5498,16 +5522,16 @@ int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, b
 }
 
 
-int32_t AudioPolicyServer::SetKaraokeParameters(const std::string &parameters, bool &ret)
+int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
 {
-    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
+    ret = AudioServerProxy::GetInstance().SetKaraokeParameters(static_cast<DeviceType>(deviceType), parameters);
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, bool &ret)
+int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, int32_t deviceType, bool &ret)
 {
     AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(modeIn);
-    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
+    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode, static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 
@@ -5728,6 +5752,11 @@ int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
 {
     audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+{
+    return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
 }
 } // namespace AudioStandard
 } // namespace OHOS

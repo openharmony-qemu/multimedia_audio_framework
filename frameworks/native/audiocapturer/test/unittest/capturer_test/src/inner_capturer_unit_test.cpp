@@ -519,9 +519,8 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_0016, TestSize.Level1)
     ASSERT_NE(nullptr, audioCapturer);
 
     std::shared_ptr<MockRenderer> renderer = std::make_shared<MockRenderer>();
-    if (renderer == nullptr) {
-        return;
-    }
+    ASSERT_NE(nullptr, renderer);
+
     renderer->InitRenderer(STREAM_USAGE_MUSIC, PRIVACY_TYPE_PUBLIC);
     renderer->Start();
     usleep(SHORT_SLEEP_TIME);

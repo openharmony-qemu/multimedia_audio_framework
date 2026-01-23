@@ -93,6 +93,7 @@ private:
     int32_t PopWriteBufferIndex();
     void SetOffloadDisable();
     void InitBasicInfo(const AudioStreamInfo &streamInfo);
+    void WriteToSinkBuffer(const BufferDesc &bufferDesc, uint32_t writeIndex);
 
 private:
     bool isDirect_;

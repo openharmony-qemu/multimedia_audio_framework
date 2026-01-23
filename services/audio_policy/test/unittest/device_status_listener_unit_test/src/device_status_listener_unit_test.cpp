@@ -232,19 +232,19 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_017, TestSize.Level1)
 
     // Test2
     info = "PROTOCOL=0;VERSION=1.0";
-    statusInfo.model = "unknowm";
+    statusInfo.model = "unknown";
     DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
     EXPECT_EQ(statusInfo.model, "hiplay");
 
     // Test3
     info = "PROTOCOL=2;VERSION=1.0";
-    statusInfo.model = "unknowm";
+    statusInfo.model = "unknown";
     DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
     EXPECT_EQ(statusInfo.model, "unknown");
 
     // Test4
     info = "PROTOCOL=0";
-    statusInfo.model = "unknowm";
+    statusInfo.model = "unknown";
     DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
     EXPECT_EQ(statusInfo.model, "hiplay");
 }

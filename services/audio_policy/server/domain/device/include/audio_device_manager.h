@@ -16,12 +16,7 @@
 #define ST_AUDIO_DEVICE_MANAGER_H
 
 #include <list>
-#include <string>
-#include <memory>
-#include <vector>
-#include <unordered_map>
-#include "audio_device_info.h"
-#include "audio_system_manager.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,6 +122,8 @@ public:
 private:
     AudioDeviceManager();
     ~AudioDeviceManager() {};
+    bool CheckNearlinkInHQRecordingSupport(const shared_ptr<AudioDeviceDescriptor> &devDesc,
+        DeviceRole devRole, DeviceUsage devUsage);
     bool DeviceAttrMatch(const shared_ptr<AudioDeviceDescriptor> &devDesc, AudioDevicePrivacyType privacyType,
         DeviceRole devRole, DeviceUsage devUsage);
 

@@ -18,12 +18,19 @@
 
 #include <unordered_set>
 #include <shared_mutex>
-#include "audio_system_manager.h"
+#include "audio_device_descriptor.h"
 #include "istandard_audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+
+struct ExcludedDevices {
+    shared_mutex sMtx_;
+    unordered_set<shared_ptr<AudioDeviceDescriptor>,
+        AudioDeviceDescriptor::AudioDeviceDescriptorHash,
+        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> devices_;
+};
 
 class AudioStateManager {
 public:
@@ -60,6 +67,10 @@ public:
     void UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
+    void ExcludeDevices(uint32_t usages, const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
+
+    void UnexcludeDevices(uint32_t usages, const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
+
     // Get media render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredMediaRenderDevice();
 
@@ -92,10 +103,10 @@ public:
         const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
 
     void SetAudioSceneOwnerUid(const int32_t uid);
-    
+
     int32_t GetAudioSceneOwnerUid();
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
-    
+
     int32_t SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
 
@@ -116,14 +127,13 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecognitionCaptureDevice_{make_shared<AudioDeviceDescriptor>()};
 
-    unordered_set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorHash,
-        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> mediaExcludedDevices_;
-    unordered_set<shared_ptr<AudioDeviceDescriptor>, AudioDeviceDescriptor::AudioDeviceDescriptorHash,
-        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> callExcludedDevices_;
+    ExcludedDevices excludedMediaInputDevices_;
+    ExcludedDevices excludedMediaOutputDevices_;
+    ExcludedDevices excludedCallInputDevices_;
+    ExcludedDevices excludedCallOutputDevices_;
+    ExcludedDevices *FindExcludedDevices(AudioDeviceUsage usage);
 
     std::mutex mutex_;
-    shared_mutex mediaExcludedDevicesMutex_;
-    shared_mutex callExcludedDevicesMutex_;
     int32_t ownerUid_ = 0;
     std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;

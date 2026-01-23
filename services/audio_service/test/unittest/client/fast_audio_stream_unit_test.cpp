@@ -83,7 +83,8 @@ public:
         (float volume, uint32_t sessionId, std::string adjustTime, uint32_t code), (override));
 
     MOCK_METHOD(int32_t, RegisterThreadPriority,
-        (pid_t tid, const std::string &bundleName, BoostTriggerMethod method), (override));
+        (pid_t tid, const std::string &bundleName, BoostTriggerMethod method, ThreadPriorityConfig threadPriority),
+        (override));
 
     MOCK_METHOD(bool, GetStopFlag, (), (const, override));
     MOCK_METHOD(void, JoinCallbackLoop, (), (override));
@@ -97,6 +98,10 @@ public:
     MOCK_METHOD(int32_t, SetStaticTriggerRecreateCallback, (std::function<void()> sendStaticRecreateFunc), (override));
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
     MOCK_METHOD(int32_t, SetStaticRenderRate, (AudioRendererRate renderRate), (override));
+
+    MOCK_METHOD(int32_t, SetFirstFrameWritingCallback,
+        (const std::shared_ptr<AudioFirstFrameCallback> &callback), (override));
+    MOCK_METHOD(void, SetIsFirstFrame, (bool value), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {
@@ -422,6 +427,22 @@ HWTEST_F(FastSystemStreamUnitTest, SetMute_001, TestSize.Level1)
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     int32_t res = fastAudioStream->SetMute(false, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetBackMute API
+ * @tc.type  : FUNC
+ * @tc.number: SetBackMute_001
+ * @tc.desc  : Test SetBackMute interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetBackMute_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("SetBackMute_001 start");
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    int32_t res = fastAudioStream->SetBackMute(false);
+    EXPECT_EQ(res, SUCCESS);
 }
 
 /**
@@ -795,6 +816,32 @@ HWTEST_F(FastSystemStreamUnitTest, SetRendererFirstFrameWritingCallback_001, Tes
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> callback =
         std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
     auto result = fastAudioStream->SetRendererFirstFrameWritingCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetRendererFirstFrameWritingCallback API
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererFirstFrameWritingCallback_002
+ * @tc.desc  : Test SetRendererFirstFrameWritingCallback interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetRendererFirstFrameWritingCallback_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetRendererFirstFrameWritingCallback_002 start");
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> callback =
+        std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
+    auto result = fastAudioStream->SetRendererFirstFrameWritingCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    fastAudioStream->rendererInfo_.isStatic = true;
+    result = fastAudioStream->SetRendererFirstFrameWritingCallback(callback);
     EXPECT_EQ(result, SUCCESS);
 }
 

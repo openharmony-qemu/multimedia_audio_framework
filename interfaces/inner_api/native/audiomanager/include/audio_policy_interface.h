@@ -124,6 +124,8 @@ class AudioClientInfoMgrCallback {
 public:
     virtual ~AudioClientInfoMgrCallback() = default;
     virtual bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) = 0;
+    virtual bool OnCheckMediaControllerBundle(const std::string &bundleName) = 0;
+    virtual bool OnQueryIsForceGetZoneDevice(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) = 0;
 };
 
@@ -286,6 +288,169 @@ public:
     virtual void OnAudioSceneChange(const AudioScene audioScene) = 0;
 };
 
+struct DistributedRoutingInfo {
+    std::shared_ptr<AudioDeviceDescriptor> descriptor;
+    CastType type;
+};
+
+class AudioDistributedRoutingRoleCallback {
+public:
+    virtual ~AudioDistributedRoutingRoleCallback() = default;
+
+    /**
+     * Called when audio device descriptor change.
+     *
+     * @param descriptor Indicates the descriptor needed by client.
+     * For details, refer AudioDeviceDescriptor in audio_system_manager.h
+     * @since 9
+     */
+    virtual void OnDistributedRoutingRoleChange(
+        std::shared_ptr<AudioDeviceDescriptor>descriptor, const CastType type) = 0;
+    std::mutex cbMutex_;
+};
+
+class AudioDeviceAnahs {
+public:
+    virtual ~AudioDeviceAnahs() = default;
+
+    virtual int32_t OnExtPnpDeviceStatusChanged(std::string anahsStatus, std::string anahsShowType) = 0;
+};
+
+class AudioManagerAvailableDeviceChangeCallback {
+public:
+    virtual ~AudioManagerAvailableDeviceChangeCallback() = default;
+    /**
+     * Called when an interrupt is received.
+     *
+     * @param deviceChangeAction Indicates the DeviceChangeAction information needed by client.
+     * For details, refer DeviceChangeAction struct
+     * @since 11
+     */
+    virtual void OnAvailableDeviceChange(const AudioDeviceUsage usage,
+        const DeviceChangeAction &deviceChangeAction) = 0;
+};
+
+class VolumeGroupInfo : public Parcelable {
+public:
+    int32_t volumeGroupId_ = 0;
+    int32_t mappingId_ = 0;
+    std::string groupName_;
+    std::string networkId_;
+    ConnectType connectType_ = CONNECT_TYPE_LOCAL;
+
+    /**
+     * @brief Volume group info.
+     *
+     * @since 9
+     */
+    VolumeGroupInfo();
+
+    /**
+     * @brief Volume group info.
+     *
+     * @param volumeGroupId volumeGroupId
+     * @param mappingId mappingId
+     * @param groupName groupName
+     * @param networkId networkId
+     * @param type type
+     * @since 9
+     */
+    VolumeGroupInfo(int32_t volumeGroupId, int32_t mappingId, std::string groupName, std::string networkId,
+        ConnectType type);
+    virtual ~VolumeGroupInfo();
+
+    /**
+     * @brief Marshall.
+     *
+     * @since 8
+     * @return bool
+     */
+    bool Marshalling(Parcel &parcel) const override;
+
+    /**
+     * @brief Unmarshall.
+     *
+     * @since 8
+     * @return Returns volume group info
+     */
+    static VolumeGroupInfo *Unmarshalling(Parcel &parcel);
+};
+
+/**
+ * Describes the mic phone blocked device information.
+ *
+ * @since 13
+ */
+struct MicrophoneBlockedInfo : public Parcelable {
+    DeviceBlockStatus blockStatus;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
+
+    void SetClientInfo(const AudioDeviceDescriptor::ClientInfo &clientInfo) const
+    {
+        for (auto &dev : devices) {
+            if (dev != nullptr) {
+                dev->SetClientInfo(clientInfo);
+            }
+        }
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(blockStatus));
+        int32_t size = static_cast<int32_t>(devices.size());
+        parcel.WriteInt32(size);
+        for (auto &dev : devices) {
+            if (dev == nullptr) {
+                return false;
+            }
+            dev->Marshalling(parcel);
+        }
+        return true;
+    }
+
+    static MicrophoneBlockedInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) MicrophoneBlockedInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->blockStatus = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
+        int32_t size = parcel.ReadInt32();
+        if (size < 0 || size >= DEVICE_CHANGE_VALID_SIZE) {
+            delete info;
+            return nullptr;
+        }
+        for (int32_t i = 0; i < size; i++) {
+            auto device = AudioDeviceDescriptor::Unmarshalling(parcel);
+            if (device != nullptr) {
+                info->devices.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(device));
+            }
+        }
+        return info;
+    }
+};
+
+class AudioManagerMicrophoneBlockedCallback {
+public:
+    virtual ~AudioManagerMicrophoneBlockedCallback() = default;
+    /**
+     * Called when micro phone is blocked.
+     *
+     * @param microphoneBlockedInfo Indicates the MisPhoneBlockedInfo information needed by client.
+     * For details, refer MisPhoneBlockedInfo struct
+     * @since 13
+     */
+    virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
+};
+
+class AudioQueryBundleNameListCallback {
+public:
+    virtual ~AudioQueryBundleNameListCallback() = default;
+    virtual bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType) = 0;
+};
+
 /**
  * @brief NearLink audio stream operation callback interface.
  */
@@ -372,6 +537,11 @@ public:
      * @return int32_t
      */
     virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
+};
+
+struct AudioSpatialEnabledStateForDevice {
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor;
+    bool enabled;
 };
 } // namespace AudioStandard
 } // namespace OHOS

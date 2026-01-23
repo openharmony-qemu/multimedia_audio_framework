@@ -16,8 +16,6 @@
 #ifndef ST_AUDIO_POLICY_MANAGER_H
 #define ST_AUDIO_POLICY_MANAGER_H
 
-#include <cstdint>
-#include <memory>
 #include "audio_client_tracker_callback_service.h"
 #include "audio_client_tracker_callback_listener.h"
 #include "audio_effect.h"
@@ -25,20 +23,16 @@
 #include "iaudio_policy.h"
 #include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
-#include "audio_routing_manager.h"
+#include "audio_stream_types.h"
 #include "audio_routing_manager_listener.h"
 #include "audio_anahs_manager_listener.h"
 #include "audio_policy_interface.h"
-#include "audio_system_manager.h"
 #include "istandard_client_tracker.h"
 #include "audio_policy_log.h"
 #include "microphone_descriptor.h"
-#include "audio_spatialization_manager.h"
-#include "audio_combine_denoising_manager.h"
+#include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
-#include "sle_audio_operation_callback_stub_impl.h"
 #include "audio_capturer_options.h"
-#include "audio_collaborative_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -657,10 +651,10 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
-    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
-    bool SetKaraokeParameters(const std::string &parameters);
+    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
     int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 
@@ -745,6 +739,7 @@ public:
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     AudioScene GetAudioSceneFromAllZones();
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
 
 private:
     AudioPolicyManager() {}

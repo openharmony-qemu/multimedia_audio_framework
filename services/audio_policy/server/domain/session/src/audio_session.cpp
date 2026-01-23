@@ -435,18 +435,20 @@ StreamUsage AudioSession::GetSessionStreamUsage()
     return GetStreamUsageInner();
 }
 
-StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice(const uint32_t streamId)
+StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice()
 {
     StreamUsage streamUsage = GetStreamUsageInner();
     if (streamUsage != StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION) {
         return streamUsage;
     }
-    for (auto &iter : streamsInSession_) {
-        if (iter.streamId == streamId && iter.audioFocusType.streamType == STREAM_RING) {
-            AUDIO_INFO_LOG("get audio session stream usage for device is stream ring");
+    
+    for (const auto& iter : streamsInSession_) {
+        if (iter.audioFocusType.streamType == STREAM_RING) {
+            AUDIO_INFO_LOG("pid [%{public}d] ringtone exists", callerPid_);
             return iter.streamUsage;
         }
     }
+
     return streamUsage;
 }
 

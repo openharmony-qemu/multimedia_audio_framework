@@ -449,6 +449,20 @@ HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_009, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsSpecialPipe_010
+ * @tc.desc: Test IsSpecialPipe when none of the conditions are met.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsSpecialPipe_010, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_HWDECODING;
+    bool result = audioPipeManager->IsSpecialPipe(routeFlag);
+    EXPECT_TRUE(result);
+}
+
+/**
  * @tc.name: GetPipeinfoByNameAndFlag_001
  * @tc.desc: Test GetPipeinfoByNameAndFlag when adapterName does not match.
  * @tc.type: FUNC
@@ -1548,19 +1562,19 @@ HWTEST_F(AudioPipeManagerUnitTest, DecideStreamInfo_001, TestSize.Level1)
     auto pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     pipeInfo->moduleInfo_.rate = "192000";
-    audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
-    EXPECT_EQ(pipeInfo->audioStreamInfo_.samplingRate, AudioSamplingRate::SAMPLE_RATE_8000);
+    auto streamInfo = audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
+    EXPECT_EQ(streamInfo.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
 
     pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
     pipeInfo->moduleInfo_.rate = "96000";
-    audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
-    EXPECT_EQ(pipeInfo->audioStreamInfo_.samplingRate, AudioSamplingRate::SAMPLE_RATE_96000);
+    streamInfo = audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
+    EXPECT_EQ(streamInfo.samplingRate, AudioSamplingRate::SAMPLE_RATE_96000);
 
     deviceDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     pipeInfo->moduleInfo_.rate = "96000";
-    audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
-    EXPECT_EQ(pipeInfo->audioStreamInfo_.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
+    streamInfo = audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
+    EXPECT_EQ(streamInfo.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
 }
 } // namespace AudioStandard
 } // namespace OHOS

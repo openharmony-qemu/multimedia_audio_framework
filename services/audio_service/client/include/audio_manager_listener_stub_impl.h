@@ -19,7 +19,7 @@
 #include <thread>
 
 #include "audio_policy_interface.h"
-#include "audio_system_manager.h"
+#include "audio_stream_types.h"
 #include "standard_audio_server_manager_listener_stub.h"
 
 namespace OHOS {

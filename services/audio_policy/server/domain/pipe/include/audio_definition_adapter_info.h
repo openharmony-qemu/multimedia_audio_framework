@@ -110,6 +110,7 @@ struct PaPropInfo {
     std::string moduleName_ = STR_INITED;
     std::string fixedLatency_ = STR_INITED;
     std::string renderInIdleState_ = STR_INITED;
+    std::string busAddress_ = STR_INITED;
 };
 
 class PipeStreamPropInfo;
@@ -146,7 +147,6 @@ public:
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
     uint32_t suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
-    int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
     bool supportEncodingEac3_ = false;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
@@ -165,6 +165,7 @@ public:
     void SelfCheck();
 
     std::string name_ = STR_INITED;
+    bool preload_ = false;
     DeviceType type_ = DEVICE_TYPE_NONE;
     AudioPin pin_ = AUDIO_PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;

@@ -52,7 +52,8 @@ static void PrintOutputPipeInfo(const std::shared_ptr<AudioOutputPipeInfo> &chan
     for (auto &streamIter : streams) {
         cout << "    - id: " << streamIter.second.streamId_ <<
             " usage: " << streamIter.second.usage_ <<
-            " state: " << streamIter.second.state_ << endl;
+            " state: " << streamIter.second.state_ <<
+            " bundleName: " << streamIter.second.bundleName_ << endl;
     }
 }
 
@@ -72,7 +73,8 @@ static void PrintInputPipeInfo(const std::shared_ptr<AudioInputPipeInfo> &change
     for (auto &streamIter : streams) {
         cout << "    - id: " << streamIter.second.streamId_ <<
             " source: " << streamIter.second.source_ <<
-            " state: " << streamIter.second.state_ << endl;
+            " state: " << streamIter.second.state_ <<
+            " bundleName: " << streamIter.second.bundleName_ << endl;
     }
 }
 
@@ -119,6 +121,12 @@ static void TestGetPipeChangeInfos(AudioMode mode)
     }
 }
 
+static void TestSetAuxiliarySinkEnable(bool isEnabled)
+{
+    cout << "set to isEnabled:" << (isEnabled ? "true" : "false") << endl;
+    int32_t ret = DelayedSingleton<AudioEngineClientManager>::GetInstance()->SetAuxiliarySinkEnable(isEnabled);
+    cout << "set auxiliarySinkEnable " << (ret == SUCCESS ? "success" : "fail") << endl;
+}
 
 static void TestRegisterPipeChangeCallback(AudioMode mode)
 {
@@ -175,6 +183,8 @@ enum CmdCode : int32_t {
     CODE_GET_INPUT_PIPE,
     CODE_GET_INPUT_REGISTER,
     CODE_GET_INPUT_UNREGISTER,
+    CODE_SET_AUXILIARY_SINK_ENABLED,
+ 	CODE_SET_AUXILIARY_SINK_DISABLED,
     CODE_EXIT,
 };
 
@@ -185,6 +195,8 @@ static const std::map<int32_t, std::string> CMD_CODE = {
     {CODE_GET_INPUT_PIPE, "Test get current intput pipes"},
     {CODE_GET_INPUT_REGISTER, "Test register intput pipe change callback"},
     {CODE_GET_INPUT_UNREGISTER, "Test unregister input pipe change callback"},
+    {CODE_SET_AUXILIARY_SINK_ENABLED, "Test set auxiliary sink enabled"},
+    {CODE_SET_AUXILIARY_SINK_DISABLED, "Test set auxiliary sink disabled"},
     {CODE_EXIT, "Exit test"},
 };
 
@@ -221,6 +233,12 @@ int main(int argc, char *argv[])
                 break;
             case CODE_GET_INPUT_UNREGISTER:
                 TestUnregisterPipeChangeCallback(AUDIO_MODE_RECORD);
+                break;
+            case CODE_SET_AUXILIARY_SINK_ENABLED:
+                TestSetAuxiliarySinkEnable(true);
+                break;
+            case CODE_SET_AUXILIARY_SINK_DISABLED:
+                TestSetAuxiliarySinkEnable(false);
                 break;
             case CODE_EXIT:
                 exit = true;

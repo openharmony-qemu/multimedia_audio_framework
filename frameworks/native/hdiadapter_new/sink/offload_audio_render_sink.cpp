@@ -250,9 +250,10 @@ int32_t OffloadAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &
     return SUCCESS;
 }
 
-int64_t OffloadAudioRenderSink::GetVolumeDataCount()
+int32_t OffloadAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 int32_t OffloadAudioRenderSink::SetVolume(float left, float right)

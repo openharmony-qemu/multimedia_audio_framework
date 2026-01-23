@@ -16,17 +16,8 @@
 #ifndef ST_AUDIO_SPATIALIZATION_MANAGER_H
 #define ST_AUDIO_SPATIALIZATION_MANAGER_H
 
-#include <cstdlib>
-#include <list>
-#include <map>
-#include <mutex>
-#include <vector>
-#include <unordered_map>
-
-#include "parcel.h"
-#include "audio_effect.h"
-#include "audio_system_manager.h"
-
+#include "audio_spatialization_types.h"
+#include "audio_device_descriptor.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioSpatializationEnabledChangeCallback {
@@ -84,18 +75,6 @@ public:
      */
     virtual void OnHeadTrackingEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
-};
-
-class AudioSpatializationStateChangeCallback {
-public:
-    virtual ~AudioSpatializationStateChangeCallback() = default;
-    /**
-     * @brief AudioSpatializationStateChangeCallback will be executed when spatialization state changes
-     *
-     * @param enabled the spatialization state.
-     * @since 11
-     */
-    virtual void OnSpatializationStateChange(const AudioSpatializationState &spatializationState) = 0;
 };
 
 class AudioAdaptiveSpatialRenderingEnabledChangeCallback {

@@ -77,9 +77,7 @@ void AudioFastCapturerUnitTest::InitializeFastCapturerOptions(AudioCapturerOptio
  */
 HWTEST_F(AudioFastCapturerUnitTest, Audio_Fast_Capturer_GetOverflowCount_001, TestSize.Level1)
 {
-    if (!g_isFastCapturer) {
-        return;
-    }
+    ASSERT_NE(false, g_isFastCapturer);
     AudioCapturerOptions CapturerOptions;
 
     InitializeFastCapturerOptions(CapturerOptions);

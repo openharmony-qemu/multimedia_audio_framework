@@ -163,7 +163,8 @@ int32_t HpaeRemoteOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
-int32_t HpaeRemoteOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId)
+int32_t HpaeRemoteOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
+    [[maybe_unused]] const std::string &busAddress)
 {
     return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId);
 }

@@ -68,6 +68,7 @@ public:
     bool IsZoneDeviceVisible();
     int32_t FindAudioZoneByUid(int32_t uid);
     int32_t FindAudioZone(int32_t uid, StreamUsage usage);
+    virtual std::string FindAudioZoneNameByUid(int32_t uid);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId);
@@ -99,7 +100,6 @@ public:
     const std::string GetZoneStringDescriptor(int32_t zoneId);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     bool CheckZoneExist(int32_t zoneId);
-    int32_t FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate);
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);

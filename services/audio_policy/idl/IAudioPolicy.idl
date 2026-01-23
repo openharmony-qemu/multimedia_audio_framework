@@ -43,6 +43,7 @@ sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
 sequenceable audio_info..OHOS.AudioStandard.ToneInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneStream;
 sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
+sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneMix;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -270,8 +271,8 @@ interface IAudioPolicy {
     void SetCallbackStreamUsageInfo([in] Set<int> streamUsages);
     void UpdateDeviceInfo([in] sharedptr<AudioDeviceDescriptor> deviceDesc, [in] int command);
     void SetSleAudioOperationCallback([in] IRemoteObject object);
-    void SetKaraokeParameters([in] String parameters, [out] boolean ret);
-    void IsAudioLoopbackSupported([in] int mode, [out] boolean isSupported);
+    void SetKaraokeParameters([in] int deviceType, [in] String parameters, [out] boolean ret);
+    void IsAudioLoopbackSupported([in] int mode, [in] int deviceType, [out] boolean isSupported);
     void SetCollaborativePlaybackEnabledForDevice([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enabled);
     void IsCollaborativePlaybackSupported([out] boolean ret);
     void IsCollaborativePlaybackEnabledForDevice([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [out] boolean enabled);
@@ -316,5 +317,6 @@ interface IAudioPolicy {
     void IsOtherMediaPlaying([out] boolean retIsExistence);
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
+    void SetCustomAudioMix([in] String zoneName, [in] List<AudioZoneMix> audioMixes);
 }
 

@@ -1940,31 +1940,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_005, TestSize.L
 
 /**
 * @tc.name  : Test AudioStreamCollector.
-* @tc.number: HandleAppStateChange_001
-* @tc.desc  : Test HandleAppStateChange.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, HandleAppStateChange_001, TestSize.Level1)
-{
-    AudioStreamCollector audioStreamCollector_;
-    int32_t clientUid = 1001;
-    int32_t clientPid = 2001;
-    bool notifyMute = false;
-    bool hasBackTask = true;
-    // Create and add AudioRendererChangeInfo
-    auto changeInfo = std::make_unique<AudioRendererChangeInfo>();
-    changeInfo->clientUID = clientUid;
-    changeInfo->clientPid = clientPid;
-    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    changeInfo->sessionId = 1;
-    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.HandleAppStateChange(clientUid, clientPid, true, notifyMute, hasBackTask);
-    EXPECT_TRUE(changeInfo->backMute);
-    audioStreamCollector_.HandleAppStateChange(clientUid, clientPid, false, notifyMute, hasBackTask);
-    EXPECT_FALSE(changeInfo->backMute);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
 * @tc.number: HandleAppStateChange_002
 * @tc.desc  : Test HandleAppStateChange.
 */

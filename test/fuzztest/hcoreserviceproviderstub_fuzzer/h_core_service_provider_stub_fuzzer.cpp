@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -66,10 +66,11 @@ void GetProcessDeviceInfoBySessionId(FuzzedDataProvider &provider)
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker.get()));
     AudioDeviceDescriptor deviceInfo;
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
-    int32_t pin = provider.ConsumeIntegral<int32_t>();
+    bool isUltraFast = provider.ConsumeBool();
     bool isReloadProcess = provider.ConsumeBool();
     AudioStreamInfo info;
-    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin, isReloadProcess);
+    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId,
+        deviceInfo, info, isUltraFast, isReloadProcess);
 }
 
 void GenerateSessionId(FuzzedDataProvider &provider)

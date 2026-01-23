@@ -27,9 +27,13 @@
 #include "audio_core_service.h"
 #include "audio_device_manager.h"
 #include "audio_connected_device.h"
+#include "audio_volume_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr std::string_view PRIMARY_ZONE_NAME = "primary";
+}
 AudioZoneService& AudioZoneService::GetInstance()
 {
     static AudioZoneService service;
@@ -91,7 +95,8 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
             RemoveUidFromAudioZone(zoneId, uid);
         }
     }
-
+    AudioVolumeManager &volumeManager = AudioVolumeManager::GetInstance();
+    volumeManager.SetAdjustVolumeForZone(0);
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
@@ -378,28 +383,17 @@ int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
     return FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
 }
 
-int32_t AudioZoneService::FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate)
+std::string AudioZoneService::FindAudioZoneNameByUid(int32_t uid)
 {
-    int32_t zoneId;
-    std::shared_ptr<AudioInterruptService> tmp = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(zoneMutex_);
-        zoneId = FindAudioZoneByKey(callerUid, "", "", StreamUsage::STREAM_USAGE_INVALID);
-        tmp = interruptService_;
-    }
-    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, zoneId, "interruptService_ is nullptr");
-    StreamUsage streamUsage = tmp->GetAudioSessionStreamUsage(callerPid);
-    {
-        std::lock_guard<std::mutex> lock(zoneMutex_);
-        if (streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
-            return zoneId;
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    auto keyList = AudioZoneBindKey::GetSupportKeys(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+    for (const auto &key : keyList) {
+        for (const auto &it : zoneMaps_) {
+            CHECK_AND_CONTINUE(it.second != nullptr && it.second->IsContainKey(key));
+            return it.second->GetName();
         }
-        zoneId = FindAudioZoneByKey(INVALID_UID, "", "", streamUsage);
-        AUDIO_INFO_LOG("get audio session zoneId:%{public}d streamUsage:%{public}d isActivate:%{public}d",
-            zoneId, streamUsage, isActivate);
     }
-    isActivate ? AddUidToAudioZone(zoneId, callerUid) : RemoveUidFromAudioZone(zoneId, callerUid);
-    return zoneId;
+    return std::string(PRIMARY_ZONE_NAME);
 }
 
 int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)

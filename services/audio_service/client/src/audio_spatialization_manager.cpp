@@ -17,15 +17,7 @@
 #endif
 
 #include "audio_spatialization_manager.h"
-
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "bundle_mgr_interface.h"
-
-#include "audio_service_log.h"
 #include "audio_errors.h"
-#include "audio_manager_base.h"
-#include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
 
 namespace OHOS {

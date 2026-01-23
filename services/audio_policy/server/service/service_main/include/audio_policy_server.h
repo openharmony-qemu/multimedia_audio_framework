@@ -56,6 +56,7 @@
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
+#include "audio_pipe_selector.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -151,7 +152,7 @@ public:
 
     int32_t IsStreamActive(int32_t streamType, bool &active) override;
 
-    int32_t IsStreamActiveByStreamUsage(int32_t streamUsage, bool &active) override;
+    int32_t IsStreamActiveByStreamUsage(int32_t streamUsageIn, bool &active) override;
 
     int32_t IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
     int32_t IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
@@ -365,9 +366,9 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
 
     int32_t IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret) override;
-    int32_t IsAudioLoopbackSupported(int32_t mode, bool &ret) override;
+    int32_t IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, bool &ret) override;
     int32_t IsIntelligentNoiseReductionEnabledForCurrentDevice(int32_t sourceType, bool &ret) override;
-    int32_t SetKaraokeParameters(const std::string &parameters, bool &ret) override;
+    int32_t SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -740,6 +741,7 @@ public:
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     void HandleDataShareReadyEvent();
     int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();

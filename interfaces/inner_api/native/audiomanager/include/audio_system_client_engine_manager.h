@@ -15,8 +15,7 @@
 
 #ifndef AUDIO_SYSTEM_CLIENT_ENGINE_MANAGER_H
 #define AUDIO_SYSTEM_CLIENT_ENGINE_MANAGER_H
-
-#include "audio_info.h"
+#include "audio_interrupt_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -132,7 +131,7 @@ public:
      * @return Returns {@link ERR_ILLEGAL_STATE} if the server is not available.
      * @return Returns {@link ERR_INVALID_PARAM} if the sessionId is not exist.
      */
-    int32_t SetForegroundList(std::vector<std::string> list);
+    int32_t SetForegroundList(const std::vector<std::string> &list);
 
     /**
      * @brief Get standby state.

@@ -25,7 +25,6 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_ec_info.h"
 #include "hdi_adapter_type.h"
@@ -47,7 +46,7 @@ public:
     const sptr<IStandardAudioService> GetAudioServerProxy();
     int32_t SetAudioSceneProxy(AudioScene audioScene, BluetoothOffloadState state);
     float GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType = SOURCE_TYPE_INVALID);
-    int64_t GetVolumeDataCount(std::string sinkName);
+    int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);
     void SetOutputDeviceSinkProxy(DeviceType deviceType, std::string sinkName);
     void SetActiveOutputDeviceProxy(DeviceType deviceType);
@@ -78,6 +77,7 @@ public:
     void RestoreRenderSinkProxy(const std::string &sinkName);
     void LoadHdiEffectModelProxy();
     void NotifyDeviceInfoProxy(std::string networkId, bool connected);
+    void NotifyTaskIdInfoProxy(std::string &taskId, bool connected);
     std::string GetAudioParameterProxy(const std::string &key);
     std::string GetAudioParameterProxy(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
@@ -116,8 +116,8 @@ public:
     void SetDeviceConnectedFlag(bool flag);
     void NotifySettingsDataReady();
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
-    bool SetKaraokeParameters(const std::string &parameters);
-    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+    bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetBtHdiInvalidState();

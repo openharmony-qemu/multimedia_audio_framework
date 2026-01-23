@@ -33,6 +33,26 @@ constexpr uint32_t SLEEP_TIME_IN_US = 20000;
 static constexpr int64_t WAIT_CLOSE_PA_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
+static const std::string BT_SINK_NAME = "a2dp";
+static const std::string USB_SINK_NAME = "usb";
+constexpr size_t DEFAULT_COLL_RENDER_FAILED_FRAME = 3;
+
+static inline const std::unordered_set<std::string> AUXILIARY_SPEAKER_LIST = {
+    BT_SINK_NAME,
+    USB_SINK_NAME
+};
+
+static inline const std::unordered_set<StreamUsage> VALID_STREAMUSAGE_AUXILIARY_FILTER = {
+    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK
+};
+
+static inline const std::unordered_set<StreamUsage> INVALID_STREAMUSAGE_AUXILIARY_FILTER = {
+    STREAM_USAGE_VOICE_COMMUNICATION,
+    STREAM_USAGE_VIDEO_COMMUNICATION
+};
 }
 
 HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -104,7 +124,13 @@ void HpaeSinkOutputNode::DoProcess()
             uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
             usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
         }
+        collRenderFrameFailedCount_.fetch_add(1);
+    } else {
+        collRenderFrameFailedCount_.store(0);
     }
+
+    CheckAndSetCollDelayForRenderFrameFailed();
+    RenderFrameForAuxiliarySink();
     periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
     std::move(renderFrameData_.begin() + renderSize_, renderFrameData_.begin() + currentSize_,
@@ -119,6 +145,21 @@ void HpaeSinkOutputNode::DoProcess()
     intervalTimer_.Start();
 #endif
     return;
+}
+
+void HpaeSinkOutputNode::RenderFrameForAuxiliarySink()
+{
+    AUDIO_DEBUG_LOG("spkName:%{public}s, auxSinkEnable_:%{public}s auxSinkState:%{public}d ",
+        sinkOutAttr_.sinkName.c_str(), auxSinkEnable_ ? "true" : "false", auxSinkState_);
+    CHECK_AND_RETURN(auxSinkEnable_ && auxSinkState_ == STREAM_MANAGER_RUNNING &&
+        AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0);
+    Trace trace("HpaeSinkOutputNode::RenderFrameForAuxiliarySink spkName:" + sinkOutAttr_.sinkName +
+       " isEnabled:" + std::to_string(auxSinkEnable_) + " state:" + std::to_string(auxSinkState_));
+
+    CHECK_AND_RETURN_LOG(auxiliarySink_ != nullptr, "auxiliarySink_ is null");
+    uint64_t writeLen = 0;
+    char *renderFrameData = (char *)renderFrameData_.data();
+    auxiliarySink_->RenderFrame(*renderFrameData, renderSize_, writeLen);
 }
 
 const char *HpaeSinkOutputNode::GetRenderFrameData(void)
@@ -177,13 +218,16 @@ void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
 #endif
 }
 
-int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
+int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
+    const std::string &busAddress)
 {
-    if (deviceNetId.empty()) {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true);
-    } else {
-        renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, true);
+    std::string info = HDI_ID_INFO_DEFAULT;
+    if (!busAddress.empty()) {
+        info = busAddress;
+    } else if (!deviceNetId.empty()) {
+        info = deviceNetId;
     }
+    renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, info, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, deviceNetId: %{public}s, renderId_: %{public}u",
@@ -193,6 +237,18 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass
         HdiAdapterManager::GetInstance().ReleaseId(renderId_);
         return ERROR;
     }
+    GetAuxiliarySink(deviceClass);
+    return SUCCESS;
+}
+
+int32_t HpaeSinkOutputNode::GetAuxiliarySink(const std::string &sinkName)
+{
+    AUDIO_INFO_LOG("spkName:%{public}s auxSinkEnable_:%{public}s", sinkName.c_str(),
+        auxSinkEnable_ ? "true" : "false");
+    CHECK_AND_RETURN_RET_LOG(AUXILIARY_SPEAKER_LIST.count(sinkName) > 0, ERROR,
+        "spkName:%{public}s invalid", sinkName.c_str());
+    auxiliarySink_ = HdiAdapterManager::GetInstance().GetAuxiliarySink();
+    CHECK_AND_RETURN_RET_LOG(auxiliarySink_ != nullptr, ERROR, "get auxiliary sink fail");
     return SUCCESS;
 }
 
@@ -201,9 +257,11 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
 
     sinkOutAttr_ = attr;
+    auxSinkEnable_ = attr.auxSinkEnable;
     if (audioRendererSink_->IsInited()) {
         AUDIO_WARNING_LOG("audioRenderSink already inited");
         SetSinkState(STREAM_MANAGER_IDLE);
+        AuxiliarySinkInit();
         return SUCCESS;
     }
 #ifdef ENABLE_HOOK_PCM
@@ -221,7 +279,26 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         sinkOutAttr_.adapterName.c_str(), interval, ret);
     std::string adapterName = sinkOutAttr_.adapterName;
 #endif
+    AuxiliarySinkInit();
     return ret;
+}
+
+int32_t HpaeSinkOutputNode::AuxiliarySinkInit()
+{
+    AUDIO_INFO_LOG("spkName:%{public}s, isEnabled:%{public}s", sinkOutAttr_.sinkName.c_str(),
+        auxSinkEnable_ ? "true" : "false");
+    Trace trace("HpaeSinkOutputNode::AuxiliarySinkInit spkName:" + std::string(sinkOutAttr_.sinkName) +
+        "isEnabled:" + std::to_string(auxSinkEnable_));
+    CHECK_AND_RETURN_RET(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0 && auxSinkEnable_, ERROR);
+    CHECK_AND_RETURN_RET_LOG(auxiliarySink_ != nullptr, ERROR, "auxiliarySink is null");
+    if (auxiliarySink_->IsInited()) {
+        AUDIO_WARNING_LOG("auxiliarySink is already inited");
+        return SUCCESS;
+    }
+
+    auto ret = auxiliarySink_->Init(sinkOutAttr_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "auxiliarySink_ init fail");
+    return SUCCESS;
 }
 
 int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
@@ -242,6 +319,26 @@ int32_t HpaeSinkOutputNode::RenderSinkDeInit(void)
         sinkOutAttr_.adapterName.c_str(),
         interval);
 #endif
+    AuxiliarySinkDeInit();
+    return SUCCESS;
+}
+
+int32_t HpaeSinkOutputNode::AuxiliarySinkDeInit(void)
+{
+    AUDIO_INFO_LOG("spkName:%{public}s, isEnabled:%{public}s", sinkOutAttr_.sinkName.c_str(),
+        auxSinkEnable_ ? "true" : "false");
+    Trace trace("HpaeSinkOutputNode::AuxiliarySinkDeInit spkName:" + sinkOutAttr_.sinkName + "isEnabled:" +
+        std::to_string(auxSinkEnable_));
+    CHECK_AND_RETURN_RET(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0, ERROR);
+    CHECK_AND_RETURN_RET_LOG(auxiliarySink_ != nullptr, ERROR, "auxiliarySink is null");
+    if (!auxiliarySink_->IsInited()) {
+        AUDIO_WARNING_LOG("auxiliarySink is already DeInited");
+        auxiliarySink_ = nullptr;
+        return SUCCESS;
+    }
+
+    auxiliarySink_->DeInit();
+    CHECK_AND_RETURN_RET_LOG(!auxiliarySink_->IsInited(), ERROR, "auxiliarySink_ deinit fail");
     return SUCCESS;
 }
 
@@ -356,11 +453,55 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 }
 
 void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state)
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
-    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    UpdateAuxiliarySinkState(change, sessionId, usage, state);
+}
+
+void HpaeSinkOutputNode::UpdateAuxiliarySinkState(StreamChangeType change,
+    uint32_t sessionId, StreamUsage usage, RendererState state)
+{
+    CHECK_AND_RETURN(AUXILIARY_SPEAKER_LIST.count(sinkOutAttr_.sinkName) > 0);
+    CHECK_AND_RETURN_LOG(VALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0 ||
+        INVALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0,
+        "sessionId:%{public}u usage:%{public}d", sessionId, usage);
+
+    if (VALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0) {
+        if ((change == STREAM_CHANGE_TYPE_ADD || change == STREAM_CHANGE_TYPE_STATE_CHANGE) &&
+            state == RENDERER_RUNNING) {
+            AUDIO_INFO_LOG("add valid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkValidFilter_[sessionId] = usage;
+        } else {
+            CHECK_AND_RETURN_LOG(sessionsWithAuxSinkValidFilter_.find(sessionId) !=
+                sessionsWithAuxSinkValidFilter_.end(), "sessionId:%{public}u is not in filter_, "
+                "change:%{public}d state:%{public}d usage:%{public}d", sessionId, change, state, usage);
+            AUDIO_INFO_LOG("remove valid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkValidFilter_.erase(sessionId);
+        }
+    }
+
+    if (INVALID_STREAMUSAGE_AUXILIARY_FILTER.count(usage) > 0) {
+        if ((change == STREAM_CHANGE_TYPE_ADD || change == STREAM_CHANGE_TYPE_STATE_CHANGE) &&
+            state == RENDERER_RUNNING) {
+            AUDIO_INFO_LOG("add invalid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkInvalidFilter_[sessionId] = usage;
+        } else {
+            CHECK_AND_RETURN_LOG(sessionsWithAuxSinkInvalidFilter_.find(sessionId) !=
+                sessionsWithAuxSinkInvalidFilter_.end(), "sessionId:%{public}u is not in filter_, "
+                "change:%{public}d state:%{public}d usage:%{public}d", sessionId, change, state, usage);
+            AUDIO_INFO_LOG("remove invalid sessionId:%{public}d", sessionId);
+            sessionsWithAuxSinkInvalidFilter_.erase(sessionId);
+        }
+    }
+    bool isRunning = sessionsWithAuxSinkInvalidFilter_.empty() && !sessionsWithAuxSinkValidFilter_.empty();
+    auto auxState = isRunning ? STREAM_MANAGER_RUNNING : STREAM_MANAGER_IDLE;
+    AUDIO_INFO_LOG("auxSinkState_ change:[%{public}s]-->[%{public}s] with sessionId:%{public}u change:%{public}d"
+        " state:%{public}d usage:%{public}d", ConvertStreamManagerState2Str(auxSinkState_).c_str(),
+        ConvertStreamManagerState2Str(auxState).c_str(), sessionId, change, state, usage);
+    auxSinkState_ = auxState;
 }
 
 void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
@@ -462,6 +603,34 @@ bool HpaeSinkOutputNode::ReadDataAndConvertFormat()
         currentSize_ += outputSize_;
     }
     return true;
+}
+
+int32_t HpaeSinkOutputNode::SetAuxiliarySinkEnable(bool isEnabled)
+{
+    AUDIO_INFO_LOG("set to isEnabled:%{public}s for spkName:%{public}s",
+        isEnabled ? "true" : "false", sinkOutAttr_.sinkName.c_str());
+    auxSinkEnable_ = isEnabled;
+    if (auxSinkEnable_) {
+        if (auxiliarySink_ == nullptr) {
+            AUDIO_ERR_LOG("auxiliarySink_ is null, need get auxiliarySink");
+            GetAuxiliarySink(sinkOutAttr_.sinkName);
+        }
+        AuxiliarySinkInit();
+    } else {
+        AuxiliarySinkDeInit();
+    }
+
+    return SUCCESS;
+}
+
+void HpaeSinkOutputNode::CheckAndSetCollDelayForRenderFrameFailed()
+{
+    if (collRenderFrameFailedCount_.load() == DEFAULT_COLL_RENDER_FAILED_FRAME) {
+        collRenderFrameFailedCount_.store(0);
+        auto statusCallback = GetNodeStatusCallback().lock();
+        CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is nullptr");
+        statusCallback->SetCollDelayCount();
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

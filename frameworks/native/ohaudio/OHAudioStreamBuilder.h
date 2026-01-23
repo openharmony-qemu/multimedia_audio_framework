@@ -97,6 +97,7 @@ private:
     bool keepRunning_ = false;
     // capturer params
     SourceType sourceType_ = SOURCE_TYPE_MIC;
+    bool modernInnerCapturer_ = false;
 
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     ReadDataCallbackType readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;

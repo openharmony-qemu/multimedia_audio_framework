@@ -23,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+typedef std::chrono::high_resolution_clock::time_point TimePoint;
 enum HpaeMsgCode {
     UPDATE_STATUS,
     INIT_DEVICE_RESULT,
@@ -140,6 +141,11 @@ struct HpaeDfxNodeInfo {
     AudioEncodingType encoding;
 };
 
+struct OffloadCallbackData {
+    bool isFlush_ = false;
+    uint64_t writePos_ = 0;
+};
+
 class INodeCallback {
 public:
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
@@ -151,6 +157,18 @@ public:
     virtual void OnNotifyDfxNodeAdmin(bool isAdd, const HpaeDfxNodeInfo &nodeInfo){};
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t parentId, uint32_t childId){};
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t NodeId, const HpaeDfxNodeInfo &nodeInfo){};
+    virtual OffloadCallbackData GetOffloadCallbackData() noexcept
+    {
+        OffloadCallbackData data {false, 0};
+        return data;
+    }
+    virtual void SetCollDelayCount(){};
+};
+
+class IOffloadCallback {
+public:
+    virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos);
+    virtual ~IOffloadCallback() = default;
 };
 
 struct HpaeNodeInfo : HpaeDfxNodeInfo {
