@@ -1040,6 +1040,9 @@ void HfpBluetoothDeviceManager::NotifyToUpdateAudioDevice(const BluetoothRemoteD
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::DEACTIVE_CONNECTED;
+    std::string deviceName = "";
+    device.GetDeviceName(deviceName, false);
+    desc.dmDeviceInfo_ = deviceName;
     AUDIO_WARNING_LOG("hfpBluetoothDeviceMap_ operation: %{public}d new bluetooth device, device address is %{public}s,\
         category is %{public}d", deviceStatus, GetEncryptAddr(device.GetDeviceAddr()).c_str(), desc.deviceCategory_);
     {
@@ -1068,6 +1071,9 @@ void HfpBluetoothDeviceManager::NotifyToUpdateVirtualDevice(const BluetoothRemot
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceName_ = device.GetDeviceName();
     desc.connectState_ = ConnectState::VIRTUAL_CONNECTED;
+    std::string deviceName = "";
+    device.GetDeviceName(deviceName, false);
+    desc.dmDeviceInfo_ = deviceName;
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "NotifyToUpdateVirtualDevice, device observer is null");
     bool isConnected = deviceStatus == DeviceStatus::VIRTUAL_ADD;
