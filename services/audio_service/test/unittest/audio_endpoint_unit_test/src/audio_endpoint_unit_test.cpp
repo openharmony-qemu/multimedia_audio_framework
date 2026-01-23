@@ -55,14 +55,16 @@ void AudioEndpointUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
-static void reConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint, AudioEndpointConfig endpointConfig, AudioDeviceDescriptor deviceInfo, AudioEndpoint::EndpointType type)
+static void reConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+    AudioEndpointConfig endpointConfig, AudioDeviceDescriptor deviceInfo, AudioEndpoint::EndpointType type)
 {
     std::shared_ptr<IAudioCaptureSource> source = audioEndpoint->GetFastSource(deviceInfo.networkId_, type);
     source->DeInit();
     audioEndpoint->Config(endpointConfig);
 }
  
-static void reConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint, AudioEndpointConfig endpointConfig, AudioEndpoint::EndpointType type)
+static void reConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+    AudioEndpointConfig endpointConfig, AudioEndpoint::EndpointType type)
 {
     std::shared_ptr<IAudioRenderSink> sink = audioEndpoint->GetFastSink(endpointConfig.deviceInfo, type);
     sink->DeInit();
@@ -245,7 +247,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
         .streamType = config.streamType,
         .isUltraFast = isUltraFast
     };
-    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
     EXPECT_EQ(nullptr, audioEndpoint);
 }
 
@@ -272,7 +275,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
         .streamType = config.streamType,
         .isUltraFast = isUltraFast
     };
-    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
     EXPECT_NE(nullptr, audioEndpoint);
 
     int32_t ret = audioEndpoint->EnableFastInnerCap(1);
