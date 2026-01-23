@@ -33,7 +33,7 @@ namespace {
     const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
     const string AUDIO_PLAYBACK_CAPTURER_TEST_FILE = "/data/audiocapturer_playbackcapturer_test.pcm";
     const int32_t READ_BUFFERS_COUNT = 128;
-    const int32_t VALUE_ZERO = 0;
+    // const int32_t VALUE_ZERO = 0;
     const int32_t STRESS_TEST_COUNTS = 200;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
