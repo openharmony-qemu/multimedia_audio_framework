@@ -110,9 +110,7 @@ struct PaPropInfo {
     std::string moduleName_ = STR_INITED;
     std::string fixedLatency_ = STR_INITED;
     std::string renderInIdleState_ = STR_INITED;
-#ifdef MULTI_BUS_ENABLE
     std::string busAddress_ = STR_INITED;
-#endif
 };
 
 class PipeStreamPropInfo;
@@ -167,6 +165,7 @@ public:
     void SelfCheck();
 
     std::string name_ = STR_INITED;
+    bool preload_ = false;
     DeviceType type_ = DEVICE_TYPE_NONE;
     AudioPin pin_ = AUDIO_PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;

@@ -412,10 +412,10 @@ void AudioPolicyDump::AudioPolicyParserDumpPipeInfo(std::string &dumpString,
 {
     for (auto &pipeInfo : adapterInfo->pipeInfos) {
         AppendFormat(dumpString, "     -pipeInfo : %s -- role=%u, supportFlags=0x%x, lib=%s, "
-            "paPropRole=%s, fixedLatency=%s, renderInIdleState=%s\n", pipeInfo->name_.c_str(),
+            "paPropRole=%s, fixedLatency=%s, renderInIdleState=%s, busAddress=%s\n", pipeInfo->name_.c_str(),
             pipeInfo->role_, pipeInfo->supportFlags_, pipeInfo->paProp_.lib_.c_str(),
             pipeInfo->paProp_.role_.c_str(), pipeInfo->paProp_.fixedLatency_.c_str(),
-            pipeInfo->paProp_.renderInIdleState_.c_str());
+            pipeInfo->paProp_.renderInIdleState_.c_str(), pipeInfo->paProp_.busAddress_.c_str());
 
         for (auto &streamProp : pipeInfo->streamPropInfos_) {
             AppendFormat(dumpString, "         - streamProp : -- format=%zu, sampleRates=%zu, channelLayout=%zu,"

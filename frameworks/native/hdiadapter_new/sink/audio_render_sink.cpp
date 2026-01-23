@@ -127,7 +127,12 @@ int32_t AudioRenderSink::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpFileName_ = halName_ + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
+
+    std::string dumpFilePrefix = halName_;
+#ifdef MULTI_BUS_ENABLE
+    dumpFilePrefix = attr_.address;
+#endif
+    dumpFileName_ = dumpFilePrefix + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     logUtilsTag_ = "AudioSink" + halName_;
