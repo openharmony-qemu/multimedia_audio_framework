@@ -300,9 +300,12 @@ private:
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
     bool IsForceGetDevByVolumeType(int32_t uid);
+    bool IsForceGetZoneDevice(int32_t uid);
     bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
     bool BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,
         AudioSessionStateChangedEvent &stateChangedEvent);
+    void ValidatePreferredOutputDeviceCallback(int32_t clientPid,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
     std::mutex runnerMutex_;
     std::mutex handleMapMutex_;

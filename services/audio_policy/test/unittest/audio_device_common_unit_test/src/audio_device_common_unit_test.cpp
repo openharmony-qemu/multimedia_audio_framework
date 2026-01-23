@@ -939,6 +939,29 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.
 }
 
 /**
+* @tc.name  : Test ClearPreferredDevices
+* @tc.number: ClearPreferredDevices_001
+* @tc.desc  : Test ClearPreferredDevices preferred.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, ClearPreferredDevices_001, TestSize.Level1)
+{
+    AudioDeviceCommon &comm = AudioDeviceCommon::GetInstance();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = 1000;
+    dev->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    dev->deviceName_ = "--";
+    dev->deviceRole_ = OUTPUT_DEVICE;
+    dev->macAddress_ = "card=2;device=0";
+    comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
+    comm.audioStateManager_.SetPreferredCallRenderDevice(dev);
+    comm.audioStateManager_.SetPreferredMediaRenderDevice(dev);
+    comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
+    comm.ClearPreferredDevices(descForCb);
+    EXPECT_NE(comm.audioStateManager_.GetPreferredCallCaptureDevice()->deviceId_, 9998);
+}
+
+/**
 * @tc.name  : Test NeedClearPreferredMediaRenderer.
 * @tc.number: NeedClearPreferredMediaRenderer_001
 * @tc.desc  : Test NeedClearPreferredMediaRenderer preferred.

@@ -411,6 +411,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
   }
 
+  if (audio_framework_feature_exclude_indirect_usb_input_device) {
+    defines += [ "EXCLUDE_INDIRECT_USB_INPUT_DEVICE" ]
+  }
+
   if (audio_framework_config_policy_enable) {
     defines += [ "USE_CONFIG_POLICY" ]
     external_deps += [ "config_policy:configpolicy_util" ]

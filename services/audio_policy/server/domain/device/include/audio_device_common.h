@@ -81,6 +81,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descForCb);
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume = true);
+    void ClearPreferredDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     DeviceType GetSpatialDeviceType(const std::string& macAddress);
 
     bool IsRendererStreamRunning(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);

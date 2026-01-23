@@ -27,6 +27,7 @@
 #include "audio_core_service.h"
 #include "audio_device_manager.h"
 #include "audio_connected_device.h"
+#include "audio_volume_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -91,7 +92,8 @@ void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
             RemoveUidFromAudioZone(zoneId, uid);
         }
     }
-
+    AudioVolumeManager &volumeManager = AudioVolumeManager::GetInstance();
+    volumeManager.SetAdjustVolumeForZone(0);
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);

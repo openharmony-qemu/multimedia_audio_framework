@@ -46,7 +46,7 @@ namespace {
     const std::string USB_SINK_NAME = "usb";
     constexpr int64_t STABLE_RUNNING_TIME_IN_NS = 500 * 1000 * 1000; // 500ms
     constexpr size_t RENDERER_REQUEST_COUNT = 5000;
-    constexpr int32_t COLL_ALING_COUNT = 5;
+    constexpr int32_t COLL_ALING_COUNT = 5; // 5 frames
 }
 
 HpaeRendererManager::HpaeRendererManager(HpaeSinkInfo &sinkInfo)
@@ -549,8 +549,9 @@ void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessor
         sceneClusterMap_[sceneType]->SetConnectedFlag(true);
     }
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-        uint32_t latency = outputCluster_->GetHdiLatency();
-        hpaeCoBufferNode_->SetLatency(latency);
+        // outputCluster_->GetHdiLatency()->SetLatency()
+        // In the future, coBuffer use the hdi latency
+        hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
         TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
     }
@@ -1587,7 +1588,7 @@ void HpaeRendererManager::EnableCollaboration()
     std::vector<uint32_t> sinkInputNodeMapKeys;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
-        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
             sinkInputNodeMapKeys.push_back(key);
         }
     }
@@ -1711,6 +1712,12 @@ int32_t HpaeRendererManager::SetAuxiliarySinkEnable(bool isEnabled)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeRendererManager::SetCollDelayCount()
+{
+    CHECK_AND_RETURN_LOG(hpaeCoBufferNode_ != nullptr, "hpaeCoBufferNode is nullptr");
+    hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
