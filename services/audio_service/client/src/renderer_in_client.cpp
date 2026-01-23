@@ -53,6 +53,7 @@
 
 #include "media_monitor_manager.h"
 #include "istandard_audio_service.h"
+#include "app_bundle_manager.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -353,7 +354,7 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
             sizePerFrameInByte_;
     }
     if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT &&
-        AudioSystemManager::GetInstance()->GetSelfBundleName() == "com.tencent.wechat") {
+        AppBundleManager::GetSelfBundleName() == "com.tencent.wechat") {
         AUDIO_INFO_LOG("Change duration for voip direct, %{public}" PRIu64 " to %{public}d",
             bufferDurationInUs, WECHAT_BUFFER_DURATION_IN_US);
         bufferDurationInUs = WECHAT_BUFFER_DURATION_IN_US;
