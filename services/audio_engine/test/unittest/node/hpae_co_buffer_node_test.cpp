@@ -182,11 +182,11 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, DelayAlignmentInner_001, TestSize.Level0)
     coBufferNode->Enqueue(&pcmBuffer);
     coBufferNode->Enqueue(&pcmBuffer);
     coBufferNode->SetDelayCount(TEST_COLLABORATION_ALIGN_COUNT);
-    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), false);
+    EXPECT_EQ(coBufferNode->DelayAlignmentInner(&pcmBuffer), false);
     coBufferNode->enqueueCount_ = TEST_COLLABORATION_ALIGN_COUNT - 1;
-    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), false);
+    EXPECT_EQ(coBufferNode->DelayAlignmentInner(&pcmBuffer), false);
     coBufferNode->enqueueCount_ = TEST_COLLABORATION_ALIGN_COUNT;
-    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), true);
+    EXPECT_EQ(coBufferNode->DelayAlignmentInner(&pcmBuffer), true);
 }
 
 /**

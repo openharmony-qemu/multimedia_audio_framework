@@ -2977,21 +2977,21 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
     rendererInServer->dupByteSizePerFrame_ = dupByteSizePerFrameTest;
 
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
         (TEST_DUP_OFFLOAD_LEN / TEST_DUP_DEFAULT_LEN));
 
     rendererInServer->offloadEnable_ = false;
     rendererInServer->dupSpanSizeInFrame_ = dupSpanSizeInFrameTest;
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
         (TEST_DUP_COMMON_LEN / TEST_DUP_DEFAULT_LEN));
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
         (TEST_DUP_COMMON_LEN / TEST_DUP_DEFAULT_LEN));
     
     rendererInServer->dupSpanSizeInFrame_ = TEST_MAX_INNERCAP_BUFFER_SIZE;
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
 }
 } // namespace AudioStandard
 } // namespace OHOS

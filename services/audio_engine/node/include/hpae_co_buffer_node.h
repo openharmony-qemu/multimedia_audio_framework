@@ -51,7 +51,7 @@ public:
     void SetLatency(uint32_t latency);
     void SetOutputClusterConnected(bool isConnect);
     bool IsOutputClusterConnected();
-    bool DelayAlignmentInner();
+    bool DelayAlignmentInner(HpaePcmBuffer* buffer);
     void SetDelayCount(int32_t delayCount);
     void ChangeLatencyByCollManager(int32_t &latency);
 private:
