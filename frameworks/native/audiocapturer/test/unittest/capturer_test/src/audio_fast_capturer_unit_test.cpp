@@ -114,7 +114,6 @@ HWTEST_F(AudioFastCapturerUnitTest, Audio_Fast_Capturer_GetOverflowCount_001, Te
                 EXPECT_NE(nullptr, bufDesc.buffer);
                 audioCapturer->Enqueue(bufDesc);
                 });
-        
     bool isStarted = audioCapturer->Start();
     EXPECT_EQ(true, isStarted);
 
