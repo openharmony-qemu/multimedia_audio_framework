@@ -55,7 +55,7 @@ void AudioEndpointUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
-static void reConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+static void ReConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint,
     AudioEndpointConfig endpointConfig, AudioDeviceDescriptor deviceInfo, AudioEndpoint::EndpointType type)
 {
     std::shared_ptr<IAudioCaptureSource> source = audioEndpoint->GetFastSource(deviceInfo.networkId_, type);
@@ -63,7 +63,7 @@ static void reConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint,
     audioEndpoint->Config(endpointConfig);
 }
  
-static void reConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+static void eConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint,
     AudioEndpointConfig endpointConfig, AudioEndpoint::EndpointType type)
 {
     std::shared_ptr<IAudioRenderSink> sink = audioEndpoint->GetFastSink(endpointConfig.deviceInfo, type);
@@ -89,7 +89,7 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        reConfigSink(audioEndpoint, endpointConfig, type);
+        ReConfigSink(audioEndpoint, endpointConfig, type);
     }
     return audioEndpoint;
 }
@@ -115,7 +115,7 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        reConfigSource(audioEndpoint, endpointConfig, deviceInfo, type);
+        ReConfigSource(audioEndpoint, endpointConfig, deviceInfo, type);
     }
     return audioEndpoint;
 }
