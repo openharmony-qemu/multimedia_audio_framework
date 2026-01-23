@@ -63,7 +63,7 @@ static void ReConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint,
     audioEndpoint->Config(endpointConfig);
 }
  
-static void eConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+static void ReConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint,
     AudioEndpointConfig endpointConfig, AudioEndpoint::EndpointType type)
 {
     std::shared_ptr<IAudioRenderSink> sink = audioEndpoint->GetFastSink(endpointConfig.deviceInfo, type);
