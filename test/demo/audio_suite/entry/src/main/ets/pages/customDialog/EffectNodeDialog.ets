@@ -131,7 +131,7 @@ export struct EffectNodeDialog {
           },
           onAgree: () => {
             // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.ENV)) {
+            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.NR)) {
               return;
             }
 
@@ -267,7 +267,7 @@ export struct EffectNodeDialog {
           this.selectedEffectNodeId);
       if (!addAssetResult) {
         this.getUIContext().showAlertDialog({
-          message: `设置空间渲染节点失败`,
+          message: `设置效果节点失败`,
           autoCancel: true
         });
         return false;
@@ -276,7 +276,7 @@ export struct EffectNodeDialog {
       let ret = audioNapi.setEffectNodeBypass(this.selectedAudioTrackId, this.selectedEffectNodeId, false);
       if (!ret) {
         this.getUIContext().showAlertDialog({
-          message: `设置空间渲染节点Bypass失败`,
+          message: `设置效果节点Bypass失败`,
           autoCancel: true
         });
         return false;

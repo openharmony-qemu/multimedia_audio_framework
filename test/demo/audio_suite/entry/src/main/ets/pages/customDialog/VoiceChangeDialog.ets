@@ -54,7 +54,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'cute', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CUTE)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CUTE)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CUTE
                   })
@@ -65,7 +65,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'cyberpunk', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_CYBERPUNK
                   })
@@ -76,7 +76,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'female', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_FEMALE)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_FEMALE)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_FEMALE
                   })
@@ -87,7 +87,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'male', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MALE)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MALE)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MALE
                   })
@@ -98,7 +98,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'mix', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MIX)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MIX)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MIX
                   })
@@ -109,7 +109,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'monster', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MONSTER)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MONSTER)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_MONSTER
                   })
@@ -120,7 +120,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'seasoned', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SEASONED)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SEASONED)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SEASONED
                   })
@@ -131,7 +131,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'synth', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SYNTH)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SYNTH)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_SYNTH
                   })
@@ -142,7 +142,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'trill', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_TRILL)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_TRILL)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_TRILL
                   })
@@ -153,7 +153,7 @@ struct GeneralVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'war', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.generalVoiceChange == GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_WAR)
+                  .checked(this.voiceChangeComponent.generalVoiceChange === GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_WAR)
                   .onChange(() => {
                     this.voiceChangeComponent.generalVoiceChange = GeneralVoiceChangeType.GENERAL_VOICE_CHANGE_TYPE_WAR
                   })
@@ -218,7 +218,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'close', group: 'PureVoiceGender' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeGender === PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_CLOSE
                   })
@@ -229,7 +229,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'close', group: 'PureVoiceGender' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_FEMALE)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeGender === PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_FEMALE)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_FEMALE
                   })
@@ -240,7 +240,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'close', group: 'PureVoiceGender' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeGender == PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_MALE)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeGender === PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_MALE)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeGender = PureVoiceChangeGenderOption.PURE_VOICE_CHANGE_MALE
                   })
@@ -257,7 +257,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'close', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CLOSE
                   })
@@ -268,7 +268,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'cute', group: 'GeneralVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CARTOON)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CARTOON)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CARTOON
                   })
@@ -279,7 +279,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'cute', group: 'PureVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CUTE)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CUTE)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_CUTE
                   })
@@ -290,7 +290,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'female', group: 'PureVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_FEMALE)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_FEMALE)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_FEMALE
                   })
@@ -301,7 +301,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'male', group: 'PureVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MALE)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MALE)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MALE
                   })
@@ -312,7 +312,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'monster', group: 'PureVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MONSTER)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MONSTER)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_MONSTER
                   })
@@ -323,7 +323,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'robot', group: 'PureVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_ROBOTS)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_ROBOTS)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_ROBOTS
                   })
@@ -334,7 +334,7 @@ struct PureVoiceChangeDialog {
             GridItem() {
               Column() {
                 Radio({ value: 'seasoned', group: 'PureVoiceChangeType' })
-                  .checked(this.voiceChangeComponent.pureVoiceChangeType == PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_SEASONED)
+                  .checked(this.voiceChangeComponent.pureVoiceChangeType === PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_SEASONED)
                   .onChange(() => {
                     this.voiceChangeComponent.pureVoiceChangeType = PureVoiceChangeType.PURE_VOICE_CHANGE_TYPE_SEASONED
                   })

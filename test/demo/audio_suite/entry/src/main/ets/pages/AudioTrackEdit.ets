@@ -940,6 +940,7 @@ export struct AudioTrackEdit {
                 break;
               case NodeType.VB:
                 this.voiceBeautifierPara = node.voiceBeautifierType ?? VoiceBeautifierType.VOICE_BEAUTIFIER_TYPE_CLEAR;
+                break;
               case NodeType.SEPARATION:
                 this.audioSeparationPara =
                   node.audioSeparationType ?? AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE;

@@ -19,7 +19,6 @@
 
 static OH_AudioCapturer *audioCapturer;
 static OH_AudioStreamBuilder *builder;
-static std::string g_filePath = "/data/storage/el2/base/haps/entry/files/oh_test_audio.pcm";
 static std::mutex g_bufferMutex;
 static std::unique_ptr<uint8_t[]> g_recordBuffer = nullptr;
 static size_t g_audioBufferSize = 0;
@@ -27,7 +26,6 @@ static size_t g_audioBufferSize = 0;
 const int GLOBAL_RESMGR = 0xFF00;
 const char *RECORD_TAG = "[AudioEditTestApp_Record_cpp]";
 const size_t BUFFER_SIZE = 1024;
-FILE *g_file = nullptr;
 // 预留逻辑，最终是用户在设置页面选择以后传过来的，不选的话，也可以是默认值
 int32_t g_samplingRate = 44100;
 int32_t g_channelCount = 2;
@@ -74,10 +72,6 @@ void SetAudioData(const uint8_t *data, size_t size)
 
 int32_t AudioCapturerOnReadData(OH_AudioCapturer *capturer, void *userData, void *buffer, int32_t bufferLen)
 {
-    size_t count = 1;
-    if (fwrite(buffer, bufferLen, count, g_file) != count) {
-        printf("buffer fwrite err");
-    }
     if (g_realPlaying) {
         // 缓冲区原有大小+bufferLen，扩展完缓冲区以后，再写入数据，缓冲区初始大小1024
         auto &bufferVec = g_writeDataBufferMap[g_key]; // 获取引用，避免重复查找
@@ -142,7 +136,7 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
     status = napi_get_value_bool(env, argv[ARG_5], &g_isPure);
     g_key = inputId;
     if (startTime > UINT_0) {
-        key = inputId.c_str() + std::to_string(startTime);
+        key = inputId + std::to_string(startTime);
     }
     g_writeDataBufferMap[g_key] = std::vector<uint8_t>(BUFFER_SIZE);
     delete[] argv;
@@ -153,11 +147,6 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
         audioCapturer = nullptr;
         builder = nullptr;
     }
-    if (g_file) {
-        fclose(g_file);
-        g_file = nullptr;
-    }
-    g_file = fopen(g_filePath.c_str(), "wb");
     AssembleStreamBuilder();
     return nullptr;
 }
@@ -184,7 +173,7 @@ napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info)
     status = napi_get_value_int64(env, argv[ARG_3], &startTime);
     g_key = inputId;
     if (startTime > 0) {
-        g_key = inputId.c_str() + std::to_string(startTime);
+        g_key = inputId + std::to_string(startTime);
     }
     g_writeDataBufferMap[g_key] = std::vector<uint8_t>(BUFFER_SIZE);
     AudioAsset asset{
@@ -269,10 +258,6 @@ napi_value AudioCapturerRelease(napi_env env, napi_callback_info info)
         audioCapturer = nullptr;
         builder = nullptr;
     }
-    if (g_file) {
-        fclose(g_file);
-        g_file = nullptr;
-    }
     return nullptr;
 }
 
@@ -333,7 +318,7 @@ napi_value MixRecordBuffer(napi_env env, napi_callback_info info)
     long startTime = 1000;
     std::string key = inputId;
     if (startTime > 0) {
-        key = inputId.c_str() + std::to_string(startTime);
+        key = inputId + std::to_string(startTime);
     }
     StoreTotalBuffToMap(reinterpret_cast<const char *>(g_recordBuffer.get()), g_audioBufferTotalSize, key);
     AudioAsset asset{

@@ -50,7 +50,7 @@ export struct EffectDialog {
       selectedAudioAssetStartTime: this.selectedAudioAssetStartTime,
       onAgree: (node: Node) => {
         if (this.onAgree) {
-          this.controller?.close();
+          this.effectNodeDialog?.close();
           this.onAgree(node)
         }
       }

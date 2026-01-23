@@ -243,6 +243,7 @@ napi_value ModifyRenderTrack(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok || argc < UINT_2) {
         napi_throw_error(env, "EINVAL", "Expected exactly 2 arguments");
+        delete[] argv;
         return nullptr;
     }
     napi_valuetype type;
@@ -278,5 +279,6 @@ napi_value ModifyRenderTrack(napi_env env, napi_callback_info info)
     const std::vector<bool> isNotSilents(trackIdsRender.size(), false);
     Timeline::getInstance().setAudioTrackSilent(trackIdsRender, isNotSilents);
     napi_value napiValue;
+    delete[] argv;
     return napiValue;
 }
