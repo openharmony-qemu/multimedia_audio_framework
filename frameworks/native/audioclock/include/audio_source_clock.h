@@ -42,7 +42,7 @@ public:
     // can be override for differ method
     virtual uint64_t GetTimestamp(uint32_t __attribute__((unused)) positionInc);
 protected:
-    uint32_t sizePerPos_;
+    uint32_t sizePerPos_ = 0;
     uint32_t sampleRate_ = 0;
     AudioSampleFormat format_ = AudioSampleFormat::INVALID_WIDTH;
     uint32_t channel_ = 0;
@@ -67,4 +67,4 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // CAPTURER_CLOCK_H
+#endif // AUDIO_SOURCE_CLOCK_H

@@ -18,12 +18,12 @@
 using OHOS::AudioStandard::OHAudioResourceManager;
 using OHOS::AudioStandard::OHAudioWorkgroup;
 
-static OHOS::AudioStandard::OHAudioResourceManager *convertResourceManager(OH_AudioResourceManager* resourceManager)
+static OHOS::AudioStandard::OHAudioResourceManager *convertResourceManager(OH_AudioResourceManager *resourceManager)
 {
     return (OHAudioResourceManager*) resourceManager;
 }
 
-static OHOS::AudioStandard::OHAudioWorkgroup *convertWorkgroup(OH_AudioWorkgroup* group)
+static OHOS::AudioStandard::OHAudioWorkgroup *convertWorkgroup(OH_AudioWorkgroup *group)
 {
     return (OHAudioWorkgroup*) group;
 }
@@ -35,7 +35,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioResourceManager(OH_AudioResourceMa
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     OHAudioResourceManager *audioResourceManager = OHAudioResourceManager::GetInstance();
-    *resourceManager = (OH_AudioResourceManager*)audioResourceManager;
+    *resourceManager = (OH_AudioResourceManager *)audioResourceManager;
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 

@@ -82,11 +82,12 @@ private:
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     void HandleOperationFlushed();
-    void HandleOperationStopped(CapturerStage stage);
     void UpdateBufferTimeStamp(size_t readLen);
     void RebuildCaptureInjector();
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
     void RecordOverflowStatus(bool currentStatus);
+    void HandleOperationStopped(CapturerStage stage);
+    void ResetAsrFlag();
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -123,6 +124,7 @@ private:
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
     int32_t innerCapId_ = 0;
+    std::string asrBundleName_ = "",
     std::atomic<bool> rebuildFlag_ = false;
 
     int64_t lastStartTime_{};
