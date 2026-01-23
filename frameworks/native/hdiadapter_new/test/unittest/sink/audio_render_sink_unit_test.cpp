@@ -298,6 +298,26 @@ HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : PrimarySinkUnitTest_007
+ * @tc.desc   : Test primary sink mute for switch device
+ */
+HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_007, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    int32_t ret = primarySink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
+
+/**
  * @tc.name   : Test SetDmDeviceType API
  * @tc.number : SetDmDeviceType_001
  * @tc.desc   : Test SetDmDeviceType
@@ -683,6 +703,26 @@ HWTEST_F(AudioRenderSinkUnitTest, VoipSinkUnitTest_005, TestSize.Level1)
     InitVoipSink();
     EXPECT_TRUE(voipSink_ && voipSink_->IsInited());
     int32_t ret = voipSink_->SetVolume(1.0f, 1.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitVoipSink();
+}
+
+/**
+ * @tc.name   : Test VoipSink API
+ * @tc.number : VoipSinkUnitTest_006
+ * @tc.desc   : Test voip sink mute for switch device
+ */
+HWTEST_F(AudioRenderSinkUnitTest, VoipSinkUnitTest_006, TestSize.Level1)
+{
+    InitVoipSink();
+    EXPECT_TRUE(voipSink_ && voipSink_->IsInited());
+    int32_t ret = voipSink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = voipSink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = voipSink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = voipSink_->SetSinkMuteForSwitchDevice(false);
     EXPECT_EQ(ret, SUCCESS);
     DeInitVoipSink();
 }

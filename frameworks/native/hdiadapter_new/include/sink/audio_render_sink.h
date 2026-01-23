@@ -115,6 +115,9 @@ private:
     void UpdateSinkState(bool started);
     void WaitForDataLinkConnected();
     void UpdateNearlinkOutputRoute();
+    int32_t HandleSwitchDeviceMuteState(bool mute, bool &applyVolume);
+    int32_t SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute);
+    int32_t SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -195,6 +198,8 @@ private:
     bool isDataLinkConnected_ = false;
     std::condition_variable dataConnectionCV_;
     std::function<void(bool)> deviceCallback_ = nullptr;
+
+    const bool needSetHdiVolume_ = false;
 };
 
 } // namespace AudioStandard
