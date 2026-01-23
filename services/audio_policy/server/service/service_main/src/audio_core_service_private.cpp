@@ -363,6 +363,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     const AudioStreamDeviceChangeReasonExt reason)
 {
     if (!pipeManager_->IsModemCommunicationIdExist()) {
+        CheckAndUpdateHearingAidCall(DEVICE_TYPE_NONE);
         return;
     }
 
