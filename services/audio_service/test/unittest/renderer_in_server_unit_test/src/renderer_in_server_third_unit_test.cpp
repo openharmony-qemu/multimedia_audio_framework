@@ -188,12 +188,12 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_006, Test
 {
     AudioProcessConfig processConfig;
     RendererInServer rendererInServer(processConfig, stateListener);
-    rendererInServer.processConfig_.rendererInfo.pipeType = PIPE_TYPE_OUT_OFFLOAD;
     rendererInServer.OnCheckActiveMusicTime("Started");
-    EXPECT_EQ(rendererInServer.processConfig_.rendererInfo.pipeType, PIPE_TYPE_OUT_OFFLOAD);
-    rendererInServer.processConfig_.rendererInfo.pipeType = PIPE_TYPE_UNKNOWN;
-    rendererInServer->OnCheckActiveMusicTime("Started");
     EXPECT_EQ(rendererInServer.processConfig_.rendererInfo.pipeType, PIPE_TYPE_UNKNOWN);
+    processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_OFFLOAD;
+    RendererInServer rendererInServer1(processConfig, stateListener);
+    rendererInServer1.OnCheckActiveMusicTime("Started");
+    EXPECT_EQ(rendererInServer1.processConfig_.rendererInfo.pipeType, PIPE_TYPE_OUT_OFFLOAD);
 }
 
 /**
