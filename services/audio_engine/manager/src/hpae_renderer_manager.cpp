@@ -655,10 +655,7 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
-#ifndef CONFIG_FACTORY_VERSION
-        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
-#endif
         UpdateClusterStreamInfo(sceneType);
         isNeedInitEffectBufferFlagMap_[sessionId] = true;
         TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
@@ -681,10 +678,7 @@ int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
         HandlePriPaPower(sessionId);
         ConnectInputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_RUNNING);
-#ifndef CONFIG_FACTORY_VERSION
-        // FACTORY_VERSION cancel fade in
         SetSessionFade(sessionId, OPERATION_STARTED);
-#endif
         UpdateClusterStreamInfo(sceneType);
         if (syncId >= 0) {
             HandleSyncId(sessionId, syncId);
