@@ -691,7 +691,7 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
         return false;
     }
 
-    auto pipeIt = deviceInfo->supportPipeMap_.find(AUDIO_OUTPUT_FLAG_MULTICHANNEL);    
+    auto pipeIt = deviceInfo->supportPipeMap_.find(AUDIO_OUTPUT_FLAG_MULTICHANNEL);
     if (pipeIt != deviceInfo->supportPipeMap_.end() && pipeIt->second != nullptr) {
         AUDIO_INFO_LOG("adapterType:%{public}d", pipeIt->second->GetAdapterType());
         if (pipeIt->second->GetAdapterType() != OHOS::AudioStandard::AudioAdapterType::TYPE_PRIMARY) {
