@@ -87,7 +87,7 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        reConfigSource(audioEndpoint, endpointConfig, deviceInfo, type);
+        reConfigSink(audioEndpoint, endpointConfig, type);
     }
     return audioEndpoint;
 }
@@ -113,7 +113,7 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        audioEndpoint = nullptr;
+        reConfigSource(audioEndpoint, endpointConfig, deviceInfo, type);
     }
     return audioEndpoint;
 }
