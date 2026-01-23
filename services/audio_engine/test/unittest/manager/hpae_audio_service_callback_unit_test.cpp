@@ -91,6 +91,11 @@ void HpaeAudioServiceCallbackUnitTest::OnGetAudioEnhancePropertyCb(int32_t resul
     getAudioEnhancePropertyResult_ = result;
 }
  
+void HpaeAudioServiceCallbackUnitTest::OnSetOutputDeviceSinkCb(int32_t result)
+{
+    setOutputDeviceSinkResult_ = result;
+}
+ 
 void HpaeAudioServiceCallbackUnitTest::HandleSourceAudioStreamRemoved(uint32_t sessionId)
 {}
 
@@ -164,5 +169,9 @@ std::vector<SinkInfo> HpaeAudioServiceCallbackUnitTest::GetSinks() const noexcep
     return sinks_;
 }
  
+int32_t HpaeAudioServiceCallbackUnitTest::GetSetOutputDeviceSinkResult() const noexcept
+{
+    return setOutputDeviceSinkResult_;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
