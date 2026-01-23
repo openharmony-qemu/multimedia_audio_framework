@@ -250,7 +250,7 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
     return SUCCESS;
 }
 
-int64_t MultichannelAudioRenderSink::GetVolumeDataCount()
+int32_t MultichannelAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     return volumeDataCount_;
 }

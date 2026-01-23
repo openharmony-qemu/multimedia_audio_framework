@@ -43,7 +43,7 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
-    int64_t GetVolumeDataCount() override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
