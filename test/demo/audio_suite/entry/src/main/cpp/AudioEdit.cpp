@@ -913,14 +913,16 @@ static napi_value clearByInputId(napi_env env, napi_callback_info info)
  
     std::string inputId;
     napi_status status = ParseNapiString(env, argv[ARG_0], inputId);
-    long startTime = 0;
+    int64_t startTime = 0;
     status = napi_get_value_int64(env, argv[ARG_1], &startTime);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "inputId is: %{public}s", inputId.c_str());
     if (status != napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SetIsRecord status: %{public}d", static_cast<int>(status));
+        delete[] argv
         return nullptr;
     }
     ClearByInputId(inputId, startTime);
+    delete[] argv
     return nullptr;
 }
 

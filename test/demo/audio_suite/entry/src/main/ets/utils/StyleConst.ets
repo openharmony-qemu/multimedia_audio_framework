@@ -51,7 +51,7 @@
      */
     public static readonly FULL_HEIGHT: string = '100%';
     /**
-     * One hundred and eight height.
+     * One hundred and eight percent height.
      */
     public static readonly ONE_HUNDRED_AND_EIGHT_HEIGHT: string = '108%';
     /**

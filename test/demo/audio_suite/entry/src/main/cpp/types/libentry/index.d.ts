@@ -64,6 +64,6 @@ export const clearByInputId: (inputId: string, startTime: number) => void;
 export const stopPipeline: () => void;
 export const registerAudioCacheCallback: (callBackFull: Function) => boolean;
 export const unregisterAudioCacheCallback: () => void;
-export const ModifyRender: (NotRenderTrackIds: string[], RenderTrackIds: string[]) => void;
+export const ModifyRender: (notRenderTrackIds: string[], renderTrackIds: string[]) => void;
 export const setCurrentTime: (currentTime: number) => void;
 export const setEffectNodeBypass: (inputId: string, effectId: string, isBypass: boolean) => boolean;

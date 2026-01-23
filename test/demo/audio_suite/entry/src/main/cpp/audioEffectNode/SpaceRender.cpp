@@ -113,34 +113,44 @@ napi_value ResetFixedPositionEffect(napi_env env, napi_callback_info info)
     return ret;
 }
 
-void ParseDynamicRenderParams(napi_env env, napi_value* argv, size_t argc, DynamicRenderParams* params)
-{
-    napi_status status;
-    if (params == nullptr) {
+void ParseDynamicRenderParams(napi_env env, napi_value *argv, size_t argc, DynamicRenderParams *params) {
+    if (!params)
         return;
-    }
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &(params->x));
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_1], &(params->y));
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &(params->z));
-    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_3], &(params->surroundTime));
-    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_4], &(params->surroundDirection));
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], params->effectNodeId);
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_6], params->inputId);
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_7], params->selectedNodeId);
 
-    switch (params->surroundDirection) {
-        case 0:
-            params->surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
-            break;
-        case 1:
-            params->surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW;
-            break;
-        default:
-            params->surroundDirectionType = OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
-    }
+    auto checkStatus = [env](napi_status status, const char *paramName) {
+        if (status != napi_ok) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "解析参数[%s]失败", paramName);
+            return false;
+        }
+        return true;
+    };
+
+    #define PARSE_DOUBLE(index, field)                                                                                 \
+        if (!checkStatus(napi_get_value_double(env, argv[index], &(params->field)), #field))                           \
+        return
+    #define PARSE_INT(index, field)                                                                                    \
+        if (!checkStatus(napi_get_value_int32(env, argv[index], &(params->field)), #field))                            \
+        return
+    #define PARSE_STR(index, field)                                                                                    \
+        if (!checkStatus(ParseNapiString(env, argv[index], params->field), #field))                                    \
+        return
+
+    PARSE_DOUBLE(NAPI_ARGV_INDEX_0, x);
+    PARSE_DOUBLE(NAPI_ARGV_INDEX_1, y);
+    PARSE_DOUBLE(NAPI_ARGV_INDEX_2, z);
+    PARSE_INT(NAPI_ARGV_INDEX_3, surroundTime);
+    PARSE_INT(NAPI_ARGV_INDEX_4, surroundDirection);
+    PARSE_STR(NAPI_ARGV_INDEX_5, effectNodeId);
+    PARSE_STR(NAPI_ARGV_INDEX_6, inputId);
+    PARSE_STR(NAPI_ARGV_INDEX_7, selectedNodeId);
+
+    params->surroundDirectionType = (params->surroundDirection == 1)
+                                        ? OH_AudioSuite_SurroundDirection::SPACE_RENDER_CW
+                                        : OH_AudioSuite_SurroundDirection::SPACE_RENDER_CCW;
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG,
-                 "x:%{public}lf, y:%{public}lf, z:%{public}lf, surroundTime:%{public}d surroundDirection:%{public}d",
+                 "解析结果 - x:%{public}lf, y:%{public}lf, z:%{public}lf, "
+                 "surroundTime:%{public}d, surroundDirection:%{public}d",
                  params->x, params->y, params->z, params->surroundTime, params->surroundDirection);
 }
 

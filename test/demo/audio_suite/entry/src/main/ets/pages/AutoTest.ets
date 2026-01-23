@@ -824,6 +824,14 @@ export struct AutoTest {
       })
       await Promise.all(scenePromises).then(async () => {
         Logger.info(TAG, `scenePromises done `);
+
+        this.autoTestProcessMap.forEach((value, key) => {
+          if (value < 100) {
+            this.autoTestProcessMap.set(key, 100);
+            Logger.warn(TAG, `Force set process ${key} to 100% after all tasks completed`);
+          }
+        });
+
         if (reportFlag) {
           await this.saveSingleCaseExecuteReport(fileSummary);
         }
