@@ -97,6 +97,11 @@ public:
         getAudioEnhancePropertyResult_ = result;
     }
 
+    void OnSetOutputDeviceSinkCb(int32_t result) override
+    {
+        setOutputDeviceSinkResult_ = result;
+    }
+
     void HandleSourceAudioStreamRemoved(uint32_t sessionId) override {}
 
     int32_t GetPortId() const noexcept
@@ -154,6 +159,11 @@ public:
         return getAudioEnhancePropertyResult_;
     }
 
+    int32_t GetSetOutputDeviceSinkResult() const noexcept
+    {
+        return setOutputDeviceSinkResult_;
+    }
+
     std::vector<OHOS::AudioStandard::SinkInput> GetSinkInputs() const noexcept
     {
         return sinkInputs_;
@@ -181,6 +191,7 @@ private:
     int32_t setSourceOutputMuteResult_ = -1;
     int32_t getAudioEffectPropertyResult_ = -1;
     int32_t getAudioEnhancePropertyResult_ = -1;
+    int32_t setOutputDeviceSinkResult_ = -1;
     std::vector<OHOS::AudioStandard::SinkInput> sinkInputs_;
     std::vector<OHOS::AudioStandard::SourceOutput> sourceOutputs_;
     std::vector<OHOS::AudioStandard::SinkInfo> sinks_;

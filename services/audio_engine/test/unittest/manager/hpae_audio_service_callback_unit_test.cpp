@@ -154,6 +154,11 @@ int32_t HpaeAudioServiceCallbackUnitTest::GetGetAudioEnhancePropertyResult() con
     return getAudioEnhancePropertyResult_;
 }
  
+int32_t HpaeAudioServiceCallbackUnitTest::GetSetOutputDeviceSinkResult() const noexcept
+{
+    return setOutputDeviceSinkResult_;
+}
+ 
 std::vector<SinkInput> HpaeAudioServiceCallbackUnitTest::GetSinkInputs() const noexcept
 {
     return sinkInputs_;
@@ -167,11 +172,6 @@ std::vector<SourceOutput> HpaeAudioServiceCallbackUnitTest::GetSourceOutputs() c
 std::vector<SinkInfo> HpaeAudioServiceCallbackUnitTest::GetSinks() const noexcept
 {
     return sinks_;
-}
- 
-int32_t HpaeAudioServiceCallbackUnitTest::GetSetOutputDeviceSinkResult() const noexcept
-{
-    return setOutputDeviceSinkResult_;
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -75,14 +75,14 @@ public:
     int32_t GetGetAudioEffectPropertyResult() const noexcept;
  
     int32_t GetGetAudioEnhancePropertyResult() const noexcept;
+
+    int32_t GetSetOutputDeviceSinkResult() const noexcept;
  
     std::vector<SinkInput> GetSinkInputs() const noexcept;
  
     std::vector<SourceOutput> GetSourceOutputs() const noexcept;
  
     std::vector<SinkInfo> GetSinks() const noexcept;
-
-    int32_t GetSetOutputDeviceSinkResult() const noexcept;
  
 private:
     int32_t portId_ = -1;
