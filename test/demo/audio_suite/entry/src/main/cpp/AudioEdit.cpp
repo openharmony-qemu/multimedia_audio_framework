@@ -232,7 +232,7 @@ static napi_value InitByPipelineCascad(napi_env env, napi_callback_info info)
 }
 
 // Import Audio Call
-void updateRecordAudioParam(int sampleRate, int channels, int bitsPerSample)
+void UpdateRecordAudioParam(int sampleRate, int channels, int bitsPerSample)
 {
     g_samplingRate = sampleRate;
     g_channelCount = channels;
@@ -267,7 +267,7 @@ static napi_value AudioInAndOutInit(napi_env env, napi_callback_info info)
     };
     CallStringArrayCallback(audioFormat);
     // Create a corresponding unsealer for the resource instance
-    updateRecordAudioParam(sampleRate, channels, bitsPerSample);
+    UpdateRecordAudioParam(sampleRate, channels, bitsPerSample);
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);

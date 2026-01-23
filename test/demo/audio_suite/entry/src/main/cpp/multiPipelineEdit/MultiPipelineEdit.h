@@ -17,6 +17,12 @@ struct InputAudioParams {
     std::string fileName;
 };
 
+struct AudioFormatParams{
+    int32_t sampleRate;
+    int32_t channels;
+    int32_t bitsPerSample;
+};
+
 napi_value AudioEditNodeInitMultiPipeline(napi_env env, napi_callback_info info);
 napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info);
 napi_value MultiPipelineEnvPrepare(napi_env env, napi_callback_info info);

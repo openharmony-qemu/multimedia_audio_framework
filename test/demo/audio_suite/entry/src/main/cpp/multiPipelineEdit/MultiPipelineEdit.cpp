@@ -965,37 +965,39 @@ bool InitAudioParams(InputAudioParams &params, FILE *&inputFile, uint32_t &offse
     }
 }
 
-napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inputFile, int32_t &sampleRate,
-                             int32_t &channels, int32_t &bitsPerSample)
+napi_value MultiAudioOutInit(napi_env &env, InputAudioParams &params, FILE *&inputFile,
+                             AudioFormatParams &audioFormat, std::shared_ptr<NodeManager> &nodeManager)
 {
     uint32_t offset = 0;
     uint32_t length = 0;
     InitAudioParams(params, inputFile, offset, length);
 
-    std::shared_ptr<NodeManager> &threadNodeManager = g_threadPipelineManager->nodeManager;
     std::map<std::string, FILE *> &writeDataFileMap = g_threadPipelineManager->writeDataFileMap;
     writeDataFileMap[params.inputId] = inputFile;
     g_threadPipelineManager->totalInputDataSize = length;
     g_activedFileArray.push_back(inputFile);
     napi_value napiValue;
     OH_AudioSuite_Result result = AUDIOSUITE_SUCCESS;
-    Node inputNode = threadNodeManager->GetNodeById(params.inputId);
+    Node inputNode = nodeManager->GetNodeById(params.inputId);
     if (inputNode.id.empty()) {
         MultiCreateInputNode(env, params.inputId, napiValue, result);
     } else {
         UpdateInputNodeParams *updateParams =
-            new UpdateInputNodeParams(params.inputId, channels, sampleRate, bitsPerSample);
+            new UpdateInputNodeParams(params.inputId, audioFormat.channels,
+                                      audioFormat.sampleRate, audioFormat.bitsPerSample);
         MultiUpdateInputNode(result, *updateParams);
         return ReturnResult(env, static_cast<AudioSuiteResult>(result));
     }
     MultiManageOutputNodes(env, params.inputId, params.outputId, params.mixerId, result);
-    std::vector<std::string> audioFormat = {std::to_string(sampleRate), std::to_string(channels),
-                                            std::to_string(bitsPerSample)};
-    CallStringArrayCallback(audioFormat);
+    std::vector<std::string> audioFormatVec = {std::to_string(audioFormat.sampleRate),
+                                               std::to_string(audioFormat.channels),
+                                               std::to_string(audioFormat.bitsPerSample)};
+    CallStringArrayCallback(audioFormatVec);
     return ReturnResult(env, static_cast<AudioSuiteResult>(result));
 }
 
-napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info) {
+napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, MULTI_PIPELINE_TAG, "MultiAudioInAndOutInit start");
     InputAudioParams params;
     napi_status status = ParseInputArguments(env, info, params);
@@ -1008,24 +1010,23 @@ napi_value MultiAudioInAndOutInit(napi_env env, napi_callback_info info) {
     OH_AVSource *source = OH_AVSource_CreateWithFD(fd, 0, fileLength);
     if (source == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
-        return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     OH_AVFormat *trackFormat = OH_AVSource_GetTrackFormat(source, 0);
     if (trackFormat == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
-    int32_t sampleRate;
-    int32_t channels;
-    int32_t bitsPerSample;
-    if (!MultiGetAudioProperties(trackFormat, &sampleRate, &channels, &bitsPerSample)) {
+    AudioFormatParams audioFormat;
+    if (!MultiGetAudioProperties(trackFormat, &audioFormat.sampleRate,
+                                 &audioFormat.channels, &audioFormat.bitsPerSample)) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
     OH_AVDemuxer *demuxer = OH_AVDemuxer_CreateWithSource(source);
     if (demuxer == nullptr) {
         return ReturnResult(env, AudioSuiteResult::DEMO_ERROR_FAILD);
     }
+    std::shared_ptr<NodeManager> nodeManager = g_threadPipelineManager->nodeManager;
 
-    return MultiAudioOutInit(env, params, inputFile, sampleRate, channels, bitsPerSample);
+    return MultiAudioOutInit(env, params, inputFile, audioFormat, nodeManager);
 }
 
 OH_AudioSuite_Result RemoveNodeMoreThanTwoSize(std::shared_ptr<NodeManager> &threadNodeManager, std::string inputId)
