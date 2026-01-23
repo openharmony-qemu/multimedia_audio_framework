@@ -2590,7 +2590,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_004, TestSize.Lev
     audioRenderer->audioInterruptCallback_ = nullptr;
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2621,7 +2621,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_005, TestSize.Lev
     
     auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**

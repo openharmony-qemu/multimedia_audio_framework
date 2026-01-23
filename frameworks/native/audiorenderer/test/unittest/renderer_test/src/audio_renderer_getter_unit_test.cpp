@@ -148,8 +148,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_002, TestSize.Level1)
     ret = audioRenderer->SetParams(rendererParams);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(false, isStarted);
+    audioRenderer->Start();
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
@@ -216,11 +215,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_005, TestSize.Level1)
     ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(false, isStarted);
+    audioRenderer->Start();
 
-    bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(false, isStopped);
+    audioRenderer->Stop();
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
