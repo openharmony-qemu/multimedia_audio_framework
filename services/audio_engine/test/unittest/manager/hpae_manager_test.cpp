@@ -1535,6 +1535,9 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER), SUCCESS);
     hpaeManager_->UpdateExtraSceneType("123", "456", "789");
     WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->SetOutputDeviceSink(1, "test");
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSuspend002, TestSize.Level0)

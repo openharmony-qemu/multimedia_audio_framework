@@ -2196,8 +2196,12 @@ void HpaeManager::InitAudioEffectChainManager(const std::vector<EffectChain> &ef
 
 void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
-    HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
-    auto request = [this, sinkName]() {
+    auto request = [this, device, sinkName]() {
+        HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
+        auto serviceCallback = serviceCallback_.lock();
+        if (serviceCallback != nullptr) {
+            serviceCallback->OnSetOutputDeviceSinkCb(SUCCESS);
+        }
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
         CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%s] in rendererManagerMap_", sinkName.c_str());
         rendererManager->RefreshProcessClusterByDevice();
