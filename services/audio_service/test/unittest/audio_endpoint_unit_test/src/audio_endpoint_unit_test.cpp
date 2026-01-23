@@ -2297,7 +2297,7 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_002, TestSize.Level1)
     
     notifier.join();
     
-    EXPECT_TRUE(audioEndpointInner->isStarted_);
+    EXPECT_EQ(audioEndpointInner->isStarted_, initialIsStarted);
 }
 
 /**
