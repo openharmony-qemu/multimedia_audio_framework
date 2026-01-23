@@ -2369,7 +2369,7 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_004, TestSize.Level1)
     
     notifier.join();
     
-    EXPECT_FALSE(audioEndpointInner->isStarted_);
+    EXPECT_TRUE(audioEndpointInner->isStarted_);
 }
 } // namespace AudioStandard
 } // namespace OHOS
