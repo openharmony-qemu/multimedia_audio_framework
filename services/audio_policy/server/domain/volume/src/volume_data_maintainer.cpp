@@ -537,7 +537,7 @@ bool VolumeDataMaintainer::GetSystemSoundUrl(const std::string &key, std::string
 
 void VolumeDataMaintainer::RegisterCloned()
 {
-    if(hasRegisterCloned_) {
+    if (hasRegisterCloned_) {
         AUDIO_WARNING_LOG("has registered cloned observer");
         return;
     }
