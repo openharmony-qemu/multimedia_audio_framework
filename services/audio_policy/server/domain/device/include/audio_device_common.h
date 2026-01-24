@@ -48,7 +48,7 @@
 #include "audio_volume_manager.h"
 #include "audio_ec_manager.h"
 #include "audio_adapter_manager.h"
-
+#include "audio_pipe_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -192,7 +192,7 @@ private:
     AudioOffloadStream& audioOffloadStream_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioA2dpDevice& audioA2dpDevice_;
-
+    AudioPipeManager& pipeManager_ = nullptr;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
 };
 
