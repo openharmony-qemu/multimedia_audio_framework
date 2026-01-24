@@ -1833,7 +1833,6 @@ HWTEST(AudioServiceUnitTest, RemoveRenderer_001, TestSize.Level1)
 
     audioService->allRendererMap_.clear();
     audioService->mutedSessions_.clear();
-
 }
 
 /**
