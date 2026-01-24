@@ -26,7 +26,7 @@
  */
 
 /**
- * @file native_audiocapturer.hxx
+ * @file native_audiocapturer.h
  *
  * @brief Declare audio stream related interfaces for input type.
  *
@@ -65,18 +65,6 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer);
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
-
-/**
- * @brief Callback function to get playback capture start result.
- *
- * @param capturer Pointer to the AudioCapturer instance that triggers the callback.
- * @param userData Pointer to the user data passed when setting the callback via
- *     {@link #OH_AudioCapturer_RequestPlaybackCaptureStart}.
- * @param state The final state to describe whether start request is successful.
- * @since 23
- */
-typedef void (*OH_AudioCapturer_OnPlaybackCaptureStartCallback)(OH_AudioCapturer* capturer, void* userData,
-    OH_AudioStream_PlaybackCaptureStartState stateCode);
 
 /*
  * Request to pause the capturer stream.
@@ -359,6 +347,20 @@ typedef void (*OH_AudioCapturer_OnFastStatusChange)(
 );
 
 /**
+ * @brief Callback function to get playback capture start result.
+ *
+ * @param capturer Pointer to the AudioCapturer instance that triggers the callback.
+ * @param userData Pointer to the user data passed when setting the callback via
+ *     {@link #OH_AudioCapturer_RequestPlaybackCaptureStart}.
+ * @param state The final state to describe whether start request is successful.
+ * @since 23
+ */
+typedef void (*OH_AudioCapturer_OnPlaybackCaptureStartCallback)(
+    OH_AudioCapturer* capturer,
+    void* userData,
+    OH_AudioStream_PlaybackCaptureStartState state);
+
+/**
  * Asynchronously request to start the playback capture stream.
  * This function is non-blocking, which means system will continue to process user authorization and
  * stream starting when receiving the start request. And the final result will be returned by callback.
@@ -372,7 +374,6 @@ typedef void (*OH_AudioCapturer_OnFastStatusChange)(
  *     {@link #AUDIOSTREAM_ERROR_SYSTEM} System internal error, like audio service error.
  * @since 23
  */
- 
 OH_AudioStream_Result OH_AudioCapturer_RequestPlaybackCaptureStart(OH_AudioCapturer* capturer,
     OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
 
