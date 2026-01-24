@@ -364,7 +364,7 @@ int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool s
         return SUCCESS;
     }
 
-    std::lock_guard<std::mutex> lock(audioSceneMutex_);
+    std::lock_guard<std::shared_mutex> lock(audioSceneMutex_);
     if (audioScene != currentAudioScene_) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
@@ -379,7 +379,7 @@ int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool s
 
 int32_t MultichannelAudioRenderSink::GetAudioScene(void)
 {
-    std::lock_guard<std::mutex> lock(audioSceneMutex_);
+    std::shared_lock<std::shared_mutex> lock(audioSceneMutex_);
     return currentAudioScene_;
 }
 

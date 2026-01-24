@@ -36,20 +36,20 @@ AudioWorkgroupCallbackImpl::~AudioWorkgroupCallbackImpl()
 void AudioWorkgroupCallbackImpl::AddWorkgroupChangeCallback(
     std::shared_ptr<AudioWorkgroupChangeCallback> cb)
 {
-    std::lock_guard<std::mutex> lock(workgroupCbMutex_);
+    std::lock_guard<std::shared_mutex> lock(workgroupCbMutex_);
     workgroupCb_ = cb;
 }
 
 void AudioWorkgroupCallbackImpl::RemoveWorkgroupChangeCallback()
 {
-    std::lock_guard<std::mutex> lock(workgroupCbMutex_);
+    std::lock_guard<std::shared_mutex> lock(workgroupCbMutex_);
     workgroupCb_ = nullptr;
 }
 
 int32_t AudioWorkgroupCallbackImpl::OnWorkgroupChange(
     const AudioWorkgroupChangeInfoIpc &info)
 {
-    std::lock_guard<std::mutex> lock(workgroupCbMutex_);
+    std::shared_lock<std::shared_mutex> lock(workgroupCbMutex_);
     if (workgroupCb_ == nullptr) {
         return ERROR;
     }

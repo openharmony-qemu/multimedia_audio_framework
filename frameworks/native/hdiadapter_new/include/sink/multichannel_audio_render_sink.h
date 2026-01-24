@@ -139,7 +139,7 @@ private:
     std::mutex switchDeviceMutex_;
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
-    std::mutex audioSceneMutex_;
+    std::shared_mutex audioSceneMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
