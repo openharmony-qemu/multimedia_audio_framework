@@ -72,7 +72,7 @@ ohos_shared_library("audio_capturer") {
     "../../../services/audio_service:audio_client",
     "../audiodefinitions:audio_definitions",
     "../audioutils:audio_utils",
-    "../../../services/audio_service:audio_common",
+    "../audioschedule:audio_schedule",
   ]
 
   if (audio_framework_feature_low_latency) {
