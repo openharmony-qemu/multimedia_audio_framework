@@ -193,7 +193,7 @@ private:
     AudioOffloadStream& audioOffloadStream_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioPipeManager& pipeManager_;
+    std::shared_ptr<AudioPipeManager> pipeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
 };
 
