@@ -346,7 +346,9 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
     if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
         return;
     }
-    CHECK_AND_CONTINUE_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+    if(pipeManager_ == nullptr) {
+        return;
+    }
     bool hasRunningRecognitionCapturerStream = pipeManager_->HasRunningRecognitionCapturerStream();
     if (desc->isVrSupported_ &&
         (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType) || hasRunningRecognitionCapturerStream)) {
