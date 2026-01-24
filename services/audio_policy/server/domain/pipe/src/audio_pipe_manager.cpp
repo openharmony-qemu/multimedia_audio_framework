@@ -864,7 +864,6 @@ bool AudioPipeManager::HasRunningRecognitionCapturerStream()
                 AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", true);
                 return true;
             }
-            }
         }
     }
 
