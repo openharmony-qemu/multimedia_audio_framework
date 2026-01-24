@@ -39,8 +39,6 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
   sources = [ "capture_clock_manager_fuzzer.cpp" ]
 
   deps = [
-    "../../../services/audio_service/idl:audio_framework_interface",
-    "../../../frameworks/native/audioclock:audio_clock",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service_static",
@@ -58,7 +56,6 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
     "background_task_mgr:bgtaskmgr_innerkits",
-    "bluetooth:btframework",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",

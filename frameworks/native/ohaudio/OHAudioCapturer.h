@@ -142,6 +142,21 @@ private:
     void *userData_;
 };
 
+class OHAudioCapturerOnPlaybackCaptureStartCallback : public AudioCapturerOnPlaybackCaptureStartCallback {
+public:
+    OHAudioCapturerOnPlaybackCaptureStartCallback(OH_AudioCapturer_OnPlaybackCaptureStartCallback callback,
+        OH_AudioCapturer *audioCapturer, void *userData)
+        : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
+    {
+    }
+
+    void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) override;
+private:
+    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback_;
+    OH_AudioCapturer *ohAudioCapturer_;
+    void *userData_;
+};
+
 struct CapturerCallback {
     OH_AudioCapturer_Callbacks callbacks = {};
 
@@ -152,21 +167,6 @@ struct CapturerCallback {
     OH_AudioCapturer_OnInterruptCallback onInterruptEventCallback = {};
 
     OH_AudioCapturer_OnErrorCallback onErrorCallback = {};
-};
-
-class OHAudioCapturerOnPlaybackCaptureStartCallback : public AudioCapturerOnPlaybackCaptureStartCallback {
-public:
-    OHAudioCapturerOnPlaybackCaptureStartCallback(OH_AudioCapturer_OnPlaybackCaptureStartCallback callback,
-        OH_AudioCapturer *audioCapturer, void *userData)
-        : callback_(callback), ohAudioCapturer_(audioCapturer), userData_(userData)
-    {
-    }
- 
-    void OnPlaybackCaptureStartResult(PlaybackCaptureStartState state) override;
-private:
-    OH_AudioCapturer_OnPlaybackCaptureStartCallback callback_;
-    OH_AudioCapturer *ohAudioCapturer_;
-    void *userData_;
 };
 
 class OHAudioCapturer {

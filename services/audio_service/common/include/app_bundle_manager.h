@@ -23,6 +23,10 @@ namespace AudioStandard {
 class AppBundleManager {
 public:
     static std::string GetBundleNameFromUid(int32_t uid);
+
+    static std::string GetSelfBundleName(int32_t uid);
+
+    static std::string GetSelfBundleName();
 };
 } // namespace AudioStandard
 } //namespace OHOS

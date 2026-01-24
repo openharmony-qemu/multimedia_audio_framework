@@ -45,7 +45,7 @@ class ConcreteIStreamListener : public IStreamListener {
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
 };
 
-const int32_t CAPTURER_FLAG = 10;
+const int32_t CAPTURER_FLAG = 10;xx
 static AudioProcessConfig GetInnerCapConfig()
 {
     AudioProcessConfig config;

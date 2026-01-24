@@ -26,7 +26,7 @@
  */
 
 /**
- * @file native_audiocapturer.h
+ * @file native_audiocapturer.hxx
  *
  * @brief Declare audio stream related interfaces for input type.
  *
