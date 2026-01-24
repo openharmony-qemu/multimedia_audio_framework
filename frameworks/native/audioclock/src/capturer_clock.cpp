@@ -26,7 +26,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
+constexpr uint64_t POS_DETLA_MAX = std::numeric_limits<uint64_t>::max() / AUDIO_NS_PER_SECOND;
 constexpr uint64_t AUDIO_CAPTURER_CLOCK_LOG_TIME_NS = 1000'000'000; // 1s
+
 CapturerClock::CapturerClock(uint32_t capturerSampleRate)
     : capturerSampleRate_(capturerSampleRate)
 {
@@ -59,12 +61,14 @@ bool CapturerClock::GetTimeStampByPosition(uint64_t capturerPos, uint64_t& times
     uint64_t tsDetla = 0;
     if (position_ > capturerPos) {
         posDetla = position_ - capturerPos;
+        CHECK_AND_RETURN_RET_LOG(posDetla < POS_DETLA_MAX, false, "posDetla overflow!");
         tsDetla = posDetla * AUDIO_NS_PER_SECOND / capturerSampleRate_;
         CHECK_AND_RETURN_RET_LOG(timestamp_ > tsDetla, false, "timestamp suboverflow timestamp_=%{public}" PRIu64
                                     "tsDetla=%{public}" PRIu64, timestamp_, tsDetla);
         timestamp = timestamp_ - tsDetla;
     } else {
         posDetla = capturerPos - position_;
+        CHECK_AND_RETURN_RET_LOG(posDetla < POS_DETLA_MAX, false, "posDetla overflow!");
         tsDetla = posDetla * AUDIO_NS_PER_SECOND / capturerSampleRate_;
         timestamp = timestamp_ + tsDetla;
     }

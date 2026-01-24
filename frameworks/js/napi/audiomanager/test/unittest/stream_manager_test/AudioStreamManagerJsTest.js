@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+import HashSet from '@ohos.util.HashSet';
 import audio from '@ohos.multimedia.audio';
 import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from 'deccjsunit/index'
 
@@ -552,7 +552,7 @@ describe("AudioStreamManagerJsTest", function () {
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getSupportedAudioEnhanceProperty();
-      console.info(`${TAG} getSupportedAudioEnhanceProperty001 success:${JSON.stringify(audioEnhanceArray)}`);
+      console.info(`${TAG} getSupportedAudioEnhanceProperty success:${JSON.stringify(audioEnhanceArray)}`);
       for (let i = 0; i < audioEnhanceArray.length; i++) {
         expect(audioEnhanceArray[i].enhanceClass !== ""
           && audioEnhanceArray[i].enhanceClass !== undefined).assertTrue();
@@ -606,7 +606,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = audioStreamManager.getAudioEffectProperty();
       console.info(`${TAG} get supported effect property SUCCESS:${JSON.stringify(audioEffectArray)}`);
-      if (audioEffectArray.length > 0) {
+      if (audioEffectArray.length > 0 ) {
         audioStreamManager.setAudioEffectProperty(audioEffectArray);
         console.info(`${TAG} setAudioEffectProperty001 SUCCESS`);
       }
@@ -716,7 +716,7 @@ describe("AudioStreamManagerJsTest", function () {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getAudioEnhanceProperty();
       console.info(`${TAG} get supported enhance property SUCCESS:${JSON.stringify(audioEnhanceArray)}`);
-      if (audioEnhanceArray.length > 0) {
+      if (audioEnhanceArray.length > 0 ) {
         audioStreamManager.setAudioEnhanceProperty(audioEnhanceArray);
         console.info(`${TAG} setAudioEnhanceProperty001 SUCCESS`);
       }

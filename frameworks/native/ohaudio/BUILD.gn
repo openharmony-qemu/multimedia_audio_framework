@@ -80,7 +80,7 @@ ohos_shared_library("ohaudio") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_single"
+    "ipc:ipc_single",
   ]
 
   innerapi_tags = [ "ndk" ]

@@ -165,7 +165,7 @@ void NapiRendererDataRequestCallback::OnJsRendererDataRequestCallback(
     std::unique_ptr<RendererDataRequestJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsRendererDataRequestCallback: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsRendererPeriodPositionCallback: jsCb.get() is null");
         return;
     }
 

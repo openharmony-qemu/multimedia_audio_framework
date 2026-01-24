@@ -347,7 +347,7 @@ int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t req
                 *data = ((sample & 0xFF00) >> BIT8);
                 data++;
             } else {
-                result = *data + (static_cast<uint16_t>(sample) & 0xFF);
+                result = *data + (sample & 0xFF);
                 *data = result & 0xFF;
                 data++;
                 *data += (result >> BIT8) + ((sample & 0xFF00) >> BIT8);
