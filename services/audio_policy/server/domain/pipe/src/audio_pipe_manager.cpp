@@ -861,11 +861,9 @@ bool AudioPipeManager::HasRunningRecognitionCapturerStream()
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             if(desc->streamStatus_ == STREAM_STATUS_STARTED
             && desc->audioMode_ == AUDIO_MODE_RECORD) {
-                hasRunningRecognitionCapturerStream = true;
-                break;
+                AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", true);
+                return true;
             }
-            if(hasRunningRecognitionCapturerStream) {
-                break;
             }
         }
     }
