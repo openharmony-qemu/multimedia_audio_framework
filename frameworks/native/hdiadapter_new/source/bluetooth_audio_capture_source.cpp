@@ -136,7 +136,7 @@ int32_t BluetoothAudioCaptureSource::Start(void)
     int32_t ret = audioCapture_->control.Start(reinterpret_cast<AudioHandle>(audioCapture_));
     if (ret < 0) {
         AUDIO_ERR_LOG("start fail");
-        callback_.OnCapturerState(false);
+        callback_.OnCaptureState(false);
 #ifdef FEATURE_POWER_MANAGER
         if (runningLock_ != nullptr) {
             AUDIO_INFO_LOG("running lock unlock");
@@ -545,7 +545,7 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
 #endif
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     if (!IsValidState()) {
-        callback_.OnCapturerState(false);
+        callback_.OnCaptureState(false);
         return ERR_INVALID_HANDLE;
     }
     if (!started_) {
