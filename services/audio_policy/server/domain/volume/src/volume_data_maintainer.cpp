@@ -537,6 +537,10 @@ bool VolumeDataMaintainer::GetSystemSoundUrl(const std::string &key, std::string
 
 void VolumeDataMaintainer::RegisterCloned()
 {
+    if(hasRegisterCloned_) {
+        AUDIO_WARNING_LOG("has registered cloned observer");
+        return;
+    }
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFunc = [&](const std::string& key) {
         int32_t value = INVALIAD_SETTINGS_CLONE_STATUS;
@@ -557,6 +561,9 @@ void VolumeDataMaintainer::RegisterCloned()
     ErrCode ret = settingProvider.RegisterObserver(observer);
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver failed");
+    } else {
+        hasRegisterCloned_ = true;
+        AUDIO_INFO_LOG("RegisterObserver success");
     }
 }
 
