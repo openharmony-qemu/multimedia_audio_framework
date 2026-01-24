@@ -124,7 +124,7 @@ private:
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
     int32_t innerCapId_ = 0;
-    std::string asrBundleName_ = "",
+    std::string asrBundleName_ = "";
     std::atomic<bool> rebuildFlag_ = false;
 
     int64_t lastStartTime_{};
