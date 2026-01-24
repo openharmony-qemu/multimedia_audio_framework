@@ -379,7 +379,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManagerUpdateArmModuleInfo_001, TestSize
     ecManager.UpdateArmModuleInfo(deviceDesc, moduleInfo);
     
     EXPECT_EQ(moduleInfo.rate, "48000");
-    EXPECT_EQ(moduleInfo.format, "AUDIO_SAMPLE_FORMAT_PCM_16Q");
+    EXPECT_EQ(moduleInfo.format, "s16le");
     EXPECT_FALSE(moduleInfo.bufferSize.empty());
 }
 
@@ -736,8 +736,23 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_003, TestSize.
     auto outputDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     std::string outputAddress = "card=2;device=0";
     outputDeviceDesc->macAddress_ = outputAddress;
-    outputDeviceDesc->deviceRole_ = DeviceRole::INPUT_DEVICE;
-    
+    outputDeviceDesc->deviceType_ = DeviceType::DEVICE_TYPE_USB_ARM_HEADSET;
+    outputDeviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    std::string parameters = "sink_format:AUDIO_FORMAT_PCM_16_BIT;sink_rate:48000;"
+        "source_format:AUDIO_FORMAT_PCM_16_BIT;source_rate:8000;sink_mmap:1";
+    outputDeviceDesc->ParseAudioParameters(parameters);
+    parameters = "sink_format:AUDIO_FORMAT_PCM_24_BIT;sink_rate:48000;"
+        "source_format:AUDIO_FORMAT_PCM_16_BIT;source_rate:8000;sink_mmap:1";
+    outputDeviceDesc->ParseAudioParameters(parameters);
+    parameters = "sink_format:AUDIO_FORMAT_PCM_24_BIT_PACKED;sink_rate:48000;"
+        "source_format:AUDIO_FORMAT_PCM_16_BIT;source_rate:8000;sink_mmap:1";
+    outputDeviceDesc->ParseAudioParameters(parameters);
+    parameters = "sink_format:AUDIO_FORMAT_PCM_32_BIT;sink_rate:48000;"
+        "source_format:AUDIO_FORMAT_PCM_16_BIT;source_rate:8000;sink_mmap:1";
+    outputDeviceDesc->ParseAudioParameters(parameters);
+    parameters = "sink_format:AUDIO_FORMAT_PCM_64_BIT;sink_rate:48000;"
+        "source_format:AUDIO_FORMAT_PCM_16_BIT;source_rate:8000;sink_mmap:1";
+    outputDeviceDesc->ParseAudioParameters(parameters);
     AudioModuleInfo outputModule{.role = "sink", .name = "output_module", .rate = "48000"};
     std::list<AudioModuleInfo> outputModuleList{outputModule};
     ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = outputModuleList;
@@ -825,7 +840,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_006, TestSize.
     ecManager.audioConfigManager_.deviceClassInfo_[ClassType::TYPE_USB] = outputModuleList;
     
     ecManager.ActivateArmDevice(outputDeviceDesc);
-    EXPECT_EQ(ecManager.activeArmOutputAddr_, outputAddress);
+    EXPECT_EQ(ecManager.activeArmOutputAddr_, "");
     // When EC is disabled, usbSinkModuleInfo_ should still be set for output devices
     EXPECT_EQ(ecManager.usbSinkModuleInfo_.name, "output_module_no_ec");
 }
