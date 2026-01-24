@@ -45,23 +45,7 @@ class ConcreteIStreamListener : public IStreamListener {
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
 };
 
-const int32_t CAPTURER_FLAG = 10;xx
-static AudioProcessConfig GetInnerCapConfig()
-{
-    AudioProcessConfig config;
-    config.appInfo.appUid = CAPTURER_FLAG;
-    config.appInfo.appPid = CAPTURER_FLAG;
-    config.streamInfo.format = SAMPLE_S32LE;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.channels = STEREO;
-    config.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.streamType = AudioStreamType::STREAM_MUSIC;
-    config.deviceType = DEVICE_TYPE_USB_HEADSET;
-    return config;
-}
-
-class ICapturerStreamTest1 : public ICapturerStream {
+class ICapturerStreamTest : public ICapturerStream {
 public:
     int32_t GetStreamFramesRead(uint64_t &framesRead) override { return 0; }
     int32_t GetCurrentTimeStamp(uint64_t &timestamp) override { return 0; }
