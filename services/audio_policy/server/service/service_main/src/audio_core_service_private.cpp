@@ -346,10 +346,11 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
     if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
         return;
     }
-    if (!pipeManager_) {
+    if (pipeManager_ == nullptr) {
         return;
-    }
+    } else {
     bool hasRunningRecognitionCapturerStream = pipeManager_->HasRunningRecognitionCapturerStream();
+    }
     if (desc->isVrSupported_ &&
         (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType) || hasRunningRecognitionCapturerStream)) {
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
