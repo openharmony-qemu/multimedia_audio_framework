@@ -868,7 +868,6 @@ bool AudioPipeManager::HasRunningRecognitionCapturerStream()
     }
     AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
     return hasRunningRecognitionCapturerStream;
-
 }
 } // namespace AudioStandard
 } // namespace OHOS
