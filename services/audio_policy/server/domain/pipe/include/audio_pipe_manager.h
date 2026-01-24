@@ -102,6 +102,7 @@ public:
     bool HasRunningStream();
     bool HasFastOutputPipe();
     bool IsStreamUltraFast(uint32_t sessionId);
+    bool HasRunningRecognitionCapturerStream();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
