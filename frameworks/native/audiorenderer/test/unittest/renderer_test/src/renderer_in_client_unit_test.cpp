@@ -1736,13 +1736,13 @@ HWTEST(RendererInClientInnerUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level
 
     testRendererInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair, testlastFramePosAndTimePairWithSpeed);
 
-    EXPECT_GT(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION);
-    EXPECT_GT(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION);
+    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION);
+    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION);
 
-    EXPECT_GT(
+    EXPECT_EQ(
         testRendererInClientObj->lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION
     );
-    EXPECT_GT(
+    EXPECT_EQ(
         testRendererInClientObj->lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION
     );
 }
