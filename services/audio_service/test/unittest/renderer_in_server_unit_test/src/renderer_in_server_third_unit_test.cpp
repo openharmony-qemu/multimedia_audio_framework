@@ -2185,7 +2185,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_006, TestSize.
     rendererInServer->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**

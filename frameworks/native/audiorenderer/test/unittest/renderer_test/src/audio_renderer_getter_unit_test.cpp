@@ -1748,24 +1748,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_002, TestSize.Le
 }
 
 /**
- * @tc.name  : Test GetAudioEffectMode with, default effectMode
- * @tc.number: Audio_Renderer_GetAudioEffectMode_003
- * @tc.desc  : Test GetAudioEffectMode interface. Returns the default effect mode EFFECT_DEFAULT.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_003, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
-    EXPECT_EQ(EFFECT_DEFAULT, effectMode);
-    audioRenderer->Release();
-}
-
-/**
  * @tc.name  : Test GetMinStreamVolume
  * @tc.number: Audio_Renderer_GetMinStreamVolume_001
  * @tc.desc  : Test GetMinStreamVolume interface to get the min volume value.

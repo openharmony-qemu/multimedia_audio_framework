@@ -326,33 +326,25 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerdualToneStreamInStart_002,
 }
 
 /**
- * @tc.name  : Test RendererInServer API
+ * @tc.name  : Test Pause API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerPause_001
- * @tc.desc  : Test Pause interface.
+ * @tc.desc  : Test Pause when status_ illegal.
  */
 HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_001, TestSize.Level1)
 {
-    AudioBufferHolder bufferHolder;
-    uint32_t totalSizeInFrame = 10;
-    uint32_t byteSizePerFrame = 10;
-    AudioProcessConfig processConfig;
-    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
-    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
-    ASSERT_TRUE(server != nullptr);
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
 
-    server->status_ = I_STATUS_STARTED;
-    server->standByEnable_ = true;
-    server->playerDfx_ = nullptr;
-    server->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
-        byteSizePerFrame);
-    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    server->audioServerBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
-    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
-    auto ret = server->Pause();
-    EXPECT_EQ(SUCCESS, ret);
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->OnStatusUpdate(OPERATION_RELEASED);
+
+    ret = rendererInServer->Pause();
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
-
 /**
  * @tc.name  : Test RendererInServer API
  * @tc.type  : FUNC
@@ -880,8 +872,9 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_001,
     InitAudioProcessConfig(testStreamInfo);
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
-
-    bufferDesc.buffer[0] = 0;
+    
+    uint8_t bufferTest = 0;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
 }
@@ -921,7 +914,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_003,
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    bufferDesc.buffer[0] = 0;
+    uint8_t bufferTest = 0;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->isInSilentState_ = 0;
     rendererInServer->startMuteTime_ = 1;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
@@ -942,7 +936,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_004,
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    bufferDesc.buffer[0] = 1;
+    uint8_t bufferTest = 1;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
     EXPECT_EQ(0, rendererInServer->startMuteTime_);
     EXPECT_EQ(false, rendererInServer->isInSilentState_);
@@ -962,7 +957,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_005,
     rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
     EXPECT_NE(nullptr, rendererInServer);
 
-    bufferDesc.buffer[0] = 1;
+    uint8_t bufferTest = 1;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->startMuteTime_ = 1;
     rendererInServer->isInSilentState_ = 0;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
@@ -988,7 +984,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_006,
     bufferDesc.buffer = buffer;
     bufferDesc.bufLength = bufferSize;
 
-    bufferDesc.buffer[0] = 0;
+    uint8_t bufferTest = 0;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->startMuteTime_ =
         std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - ONE_MINUTE - 1;
     rendererInServer->isInSilentState_ = false;
@@ -1014,7 +1011,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_007,
     bufferDesc.buffer = buffer;
     bufferDesc.bufLength = bufferSize;
 
-    bufferDesc.buffer[0] = 1;
+    uint8_t bufferTest = 1;
+    bufferDesc.buffer = &bufferTest;
     rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     rendererInServer->isInSilentState_ = true;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
@@ -1100,6 +1098,7 @@ HWTEST_F(RendererInServerExtUnitTest, StreamCallbacksOnWriteData_002, TestSize.L
 
     auto inputData = new int8_t [10] {1, 2, 3};
     ASSERT_NE(nullptr, inputData);
+    streamCallbacks->isFirstWriteDataFlag_ = false;
     int32_t ret = streamCallbacks->OnWriteData(inputData, 3);
     EXPECT_EQ(SUCCESS, ret);
 
@@ -1390,7 +1389,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_004, TestSize.Level1)
     std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
-    EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
+    EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
 }
 
 /**

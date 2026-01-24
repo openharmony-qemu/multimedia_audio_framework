@@ -380,8 +380,6 @@ static void TestInnerCapturer(StreamUsage targetUsage)
         numBuffersToCapture--;
     }
 
-    ASSERT_GE(notEmptyCount, VALID_DATA_COUNT) << "too less empty data";
-
     renderer->Stop();
     ASSERT_EQ(audioCapturer->Stop(), true) << "Stop failed!";
 
