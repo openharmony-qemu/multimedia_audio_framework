@@ -7,7 +7,7 @@
 
 #include <string>
 #include <map>
-#include "ohaudio/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
 
 // 定义错误码枚举
 enum class AudioSuiteResult {
