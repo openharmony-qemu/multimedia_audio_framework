@@ -49,7 +49,7 @@ public:
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
     int32_t DropBuffer() override;
-    void AbortCallback(int32_t abortTimes);
+    void AbortCallback(int32_t abortTimes) override;
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     void TriggerAppsUidUpdate() override;

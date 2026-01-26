@@ -112,8 +112,7 @@ private:
         HpaeSourceInputNodeType &ecNodeType);
     bool CheckMicRefCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &micRefNodeInfo);
     void StopOuputNode();
-    void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, CapturerState state,
-        uint32_t appUid = INVALID_UID);
+    void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, CapturerState state);
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;

@@ -39,7 +39,6 @@ ohos_shared_library("pro_audio_service_adapter") {
   include_dirs = [
     "include",
     "../audioutils/include",
-    "../audioschedule/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_service/server/include",
     "../hdiadapter/common/include",
@@ -51,9 +50,9 @@ ohos_shared_library("pro_audio_service_adapter") {
   ]
 
   deps = [
-    "../../../services/audio_engine:hpae_engine_manager",
+    "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_service:audio_common",
-    "../audioschedule:audio_schedule",
+    "../../../services/audio_service:audio_process_service",
     "../audioutils:audio_utils",
   ]
 
@@ -64,7 +63,6 @@ ohos_shared_library("pro_audio_service_adapter") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "samgr:samgr_proxy",
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {
@@ -76,6 +74,11 @@ ohos_shared_library("pro_audio_service_adapter") {
 
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libpulse_audio_service_adapter.versionscript"

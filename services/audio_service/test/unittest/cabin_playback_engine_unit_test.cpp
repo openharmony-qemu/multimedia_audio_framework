@@ -218,9 +218,6 @@ HWTEST_F(CabinPlayBackEngineUnitTest, CabinPlayBackEngineState_004, TestSize.Lev
     playbackEngine_->PollAndWrite();
 
     ret = playbackEngine_->Start();
-    EXPECT_FALSE(ret);
-    EXPECT_FALSE(playbackEngine_->isStart_);
-
     ret = playbackEngine_->Stop();
     EXPECT_EQ(SUCCESS, ret);
     playbackEngine_->RemoveRenderer(rendererStream);

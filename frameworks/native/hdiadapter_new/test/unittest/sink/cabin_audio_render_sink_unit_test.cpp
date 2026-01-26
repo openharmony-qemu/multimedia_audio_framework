@@ -233,7 +233,8 @@ HWTEST_F(CabinAudioRenderSinkUnitTest, SetMuteAndBalance_001, TestSize.Level1)
     // Test SetAudioBalanceValue and SetAudioMonoState(empty, just call for coverage)
     sink_->SetAudioBalanceValue(1.0f);
     sink_->SetAudioMonoState(true);
-    EXPECT_EQ(sink_->GetVolumeDataCount(), ERR_NOT_SUPPORTED);
+    int64_t volumeData = 0;
+    EXPECT_EQ(sink_->GetVolumeDataCount(volumeData), ERR_NOT_SUPPORTED);
     sink_->SetSpeed(1.0f);
     EXPECT_EQ(sink_->Reset(), SUCCESS);
     sink_->GetMaxAmplitude();

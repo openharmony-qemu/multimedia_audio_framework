@@ -51,13 +51,12 @@ ohos_fuzztest("CoreServiceProviderStubFuzzTest") {
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_common",
     "../../../frameworks/native/audioclock:audio_clock",
-    "../../../services/audio_engine:hpae_engine_manager",
+    "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_service_static",
   ]
 
   external_deps = [
-    "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:extension_manager",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",

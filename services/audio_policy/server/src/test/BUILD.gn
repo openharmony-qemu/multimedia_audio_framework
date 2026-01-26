@@ -108,9 +108,6 @@ ohos_unittest("audio_policy_manager_listener_unit_test") {
     "../../../../audio_policy:audio_policy_client",
     "../../../../audio_policy:audio_policy_service_static",
     "../../../../audio_service:audio_client",
-    "../../../../audio_service:audio_engine_manager",
-    "../../../../audio_service:audio_policy_manager",
-    "../../../../audio_service:audio_stream_client",
     "../../../../audio_service:audio_common",
   ]
 }
@@ -198,9 +195,6 @@ ohos_unittest("audio_spatialization_state_change_listener_unit_test") {
     "../../../../audio_policy:audio_policy_client",
     "../../../../audio_policy:audio_policy_service_static",
     "../../../../audio_service:audio_client",
-    "../../../../audio_service:audio_engine_manager",
-    "../../../../audio_service:audio_policy_manager",
-    "../../../../audio_service:audio_stream_client",
     "../../../../audio_service:audio_common",
   ]
 }

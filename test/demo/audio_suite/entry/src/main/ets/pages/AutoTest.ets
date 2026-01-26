@@ -9,7 +9,7 @@ import buffer from '@ohos.buffer';
 import { common } from '@kit.AbilityKit';
 import { fileUri, ListFileOptions, picker } from '@kit.CoreFileKit';
 import fs from '@ohos.file.fs';
-import {NodeType, ColorMap, InputStringToNodeTypeMap} from '../utils/importSongs/InterfaceInfo'
+import {NodeType, ColorMap, InputStringToNodeTypeMap} from '../utils/InterfaceInfo'
 import { SceneInfo, OutputFile, InputFile, ExpectedOutput, ExecuteReport,
   NodeInfo, PipelineInfo, JsonFileInfo, DisplayPipelineInfo } from '../utils/autoTest/Interface'
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -194,20 +194,30 @@ function parseJsonObject(jsonObjectStr: string): SceneInfo {
 }
 
 function getMD5OfFile(filePath: string): string {
-  // 获取文件内容
-  let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
-  let buf = new ArrayBuffer(40960);
-  fs.readSync(file.fd, buf);
-  fs.closeSync(file);
-
-  let mdAlgName = 'MD5';
-  let md = cryptoFramework.createMd(mdAlgName);
-  md.updateSync({ data: new Uint8Array(buf) });
-  let mdResult = md.digestSync();
-  Logger.info(TAG, '[Sync]:Md result:' + mdResult.data);
-  let md5Str = buffer.from(mdResult.data.buffer).toString('hex');
-  Logger.info(TAG, '[Sync]:Md string result:' + md5Str);
-  return md5Str;
+  try {
+    const stats = fs.statSync(filePath);
+    if (stats.size === 0) return '';
+    const file = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
+    fs.fsyncSync(file.fd);
+    const md = cryptoFramework.createMd('MD5');
+    const buf = new ArrayBuffer(4096);
+    let bytesRead = 0;
+    while (bytesRead < stats.size) {
+      const actualRead = fs.readSync(file.fd, buf, {
+        offset: bytesRead,
+        length: Math.min(4096, stats.size - bytesRead)
+      });
+      md.updateSync({ data: new Uint8Array(buf, 0, actualRead) });
+      bytesRead += actualRead;
+    }
+    fs.closeSync(file);
+    let md5Str = buffer.from(md.digestSync().data).toString('hex')
+    Logger.info(TAG, '[Sync]:Md5 string result:' + md5Str);
+    return md5Str;
+  } catch (e) {
+    Logger.error(TAG, `[MD5 Calculation] Error occurred.: ${e}`);
+    return '';
+  }
 }
 
 function checkMd5IsEqual(outputFileMd5: string[], expectedFileMd5: string[]): boolean {
@@ -244,6 +254,13 @@ export struct AutoTest {
   @State autoTestProcessMap: Map<string, number> = new Map();
   @State exeOneStateEffect: boolean = true;
   @State executeProcessState: boolean = false;
+  @State isExecutingAll: boolean = false;
+  @State currentFileIndex: number = 0;
+  @State totalFilesCount: number = 0;
+  @State executeResultMessage: string = '';
+  @State executeResultSuccess: boolean = true;
+  @State showExecuteResult: boolean = false;
+  @State failedCases: string[] = [];
   pageInfos: NavPathStack = new NavPathStack();
 
   async aboutToAppear(): Promise<void> {
@@ -407,37 +424,53 @@ export struct AutoTest {
         }
       }.height('75%').width('100%').padding(2)
 
-      // .border({ width: '2vp', color: Color.Pink, radius: '10vp' })
-
-      Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceAround, alignItems: ItemAlign.Center }) {
-        Button() {
-          Text(this.exeOneStateEffect?`执行选中用例`:`执行中...`)
+      Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
+        Column() {
+          Text(`执行进度: ${this.currentFileIndex}/${this.totalFilesCount}`)
+            .fontSize(16)
+            .margin({ bottom: 10 })
+          Progress({ value: this.currentFileIndex, total: this.totalFilesCount })
+            .width('80%')
+            .height(20)
+            .margin({ bottom: 20 })
         }
-        .onClick(async () => {
-          this.exeOneStateEffect = false;
-          this.executeProcessState = true;
-          await this.executeSingleFileWithSyncInit(`${this.selectedFileSummary}`);
-          this.exeOneStateEffect = true;
-        })
-        .backgroundColor(0x317aff)
-        .borderRadius(10)
-        .width(100)
-        .height(50)
-        .enabled(this.exeOneStateEffect)
+        .visibility(this.isExecutingAll ? Visibility.Visible : Visibility.None)
 
-        Button() {
-          Text(`执行全部用例`)
+        Text(this.executeResultMessage)
+          .fontSize(16)
+          .fontColor(this.executeResultSuccess ? 0x00FF00 : 0xFF0000)
+          .margin({ bottom: 20 })
+          .visibility(this.showExecuteResult ? Visibility.Visible : Visibility.None)
+
+        Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceAround, alignItems: ItemAlign.Center }) {
+          Button() {
+            Text(this.exeOneStateEffect ? `执行选中用例` : `执行中...`)
+          }
+          .onClick(async () => {
+            this.exeOneStateEffect = false;
+            this.executeProcessState = true;
+            await this.executeSingleFileWithSyncInit(`${this.selectedFileSummary}`);
+            this.exeOneStateEffect = true;
+          })
+          .backgroundColor(0x317aff)
+          .borderRadius(10)
+          .width(100)
+          .height(50)
+          .enabled(this.exeOneStateEffect)
+
+          Button() {
+            Text(`执行全部用例`)
+          }
+          .onClick(() => {
+            this.executeAllFile();
+          })
+          .backgroundColor(0x317aff)
+          .borderRadius(10)
+          .width(100)
+          .height(50)
+          .margin({ left: 20 })
         }
-        .onClick(() => {
-          this.executeAllFile();
-        })
-        .backgroundColor(0x317aff)
-        .borderRadius(10)
-        .width(100)
-        .height(50)
-        .margin({ left: 20 })
       }.height('20%').width('100%')
-
     }
     .bindSheet(this.executeProcessState && this.autoTestProcessMap.size > 0, this.ExecuteProcessDialog(), {
       height: '100%',
@@ -661,17 +694,44 @@ export struct AutoTest {
   }
 
   async executeAllFile() {
-    Logger.info(TAG, "executeAllFile start");
-    const jsonFiles = Array.from(jsonSummaryToJsonFileInfoMap.values());
-    for (const jsonFile of jsonFiles) {
-      Logger.info(TAG, `before task jsonFile=${jsonFile.summary}`);
-      this.selectedFileSummary = jsonFile.summary;
-      let ret = await this.executeSingleFileWithSyncInit(jsonFile.summary, false);
-      Logger.info(TAG, `before task ret = ${ret}`);
+    try {
+      this.isExecutingAll = true;
+      this.failedCases = [];
+      this.executeResultMessage = '';
+      this.showExecuteResult = false;
+      Logger.info(TAG, "executeAllFile start");
+      const jsonFiles = Array.from(jsonSummaryToJsonFileInfoMap.values());
+      this.totalFilesCount = jsonFiles.length;
+      this.currentFileIndex = 0;
+
+      for (const jsonFile of jsonFiles) {
+        this.currentFileIndex++;
+        const result = await this.executeSingleFileWithSyncInit(jsonFile.summary, false);
+
+        if (result !== SUCCESS) {
+          this.failedCases.push(jsonFile.summary);
+        }
+      }
+
+      if (this.failedCases.length > 0) {
+        this.executeResultMessage = `执行完成！失败用例: \n${this.failedCases.join('\n')}`;
+        this.executeResultSuccess = false;
+      } else {
+        this.executeResultMessage = `全部用例执行成功！`;
+        this.executeResultSuccess = true;
+      }
+      this.showExecuteResult = true;
+      await this.saveAllCaseExecuteReport();
+    } catch (error) {
+      Logger.error(TAG, "An error occurred when executing all test cases", error);
+      this.executeResultMessage = `执行全部用例时发生错误`;
+      this.executeResultSuccess = false;
+      this.showExecuteResult = true;
+    } finally {
+      this.isExecutingAll = false;
+      this.destroyPipeline();
+      Logger.info(TAG, "executeAllFile end");
     }
-    await this.saveAllCaseExecuteReport();
-    this.destroyPipeline();
-    Logger.info(TAG, "executeAllFile end");
   }
 
   async executeSingleFileWithSyncInit(fileSummary: string, reportFlag: boolean = true): Promise<number> {
@@ -706,7 +766,6 @@ export struct AutoTest {
         if (newMap.size == 0) {
           Logger.error(TAG, `newMap size is 0`);
           clearInterval(timer);
-          this.destroyPipeline();
           return;
         }
         Logger.error(TAG, `newMap size is ${newMap.size}`);
@@ -745,21 +804,40 @@ export struct AutoTest {
         const multiRenderFrameFlag = pipelineInfo.multiRenderFrameFlag;
         if (jsonFileInfo.realTime) {
           const buffer: object = await taskpool.execute(multiPipelineRealTimeSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
-          await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag)
+          const saveResult = await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag);
+          if (saveResult !== SUCCESS) {
+            Logger.error(TAG, `saveSingleFile fail`)
+            Logger.info(TAG, `saveSingleFile Return Value: ${saveResult}`);
+            return FAILED;
+          }
         } else {
           const buffer: object = await taskpool.execute(multiPipelineSaveFileBuffer, pipelineId, outputInfo, multiRenderFrameFlag);
-          await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag)
+          const saveResult = await this.saveSingleFile(pipelineId, buffer as ArrayBuffer[], ".wav", outputInfo, multiRenderFrameFlag);
+          if (saveResult !== SUCCESS) {
+            Logger.error(TAG, `saveSingleFile fail`)
+            Logger.info(TAG, `saveSingleFile Return Value: ${saveResult}`);
+            return FAILED;
+          }
         }
         this.generateSingleReportInfo(pipelineId);
         return SUCCESS;
       })
       await Promise.all(scenePromises).then(async () => {
         Logger.info(TAG, `scenePromises done `);
+
+        this.autoTestProcessMap.forEach((value, key) => {
+          if (value < 100) {
+            this.autoTestProcessMap.set(key, 100);
+            Logger.warn(TAG, `Force set process ${key} to 100% after all tasks completed`);
+          }
+        });
+
         if (reportFlag) {
           await this.saveSingleCaseExecuteReport(fileSummary);
         }
       })
     }
+    this.destroyPipeline();
     return SUCCESS;
   }
   // sync init pipeline/inputNode/effectNode
@@ -854,7 +932,7 @@ export struct AutoTest {
               } else {
                 Logger.info(TAG, `addAudioSeparation node successful!!!`);
               }
-              pipelineInfo.multiRenderFrameFlag = true
+              pipelineInfo.multiRenderFrameFlag = true;
               break;
             case NodeType.ENV:
               let ENVId: string = util.generateRandomUUID(true);
@@ -948,33 +1026,33 @@ export struct AutoTest {
                 Logger.info(TAG, `setSoundSpeedTone successful!!!`);
               }
               break;
-            // case NodeType.SPACE_RENDER:
-            //   let spaceRenderId: string = util.generateRandomUUID(true);
-            //   const spaceRenderMode = effect.mode;
-            //   const x:number = Object(effectObj)["x"];
-            //   const y:number = Object(effectObj)["y"];
-            //   const z:number = Object(effectObj)["z"];
-            //   status = FAILED;
-            //   if (spaceRenderMode === 0) {
-            //     status = audioNapi.StartFixedPositionEffect(x, y, z, spaceRenderId, inputId);
-            //   }
-            //   if (spaceRenderMode === 1) {
-            //     const surroundTime:number = Object(effectObj)["surroundTime"];
-            //     const surroundDirection:number = Object(effectObj)["surroundDirection"];
-            //     status = audioNapi.StartDynamicRenderEffect(x,  y, z, surroundTime, surroundDirection, spaceRenderId, inputId);
-            //   }
-            //   if (spaceRenderMode === 2) {
-            //     const extRadius:number = Object(effectObj)["extRadius"];
-            //     const extAngle:number = Object(effectObj)["extAngle"];
-            //     status = audioNapi.StartExpandEffect(extRadius, extAngle, spaceRenderId, inputId);
-            //   }
-            //   if (status != SUCCESS) {
-            //     Logger.error(TAG, `SPACE_RENDER error number is ${status}`);
-            //     return FAILED;
-            //   } else {
-            //     Logger.info(TAG, `add SPACE_RENDER successful!!!`);
-            //   }
-            //   break;
+            case NodeType.SPACE_RENDER:
+              let spaceRenderId: string = util.generateRandomUUID(true);
+              const spaceRenderMode = effect.mode;
+              const x:number = Object(effectObj)["x"];
+              const y:number = Object(effectObj)["y"];
+              const z:number = Object(effectObj)["z"];
+              status = FAILED;
+              if (spaceRenderMode === 1) {
+                status = audioNapi.StartFixedPositionEffect(x, y, z, spaceRenderId, inputId);
+              }
+              if (spaceRenderMode === 2) {
+                const surroundTime:number = Object(effectObj)["surroundTime"];
+                const surroundDirection:number = Object(effectObj)["surroundDirection"];
+                status = audioNapi.StartDynamicRenderEffect(x,  y, z, surroundTime, surroundDirection, spaceRenderId, inputId);
+              }
+              if (spaceRenderMode === 3) {
+                const extRadius:number = Object(effectObj)["extRadius"];
+                const extAngle:number = Object(effectObj)["extAngle"];
+                status = audioNapi.StartExpandEffect(extRadius, extAngle, spaceRenderId, inputId);
+              }
+              if (status != SUCCESS) {
+                Logger.error(TAG, `SPACE_RENDER error number is ${status}`);
+                return FAILED;
+              } else {
+                Logger.info(TAG, `add SPACE_RENDER successful!!!`);
+              }
+              break;
           }
         }
         Logger.info(TAG, `all effect node of input inited, inputId :${inputId}, pipelineId:${pipelineId}`);
@@ -1011,14 +1089,15 @@ export struct AutoTest {
       Logger.info(TAG, `saveSingleFile pcmBuffer of ---${index}---length : ${value.byteLength}`)
     })
     try {
-      // let newFileName1 = `${outputInfo.nameTemplate}${multiRenderFrameFlag ? "_Voice" :
-      //   ""}_${getDateStringWithTimeStamp(new Date().getTime())}.wav`;
-      // let newFileName2 = `${outputInfo.nameTemplate}${multiRenderFrameFlag ? "_Accompaniment" :
-      //   ""}_${getDateStringWithTimeStamp(new Date().getTime())}.wav`;
-      let newFileName1 = `${outputInfo.nameTemplate}.wav`;
-      let newFileName2 = `${outputInfo.nameTemplate}.wav`;
-      const outputFilePath = multiRenderFrameFlag ? [`${outputPath}/${newFileName1}`, `${outputPath}/${newFileName2}`] :
-        [`${outputPath}/${newFileName1}`];
+      let outputFilePath: string[];
+      if (multiRenderFrameFlag) {
+        const nameTemplate1 = outputInfo.nameTemplate[0];
+        const nameTemplate2 = outputInfo.nameTemplate[1];
+        outputFilePath = [`${outputPath}/${nameTemplate1}.wav`, `${outputPath}/${nameTemplate2}.wav`];
+      } else {
+        const nameTemplate1 = outputInfo.nameTemplate;
+        outputFilePath = [`${outputPath}/${nameTemplate1}.wav`];
+      }
       outputFilePath.forEach((path: string, index: number) => {
         let file = fs.openSync(path, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE);
         Logger.info(TAG, `SaveBuffer filePath : ${path}`);
@@ -1040,7 +1119,7 @@ export struct AutoTest {
       outputInfo.outputFileList = outputFilePath;
       const sceneInfoId = pipelineIdToPipelineInfoMap.get(pipelineId)?.sceneInfoId;
       if (sceneInfoId === undefined) {
-        return 1;
+        return SUCCESS;
       }
       let expectedFileMd5: string[] | undefined =
         sceneInfoIdToSceneInfoMap.get(sceneInfoId)?.expectedOutput.md5Value;
@@ -1052,22 +1131,23 @@ export struct AutoTest {
         })
       } catch (e) {
         Logger.error(TAG, `Get MD5 failed, error : ${e}`)
+        return FAILED;
       }
-      if (expectedFileMd5 != undefined && !checkMd5IsEqual(outputFileMd5, expectedFileMd5)) {
+      if (expectedFileMd5 && !checkMd5IsEqual(outputFileMd5, expectedFileMd5)) {
+        this.failedCases.push(pipelineId);
         Logger.error(TAG,
           `file MD5 compare ERROR --- file:${outputFilePath}; md5Value:${outputFileMd5}; expectedMd5:${expectedFileMd5}`);
-        this.getUIContext().showAlertDialog({
-          message: '输出文件与预期不符失败\n请单击弹窗外任意处关闭弹窗',
-          autoCancel: true
-        })
+        Logger.error(TAG, `MD5 Verification failed`);
+        return FAILED;
       } else {
         Logger.info(TAG,
           `file MD5 compare SUCCESS --- file1:${outputFilePath}; md5Value:${outputFileMd5};`);
       }
-      return 0;
+      return SUCCESS;
     } catch (e) {
+      this.failedCases.push(pipelineId);
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
-      return 1;
+      return FAILED;
     }
   }
 

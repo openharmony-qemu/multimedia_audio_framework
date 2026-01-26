@@ -2811,19 +2811,19 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
     return SUCCESS;
 }
 
-int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount)
+int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
         IPCSkeleton::GetCallingUid());
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
-    if (sink != nullptr) {
-        volumeDataCount = sink->GetVolumeDataCount();
-    } else {
-        volumeDataCount = 0;
+
+    if (sink == nullptr) {
         AUDIO_WARNING_LOG("can not find: %{public}s", sinkName.c_str());
+        return ERR_OPERATION_FAILED;
     }
-    return SUCCESS;
+
+    return sink->GetVolumeDataCount(volumeData);
 }
 
 int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer)

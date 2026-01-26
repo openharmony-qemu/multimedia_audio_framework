@@ -45,6 +45,7 @@ public:
     int32_t AddUnprocessStream(int32_t appUid) override;
     uint64_t GetLatency() noexcept override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
+    int32_t GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId) override;
 private:
     int32_t GetDeviceNameForConnect(AudioProcessConfig processConfig, uint32_t sessionId, std::string &deviceName);
     // audio channel index

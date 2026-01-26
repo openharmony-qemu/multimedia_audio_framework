@@ -183,8 +183,11 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
     // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
+        auto ret = SUCCESS;
+#ifndef CONFIG_FACTORY_VERSION
         AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+        ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+#endif
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
@@ -200,8 +203,11 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
             SilenceData(input);
             return;
         }
+        auto ret = SUCCESS;
+#ifndef CONFIG_FACTORY_VERSION
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        auto ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+        ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+#endif
         fadeInState_ = false;
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
     }
@@ -223,7 +229,8 @@ void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
 uint32_t HpaeGainNode::CalcRemainDurationMs(uint32_t duration, uint32_t frameLen, float *curSysGain, float *preSysGain)
 {
     uint32_t remainDurationMs = 0;
-    uint32_t spaneInFrameMs = (frameLen * 1000u) / GetSampleRate();
+    uint32_t sampleRate = static_cast<uint32_t>(GetSampleRate());
+    uint32_t spaneInFrameMs = static_cast<uint32_t>((frameLen * 1000.0f) / sampleRate);
     uint32_t times = duration / spaneInFrameMs;
     if (times > 0) {
         *curSysGain = (*curSysGain - *preSysGain) / times + *preSysGain;

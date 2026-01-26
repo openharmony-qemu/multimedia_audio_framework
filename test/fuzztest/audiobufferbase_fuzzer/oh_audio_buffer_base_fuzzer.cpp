@@ -100,6 +100,9 @@ void GetReadableDataFramesFuzzTest()
     }
     auto basicInfo = std::make_shared<BasicBufferInfo>();
     ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
     ohAudioBufferBase->GetReadableDataFrames();
 }
 

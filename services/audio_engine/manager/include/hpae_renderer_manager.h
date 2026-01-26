@@ -157,8 +157,7 @@ private:
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
     void StopOuputNode();
-    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId,
-        RendererState state, uint32_t appUid = INVALID_UID);
+    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state);
 
 private:
 
@@ -182,6 +181,7 @@ private:
 
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;
+    bool coBufferNodeIsConnected_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

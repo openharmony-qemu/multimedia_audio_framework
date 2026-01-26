@@ -45,7 +45,6 @@ config("audio_ohaudio_config") {
     "../../../../../../interfaces/kits/c/audio_renderer/",
     "../../../../../../interfaces/kits/c/audio_capturer/",
     "../../../../audioutils/include",
-    "../../../../audioschedule/include",
   ]
 }
 
@@ -63,7 +62,6 @@ ohos_unittest("audio_oh_capture_unit_test") {
   deps = [
     "../../../../audiocapturer:audio_capturer",
     "../../../../ohaudio:ohaudio",
-    "../../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [

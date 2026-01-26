@@ -353,7 +353,7 @@ describe("AudioManagerJsUnitTest", function () {
                 done();
             }).catch(err => {
                 console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 FAIL: ${err.code}.`);
-                expect(true).assertTrue();
+                expect(false).assertTrue();
                 done();
             });
         } catch (err) {
@@ -377,7 +377,7 @@ describe("AudioManagerJsUnitTest", function () {
                 done();
             }).catch(err => {
                 console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 FAIL: ${err.code}.`);
-                expect(true).assertTrue();
+                expect(false).assertTrue();
                 done();
             });
         } catch (err) {

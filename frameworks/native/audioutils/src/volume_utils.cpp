@@ -28,6 +28,7 @@ namespace {
 } // namespace
 
 float VolumeUtils::enforcedToneVolume_ = -1.0f;
+bool VolumeUtils::isLegacySetVolumeIgnored_ = false;
 
 void VolumeUtils::InitEnforcedToneVolume()
 {
@@ -47,6 +48,17 @@ float VolumeUtils::GetEnforcedToneVolumeFixed()
 {
     AUDIO_DEBUG_LOG("fixed enforced tone volume: %{public}f", enforcedToneVolume_);
     return enforcedToneVolume_;
+}
+
+void VolumeUtils::SetVolumeLegacyIgnored(const bool &isIgnored)
+{
+    AUDIO_INFO_LOG("set volume ignored for legacy: %{public}d", isIgnored);
+    isLegacySetVolumeIgnored_ = isIgnored;
+}
+
+bool VolumeUtils::IsLegacySetVolumeIgnored()
+{
+    return isLegacySetVolumeIgnored_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

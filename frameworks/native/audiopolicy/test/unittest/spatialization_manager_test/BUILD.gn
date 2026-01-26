@@ -32,12 +32,7 @@ ohos_unittest("audio_spatialization_manager_test") {
 
   sources = [ "src/audio_spatialization_manager_unit_test.cpp" ]
 
-  deps = [
-    "../../../../../../services/audio_service:audio_client",
-    "../../../../../../services/audio_service:audio_engine_manager",
-    "../../../../../../services/audio_service:audio_policy_manager",
-    "../../../../../../services/audio_service:audio_stream_client",
-  ]
+  deps = [ "../../../../../../services/audio_service:audio_client" ]
   external_deps = [
     "c_utils:utils",
     "googletest:gmock",

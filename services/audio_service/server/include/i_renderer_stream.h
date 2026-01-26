@@ -61,6 +61,7 @@ public:
     virtual int32_t GetMinimumBufferSize(size_t &minBufferSize) const = 0;
     virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;
     virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
+    virtual void AbortCallback(int32_t abortTimes) = 0;
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0;
     virtual int32_t UnsetOffloadMode() = 0;

@@ -2603,7 +2603,7 @@ HWTEST_F(AudioServerUnitTest, RestoreRenderSink_001, TestSize.Level4)
     EXPECT_NE(nullptr, audioServer);
     std::string sinkName = "primary";
     int32_t ret = audioServer->RestoreRenderSink(sinkName);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

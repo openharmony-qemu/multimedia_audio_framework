@@ -208,6 +208,7 @@ private:
     bool isSettingsCloneHaveStarted_ = false;
     std::unordered_map<DeviceType, std::unordered_map<AudioStreamType, int32_t>> deviceTypeToSystemVolumeForEffectMap_;
     bool isDataShareReady_ = false;
+    bool hasRegisterCloned_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

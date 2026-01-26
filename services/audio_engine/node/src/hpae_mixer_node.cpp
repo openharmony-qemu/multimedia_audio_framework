@@ -97,6 +97,7 @@ void HpaeMixerNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmB
     const auto port = preNode->GetOutputPort(nodeInfo, true);
     inputStream_.DisConnect(port);
 #ifdef ENABLE_HIDUMP_DFX
+    CHECK_AND_RETURN_LOG(port != nullptr, "port is nullptr");
     if (auto callback = GetNodeStatusCallback().lock()) {
         callback->OnNotifyDfxNodeInfo(false, port->GetNodeId(), GetNodeId());
     }

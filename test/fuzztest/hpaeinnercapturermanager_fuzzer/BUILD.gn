@@ -47,7 +47,7 @@ ohos_fuzztest("HpaeInnerCapturerManagerFuzzTest") {
 
   deps = [
     "../../../services/audio_engine:audio_engine_node",
-    "../../../services/audio_engine:hpae_engine_manager",
+    "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_service:audio_service",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/audioschedule:audio_schedule",

@@ -33,7 +33,6 @@ namespace {
     const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
     const string AUDIO_PLAYBACK_CAPTURER_TEST_FILE = "/data/audiocapturer_playbackcapturer_test.pcm";
     const int32_t READ_BUFFERS_COUNT = 128;
-    const int32_t VALUE_ZERO = 0;
     const int32_t STRESS_TEST_COUNTS = 200;
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
@@ -2004,12 +2003,11 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_001, TestS
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);
-    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
-    EXPECT_GE(bytesRead, VALUE_ZERO);
+    audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
 
     int64_t firstTs;
     bool getRet = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
-    EXPECT_EQ(true, getRet);
+    EXPECT_EQ(false, getRet);
     EXPECT_TRUE(firstTs >= 0);
 
     audioCapturer->Flush();

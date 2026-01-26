@@ -225,6 +225,7 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass
     } else {
         renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, true);
     }
+
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, deviceNetId: %{public}s, renderId_: %{public}u",
@@ -450,11 +451,11 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 }
 
 void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t sessionId, StreamUsage usage, RendererState state)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
-    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
     UpdateAuxiliarySinkState(change, sessionId, usage, state);
 }
 

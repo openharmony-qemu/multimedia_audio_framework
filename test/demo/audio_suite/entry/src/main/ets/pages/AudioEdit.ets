@@ -6,7 +6,7 @@ import {StyleConst} from '../utils/StyleConst';
 import audioNapi from 'libentry.so';
 import {Logger} from '../utils/Logger';
 import {JSON, util} from '@kit.ArkTS';
-import {SongInfo, NodeType, Node, ColorMap, SoundFiledType} from '../utils/importSongs/InterfaceInfo';
+import {SongInfo, NodeType, Node, ColorMap, SoundFiledType, balanceBandGainsMap} from '../utils/InterfaceInfo';
 
 const TAG: string = 'AudioEditTestApp_AudioEdit';
 
@@ -876,6 +876,7 @@ export struct AudioEdit {
                             .backgroundColor(this.equalizerMode === (index + 1) ? $r('app.color.index_audio_clip_card') :
                                 Color.Gray)
                             .onClick(() => {
+                                this.balanceBandGains = balanceBandGainsMap.get(this.equalizerMode) ?? [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
                                 Logger.info(TAG, `index + 1 is ${index + 1}`);
                                 this.equalizerMode = index + 1;
                             })
@@ -893,6 +894,7 @@ export struct AudioEdit {
                             .backgroundColor(this.equalizerMode === (index + 6) ? $r('app.color.index_audio_clip_card') :
                                 Color.Gray)
                             .onClick(() => {
+                                this.balanceBandGains = balanceBandGainsMap.get(this.equalizerMode) ?? [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
                                 Logger.info(TAG, `index + 1 is ${index + 6}`);
                                 this.equalizerMode = index + 6;
                             })
@@ -1453,8 +1455,9 @@ export struct AudioEdit {
         if (info.songType === 'wav' && info.wavBuffer) {
             // Invoke the NAPI interface.
             try {
+                let nodeIds: string[] = [inputId, outPutId, mixerId];
                 let result =
-                    audioNapi.audioInAndOutInit(inputId, outPutId, mixerId, info.fd, info.wavBuffer.byteLength);
+                    audioNapi.audioInAndOutInit(nodeIds, info.fd, info.wavBuffer.byteLength, 0);
                 if (result !== 0) {
                     this.getUIContext().showAlertDialog({
                         title: '提示',

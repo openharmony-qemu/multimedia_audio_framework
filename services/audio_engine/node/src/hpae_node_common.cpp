@@ -580,7 +580,6 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
-    nodeInfo.encoding = streamInfo.encoding;
 }
 
 RendererState ConvertHpaeToRendererState(HpaeSessionState state)

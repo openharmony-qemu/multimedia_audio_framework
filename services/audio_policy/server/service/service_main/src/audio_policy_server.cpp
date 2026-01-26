@@ -640,7 +640,13 @@ void AudioPolicyServer::TriggerMuteCheck()
 
     bool mutePlay = false;
     for (auto sinkName : deviceClassSet) {
-        int64_t volumeDataCount = AudioServerProxy::GetInstance().GetVolumeDataCount(sinkName);
+        int64_t volumeDataCount = 0;
+        int32_t ret = AudioServerProxy::GetInstance().GetVolumeDataCount(sinkName, volumeDataCount);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("sink:%{public}s GetVolumeDataCount failed", sinkName.c_str());
+            continue;
+        }
+
         if (volumeDataCount < SILENT_FRAME_LIMIT) {
             mutePlay = true;
             AUDIO_WARNING_LOG("sink:%{public}s running with mute data", sinkName.c_str());
@@ -1129,6 +1135,10 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volume
 int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int32_t volumeLevel)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
+    if (VolumeUtils::IsLegacySetVolumeIgnored() && !PermissionUtil::VerifySystemPermission()) {
+        AUDIO_WARNING_LOG("set volume legacy is not allowed for third hap");
+        return ERR_PERMISSION_DENIED;
+    }
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }

@@ -3,6 +3,8 @@
  */
 
 export * from "./multiPipelineIndex";
+export * from "./audioRecord";
+export * from "./timeline";
 export const record: () => void;
 export const audioRendererInit: () => void;
 export const audioRendererDestory: () => void;
@@ -11,10 +13,11 @@ export const audioRendererPause: () => void;
 export const audioRendererStop: () => void;
 export const getRendererState: () => number;
 export const registerFinishedCallback: (callBackFull: Function) => boolean;
+export const unregisterFinishedCallback: () => void;
 export const resetTotalWriteAudioDataSize: () => void;
 export const realTimeSaveFileBuffer: () => ArrayBuffer;
 export const audioEditNodeInit: (workMode: number) => number;
-export const audioInAndOutInit: (inputId: string, outputId: string, mixerId: string, fd: number, bufferLength: number) => number;
+export const audioInAndOutInit: (NodeIds: string[], fd: number, bufferLength: number, startTime: number) => number;
 export const initByPipelineCascad: (inputId: string, outputId: string, mixerId: string, audioFormat: string, buffer: ArrayBuffer) => number;
 export const audioEditDestory: () => number;
 export const setEqualizerMode: (equalizerMode: number, nodeId: string, inputId:string) => number;
@@ -35,6 +38,7 @@ export const startVBEffect: (inputId: string, mode: number, voiceBeautifierId: s
 export const resetVBEffect: (inputId: string, mode: number, voiceBeautifierId: string) => number;
 export const deleteNode: (nodeId: string) => number;
 export const registerAudioFormatCallback: (callBackFull: Function) => string[];
+export const unregisterAudioFormatCallback: () => void;
 export const getOptions: (nodeId: string) => string;
 export const getEffectNodeList: () => Array<number>;
 export const setSoundSpeedTone: (pitchSong: string, soundSpeedToneId: string, soundSpeed: number, soundTone: number, selectedNodeId?: string) => number;
@@ -53,3 +57,13 @@ export const ResetExpandEffect: (extRadius: number, extAngle: number, spaceRende
 export const GetFixedPositionParams: (nodeId: string) => { x: number, y: number, z: number };
 export const GetDynamicRenderParams: (nodeId: string) => { x: number, y: number, z: number, surroundTime: number, surroundDirection: number };
 export const GetExpandParams: (nodeId: string) => { extRadius: number, extAngle: number };
+export const registerStringCallback: (callBackFull: Function) => string;
+export const unregisterStringCallback: () => void;
+export const clear: () => void;
+export const clearByInputId: (inputId: string, startTime: number) => void;
+export const stopPipeline: () => void;
+export const registerAudioCacheCallback: (callBackFull: Function) => boolean;
+export const unregisterAudioCacheCallback: () => void;
+export const ModifyRender: (notRenderTrackIds: string[], renderTrackIds: string[]) => void;
+export const setCurrentTime: (currentTime: number) => void;
+export const setEffectNodeBypass: (inputId: string, effectId: string, isBypass: boolean) => boolean;

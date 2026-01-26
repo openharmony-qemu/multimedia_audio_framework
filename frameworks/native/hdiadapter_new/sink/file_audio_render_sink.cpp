@@ -113,7 +113,7 @@ int32_t FileAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wri
     return SUCCESS;
 }
 
-int64_t FileAudioRenderSink::GetVolumeDataCount()
+int32_t FileAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
     return 0;

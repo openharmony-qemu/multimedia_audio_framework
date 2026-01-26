@@ -45,9 +45,6 @@ ohos_fuzztest("AudioStreamFuzzTest") {
     "../../../frameworks/native/audioinnercall:audio_inner_call",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
-    "../../../services/audio_service:audio_engine_manager",
-    "../../../services/audio_service:audio_policy_manager",
-    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service_static",
     "../../../services/audio_service:audio_service_static",
@@ -66,8 +63,8 @@ ohos_fuzztest("AudioStreamFuzzTest") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "power_manager:powermgr_client",
-    "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
+    "qos_manager:concurrent_task_client",
   ]
   if (defined(global_parts_info) &&
       defined(global_parts_info.barrierfree_accessibility)) {

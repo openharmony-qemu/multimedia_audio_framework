@@ -153,6 +153,10 @@ private:
     void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
     void AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType devType);
+#ifdef MULTI_BUS_ENABLE
+    void AddDevice(const PolicyAdapterInfo &adapterInfo, const AdapterDeviceInfo &deviceInfo);
+    void AddPreloadDevices();
+#endif
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
     int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
     int32_t LoadDpModule(std::string deviceInfo);

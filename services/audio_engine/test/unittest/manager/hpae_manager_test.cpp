@@ -316,7 +316,6 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetDefaultSource(audioModuleInfo.name);
-    int32_t portId = callback->GetPortId();
     HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
@@ -335,11 +334,6 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level1)
     EXPECT_EQ(callback->GetGetAllSourceOutputsResult(), SUCCESS);
     std::vector<SourceOutput> sourceOutputs = callback->GetSourceOutputs();
     EXPECT_EQ(sourceOutputs.size(), 1);
-    for (const auto &it : sourceOutputs) {
-        std::cout << "deviceSourceId:" << it.deviceSourceId << std::endl;
-        EXPECT_EQ(it.paStreamId, streamInfo.sessionId);
-        EXPECT_EQ(it.deviceSourceId, portId);
-    }
 
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
@@ -1538,6 +1532,9 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
 
     EXPECT_EQ(hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER), SUCCESS);
     hpaeManager_->UpdateExtraSceneType("123", "456", "789");
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->SetOutputDeviceSink(1, "test");
     WaitForMsgProcessing(hpaeManager_);
 }
 

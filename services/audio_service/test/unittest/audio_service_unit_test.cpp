@@ -1814,25 +1814,25 @@ HWTEST(AudioServiceUnitTest, RemoveRenderer_001, TestSize.Level1)
     EXPECT_NE(audioService, nullptr);
 
     audioService->allRendererMap_.clear();
+    audioService->mutedSessions_.clear();
 
     uint32_t sessionId = 100001;
+    std::shared_ptr<RendererInServer> rendererInServer = nullptr;
     audioService->UpdateMuteControlSet(sessionId, true);
-
-    std::set<uint32_t>::iterator end = audioService->mutedSessions_.end();
-    std::set<uint32_t>::iterator it = end;
-    audioService->RemoveRenderer(sessionId, true);
-    {
-        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
-        it = audioService->mutedSessions_.find(sessionId);
-        EXPECT_NE(it, end);
-    }
+    audioService->allRendererMap_.insert(std::make_pair(sessionId, rendererInServer));
 
     audioService->RemoveRenderer(sessionId, false);
     {
-        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
-        it = audioService->mutedSessions_.find(sessionId);
-        EXPECT_EQ(it, end);
+        std::lock_guard<std::mutex> lock(audioService->rendererMapMutex_);
+        EXPECT_EQ(audioService->allRendererMap_.count(sessionId), 0);
     }
+    {
+        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
+        EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 0);
+    }
+
+    audioService->allRendererMap_.clear();
+    audioService->mutedSessions_.clear();
 }
 
 /**
@@ -2715,9 +2715,11 @@ HWTEST(AudioServiceUnitTest, RemoveThread_002, TestSize.Level1)
     AudioWorkgroup workgroup(1);
     int32_t tid = -1;
     ConcurrentTask::IntervalReply reply;
-    reply.paramA = 1;
+    reply.paramA = -1;
+
     int32_t result = workgroup.AddThread(tid);
-    EXPECT_NE(result, AUDIO_OK);
+
+    EXPECT_NE(result, AUDIO_ERR);
 }
 
 /**

@@ -52,7 +52,7 @@ public:
 
     int32_t Config();
 
-    int32_t RegisterStreamListener(const sptr<IRemoteObject>& object) override;
+    int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
 

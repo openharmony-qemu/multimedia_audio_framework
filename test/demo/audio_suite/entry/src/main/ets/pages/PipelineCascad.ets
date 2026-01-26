@@ -13,7 +13,7 @@ import {
   PIPELINECASCADMODE_1,
   PIPELINECASCADMODE_2,
   PIPELINECASCADMODE_3
-} from '../utils/importSongs/InterfaceInfo';
+} from '../utils/InterfaceInfo';
 import { Logger } from "../utils/Logger";
 import { taskpool, util } from "@kit.ArkTS";
 import { PipelineInfo } from "../utils/autoTest/Interface";

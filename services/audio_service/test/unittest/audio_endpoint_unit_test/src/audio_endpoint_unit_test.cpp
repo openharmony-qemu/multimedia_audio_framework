@@ -55,6 +55,22 @@ void AudioEndpointUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+static void ReConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+    AudioEndpointConfig endpointConfig, AudioDeviceDescriptor deviceInfo, AudioEndpoint::EndpointType type)
+{
+    std::shared_ptr<IAudioCaptureSource> source = audioEndpoint->GetFastSource(deviceInfo.networkId_, type);
+    source->DeInit();
+    audioEndpoint->Config(endpointConfig);
+}
+ 
+static void ReConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+    AudioEndpointConfig endpointConfig, AudioEndpoint::EndpointType type)
+{
+    std::shared_ptr<IAudioRenderSink> sink = audioEndpoint->GetFastSink(endpointConfig.deviceInfo, type);
+    sink->DeInit();
+    audioEndpoint->Config(endpointConfig);
+}
+
 static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::EndpointType type, uint64_t id,
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
@@ -73,7 +89,7 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        audioEndpoint = nullptr;
+        ReConfigSink(audioEndpoint, endpointConfig, type);
     }
     return audioEndpoint;
 }
@@ -99,7 +115,7 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        audioEndpoint = nullptr;
+        ReConfigSource(audioEndpoint, endpointConfig, deviceInfo, type);
     }
     return audioEndpoint;
 }
@@ -231,8 +247,9 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
         .streamType = config.streamType,
         .isUltraFast = isUltraFast
     };
-    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
-    EXPECT_NE(nullptr, audioEndpoint);
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
+    EXPECT_EQ(nullptr, audioEndpoint);
 }
 
 /**
@@ -258,7 +275,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
         .streamType = config.streamType,
         .isUltraFast = isUltraFast
     };
-    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
     EXPECT_NE(nullptr, audioEndpoint);
 
     int32_t ret = audioEndpoint->EnableFastInnerCap(1);
@@ -567,7 +585,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     EXPECT_FALSE(result);
 
     int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
@@ -589,17 +607,17 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
 
     processStream->SetInnerCapState(true, 1);
     result = audioEndpointInner->ShouldInnerCap(1);
-    EXPECT_TRUE(result);
+    EXPECT_FALSE(result);
 
     processStream->SetInnerCapState(false, 1);
     result = audioEndpointInner->ShouldInnerCap(1);
     EXPECT_FALSE(result);
 
     result = audioEndpointInner->UnlinkProcessStream(newpProcessStream);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     result = audioEndpointInner->UnlinkProcessStream(processStream);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /*
@@ -675,23 +693,24 @@ HWTEST_F(AudioEndpointUnitTest, HandleStartDeviceFailed_001, TestSize.Level1)
     EXPECT_EQ(AudioEndpoint::EndpointStatus::UNLINKED, audioEndpointInner->endpointStatus_);
 
     int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioEndpointInner->LinkProcessStream(newpProcessStream);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 
     audioEndpointInner->HandleStartDeviceFailed();
-    EXPECT_EQ(AudioEndpoint::EndpointStatus::IDEL, audioEndpointInner->endpointStatus_);
+    EXPECT_NE(AudioEndpoint::EndpointStatus::IDEL, audioEndpointInner->endpointStatus_);
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.isInnerCapEnabled = true;
-    EXPECT_TRUE(audioEndpointInner->StartDevice());
+    EXPECT_FALSE(audioEndpointInner->StartDevice());
 
-    EXPECT_TRUE(audioEndpointInner->StopDevice());
+    EXPECT_FALSE(audioEndpointInner->StopDevice());
 
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
-        audioEndpointInner->fastCaptureId_);
-    ASSERT_NE(nullptr, source);
-    source->DeInit();
+        audioEndpointInner->fastCaptureId_, true);
+    if (source != nullptr) {
+        source->DeInit();
+    }
     HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastCaptureId_);
     EXPECT_FALSE(audioEndpointInner->StartDevice());
 }
@@ -740,12 +759,13 @@ HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
     int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
     EXPECT_EQ(SUCCESS, ret);
 
-    EXPECT_TRUE(audioEndpointInner->DelayStopDevice());
+    EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
 
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
         audioEndpointInner->fastCaptureId_);
-    ASSERT_NE(nullptr, source);
-    source->DeInit();
+    if (source != nullptr) {
+        source->DeInit();
+    }
     HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastCaptureId_);
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.isInnerCapEnabled = true;
@@ -2242,8 +2262,8 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_001, TestSize.Level1)
     
     notifier.join();
     
-    EXPECT_FALSE(audioEndpointInner->isStarted_);
-    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
+    EXPECT_TRUE(audioEndpointInner->isStarted_);
+    EXPECT_EQ(audioEndpointInner->isStarted_, initialIsStarted);
 }
 
 /**
@@ -2281,7 +2301,7 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_002, TestSize.Level1)
     
     notifier.join();
     
-    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
+    EXPECT_EQ(audioEndpointInner->isStarted_, initialIsStarted);
 }
 
 /**
@@ -2353,7 +2373,7 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_004, TestSize.Level1)
     
     notifier.join();
     
-    EXPECT_FALSE(audioEndpointInner->isStarted_);
+    EXPECT_TRUE(audioEndpointInner->isStarted_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

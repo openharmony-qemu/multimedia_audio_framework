@@ -40,7 +40,7 @@ const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
 }
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
-    : renderId_(renderId), halName_(halName)
+    : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP)
 {
     if (halName_ == HDI_ID_INFO_DIRECT || halName_ == HDI_ID_INFO_VOIP) {
         sinkType_ = ADAPTER_TYPE_DIRECT;
@@ -127,7 +127,12 @@ int32_t AudioRenderSink::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpFileName_ = halName_ + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
+
+    std::string dumpFilePrefix = halName_;
+#ifdef MULTI_BUS_ENABLE
+    dumpFilePrefix = attr_.address;
+#endif
+    dumpFileName_ = dumpFilePrefix + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     logUtilsTag_ = "AudioSink" + halName_;
@@ -299,9 +304,10 @@ void AudioRenderSink::CheckJank()
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, stamp);
 }
 
-int64_t AudioRenderSink::GetVolumeDataCount()
+int32_t AudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value)
@@ -430,8 +436,34 @@ int32_t AudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
+    return needSetHdiVolume_ ? SetSinkMuteForSwitchDeviceWithHdiVolume(mute)
+                             : SetSinkMuteForSwitchDeviceWithoutHdiVolume(mute);
+}
+
+int32_t AudioRenderSink::SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    bool applyVolume = false;
+    int32_t ret = HandleSwitchDeviceMuteState(mute, applyVolume);
+    CHECK_AND_RETURN_RET(ret == SUCCESS && applyVolume, ret);
+    if (mute) {
+        audioRender_->SetVolume(audioRender_, 0.0f);
+        return SUCCESS;
+    }
+    SetVolume(leftVolume_, rightVolume_);
+    return SUCCESS;
+}
+
+int32_t AudioRenderSink::SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute)
+{
+    bool applyVolume = false;
+    return HandleSwitchDeviceMuteState(mute, applyVolume);
+}
+
+int32_t AudioRenderSink::HandleSwitchDeviceMuteState(bool mute, bool &applyVolume)
+{
+    applyVolume = false;
     if (mute) {
         muteCount_++;
         if (switchDeviceMute_) {
@@ -439,22 +471,18 @@ int32_t AudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
             return SUCCESS;
         }
         switchDeviceMute_ = true;
-        if (halName_ == HDI_ID_INFO_VOIP) {
-            audioRender_->SetVolume(audioRender_, 0.0f);
-        }
-    } else {
-        muteCount_--;
-        if (muteCount_ > 0) {
-            AUDIO_WARNING_LOG("%{public}s not all unmuted", halName_.c_str());
-            return SUCCESS;
-        }
-        switchDeviceMute_ = false;
-        muteCount_ = 0;
-        if (halName_ == HDI_ID_INFO_VOIP) {
-            SetVolume(leftVolume_, rightVolume_);
-        }
+        applyVolume = true;
+        return SUCCESS;
     }
 
+    muteCount_--;
+    if (muteCount_ > 0) {
+        AUDIO_WARNING_LOG("%{public}s not all unmuted", halName_.c_str());
+        return SUCCESS;
+    }
+    switchDeviceMute_ = false;
+    muteCount_ = 0;
+    applyVolume = true;
     return SUCCESS;
 }
 

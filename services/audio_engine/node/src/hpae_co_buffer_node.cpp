@@ -63,6 +63,7 @@ HpaeCoBufferNode::~HpaeCoBufferNode()
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_LOG(buffer != nullptr, "Enqueue failed, buffer is nullptr");
     
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ && buffer) {
@@ -72,7 +73,7 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 #endif
 
     // delay alignment
-    if (!DelayAlignmentInner()) {
+    if (!DelayAlignmentInner(buffer)) {
         return;
     }
 
@@ -271,7 +272,7 @@ void HpaeCoBufferNode::SetDelayCount(int32_t delayCount)
     enqueueRunning_ = false;
 }
 
-bool HpaeCoBufferNode::DelayAlignmentInner()
+bool HpaeCoBufferNode::DelayAlignmentInner(HpaePcmBuffer* buffer)
 {
     if (enqueueCount_ < waitCountThreshold_) {
         enqueueCount_++;
@@ -292,8 +293,8 @@ bool HpaeCoBufferNode::DelayAlignmentInner()
         float gain = 0;
         float deltaGain = 1.0f / DEFAULT_FRAME_LEN;
         for (int32_t i = 0; i < DEFAULT_FRAME_LEN; i++) {
-            coBufferOut_.GetPcmDataBuffer()[COLLABORATION_CHANNELS * i] *= gain;
-            coBufferOut_.GetPcmDataBuffer()[(COLLABORATION_CHANNELS * i) + 1] *= gain;
+            buffer->GetPcmDataBuffer()[COLLABORATION_CHANNELS * i] *= gain;
+            buffer->GetPcmDataBuffer()[(COLLABORATION_CHANNELS * i) + 1] *= gain;
             gain += deltaGain;
         }
     }

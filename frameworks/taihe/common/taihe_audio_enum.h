@@ -121,6 +121,7 @@ public:
     static AudioVolumeType GetJsAudioVolumeTypeMore(OHOS::AudioStandard::AudioStreamType volumeType);
     static StreamUsage GetJsStreamUsage(OHOS::AudioStandard::StreamUsage streamUsage);
     static StreamUsage GetJsStreamUsageFir(OHOS::AudioStandard::StreamUsage streamUsage);
+    static StreamUsage GetJsStreamUsageSec(OHOS::AudioStandard::StreamUsage streamUsage);
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);

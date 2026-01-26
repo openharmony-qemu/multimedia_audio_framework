@@ -62,10 +62,6 @@ ohos_shared_library("audio_definitions") {
     defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
   }
 
-  if (audio_framework_feature_detect_soundbox) {
-    defines += [ "DETECT_SOUNDBOX" ]
-  }
-
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"

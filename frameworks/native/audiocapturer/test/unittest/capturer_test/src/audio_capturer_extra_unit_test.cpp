@@ -619,6 +619,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_002, TestSize.Level1)
     ASSERT_NE(nullptr, audioCapturer);
 
     std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    ASSERT_NE(nullptr, pCapturer);
     bool isStarted = pCapturer->Start();
     EXPECT_EQ(true, isStarted);
     state = audioCapturer->GetStatus();
@@ -1632,6 +1633,5 @@ HWTEST(AudioCapturerUnitTest, AsyncCheckAudioCapturer_001, TestSize.Level4)
     int32_t res = testCapturerInner->AsyncCheckAudioCapturer("Test");
     EXPECT_EQ(SUCCESS, res);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -491,6 +491,7 @@ int32_t AudioDeviceStatus::UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &upd
     if (!VolumeUtils::IsPCVolumeEnable()) {
         audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_ASSISTANT,
             audioVolumeManager_.GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT));
+        audioVolumeManager_.SetStreamMute(STREAM_VOICE_ASSISTANT, false, STREAM_USAGE_UNKNOWN, DEVICE_TYPE_NEARLINK);
     }
     return SUCCESS;
 }
@@ -1099,7 +1100,12 @@ void AudioDeviceStatus::AddEarpiece()
 bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo)
 {
     auto devType = AudioPolicyUtils::GetInstance().GetDeviceType(moduleInfo.name);
+    
+#ifdef MULTI_BUS_ENABLE
+    if (moduleInfo.role == ROLE_SINK) {
+#else
     if (devType != DEVICE_TYPE_MIC) {
+#endif
         audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
         if (devType == DEVICE_TYPE_SPEAKER) {
@@ -1112,9 +1118,11 @@ bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &
         audioEcManager_.SetPrimaryMicModuleInfo(moduleInfo);
     }
 
+#ifndef MULTI_BUS_ENABLE
     if (devType == DEVICE_TYPE_SPEAKER || devType == DEVICE_TYPE_MIC) {
         AddAudioDevice(moduleInfo, devType);
     }
+#endif
 
     audioVolumeManager_.NotifyVolumeGroup();
 
@@ -1156,6 +1164,63 @@ void AudioDeviceStatus::AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType d
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
 }
 
+#ifdef MULTI_BUS_ENABLE
+void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const AdapterDeviceInfo &deviceInfo)
+{
+    // add new device into active device list
+    std::string volumeGroupName = audioConfigManager_.GetGroupName(deviceInfo.name_, VOLUME_TYPE);
+    std::string interruptGroupName = audioConfigManager_.GetGroupName(deviceInfo.name_, INTERRUPT_TYPE);
+    int32_t volumeGroupId = GROUP_ID_NONE;
+    int32_t interruptGroupId = GROUP_ID_NONE;
+    audioVolumeManager_.UpdateGroupInfo(GroupType::VOLUME_TYPE, volumeGroupName, volumeGroupId, LOCAL_NETWORK_ID, true,
+        NO_REMOTE_ID);
+    audioVolumeManager_.UpdateGroupInfo(GroupType::INTERRUPT_TYPE, interruptGroupName, interruptGroupId,
+        LOCAL_NETWORK_ID, true, NO_REMOTE_ID);
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(deviceInfo.type_,
+        deviceInfo.role_, volumeGroupId, interruptGroupId, LOCAL_NETWORK_ID);
+    CHECK_AND_RETURN_LOG(audioDescriptor != nullptr, "audioDescriptor is nullptr.");
+
+    std::list<DeviceStreamInfo> streamInfos = {};
+    for (const auto &pipe : adapterInfo.pipeInfos) {
+        if (pipe == nullptr) { continue; }
+        if (std::find(deviceInfo.supportPipes_.begin(), deviceInfo.supportPipes_.end(), pipe->name_) ==
+            deviceInfo.supportPipes_.end()) { continue; }
+        
+        for (const auto &spi : pipe->streamPropInfos_) {
+            if (spi == nullptr) { continue; }
+            streamInfos.emplace_back(static_cast<AudioSamplingRate>(spi->sampleRate_), AudioEncodingType::ENCODING_PCM,
+                spi->format_, spi->channelLayout_);
+        }
+    }
+    audioDescriptor->SetDeviceCapability(streamInfos, 0);
+
+    audioDescriptor->deviceId_ = AudioPolicyUtils::startDeviceId++;
+    AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
+    audioDeviceManager_.AddNewDevice(audioDescriptor);
+    audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+    audioMicrophoneDescriptor_.AddMicrophoneDescriptor(audioDescriptor);
+    AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
+}
+
+void AudioDeviceStatus::AddPreloadDevices()
+{
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap = {};
+    audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
+    for (const auto &adapterPair : adapterInfoMap) {
+        if (adapterPair.second == nullptr) {
+            continue;
+        }
+        const auto &adapterInfo = *(adapterPair.second);
+        for (const auto &deviceInfo : adapterInfo.deviceInfos) {
+            if (deviceInfo != nullptr && deviceInfo->preload_) {
+                AddDevice(adapterInfo, *deviceInfo);
+            }
+        }
+    }
+}
+#endif
+
 int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
 {
     int32_t result = ERROR;
@@ -1179,6 +1244,10 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
             }
         }
     }
+    
+#ifdef MULTI_BUS_ENABLE
+    AddPreloadDevices();
+#endif
 
     if (result == SUCCESS) {
         AUDIO_INFO_LOG("[module_load]::Setting speaker as active device on bootup");

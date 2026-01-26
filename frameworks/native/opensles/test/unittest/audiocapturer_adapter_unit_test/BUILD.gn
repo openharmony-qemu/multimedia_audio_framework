@@ -38,7 +38,6 @@ ohos_unittest("audio_capturer_adapter_unit_test") {
   include_dirs = [
     "../../../opensles/include",
     "./include",
-    "../../../../audioschedule/include",
   ]
 
   configs = [
@@ -51,11 +50,7 @@ ohos_unittest("audio_capturer_adapter_unit_test") {
   deps = [
     "../../../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../../../services/audio_service:audio_client",
-    "../../../../../../services/audio_service:audio_engine_manager",
-    "../../../../../../services/audio_service:audio_policy_manager",
-    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../opensles:opensles",
-    "../../../../audioschedule:audio_schedule",
   ]
   external_deps = [
     "bundle_framework:appexecfwk_core",
@@ -63,6 +58,5 @@ ohos_unittest("audio_capturer_adapter_unit_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "opensles:libSLES",
-    "eventhandler:libeventhandler",
   ]
 }

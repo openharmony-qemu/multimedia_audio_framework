@@ -65,7 +65,7 @@ public:
     uint32_t GetCaptureId() const;
     void SetInjectState(bool isInjecting);
     void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID);
+        uint32_t sessionId, SourceType source, CapturerState state);
 
 private:
     int32_t GetCapturerSourceAdapter(

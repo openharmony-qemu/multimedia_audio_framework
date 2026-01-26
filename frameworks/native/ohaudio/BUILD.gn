@@ -71,9 +71,6 @@ ohos_shared_library("ohaudio") {
 
   deps = [
     "../../../services/audio_service:audio_client",
-    "../../../services/audio_service:audio_engine_manager",
-    "../../../services/audio_service:audio_policy_manager",
-    "../../../services/audio_service:audio_stream_client",
     "../audiocapturer:audio_capturer",
     "../audiorenderer:audio_renderer",
   ]
@@ -83,7 +80,7 @@ ohos_shared_library("ohaudio") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
-    "ipc:ipc_single"
+    "ipc:ipc_single",
   ]
 
   innerapi_tags = [ "ndk" ]

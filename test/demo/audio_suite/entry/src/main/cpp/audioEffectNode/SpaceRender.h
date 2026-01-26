@@ -6,7 +6,7 @@
 #define AUDIOEDITTESTAPP_SPACERENDER_H
 #include "NodeManager.h"
 #include "napi/native_api.h"
-#include <ohaudio/native_audio_suite_base.h>
+#include <ohaudiosuite/native_audio_suite_base.h>
 #include <string>
 
 class SpaceRender {
