@@ -850,5 +850,24 @@ bool AudioPipeManager::IsStreamUltraFast(uint32_t sessionId)
     }
     return false;
 }
+
+bool AudioPipeManager::HasRunningRecognitionCapturerStream()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    bool hasRunningRecognitionCapturerStream = false;
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
+            (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION)) {
+                return true;
+            }
+        }
+    }
+    AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
+    return hasRunningRecognitionCapturerStream;
+}
 } // namespace AudioStandard
 } // namespace OHOS
