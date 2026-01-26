@@ -876,7 +876,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
 
 void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
 {
-    bool hasRunningRecognitionCapturerStream = streamCollector_.HasRunningRecognitionCapturerStream();
+    bool hasRunningRecognitionCapturerStream = pipeManager_->HasRunningRecognitionCapturerStream();
     if (hasRunningRecognitionCapturerStream) {
         return;
     }

@@ -1576,5 +1576,77 @@ HWTEST_F(AudioPipeManagerUnitTest, DecideStreamInfo_001, TestSize.Level1)
     streamInfo = audioPipeManager->DecideStreamInfo(pipeInfo, deviceDesc);
     EXPECT_EQ(streamInfo.samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
 }
+
+/**
+ * @tc.name  : Test IsOnPrimaryAdapter.
+ * @tc.number: IsOnPrimaryAdapter_001.
+ * @tc.desc  : Primary adapter exists and the target stream session is on the primary adapter
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t targetSessionId = 10000;
+    bool ret = audioPipeManager->IsOnPrimaryAdapter(targetSessionId);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test IsOnPrimaryAdapter.
+ * @tc.number: IsOnPrimaryAdapter_002.
+ * @tc.desc  : Primary adapter exists and the target stream session is not on the primary adapter
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t targetSessionId = 10001;
+    bool ret = audioPipeManager->IsOnPrimaryAdapter(targetSessionId);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test IsOnPrimaryAdapter.
+ * @tc.number: IsOnPrimaryAdapter_003.
+ * @tc.desc  : Primary adapter does not exist
+ */
+HWTEST_F(AudioPipeManagerUnitTest, IsOnPrimaryAdapter_003, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_NE(nullptr, audioPipeManager);
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 10000;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = "remote";
+    pipeInfo->AddStream(streamDesc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t targetSessionId = 10000;
+    bool ret = audioPipeManager->IsOnPrimaryAdapter(targetSessionId);
+    EXPECT_FALSE(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

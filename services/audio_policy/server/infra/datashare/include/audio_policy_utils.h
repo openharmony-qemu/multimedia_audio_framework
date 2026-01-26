@@ -98,7 +98,6 @@ public:
     bool IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission);
 
     bool IsWirelessDevice(DeviceType deviceType);
-    bool IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_t sessionId);
 
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
