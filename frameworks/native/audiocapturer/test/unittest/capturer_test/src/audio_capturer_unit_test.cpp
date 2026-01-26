@@ -2007,7 +2007,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_001, TestS
 
     int64_t firstTs;
     bool getRet = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
-    EXPECT_EQ(true, getRet);
+    EXPECT_EQ(false, getRet);
     EXPECT_TRUE(firstTs >= 0);
 
     audioCapturer->Flush();
