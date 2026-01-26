@@ -1099,12 +1099,12 @@ void AudioDeviceStatus::AddEarpiece()
 bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo)
 {
     auto devType = AudioPolicyUtils::GetInstance().GetDeviceType(moduleInfo.name);
-    
+
+    bool needOpenPort = (devType != DEVICE_TYPE_MIC);
 #ifdef MULTI_BUS_ENABLE
-    if (moduleInfo.role == ROLE_SINK) {
-#else
-    if (devType != DEVICE_TYPE_MIC) {
+    needOpenPort = (moduleInfo.role == ROLE_SINK);
 #endif
+    if (needOpenPort) {
         audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
         if (devType == DEVICE_TYPE_SPEAKER) {
@@ -1182,12 +1182,12 @@ void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const Ad
 
     std::list<DeviceStreamInfo> streamInfos = {};
     for (const auto &pipe : adapterInfo.pipeInfos) {
-        if (pipe == nullptr) { continue; }
+        CHECK_AND_CONTINUE(pipe != nullptr);
         if (std::find(deviceInfo.supportPipes_.begin(), deviceInfo.supportPipes_.end(), pipe->name_) ==
             deviceInfo.supportPipes_.end()) { continue; }
         
         for (const auto &spi : pipe->streamPropInfos_) {
-            if (spi == nullptr) { continue; }
+            CHECK_AND_CONTINUE(spi != nullptr);
             streamInfos.emplace_back(static_cast<AudioSamplingRate>(spi->sampleRate_), AudioEncodingType::ENCODING_PCM,
                 spi->format_, spi->channelLayout_);
         }
@@ -1207,9 +1207,7 @@ void AudioDeviceStatus::AddPreloadDevices()
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap = {};
     audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     for (const auto &adapterPair : adapterInfoMap) {
-        if (adapterPair.second == nullptr) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(adapterPair.second != nullptr);
         const auto &adapterInfo = *(adapterPair.second);
         for (const auto &deviceInfo : adapterInfo.deviceInfos) {
             if (deviceInfo != nullptr && deviceInfo->preload_) {
