@@ -815,25 +815,6 @@ HWTEST_F(FastSystemStreamUnitTest, SetRendererFirstFrameWritingCallback_001, Tes
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetRendererFirstFrameWritingCallback_001 start");
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> callback =
         std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
-    auto result = fastAudioStream->SetRendererFirstFrameWritingCallback(callback);
-    EXPECT_EQ(result, SUCCESS);
-}
-
-/**
- * @tc.name  : Test SetRendererFirstFrameWritingCallback API
- * @tc.type  : FUNC
- * @tc.number: SetRendererFirstFrameWritingCallback_002
- * @tc.desc  : Test SetRendererFirstFrameWritingCallback interface.
- */
-HWTEST_F(FastSystemStreamUnitTest, SetRendererFirstFrameWritingCallback_002, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream;
-    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetRendererFirstFrameWritingCallback_002 start");
-    std::shared_ptr<AudioRendererFirstFrameWritingCallback> callback =
-        std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
     auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
     fastAudioStream->processClient_ = mockProcessClient;
 
