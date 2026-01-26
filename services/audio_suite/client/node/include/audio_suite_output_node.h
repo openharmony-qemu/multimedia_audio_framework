@@ -35,7 +35,7 @@ public:
     int32_t Connect(const std::shared_ptr<AudioNode> &preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode> &preNode) override;
 
-    virtual int32_t DoProcess() override;
+    virtual int32_t DoProcess(uint32_t needDataLength) override;
     int32_t DoProcess(uint8_t *audioData, int32_t frameSize, int32_t *writeDataSize, bool *finished);
     int32_t DoProcess(uint8_t **audioDataArray, int32_t arraySize,
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag);
@@ -52,6 +52,7 @@ private:
     uint8_t *GetCacheBufferData(size_t idx);
     InputPort<AudioSuitePcmBuffer *> inputStream_;
     int32_t preNodeOutputNum_ = 0;
+    uint32_t needDataLength = 20;
 
     // for cache buffer
     std::vector<AudioSuitePcmBuffer *> outputs_;

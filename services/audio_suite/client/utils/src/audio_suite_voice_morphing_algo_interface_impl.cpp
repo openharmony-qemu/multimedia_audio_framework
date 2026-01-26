@@ -29,8 +29,6 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
-constexpr int32_t DEFAULT_FRAME_LEN = 960;  // single channel sample point number.
-constexpr int32_t DEFAULT_CHANNEL_COUNT = 2;
 const std::string voiceMorphingMode = "VoiceBeautifierType";
 const std::string generalVoiceChangeMode = "AudioGeneralVoiceChangeType";
 }  // namespace
@@ -106,8 +104,8 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Init()
     handle_.resize(memSize.stateSize);
     scratchBuf_.resize(memSize.scratchSize);
 
-    inBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
-    outBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
+    inBuf_.resize(nodeParameter_.frameLen * nodeParameter_.inChannels * sizeof(uint32_t));
+    outBuf_.resize(nodeParameter_.frameLen * nodeParameter_.outChannels * sizeof(uint32_t));
 
     ret = vmAlgoApi_.init(handle_.data(), scratchBuf_.data());
     if (ret != AUDIO_VMP_EOK) {
@@ -171,7 +169,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     AudioVoiceMorphingData data = {
         .dataIn = reinterpret_cast<int *>(inBuf_.data()),
         .dataOut = reinterpret_cast<int *>(outBuf_.data()),
-        .dataSize = DEFAULT_FRAME_LEN,
+        .dataSize = nodeParameter_.frameLen,
         .enableFlag = 1,
         .dataFormat = 1,
         .inCh = 2,
@@ -181,7 +179,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     int16_t *inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t *outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
     int32_t offset = 16;
-    int32_t requiredSize = DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT;
+    int32_t requiredSize = nodeParameter_.frameLen * nodeParameter_.outChannels;
     for (int32_t i = 0; i < requiredSize; i++) {
         inBuf_[i] = inPcm[i];
         inBuf_[i] <<= offset;
@@ -192,7 +190,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
         return ERROR;
     }
 
-    for (int32_t i = 0; i < DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT; i++) {
+    for (uint32_t i = 0; i < nodeParameter_.frameLen * nodeParameter_.outChannels; i++) {
         outPcm[i] = outBuf_[i] >> offset;
     }
 

@@ -28,19 +28,14 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
-constexpr uint32_t DEFAULT_CHANNELS_OUT = 4;
 constexpr uint32_t DEFAULT_CHANNEL_IN_LAYOUT = 3;
 constexpr uint32_t DEFAULT_CHANNEL_OUT_LAYOUT = 51;
-constexpr uint32_t DEFAULT_FRAME_LEN = 960;
-constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
-constexpr uint8_t DEFAULT_SAMPLE_FORMAT = 4;
 constexpr uint32_t MAX_UINT_VOLUME = 65535;
 constexpr int32_t CHANNEL_1 = 1;
 constexpr int32_t CHANNEL_2 = 2;
 constexpr int32_t CHANNEL_3 = 3;
 constexpr int32_t CHANNEL_4 = 4;
-constexpr size_t NUM_THREE = 3;
+constexpr size_t NUM_TWO = 2;
 const std::string AISS_NAME = "aiss";
 const std::string AISS_PROPERTY = "AISSVX";
 const std::string AISS_LIB = "AISSLIB";
@@ -107,9 +102,13 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Init()
         Deinit();
         return ERROR;
     }
+    outputPcmbuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate),
+        nodeParameter_.outChannels,
+        CH_LAYOUT_QUAD,
+        static_cast<AudioSampleFormat>(nodeParameter_.outFormat)});
     AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl Init success");
-    inAudioBuffer_.frameLength = DEFAULT_FRAME_LEN;
-    outAudioBuffer_.frameLength = DEFAULT_FRAME_LEN;
+    inAudioBuffer_.frameLength = nodeParameter_.frameLen;
+    outAudioBuffer_.frameLength = nodeParameter_.frameLen;
     return SUCCESS;
 }
  
@@ -141,7 +140,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::GetParameter(const std::string& paramTy
 int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::vector<uint8_t*>& v2)
 {
     CHECK_AND_RETURN_RET_LOG(!v1.empty(), ERROR, "Input parameter vector is empty");
-    CHECK_AND_RETURN_RET_LOG(v2.size() == NUM_THREE, ERROR, "Output parameter vector size is not equal 3");
+    CHECK_AND_RETURN_RET_LOG(v2.size() == NUM_TWO, ERROR, "Output parameter vector size is not equal 2");
     for (uint8_t* ptr : v1) {
         if (ptr == nullptr) {
             AUDIO_ERR_LOG("Input parameter is nullptr");
@@ -155,7 +154,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::v
         }
     }
     inAudioBuffer_.raw = reinterpret_cast<void *>(v1[0]);
-    outAudioBuffer_.raw = reinterpret_cast<void *>(v2[0]);
+    outAudioBuffer_.raw = reinterpret_cast<void *>(outputPcmbuffer_.GetPcmData());
     if (algoHandle_ == nullptr) {
         AUDIO_ERR_LOG("algoHandle_ is nullptr");
         return ERROR;
@@ -166,9 +165,10 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::v
         return ERROR;
     }
     float* outAudioBuf = reinterpret_cast<float *>(outAudioBuffer_.raw);
-    float* humanAudioBuf = reinterpret_cast<float *>(v2[1]);
-    float* bkgAudioBuf = reinterpret_cast<float *>(v2[2]);
+    float* humanAudioBuf = reinterpret_cast<float *>(v2[0]);
+    float* bkgAudioBuf = reinterpret_cast<float *>(v2[1]);
     SeparateChannels(outAudioBuffer_.frameLength, outAudioBuf, humanAudioBuf, bkgAudioBuf);
+
     AUDIO_DEBUG_LOG("AudioSuiteAissAlgoInterfaceImpl Apply success");
     return SUCCESS;
 }
@@ -192,13 +192,17 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::CheckFilePath(std::string &filePath)
 
 int32_t AudioSuiteAissAlgoInterfaceImpl::InitIOBufferConfig()
 {
-    uint32_t rate = DEFAULT_SAMPLE_RATE;
-    uint8_t sampleFormat = DEFAULT_SAMPLE_FORMAT;
     AudioEncodingType encodingType = AudioEncodingType::ENCODING_PCM;
-    AudioBufferConfig inBufferConfig = {rate, DEFAULT_CHANNELS_IN, sampleFormat,
-        DEFAULT_CHANNEL_IN_LAYOUT, encodingType};
-    AudioBufferConfig outBufferConfig = {rate, DEFAULT_CHANNELS_OUT, sampleFormat,
-        DEFAULT_CHANNEL_OUT_LAYOUT, encodingType};
+    AudioBufferConfig inBufferConfig = {nodeParameter_.inSampleRate,
+        nodeParameter_.inChannels,
+        nodeParameter_.inFormat,
+        DEFAULT_CHANNEL_IN_LAYOUT,
+        encodingType};
+    AudioBufferConfig outBufferConfig = {nodeParameter_.outSampleRate,
+        nodeParameter_.outChannels,
+        nodeParameter_.outFormat,
+        DEFAULT_CHANNEL_OUT_LAYOUT,
+        encodingType};
     AudioEffectConfig ioBufferConfig = {inBufferConfig, outBufferConfig};
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
     int32_t replyData = 0;
@@ -219,13 +223,17 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::InitIOBufferConfig()
 
 int32_t AudioSuiteAissAlgoInterfaceImpl::InitConfig()
 {
-    uint32_t rate = DEFAULT_SAMPLE_RATE;
-    uint8_t sampleFormat = DEFAULT_SAMPLE_FORMAT;
     AudioEncodingType encodingType = AudioEncodingType::ENCODING_PCM;
-    AudioBufferConfig inBufferConfig = {rate, DEFAULT_CHANNELS_IN, sampleFormat,
-        DEFAULT_CHANNEL_IN_LAYOUT, encodingType};
-    AudioBufferConfig outBufferConfig = {rate, DEFAULT_CHANNELS_OUT, sampleFormat,
-        DEFAULT_CHANNEL_OUT_LAYOUT, encodingType};
+    AudioBufferConfig inBufferConfig = {nodeParameter_.inSampleRate,
+        nodeParameter_.inChannels,
+        nodeParameter_.inFormat,
+        DEFAULT_CHANNEL_IN_LAYOUT,
+        encodingType};
+    AudioBufferConfig outBufferConfig = {nodeParameter_.outSampleRate,
+        nodeParameter_.outChannels,
+        nodeParameter_.outFormat,
+        DEFAULT_CHANNEL_OUT_LAYOUT,
+        encodingType};
     AudioEffectConfig ioBufferConfig = {inBufferConfig, outBufferConfig};
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig};
     int32_t replyData = 0;

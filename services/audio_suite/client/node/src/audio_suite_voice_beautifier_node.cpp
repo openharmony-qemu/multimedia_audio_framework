@@ -39,6 +39,7 @@ AudioSuiteVoiceBeautifierNode::~AudioSuiteVoiceBeautifierNode()
 int32_t AudioSuiteVoiceBeautifierNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init begin");
+    nodeName = VOICE_BEAUTIFIER_TYPE;
     if (!isOutputPortInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;
@@ -57,10 +58,6 @@ int32_t AudioSuiteVoiceBeautifierNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter.inFormat),
         static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
 
-    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
-        nodeParameter.outChannels,
-        VM_ALGO_CHANNEL_LAYOUT,
-        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode Init end");
@@ -78,49 +75,6 @@ int32_t AudioSuiteVoiceBeautifierNode::DeInit()
 
     AUDIO_INFO_LOG("AudioSuiteVoiceBeautifierNode DeInit end");
     return SUCCESS;
-}
-
-int32_t AudioSuiteVoiceBeautifierNode::SetOptions(std::string name, std::string value)
-{
-    CHECK_AND_RETURN_RET_LOG(name == VOICE_BEAUTIFIER_TYPE, ERROR, "wrong options name.");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
-
-    if (algoInterface_->SetParameter(name, value)) {
-        AUDIO_ERR_LOG("SetOptions fail.");
-        DeInit();
-        return ERROR;
-    }
-    paraName_ = name;
-    paraValue_ = value;
-    return SUCCESS;
-}
-
-int32_t AudioSuiteVoiceBeautifierNode::GetOptions(std::string name, std::string &value)
-{
-    CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "voiceBeautifierType is empty.");
-    CHECK_AND_RETURN_RET_LOG(name == VOICE_BEAUTIFIER_TYPE, ERROR, "wrong options name.");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
-
-    value = paraValue_;
-    return SUCCESS;
-}
-
-AudioSuitePcmBuffer *AudioSuiteVoiceBeautifierNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
-{
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterface is nullptr, need Init first");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "Inputs list is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, inputs[0], "Input data is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), nullptr, "voiceBeautifierType is empty, skip signalProccess.");
-    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid input format");
-
-    AUDIO_DEBUG_LOG("start apply algo.");
-    vmAlgoInputs_[0] = inputs[0]->GetPcmData();
-    vmAlgoOutputs_[0] = outPcmBuffer_.GetPcmData();
-    int32_t ret = algoInterface_->Apply(vmAlgoInputs_, vmAlgoOutputs_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "voiceBeautifierType node Apply algo fail");
-    AUDIO_DEBUG_LOG("end apply algo.");
-
-    return &outPcmBuffer_;
 }
 
 }  // namespace AudioSuite

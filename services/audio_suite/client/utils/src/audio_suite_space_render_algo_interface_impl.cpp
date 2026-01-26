@@ -41,10 +41,6 @@ constexpr uint32_t PARAMS_NUM_ONE = 1;
 constexpr uint32_t PARAMS_NUM_TWO = 2;
 constexpr uint32_t PARAMS_NUM_THREE = 3;
 constexpr uint32_t PARAMS_NUM_FOUR = 4;
-constexpr uint32_t INPUT_TIME = 20;
-constexpr uint32_t INPUT_RATE = 48000;
-constexpr uint32_t INPUT_CHANNEL = 2;
-constexpr uint32_t INPUT_DATA_LENGTH = INPUT_TIME * INPUT_RATE * INPUT_CHANNEL / 1000;
 
 const std::string SPACE_RENDER_POSITIONS_MOD = "AudioSpaceRenderPositionParams";
 const std::string SPACE_RENDER_ROTATION_MOD = "AudioSpaceRenderRotationParams";
@@ -302,6 +298,7 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pc
 
     const short *bufIn = reinterpret_cast<const short *>(pcmInBuf[0]);
     short *pcmOut = reinterpret_cast<short *>(pcmOutBuf[0]);
+    uint32_t INPUT_DATA_LENGTH = nodeParameter_.frameLen * nodeParameter_.outChannels;
     int32_t ret = algoApi_.applyAlgo(spaceRenderHandle_.data(), bufIn, INPUT_DATA_LENGTH, pcmOut);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render apply failed %{public}d ", ret);
  

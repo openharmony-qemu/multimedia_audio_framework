@@ -41,7 +41,17 @@ public:
     {
     }
 
-    AudioSuiteRingBuffer(const AudioSuiteRingBuffer&) = delete;
+    // AudioSuiteRingBuffer(const AudioSuiteRingBuffer&) = delete;
+    AudioSuiteRingBuffer(const AudioSuiteRingBuffer &other)
+        : capacity_(other.capacity_),  // 拷贝容量
+          head_(other.head_),          // 拷贝头指针
+          tail_(other.tail_),          // 拷贝尾指针
+          size_(other.size_)           // 拷贝当前大小
+    {
+        // 深拷贝缓冲区数据
+        buffer_.resize(other.buffer_.size());
+        std::copy(other.buffer_.begin(), other.buffer_.end(), buffer_.begin());
+    }
     AudioSuiteRingBuffer& operator=(const AudioSuiteRingBuffer&) = delete;
 
     int32_t PushData(uint8_t* byteData, uint32_t size);

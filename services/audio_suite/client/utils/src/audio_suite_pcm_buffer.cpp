@@ -32,7 +32,7 @@ AudioSuitePcmBuffer::AudioSuitePcmBuffer(PcmBufferFormat format)
     InitPcmProcess();
 }
 
-AudioSuitePcmBuffer::AudioSuitePcmBuffer(PcmBufferFormat format, PcmDataDuration duration)
+AudioSuitePcmBuffer::AudioSuitePcmBuffer(PcmBufferFormat format, uint32_t duration)
 {
     pcmBufferFormat_ = format;
     duration_ = duration;
@@ -45,6 +45,7 @@ void AudioSuitePcmBuffer::InitPcmProcess()
     frameLen_ = duration_ * pcmBufferFormat_.sampleRate / SECONDS_TO_MS;
     sampleCount_ = frameLen_ * pcmBufferFormat_.channelCount;
     dataByteSize_ = sampleCount_ * AudioSuiteUtil::GetSampleSize(pcmBufferFormat_.sampleFormat);
+
     pcmDataBuffer_.assign(dataByteSize_, 0);
     
     AUDIO_DEBUG_LOG("AudioSuitePcmBuffer Init: rate:%{public}u, channelCount:%{public}u,"
@@ -75,6 +76,11 @@ bool AudioSuitePcmBuffer::IsSameFormat(const PcmBufferFormat &otherFormat)
            pcmBufferFormat_.channelCount == otherFormat.channelCount &&
            pcmBufferFormat_.channelLayout == otherFormat.channelLayout &&
            pcmBufferFormat_.sampleFormat == otherFormat.sampleFormat;
+}
+
+bool AudioSuitePcmBuffer::IsSameLength(const uint32_t &nextNodeBytelength)
+{ 
+    return dataByteSize_ == nextNodeBytelength;
 }
 
 AudioSamplingRate AudioSuitePcmBuffer::GetSampleRate()
@@ -145,8 +151,9 @@ int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format)
     return 0;
 }
 
-int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format, PcmDataDuration duration)
+int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format, uint32_t duration)
 {
+    CHECK_AND_RETURN_RET_LOG(duration <= maxRequestLength, ERROR, "Exceeding the maximum request data length.");
     if (IsSameFormat(format) && (duration == duration_)) {
         return 0;
     }
@@ -155,6 +162,19 @@ int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format, PcmDataDura
     duration_ = duration;
 
     InitPcmProcess();
+    return 0;
+}
+
+nt32_t AudioSuitePcmBuffer::ResizePcmBuffer(uint32_t bytelength)
+{
+    CHECK_AND_RETURN_RET_LOG(bytelength <= maxRequestByteLength, ERROR, "Exceeding the maximum request data length.");
+    if (dataByteSize_ == bytelength) {
+        return 0;
+    }
+ 
+    dataByteSize_ = bytelength;
+ 
+    pcmDataBuffer_.assign(dataByteSize_, 0);
     return 0;
 }
 

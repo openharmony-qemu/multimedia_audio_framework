@@ -29,16 +29,7 @@ public:
 
     int32_t Init() override;
     int32_t DeInit() override;
-    int32_t SetOptions(std::string name, std::string value) override;
-    int32_t GetOptions(std::string name, std::string &value) override;
-
-protected:
-    AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
-
 private:
-    AudioSuitePcmBuffer outPcmBuffer_;
-    std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
-
     bool isInit_ = false;
 };
 

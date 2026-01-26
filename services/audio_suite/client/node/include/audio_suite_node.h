@@ -54,7 +54,7 @@ public:
 
     virtual int32_t Init();
     virtual int32_t DeInit();
-    virtual int32_t DoProcess() = 0;
+    virtual int32_t DoProcess(uint32_t needDataLength) = 0;
     // for Flush node
     virtual int32_t Flush() = 0;
     virtual int32_t Connect(const std::shared_ptr<AudioNode> &preNode) = 0;

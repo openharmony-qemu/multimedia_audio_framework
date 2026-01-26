@@ -31,29 +31,16 @@ public:
     ~AudioSuiteTempoPitchNode();
     int32_t Init() override;
     int32_t DeInit() override;
-    int32_t DoProcess() override;
     int32_t SetOptions(std::string name, std::string value) override;
-    int32_t GetOptions(std::string name, std::string &value) override;
-
-protected:
-    AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
+    int32_t CalculationNeedBytes(uint32_t frameLengthMs) override;
 
 private:
-    int32_t DoProcessPreOutputs(AudioSuitePcmBuffer** tempOut);
-    int32_t PadBufferToPcmBuffer(AudioSuitePcmBuffer &pcmBuffer);
-    int32_t SplitDataToQueue(uint8_t* outBuffer, int32_t outFrameBytes);
+    std::vector<AudioSuitePcmBuffer *> SignalProcess(
+        const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
+private:
     bool isInit_ = false;
-    std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
-    AudioSuitePcmBuffer outPcmBuffer_;
-    std::vector<uint8_t> outBuffer_;
-    std::vector<uint8_t> currentDataBuffer_;
-    std::vector<uint8_t *> tmpin_;
-    std::vector<uint8_t *> tmpout_;
- 
-    int32_t bufferRemainSize_ = 0;
-    std::queue<std::vector<uint8_t>> readyDataBuffer_;
-    bool readFinishedFlag_ = false;
+    float speedRate = 0.0f;
 };
 
 }  // namespace AudioSuite

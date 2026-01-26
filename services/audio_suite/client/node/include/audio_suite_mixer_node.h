@@ -33,13 +33,12 @@ public:
     int32_t DeInit() override;
 
 protected:
-    AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
+    std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
     int32_t InitAudioLimiter();
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
     AudioSuitePcmBuffer tmpOutput_;
-    AudioSuitePcmBuffer mixerOutput_;
 };
 
 }  // namespace AudioSuite

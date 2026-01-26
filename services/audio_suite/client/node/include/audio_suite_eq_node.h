@@ -26,21 +26,12 @@ class AudioSuiteEqNode : public AudioSuiteProcessNode {
 public:
     AudioSuiteEqNode();
     ~AudioSuiteEqNode();
-
     int32_t Init() override;
     int32_t DeInit() override;
     
     int32_t SetOptions(std::string name, std::string value) override;
-    int32_t GetOptions(std::string name, std::string &value) override;
-
-protected:
-    AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
 
 private:
-    AudioSuitePcmBuffer outPcmBuffer_;
-    std::shared_ptr<AudioSuiteEqAlgoInterfaceImpl> eqAlgoInterfaceImpl_;
-    std::vector<uint8_t *> tmpIn_{nullptr};
-    std::vector<uint8_t *> tmpOut_{nullptr};
     bool isEqNodeInit_ = false;
 };
 
