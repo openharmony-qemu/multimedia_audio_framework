@@ -116,7 +116,7 @@ int32_t AudioServerDump::Initialize()
     PaLockGuard lock(mainLoop);
 
     if (pa_threaded_mainloop_start(mainLoop) < 0) {
-        AUDIO_ERR_LOG("Audio Service not started!");
+        AUDIO_ERR_LOG("Audio Service not started");
         ResetPAAudioDump();
         return AUDIO_DUMP_INIT_ERR;
     }

@@ -21,12 +21,12 @@
     *HandleScoWithRecongnition*;
     *SetDeviceAbsVolume*;
     *SetActiveA2dpDevice*;
+    *GetActiveA2dpDeviceLocal*;
     *DisconnectSco*;
     *OffloadStopPlaying*;
     *A2dpOffloadSessionRequest*;
     *OffloadStartPlaying*;
     *GetActiveA2dpDevice*;
-    *GetActiveA2dpDeviceLocal*;
     *activeA2dpDevice_*;
     *IsRecognitionStatus*;
     *SendUserSelectionEvent*;

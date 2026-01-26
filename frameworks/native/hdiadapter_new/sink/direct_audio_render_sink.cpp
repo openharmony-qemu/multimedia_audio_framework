@@ -225,7 +225,7 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
 int32_t DirectAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
-    return 0;
+    return ERR_NOT_SUPPORTED;
 }
 
 void DirectAudioRenderSink::SetSpeed(float speed)

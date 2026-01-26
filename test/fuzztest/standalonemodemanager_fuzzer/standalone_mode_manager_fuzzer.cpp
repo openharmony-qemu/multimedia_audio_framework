@@ -147,7 +147,7 @@ void FuzzTest(const uint8_t* rawData, size_t size)
 }
 
 } // namespace AudioStandard
-} // namesapce OHOS
+} // namespace OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)

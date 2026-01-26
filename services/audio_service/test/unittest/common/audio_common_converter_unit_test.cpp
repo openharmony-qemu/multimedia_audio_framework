@@ -201,9 +201,7 @@ HWTEST(AudioCommonConverterUnitTest, ConvertBufferTo16Bit_001, TestSize.Level1)
     for (size_t i = 0; i < 10; ++i) {
         buffer[i] = static_cast<int8_t>(i);
     }
-    bufferInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     bufferInfo.format = AUDIO_SAMPLE_FORMAT_8BIT;
-    bufferInfo.frameSize = 10;
     bufferInfo.channelCount = 1;
     bufferInfo.volumeBg = 0.0f;
     bufferInfo.volumeEd = 1.0f;

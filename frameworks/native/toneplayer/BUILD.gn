@@ -61,10 +61,10 @@ if (!audio_framework_feature_dtmf_tone) {
     defines = [ "FEATURE_DTMF_TONE" ]
 
     deps = [
-      "../../../services/audio_service:audio_common",
       "../../../services/audio_policy:audio_policy_client",
       "../audiorenderer:audio_renderer",
       "../audioutils:audio_utils",
+      "../../../services/audio_service:audio_common",
     ]
 
     public_configs = [ ":audio_external_library_config" ]

@@ -95,6 +95,7 @@ private:
     bool IsValidState(void);
     bool IsSinkInited(void) override;
     void SetAudioParameterInner(const std::string &value);
+    void SetA2dpCacheParam();
 
     // low latency
     int32_t PrepareMmapBuffer(void);
@@ -175,7 +176,7 @@ private:
         AudioParamKey key = AudioParamKey::NONE;
         std::string condition = "";
         std::string value = "";
-    
+
         bool empty() const
         {
             return key == AudioParamKey::NONE && condition.empty() && value.empty();

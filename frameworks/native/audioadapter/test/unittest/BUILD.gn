@@ -115,5 +115,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../../services/audio_engine:audio_engine_manager",
     "../../../../../services/audio_service:audio_common",
+    "../../../../../services/audio_service:audio_process_service",
   ]
+
 }

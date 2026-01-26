@@ -60,7 +60,7 @@ bool AudioParamParser::LoadConfiguration(
 #endif
 
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Load Config failed!");
+        AUDIO_ERR_LOG("Load Config Failed");
         curNode = nullptr;
         return false;
     }

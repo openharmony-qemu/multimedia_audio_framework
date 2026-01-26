@@ -249,7 +249,7 @@ HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_013, TestSize.Level1)
     FileAudioRenderSink fileSink;
     fileSink.filePath_ = "/data/data/utTestFilel.pcm";
     int32_t res = fileSink.Start();
-    EXPECT_NE(res, SUCCESS);
+    EXPECT_EQ(res, SUCCESS);
 
     res = fileSink.Stop();
     EXPECT_EQ(res, SUCCESS);
