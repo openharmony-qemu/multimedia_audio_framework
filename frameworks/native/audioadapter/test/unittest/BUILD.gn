@@ -48,7 +48,7 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
 
   deps = [
     "../../:pro_audio_service_adapter",
-    "../../../../../services/audio_engine:audio_engine_manager",
+    "../../../../../services/audio_engine:hpae_engine_manager",
     "../../../audioutils:audio_utils",
     "../../../hdiadapter_new:hdiadapter_new",
   ]
@@ -113,7 +113,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "../../:pro_audio_service_adapter",
     "../../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../../services/audio_engine:audio_engine_manager",
+    "../../../../../services/audio_engine:hpae_engine_manager",
     "../../../../../services/audio_service:audio_common",
     "../../../../../services/audio_service:audio_process_service",
   ]
