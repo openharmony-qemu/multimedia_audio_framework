@@ -40,7 +40,7 @@ void TaiheDfxUtils::SendVolumeApiInvokeEvent(int32_t uid, const std::string &fun
 
 static const char* GetFuncReadable(bool direction, uint8_t functionType)
 {
-    if (direction == TaiheDfxUtils::SteamDirection::playback) {
+    if (direction == TaiheDfxUtils::StreamDirection::playback) {
         switch (functionType) {
             case 0: return "Write";
             case 1: return "RegisterRendererWriteDataCallback";
