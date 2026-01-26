@@ -148,7 +148,7 @@ struct HpaeSourceInfo {
     std::string deviceClass;
     std::string adapterName;
     std::string sourceName;
-    SourceType sourceType;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
     std::string filePath;
     std::string deviceName;
     size_t frameLen = 0;

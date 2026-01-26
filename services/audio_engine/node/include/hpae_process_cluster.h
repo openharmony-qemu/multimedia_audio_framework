@@ -62,7 +62,7 @@ private:
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
-    bool CheckNeedNotifyEffectNode(HpaeSinkInfo sinkInfo);
+    bool CheckNeedNotifyEffectNode(const HpaeSinkInfo &sinkInfo);
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
     std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;

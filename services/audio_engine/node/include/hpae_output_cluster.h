@@ -35,8 +35,7 @@ public:
     void RegisterCurrentDeviceCallback();
     int32_t GetConverterNodeCount() override;
     int32_t GetPreOutNum() override;
-    int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &busAddress = "") override;
+    int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId) override;
     int32_t Init(IAudioSinkAttr &attr) override;
     int32_t DeInit() override;
     int32_t Flush(void) override;
@@ -55,7 +54,7 @@ public:
     uint32_t GetHdiLatency() override;
     uint64_t GetLatency(HpaeProcessorType sceneType) override;
     void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID) override;
+        uint32_t sessionId, StreamUsage usage, RendererState state) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
 
 private:

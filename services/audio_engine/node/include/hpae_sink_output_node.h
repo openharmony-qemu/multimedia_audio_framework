@@ -40,8 +40,7 @@ public:
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback);
-    int32_t GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &busAddress = "");
+    int32_t GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId);
     int32_t RenderSinkInit(IAudioSinkAttr &attr);
     int32_t RenderSinkDeInit();
     int32_t RenderSinkFlush(void);
@@ -60,7 +59,7 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     uint32_t GetLatency();
     void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
+        uint32_t sessionId, StreamUsage usage, RendererState state);
     int32_t SetAuxiliarySinkEnable(bool isEnabled);
     void CheckAndSetCollDelayForRenderFrameFailed();
 

@@ -67,8 +67,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     deviceName = originDeviceName.has_value() ? std::string(originDeviceName.value()) : deviceName;
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
-    CHECK_AND_CALL_FUNC_RETURN_RET(rendererStream != nullptr, ERR_DEVICE_INIT,
-        HILOG_COMM_ERROR("[CreateRender]Failed to init pa stream!"));
+    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
     SetHighResolution(processConfig, sessionId);
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -328,6 +327,12 @@ void HpaeAdapterManager::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     std::lock_guard<std::mutex> lock(sinkInputsMutex_);
     sinkInputs = sinkInputs_;
     return;
+}
+
+int32_t HpaeAdapterManager::GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId)
+{
+    AUDIO_INFO_LOG("get sessionId: %{public}d for paIndex: %{public}d", sessionId, paIndex);
+    return SUCCESS;
 }
 
 void HpaeAdapterManager::SetHighResolution(AudioProcessConfig &processConfig, uint32_t sessionId)

@@ -229,7 +229,8 @@ void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
 uint32_t HpaeGainNode::CalcRemainDurationMs(uint32_t duration, uint32_t frameLen, float *curSysGain, float *preSysGain)
 {
     uint32_t remainDurationMs = 0;
-    uint32_t spaneInFrameMs = (frameLen * 1000u) / GetSampleRate();
+    uint32_t sampleRate = static_cast<uint32_t>(GetSampleRate());
+    uint32_t spaneInFrameMs = static_cast<uint32_t>((frameLen * 1000.0f) / sampleRate);
     uint32_t times = duration / spaneInFrameMs;
     if (times > 0) {
         *curSysGain = (*curSysGain - *preSysGain) / times + *preSysGain;

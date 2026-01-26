@@ -149,10 +149,9 @@ int32_t HpaeOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
-int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const std::string &busAddress)
+int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
-    return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId, busAddress);
+    return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId);
 }
 
 int32_t HpaeOutputCluster::Init(IAudioSinkAttr &attr)
@@ -232,10 +231,10 @@ int32_t HpaeOutputCluster::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 }
 
 void HpaeOutputCluster::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t sessionId, StreamUsage usage, RendererState state)
 {
     CHECK_AND_RETURN(hpaeSinkOutputNode_ != nullptr);
-    hpaeSinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    hpaeSinkOutputNode_->NotifyStreamChangeToSink(change, sessionId, usage, state);
 }
 
 int32_t HpaeOutputCluster::SetPriPaPower(void)

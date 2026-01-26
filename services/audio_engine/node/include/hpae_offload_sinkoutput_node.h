@@ -66,7 +66,7 @@ public:
 
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
+        uint32_t sessionId, StreamUsage usage, RendererState state);
     
     void RegisterOffloadCallback(IOffloadCallback *offloadCallback);
     OffloadCallbackData GetOffloadCallbackData() noexcept;

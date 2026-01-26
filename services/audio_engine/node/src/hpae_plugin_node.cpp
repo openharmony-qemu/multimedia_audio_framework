@@ -126,6 +126,7 @@ void HpaePluginNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
+    CHECK_AND_RETURN_LOG(preNode->GetOutputPort() != nullptr, "port is nullptr");
     if (auto callback = GetNodeStatusCallback().lock()) {
         if (isSourceNode_) {
             callback->OnNotifyDfxNodeInfo(false, preNode->GetOutputPort()->GetNodeId(), GetNodeId());

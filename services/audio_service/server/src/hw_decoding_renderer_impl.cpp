@@ -362,6 +362,10 @@ void HWDecodingRendererStream::SetStreamIndex(uint32_t index)
     streamIndex_ = index;
 }
 
+void HWDecodingRendererStream::AbortCallback(int32_t abortTimes)
+{
+}
+
 uint32_t HWDecodingRendererStream::GetStreamIndex()
 {
     return streamIndex_;
