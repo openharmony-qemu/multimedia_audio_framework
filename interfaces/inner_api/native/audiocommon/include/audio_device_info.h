@@ -488,6 +488,7 @@ public:
         DISTRIBUTED_DEVICE_UNAVAILABLE = 1003,
         SET_INPUT_DEVICE = 1004,
         CALL_OR_RING_TO_DEFAULT = 1005,
+        COLLABORATIVE_STATE_CHANGE = 1006,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -569,6 +570,11 @@ public:
         }
         info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
         return info;
+    }
+
+    bool IsCollaborativeStateChange() const
+    {
+        return reason_ == ExtEnum::COLLABORATIVE_STATE_CHANGE;
     }
 
 private:

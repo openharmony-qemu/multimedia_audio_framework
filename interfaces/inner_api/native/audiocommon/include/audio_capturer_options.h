@@ -46,6 +46,7 @@ struct AudioCapturerOptions {
     AudioPlaybackCaptureConfig playbackCaptureConfig;
     AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
     AudioDeviceDescriptor preferredInputDevice;
+    AudioStreamInfo micInStreamInfo;
     AudioStreamInfo ecStreamInfo;
 };
 }  //namespace AudioStandard

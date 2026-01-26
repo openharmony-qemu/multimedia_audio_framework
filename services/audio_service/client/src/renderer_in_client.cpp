@@ -74,7 +74,8 @@ static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
-static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; //1s
+static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
+static const int32_t WECHAT_BUFFER_DURATION_IN_US = 120000;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -215,7 +216,7 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
     config.audioMode = AUDIO_MODE_PLAYBACK;
 
     if (rendererInfo_.rendererFlags != AUDIO_FLAG_NORMAL && rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT &&
-        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT) {
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT && rendererInfo_.rendererFlags != AUDIO_FLAG_3DA_DIRECT) {
         AUDIO_WARNING_LOG("ConstructConfig find renderer flag invalid:%{public}d", rendererInfo_.rendererFlags);
         rendererInfo_.rendererFlags = 0;
     }
@@ -350,6 +351,12 @@ void RendererInClientInner::InitCallbackBuffer(uint64_t bufferDurationInUs)
     } else {
         cbBufferSize_ = static_cast<size_t>(bufferDurationInUs * sampleRate / AUDIO_US_PER_S) *
             sizePerFrameInByte_;
+    }
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_VOIP_DIRECT &&
+        AudioSystemManager::GetInstance()->GetSelfBundleName() == "com.tencent.wechat") {
+        AUDIO_INFO_LOG("Change duration for voip direct, %{public}" PRIu64 " to %{public}d",
+            bufferDurationInUs, WECHAT_BUFFER_DURATION_IN_US);
+        bufferDurationInUs = WECHAT_BUFFER_DURATION_IN_US;
     }
     uint64_t durationInFrame = bufferDurationInUs * sampleRate / AUDIO_US_PER_S;
     SetCacheSize(durationInFrame);
@@ -630,6 +637,31 @@ void RendererInClientInner::DfxWriteInterval()
             logUtilsTag_.c_str(), (ClockTime::GetCurNano() / AUDIO_US_PER_SECOND) - preWriteEndTime_);
     }
 }
+
+void RendererInClientInner::WriteAudioVividDirect(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
+    size_t metaBufferSize)
+{
+    size_t totalLen = pcmBufferSize + metaBufferSize;
+    if (outPackedBuf_.size() < totalLen) {
+        outPackedBuf_.resize(totalLen);
+    }
+    auto error = memcpy_s(outPackedBuf_.data(), outPackedBuf_.size(), pcmBuffer, pcmBufferSize);
+    if (error != EOK) {
+        AUDIO_ERR_LOG("memcpy_s pcm failed");
+        return;
+    }
+    if (metaBuffer != nullptr  && metaBufferSize > 0) {
+        error = memcpy_s(outPackedBuf_.data() + pcmBufferSize, outPackedBuf_.size() - pcmBufferSize,
+            metaBuffer, metaBufferSize);
+        if (error != EOK) {
+            AUDIO_ERR_LOG("memcpy_s meta failed");
+            return;
+        }
+    }
+
+    outPackedLen_ = totalLen;
+}
+
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
@@ -641,6 +673,15 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     CHECK_AND_RETURN_RET_LOG(converter_->CheckInputValid(bufDesc), ERR_INVALID_PARAM, "Write: Invalid input.");
 
     WriteMuteDataSysEvent(pcmBuffer, pcmBufferSize);
+
+    AUDIO_DEBUG_LOG("WriteInner with meta: pcmBuffer size: %{public}zu, metaBuffer size: %{public}zu",
+        pcmBufferSize, metaBufferSize);
+
+    AUDIO_INFO_LOG("renderer rendererFlags: %{public}u", rendererInfo_.rendererFlags);
+    if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
+        WriteAudioVividDirect(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+        return WriteInner(outPackedBuf_.data(), outPackedLen_);
+    }
 
     converter_->Process(bufDesc);
     uint8_t *buffer;
@@ -658,7 +699,7 @@ void RendererInClientInner::FirstFrameProcess()
 
     // if first call, call set thread priority. if thread tid change recall set thread priority
     if (needSetThreadPriority_.exchange(false)) {
-        ipcStream_->RegisterThreadPriority(gettid(), bundleName, METHOD_WRITE_OR_READ);
+        ipcStream_->RegisterThreadPriority(gettid(), bundleName, METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
     }
 
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
@@ -1029,7 +1070,7 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
         return;
     }
 
-    ipcStream_->RegisterThreadPriority(tid, bundleName, METHOD_START);
+    ipcStream_->RegisterThreadPriority(tid, bundleName, METHOD_START, THREAD_PRIORITY_QOS_7);
 }
 
 void RendererInClientInner::ResetCallbackLoopTid()
@@ -1136,23 +1177,29 @@ bool RendererInClientInner::CheckStaticAndOperate()
 
 void RendererInClientInner::CheckOperations()
 {
-    if (rendererInfo_.isStatic) {
-        Trace trace("RendererInClientInner::ProcessStaticOperations");
-        if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
-            sendStaticRecreateFunc_();
-        }
-        std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
-        CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
-        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer is nullptr");
-        while (clientBuffer_->IsNeedSendBufferEndCallback()) {
-            Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
-            clientBuffer_->DecreaseBufferEndCallbackSendTimes();
-        }
-        if (clientBuffer_->IsNeedSendLoopEndCallback()) {
-            audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
-            clientBuffer_->SetIsNeedSendLoopEndCallback(false);
-        }
+    if (!rendererInfo_.isStatic) {
+        return;
+    }
+
+    Trace trace("RendererInClientInner::ProcessStaticOperations");
+    if (IsRestoreNeeded() && sendStaticRecreateFunc_ != nullptr) {
+        sendStaticRecreateFunc_();
+    }
+    std::unique_lock<std::mutex> staticBufferLock(staticBufferMutex_);
+    CHECK_AND_RETURN_LOG(audioStaticBufferEventCallback_ != nullptr, "audioStaticBufferEventCallback_ is nullptr");
+    CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer is nullptr");
+    while (clientBuffer_->IsNeedSendBufferEndCallback()) {
+        Trace traceLoop("RendererInClientInner send BUFFER_END_EVENT");
+        audioStaticBufferEventCallback_->OnStaticBufferEvent(BUFFER_END_EVENT);
+        clientBuffer_->DecreaseBufferEndCallbackSendTimes();
+    }
+    if (clientBuffer_->IsNeedSendLoopEndCallback()) {
+        audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
+        clientBuffer_->SetIsNeedSendLoopEndCallback(false);
+    }
+    if (clientBuffer_->IsFirstFrame()) {
+        clientBuffer_->SetIsFirstFrame(false);
+        OnFirstFrameWriting();
     }
 }
 

@@ -103,6 +103,7 @@
     *SetBypassSpatializationForStereo*;
     *IsSpatializationEnabledForChains*;
     *IsEffectChainFading*;
+    *GetCollaborationLatency*;
   local:
     *;
 };

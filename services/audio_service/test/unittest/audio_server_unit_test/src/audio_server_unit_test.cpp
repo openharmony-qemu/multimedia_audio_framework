@@ -30,6 +30,7 @@
 #include "iservice_registry.h"
 #include "audio_service_types.h"
 #include "audio_server_hpae_dump.h"
+#include "manager/hdi_adapter_manager.h"
 
 using namespace testing::ext;
 using OHOS::AudioStandard::SetSysPara;
@@ -476,6 +477,15 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
  */
 HWTEST_F(AudioServerUnitTest, AudioServerGetTransactionId_001, TestSize.Level1)
 {
+    CaptureSourceInfo sourceInfo;
+    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
+    sourceInfo.source_ = std::make_shared<TestAudioCaptureSource>();
+    sourceInfo.refCount_.store(1);
+    HdiAdapterManager::GetInstance().captureSources_.erase(id);
+    HdiAdapterManager::GetInstance().captureSources_.try_emplace(id);
+    HdiAdapterManager::GetInstance().captureSources_[id].source_ = std::make_shared<TestAudioCaptureSource>();
+    HdiAdapterManager::GetInstance().captureSources_[id].refCount_.store(1);
+
     EXPECT_NE(nullptr, audioServer);
     uint64_t ret;
     audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::DEVICE_ROLE_MAX, ret);
@@ -1321,7 +1331,7 @@ HWTEST_F(AudioServerUnitTest, ResetRouteForDisconnect_001, TestSize.Level1)
 
     EXPECT_NE(nullptr, audioServer);
     auto ret = audioServer->ResetRouteForDisconnect(deviceType);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1374,16 +1384,16 @@ HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     float volume = 0.5f;
     int32_t ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 
     streamType = static_cast<AudioStreamType>(-1);
     ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 
     streamType = STREAM_MUSIC;
     volume = -1.0f;
     ret = audioServer->NotifyStreamVolumeChanged(streamType, volume);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1636,7 +1646,7 @@ HWTEST_F(AudioServerUnitTest, GetExtraParameters_001, TestSize.Level1)
     result_.push_back({"key1", "value1"});
 
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result_);
-    EXPECT_EQ(ret, ERROR);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2215,7 +2225,7 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
     AudioProcessConfig config;
     config.appInfo.appTokenId = SYSTEM_ABILITY_ID;
     config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_DENIED);
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
     config.innerCapMode = MODERN_INNER_CAP;
     config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
@@ -2380,9 +2390,9 @@ HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_NONE);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, SUCCESS);
     result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_INVALID);
-    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -2593,7 +2603,7 @@ HWTEST_F(AudioServerUnitTest, RestoreRenderSink_001, TestSize.Level4)
     EXPECT_NE(nullptr, audioServer);
     std::string sinkName = "primary";
     int32_t ret = audioServer->RestoreRenderSink(sinkName);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

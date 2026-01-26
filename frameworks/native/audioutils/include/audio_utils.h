@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -56,6 +56,9 @@ const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
 const uint32_t AUDIO_ID = 1041;
 constexpr uint32_t BASE_HEX = 16;
+static constexpr int32_t DEFAULT_FAST_SPAN_SIZE_INT_IN_MS = 5;
+static constexpr float DEFAULT_FAST_SPAN_SIZE_FLOAT_IN_MS = 5.0;
+static constexpr float ULTRA_FAST_PERIOD_TIME_IN_MS = 2.5;
 
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
@@ -621,6 +624,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_HWDECODING = 13,
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
     HDI_RENDER_OFFSET_HEARING_AID = 15,
+    HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
@@ -651,6 +655,8 @@ std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid);
 float ConvertAudioRenderRateToSpeed(AudioRendererRate renderRate);
 
 uint64_t HexStrToNum(const std::string &str);
+
+void BindBigAndMidCore();
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

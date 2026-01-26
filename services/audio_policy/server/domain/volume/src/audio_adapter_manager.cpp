@@ -47,9 +47,7 @@ static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
     DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_BLUETOOTH_A2DP,
-    DEVICE_TYPE_WIRED_HEADSET,
-    DEVICE_TYPE_REMOTE_CAST,
-    DEVICE_TYPE_REMOTE_DAUDIO
+    DEVICE_TYPE_WIRED_HEADSET
 };
 
 static const std::vector<std::string> SYSTEM_SOUND_KEY_LIST = {
@@ -1919,6 +1917,9 @@ std::string AudioAdapterManager::GetModuleArgs(const AudioModuleInfo &audioModul
 
 std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioModuleInfo) const
 {
+    if (!audioModuleInfo.busAddress.empty()) {
+        return audioModuleInfo.busAddress;
+    }
     if (audioModuleInfo.className == "remote" || audioModuleInfo.className == "remote_offload") {
         return audioModuleInfo.networkId;
     }
@@ -1976,6 +1977,9 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
 {
     IAudioSinkAttr attr;
     attr.adapterName = audioModuleInfo.adapterName.c_str();
+    if (!audioModuleInfo.busAddress.empty()) {
+        attr.address = audioModuleInfo.busAddress;
+    }
     if (!audioModuleInfo.OpenMicSpeaker.empty()) {
         attr.openMicSpeaker = static_cast<uint32_t>(std::stoul(audioModuleInfo.OpenMicSpeaker));
     }
@@ -3548,7 +3552,7 @@ void AudioAdapterManager::SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> 
     AudioStreamType streamType, int32_t volumeLevel, bool updateDb, bool updateMem)
 {
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType);
+    int32_t volumeLevelMax = GetMaxVolumeLevel(volumeType, desc);
     int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
 
     if (updateDb) {
@@ -3706,6 +3710,12 @@ void AudioAdapterManager::SetMuteFromRemote(std::string networkId, bool mute)
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is not exist");
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, mute);
     SendVolumeKeyEventCbWithUpdateUi(STREAM_MUSIC, desc);
+}
+
+void AudioAdapterManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
+{
+    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
+    audioServiceAdapter_->SetOutputDeviceSink(device, sinkName);
 }
 
 void AudioAdapterManager::SendVolumeKeyEventCbWithUpdateUi(AudioStreamType streamType,

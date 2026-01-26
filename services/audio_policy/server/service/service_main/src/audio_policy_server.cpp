@@ -640,7 +640,13 @@ void AudioPolicyServer::TriggerMuteCheck()
 
     bool mutePlay = false;
     for (auto sinkName : deviceClassSet) {
-        int64_t volumeDataCount = AudioServerProxy::GetInstance().GetVolumeDataCount(sinkName);
+        int64_t volumeDataCount = 0;
+        int32_t ret = AudioServerProxy::GetInstance().GetVolumeDataCount(sinkName, volumeDataCount);
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("sink:%{public}s GetVolumeDataCount failed", sinkName.c_str());
+            continue;
+        }
+
         if (volumeDataCount < SILENT_FRAME_LIMIT) {
             mutePlay = true;
             AUDIO_WARNING_LOG("sink:%{public}s running with mute data", sinkName.c_str());
@@ -5746,6 +5752,11 @@ int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
 {
     audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+{
+    return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
 }
 
 int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)

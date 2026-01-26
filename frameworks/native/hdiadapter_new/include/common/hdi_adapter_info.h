@@ -41,6 +41,7 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_AI,
     HDI_ID_TYPE_VA,
     HDI_ID_TYPE_VIRTUAL_INJECTOR,
+    HDI_ID_TYPE_AUDIO_VIVID_3DA_DIRECT,
     HDI_ID_TYPE_NUM,
 };
 
@@ -61,8 +62,8 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_UNPROCESS "unprocess"
 #define HDI_ID_INFO_ULTRASONIC "ultrasonic"
 #define HDI_ID_INFO_VOICE_RECOGNITION "voice_recognition"
-#define HDI_ID_INFO_RAW_AI "raw_ai"
 #define HDI_ID_INFO_DP_FAST "dp_fast"
+#define HDI_ID_INFO_RAW_AI "raw_ai"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

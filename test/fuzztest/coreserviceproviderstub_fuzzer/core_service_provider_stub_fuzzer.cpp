@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -23,11 +23,12 @@
 #include "i_core_service_provider.h"
 #include "core_service_provider_stub.h"
 #include "audio_core_service.h"
+#include "../fuzz_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -124,8 +125,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     AudioDeviceDescriptor deviceInfo;
     bool reload = GetData<bool>();
     AudioStreamInfo info;
-    int32_t pin;
-    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, pin, reload);
+    bool isUltraFast = false;
+    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, isUltraFast, reload);
 }
 
 void GenerateSessionIdFuzzTest()
@@ -137,7 +138,7 @@ void GenerateSessionIdFuzzTest()
     coreServiceProviderWrapper.GenerateSessionId(sessionId);
 }
 
-TestFuncs g_testFuncs[] = {
+vector<TestFuncs> g_testFuncs = {
     CoreServiceProviderWrapperFuzzTest,
     UpdateSessionOperationFuzzTest,
     ReloadCaptureSessionFuzzTest,
@@ -180,6 +181,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }

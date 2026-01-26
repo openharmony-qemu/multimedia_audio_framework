@@ -48,6 +48,8 @@ public:
 
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) = 0;
 
+    virtual void OnSetOutputDeviceSinkCb(int32_t result) = 0;
+
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) = 0;
 
     virtual ~AudioServiceHpaeCallback()

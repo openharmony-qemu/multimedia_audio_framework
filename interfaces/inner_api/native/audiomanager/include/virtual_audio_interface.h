@@ -54,6 +54,6 @@ public:
     virtual int32_t OnDevicesDisconnected(const VADevice &device) = 0;
 };
 #endif
-} // namespace AudioStandard
-} // namespace OHOS
+}
+}
 #endif // ST_VIRTUAL_AUDIO_INTERFACE_H

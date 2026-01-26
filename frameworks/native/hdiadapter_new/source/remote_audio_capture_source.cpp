@@ -80,10 +80,11 @@ int32_t RemoteAudioCaptureSource::Start(void)
         std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
         std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
-    if (!captureInited_.load()) {
+    if (!captureInited_.load() || !IsValidState()) {
         int32_t ret = CreateCapture();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
         captureInited_.store(true);
+        validState_.store(true);
     }
 
     if (started_.load()) {
@@ -91,6 +92,7 @@ int32_t RemoteAudioCaptureSource::Start(void)
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail, ret: %{public}d", ret);
     started_.store(true);
@@ -107,6 +109,7 @@ int32_t RemoteAudioCaptureSource::Stop(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "stop fail, ret: %{public}d", ret);
     started_.store(false);
@@ -129,6 +132,7 @@ int32_t RemoteAudioCaptureSource::Resume(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->Resume();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "resume fail, ret: %{public}d", ret);
     paused_.store(false);
@@ -147,6 +151,7 @@ int32_t RemoteAudioCaptureSource::Pause(void)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "pause fail, ret: %{public}d", ret);
     paused_.store(true);
@@ -160,6 +165,7 @@ int32_t RemoteAudioCaptureSource::Flush(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "flush fail, ret: %{public}d", ret);
     return SUCCESS;
@@ -172,6 +178,7 @@ int32_t RemoteAudioCaptureSource::Reset(void)
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->Flush();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "reset fail, ret: %{public}d", ret);
     return SUCCESS;
@@ -180,6 +187,7 @@ int32_t RemoteAudioCaptureSource::Reset(void)
 int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64_t &replyBytes)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     if (!started_.load()) {
         AUDIO_WARNING_LOG("not start, invalid state");
         return ERR_ILLEGAL_STATE;
@@ -213,6 +221,7 @@ int32_t RemoteAudioCaptureSource::SetVolume(float left, float right)
     }
 
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->SetVolume(volume);
     AUDIO_INFO_LOG("left: %{public}f, right: %{public}f, ret: %{public}d", left, right, ret);
     return SUCCESS;
@@ -221,6 +230,7 @@ int32_t RemoteAudioCaptureSource::SetVolume(float left, float right)
 int32_t RemoteAudioCaptureSource::GetVolume(float &left, float &right)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
 
     float val = 0.0;
     audioCapture_->GetVolume(val);
@@ -237,6 +247,7 @@ int32_t RemoteAudioCaptureSource::SetMute(bool isMute)
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->SetMute(isMute);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "set mute fail");
     return SUCCESS;
@@ -245,6 +256,7 @@ int32_t RemoteAudioCaptureSource::SetMute(bool isMute)
 int32_t RemoteAudioCaptureSource::GetMute(bool &isMute)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     bool hdiMuteState = false;
     int32_t ret = audioCapture_->GetMute(hdiMuteState);
     if (ret != SUCCESS) {
@@ -286,6 +298,7 @@ int32_t RemoteAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoE
     };
     AUDIO_INFO_LOG("start");
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
+    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
     int32_t ret = audioCapture_->SelectScene(sceneDesc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     AUDIO_INFO_LOG("end");
@@ -300,6 +313,16 @@ int32_t RemoteAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUT
 int32_t RemoteAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
     return ERR_NOT_SUPPORTED;
+}
+
+void RemoteAudioCaptureSource::SetInvalidState(void)
+{
+    AUDIO_INFO_LOG("update validState:false, adapterName: %{public}s", GetEncryptStr(deviceNetworkId_).c_str());
+    validState_.store(false);
+    sourceInited_.store(false);
+    captureInited_.store(false);
+    started_.store(false);
+    paused_.store(false);
 }
 
 void RemoteAudioCaptureSource::DumpInfo(std::string &dumpString)
@@ -421,10 +444,12 @@ void RemoteAudioCaptureSource::DestroyCapture(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN(deviceManager != nullptr);
+    CHECK_AND_RETURN(IsValidState());
     deviceManager->DestroyCapture(deviceNetworkId_, hdiCaptureId_);
     deviceManager->UnRegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_);
     audioCapture_.ForceSetRefPtr(nullptr);
     hdiCaptureId_ = 0;
+    validState_.store(true);
 }
 
 void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
@@ -442,6 +467,12 @@ void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
             }
         }
     }
+}
+
+bool RemoteAudioCaptureSource::IsValidState()
+{
+    JUDGE_AND_WARNING_LOG(!validState_.load(), "disconnected, render invalid");
+    return validState_.load();
 }
 
 } // namespace AudioStandard

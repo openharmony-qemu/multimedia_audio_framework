@@ -68,7 +68,7 @@ void AudioProcessInServerExecute(FuzzedDataProvider &provider)
     int32_t tid = provider.ConsumeIntegral<int32_t>();
     std::string bundleName = provider.ConsumeRandomLengthString();
     int32_t method =  provider.ConsumeIntegralInRange<int32_t>(0, 2);
-    audioProcessInServer->RegisterThreadPriority(tid, bundleName, method);
+    audioProcessInServer->RegisterThreadPriority(tid, bundleName, method, THREAD_PRIORITY_QOS_7);
     bool on = provider.ConsumeBool();
     audioProcessInServer->SetSilentModeAndMixWithOthers(on);
     int64_t duration = provider.ConsumeIntegral<int64_t>();

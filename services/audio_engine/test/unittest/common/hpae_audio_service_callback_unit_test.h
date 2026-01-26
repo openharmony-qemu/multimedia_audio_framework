@@ -50,6 +50,8 @@ public:
  
     void OnGetAudioEnhancePropertyCb(int32_t result) override;
 
+    void OnSetOutputDeviceSinkCb(int32_t result) override;
+
     void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
  
     int32_t GetPortId() const noexcept;
@@ -73,6 +75,8 @@ public:
     int32_t GetGetAudioEffectPropertyResult() const noexcept;
  
     int32_t GetGetAudioEnhancePropertyResult() const noexcept;
+
+    int32_t GetSetOutputDeviceSinkResult() const noexcept;
  
     std::vector<SinkInput> GetSinkInputs() const noexcept;
  
@@ -92,6 +96,7 @@ private:
     int32_t setSourceOutputMuteResult_ = -1;
     int32_t getAudioEffectPropertyResult_ = -1;
     int32_t getAudioEnhancePropertyResult_ = -1;
+    int32_t setOutputDeviceSinkResult_ = -1;
     std::vector<SinkInput> sinkInputs_;
     std::vector<SourceOutput> sourceOutputs_;
     std::vector<SinkInfo> sinks_;

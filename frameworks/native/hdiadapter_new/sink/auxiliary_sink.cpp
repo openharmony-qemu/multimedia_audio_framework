@@ -307,7 +307,7 @@ void AuxiliarySink::DumpInfo(std::string &dumpString)
         std::to_string(attr_.format) + "]";
 }
 
-int64_t AuxiliarySink::GetVolumeDataCount()
+int32_t AuxiliarySink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
     return 0;

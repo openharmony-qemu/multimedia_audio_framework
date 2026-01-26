@@ -34,6 +34,7 @@
 #include "audio_mute_factor_manager.h"
 #include "audio_active_device.h"
 #include "audio_volume_utils.h"
+#include "audio_device_common.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -84,8 +85,10 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ULTRASONIC,
     STREAM_SYSTEM,
     STREAM_VOICE_CALL_ASSISTANT,
+#ifdef MULTI_ALARM_LEVEL
     STREAM_ANNOUNCEMENT,
     STREAM_EMERGENCY,
+#endif
     STREAM_ALL
 };
 
@@ -448,6 +451,9 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     audioActiveDevice_.SetAdjustVolumeForZone(zoneId);
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+        AudioStreamDeviceChangeReason::OVERRODE);
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
 

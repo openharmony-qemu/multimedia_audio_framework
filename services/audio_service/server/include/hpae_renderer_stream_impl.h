@@ -78,7 +78,7 @@ public:
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
-    void AbortCallback(int32_t abortTimes);
+    void AbortCallback(int32_t abortTimes) override;
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
@@ -149,7 +149,7 @@ private:
     // Only for debug
     int32_t abortFlag_ = 0;
     // offload
-    bool offloadEnable_ = false;
+    std::atomic<bool> offloadEnable_ = false;
     std::atomic<int32_t> offloadStatePolicy_ = OFFLOAD_DEFAULT;
     // offload end
     float clientVolume_ = 1.0f;
@@ -184,8 +184,8 @@ private:
     std::atomic<size_t> mutePaddingFrames_ = 0;
     bool noWaitDataFlag_ = true;
 
-    std::unordered_map<int32_t, PositionData> currentPositionData;
-    std::unordered_map<int32_t, PositionData> speedPositionData;
+    std::vector<PositionData> currentPositionData_ = {Timestamp::Timestampbase::BASESIZE, PositionData{}};
+    std::vector<PositionData> speedPositionData_ = {Timestamp::Timestampbase::BASESIZE, PositionData{}};
 
     uint32_t usedSampleRate_ = 0;
 

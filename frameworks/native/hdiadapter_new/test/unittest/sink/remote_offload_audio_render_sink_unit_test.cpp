@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/remote_offload_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -184,6 +185,28 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_007, Te
 
     ret = sink_->UnLockOffloadRunningLock();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test OffloadSink API
+ * @tc.number : RemoteOffloadSinkUnitTest_008
+ * @tc.desc   : Test remote offload sink set invalid state
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_008, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sink->SetInvalidState();
+    sink->sinkInited_.store(true);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    sink->renderInited_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    sink->validState_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 } // namespace AudioStandard

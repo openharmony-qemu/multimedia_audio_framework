@@ -317,7 +317,7 @@ int32_t HpaeProcessCluster::AudioRendererCreate(HpaeNodeInfo &nodeInfo, const Hp
         return renderEffectNode_->AudioRendererCreate(nodeInfo);
     }
 
-    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo) == true) {
+    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo)) {
         return renderNoneEffectNode_->AudioRendererCreate(nodeInfo);
     }
 
@@ -330,7 +330,7 @@ int32_t HpaeProcessCluster::AudioRendererStart(HpaeNodeInfo &nodeInfo, const Hpa
         return renderEffectNode_->AudioRendererStart(nodeInfo);
     }
 
-    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo) == true) {
+    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo)) {
         return renderNoneEffectNode_->AudioRendererStart(nodeInfo);
     }
 
@@ -343,7 +343,7 @@ int32_t HpaeProcessCluster::AudioRendererStop(HpaeNodeInfo &nodeInfo, const Hpae
         return renderEffectNode_->AudioRendererStop(nodeInfo);
     }
 
-    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo) == true) {
+    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo)) {
         return renderNoneEffectNode_->AudioRendererStop(nodeInfo);
     }
 
@@ -356,14 +356,14 @@ int32_t HpaeProcessCluster::AudioRendererRelease(HpaeNodeInfo &nodeInfo, const H
         return renderEffectNode_->AudioRendererRelease(nodeInfo);
     }
 
-    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo) == true) {
+    if (renderNoneEffectNode_ != nullptr && CheckNeedNotifyEffectNode(sinkInfo)) {
         return renderNoneEffectNode_->AudioRendererRelease(nodeInfo);
     }
 
     return 0;
 }
 
-bool HpaeProcessCluster::CheckNeedNotifyEffectNode(HpaeSinkInfo sinkInfo)
+bool HpaeProcessCluster::CheckNeedNotifyEffectNode(const HpaeSinkInfo &sinkInfo)
 {
     if (sinkInfo.deviceClass == "remote" || sinkInfo.deviceName == "DP_MCH_speaker") {
         return false;

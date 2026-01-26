@@ -280,8 +280,8 @@ int32_t AudioCacheMgrInner::DumpAllMemBlock()
         std::shared_ptr<MemChunk> curMemChunk = memChunkDeque_.front();
         memChunkDeque_.pop_front();
 
-        std::shared_ptr<std::deque<MemBlock>> curMemBlockDeque = curMemChunk->GetMemBlockDeque();
         CHECK_AND_RETURN_RET_LOG(curMemChunk != nullptr, ERROR, "curMemChunk is null pointer");
+        std::shared_ptr<std::deque<MemBlock>> curMemBlockDeque = curMemChunk->GetMemBlockDeque();
         for (auto it = curMemBlockDeque->begin(); it != curMemBlockDeque->end(); ++it) {
             Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteAudioBuffer("pcm_dump_" +
                 curMemChunk->idFileNameMap_[it->dumpFileNameId_], it->dataPointer_, it->dataLength_);

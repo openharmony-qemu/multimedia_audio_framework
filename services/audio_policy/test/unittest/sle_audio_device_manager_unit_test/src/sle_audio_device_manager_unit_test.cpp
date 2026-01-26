@@ -413,10 +413,24 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamType_003, TestSize.Level1)
         std::make_shared<SleAudioDeviceManager>();
     
     StreamUsage streamUsage = STREAM_USAGE_MUSIC;
-    bool isGame = true;
+    int32_t invalidUid1 = INVALID_UID;
 
-    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, isGame);
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, invalidUid1);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_MUSIC);
+
+    int32_t invalidUid2 = 0;
+    ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, invalidUid2);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_MUSIC);
+
+    int32_t gameUid = 1;
+    int32_t normalUid = 2;
+    sleAudioDeviceManager_->clientTypeMap_[gameUid] = true;
+    ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, normalUid);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_MUSIC);
+
+    ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, gameUid);
     EXPECT_EQ(ret, SLE_AUDIO_STREAM_GAME);
+    sleAudioDeviceManager_->clientTypeMap_.clear();
 }
 
 /**

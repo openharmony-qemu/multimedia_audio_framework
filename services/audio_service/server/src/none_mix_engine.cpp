@@ -508,8 +508,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ERR_INVALID_HANDLE;
     }
     IAudioSinkAttr attr = {};
-    bool isDefaultAdapterEnable = AudioService::GetInstance()->GetDefaultAdapterEnable();
-    attr.adapterName = isDefaultAdapterEnable ? "dp" : SINK_ADAPTER_NAME;
+    attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = rate;
     attr.channel = channel;
     attr.format = format;
@@ -524,8 +523,8 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ret;
     }
     RegisterSinkLatencyFetcher(renderId_);
-    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
-    float volume = 1.0f * mdmMuteFactor;
+    float mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float volume = mdmMute ? 0.0f : 1.0f;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;

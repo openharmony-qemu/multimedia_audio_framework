@@ -22,15 +22,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
-static bool g_napiAudioCapturerIsNullptr = true;
-static std::mutex g_asynccallbackMutex;
 static const int32_t READ_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
 
 NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAudioCapturer *napiCapturer)
     : env_(env), napiCapturer_(napiCapturer)
 {
     AUDIO_DEBUG_LOG("instance create");
-    g_napiAudioCapturerIsNullptr = false;
 }
 
 NapiCapturerReadDataCallback::~NapiCapturerReadDataCallback()
@@ -94,14 +91,6 @@ void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_va
         CHECK_AND_RETURN_LOG(status == napi_ok, "deleting reference for callback failed");
         capturerReadDataCallback_->cb_ = nullptr;
     }
-}
-
-void NapiCapturerReadDataCallback::RemoveNapiCapturer()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    std::lock_guard<std::mutex> asyncLock(g_asynccallbackMutex);
-    napiCapturer_ = nullptr;
-    g_napiAudioCapturerIsNullptr = true;
 }
 
 void NapiCapturerReadDataCallback::OnReadData(size_t length)
@@ -170,7 +159,7 @@ void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<
 
 void NapiCapturerReadDataCallback::CaptureReadDataTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    AUDIO_DEBUG_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
+    AUDIO_INFO_LOG("CaptureReadDataTsfnFinalize: safe thread resource release.");
 }
 
 void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(

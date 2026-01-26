@@ -38,6 +38,7 @@ namespace {
 constexpr uint32_t TEST_FRAME_LEN = 960; // 20ms at 48kHz
 constexpr uint32_t TEST_LATENCY_MS = 280; // 280ms latency for testing
 constexpr int32_t TEST_COLLABORATION_ALIGN_COUNT = 5;
+constexpr int32_t TEST_MAX_LATENCY_MS = 100000000;
 HpaeNodeInfo GetTestNodeInfo()
 {
     HpaeNodeInfo nodeInfo;
@@ -161,31 +162,20 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, SetDelayCount_001, TestSize.Level0)
 }
 
 /**
- * @tc.name  : Test DelayAlignmentInner
+ * @tc.name  : Test FillSilenceFramesInner
  * @tc.type  : FUNC
- * @tc.number: DelayAlignmentInner_001
- * @tc.desc  : Test DelayAlignmentInner when config in vaild.
+ * @tc.number: FillSilenceFramesInner_001
+ * @tc.desc  : Test FillSilenceFramesInner when config in vaild.
  */
-HWTEST_F(HpaeCoBufferNodeUnitTest, DelayAlignmentInner_001, TestSize.Level0)
+HWTEST_F(HpaeCoBufferNodeUnitTest, FillSilenceFramesInner_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
-    coBufferNode->SetLatency(TEST_LATENCY_MS);
-    coBufferNode->SetNodeInfo(nodeInfo);
-    std::shared_ptr<HpaeSinkOutputNode> sinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
-    sinkOutputNode->Connect(coBufferNode);
-    PcmBufferInfo pcmBufferInfo;
-    pcmBufferInfo.ch = STEREO;
-    pcmBufferInfo.frameLen = TEST_FRAME_LEN;
-    HpaePcmBuffer pcmBuffer(pcmBufferInfo);
-    coBufferNode->Enqueue(&pcmBuffer);
-    coBufferNode->Enqueue(&pcmBuffer);
-    coBufferNode->SetDelayCount(TEST_COLLABORATION_ALIGN_COUNT);
-    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), false);
-    coBufferNode->enqueueCount_ = TEST_COLLABORATION_ALIGN_COUNT - 1;
-    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), false);
-    coBufferNode->enqueueCount_ = TEST_COLLABORATION_ALIGN_COUNT;
-    EXPECT_EQ(coBufferNode->DelayAlignmentInner(), true);
+    coBufferNode->FillSilenceFramesInner(-1);
+    coBufferNode->FillSilenceFramesInner(TEST_LATENCY_MS);
+    coBufferNode->FillSilenceFramesInner(TEST_MAX_LATENCY_MS);
+
+    EXPECT_EQ(coBufferNode->ringCache_->GetWritableSize().size != 0, true);
 }
 }
 }

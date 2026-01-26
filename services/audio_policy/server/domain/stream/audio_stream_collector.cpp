@@ -107,8 +107,13 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
+#ifdef MULTI_ALARM_LEVEL
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+#else
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ALARM;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_ALARM;
+#endif
 
     return streamMap;
 }
@@ -1955,7 +1960,8 @@ void AudioStreamCollector::GetPlayingMediaRendererChangeInfos(
         STREAM_SPEECH,
         STREAM_NAVIGATION,
         STREAM_CAMCORDER,
-        STREAM_VOICE_MESSAGE
+        STREAM_VOICE_MESSAGE,
+        STREAM_VOICE_ASSISTANT
     };
     for (auto &changeInfo: audioRendererChangeInfos_) {
         if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING &&

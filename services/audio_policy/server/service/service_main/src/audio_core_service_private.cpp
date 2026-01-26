@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -73,6 +73,7 @@ static const uint32_t HEADSET_TO_SPK_EP_EXTRA_SLEEP_US = 120000; // 120ms
 static const uint32_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 120000; // 120ms
 static const uint32_t VOICE_CALL_DEVICE_SET_DELAY_US = 120000; // 120ms
 static const uint32_t OLD_DEVICE_UNAVALIABLE_SUSPEND_MS = 1000; // 1s
+static const int64_t COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US = 200000; // 200ms
 
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
@@ -88,6 +89,12 @@ static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
 static const std::unordered_set<uid_t> skipAddSessionIdUidSet_ = {
     MCU_UID,
     TV_SERVICE_UID
+};
+static const std::unordered_set<DeviceType> ultraFastDevicesSet_ = {
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_EARPIECE
+};
+static const std::set<std::string> supportUltraFastBundleSet_ = {
 };
 }
 
@@ -356,6 +363,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     const AudioStreamDeviceChangeReasonExt reason)
 {
     if (!pipeManager_->IsModemCommunicationIdExist()) {
+        CheckAndUpdateHearingAidCall(DEVICE_TYPE_NONE);
         return;
     }
 
@@ -401,6 +409,9 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
 void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReasonExt reason)
 {
     AudioScene audioScene = audioSceneManager_.GetAudioScene();
+    if (audioScene == AUDIO_SCENE_DEFAULT && !CheckRingAndVoipStreamRunning()) {
+        return;
+    }
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDescs =
         audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_NOTIFICATION_RINGTONE, -1, "CheckRingAndVoipScene");
@@ -1226,11 +1237,11 @@ std::string AudioCoreService::GetModuleNameBySessionId(uint32_t sessionId)
 }
 
 int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
-    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, int32_t &pin)
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool &isUltraFast)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
     deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
-    pin = policyConfigMananger_.GetAudioPolicyConfigData().DecideAudioPin(deviceInfo.getType(), deviceInfo.getRole());
+    isUltraFast = pipeManager_->IsStreamUltraFast(sessionId);
     return SUCCESS;
 }
 
@@ -2835,6 +2846,10 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             [&]() { return reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
             {BASE_DEVICE_SWITCH_SLEEP_US}
         },
+        {
+            [&]() { return reason.IsCollaborativeStateChange(); },
+            {BASE_DEVICE_SWITCH_SLEEP_US}
+        },
     };
 
     for (const auto &strategy : strategies) {
@@ -2934,6 +2949,9 @@ void AudioCoreService::MuteSinkPortLogic(const std::string &oldSinkName, const s
         oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) {
         // remote cast -> earpiece 300ms fix sound leak
         audioIOHandleMap_.MuteSinkPort(newSinkName, NEW_DEVICE_REMOTE_CAST_AVALIABLE_MUTE_MS, true, false);
+    } else if (reason.IsCollaborativeStateChange()) {
+        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US, true, false);
+        audioIOHandleMap_.MuteSinkPort(BLUETOOTH_SPEAKER, COLLABORATIVE_STATE_CHANGE_MUTE_SINK_PORT_US, true, false);
     }
 }
 
@@ -3567,14 +3585,17 @@ void AudioCoreService::HandleNearlinkErrResultAsync(int32_t result, shared_ptr<A
     }
 }
 
-void AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
+bool AudioCoreService::HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene)
 {
+    bool ret = false;
     if ((lastAudioScene == AUDIO_SCENE_VOICE_RINGING || lastAudioScene == AUDIO_SCENE_RINGING) &&
         (audioScene == AUDIO_SCENE_DEFAULT || audioScene == AUDIO_SCENE_PHONE_CALL ||
             audioScene == AUDIO_SCENE_PHONE_CHAT)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when audio scene change from ring to non-ring");
         isRingDualToneOnPrimarySpeaker_ = false;
+        ret = true;
     }
+    return ret;
 }
 
 bool AudioCoreService::IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene)
@@ -3630,6 +3651,26 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
     }
     CHECK_AND_RETURN(isNeedUpdate);
     NotifyRemoteDeviceStatusUpdate(oldDesc);
+}
+
+bool AudioCoreService::IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_.front() != nullptr, false, "Invalid stream desc");
+    CHECK_AND_RETURN_RET_LOG(isSupportUltraFast_, false, "Ultra fast is not supported");
+    CHECK_AND_RETURN_RET_LOG(
+        supportUltraFastBundleSet_.find(streamDesc->GetBundleName()) != supportUltraFastBundleSet_.end(), false,
+        "Bundle name %{public}s is not in ultra fast support list", streamDesc->GetBundleName().c_str());
+    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
+    if (ultraFastDevicesSet_.find(deviceType) == ultraFastDevicesSet_.end()) {
+        AUDIO_INFO_LOG("Device type %{public}d is not support ultra fast mode", deviceType);
+        streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
+        return false;
+    }
+    streamDesc->SetUltraFastFlag(true);
+    streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
+    AUDIO_INFO_LOG("Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
+    return true;
 }
 } // namespace AudioStandard
 } // namespace OHOS

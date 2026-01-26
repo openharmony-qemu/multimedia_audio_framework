@@ -35,8 +35,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 using namespace USB;
-constexpr int32_t MAX_RETRY = 100;
-constexpr int32_t DELAY_MS = 1;
+constexpr int32_t MAX_RETRY = 10;
+constexpr int32_t DELAY_MS = 10;
 
 static string ReadTextFile(const string &file)
 {
@@ -174,10 +174,11 @@ string EncUsbAddr(const string &src)
 
 static void WaitFile(const string &path)
 {
-    if (!filesystem::exists(path)) {
+    error_code ec;
+    if (!filesystem::exists(path, ec)) {
         for (int32_t i = 0; i < MAX_RETRY; i++) {
             this_thread::sleep_for(chrono::milliseconds(DELAY_MS));
-            if (filesystem::exists(path)) {
+            if (filesystem::exists(path, ec)) {
                 return;
             }
         }

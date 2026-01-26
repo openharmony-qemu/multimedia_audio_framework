@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -84,8 +84,10 @@ static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
     {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
     {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, STREAM_USAGE_ANNOUNCEMENT},
     {STREAM_EMERGENCY, STREAM_USAGE_EMERGENCY}
+#endif
 };
 
 static const std::map<AudioFlag, int32_t> OUTPUT_ROUTE_TO_STREAM_MAP = {
@@ -730,6 +732,15 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     isHWDecodingType_ = IsHWDecodingType(params.encodingType);
     rendererInfo_.audioFlag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : AUDIO_OUTPUT_FLAG_NORMAL;
+    if (params.encodingType == ENCODING_AUDIOVIVID) {
+        int32_t direct3DATestFlag = 0;
+        GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
+        if (direct3DATestFlag == 1) {
+            rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_3DA_DIRECT;
+        }
+        AUDIO_INFO_LOG("3DA Direct mode enabled for this audio vivid stream. flag: %{public}u",
+            rendererInfo_.audioFlag);
+    }
     ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
@@ -787,6 +798,12 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     flag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : flag;
     UpdateAudioStreamParamsByStreamDescriptor(audioStreamParams, streamDesc);
 
+    int32_t direct3DATestFlag = 0;
+    GetSysPara("persist.multimedia.3dadirecttest", direct3DATestFlag);
+    if ((direct3DATestFlag == 1) && (audioStreamParams.encoding == ENCODING_AUDIOVIVID)) {
+        flag |= AUDIO_OUTPUT_FLAG_3DA_DIRECT;
+        AUDIO_INFO_LOG("3DA Direct mode re-applied to flag: %{public}u", flag);
+    }
     streamClass = DecideStreamClassAndUpdateRendererInfo(flag);
 
     if (audioStream_ == nullptr) {
@@ -828,7 +845,10 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
 IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfo(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
-    if (flag & AUDIO_OUTPUT_FLAG_FAST) {
+    if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
+    } else if (flag & AUDIO_OUTPUT_FLAG_FAST) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
@@ -3185,6 +3205,7 @@ void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStream
     audioStreamParams.isRemoteSpatialChannel = streamDesc->newDeviceDescs_.front()->IsDistributedSpeaker();
     audioStreamParams.remoteChannelLayout =
         static_cast<uint64_t>(*streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().channelLayout.begin());
+    audioStreamParams.isUltraFast = streamDesc->GetUltraFastFlag();
 }
 
 void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,

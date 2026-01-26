@@ -562,6 +562,11 @@ void AudioActiveDevice::SetAdjustVolumeForZone(int32_t zoneId)
     volumeAdjustZoneId_ = zoneId;
 }
 
+int32_t AudioActiveDevice::GetAdjustVolumeZoneId()
+{
+    return volumeAdjustZoneId_;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(AudioVolumeType volumeType)
 {
     CHECK_AND_RETURN_RET_LOG(!audioConnectedDevice_.IsEmpty(), defaultOutputDevice_, "no device connected");
@@ -625,8 +630,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
         STREAM_USAGE_DTMF,
         STREAM_USAGE_SYSTEM,
         STREAM_USAGE_ENFORCED_TONE,
+#ifdef MULTI_ALARM_LEVEL
         STREAM_USAGE_ANNOUNCEMENT,
         STREAM_USAGE_EMERGENCY
+#endif
     };
     {
         std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);

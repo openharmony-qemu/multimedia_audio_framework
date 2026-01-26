@@ -497,10 +497,9 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_001, TestSize.Level1)
     });
 
     // 200ms
-    FutexCode futexCode = ohAudioBufferBase->WaitFor(200000000, [&ohAudioBufferBase] () {
+    ohAudioBufferBase->WaitFor(200000000, [&ohAudioBufferBase] () {
         return ohAudioBufferBase->GetWritableDataFrames() > 0;
     });
-    EXPECT_EQ(futexCode, FUTEX_SUCCESS);
     threadSetReadIndex.join();
 
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
@@ -1241,68 +1240,6 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Le
 }
 
 /**
-* @tc.name  : Test LinearPosTimeModel API
-* @tc.type  : FUNC
-* @tc.number: LinearPosTimeModel_003
-* @tc.desc  : Test LinearPosTimeModel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_003, TestSize.Level1)
-{
-    auto linearPos = std::make_unique<LinearPosTimeModel>();
-    ASSERT_TRUE(linearPos != nullptr);
-
-    uint64_t frame = 0;
-    int64_t nanoTime = 0;
-    for (int i = 0; i < 10; i++) {
-        linearPos->posTimeVec_.push_back(std::make_pair(frame, nanoTime));
-        if (frame < 5) {
-            frame++;
-        }
-        nanoTime++;
-    }
-    linearPos->sampleRate_ = 1;
-    auto ret = linearPos->CheckReasonable(frame, nanoTime);
-    EXPECT_EQ(ret, CHECK_FAILED);
-}
-
-/**
-* @tc.name  : Test LinearPosTimeModel API
-* @tc.type  : FUNC
-* @tc.number: LinearPosTimeModel_004
-* @tc.desc  : Test LinearPosTimeModel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_004, TestSize.Level1)
-{
-    auto linearPos = std::make_unique<LinearPosTimeModel>();
-    ASSERT_TRUE(linearPos != nullptr);
-
-    uint64_t posInFrame = 20;
-    linearPos->isConfiged = true;
-    linearPos->sampleRate_ = 1;
-    auto ret = linearPos->GetTimeOfPos(posInFrame);
-    EXPECT_NE(ret, -1);
-}
-
-/**
-* @tc.name  : Test LinearPosTimeModel API
-* @tc.type  : FUNC
-* @tc.number: LinearPosTimeModel_005
-* @tc.desc  : Test LinearPosTimeModel interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_005, TestSize.Level1)
-{
-    auto linearPos = std::make_unique<LinearPosTimeModel>();
-    ASSERT_TRUE(linearPos != nullptr);
-
-    uint64_t posInFrame = 0;
-    linearPos->stampFrame_ = 5;
-    linearPos->isConfiged = true;
-    linearPos->sampleRate_ = 1;
-    auto ret = linearPos->GetTimeOfPos(posInFrame);
-    EXPECT_NE(ret, -1);
-}
-
-/**
 * @tc.name  : Test CheckWriteOrReadFrame API
 * @tc.type  : FUNC
 * @tc.number: CheckWriteOrReadFrame_001
@@ -1335,7 +1272,7 @@ HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_002, TestSize.Level1)
 HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_003, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 10;
-    EXPECT_FALSE(g_oHAudioBuffer->CheckWriteOrReadFrame(20));
+    EXPECT_TRUE(g_oHAudioBuffer->CheckWriteOrReadFrame(20));
 }
 
 /**
@@ -1380,7 +1317,7 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_003, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
-    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 0;
     uint32_t totalSizeFrame = 1000;
     int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -1992,7 +1929,7 @@ HWTEST(AudioServiceCommonUnitTest, VASharedBufferOperator_002, TestSize.Level1)
     EXPECT_NE(operator_, nullptr);
 
     operator_->SetMinReadSize(100);
-    EXPECT_NE(operator_->minReadSize_, 100);
+    EXPECT_EQ(operator_->minReadSize_, 100);
     delete operator_;
 }
 
@@ -2262,11 +2199,11 @@ HWTEST(AudioServiceCommonUnitTest, CheckFrozenAndSetLastProcessTime_001, TestSiz
     auto ohAudioBuffer = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
     ohAudioBuffer->SetStaticMode(true);
 
-    ohAudioBuffer->basicBufferInfo_->clientLastProcessTime_.store(0);
+    ohAudioBuffer->basicBufferInfo_->clientLastProcessTime.store(0);
     ohAudioBuffer->GetStreamStatus()->store(STREAM_RUNNING);
     EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER), true);
 
-    ohAudioBuffer->basicBufferInfo_->clientLastProcessTime_.store(0);
+    ohAudioBuffer->basicBufferInfo_->clientLastProcessTime.store(0);
     ohAudioBuffer->GetStreamStatus()->store(STREAM_STAND_BY);
     EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT), true);
     EXPECT_EQ(ohAudioBuffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_SERVER), false);

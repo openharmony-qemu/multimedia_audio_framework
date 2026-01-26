@@ -35,6 +35,7 @@ static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
 static const std::string BT_SINK_NAME = "a2dp";
 static const std::string USB_SINK_NAME = "usb";
+constexpr size_t DEFAULT_COLL_RENDER_FAILED_FRAME = 3;
 
 static inline const std::unordered_set<std::string> AUXILIARY_SPEAKER_LIST = {
     BT_SINK_NAME,
@@ -123,7 +124,12 @@ void HpaeSinkOutputNode::DoProcess()
             uint64_t usedTimeUs = static_cast<uint64_t>(periodTimer_.Elapsed<std::chrono::microseconds>());
             usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
         }
+        collRenderFrameFailedCount_.fetch_add(1);
+    } else {
+        collRenderFrameFailedCount_.store(0);
     }
+
+    CheckAndSetCollDelayForRenderFrameFailed();
     RenderFrameForAuxiliarySink();
     periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
@@ -219,6 +225,7 @@ int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass
     } else {
         renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, deviceNetId, true);
     }
+
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get sink fail, deviceClass: %{public}s, deviceNetId: %{public}s, renderId_: %{public}u",
@@ -444,11 +451,11 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 }
 
 void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
+    uint32_t sessionId, StreamUsage usage, RendererState state)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
-    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
     UpdateAuxiliarySinkState(change, sessionId, usage, state);
 }
 
@@ -614,6 +621,15 @@ int32_t HpaeSinkOutputNode::SetAuxiliarySinkEnable(bool isEnabled)
     return SUCCESS;
 }
 
+void HpaeSinkOutputNode::CheckAndSetCollDelayForRenderFrameFailed()
+{
+    if (collRenderFrameFailedCount_.load() == DEFAULT_COLL_RENDER_FAILED_FRAME) {
+        collRenderFrameFailedCount_.store(0);
+        auto statusCallback = GetNodeStatusCallback().lock();
+        CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is nullptr");
+        statusCallback->SetCollDelayCount();
+    }
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

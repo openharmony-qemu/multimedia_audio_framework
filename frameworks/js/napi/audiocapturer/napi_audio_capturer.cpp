@@ -64,11 +64,6 @@ void NapiAudioCapturer::Destructor(napi_env env, void *nativeObject, void *final
         return;
     }
     auto obj = static_cast<NapiAudioCapturer *>(nativeObject);
-    if (obj != nullptr && obj->capturerReadDataCallbackNapi_ != nullptr) {
-        std::shared_ptr<NapiCapturerReadDataCallback> cb =
-            std::static_pointer_cast<NapiCapturerReadDataCallback>(obj->capturerReadDataCallbackNapi_);
-        cb->RemoveNapiCapturer();
-    }
     ObjectRefMap<NapiAudioCapturer>::DecreaseRef(obj);
     AUDIO_INFO_LOG("Decrease obj count");
 }

@@ -84,7 +84,7 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
-    int64_t GetVolumeDataCount(void) override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
 
@@ -109,6 +109,8 @@ public:
     int32_t SetOffloadRenderCallbackType(RenderCallbackType type) override;
     int32_t LockOffloadRunningLock(void) override;
     int32_t UnLockOffloadRunningLock(void) override;
+
+    void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
 
@@ -140,6 +142,7 @@ private:
     void FlushResetPosition();
     int32_t EstimateRenderPosition();
     int32_t FlushInner(void);
+    bool IsValidState();
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -164,6 +167,7 @@ private:
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
     std::atomic<bool> isFlushing_ = false;
+    std::atomic<bool> validState_ = true;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;

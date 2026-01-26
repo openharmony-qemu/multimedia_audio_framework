@@ -354,6 +354,7 @@ public:
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
     void SetMuteFromRemote(std::string networkId, bool mute);
+    void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
 
     class RemoteVolumeCallback : public AudioParameterCallback {
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
@@ -622,8 +623,10 @@ public:
             STREAM_ULTRASONIC,
             STREAM_SYSTEM,
             STREAM_VOICE_CALL_ASSISTANT,
+#ifdef MULTI_ALARM_LEVEL
             STREAM_ANNOUNCEMENT,
             STREAM_EMERGENCY,
+#endif
             STREAM_ALL
         };
         for (auto &volumeType : volumeList) {

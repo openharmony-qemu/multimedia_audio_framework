@@ -428,6 +428,7 @@ audio_ohos_library("audio_process_service") {
     "server/src/capturer_in_server.cpp",
     "server/src/core_service_handler.cpp",
     "server/src/direct_playback_engine.cpp",
+    "server/src/cabin_playback_engine.cpp",
     "server/src/hpae_adapter_manager.cpp",
     "server/src/hpae_capturer_stream_impl.cpp",
     "server/src/hpae_renderer_stream_impl.cpp",
@@ -554,6 +555,10 @@ audio_ohos_library("audio_process_service") {
 
   if (!audio_framework_feature_new_engine_flag) {
     defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
   cflags = [ "-Os" ]

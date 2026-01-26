@@ -56,6 +56,7 @@
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
+#include "audio_pipe_selector.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -742,6 +743,7 @@ public:
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
     void HandleDataShareReadyEvent();
     int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();

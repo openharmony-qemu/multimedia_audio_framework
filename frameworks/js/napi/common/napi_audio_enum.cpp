@@ -1506,12 +1506,19 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
             break;
+#ifdef MULTI_ALARM_LEVEL
         case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
             result = NapiAudioEnum::USAGE_ANNOUNCEMENT;
             break;
         case StreamUsage::STREAM_USAGE_EMERGENCY:
             result = NapiAudioEnum::USAGE_EMERGENCY;
             break;
+#else
+        case StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
+        case StreamUsage::STREAM_USAGE_EMERGENCY:
+            result = NapiAudioEnum::USAGE_ALARM;
+            break;
+#endif
         default:
             result = NapiAudioEnum::USAGE_UNKNOW;
             break;
@@ -1830,12 +1837,19 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
         case NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
             result = STREAM_USAGE_VOICE_CALL_ASSISTANT;
             break;
+#ifdef MULTI_ALARM_LEVEL
         case NapiAudioEnum::USAGE_ANNOUNCEMENT:
             result = STREAM_USAGE_ANNOUNCEMENT;
             break;
         case NapiAudioEnum::USAGE_EMERGENCY:
             result = STREAM_USAGE_EMERGENCY;
             break;
+#else
+        case NapiAudioEnum::USAGE_ANNOUNCEMENT:
+        case NapiAudioEnum::USAGE_EMERGENCY:
+            result = STREAM_USAGE_ALARM;
+            break;
+#endif
         case NapiAudioEnum::USAGE_MAX:
             result = STREAM_USAGE_MAX;
             break;

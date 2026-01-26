@@ -53,6 +53,7 @@ public:
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
+    void OnSupportUltraFast(bool supportUltraFast);
     
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
@@ -85,6 +86,7 @@ public:
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
+    bool GetUltraFastFlag();
     bool IsFastStreamSupported(AudioStreamInfo &streamInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool GetFastStreamSupport(AudioStreamInfo &streamInfo, std::shared_ptr<AdapterDeviceInfo> &deviceInfo);
@@ -92,6 +94,10 @@ public:
 
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
+#ifdef MULTI_BUS_ENABLE
+    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info,
+                           const std::vector<std::string> &busAddresses);
+#endif
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
         const AudioStreamInfo &streamInfo);
     bool MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
@@ -153,6 +159,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     AudioSampleFormat fastFormat_ = SAMPLE_S16LE;
     bool normalVoipFlag_ = false;
+    bool supportUltraFast_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;
     AudioDeviceManager &audioDeviceManager_;

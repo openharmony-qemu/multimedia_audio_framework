@@ -218,6 +218,7 @@ void AudioPolicyConfigParser::ParsePaProp(std::shared_ptr<AudioXmlNode> curNode,
     curNode->GetProp("moduleName", paProp.moduleName_);
     curNode->GetProp("fixed_latency", paProp.fixedLatency_);
     curNode->GetProp("render_in_idle_state", paProp.renderInIdleState_);
+    curNode->GetProp("bus_address", paProp.busAddress_);
     pipeInfo->paProp_ = std::move(paProp);
 }
 
@@ -303,6 +304,9 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         } else {
             pipeInfo->suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
         }
+    } else if (attributeInfo.name_ == "support_ultra_fast") {
+        AUDIO_INFO_LOG("Support ultra fast");
+        supportUltraFast_ = (attributeInfo.value_ == "true");
     }
 }
 
@@ -317,6 +321,9 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             AdapterDeviceInfo deviceInfo {};
             deviceInfo.adapterInfo_ = adapterInfo;
             curNode->GetProp("name", deviceInfo.name_);
+            std::string preload;
+            curNode->GetProp("preload", preload);
+            deviceInfo.preload_ = preload == "true";
             std::string type;
             curNode->GetProp("type", type);
             deviceInfo.type_ = AudioDefinitionPolicyUtils::deviceTypeStrToEnum[type];
@@ -626,7 +633,7 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
 
         AudioPipeRole currentRole = PIPE_ROLE_NONE;
         for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
-            if (currentRole == pipeInfo->role_) {
+            if (currentRole == pipeInfo->role_ && pipeInfo->paProp_.busAddress_.empty()) {
                 continue;
             }
             currentRole = pipeInfo->role_;
@@ -693,6 +700,7 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
     }
 
     audioModuleInfo.lib = pipeInfo->paProp_.lib_;
+    audioModuleInfo.busAddress = pipeInfo->paProp_.busAddress_;
 
     if (pipeInfo->streamPropInfos_.size() != 0) {
         audioModuleInfo.rate = std::to_string(pipeInfo->streamPropInfos_.front()->sampleRate_);

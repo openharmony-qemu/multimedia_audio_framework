@@ -49,7 +49,7 @@ public:
     virtual int32_t Flush(void) = 0;
     virtual int32_t Reset(void) = 0;
     virtual int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) = 0;
-    virtual int64_t GetVolumeDataCount() = 0;
+    virtual int32_t GetVolumeDataCount(int64_t &volumeData) = 0;
 
     virtual int32_t SuspendRenderSink(void) SUCCESS_RET
     virtual int32_t RestoreRenderSink(void) SUCCESS_RET

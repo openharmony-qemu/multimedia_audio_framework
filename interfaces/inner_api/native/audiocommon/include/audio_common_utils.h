@@ -25,6 +25,7 @@ namespace AudioStandard {
 class VolumeUtils {
 public:
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
+
     static void SetPCVolumeEnable(const bool& isPCVolumeEnable);
     static bool IsPCVolumeEnable();
     static void SetVolumeFixEnable(const bool& isPCVolumeEnable);

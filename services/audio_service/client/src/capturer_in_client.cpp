@@ -1175,7 +1175,6 @@ void CapturerInClientInner::SetPlaybackCaptureStartStateCallback(
  
 int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     if (gasp == nullptr) {
         AUDIO_ERR_LOG("LatencyMeas failed to get AudioServerProxy");
@@ -1192,6 +1191,7 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     waitLock.unlock();
  
     std::unique_lock<std::mutex> lock(playbackCaptureStartCallbackMutex_);
+    CHECK_AND_RETURN_RET(playbackCaptureStartCallback_ != nullptr, ERROR);
     if (operation != USER_PRIVACY_AUTHORITY) {
         AUDIO_ERR_LOG("authorization failed: %{public}s Operation:%{public}d result:%{public}" PRId64".",
             (!stopWaiting ? "timeout" : "no timeout"), operation, result);
@@ -1529,7 +1529,8 @@ int32_t CapturerInClientInner::Read(uint8_t &buffer, size_t userSize, bool isBlo
     if (needSetThreadPriority_) {
         CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is null");
         ipcStream_->RegisterThreadPriority(gettid(),
-            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
+            AppBundleManager::GetSelfBundleName(clientConfig_.appInfo.appUid),
+            METHOD_WRITE_OR_READ, THREAD_PRIORITY_QOS_7);
         needSetThreadPriority_ = false;
     }
 

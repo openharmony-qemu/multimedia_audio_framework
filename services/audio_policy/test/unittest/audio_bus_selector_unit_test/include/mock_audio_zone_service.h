@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,24 +13,22 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_SERVER_EXT_UNIT_TEST_H
-#define AUDIO_SERVER_EXT_UNIT_TEST_H
+#ifndef MOCK_AUDIO_ZONE_SERVICE
+#define MOCK_AUDIO_ZONE_SERVICE
 
-#include "gtest/gtest.h"
+#include "audio_zone_service.h"
+#include "gmock/gmock.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioServerExtUnitTest : public testing::Test {
+
+class MockAudioZoneService : public AudioZoneService {
 public:
-    // SetUpTestCase: Called before all test cases
-    static void SetUpTestCase(void);
-    // TearDownTestCase: Called after all test case
-    static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
-    void SetUp(void);
-    // TearDown: Called after each test cases
-    void TearDown(void);
+    MockAudioZoneService() = default;
+    virtual ~MockAudioZoneService() = default;
+    MOCK_METHOD(std::string, FindAudioZoneNameByUid, (int32_t uid), (override));
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_SERVER_UNIT_TEST_H
+
+#endif

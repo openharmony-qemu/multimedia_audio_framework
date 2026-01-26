@@ -48,7 +48,7 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
-    int64_t GetVolumeDataCount() override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     int32_t SetVolume(float left, float right) override;
     int32_t GetVolume(float &left, float &right) override;
@@ -62,6 +62,8 @@ public:
 
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
+
+    void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
 
@@ -83,6 +85,8 @@ private:
     int32_t PrepareMmapBuffer(void);
     int32_t CheckPositionTime(void);
 
+    bool IsValidState();
+
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
     static constexpr uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
@@ -99,6 +103,7 @@ private:
     std::atomic<bool> renderInited_ = false;
     std::atomic<bool> started_ = false;
     std::atomic<bool> paused_ = false;
+    std::atomic<bool> validState_ = true;
     float leftVolume_ = 0;
     float rightVolume_ = 0;
     uint32_t hdiRenderId_ = HDI_INVALID_ID;

@@ -210,7 +210,7 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled)
 {
     if (isCollaborationEnabled) {
-        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
             nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
@@ -580,7 +580,6 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
-    nodeInfo.encoding = streamInfo.encoding;
 }
 
 RendererState ConvertHpaeToRendererState(HpaeSessionState state)

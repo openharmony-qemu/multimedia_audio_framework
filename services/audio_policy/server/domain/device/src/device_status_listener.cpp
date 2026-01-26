@@ -175,6 +175,7 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         JUDGE_AND_ERR_LOG(sscanf_s(info.c_str(), "EVENT_TYPE=%d;NID=%[^;];PIN=%d;VID=%d;IID=%d", &pnpEventType,
             statusInfo.networkId, sizeof(statusInfo.networkId), &(statusInfo.hdiPin), &(statusInfo.mappingVolumeId),
             &(statusInfo.mappingInterruptId)) < D_EVENT_PARAMS, "[DeviceStatusListener]: Failed to scan info string");
+        AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo, true);
         devListener->OnDistributedServiceStatusChanged(false);
         devListener->WriteDistributedDeviceChangedEvent(info, statusInfo, serviceStatus->status);

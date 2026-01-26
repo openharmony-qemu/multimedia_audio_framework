@@ -215,6 +215,12 @@ int32_t HpaeInjectorRendererManager::SuspendStreamManager(bool isSuspend)
 
 int32_t HpaeInjectorRendererManager::StopManager()
 {
+    auto request = [this] {
+        Trace trace("StopManager");
+        CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sink output node is nullptr");
+        sinkOutputNode_->RenderSinkStop();
+    };
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 

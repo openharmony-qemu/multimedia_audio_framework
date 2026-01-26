@@ -111,6 +111,7 @@ struct HpaeSinkInfo {
     std::string lib;
     std::string filePath;
     std::string deviceName;
+    std::string busAddress;
     size_t frameLen = 0;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
     AudioSampleFormat format = INVALID_WIDTH;
@@ -147,7 +148,7 @@ struct HpaeSourceInfo {
     std::string deviceClass;
     std::string adapterName;
     std::string sourceName;
-    SourceType sourceType;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
     std::string filePath;
     std::string deviceName;
     size_t frameLen = 0;
