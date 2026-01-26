@@ -862,7 +862,6 @@ bool AudioPipeManager::HasRunningRecognitionCapturerStream()
             if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
             (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
             desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION)) {
-                AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", true);
                 return true;
             }
         }
