@@ -14,7 +14,7 @@ std::shared_ptr<NodeManager> g_nodeManager = nullptr;
 std::shared_ptr<NodeManager> g_singlePipelineNodeManager = nullptr;
 
 // After creating an effect node, call this method to add the effect node to the nodeManager
-int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId)
+int32_t AddEffectNodeToNodeManager(const std::string &inputNodeId, const std::string &effectNodeId)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, EFFECT_NODE_TAG,
         "audioEditTest AddEffectNodeToNodeManager start and inputNodeId is: %{public}s, effectNodeId is %{public}s",

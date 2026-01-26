@@ -7,7 +7,7 @@
 
 #include <string>
 #include "napi/native_api.h"
-#include "ohaudio/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
 #include "../NodeManager.h"
 #include "./EffectNode.h"
 

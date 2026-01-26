@@ -2,7 +2,7 @@
  * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
-import { SpacePosition, SpaceRender, SpaceRenderMode } from '../../utils/importSongs/InterfaceInfo'
+import { SpacePosition, SpaceRender, SpaceRenderMode } from '../../utils/InterfaceInfo'
 import { Logger } from '../../utils/Logger';
 
 const TAG: string = 'AudioEditTestApp_SpaceRender';
@@ -77,7 +77,7 @@ export struct SpaceRenderPositionView {
         const realX = parseFloat(this.pixelToReal(constrainedX, canvasWidth).toFixed(2));
         const realZ = parseFloat(this.pixelToReal(constrainedY, canvasHeight).toFixed(2));
 
-        Logger.info(TAG, `The position is ${realX} ${realZ} ${this.spaceRender.fixedPosition?.y}`)
+        Logger.error(TAG, `The position is ${realX} ${realZ} ${this.spaceRender.fixedPosition?.y}`)
         if (this.spaceRender.mode === SpaceRenderMode.FIXED_POSITION) {
           let fixedPosition: SpacePosition = {
             x: realX,
@@ -169,7 +169,7 @@ export struct SpaceRenderPositionView {
 
     // Color Definition
     const borderAndMiddleColor = '#000';     // Dark: Border + Center Line
-    const regularLineColor = '#999';           // Light color: normal grid lines
+    const regularLineColor = '#999';          // Light color: normal grid lines
 
     // line width
     const lineWidth = 2;

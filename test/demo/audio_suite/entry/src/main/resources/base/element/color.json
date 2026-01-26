@@ -39,6 +39,18 @@
     {
       "name": "selected_node_info_background_color",
       "value": "#999"
+    },
+    {
+      "name": "time_line_color",
+      "value": "#8161c4"
+    },
+    {
+      "name": "silent_color",
+      "value": "#BE682A"
+    },
+    {
+      "name": "solo_color",
+      "value": "#3B6DA0"
     }
   ]
 }
