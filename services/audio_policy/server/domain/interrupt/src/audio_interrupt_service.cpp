@@ -2739,7 +2739,10 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     dfxBuilder.WriteActionMsg(infoIdx, effectIdx, stage);
     dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
 
-    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
+        RemoveStreamIdSuggestionRecord(streamId);
+    } else if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+        muteAudioFocus_.erase(streamId);
         RemoveStreamIdSuggestionRecord(streamId);
     }
 
