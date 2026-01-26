@@ -52,7 +52,7 @@ void InputPort<T>::deInit()
 }
 
 template <class T>
-std::vector<T>& InputPort<T>::ReadPreOutputData(PcmBufferFormat outFormat, bool needConvert)
+std::vector<T>& InputPort<T>::ReadPreOutputData(PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength)
 {
     inputData_.clear();
     for (auto &o : outputPorts_) {
@@ -60,7 +60,7 @@ std::vector<T>& InputPort<T>::ReadPreOutputData(PcmBufferFormat outFormat, bool 
             continue;
         }
 
-        std::vector<T> outputData = o.first->PullOutputData(outFormat, needConvert);
+        std::vector<T> outputData = o.first->PullOutputData(outFormat, needConvert, needDataLength);
         inputData_.insert(inputData_.end(), outputData.begin(), outputData.end());
     }
     return inputData_;
@@ -149,52 +149,10 @@ void OutputPort<T>::WriteDataToOutput(T data)
 }
 
 template <class T>
-int32_t OutputPort<T>::PullOutputDataForDoubleFrame()
-{
-    uint32_t doubleFrame = 2;
-    CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, ERROR, "audionode is nullptr.");
-    for (uint32_t frame = 0; frame < doubleFrame; frame++) {
-        outputData_.clear();
-        audioNode_->DoProcess();
-        CHECK_AND_RETURN_RET_LOG(!outputData_.empty(), ERROR, "outputData is empty.");
-        CHECK_AND_RETURN_RET_LOG(outputData_.size() == tmpData_.size(), ERROR, "input data num err.");
-        for (size_t idx = 0; idx < tmpData_.size(); idx++) {
-            T in = outputData_[idx];
-            CHECK_AND_RETURN_RET_LOG(in != nullptr, ERROR, "outputData is nullptr.");
-
-            if (frame == 0) {
-                tmpData_[idx].ResizePcmBuffer(in->GetPcmBufferFormat(), PCM_DATA_DURATION_40_MS);
-                tmpData_[idx].Reset();
-            }
-            int32_t ret = memcpy_s(tmpData_[idx].GetPcmData() + frame * in->GetDataSize(),
-                tmpData_[idx].GetDataSize() - frame * in->GetDataSize(), in->GetPcmData(), in->GetDataSize());
-            CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memecpy failed, ret is %{public}d.", ret);
-            tmpData_[idx].SetIsFinished(in->GetIsFinished());
-        }
-
-        CHECK_AND_RETURN_RET_LOG(outputData_[0] != nullptr, ERROR, "outputData is nullptr.");
-        if (outputData_[0]->GetIsFinished()) {
-            break;
-        }
-    }
-
-    outputData_.clear();
-    for (size_t idx = 0; idx < tmpData_.size(); idx++) {
-        outputData_.push_back(&tmpData_[idx]);
-    }
-    return SUCCESS;
-}
-
-template <class T>
-std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool needConvert)
+std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLengthMs)
 {
     CHECK_AND_RETURN_RET_LOG(audioNode_ != nullptr, std::vector<T>(), "audionode is nullptr.");
-    if (outFormat.sampleRate == SAMPLE_RATE_11025) {
-        int32_t ret = PullOutputDataForDoubleFrame();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, std::vector<T>(), "Get double frame data fail.");
-    } else {
-        audioNode_->DoProcess();
-    }
+    audioNode_->DoProcess(needDataLengthMs);
 
     CHECK_AND_RETURN_RET_LOG(!outputData_.empty(), std::vector<T>(), "outputData is empty.");
     CHECK_AND_RETURN_RET_LOG(outputData_.size() == convert_.size(), std::vector<T>(), "input data num err.");
@@ -208,7 +166,7 @@ std::vector<T> OutputPort<T>::PullOutputData(PcmBufferFormat outFormat, bool nee
         if (!needConvert || data->IsSameFormat(outFormat)) {
             outData.push_back(data);
         } else {
-            AudioSuitePcmBuffer *convertData = convert_[idx]->Process(data, outFormat);
+            AudioSuitePcmBuffer *convertData = convert_[idx]->Process(data, outFormat, needDataLengthMs);
             CHECK_AND_RETURN_RET_LOG(convertData != nullptr, std::vector<T>(), "convertData is nullptr.");
             convertData->SetIsFinished(data->GetIsFinished());
             outData.push_back(convertData);

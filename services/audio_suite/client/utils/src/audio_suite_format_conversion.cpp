@@ -100,18 +100,15 @@ int32_t AudioSuiteFormatConversion::Resample(AudioSuitePcmBuffer *in, AudioSuite
     return SUCCESS;
 }
 
-AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(AudioSuitePcmBuffer *inPcmBuffer, PcmBufferFormat &outFormat)
+AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(
+    AudioSuitePcmBuffer *inPcmBuffer, PcmBufferFormat &outFormat, uint32_t needDataLength)
 {
     CHECK_AND_RETURN_RET_LOG(inPcmBuffer != nullptr, nullptr, "nullptr");
     if (inPcmBuffer->IsSameFormat(outFormat)) {
         return inPcmBuffer;
     }
 
-    PcmDataDuration duration = PCM_DATA_DEFAULT_DURATION_20_MS;
-    if ((inPcmBuffer->GetSampleRate() == AudioSamplingRate::SAMPLE_RATE_11025) ||
-        (outFormat.sampleRate == AudioSamplingRate::SAMPLE_RATE_11025)) {
-        duration = PCM_DATA_DURATION_40_MS;
-    }
+    uint32_t duration = needDataLength;
 
     AudioSuitePcmBuffer *in = inPcmBuffer;
     if (in->GetSampleFormat() != SAMPLE_F32LE) {
