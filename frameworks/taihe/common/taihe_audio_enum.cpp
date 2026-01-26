@@ -685,12 +685,19 @@ OHOS::AudioStandard::StreamUsage TaiheAudioEnum::GetNativeStreamUsageFir(int32_t
         case TaiheAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
             result = OHOS::AudioStandard::STREAM_USAGE_VOICE_CALL_ASSISTANT;
             break;
+#ifdef MULTI_ALARM_LEVEL
         case TaiheAudioEnum::USAGE_ANNOUNCEMENT:
             result = OHOS::AudioStandard::STREAM_USAGE_ANNOUNCEMENT;
             break;
         case TaiheAudioEnum::USAGE_EMERGENCY:
             result = OHOS::AudioStandard::STREAM_USAGE_EMERGENCY;
             break;
+#else
+        case TaiheAudioEnum::USAGE_ANNOUNCEMENT:
+        case TaiheAudioEnum::USAGE_EMERGENCY:
+            result = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+            break;
+#endif
         case TaiheAudioEnum::USAGE_MAX:
             result = OHOS::AudioStandard::STREAM_USAGE_MAX;
             break;
@@ -847,12 +854,31 @@ StreamUsage TaiheAudioEnum::GetJsStreamUsageFir(OHOS::AudioStandard::StreamUsage
             result = TaiheAudioEnum::ToTaiheStreamUsage(
                 OHOS::AudioStandard::StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
             break;
+        default:
+            result = GetJsStreamUsageSec(streamUsage);
+            break;
+    }
+    return result;
+}
+
+StreamUsage TaiheAudioEnum::GetJsStreamUsageSec(OHOS::AudioStandard::StreamUsage streamUsage)
+{
+    StreamUsage result = TaiheAudioEnum::ToTaiheStreamUsage(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
+    switch (streamUsage) {
+#ifdef MULTI_ALARM_LEVEL
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
             result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
             break;
         case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_EMERGENCY:
             result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
             break;
+#else
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ANNOUNCEMENT:
+        case OHOS::AudioStandard::StreamUsage::STREAM_USAGE_EMERGENCY:
+            streamUsage = OHOS::AudioStandard::StreamUsage::STREAM_USAGE_ALARM;
+            result = TaiheAudioEnum::ToTaiheStreamUsage(streamUsage);
+            break;
+#endif
         default:
             result = TaiheAudioEnum::ToTaiheStreamUsage(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN);
             break;

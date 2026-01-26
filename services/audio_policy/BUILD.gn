@@ -335,6 +335,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [

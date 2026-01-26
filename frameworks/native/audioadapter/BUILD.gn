@@ -76,6 +76,11 @@ ohos_shared_library("pro_audio_service_adapter") {
 
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
+
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libpulse_audio_service_adapter.versionscript"

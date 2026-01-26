@@ -95,6 +95,10 @@ ohos_shared_library("audio_utils") {
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
 
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"

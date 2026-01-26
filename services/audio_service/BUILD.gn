@@ -557,6 +557,10 @@ audio_ohos_library("audio_process_service") {
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
 
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   cflags = [ "-Os" ]
   cflags_cc = cflags
 
