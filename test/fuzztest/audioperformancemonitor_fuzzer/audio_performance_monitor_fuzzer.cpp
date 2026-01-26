@@ -34,7 +34,6 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
