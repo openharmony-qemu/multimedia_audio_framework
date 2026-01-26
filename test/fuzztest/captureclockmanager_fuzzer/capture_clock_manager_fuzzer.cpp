@@ -38,11 +38,12 @@
 #include "audio_source_clock.h"
 #include "capturer_clock.h"
 #include "capturer_clock_manager.h"
+#include "../fuzz_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
-
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -166,7 +167,7 @@ void GetTimeStampByPositionDifferentFuzzTest()
     CapturerClockManager::GetInstance().DeleteCapturerClock(1);
 }
 
-TestFuncs g_testFuncs[] = {
+vector<TestFuncs> g_testFuncs = {
     GetMediaRenderDeviceFuzzTest,
     GetRecordCaptureDeviceFuzzTest,
     CaptureClockStartAndStopFuzzTest,
@@ -206,6 +207,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }

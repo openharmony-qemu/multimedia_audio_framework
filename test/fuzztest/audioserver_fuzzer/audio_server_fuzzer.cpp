@@ -2059,7 +2059,7 @@ void GetRemoteAudioParameter()
     audioServerPtr->GetRemoteAudioParameter(networkId, key, cond, value);
 }
 
-TestFuncs g_testFuncs[] = {
+vector<TestFuncs> g_testFuncs = {
     AudioServerDumpTest,
     AudioServerGetUsbParameterTest,
     AudioServerOnAddSystemAbilityTest,
@@ -2218,7 +2218,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     OHOS::AudioStandard::AudioServerWriteServiceStartupErrorTest();
     OHOS::AudioStandard::AudioServerRegisterDataTransferStateChangeCallbackFuzzTest();
     OHOS::AudioStandard::AudioServerInitMaxRendererStreamCntPerUidFuzzTest();
