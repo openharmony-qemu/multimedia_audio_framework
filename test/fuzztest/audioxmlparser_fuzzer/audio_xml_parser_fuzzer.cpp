@@ -118,7 +118,7 @@ void OperatorFuzzTest()
     ptr2.reset();
 }
 
-vector<TestFunc> g_testFuncs = {
+vector<TestFuncs> g_testFuncs = {
     HasPropFuzzTest,
     GetContentFuzzTest,
     OperatorFuzzTest,

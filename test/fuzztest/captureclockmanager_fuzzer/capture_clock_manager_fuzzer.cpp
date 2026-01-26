@@ -167,7 +167,7 @@ void GetTimeStampByPositionDifferentFuzzTest()
     CapturerClockManager::GetInstance().DeleteCapturerClock(1);
 }
 
-vector<TestFunc> g_testFuncs = {
+vector<TestFuncs> g_testFuncs = {
     GetMediaRenderDeviceFuzzTest,
     GetRecordCaptureDeviceFuzzTest,
     CaptureClockStartAndStopFuzzTest,

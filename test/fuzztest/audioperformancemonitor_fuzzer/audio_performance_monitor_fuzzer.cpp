@@ -159,7 +159,7 @@ void StartSilenceMonitorFuzzTest()
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, tokenId);
 }
 
-vector<TestFunc> g_testFuncs = {
+vector<TestFuncs> g_testFuncs = {
     RecordSilenceStateFuzzTest,
     DeleteSilenceMonitorFuzzTest,
     ReportWriteSlowFuzzTest,

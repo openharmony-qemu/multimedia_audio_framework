@@ -128,7 +128,7 @@ void ResetEndpointThreadPriorityFuzzTest()
 #endif
 }
 
-vector<TestFunc> g_testFuncs = {
+vector<TestFuncs> g_testFuncs = {
     ResetProcessDataThreadPriorityFuzzTest,
     SetProcessDataThreadPriorityFuzzTest,
     OnAddResSchedServiceFuzzTest,

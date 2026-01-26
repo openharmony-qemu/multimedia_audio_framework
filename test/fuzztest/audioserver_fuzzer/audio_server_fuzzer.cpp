@@ -2059,7 +2059,7 @@ void GetRemoteAudioParameter()
     audioServerPtr->GetRemoteAudioParameter(networkId, key, cond, value);
 }
 
-vector<TestFunc> g_testFuncs = {
+vector<TestFuncs> g_testFuncs = {
     AudioServerDumpTest,
     AudioServerGetUsbParameterTest,
     AudioServerOnAddSystemAbilityTest,

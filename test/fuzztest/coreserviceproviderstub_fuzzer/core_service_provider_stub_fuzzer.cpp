@@ -138,7 +138,7 @@ void GenerateSessionIdFuzzTest()
     coreServiceProviderWrapper.GenerateSessionId(sessionId);
 }
 
-vector<TestFunc> g_testFuncs = {
+vector<TestFuncs> g_testFuncs = {
     CoreServiceProviderWrapperFuzzTest,
     UpdateSessionOperationFuzzTest,
     ReloadCaptureSessionFuzzTest,
