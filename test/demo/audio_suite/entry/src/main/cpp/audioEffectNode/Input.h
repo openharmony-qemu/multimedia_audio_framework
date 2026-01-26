@@ -9,7 +9,7 @@
 #include <map>
 #include "./EffectNode.h"
 #include "napi/native_api.h"
-#include "ohaudio/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
 
 #include <multimedia/player_framework/native_avformat.h>
 #include <multimedia/player_framework/native_avdemuxer.h>

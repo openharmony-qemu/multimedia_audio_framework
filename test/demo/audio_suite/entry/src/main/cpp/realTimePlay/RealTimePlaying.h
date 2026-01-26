@@ -5,8 +5,8 @@
 #ifndef AUDIOEDITTESTAPP_REALTIMEPLAYING_H
 #define AUDIOEDITTESTAPP_REALTIMEPLAYING_H
 
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audiostream_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audiostream_base.h"
 
 extern OH_AudioRenderer *audioRenderer;
 

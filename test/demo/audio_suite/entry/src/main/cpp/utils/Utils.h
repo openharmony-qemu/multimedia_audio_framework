@@ -8,8 +8,8 @@
 #include <string>
 #include "audioSuiteError/AudioSuiteError.h"
 #include "napi/native_api.h"
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audiostream_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audiostream_base.h"
 
 enum {
     ARG_0 = 0,
