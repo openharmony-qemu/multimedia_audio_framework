@@ -47,10 +47,6 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceTy
 {
     vector<shared_ptr<AudioDeviceDescriptor>> allDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
-    shared_ptr<AudioDeviceDescriptor> device =
-        AudioDeviceManager::GetAudioDeviceManager().GetSelectedCaptureDevice(sessionID);
-    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
-        RouterBase::GetPairDevice(device, allDevices, CALL_INPUT_DEVICES));
     device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return RouterBase::GetPairDevice(device, allDevices, CALL_INPUT_DEVICES);
 }
