@@ -236,17 +236,20 @@ int32_t AudioVolumeParser::ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNod
 int32_t AudioVolumeParser::ParseVolumeFixInfo(std::shared_ptr<AudioXmlNode> curNode)
 {
     AUDIO_DEBUG_LOG("AudioVolumeParse::ParseVolumeFixInfo");
-    std::string pValueStr;
-    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("type", pValueStr) == SUCCESS,
+    std::string typeValue;
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("type", typeValue) == SUCCESS,
         ERR_INVALID_PARAM, "invalid type parameter");
-    std::string volumeFix;
-    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("enable", volumeFix) == SUCCESS,
+    std::string enableValue;
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("enable", enableValue) == SUCCESS,
         ERR_INVALID_PARAM, "invalid enable parameter");
-    if (pValueStr == "VOLUME_FIX_ENABLE" && volumeFix == "1") {
+    if (typeValue == "VOLUME_FIX_ENABLE" && enableValue == "1") {
         VolumeUtils::SetVolumeFixEnable(true);
         AUDIO_INFO_LOG("VolumeFix is enable");
         // volumeFixEnable for volume 0 return 1, not mute
         return ERR_NOT_SUPPORTED;
+    }
+    if (typeValue == "VOLUME_APP_NOTSET_ENABLE" && enableValue == "1") {
+        VolumeUtils::SetVolumeLegacyIgnored(true);
     }
     return AUDIO_OK;
 }
