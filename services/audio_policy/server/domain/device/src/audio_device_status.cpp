@@ -491,6 +491,7 @@ int32_t AudioDeviceStatus::UpdateNearlinkDeviceVolume(AudioDeviceDescriptor &upd
     if (!VolumeUtils::IsPCVolumeEnable()) {
         audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_VOICE_ASSISTANT,
             audioVolumeManager_.GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT));
+        audioVolumeManager_.SetStreamMute(STREAM_VOICE_ASSISTANT, false, STREAM_USAGE_UNKNOWN, DEVICE_TYPE_NEARLINK);
     }
     return SUCCESS;
 }
