@@ -28,10 +28,12 @@
 #include "audio_speed.h"
 #include "audio_performance_monitor.h"
 #include "audio_performance_monitor_c.h"
+#include "../fuzz_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
@@ -158,7 +160,7 @@ void StartSilenceMonitorFuzzTest()
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, tokenId);
 }
 
-TestFuncs g_testFuncs[] = {
+vector<TestFunc> g_testFuncs = {
     RecordSilenceStateFuzzTest,
     DeleteSilenceMonitorFuzzTest,
     ReportWriteSlowFuzzTest,

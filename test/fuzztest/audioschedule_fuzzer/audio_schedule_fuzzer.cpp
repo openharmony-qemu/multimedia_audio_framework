@@ -48,10 +48,12 @@
 #include "audio_dump_pcm_private.h"
 #include "audio_zone_service.h"
 #include "audio_schedule.h"
+#include "../fuzz_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
@@ -127,7 +129,7 @@ void ResetEndpointThreadPriorityFuzzTest()
 #endif
 }
 
-TestFuncs g_testFuncs[] = {
+vector<TestFunc> g_testFuncs = {
     ResetProcessDataThreadPriorityFuzzTest,
     SetProcessDataThreadPriorityFuzzTest,
     OnAddResSchedServiceFuzzTest,
@@ -167,6 +169,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
-    OHOS::AudioStandard::FuzzTest(data, size);
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }
