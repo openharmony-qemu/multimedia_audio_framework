@@ -38,6 +38,13 @@ AudioVolumeParser::AudioVolumeParser()
         {"ULTRASONIC", STREAM_ULTRASONIC},
         {"SYSTEM", STREAM_SYSTEM},
         {"APP", STREAM_APP},
+        {"SPEECH", STREAM_SPEECH},
+        {"VOICE_MESSAGE", STREAM_VOICE_MESSAGE},
+        {"VOICE_RING", STREAM_VOICE_RING},
+        {"NOTIFICATION", STREAM_NOTIFICATION},
+        {"GAME", STREAM_GAME},
+        {"MOVIE", STREAM_MOVIE},
+        {"NAVIGATION", STREAM_NAVIGATION},
 #ifdef MULTI_ALARM_LEVEL
         {"ANNOUNCEMENT", STREAM_ANNOUNCEMENT},
         {"EMERGENCY", STREAM_EMERGENCY}
@@ -248,7 +255,40 @@ int32_t AudioVolumeParser::ParseVolumeFixInfo(std::shared_ptr<AudioXmlNode> curN
         // volumeFixEnable for volume 0 return 1, not mute
         return ERR_NOT_SUPPORTED;
     }
+    if (pValueStr == "LOWER_VOLUME_IN_CALL" && volumeFix == "1") {
+        ParseLowerVolumeInfo(curNode);
+    }
     return AUDIO_OK;
+}
+
+void AudioVolumeParser::ParseLowerVolumeInfo(const std::shared_ptr<AudioXmlNode> &curNode)
+{
+    CHECK_AND_RETURN_LOG(curNode != nullptr, "curNode is nullptr");
+    auto child = curNode->GetChildrenNode();
+    while (child && child->IsNodeValid()) {
+        auto volumeInfo = std::make_shared<LowerVolumeInfo>();
+        if (child->CompareName("volume_type") && volumeInfo) {
+            std::string value;
+            child->GetProp("type", value);
+            if (audioStreamMap_.count(value) == 0) {
+                AUDIO_ERR_LOG("invalid type:%{public}s", value.c_str());
+                child->MoveToNext();
+                continue;
+            }
+            volumeInfo->streamType = audioStreamMap_[value];
+            child->GetProp("decibel", value);
+            StringConverterFloat(value, volumeInfo->duckedDb);
+            AUDIO_INFO_LOG("streamType: %{public}d, duckedDb: %{public}f",
+                volumeInfo->streamType, volumeInfo->duckedDb);
+            lowerVolumeInfos_[volumeInfo->streamType] = volumeInfo;
+        }
+        child->MoveToNext();
+    }
+}
+
+LowerVolumeInfoMap AudioVolumeParser::GetLowerVolumeInfoCfg()
+{
+    return lowerVolumeInfos_;
 }
 
 void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> curNode,
