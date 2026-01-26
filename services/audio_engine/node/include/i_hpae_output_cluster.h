@@ -28,8 +28,7 @@ public:
     virtual ~IHpaeOutputCluster() = default;
     virtual int32_t GetConverterNodeCount() = 0;
     virtual int32_t GetPreOutNum() = 0;
-    virtual int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const std::string &busAddress = "") = 0;
+    virtual int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId) = 0;
     virtual int32_t Init(IAudioSinkAttr &attr) = 0;
     virtual int32_t DeInit() = 0;
     virtual int32_t Flush(void) = 0;
@@ -49,7 +48,7 @@ public:
     virtual uint64_t GetLatency(HpaeProcessorType sceneType) { return 0; };
     virtual void UpdateStreamInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> preNode) {};
     virtual void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID) {};
+        uint32_t sessionId, StreamUsage usage, RendererState state) {};
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
 };
 }  // namespace HPAE

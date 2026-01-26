@@ -133,6 +133,12 @@ int32_t HWDecodingStreamManager::ReleaseCapturer(uint32_t streamIndex)
     return SUCCESS;
 }
 
+int32_t HWDecodingStreamManager::GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId)
+{
+    AUDIO_INFO_LOG("get sessionId: %{public}d for paIndex: %{public}d", sessionId, paIndex);
+    return SUCCESS;
+}
+
 uint64_t HWDecodingStreamManager::GetLatency() noexcept
 {
     return 0;

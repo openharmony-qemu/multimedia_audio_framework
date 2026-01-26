@@ -226,6 +226,12 @@ int32_t ProAudioStreamManager::AddUnprocessStream(int32_t appUid)
     return SUCCESS;
 }
 
+int32_t ProAudioStreamManager::GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation for proAudio");
+    return SUCCESS;
+}
+
 uint64_t ProAudioStreamManager::GetLatency() noexcept
 {
     CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, 0, "engine not init!");

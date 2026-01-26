@@ -114,7 +114,8 @@ int32_t HpaeSinkVirtualOutputNode::PeekAudioData(uint8_t *buffer, const size_t &
     DoProcessInner();
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERROR_INVALID_PARAM, "Invalid nullptr buffer provided");
     memset_s(buffer, bufferSize, 0, bufferSize);
-    size_t outputSizeInt = outputAudioBuffer_.DataSize() * GetSizeFromFormat(GetBitWidth()) / sizeof(float);
+    size_t outputSizeInt = outputAudioBuffer_.DataSize() * static_cast<size_t>(GetSizeFromFormat(GetBitWidth())) /
+        sizeof(float);
     if (bufferSize > outputSizeInt) {
         AUDIO_WARNING_LOG("peek buffersize[%{public}zu] > sinnVirtualOutputNode bufferSize[%{public}zu]!",
             bufferSize, outputSizeInt);

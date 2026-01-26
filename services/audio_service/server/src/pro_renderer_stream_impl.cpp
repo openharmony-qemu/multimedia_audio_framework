@@ -498,6 +498,11 @@ void ProRendererStreamImpl::SetStreamIndex(uint32_t index)
     streamIndex_ = index;
 }
 
+void ProRendererStreamImpl::AbortCallback(int32_t abortTimes)
+{
+    abortFlag_ += abortTimes;
+}
+
 uint32_t ProRendererStreamImpl::GetStreamIndex()
 {
     return streamIndex_;
