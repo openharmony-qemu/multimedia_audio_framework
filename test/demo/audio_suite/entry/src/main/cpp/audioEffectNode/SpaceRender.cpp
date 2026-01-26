@@ -141,7 +141,7 @@ void ParseDynamicRenderParams(napi_env env, napi_value* argv, size_t argc, Dynam
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG,
                  "x:%{public}lf, y:%{public}lf, z:%{public}lf, surroundTime:%{public}d surroundDirection:%{public}d",
-                params->x, params->y, params->z, params->surroundTime, params->surroundDirection);
+                 params->x, params->y, params->z, params->surroundTime, params->surroundDirection);
 }
 
 napi_value StartDynamicRenderEffect(napi_env env, napi_callback_info info)
