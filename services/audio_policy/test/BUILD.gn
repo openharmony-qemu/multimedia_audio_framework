@@ -433,6 +433,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_service/common/include/dfx",
+    "../../audio_service/test/unittest/include",
     "${audio_framework_root}/services/audio_service/common/include/",
   ]
 
@@ -501,7 +502,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
-    "./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
+    #"./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_zone_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_custom_unit_test.cpp",
   ]

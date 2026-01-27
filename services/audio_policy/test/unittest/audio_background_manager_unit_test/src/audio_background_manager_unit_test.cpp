@@ -1212,5 +1212,92 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_047, TestSize.Leve
     result = audioBackgroundManagerTest_->IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     EXPECT_TRUE(result);
 }
+
+/**
+ * @tc.name  : Test HandleFreezeStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: AudioBackgroundManager_048
+ * @tc.desc  : Test HandleFreezeStateChange
+ */
+HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_048, TestSize.Level1)
+{
+    AudioBackgroundManager* audioBackgroundManagerTest_ = nullptr;
+    audioBackgroundManagerTest_ = &AudioBackgroundManager::GetInstance();
+    ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
+
+    int32_t pid = 0;
+    AppState appState;
+    appState.isSystem = false;
+    appState.hasBackTask = true;
+    bool isFreeze = true;
+
+    audioBackgroundManagerTest_->appStatesMap_.clear();
+    audioBackgroundManagerTest_->appStatesMap_.insert({pid, appState});
+    audioBackgroundManagerTest_->HandleFreezeStateChange(pid, isFreeze);
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].hasBackTask, true);
+}
+
+/**
+ * @tc.name  : Test HandleFreezeStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: AudioBackgroundManager_049
+ * @tc.desc  : Test HandleFreezeStateChange
+ */
+HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_049, TestSize.Level1)
+{
+    AudioBackgroundManager* audioBackgroundManagerTest_ = nullptr;
+    audioBackgroundManagerTest_ = &AudioBackgroundManager::GetInstance();
+    ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
+
+    int32_t pid = 0;
+    AppState appState;
+    appState.isSystem = false;
+    appState.hasBackTask = false;
+    bool isFreeze = true;
+
+    audioBackgroundManagerTest_->appStatesMap_.clear();
+    audioBackgroundManagerTest_->appStatesMap_.insert({pid, appState});
+    audioBackgroundManagerTest_->HandleFreezeStateChange(pid, isFreeze);
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_[pid].hasBackTask, false);
+}
+
+/**
+ * @tc.name  : Test IsAppInBackState API
+ * @tc.type  : FUNC
+ * @tc.number: AudioBackgroundManager_050
+ * @tc.desc  : Test IsAppInBackState
+ */
+HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_050, TestSize.Level1)
+{
+    AudioBackgroundManager* audioBackgroundManagerTest_ = nullptr;
+    audioBackgroundManagerTest_ = &AudioBackgroundManager::GetInstance();
+    ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
+
+    int32_t pid = 0;
+    audioBackgroundManagerTest_->appStatesMap_.clear();
+    auto ret = audioBackgroundManagerTest_->IsAppInBackState(pid);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test IsAppInBackState API
+ * @tc.type  : FUNC
+ * @tc.number: AudioBackgroundManager_051
+ * @tc.desc  : Test IsAppInBackState
+ */
+HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_051, TestSize.Level1)
+{
+    AudioBackgroundManager* audioBackgroundManagerTest_ = nullptr;
+    audioBackgroundManagerTest_ = &AudioBackgroundManager::GetInstance();
+    ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
+
+    int32_t pid = 0;
+    AppState appState;
+    appState.isBack = false;
+    audioBackgroundManagerTest_->appStatesMap_.clear();
+    audioBackgroundManagerTest_->appStatesMap_.insert({pid, appState});
+    auto ret = audioBackgroundManagerTest_->IsAppInBackState(pid);
+    EXPECT_FALSE(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
