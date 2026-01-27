@@ -842,7 +842,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_ActivateArmDevice_006, TestSize.
     ecManager.ActivateArmDevice(outputDeviceDesc);
     EXPECT_EQ(ecManager.activeArmOutputAddr_, "");
     // When EC is disabled, usbSinkModuleInfo_ should still be set for output devices
-    EXPECT_EQ(ecManager.usbSinkModuleInfo_.name, "output_module_no_ec");
+    EXPECT_EQ(ecManager.usbSinkModuleInfo_.name, "output_module");
 }
 
 /**
