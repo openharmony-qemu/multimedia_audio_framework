@@ -51,6 +51,8 @@ void AudioSuiteSoundFieldAlgoInterfaceImplUnitTest::SetUp(void)
     }
     nc.soName = "libimedia_sws.z.so";
     nc.soPath = "/system/lib64/";
+    nc.frameLen = 480;
+    nc.inChannels = 2;
     std::filesystem::remove(g_outputfile);
 }
 
@@ -112,28 +114,28 @@ HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestSetAndGetParameter_0
     std::string newValue;
 
     // not init return error
-    paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_FRONT));
+    paramValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_FRONT_FACING));
     EXPECT_EQ(soundFieldAlgo.SetParameter(paramType, paramValue), ERROR);
     EXPECT_EQ(soundFieldAlgo.GetParameter(paramType, newValue), ERROR);
 
     ASSERT_EQ(soundFieldAlgo.Init(), 0);
 
-    paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_FRONT));
+    paramValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_FRONT_FACING));
     EXPECT_EQ(soundFieldAlgo.SetParameter(paramType, paramValue), 0);
     EXPECT_EQ(soundFieldAlgo.GetParameter(paramType, newValue), 0);
     EXPECT_EQ(newValue == paramValue, true);
 
-    paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_BROAD));
+    paramValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_WIDE));
     EXPECT_EQ(soundFieldAlgo.SetParameter(paramType, paramValue), 0);
     EXPECT_EQ(soundFieldAlgo.GetParameter(paramType, newValue), 0);
     EXPECT_EQ(newValue == paramValue, true);
 
-    paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_DEFAULT));
+    paramValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_NEAR));
     EXPECT_EQ(soundFieldAlgo.SetParameter(paramType, paramValue), 0);
     EXPECT_EQ(soundFieldAlgo.GetParameter(paramType, newValue), 0);
     EXPECT_EQ(newValue == paramValue, true);
 
-    paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_GRAND));
+    paramValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_GRAND));
     EXPECT_EQ(soundFieldAlgo.SetParameter(paramType, paramValue), 0);
     EXPECT_EQ(soundFieldAlgo.GetParameter(paramType, newValue), 0);
     EXPECT_EQ(newValue == paramValue, true);
@@ -149,7 +151,7 @@ HWTEST_F(AudioSuiteSoundFieldAlgoInterfaceImplUnitTest, TestSoundFieldAlgoApply_
 
     ASSERT_EQ(soundFieldAlgo.Init(), 0);
 
-    std::string paramValue = std::to_string(static_cast<int32_t>(IMEDIA_SWS_SOUROUND_BROAD));
+    std::string paramValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_SOUND_FIELD_WIDE));
     EXPECT_EQ(soundFieldAlgo.SetParameter("SoundFieldType", paramValue), 0);
 
     // Read inputfile

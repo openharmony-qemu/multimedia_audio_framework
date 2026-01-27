@@ -63,33 +63,34 @@ namespace {
     constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
     constexpr uint32_t BYTES_PER_SAMPLE = 4;
     const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
+    static constexpr uint32_t needDataLength = 20;
      
     HWTEST_F(AudioSuiteAissNodeTest, ProcessTest, TestSize.Level0)
     {
-        EXPECT_NE(impl->DoProcess(), SUCCESS);
+        EXPECT_EQ(impl->Init(), SUCCESS);
+
+        EXPECT_NE(impl->DoProcess(needDataLength), SUCCESS);
+
         std::ifstream inputFile(INPUT_PATH, std::ios::binary | std::ios::ate);
         ASSERT_TRUE(inputFile.is_open());
-        AudioSuitePcmBuffer inputBuffer(PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNELS_IN, LAY_OUT, SAMPLE_F32LE));
+
+        AudioSuitePcmBuffer inputBuffer(
+            PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNELS_IN, LAY_OUT, SAMPLE_F32LE), needDataLength);
         const uint32_t byteSizePerFrameIn = DEFAULT_SAMPLING_RATE * FRAME_LEN_MS /
             1000 * DEFAULT_CHANNELS_IN * BYTES_PER_SAMPLE;
+
         inputFile.read(reinterpret_cast<char *>(inputBuffer.GetPcmData()), byteSizePerFrameIn);
         ASSERT_FALSE(inputFile.fail() && !inputFile.eof());
+        
         std::vector<AudioSuitePcmBuffer*> inputs;
         inputs.emplace_back(&inputBuffer);
-        AudioSuitePcmBuffer *outputBuffer = impl->SignalProcess(inputs);
-        EXPECT_NE(outputBuffer, nullptr);
+        std::vector<AudioSuitePcmBuffer *> outPcmbuffer = impl->SignalProcess(inputs);
+
+        EXPECT_NE(outPcmbuffer[0], nullptr);
         inputFile.close();
 
         EXPECT_EQ(impl->DeInit(), SUCCESS);
-    }
-
-    HWTEST_F(AudioSuiteAissNodeTest, DoProcessTest001, TestSize.Level0)
-    {
-        std::shared_ptr<AudioSuiteAissNode> impl = std::make_shared<AudioSuiteAissNode>();
-        int32_t ret = impl->DoProcess();
-        EXPECT_EQ(ret, ERROR);
-
-        EXPECT_EQ(impl->DeInit(), SUCCESS);
+        impl->DeInit();
     }
  
     HWTEST_F(AudioSuiteAissNodeTest, DoProcessTest002, TestSize.Level0)

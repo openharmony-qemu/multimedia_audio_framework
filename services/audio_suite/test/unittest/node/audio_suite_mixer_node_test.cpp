@@ -56,6 +56,7 @@ const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
 
 size_t g_frameCount20Ms = (SAMPLE_RATE_48000 * STEREO * 20) / 1000; // 20ms of data
 size_t g_frameCount20MsTwo = (SAMPLE_RATE_48000 * STEREO * 20) / 1000; // 20ms of data
+static constexpr uint32_t needDataLength = 20;
 
 class AudioSuiteMixerTest : public testing::Test {
 public:
@@ -84,6 +85,8 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
 {
     auto node = std::make_shared<AudioSuiteMixerNode>();
     node->Init();
+    int32_t ret = node->InitCacheLength(needDataLength);
+    EXPECT_EQ(ret, SUCCESS);
 
     std::ifstream file1(g_fileNameOne, std::ios::binary | std::ios::ate);
     std::ifstream file2(g_fileNameTwo, std::ios::binary | std::ios::ate);
@@ -109,8 +112,8 @@ HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
             break;
         }
         std::vector<AudioSuitePcmBuffer *> inputs = {&buffer1, &buffer2};
-
-        outProcessedFile.write(reinterpret_cast<const char *>((node->SignalProcess(inputs))->GetPcmData()),
+        std::vector<AudioSuitePcmBuffer *> outPcmbuffer = node->SignalProcess(inputs);
+        outProcessedFile.write(reinterpret_cast<const char *>(outPcmbuffer[0]->GetPcmData()),
             dataSize);
         inputs.clear();
     }
