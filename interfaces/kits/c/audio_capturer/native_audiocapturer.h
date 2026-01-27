@@ -66,6 +66,18 @@ OH_AudioStream_Result OH_AudioCapturer_Release(OH_AudioCapturer* capturer);
  */
 OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
 
+ /** 
+  * @brief Callback function to get playback capture start result. 
+  * 
+  * @param capturer Pointer to the AudioCapturer instance that triggers the callback. 
+  * @param userData Pointer to the user data passed when setting the callback via 
+  *     {@link #OH_AudioCapturer_RequestPlaybackCaptureStart}. 
+  * @param state The final state to describe whether start request is successful. 
+  * @since 23 
+  */ 
+ typedef void (*OH_AudioCapturer_OnPlaybackCaptureStartCallback)(OH_AudioCapturer* capturer, void* userData, 
+     OH_AudioStream_PlaybackCaptureStartState stateCode);
+
 /*
  * Request to pause the capturer stream.
  *
@@ -345,20 +357,6 @@ typedef void (*OH_AudioCapturer_OnFastStatusChange)(
     void* userData,
     OH_AudioStream_FastStatus status
 );
-
-/**
- * @brief Callback function to get playback capture start result.
- *
- * @param capturer Pointer to the AudioCapturer instance that triggers the callback.
- * @param userData Pointer to the user data passed when setting the callback via
- *     {@link #OH_AudioCapturer_RequestPlaybackCaptureStart}.
- * @param state The final state to describe whether start request is successful.
- * @since 23
- */
-typedef void (*OH_AudioCapturer_OnPlaybackCaptureStartCallback)(
-    OH_AudioCapturer* capturer,
-    void* userData,
-    OH_AudioStream_PlaybackCaptureStartState state);
 
 /**
  * Asynchronously request to start the playback capture stream.
