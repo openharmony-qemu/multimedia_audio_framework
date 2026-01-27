@@ -47,7 +47,7 @@ struct GeneralVoiceParameter {
 };
 
 static std::string g_outputNodeTestDir = "/data/audiosuite/vb/";
-static constexpr uint32_t needDataLength = 20;
+static constexpr uint32_t NEED_DATA_LENGTH = 20;
 
 static GeneralVoiceChangeInfo g_info[] = {
     {"vb_input_48000_2_S16LE.pcm", "out1.pcm", "voice_morph_output_cute_sframe.pcm", GENERAL_VOICE_CHANGE_TYPE_CUTE},
@@ -101,10 +101,8 @@ static bool RunGeneralVoiceChangeTest(
     node->Init();
     std::string value = std::to_string(static_cast<int32_t>(info.generalVoiceType));
     std::string name = "AudioGeneralVoiceChangeType";
-    int32_t ret = node->SetOptions(name, value);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = node->InitCacheLength(needDataLength);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(node->SetOptions(name, value), SUCCESS);
+    EXPECT_EQ(node->InitCacheLength(NEED_DATA_LENGTH), SUCCESS);
 
     std::vector<AudioSuitePcmBuffer *> inputs;
     std::ifstream file(inputFilePath, std::ios::binary | std::ios::ate);
@@ -130,8 +128,7 @@ static bool RunGeneralVoiceChangeTest(
         std::copy(rawBuffer.begin(), rawBuffer.end(), buffer->GetPcmData());
         inputs.clear();
         inputs.push_back(buffer);
-        std::vector<AudioSuitePcmBuffer *> outPcmbuffer;
-        outPcmbuffer = node->SignalProcess(inputs);
+       std::vector<AudioSuitePcmBuffer *> outPcmbuffer = node->SignalProcess(inputs);
 
         EXPECT_TRUE(outPcmbuffer[0] != nullptr);
         uint8_t *data = outPcmbuffer[0]->GetPcmData();
@@ -142,8 +139,7 @@ static bool RunGeneralVoiceChangeTest(
             }
         }
     }
-    ret = node->SetOptions(name, value);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(node->SetOptions(name, value), SUCCESS);
 
     file.close();
     outFile.close();

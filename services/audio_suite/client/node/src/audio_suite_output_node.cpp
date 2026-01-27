@@ -33,6 +33,8 @@ namespace AudioSuite {
 
 static constexpr uint32_t DEFAULT_NODE_OUTPUT_NUM = 1;
 static constexpr uint32_t AUDIO_SEPARATION_NODE_OUTPUT_NUM = 2;
+const uint32_t DOUBLE_FRAME_NEED_LENGTH = 40;
+const uint32_t SINGLE_FRAME_NEED_LENGTH = 20;
 
 AudioOutputNode::AudioOutputNode(AudioFormat format)
     : AudioNode(AudioNodeType::NODE_TYPE_OUTPUT, format),
@@ -52,9 +54,9 @@ void AudioOutputNode::SetAudioNodeFormat(AudioFormat audioFormat)
 {
     AUDIO_INFO_LOG("numChannels:%{public}u, sampleFormat:%{public}u, sampleRate:%{public}d, encodingType:%{public}d",
         audioFormat.audioChannelInfo.numChannels, audioFormat.format, audioFormat.rate, audioFormat.encodingType);
-    needDataLength = 20;//重置需求数据长度
+    needDataLength = SINGLE_FRAME_NEED_LENGTH;
     if (audioFormat.rate == AudioSamplingRate::SAMPLE_RATE_11025) {
-        needDataLength = 40;
+        needDataLength = DOUBLE_FRAME_NEED_LENGTH;
     }
     AudioNode::SetAudioNodeFormat(audioFormat);
 }

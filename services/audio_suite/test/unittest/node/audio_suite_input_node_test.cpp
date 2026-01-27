@@ -30,7 +30,7 @@ class InputNodeRequestDataCallBack;
 namespace {
 
 static constexpr uint32_t TEST_CACHE_SIZE1 = 882;
-static constexpr uint32_t needDataLength = 20;
+static constexpr uint32_t NEED_DATA_LENGTH = 20;
 
 class AudioSuiteInputNodeTest : public testing::Test {
 public:
@@ -253,13 +253,13 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeDoProcess_001, TestSize.Lev
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
 
-    auto ret = inputNode->DoProcess(needDataLength);
+    auto ret = inputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, ERR_WRITE_FAILED);
 
     std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     inputNode->SetRequestDataCallback(testCallback);
-    ret = inputNode->DoProcess(needDataLength);
+    ret = inputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
 }
 

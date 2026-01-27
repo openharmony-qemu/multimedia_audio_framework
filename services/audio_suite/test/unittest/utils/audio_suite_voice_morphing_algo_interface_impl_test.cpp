@@ -29,6 +29,10 @@ using namespace AudioSuite;
 using namespace testing::ext;
 
 namespace {
+const uint32_t FRAME_LENGTH = 960;
+const uint32_t INPUT_CHANNEL_COUNT = 2;
+const uint32_t OUTPUT_CHANNEL_COUNT = 2;
+
 class AudioSuiteVbAlgoInterfaceImplUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void){};
@@ -48,9 +52,9 @@ void AudioSuiteVbAlgoInterfaceImplUnitTest::SetUp(void)
     std::filesystem::remove("/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm");
     nc.soName = "libaudio_voice_morph_bgm.z.so";
     nc.soPath = "/system/lib64/";
-    nc.frameLen = 960;
-    nc.inChannels = 2;
-    nc.outChannels = 2;
+    nc.frameLen = FRAME_LENGTH;
+    nc.inChannels = INPUT_CHANNEL_COUNT;
+    nc.outChannels = OUTPUT_CHANNEL_COUNT;
 }
 
 void AudioSuiteVbAlgoInterfaceImplUnitTest::TearDown(void)

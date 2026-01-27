@@ -170,6 +170,8 @@ static FormatConversionInfo g_inputInfo[] = {
 const uint32_t AUDIO_DATA_SIZE = 1024;
 const uint32_t HEADER_SIZE = 44;
 static uint32_t needDataLength = 20;
+const uint32_t DOUBLE_FRAME_NEED_LENGTH = 40;
+const uint32_t SINGLE_FRAME_NEED_LENGTH = 20;
 class AudioSuiteOutputNodeTest : public testing::Test {
 public:
     void SetUp()
@@ -263,9 +265,9 @@ static bool RunFormatConversionTest(const FormatConversionInfo& info,
     auto ret = outputNode->Connect(inputNode);
     EXPECT_EQ(ret, SUCCESS);
 
-    outputNode->needDataLength = 20;
+    outputNode->needDataLength = SINGLE_FRAME_NEED_LENGTH;
     if (info.outputFormat.rate == SAMPLE_RATE_11025) {
-        outputNode->needDataLength = 40;
+        outputNode->needDataLength = DOUBLE_FRAME_NEED_LENGTH;
     }
 
     inputFile.seekg(HEADER_SIZE, std::ios::beg);
@@ -409,7 +411,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_001, TestSize.Level0)
     std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(format);
     EXPECT_NE(outputNode, nullptr);
 
-    auto ret = outputNode->DoProcess(needDataLength);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -428,7 +430,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_002, TestSize.Level0)
         PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
     inputNode->GetOutputPort()->outputData_.push_back(data.get());
     outputNode->Connect(inputNode);
-    auto ret = outputNode->DoProcess(needDataLength);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -447,7 +449,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_003, TestSize.Level0)
         PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
     inputNode->GetOutputPort()->outputData_.push_back(data.get());
     outputNode->Connect(inputNode);
-    auto ret = outputNode->DoProcess(needDataLength);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -466,7 +468,7 @@ HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_004, TestSize.Level0)
         PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
     inputNode->GetOutputPort()->outputData_.push_back(data.get());
     outputNode->Connect(inputNode);
-    auto ret = outputNode->DoProcess(needDataLength);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
 }
 

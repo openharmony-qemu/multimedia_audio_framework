@@ -99,10 +99,7 @@ HWTEST_F(AudioSuiteSoundFieldNodeUnitTest, TestSetAndGetOptions, TestSize.Level0
     EXPECT_EQ(newValue == value, true);
 
     // Invalid values
-    // EXPECT_EQ(node->GetOptions("unKnownType", newValue), ERROR);
-    // EXPECT_EQ(node->SetOptions("unKnownType", value), ERROR);
     EXPECT_EQ(node->SetOptions(name, "9"), ERROR);
-
     EXPECT_EQ(node->DeInit(), SUCCESS);
 }
 

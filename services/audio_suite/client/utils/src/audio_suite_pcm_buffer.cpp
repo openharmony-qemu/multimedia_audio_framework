@@ -79,7 +79,7 @@ bool AudioSuitePcmBuffer::IsSameFormat(const PcmBufferFormat &otherFormat)
 }
 
 bool AudioSuitePcmBuffer::IsSameLength(const uint32_t nextNodeBytelength)
-{ 
+{
     return dataByteSize_ == nextNodeBytelength;
 }
 
