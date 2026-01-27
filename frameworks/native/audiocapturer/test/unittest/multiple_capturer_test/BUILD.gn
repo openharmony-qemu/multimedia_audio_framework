@@ -22,6 +22,7 @@ ohos_unittest("multiple_audio_capturer_unit_test") {
   include_dirs = [
     "./include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../audioschedule/include",
   ]
 
   cflags = [
@@ -33,6 +34,7 @@ ohos_unittest("multiple_audio_capturer_unit_test") {
 
   deps = [
     "../../../../audiocapturer:audio_capturer",
+    "../../../../audioschedule:audio_schedule",
   ]
 
   external_deps = [
