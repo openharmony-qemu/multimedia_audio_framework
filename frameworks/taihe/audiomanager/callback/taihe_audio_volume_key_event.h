@@ -26,6 +26,7 @@ using namespace taihe;
 using namespace ohos::multimedia::audio;
 
 const std::string VOLUME_KEY_EVENT_CALLBACK_NAME = "volumeChange";
+const std::string VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME = "volumePercentageChange";
 
 class TaiheAudioVolumeKeyEvent : public OHOS::AudioStandard::VolumeKeyEventCallback,
     public std::enable_shared_from_this<TaiheAudioVolumeKeyEvent> {
@@ -49,6 +50,33 @@ private:
     std::mutex mutex_;
     std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> audioVolumeKeyEventJsCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
+};
+
+class TaiheAudioVolumeKeyEventEx : public OHOS::AudioStandard::VolumeKeyEventCallback,
+    public std::enable_shared_from_this<TaiheAudioVolumeKeyEventEx> {
+public:
+    explicit TaiheAudioVolumeKeyEventEx();
+    virtual ~TaiheAudioVolumeKeyEventEx();
+    void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback);
+    void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback);
+    void RemoveAllCallbackReference();
+    int32_t GetVolumeKeyEventCbListSize();
+    void OnVolumeKeyEvent(OHOS::AudioStandard::VolumeEvent volumeEvent) override {}
+    void OnVolumeDegreeEvent(OHOS::AudioStandard::VolumeEvent volumeEvent) override;
+
+private:
+    struct AudioVolumeKeyEventJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::string callbackName = "unknown";
+        OHOS::AudioStandard::VolumeEvent volumeEvent;
+    };
+
+    void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
+    static void SafeJsCallbackVolumeEventWork(AudioVolumeKeyEventJsCallback *event);
+
+    std::list<std::shared_ptr<AutoRef>> audioVolumeKeyEventCbList_;
+    std::mutex mutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

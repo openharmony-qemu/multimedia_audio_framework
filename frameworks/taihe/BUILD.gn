@@ -85,8 +85,10 @@ taihe_shared_library("audio_taihe") {
     "audiomanager/callback/taihe_audio_rounting_available_devicechange_callback.cpp",
     "audiomanager/callback/taihe_audio_routing_manager_callbacks.cpp",
     "audiomanager/callback/taihe_audio_scene_callbacks.cpp",
+    "audiomanager/callback/taihe_audio_session_available_devicechange_callback.cpp",
     "audiomanager/callback/taihe_audio_session_callback.cpp",
     "audiomanager/callback/taihe_audio_session_device_callback.cpp",
+    "audiomanager/callback/taihe_audio_session_input_device_callback.cpp",
     "audiomanager/callback/taihe_audio_session_state_callback.cpp",
     "audiomanager/callback/taihe_audio_spatialization_manager_callback.cpp",
     "audiomanager/callback/taihe_audio_stream_volume_change_callback.cpp",
@@ -111,6 +113,7 @@ taihe_shared_library("audio_taihe") {
     "audiorenderer/taihe_audio_renderer.cpp",
     "common/taihe_audio_enum.cpp",
     "common/taihe_audio_error.cpp",
+    "common/taihe_dfx_utils.cpp",
     "common/taihe_param_utils.cpp",
     "src/ani_constructor.cpp",
   ]
@@ -136,6 +139,8 @@ taihe_shared_library("audio_taihe") {
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
     "napi:ace_napi",
   ]
 

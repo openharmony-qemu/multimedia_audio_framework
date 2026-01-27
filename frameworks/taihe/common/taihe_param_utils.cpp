@@ -185,7 +185,6 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
     status = GetCapturerInfo(opts->capturerInfo, options.capturerInfo);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseCapturerInfo failed");
 
-    CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParsePlaybackCaptureConfig failed");
     AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
     return AUDIO_OK;
 }
@@ -589,6 +588,10 @@ VolumeEvent TaiheParamUtils::SetValueVolumeEvent(const OHOS::AudioStandard::Volu
         .updateUi = volumeEvent.updateUi,
         .volumeGroupId = volumeEvent.volumeGroupId,
         .networkId = ::taihe::string(volumeEvent.networkId),
+        .volumeMode = taihe::optional<AudioVolumeMode>(std::in_place_t{},
+            TaiheAudioEnum::GetJsAudioVolumeMode(volumeEvent.volumeMode)),
+        .percentage = taihe::optional<int32_t>(std::in_place_t{}, volumeEvent.volumeDegree),
+        
     };
     return taiheVolumeEvent;
 }
@@ -685,6 +688,7 @@ AudioDeviceDescriptor TaiheParamUtils::SetDeviceDescriptor(
         .encodingTypes = optional<taihe::array<AudioEncodingType>>(std::in_place_t{}, encodingArray),
         .spatializationSupported = optional<bool>(std::in_place_t{}, deviceInfo.spatializationSupported_),
         .dmDeviceType = optional<int32_t>(std::in_place_t{}, static_cast<int32_t>(deviceInfo.dmDeviceType_)),
+        .highQualityRecordingSupported = optional<bool>(std::in_place_t{}, deviceInfo.highQualityRecordingSupported_),
         .model = optional<taihe::string>(std::in_place_t{}, deviceInfo.model_),
         .capabilities = optional<taihe::array<AudioStreamInfo>>(std::in_place_t{}, audioStreamInfosArray),
     };
@@ -748,7 +752,9 @@ void TaiheParamUtils::ConvertDeviceInfoToAudioDeviceDescriptor(
     audioDeviceDescriptor->volumeGroupId_ = deviceInfo.volumeGroupId_;
     audioDeviceDescriptor->networkId_ = deviceInfo.networkId_;
     audioDeviceDescriptor->displayName_ = deviceInfo.displayName_;
+    audioDeviceDescriptor->model_ = deviceInfo.model_;
     audioDeviceDescriptor->audioStreamInfo_ = deviceInfo.audioStreamInfo_;
+    audioDeviceDescriptor->capabilities_ = deviceInfo.capabilities_;
 }
 
 taihe::array<AudioDeviceDescriptor> TaiheParamUtils::SetValueDeviceInfo(
@@ -837,5 +843,40 @@ bool TaiheParamUtils::IsSameRef(std::shared_ptr<uintptr_t> src, std::shared_ptr<
     CHECK_AND_RETURN_RET_LOG(srcPtr != nullptr, false, "srcPtr is null");
     CHECK_AND_RETURN_RET_LOG(dstPtr != nullptr, false, "dstPtr is null");
     return *srcPtr == *dstPtr;
+}
+
+AudioDeviceDescriptor TaiheParamUtils::MakeEmptyDeviceDescriptor()
+{
+    AudioDeviceDescriptor emptyDescriptor {
+        .deviceRole = DeviceRole::key_t::INPUT_DEVICE,
+        .deviceType = DeviceType::key_t::INVALID,
+        .id = 0,
+        .name = "",
+        .address = "",
+        .sampleRates = taihe::array<int32_t>(0),
+        .channelCounts = taihe::array<int32_t>(0),
+        .channelMasks = taihe::array<int32_t>(0),
+        .networkId = "",
+        .interruptGroupId = 0,
+        .volumeGroupId = 0,
+        .displayName = "",
+        .encodingTypes = optional<taihe::array<AudioEncodingType>>(std::nullopt),
+        .spatializationSupported = optional<bool>(std::nullopt),
+        .dmDeviceType = optional<int32_t>(std::nullopt),
+        .highQualityRecordingSupported = optional<bool>(std::nullopt),
+        .model = optional<taihe::string>(std::nullopt),
+        .capabilities = optional<taihe::array<AudioStreamInfo>>(std::nullopt),
+    };
+    return emptyDescriptor;
+}
+
+CurrentInputDeviceChangedEvent TaiheParamUtils::SetValueCurrentInputDeviceChangedEvent(
+    const OHOS::AudioStandard::CurrentInputDeviceChangedEvent &event)
+{
+    CurrentInputDeviceChangedEvent currentInputDeviceChangedEvent {
+        .devices = TaiheParamUtils::SetDeviceDescriptors(event.devices),
+        .changeReason = TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(event.changeReason),
+    };
+    return currentInputDeviceChangedEvent;
 }
 } // namespace ANI::Audio
