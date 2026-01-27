@@ -4833,5 +4833,44 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAllZones_001, T
     auto audioScene = interruptService->GetHighestPriorityAudioSceneFromAllZones();
     EXPECT_NE(audioScene, AUDIO_SCENE_DEFAULT);
 }
+
+/**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: UpdateMapFocusStrategy
+ * @tc.desc  : Test UpdateMapFocusStrategy
+ */
+HWTEST_F(AudioInterruptUnitTest, UpdateMapFocusStrategy, TestSize.Level1)
+{
+    auto audioInterruptSeervice = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptSeervice, nullptr);
+
+    SourceType incomingSourceType;
+    std::string bundleName = "";
+    AudioFocusEntry focusEntry;
+
+    incomingSourceType= SOURCE_TYPE_MIC;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptSeervice->UpdateMapFocusStrategy(bundleName, focusEntry, false, incomingSourceType);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    bundleName = "";
+    incomingSourceType= SOURCE_TYPE_INVALID;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptSeervice->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    bundleName = "";
+    incomingSourceType= SOURCE_TYPE_MIC;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptSeervice->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+
+    bundleName = "appname";
+    incomingSourceType= SOURCE_TYPE_MIC;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptSeervice->UpdateMapFocusStrategy(bundleName, focusEntry, true, incomingSourceType);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_PAUSE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -233,6 +233,8 @@ private:
         const std::vector<SourceType> &incomingConcurrentSources);
     void UpdateFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
+    void UpdateMapFocusStrategy(const std::string &bundleName,
+        AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
     bool IsMediaStream(AudioStreamType audioStreamType);
     std::string GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt);
     std::string GetCurrentBundleName(uint32_t uid);
