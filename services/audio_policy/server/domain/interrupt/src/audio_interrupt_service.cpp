@@ -320,16 +320,16 @@ void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
         return;
     }
 
-    int32_t zoneId = zoneManager_.FindZoneByPid(callerPid);
-    auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_CALL_FUNC_RETURN(itZone != zonesMap_.end(),
-        HILOG_COMM_ERROR("[AddActiveInterruptToSession]can not find zoneid"));
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+    std::vector<int32_t> zoneIds = zoneManager_.FindAudioZonesByPid(callerPid);
+    for (const auto zoneId : zoneIds) {
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_CALL_FUNC_RETURN(itZone != zonesMap_.end(),
+            HILOG_COMM_ERROR("[AddActiveInterruptToSession]can not find zoneid"));
+        CHECK_AND_CONTINUE(itZone != zonesMap_.end() && itZone->second != nullptr);
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
         audioFocusInfoList = itZone->second->audioFocusInfoList;
-    }
-    for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
-        if ((iterActive->first).pid == callerPid) {
+        for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
+            CHECK_AND_CONTINUE((iterActive->first).pid == callerPid);
             sessionService_.AddStreamInfo(iterActive->first);
         }
     }
@@ -495,17 +495,16 @@ void AudioInterruptService::RemovePlaceholderInterruptForSession(const int32_t c
         return;
     }
 
-    int32_t zoneId = zoneManager_.FindZoneByPid(callerPid);
-    auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_CALL_FUNC_RETURN(itZone != zonesMap_.end(),
-        HILOG_COMM_ERROR("[RemovePlaceholderInterruptForSession]can not find zoneid"));
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+    std::vector<int32_t> zoneIds = zoneManager_.FindAudioZonesByPid(callerPid);
+    for (const auto zoneId : zoneIds) {
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_CALL_FUNC_RETURN(itZone != zonesMap_.end(),
+            HILOG_COMM_ERROR("[RemovePlaceholderInterruptForSession]can not find zoneid"));
+        CHECK_AND_CONTINUE(itZone != zonesMap_.end() && itZone->second != nullptr);
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
         audioFocusInfoList = itZone->second->audioFocusInfoList;
-    }
-
-    for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
-        if (iter->first.pid == callerPid && iter->second == PLACEHOLDER) {
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+            CHECK_AND_CONTINUE(iter->first.pid == callerPid && iter->second == PLACEHOLDER);
             AudioInterrupt placeholder = iter->first;
             AUDIO_INFO_LOG("Remove stream id %{public}u (placeholder for pid%{public}d)",
                 placeholder.streamId, callerPid);
