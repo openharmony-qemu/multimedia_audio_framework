@@ -88,7 +88,7 @@ public:
     MockInputNode() : AudioNode(NODE_TYPE_EQUALIZER)
     {}
     ~MockInputNode() {}
-   MOCK_METHOD(int32_t, DoProcess, (uint32_t needDataLength), (override));
+    MOCK_METHOD(int32_t, DoProcess, (uint32_t needDataLength), (override));
     MOCK_METHOD(OutputPort<AudioSuitePcmBuffer*>*, GetOutputPort, ());
     MOCK_METHOD(int32_t, Flush, (), ());
     MOCK_METHOD(int32_t, Connect, (const std::shared_ptr<AudioNode> &preNode, AudioNodePortType type), ());

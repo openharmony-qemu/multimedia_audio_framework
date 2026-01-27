@@ -201,7 +201,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
     node_->Connect(mockInputNode_);
 
-     ret = node_->DoProcess(NEED_DATA_LENGTH);
+    ret = node_->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
     node_->DisConnect(mockInputNode_);
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());

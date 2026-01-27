@@ -128,7 +128,7 @@ static bool RunGeneralVoiceChangeTest(
         std::copy(rawBuffer.begin(), rawBuffer.end(), buffer->GetPcmData());
         inputs.clear();
         inputs.push_back(buffer);
-       std::vector<AudioSuitePcmBuffer *> outPcmbuffer = node->SignalProcess(inputs);
+        std::vector<AudioSuitePcmBuffer *> outPcmbuffer = node->SignalProcess(inputs);
 
         EXPECT_TRUE(outPcmbuffer[0] != nullptr);
         uint8_t *data = outPcmbuffer[0]->GetPcmData();
