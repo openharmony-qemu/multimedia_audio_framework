@@ -33,6 +33,9 @@ ohos_unittest("audio_capturer_unit_test") {
     "-fno-access-control",
   ]
 
+  cflags_cc = cflags 
+  cflags_cc += [ "-fno-access-control" ]
+
   external_deps = [
     "ipc:ipc_core",
     "c_utils:utils",
@@ -62,6 +65,7 @@ ohos_unittest("inner_capturer_unit_test") {
     "./include",
     "../../../include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../audioschedule/include",
   ]
 
   cflags = [
