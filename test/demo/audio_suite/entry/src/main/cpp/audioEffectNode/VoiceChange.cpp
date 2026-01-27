@@ -98,7 +98,7 @@ napi_status getvoiceChangeModeParameters(napi_env env, napi_value *argv, int &vo
         LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG,
         "audioEditTest SetEquailizerMode equailizerMode: %{public}d, equailizerId: %{public}s, inputId: %{public}s",
         voiceChangeMode, VoiceChangeId.c_str(), inputId.c_str());
-    delete [] argv;    
+    delete [] argv;
     return status;
 }
 
