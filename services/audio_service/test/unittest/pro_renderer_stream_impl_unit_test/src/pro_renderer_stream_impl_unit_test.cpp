@@ -1588,7 +1588,7 @@ HWTEST(ProRendererStreamImplUnitTest, InitBasicInfo_002, TestSize.Level0)
     uint32_t audiovividSamples = 1024;
     uint32_t expectedMinBufSize = audiovividSamples * 8 * 2 + metadataSize; // 8 for channel 2 bit format
     EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, audiovividSamples);
-    EXPECT_EQ(rendererStreamImpl->minBufferSize_, expectedMinBufSize); 
+    EXPECT_EQ(rendererStreamImpl->minBufferSize_, expectedMinBufSize);
 }
 
 /**
