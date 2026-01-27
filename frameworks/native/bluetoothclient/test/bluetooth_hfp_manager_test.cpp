@@ -51,6 +51,7 @@ public:
     void OnPrivacyDeviceSelected(AudioStandard::DeviceType devType, const std::string &macAddress) override {};
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {};
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) override {};
+    void OnConnectFailed(AudioDeviceDescriptor &desc) override {};
 };
 
 class BluetoothHfpManagerTest : public testing::Test {

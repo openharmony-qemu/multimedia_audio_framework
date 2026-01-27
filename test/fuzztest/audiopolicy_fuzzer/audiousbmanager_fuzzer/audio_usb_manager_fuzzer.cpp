@@ -45,6 +45,7 @@ public:
     void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress) override {};
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {};
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) override {};
+    void OnConnectFailed(AudioDeviceDescriptor &desc) override {}
 
     FuzzTestDeviceStatusObserver() = default;
     virtual ~FuzzTestDeviceStatusObserver() = default;

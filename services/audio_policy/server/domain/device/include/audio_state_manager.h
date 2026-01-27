@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <shared_mutex>
 #include "audio_device_descriptor.h"
+#include "audio_usr_select_manager.h"
 #include "istandard_audio_policy_manager_listener.h"
 
 namespace OHOS {
@@ -89,6 +90,8 @@ public:
 
     // Get tone render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredToneRenderDevice();
+
+    bool IsPreferredDevice(AudioDeviceDescriptor &desc);
 
     void SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc);
     shared_ptr<AudioDeviceDescriptor> GetPreferredRecognitionCaptureDevice();

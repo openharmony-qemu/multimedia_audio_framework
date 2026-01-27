@@ -1368,6 +1368,14 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2 param");
 }
 
+void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    CHECK_AND_RETURN(AudioStateManager::GetAudioStateManager().IsPreferredDevice(desc));
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::SELECTED_DEVICE_CONNECT_FAILED};
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnConnectFailed", reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnConnectFailed", reason);
+}
+
 void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bool isConnected,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
     AudioStreamDeviceChangeReasonExt &reason)
