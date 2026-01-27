@@ -120,8 +120,8 @@ public:
         BufferDesc bufferDesc;
         return bufferDesc;
     }
+    int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
 };
-int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
 class ConcreteIStreamListener : public IStreamListener {
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
 };
