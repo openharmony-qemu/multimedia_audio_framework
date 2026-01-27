@@ -45,7 +45,6 @@ public:
     int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
     CapturerState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
-    bool GetFirstPkgTimeStampInfo(int64_t &firstTs) const override;
     bool Pause() const override;
     bool Stop() const override;
     bool Flush() const override;
@@ -96,11 +95,11 @@ public:
     std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const override;
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
-    int32_t SetInputDevice(DeviceType deviceType) const override;
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
     FastStatus GetFastStatus() override;
 
     uint32_t GetOverflowCount() const override;
+    int32_t SetInputDevice(DeviceType deviceType) const override;
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
     int32_t SetInterruptStrategy(InterruptStrategy strategy) override;
@@ -108,7 +107,8 @@ public:
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
-    void HandleSetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
+    void SetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
+
     int32_t StartPlaybackCapture() override;
 
     std::shared_ptr<IAudioStream> audioStream_;
@@ -121,7 +121,24 @@ public:
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
     bool isChannelChange_ = false;
-    AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params);
+    static AudioStreamParams ConvertToAudioStreamParams(const AudioCapturerParams params)
+    {
+        AudioStreamParams audioStreamParams;
+
+        audioStreamParams.format = params.audioSampleFormat;
+        audioStreamParams.samplingRate = params.samplingRate;
+        audioStreamParams.channels = params.audioChannel;
+        audioStreamParams.encoding = params.audioEncoding;
+        audioStreamParams.channelLayout = params.channelLayout;
+
+        audioStreamParams.ecFormat = params.audioEcSampleFormat;
+        audioStreamParams.ecSamplingRate = params.ecSamplingRate;
+        audioStreamParams.ecChannels = params.audioEcChannel;
+        audioStreamParams.ecEncoding = params.audioEcEncoding;
+        audioStreamParams.ecChannelLayout = params.ecChannelLayout;
+
+        return audioStreamParams;
+    }
 
 private:
     int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);
@@ -147,7 +164,6 @@ private:
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
-    void WriteOverflowEvent() const;
     int32_t GetCurrentInputDevicesInner(AudioDeviceDescriptor &deviceInfo) const;
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
     uint32_t GetOverflowCountInner() const;
@@ -157,14 +173,15 @@ private:
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
-    bool IsRestoreOrStopNeeded();
     void SetInSwitchingFlag(bool inSwitchingFlag);
+    bool IsRestoreOrStopNeeded();
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
         CapturerState previousState);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
     mutable std::shared_mutex switchStreamMutex_;
+    void WriteOverflowEvent() const;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioCapturerErrorCallback> audioCapturerErrorCallback_ = nullptr;
@@ -193,10 +210,9 @@ private:
     std::mutex policyServiceDiedCallbackMutex_;
     std::mutex audioInterruptMutex_;
     int32_t callbackLoopTid_ = -1;
+    std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
     std::shared_ptr<AudioCapturerFastStatusChangeCallback> fastStatusChangeCallback_ = nullptr;
     std::mutex fastStatusChangeCallbackMutex_;
-    std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
-
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     std::condition_variable taskLoopCv_;
     std::mutex inSwitchingMtx_;
