@@ -41,9 +41,9 @@ void CapturerInServerUnitTest::TearDownTestCase() {}
 void CapturerInServerUnitTest::SetUp() {}
 void CapturerInServerUnitTest::TearDown() {}
 
-class ConcreteIStreamListener : public IStreamListener {	 
-    int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }	 
-};	 
+class ConcreteIStreamListener : public IStreamListener {
+    int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
+};
  
 const int32_t CAPTURER_FLAG = 10;
 static AudioProcessConfig GetInnerCapConfig()
