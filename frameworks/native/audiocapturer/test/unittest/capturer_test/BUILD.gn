@@ -14,7 +14,7 @@
 import("//build/test.gni")
 import("../../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/part2/audio_capturer"
+module_output_path = "audio_framework/audio_framework_route/audio_capturer"
 
 ohos_unittest("audio_capturer_unit_test") {
   module_out_path = module_output_path
