@@ -882,6 +882,11 @@ private:
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
     int32_t GetSystemVolumeDegreeInternal(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isUpdatedAudioStrategy);
+    int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
+        const AudioSessionStrategy &strategy, const bool isStandalone);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
@@ -966,6 +971,7 @@ private:
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;
     std::condition_variable distributeDeviceCond_;
+    std::mutex focusUpdateMutex_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
