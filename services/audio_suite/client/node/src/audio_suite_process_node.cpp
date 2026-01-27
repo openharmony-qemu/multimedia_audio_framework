@@ -86,8 +86,8 @@ int32_t AudioSuiteProcessNode::InitCacheLength(uint32_t needDataLength)
         CHECK_AND_RETURN_RET_LOG(
             outputPcmBuffer[idx].GetPcmData() != nullptr, ERROR, "The target buffer pointer is null.");
 
-        uint32_t needByteLength = outputPcmBuffer[idx].GetDataSize() 
-                               >= frameOutBytes ? outputPcmBuffer[idx].GetDataSize() : frameOutBytes;
+        uint32_t needByteLength =
+            outputPcmBuffer[idx].GetDataSize() >= frameOutBytes ? outputPcmBuffer[idx].GetDataSize() : frameOutBytes;
         ret = cachedBuffer[idx].ResizeBuffer(needByteLength * doubleLength);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Circular buffer allocation failed.");
 
@@ -166,10 +166,10 @@ int32_t AudioSuiteProcessNode::ProcessedDataToNextNode()
         for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
             outputPcmBuffer[idx].Reset();
             CHECK_AND_RETURN_RET_LOG(algoRetPcmBuffer[idx] != nullptr && 
-                                    algoRetPcmBuffer[idx]->GetPcmData() != nullptr,
-                                    ERR_OPERATION_FAILED,
-                                    "node %{public}d do SignalProcess failed, return a nullptr.",
-                                    GetNodeType());
+                                     algoRetPcmBuffer[idx]->GetPcmData() != nullptr,
+                                     ERR_OPERATION_FAILED,
+                                     "node %{public}d do SignalProcess failed, return a nullptr.",
+                                     GetNodeType());
             CHECK_AND_RETURN_RET_LOG(algoRetPcmBuffer[idx]->GetDataSize() <= outputPcmBuffer[idx].GetDataSize(),
                 ERROR,
                 "Insufficient target buffer size.");
