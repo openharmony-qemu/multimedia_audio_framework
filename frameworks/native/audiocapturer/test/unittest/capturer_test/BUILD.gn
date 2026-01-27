@@ -24,6 +24,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../audiostream/include",
     "../../../../../../services/audio_policy/server/include",
+    "../../../../audioschedule/include",
   ]
 
   cflags = [
@@ -33,7 +34,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "-fno-access-control",
   ]
 
-  cflags_cc = cflags 
+  cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
   external_deps = [
@@ -65,7 +66,6 @@ ohos_unittest("inner_capturer_unit_test") {
     "./include",
     "../../../include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../../audioschedule/include",
   ]
 
   cflags = [
