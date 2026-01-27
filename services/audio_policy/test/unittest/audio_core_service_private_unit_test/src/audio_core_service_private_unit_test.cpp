@@ -4258,7 +4258,7 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_003, TestSize.Level1)
 /**
  * @tc.name   : AudioCoreServicePrivateTest_UpdateOutputRoute_002
  * @tc.number : UpdateOutputRoute_002
- * @tc.desc   : Test UpdateOutputRoute() with IsOnPrimarySink condition false.
+ * @tc.desc   : Test UpdateOutputRoute() with IsOnPrimaryAdapter condition false.
  */
 HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_002, TestSize.Level1)
 {
@@ -4280,7 +4280,7 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_002, TestSize.Level1)
 /**
  * @tc.name   : AudioCoreServicePrivateTest_UpdateOutputRoute_003
  * @tc.number : UpdateOutputRoute_003
- * @tc.desc   : Test UpdateOutputRoute() with IsOnPrimarySink condition true.
+ * @tc.desc   : Test UpdateOutputRoute() with IsOnPrimaryAdapter condition true.
  */
 HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_003, TestSize.Level1)
 {
