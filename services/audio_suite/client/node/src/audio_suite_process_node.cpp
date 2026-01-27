@@ -64,31 +64,30 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteProcessNode::SignalProcess(
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), retError, "Invalid input format");
 
     algorithmInput_[0] = inputs[0]->GetPcmData();
-    // frameOutBytes = CalculationNeedBytes(pcmDurationMs_);//需要本节点输出的字节数，用于将其放进ringbuffer中
     int32_t ret =
-        algoInterface_->Apply(algorithmInput_, algorithmOutput_);  // temin_和tempout_需要存储pcmfbuffer的指针
+        algoInterface_->Apply(algorithmInput_, algorithmOutput_);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, retError, "Node SignalProcess Apply failed");
 
-    return retPcmBuffer;  // 改成数组
+    return retPcmBuffer;
 }
 
 int32_t AudioSuiteProcessNode::InitCacheLength(uint32_t needDataLength)
 {
-    frameOutBytes = CalculationNeedBytes(pcmDurationMs_);  // 需要本节点输出的字节数，用于将其放进ringbuffer中
+    frameOutBytes = CalculationNeedBytes(pcmDurationMs_);
     algoOutPcmBuffer_.resize(resultNumber);
     outputPcmBuffer.resize(resultNumber);
     cachedBuffer.resize(resultNumber);
 
     for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
         int32_t ret = outputPcmBuffer[idx].ResizePcmBuffer(
-            GetAudioNodeInPcmFormat(), needDataLength);  // 定义存储结果的缓存，缓存大小应和
+            GetAudioNodeInPcmFormat(), needDataLength);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Target buffer allocation failed.");
         CHECK_AND_RETURN_RET_LOG(
             outputPcmBuffer[idx].GetPcmData() != nullptr, ERROR, "The target buffer pointer is null.");
 
         uint32_t needByteLength = 
             outputPcmBuffer[idx].GetDataSize() >= frameOutBytes ? outputPcmBuffer[idx].GetDataSize() : frameOutBytes;
-        ret = cachedBuffer[idx].ResizeBuffer(needByteLength * 2);  // 字节,取两个的最大值，本节点长度和下一节点需要长度的两倍
+        ret = cachedBuffer[idx].ResizeBuffer(needByteLength * 2);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Circular buffer allocation failed.");
 
         ret = algoOutPcmBuffer_[idx].ResizePcmBuffer(GetAudioNodeInPcmFormat(), pcmDurationMs_);
@@ -193,7 +192,7 @@ int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
     CHECK_AND_RETURN_RET_LOG(needDataLength <= maxRequestLength, ERROR, "Request data length error.");
     if (GetAudioNodeDataFinishedFlag() && cachedBuffer[0].GetSize() == 0) {
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
-        return SUCCESS;//返回值ERROR
+        return SUCCESS;
     }
 
     if (!secondCall) {
@@ -204,7 +203,7 @@ int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
 
     if ((GetNodeBypassStatus() == true)) {
         pcmDurationMs_ = needDataLength;
-         preOutputs = ReadProcessNodePreOutputData();//如果某个节点是10毫秒会如何？给后面20毫秒吗？
+         preOutputs = ReadProcessNodePreOutputData();
          if (!preOutputs.empty()) {
              AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
              for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
@@ -294,14 +293,14 @@ int32_t AudioSuiteProcessNode::Flush()
     secondCall = false;
     needCache = false;
     pcmDurationMs_ = 20;
-    frameOutBytes = 0; //本节点20ms输出的字节数
+    frameOutBytes = 0;
     resultNumber = 1;
     cachedBuffer.resize(0);
     outputPcmBuffer.resize(0);
     algoRetPcmBuffer.resize(0);
     retPcmBuffer.resize(0);
     preOutputs.resize(0);
-    nextNeedDataLength = 0;//下一节点需要的数据长度
+    nextNeedDataLength = 0;
     algorithmInput_.resize(1);
     algorithmOutput_.resize(0);
     algoInterface_ = nullptr ;

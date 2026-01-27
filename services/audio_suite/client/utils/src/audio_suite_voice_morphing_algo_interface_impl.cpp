@@ -104,6 +104,9 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Init()
     handle_.resize(memSize.stateSize);
     scratchBuf_.resize(memSize.scratchSize);
 
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.frameLen < maxSamplePoint && nodeParameter_.inChannels <= maxChannelCount,
+        ERROR,
+        "The algorithm returned more than the maximum number of sample points.");
     inBuf_.resize(nodeParameter_.frameLen * nodeParameter_.inChannels * sizeof(uint32_t));
     outBuf_.resize(nodeParameter_.frameLen * nodeParameter_.outChannels * sizeof(uint32_t));
 

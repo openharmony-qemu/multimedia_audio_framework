@@ -45,7 +45,7 @@ int32_t AudioSuiteEqNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEqNode::Init failed, already inited");
         return ERROR;
     }
-    nodeName = setBandGains;
+    
     if (!isOutputPortInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;

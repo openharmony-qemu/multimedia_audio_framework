@@ -101,19 +101,20 @@ int32_t AudioSuiteMixerNode::DeInit()
 
 std::vector<AudioSuitePcmBuffer *> AudioSuiteMixerNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
-    CHECK_AND_RETURN_RET_LOG(limiter_ != nullptr, retPcmBuffer, "limiter_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), retPcmBuffer, "AudioSuitePcmBuffer inputs is nullptr");
+    std::vector<AudioSuitePcmBuffer *> retError{ nullptr };
+    CHECK_AND_RETURN_RET_LOG(limiter_ != nullptr, retError, "limiter_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), retError, "AudioSuitePcmBuffer inputs is nullptr");
  
     tmpOutput_.Reset();
     float *outData = reinterpret_cast<float *>(tmpOutput_.GetPcmData());
     float *inData = nullptr;
     for (auto input : inputs) {
-        CHECK_AND_RETURN_RET_LOG(input != nullptr, retPcmBuffer, "Input pcm buffer is nullptr");
-        CHECK_AND_RETURN_RET_LOG(input->IsSameFormat(tmpOutput_), retPcmBuffer, "Invalid inputPcmBuffer format");
+        CHECK_AND_RETURN_RET_LOG(input != nullptr, retError, "Input pcm buffer is nullptr");
+        CHECK_AND_RETURN_RET_LOG(input->IsSameFormat(tmpOutput_), retError, "Invalid inputPcmBuffer format");
         CHECK_AND_RETURN_RET_LOG(input->GetSampleCount() == tmpOutput_.GetSampleCount(),
-            retPcmBuffer, "Invalid inputPcmBuffer data");
+            retError, "Invalid inputPcmBuffer data");
         inData = reinterpret_cast<float *>(input->GetPcmData());
-        CHECK_AND_RETURN_RET_LOG(inData != nullptr, retPcmBuffer, "Input data is nullptr");
+        CHECK_AND_RETURN_RET_LOG(inData != nullptr, retError, "Input data is nullptr");
         for (size_t idx = 0; idx < tmpOutput_.GetSampleCount(); ++idx) {
             outData[idx] += inData[idx];
         }

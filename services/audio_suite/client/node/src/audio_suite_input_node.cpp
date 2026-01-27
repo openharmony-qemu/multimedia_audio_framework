@@ -32,7 +32,7 @@ static constexpr uint32_t REQUEST_DATA_TRY_COUNTS = 3;
 static constexpr uint32_t CACHE_FRAME_DEFAULT_LEN = 3;
 static constexpr uint32_t CACHE_FRAME_SAMPLE_RATE_11025_LEN = 2;
 
-AudioInputNode::AudioInputNode(AudioFormat format) : AudioNode(AudioNodeType::NODE_TYPE_INPUT, format)
+AudioInputNode::AudioInputNode(AudioFormat format) : AudioNode(AudioNodeType::NODE_TYPE_INPUT, format), inPcmFormat()
 {
     AUDIO_INFO_LOG("numChannels:%{public}u, channelLayout:%{public}" PRIu64 "sampleFormat:%{public}u,"
         "sampleRate:%{public}d, encodingType:%{public}d", format.audioChannelInfo.numChannels,
@@ -72,7 +72,7 @@ int32_t AudioInputNode::DeInit()
 int32_t AudioInputNode::Flush()
 {
     AUDIO_INFO_LOG("AudioInputNode::Flush");
-    initFlag = false;
+    initFlag_ = false;
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
     convert_.Reset();
@@ -99,7 +99,7 @@ OutputPort<AudioSuitePcmBuffer*>* AudioInputNode::GetOutputPort()
 
 int32_t AudioInputNode::DoProcess(uint32_t needDataLength)
 {
-    if (!initFlag) {
+    if (!initFlag_) {
         outPcmData_.ResizePcmBuffer(inPcmFormat, needDataLength);
         singleRequestSize_ =
             singleRequestSize_ >= outPcmData_.GetDataSize() ? singleRequestSize_ : outPcmData_.GetDataSize();
@@ -107,7 +107,7 @@ int32_t AudioInputNode::DoProcess(uint32_t needDataLength)
                               ? CACHE_FRAME_SAMPLE_RATE_11025_LEN
                               : CACHE_FRAME_DEFAULT_LEN;
         cachedBuffer_.ResizeBuffer(singleRequestSize_ * frames);
-        initFlag = true;
+        initFlag_ = true;
     }
     CHECK_AND_RETURN_RET(GetDataFromUser() == SUCCESS, ERR_WRITE_FAILED, "Get data from user fail");
     CHECK_AND_RETURN_RET(GeneratePushBuffer() == SUCCESS, ERR_WRITE_FAILED, "Get data from buffer fail");

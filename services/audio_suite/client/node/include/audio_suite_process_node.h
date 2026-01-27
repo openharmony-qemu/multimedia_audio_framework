@@ -39,7 +39,6 @@ public:
     int32_t Flush() override;
     int32_t SetOptions(std::string name, std::string value) override;
     int32_t GetOptions(std::string name, std::string &value) override;
-    std::string nodeName = "";
     std::string paraName_ = "";
     std::string paraValue_ = "";
     AudioSuiteProcessNode(const AudioSuiteProcessNode& others) = delete;
@@ -77,14 +76,14 @@ protected:
     int32_t InitOutputStream();
     bool isOutputPortInit_ = false;
     uint32_t pcmDurationMs_ = 20;
-    uint32_t frameOutBytes = 0; //本节点20ms输出的字节数
+    uint32_t frameOutBytes = 0;
     uint32_t resultNumber = 1;
     std::vector<AudioSuiteRingBuffer> cachedBuffer;
     std::vector<AudioSuitePcmBuffer> outputPcmBuffer;
     std::vector<AudioSuitePcmBuffer *> algoRetPcmBuffer;
     std::vector<AudioSuitePcmBuffer *> retPcmBuffer;
     std::vector<AudioSuitePcmBuffer *> preOutputs;
-    uint32_t nextNeedDataLength = 0;//下一节点需要的数据长度
+    uint32_t nextNeedDataLength = 0;
     std::vector<uint8_t *> algorithmInput_{nullptr};
     std::vector<uint8_t *> algorithmOutput_;
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_{ nullptr };

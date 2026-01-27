@@ -56,7 +56,7 @@ private:
     uint32_t inPcmDataGetSize_ = 0;
     AudioSuiteFormatConversion convert_;
     PcmBufferFormat inPcmFormat;
-    bool initFlag = false;
+    bool initFlag_ = false;
 };
 }
 }
