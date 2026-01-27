@@ -141,11 +141,11 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteTempoPitchNode::SignalProcess(
 
     algorithmInput_[0] = inputs[0]->GetPcmData();
 
-    int32_t ret = algoInterface_->Apply(algorithmInput_, algorithmOutput_);//temin_和tempout_需要存储pcmfbuffer的指针
+    int32_t ret = algoInterface_->Apply(algorithmInput_, algorithmOutput_);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, retPcmBuffer, "Node SignalProcess Apply failed");
     frameOutBytes = ret * sizeof(int16_t);
     
-    return retPcmBuffer;//改成数组
+    return retPcmBuffer;
 }
 
 }  // namespace AudioSuite
