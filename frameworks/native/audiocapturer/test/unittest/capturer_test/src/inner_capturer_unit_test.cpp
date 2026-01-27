@@ -30,6 +30,9 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+const int32_t READ_BUFFERS_MAX_COUNT = 100; 
+const int32_t VALID_DATA_COUNT = 20; 
+const size_t SHORT_SLEEP_TIME = 100000; // us 100ms
 namespace {
 const size_t NUM2 = 2;
 } // namespace
@@ -332,6 +335,7 @@ HWTEST(InnerCapturerUnitTest, Inner_Capturer_Basic_004, TestSize.Level1)
 
     audioCapturer->Release();
 }
+#endif
 
 // Test play target usage and start inner-cap the target usage, check data not empty.
 static void TestInnerCapturer(StreamUsage targetUsage)
