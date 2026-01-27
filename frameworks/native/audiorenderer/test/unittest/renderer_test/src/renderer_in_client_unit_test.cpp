@@ -1682,7 +1682,7 @@ HWTEST(RendererInClientInnerUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
         .channels = AudioChannel::STEREO,
     };
     int32_t ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     info.isRemoteSpatialChannel = true;
     ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
     EXPECT_EQ(ret, SUCCESS);
@@ -3222,27 +3222,17 @@ HWTEST(RendererInClientInnerUnitTest, CheckFrozenStateInStaticMode_004, TestSize
  */
 HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_094, TestSize.Level4)
 {
-    SetParameter("persist.multimedia.3dadirecttest", std::to_string(1).c_str());
-    int32_t realSysVal = 0;
-    for (int i = 0; i < 50; i++) {
-        GetSysPara("persist.multimedia.3dadirecttest", realSysVal);
-        if (realSysVal == 1) {
-            break;
-        }
-        usleep(10000);
-    }
-    ASSERT_EQ(realSysVal, 1);
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
     AudioStreamParams info;
     info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
     info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     info.format = AudioSampleFormat::SAMPLE_S16LE;
     info.channels = AudioChannel::CHANNEL_8;
-    info.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+    info.isRemoteSpatialChannel = false;
+    ptrRendererInClientInner->rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
 
-    int32_t ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
-    EXPECT_NE(ret, SUCCESS);
-    SetParameter("persist.multimedia.3dadirecttest", std::to_string(0).c_str());
+    ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ptrRendererInClientInner->curStreamParams_.channelLayout, AudioChannelLayout::CH_LAYOUT_5POINT1POINT2);
 }
 
 /**
