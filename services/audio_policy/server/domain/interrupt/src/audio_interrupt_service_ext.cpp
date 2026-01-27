@@ -474,5 +474,84 @@ int32_t AudioInterruptService::EnableMuteSuggestionWhenMixWithOthers(int32_t cal
     std::unique_lock<std::mutex> lock(mutex_);
     return sessionService_.EnableMuteSuggestionWhenMixWithOthers(callerPid, enable);
 }
+
+void AudioInterruptService::RemoveInterruptFocusInfoList(
+    const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, std::list<int32_t> &removeFocusInfoPidList)
+{
+    AudioInterrupt activeInterrupt = audioFocusInfo.first;
+    int32_t zoneId = zoneManager_.FindZoneByPid(activeInterrupt.pid);
+    auto itZone = zonesMap_.find(zoneId);
+    CHECK_AND_RETURN_LOG((itZone != zonesMap_.end() && itZone->second != nullptr), "can not find zone");
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList {};
+    tmpFocusInfoList = itZone->second->audioFocusInfoList;
+    auto iterActive = std::find_if(tmpFocusInfoList.begin(), tmpFocusInfoList.end(),
+        [&activeInterrupt](const std::pair<AudioInterrupt, AudioFocuState>& item) {
+            return item.first.streamId == activeInterrupt.streamId;
+    });
+    if (iterActive != tmpFocusInfoList.end()) {
+        RemoveFocusInfo(iterActive, tmpFocusInfoList, itZone->second, removeFocusInfoPidList);
+    }
+    itZone->second->audioFocusInfoList = tmpFocusInfoList;
+
+    for (auto&[streamId, activeFocusList] : muteAudioFocus_) {
+        activeFocusList.remove_if([&activeInterrupt](const std::pair<AudioInterrupt, AudioFocuState>& pair) {
+            return pair.first.streamId == activeInterrupt.streamId;
+        });
+    }
+}
+
+void AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (muteAudioFocus_.count(streamId) > 0) {
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> tempMuteList(muteAudioFocus_[streamId]);
+        std::list<int32_t> removeFocusInfoPidList = {};
+        for (const auto& audioFocusInfo : tempMuteList) {
+            AudioInterrupt activeInterrupt = audioFocusInfo.first;
+            InterruptEventInternal interruptEvent = {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+            AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
+                activeInterrupt.streamId, streamId);
+            SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
+            RemoveInterruptFocusInfoList(audioFocusInfo, removeFocusInfoPidList);
+        }
+        muteAudioFocus_.erase(streamId);
+        AUDIO_INFO_LOG("StreamId: %{public}d has been removed from muteAudioFocus_ record, "
+            "now record size: %{public}zu", streamId, muteAudioFocus_.size());
+        RemoveAllPlaceholderInterrupt(removeFocusInfoPidList);
+    }
+}
+
+void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
+    const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
+    bool &removeFocusInfo, InterruptEventInternal &interruptEvent)
+{
+    if (sessionService_.IsAudioSessionFocusMode(incomingInterrupt.pid)) {
+        return;
+    }
+
+    AudioInterrupt currentInterrupt = audioFocusInfo.first;
+    AudioStreamType currentStreamType = currentInterrupt.audioFocusType.streamType;
+    AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
+    if (focusEntry.hintType != INTERRUPT_HINT_STOP ||
+        !IsMediaStream(currentStreamType) || !IsMediaStream(incomingStreamType)) {
+        return;
+    }
+
+    bool isInMuteCheckList = false;
+    auto bundleName = GetAudioInterruptBundleName(incomingInterrupt);
+    string muteCheckAppName = bundleName + "_check";
+    if (queryBundleNameListCallback_ != nullptr) {
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_param",
+            isInMuteCheckList);
+    }
+    if (isInMuteCheckList) {
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        interruptEvent.hintType = INTERRUPT_HINT_NONE;
+        removeFocusInfo = false;
+        muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
+        AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
+    }
+}
 }
 } // namespace OHOS

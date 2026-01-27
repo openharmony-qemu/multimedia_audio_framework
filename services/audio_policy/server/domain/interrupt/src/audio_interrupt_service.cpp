@@ -1800,6 +1800,7 @@ void AudioInterruptService::ProcessActiveInterrupt(const int32_t zoneId, const A
         uint32_t activeStreamId = (iterActive->first).streamId;
         bool removeFocusInfo = false;
         ProcessExistInterrupt(iterActive, focusEntry, incomingInterrupt, removeFocusInfo, interruptEvent);
+        MuteCheckFocusStrategy(focusEntry, *iterActive, incomingInterrupt, removeFocusInfo, interruptEvent);
         AudioInterrupt currentInterrupt = iterActive->first;
         if (removeFocusInfo) {
             RemoveFocusInfo(iterActive, tmpFocusInfoList, targetZoneIt->second, removeFocusInfoPidList);
@@ -2538,6 +2539,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
             return;
         }
         ResetNonInterruptControl(audioInterrupt);
+        muteAudioFocus_.erase(iter->first.streamId);
         audioFocusInfoList.erase(iter);
         itZone->second->zoneId = zoneId;
         itZone->second->audioFocusInfoList = audioFocusInfoList;
@@ -2550,7 +2552,13 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         AUDIO_DEBUG_LOG("stream (streamId %{public}u) is not active now", audioInterrupt.streamId);
         return;
     }
+    DeactivateAudioInterruptInternalContinue(zoneId, isSessionTimeout);
+    return;
+}
 
+void AudioInterruptService::DeactivateAudioInterruptInternalContinue(const int32_t zoneId, bool isSessionTimeout)
+{
+    auto itZone = zonesMap_.find(zoneId);
     if (itZone->second->context.focusStrategy_ == AudioZoneFocusStrategy::DISTRIBUTED_FOCUS_STRATEGY) {
         HILOG_COMM_INFO("[DeactivateAudioInterruptInternal]zone: %{public}d distributed focus strategy not "
             "resume when deactivate interrupt", itZone->first);
@@ -2731,7 +2739,10 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     dfxBuilder.WriteActionMsg(infoIdx, effectIdx, stage);
     dfxCollector_->AddDfxMsg(audioInterrupt.streamId, dfxBuilder.GetResult());
 
-    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+    if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE) {
+        RemoveStreamIdSuggestionRecord(streamId);
+    } else if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+        muteAudioFocus_.erase(streamId);
         RemoveStreamIdSuggestionRecord(streamId);
     }
 

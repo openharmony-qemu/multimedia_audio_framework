@@ -104,6 +104,7 @@ public:
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool CheckExistUidInAudioZone();
+    void NotifyStreamSilentChange(uint32_t streamId);
 
     AudioScene GetAudioSceneFromAllZones();
 

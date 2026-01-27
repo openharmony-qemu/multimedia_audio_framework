@@ -5762,5 +5762,11 @@ int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const 
 {
     return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
 }
+
+int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)
+{
+    AudioZoneService::GetInstance().NotifyStreamSilentChange(streamId);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

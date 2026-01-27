@@ -318,5 +318,5 @@ interface IAudioPolicy {
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);
     void SetCustomAudioMix([in] String zoneName, [in] List<AudioZoneMix> audioMixes);
+    void NotifyStreamSilentChange([in] unsigned int streamId);
 }
-

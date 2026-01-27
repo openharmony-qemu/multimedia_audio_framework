@@ -152,6 +152,7 @@ public:
         int32_t zoneId = ZONEID_DEFAULT);
     void PostUpdateAudioSceneFromInterruptAction(const AudioScene audioScene,
         AudioInterruptChangeType changeType, int32_t zoneId = ZONEID_DEFAULT);
+    void NotifyStreamSilentChange(uint32_t streamId);
     std::future<void> stopFuture_;
 
     AudioScene GetHighestPriorityAudioSceneFromAllZones();
@@ -261,6 +262,7 @@ private:
         const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt);
     void DeactivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isSessionTimeout = false);
+    void DeactivateAudioInterruptInternalContinue(const int32_t zoneId, bool isSessionTimeout = false);
     void SendInterruptEvent(AudioFocuState oldState, AudioFocuState newState,
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, bool &removeFocusInfo);
     void SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
@@ -382,6 +384,11 @@ private:
         const AudioInterrupt &incomingInterrupt);
     void SuggestionProcessWhenMixWithOthers(const AudioFocusEntry &focusEntry, const AudioInterrupt &currentInterrupt,
         const AudioInterrupt &incomingInterrupt);
+    void RemoveInterruptFocusInfoList(const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo,
+        std::list<int32_t> &removeFocusInfoPidList);
+    void MuteCheckFocusStrategy(AudioFocusEntry &focusEntry,
+        const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
+        bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -399,6 +406,8 @@ private:
     std::map<uint32_t, std::shared_ptr<AudioInterrupt>> suggestionInterrupts_;
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionStreamIdRecords_;
     std::map<uint32_t, std::unordered_set<int32_t>> suggestionPidRecords_;
+
+    std::map<uint32_t, std::list<std::pair<AudioInterrupt, AudioFocuState>>> muteAudioFocus_;
 
     // deprecated interrupt members
     std::unique_ptr<AudioInterrupt> focussedAudioInterruptInfo_;
