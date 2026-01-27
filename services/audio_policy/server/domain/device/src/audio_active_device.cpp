@@ -353,7 +353,7 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, c
     CHECK_AND_RETURN_RET_LOG(itr != deviceList.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
     int32_t ownerUid = AudioStateManager::GetAudioStateManager().GetAudioSceneOwnerUid();
-    int32_t callerUid = GAudioStateManager::GetAudioStateManager().GetPreferredUid(uid);
+    int32_t callerUid = AudioStateManager::GetAudioStateManager().GetPreferredUid(uid);
     if (!active) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
