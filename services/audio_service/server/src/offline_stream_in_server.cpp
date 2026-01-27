@@ -105,9 +105,9 @@ int32_t OfflineStreamInServer::AllocSharedMemory(uint32_t inSize, uint32_t outSi
     CHECK_AND_RETURN_RET_LOG(inSize < MAXIMUM_BUFFER_SIZE && outSize < MAXIMUM_BUFFER_SIZE,
         ERR_INVALID_PARAM, "alloc %{public}u inBuf or %{public}u outBuf out of range", inSize, outSize);
     serverBufferIn_ = AudioSharedMemory::CreateFromLocal(inSize, OFFLINE_SERVER_BUFFER_IN);
-    CHECK_AND_RETURN_RET_LOG(serverBufferIn_ != nullptr, ERR_OPERATION_FAILED, "serverBufferIn_ mmap failed!");
+    CHECK_AND_RETURN_RET_LOG(serverBufferIn_ != nullptr, ERR_OPERATION_FAILED, "serverBufferIn_ mmap failed.");
     serverBufferOut_ = AudioSharedMemory::CreateFromLocal(outSize, OFFLINE_SERVER_BUFFER_OUT);
-    CHECK_AND_RETURN_RET_LOG(serverBufferOut_ != nullptr, ERR_OPERATION_FAILED, "serverBufferOut_ mmap failed!");
+    CHECK_AND_RETURN_RET_LOG(serverBufferOut_ != nullptr, ERR_OPERATION_FAILED, "serverBufferOut_ mmap failed.");
     return SUCCESS;
 }
 } // namespace AudioStandard
