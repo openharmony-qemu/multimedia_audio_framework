@@ -157,7 +157,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_002, TestSize.
     audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
     auto ret = audioInterruptService->ActivateAudioSession(AudioInterruptService::ZONEID_DEFAULT,
         fakePid, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret.retCode);
 }
 
 /**
@@ -178,7 +178,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_003, TestSize.
     AudioSessionStrategy audioSessionStrategy;
     audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
     auto ret = audioInterruptService->ActivateAudioSession(1, fakePid, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret.retCode);
 }
 
 /**
@@ -1910,8 +1910,8 @@ HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptInternal01, Te
         audioInterrupt, false, updateScene);
     EXPECT_EQ(ret, ERR_FOCUS_DENIED);
     audioInterruptService->GameRecogSetParam(CLIENT_TYPE_GAME, SOURCE_TYPE_VOICE_RECOGNITION, false);
-    ret = audioInterruptService->DeactivateAudioInterrupt(DEFAULT_ZONE_ID, audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
+    auto ret1 = audioInterruptService->DeactivateAudioInterrupt(DEFAULT_ZONE_ID, audioInterrupt);
+    EXPECT_EQ(ret1.retCode, SUCCESS);
 }
 
 } // namespace AudioStandard
