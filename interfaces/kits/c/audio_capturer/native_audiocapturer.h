@@ -76,7 +76,7 @@ OH_AudioStream_Result OH_AudioCapturer_Start(OH_AudioCapturer* capturer);
  * @since 23
  */
 typedef void (*OH_AudioCapturer_OnPlaybackCaptureStartCallback)(OH_AudioCapturer* capturer, void* userData,
-     OH_AudioStream_PlaybackCaptureStartState stateCode);
+    OH_AudioStream_PlaybackCaptureStartState stateCode);
 
 /*
  * Request to pause the capturer stream.
