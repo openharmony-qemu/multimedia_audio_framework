@@ -42,6 +42,13 @@ public:
         }
         nc.soName = "libaudio_aiss_intergration.z.so";
         nc.soPath = "/system/lib64/";
+        nc.frameLen = 960;
+        nc.outSampleRate = 48000;
+        nc.inSampleRate = 48000;
+        nc.inChannels = 2;
+        nc.outChannels = 4;
+        nc.inFormat = 4;
+        nc.outFormat = 4;
     };
     void TearDown()
     {

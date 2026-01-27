@@ -50,6 +50,8 @@ void AudioSuiteNrAlgoInterfaceImplUnitTest::SetUp(void)
     }
     nc.soName = "libimedia_vqe_ainr.z.so";
     nc.soPath = "/system/lib64/";
+    nc.inChannels = 1;
+    nc.frameLen = 160;
     std::filesystem::remove(g_outputPcmFilePath);
 }
 

@@ -196,7 +196,7 @@ public:
     {
     }
     virtual ~AudioNodeTestImpl() = default;
-    int32_t DoProcess() override
+    int32_t DoProcess(uint32_t needDataLength) override
     {
         return 0;
     }
