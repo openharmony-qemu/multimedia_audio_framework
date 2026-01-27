@@ -38,6 +38,7 @@ static std::string g_targetfile003 = "/data/audiosuite/tempo_pitch/target_48000_
 static int32_t g_expectedGetOutputPortCalls = 2;      // Times of GetOutputPort called in DoProcess
 static constexpr uint32_t needDataLength = 20;
 static constexpr int32_t frameBytes = 4352;
+const int MAX_FRAMES = 2000;
 
 class MockInputNode : public AudioNode {
 public:
@@ -117,7 +118,8 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
     uint8_t *readPtr = inputfileBuffer.data();
     int32_t frames = inputfileBuffer.size() / frameSizeInput;
     int32_t frameIndex = 0;
-    while (true) {
+    uint32_t loopCount = 0;
+    while (loopCount < MAX_FRAMES) {
         EXPECT_CALL(*mockInputNode_, DoProcess(needDataLength))
             .WillRepeatedly(::testing::Invoke([&]() {
             if (frameIndex == frames - 1) {
@@ -132,7 +134,7 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
         std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, false, needDataLength);
         CHECK_AND_RETURN_RET(result.size() == 1, ERROR);
         outFile.write(reinterpret_cast<const char *>(result[0]->GetPcmData()), frameSizeInput);
-        if (result[0]->GetIsFinished()) {
+        if (result[0]->GetIsFinished()  || ++loopCount >= MAX_FRAMES) {
             break;
         }
     }
