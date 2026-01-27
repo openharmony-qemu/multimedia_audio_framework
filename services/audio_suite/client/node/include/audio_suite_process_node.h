@@ -59,8 +59,6 @@ public:
     {
         return &outputStream_;
     }
-
-
     int32_t ObtainProcessedData();
 
 protected:

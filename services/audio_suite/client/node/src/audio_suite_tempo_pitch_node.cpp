@@ -115,18 +115,16 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
     AUDIO_INFO_LOG("Tempo and Pitch node SetOptions [%{public}s]: %{public}s", name.c_str(), value.c_str());
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
     CHECK_AND_RETURN_RET_LOG(name == "speedAndPitch", ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
-
     paraName_ = name;
     paraValue_ = value;
     int32_t ret = algoInterface_->SetParameter(name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "TempoPitchNode SetOptions ERROR");
-
     speedRate = ParseStringToSpeedRate(value, ',');
     
     if (FLOAT_COMPARE_EQ(speedRate, 0.0f)) {
         AUDIO_ERR_LOG("TempoPitchNode ParseStringToSpeedRate ERROR");
         return ERROR;
-    } 
+    }
     AUDIO_INFO_LOG("TempoPitchNode SetOptions SUCCESS");
     return SUCCESS;
 }

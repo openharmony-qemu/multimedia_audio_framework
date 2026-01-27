@@ -48,7 +48,6 @@ public:
     ~TestAudioSuiteProcessNode() override = default;
     std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) override
     {
-
         if (!inputs.empty()) {
             // simulate a signal process.
             if (inputs[0] == nullptr) {
@@ -74,7 +73,7 @@ public:
     }
 };
 bool TestReadTapCallBack::testFlag = false;
-static constexpr uint32_t needDataLength = 20;
+static constexpr uint32_t NEED_DATA_LENGTH = 20;
 class AudioSuiteProcessNodeTest : public ::testing::Test {
 public:
     void SetUp() override
@@ -119,14 +118,14 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessDefaultTest, TestSize.Level0)
     OutputPort<AudioSuitePcmBuffer*> inputNodeOutputPort;
     inputNodeOutputPort.SetOutputPort(mockInputNode_);
     inputNodeOutputPort.WriteDataToOutput(buffer.get());
-    EXPECT_CALL(*mockInputNode_, DoProcess(needDataLength)).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
+    EXPECT_CALL(*mockInputNode_, DoProcess(NEED_DATA_LENGTH)).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
     node_->Connect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort.GetInputNum(), 1);
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort =
         node_->GetOutputPort();
-    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true, needDataLength);
+    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true, NEED_DATA_LENGTH);
     EXPECT_EQ(result.size(), 1);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort.GetInputNum(), 0);
@@ -142,13 +141,13 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessWithEnableProcessFalseTest, TestSiz
     OutputPort<AudioSuitePcmBuffer*> inputNodeOutputPort;
     inputNodeOutputPort.SetOutputPort(mockInputNode_);
     inputNodeOutputPort.WriteDataToOutput(buffer.get());
-    EXPECT_CALL(*mockInputNode_, DoProcess(needDataLength)).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
+    EXPECT_CALL(*mockInputNode_, DoProcess(NEED_DATA_LENGTH)).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
     node_->Connect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort.GetInputNum(), 1);
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node_->GetOutputPort();
-    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, false, needDataLength);
+    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, false, NEED_DATA_LENGTH);
     EXPECT_EQ(result.size(), 1);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort.GetInputNum(), 0);
@@ -166,18 +165,19 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessWithFinishedPcmBufferTest, TestSize
     inputNodeOutputPort.SetOutputPort(mockInputNode_);
     inputNodeOutputPort.WriteDataToOutput(buffer.get());
 
-    EXPECT_CALL(*mockInputNode_, DoProcess(needDataLength)).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
+    EXPECT_CALL(*mockInputNode_, DoProcess(NEED_DATA_LENGTH)).Times(1).WillRepeatedly(::testing::Return(SUCCESS));
     EXPECT_CALL(*mockInputNode_, GetOutputPort())
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
     node_->Connect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort.GetInputNum(), 1);
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node_->GetOutputPort();
-    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true, needDataLength);
+    std::vector<AudioSuitePcmBuffer *> result = nodeOutputPort->PullOutputData(outFormat_, true, NEED_DATA_LENGTH);
     EXPECT_EQ(result.size(), 1);
     EXPECT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->GetIsFinished(), true);
     EXPECT_EQ(node_->GetAudioNodeDataFinishedFlag(), true);
-    std::vector<AudioSuitePcmBuffer *> resultWhenNodeFinished = nodeOutputPort->PullOutputData(outFormat_, true, needDataLength);
+    std::vector<AudioSuitePcmBuffer *> resultWhenNodeFinished =
+        nodeOutputPort->PullOutputData(outFormat_, true, NEED_DATA_LENGTH);
     EXPECT_EQ(resultWhenNodeFinished.size(), 0);
     node_->DisConnect(mockInputNode_);
     EXPECT_EQ(inputNodeOutputPort.GetInputNum(), 0);
@@ -190,7 +190,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
     int32_t ret = node_->SetBypassEffectNode(true);
     EXPECT_EQ(ret, SUCCESS);
 
-     ret = node_->DoProcess(needDataLength);
+     ret = node_->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, ERROR);
 
     std::unique_ptr<AudioSuitePcmBuffer> buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
@@ -201,7 +201,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
     node_->Connect(mockInputNode_);
 
-     ret = node_->DoProcess(needDataLength);
+     ret = node_->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
     node_->DisConnect(mockInputNode_);
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());

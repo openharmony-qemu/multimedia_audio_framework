@@ -32,6 +32,8 @@ namespace {
 static std::string g_inputfile = "/data/audiosuite/soundfield_input_48000_2_S16LE.pcm";
 static std::string g_targetfile = "/data/audiosuite/soundfield_target_48000_2_S16LE.pcm";
 static std::string g_outputfile = "/data/audiosuite/soundfield_output_48000_2_S16LE.pcm";
+const uint32_t CHANNEL_COUNT = 2;
+const uint32_t FRAME_LENGTH = 480;
 
 class AudioSuiteSoundFieldAlgoInterfaceImplUnitTest : public testing::Test {
 public:
@@ -51,8 +53,8 @@ void AudioSuiteSoundFieldAlgoInterfaceImplUnitTest::SetUp(void)
     }
     nc.soName = "libimedia_sws.z.so";
     nc.soPath = "/system/lib64/";
-    nc.frameLen = 480;
-    nc.inChannels = 2;
+    nc.frameLen = FRAME_LENGTH;
+    nc.inChannels = CHANNEL_COUNT;
     std::filesystem::remove(g_outputfile);
 }
 

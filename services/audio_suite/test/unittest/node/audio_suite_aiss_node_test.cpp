@@ -63,19 +63,19 @@ namespace {
     constexpr uint32_t DEFAULT_CHANNELS_IN = 2;
     constexpr uint32_t BYTES_PER_SAMPLE = 4;
     const AudioChannelLayout LAY_OUT = CH_LAYOUT_STEREO;
-    static constexpr uint32_t needDataLength = 20;
+    static constexpr uint32_t NEED_DATA_LENGTH = 20;
      
     HWTEST_F(AudioSuiteAissNodeTest, ProcessTest, TestSize.Level0)
     {
         EXPECT_EQ(impl->Init(), SUCCESS);
 
-        EXPECT_NE(impl->DoProcess(needDataLength), SUCCESS);
+        EXPECT_NE(impl->DoProcess(NEED_DATA_LENGTH), SUCCESS);
 
         std::ifstream inputFile(INPUT_PATH, std::ios::binary | std::ios::ate);
         ASSERT_TRUE(inputFile.is_open());
 
         AudioSuitePcmBuffer inputBuffer(
-            PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNELS_IN, LAY_OUT, SAMPLE_F32LE), needDataLength);
+            PcmBufferFormat(SAMPLE_RATE_48000, DEFAULT_CHANNELS_IN, LAY_OUT, SAMPLE_F32LE), NEED_DATA_LENGTH);
         const uint32_t byteSizePerFrameIn = DEFAULT_SAMPLING_RATE * FRAME_LEN_MS /
             1000 * DEFAULT_CHANNELS_IN * BYTES_PER_SAMPLE;
 

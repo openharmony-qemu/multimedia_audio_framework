@@ -42,7 +42,7 @@ static constexpr AudioSamplingRate SPACE_RENDER_ALGO_SAMPLE_RATE = SAMPLE_RATE_4
 static constexpr AudioSampleFormat SPACE_RENDER_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel SPACE_RENDER_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-static constexpr uint32_t needDataLength = 20;
+static constexpr uint32_t NEED_DATA_LENGTH = 20;
 
 std::string g_fileNameOne = "/data/audiosuite/sr/48000_2_16.pcm";
 std::string g_outFilename = "/data/audiosuite/sr/out.pcm";
@@ -81,13 +81,13 @@ void DoSignalProcess(std::string inputFile, std::string outputFile,
     std::ofstream outProcessedFile(outputFile, std::ios::binary);
 
     node->Init();
-    int32_t ret = node->InitCacheLength(needDataLength);
+    int32_t ret = node->InitCacheLength(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
     node->SetOptions(name, value);
 
     AudioSuitePcmBuffer buffer(PcmBufferFormat{
         SPACE_RENDER_ALGO_SAMPLE_RATE, SPACE_RENDER_ALGO_CHANNEL_COUNT,
-          SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT}, needDataLength);
+          SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT}, NEED_DATA_LENGTH);
     uint32_t dataSize = buffer.GetDataSize();
 
     std::vector<AudioSuitePcmBuffer *> inputs;
