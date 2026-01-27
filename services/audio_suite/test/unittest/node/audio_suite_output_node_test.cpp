@@ -169,7 +169,7 @@ static FormatConversionInfo g_inputInfo[] = {
 
 const uint32_t AUDIO_DATA_SIZE = 1024;
 const uint32_t HEADER_SIZE = 44;
-static uint32_t needDataLength = 20;
+static uint32_t NEED_DATA_LENGTH = 20;
 const uint32_t DOUBLE_FRAME_NEED_LENGTH = 40;
 const uint32_t SINGLE_FRAME_NEED_LENGTH = 20;
 class AudioSuiteOutputNodeTest : public testing::Test {

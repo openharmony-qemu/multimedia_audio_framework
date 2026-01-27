@@ -120,7 +120,6 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
     int32_t ret = algoInterface_->SetParameter(name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "TempoPitchNode SetOptions ERROR");
     speedRate = ParseStringToSpeedRate(value, ',');
-    
     if (FLOAT_COMPARE_EQ(speedRate, 0.0f)) {
         AUDIO_ERR_LOG("TempoPitchNode ParseStringToSpeedRate ERROR");
         return ERROR;
