@@ -17,6 +17,7 @@
 
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,9 +33,9 @@ void IAudioCaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSo
 }
 
 void IAudioCaptureSource::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state)
+    uint32_t streamId, SourceType source, CapturerState state, uint32_t appUid)
 {
-    ChangePipeStream(change, streamId, source);
+    ChangePipeStream(change, streamId, source, state, appUid);
 }
 
 std::shared_ptr<AudioInputPipeInfo> IAudioCaptureSource::GetInputPipeInfo()
