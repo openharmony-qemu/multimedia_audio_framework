@@ -36,6 +36,7 @@ public:
     MOCK_METHOD(CapturerState, GetStatus, (), (const, override));
     MOCK_METHOD(bool, GetTimeStampInfo, (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
     MOCK_METHOD(bool, GetAudioTime, (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
+    MOCK_METHOD(bool, GetFirstPkgTimeStampInfo, (int64_t &firstTs), (const, override));
     MOCK_METHOD(bool, Pause, (), (const, override));
     MOCK_METHOD(bool, Stop, (), (const, override));
     MOCK_METHOD(bool, Flush, (), (const, override));
