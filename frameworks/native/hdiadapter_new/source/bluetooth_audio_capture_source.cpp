@@ -546,7 +546,6 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
     if (!IsValidState()) {
         callback_.OnCaptureState(false);
-        ChangePipeStatus(PIPE_STATUS_STANDBY)
         return ERR_INVALID_HANDLE;
     }
     if (!started_) {
