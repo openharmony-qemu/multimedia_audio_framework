@@ -485,6 +485,7 @@ HWTEST_F(SimdPointByPointTest, SimdPointByPoint_023, TestSize.Level1)
     
     // 应该不会崩溃
     SimdPointByPointSub(length, left.data(), right.data(), nullptr);
+    SUCCEED();
 }
 
 /**
@@ -499,6 +500,7 @@ HWTEST_F(SimdPointByPointTest, SimdPointByPoint_024, TestSize.Level1)
     
     // 应该不会崩溃
     SimdPointByPointSub(length, nullptr, nullptr, nullptr);
+    SUCCEED();
 }
 
 /**
@@ -768,6 +770,7 @@ HWTEST_F(SimdPointByPointTest, SimdPointByPoint_038, TestSize.Level1)
     
     // 应该不会崩溃
     SimdPointByPointMul(length, left.data(), right.data(), nullptr);
+    SUCCEED();
 }
 
 /**
@@ -782,6 +785,7 @@ HWTEST_F(SimdPointByPointTest, SimdPointByPoint_039, TestSize.Level1)
     
     // 应该不会崩溃
     SimdPointByPointMul(length, nullptr, nullptr, nullptr);
+    SUCCEED();
 }
 
 /**
