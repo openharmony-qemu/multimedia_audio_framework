@@ -1980,11 +1980,27 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     SourceType existSourceType = existAudioFocusType.sourceType;
     SourceType incomingSourceType = incomingAudioFocusType.sourceType;
     UpdateFocusStrategy(bundleName, focusEntry, IsMediaStream(existStreamType), IsMediaStream(incomingStreamType));
+    UpdateMapFocusStrategy(bundleName, focusEntry, IsMediaStream(existStreamType), incomingSourceType);
     UpdateMicFocusByUid(currentInterrupt, incomingInterrupt, focusEntry);
     UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
     if (interruptCustom_ != nullptr) {
         interruptCustom_->UpdateCustomFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+    }
+}
+
+void AudioInterruptService::UpdateMapFocusStrategy(const std::string &bundleName,
+    AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType)
+{
+    bool isBundleNameExist = false;
+    if (queryBundleNameListCallback_ != nullptr) {
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList((bundleName + ".audiointerrupt"), "audio_param",
+            isBundleNameExist);
+    }
+    if (isExistMediaStream && incomingSourceType == SOURCE_TYPE_MIC && isBundleNameExist &&
+        focusEntry.hintType == INTERRUPT_HINT_PAUSE) {
+        focusEntry.hintType = INTERRUPT_HINT_STOP;
+        AUDIO_INFO_LOG("%{public}s update Map audio focus strategy", bundleName.c_str());
     }
 }
 
