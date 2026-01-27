@@ -165,7 +165,7 @@ int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format, uint32_t du
     return 0;
 }
 
-nt32_t AudioSuitePcmBuffer::ResizePcmBuffer(uint32_t bytelength)
+int32_t AudioSuitePcmBuffer::ResizePcmBuffer(uint32_t bytelength)
 {
     CHECK_AND_RETURN_RET_LOG(bytelength <= maxRequestByteLength, ERROR, "Exceeding the maximum request data length.");
     if (dataByteSize_ == bytelength) {
