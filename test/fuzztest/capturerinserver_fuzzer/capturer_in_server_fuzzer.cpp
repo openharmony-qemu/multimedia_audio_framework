@@ -121,11 +121,7 @@ public:
         return bufferDesc;
     }
 };
-
 int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
-void AbortCallback(int32_t abortTimes) override { return; }
-};
-
 class ConcreteIStreamListener : public IStreamListener {
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
 };
