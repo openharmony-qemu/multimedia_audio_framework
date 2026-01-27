@@ -25,8 +25,6 @@
 #include "audio_errors.h"
 #include "audio_suite_unittest_tools.h"
 
-#include "audio_suite_log.h"
-
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace AudioSuite;

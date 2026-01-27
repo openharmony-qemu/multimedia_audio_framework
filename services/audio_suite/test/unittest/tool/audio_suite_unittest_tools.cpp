@@ -140,7 +140,6 @@ bool IsFilesEqual(const std::string &filename1, const std::string &filename2)
     file1.seekg(0, std::ios::end);
     file2.seekg(0, std::ios::end);
     if (file1.tellg() != file2.tellg()) {
-        AUDIO_ERR_LOG("142");
         return false;
     }
 
@@ -156,11 +155,9 @@ bool IsFilesEqual(const std::string &filename1, const std::string &filename2)
         file2.read(buffer2, sizeof(buffer2));
         bytesRead = file1.gcount();
         if (bytesRead != file2.gcount()) {
-            AUDIO_ERR_LOG("158%{public}ld, %{public}ld", bytesRead, file2.gcount());
             return false;
         }
         if (std::memcmp(buffer1, buffer2, bytesRead) != 0) {
-            AUDIO_ERR_LOG("162");
             return false;
         }
     } while (bytesRead > 0);
