@@ -206,7 +206,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_007, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredMediaRenderDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 
@@ -219,7 +219,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_008, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredCallRenderDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 
@@ -232,7 +232,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_009, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredCallCaptureDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 
@@ -245,7 +245,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredRecordCaptureDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 

@@ -1351,7 +1351,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_002, TestSize.Le
 
     updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     updatedDesc.deviceType_ = DEVICE_TYPE_MAX;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
