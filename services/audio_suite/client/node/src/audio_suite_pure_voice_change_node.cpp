@@ -48,7 +48,7 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         AUDIO_ERR_LOG("AudioSuitePureVoiceChangeNode::Init failed, already inited");
         return ERROR;
     }
-    nodeName = PURE_VOICE_CHANGE_MODE;
+    
     if (!isOutputPortInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;

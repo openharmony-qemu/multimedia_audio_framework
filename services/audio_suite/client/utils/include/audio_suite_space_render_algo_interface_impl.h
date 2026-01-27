@@ -60,6 +60,8 @@ private:
         {0.0f, 0.0f, 0.0f}, 0.0f, SPACE_RENDER_ROTATION_MODE_CW, 0.0f, 0};
     std::vector<char> spaceRenderHandle_;
     AudioSuiteLibraryManager algoLibrary_;
+    uint32_t maxChannelCount = 4;
+    uint32_t maxSamplePoint = 76800;
 
     int SetPositionParameter(const std::string &paramValue);
     int SetExtensionParameter(const std::string &paramValue);

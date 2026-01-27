@@ -114,6 +114,9 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     handle_.resize(memSize.stateSize);
     scratchBuf_.resize(memSize.scratchSize);
 
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.frameLen < maxSamplePoint,
+        ERROR,
+        "The algorithm returned more than the maximum number of sample points.");
     inBuf_.resize(nodeParameter_.frameLen * sizeof(float));
     outBuf_.resize(nodeParameter_.frameLen * sizeof(float));
 

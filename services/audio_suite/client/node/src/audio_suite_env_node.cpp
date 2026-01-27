@@ -45,7 +45,7 @@ int32_t AudioSuiteEnvNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEnvNode::Init failed, already inited");
         return ERROR;
     }
-    nodeName = setEnvMode;
+    
     if (!isOutputPortInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;

@@ -42,7 +42,7 @@ AudioSuiteGeneralVoiceChangeNode::~AudioSuiteGeneralVoiceChangeNode()
 int32_t AudioSuiteGeneralVoiceChangeNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode Init begin");
-    nodeName = setVoiceChangeMode;
+    
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE, nodeParameter);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create General Voice Change algoInterface");

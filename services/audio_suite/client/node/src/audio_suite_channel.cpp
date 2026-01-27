@@ -55,12 +55,13 @@ template <class T>
 std::vector<T>& InputPort<T>::ReadPreOutputData(PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength)
 {
     inputData_.clear();
+    std::vector<T> outputData;
     for (auto &o : outputPorts_) {
         if (o.first == nullptr) {
             continue;
         }
 
-        std::vector<T> outputData = o.first->PullOutputData(outFormat, needConvert, needDataLength);
+        outputData = o.first->PullOutputData(outFormat, needConvert, needDataLength);
         inputData_.insert(inputData_.end(), outputData.begin(), outputData.end());
     }
     return inputData_;

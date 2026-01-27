@@ -77,7 +77,7 @@ public:
     PcmBufferFormat &GetPcmBufferFormat();
     bool IsSameFormat(AudioSuitePcmBuffer &other);
     bool IsSameFormat(const PcmBufferFormat &otherFormat);
-    bool IsSameLength(const uint32_t &nextNodeBytelength);
+    bool IsSameLength(const uint32_t nextNodeBytelength);
     AudioSamplingRate GetSampleRate();
     uint32_t GetChannelCount();
     AudioChannelLayout GetChannelLayout();
