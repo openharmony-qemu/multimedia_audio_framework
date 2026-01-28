@@ -1100,12 +1100,12 @@ void AudioDeviceStatus::AddEarpiece()
 bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo)
 {
     auto devType = AudioPolicyUtils::GetInstance().GetDeviceType(moduleInfo.name);
-    
+
+    bool needOpenPort = (devType != DEVICE_TYPE_MIC);
 #ifdef MULTI_BUS_ENABLE
-    if (moduleInfo.role == ROLE_SINK) {
-#else
-    if (devType != DEVICE_TYPE_MIC) {
+    needOpenPort = (moduleInfo.role == ROLE_SINK);
 #endif
+    if (needOpenPort) {
         audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
         if (devType == DEVICE_TYPE_SPEAKER) {
@@ -1183,12 +1183,12 @@ void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const Ad
 
     std::list<DeviceStreamInfo> streamInfos = {};
     for (const auto &pipe : adapterInfo.pipeInfos) {
-        if (pipe == nullptr) { continue; }
+        CHECK_AND_CONTINUE(pipe != nullptr);
         if (std::find(deviceInfo.supportPipes_.begin(), deviceInfo.supportPipes_.end(), pipe->name_) ==
             deviceInfo.supportPipes_.end()) { continue; }
         
         for (const auto &spi : pipe->streamPropInfos_) {
-            if (spi == nullptr) { continue; }
+            CHECK_AND_CONTINUE(spi != nullptr);
             streamInfos.emplace_back(static_cast<AudioSamplingRate>(spi->sampleRate_), AudioEncodingType::ENCODING_PCM,
                 spi->format_, spi->channelLayout_);
         }
@@ -1208,9 +1208,7 @@ void AudioDeviceStatus::AddPreloadDevices()
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap = {};
     audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     for (const auto &adapterPair : adapterInfoMap) {
-        if (adapterPair.second == nullptr) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(adapterPair.second != nullptr);
         const auto &adapterInfo = *(adapterPair.second);
         for (const auto &deviceInfo : adapterInfo.deviceInfos) {
             if (deviceInfo != nullptr && deviceInfo->preload_) {
@@ -1366,6 +1364,14 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     }
     audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2 param");
+}
+
+void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    CHECK_AND_RETURN(AudioStateManager::GetAudioStateManager().IsPreferredDevice(desc));
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::SELECTED_DEVICE_CONNECT_FAILED};
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnConnectFailed", reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnConnectFailed", reason);
 }
 
 void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bool isConnected,
@@ -1530,9 +1536,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
             UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>());
-            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
-                make_shared<AudioDeviceDescriptor>(desc)};
-            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
 #ifdef BLUETOOTH_ENABLE
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
@@ -1543,6 +1546,9 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceCategory_ == BT_HEADPHONE && desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
+            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
+                make_shared<AudioDeviceDescriptor>(desc)};
+            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             auto usage = audioDeviceManager_.GetDeviceUsage(desc);
             auto audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);

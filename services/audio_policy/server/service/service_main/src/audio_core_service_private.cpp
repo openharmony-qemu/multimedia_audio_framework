@@ -1465,6 +1465,11 @@ void AudioCoreService::OnPrivacyDeviceSelected(DeviceType devType, const std::st
     audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
+void AudioCoreService::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    audioDeviceStatus_.OnConnectFailed(desc);
+}
+
 void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->moduleInfo_.className == "remote_offload");
@@ -2826,7 +2831,8 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
 
     std::vector<SleepStrategy> strategies = {
         {
-            [&]() { return reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsNewDeviceAvailable(); },
+            [&]() { return reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsNewDeviceAvailable() ||
+                reason.IsSelectedDeviceConnectFailed(); },
             {BASE_DEVICE_SWITCH_SLEEP_US, BASE_DEVICE_SWITCH_SLEEP_US}
         },
         {
@@ -2842,11 +2848,8 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
-            {BASE_DEVICE_SWITCH_SLEEP_US}
-        },
-        {
-            [&]() { return reason.IsCollaborativeStateChange(); },
+            [&]() { return (reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) ||
+                reason.IsCollaborativeStateChange(); },
             {BASE_DEVICE_SWITCH_SLEEP_US}
         },
     };
@@ -2898,7 +2901,8 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault()) {
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault() ||
+        reason.IsSelectedDeviceConnectFailed()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;

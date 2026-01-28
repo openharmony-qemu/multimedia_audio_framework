@@ -488,7 +488,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, DeactivateAudioInterrupt_001, TestSize.L
     zone->audioFocusInfoList.push_back(
         std::make_pair(audioInterrupt, AudioFocuState::ACTIVE));
     audioInterruptService_->zonesMap_[zoneId] = zone;
-    EXPECT_EQ(audioInterruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt), SUCCESS);
+    EXPECT_EQ(audioInterruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt).retCode, SUCCESS);
 }
 
 /**

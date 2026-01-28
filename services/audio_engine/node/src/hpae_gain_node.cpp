@@ -33,9 +33,10 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
+#ifndef CONFIG_FACTORY_VERSION
 static constexpr float FADE_LOW = 0.0f;
 static constexpr float FADE_HIGH = 1.0f;
+#endif
 static constexpr float SHORT_FADE_PERIOD = 0.005f; // 5ms fade for 10ms < playback duration <= 40ms
 static constexpr float EPSILON = 1e-6f;
 
@@ -174,6 +175,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         statusCallback->OnFadeDone(GetSessionId());
         return;
     }
+#ifndef CONFIG_FACTORY_VERSION
     AudioRawFormat rawFormat;
     rawFormat.format = SAMPLE_F32LE; // for now PCM in gain node is float32
     rawFormat.channels = GetChannelCount();
@@ -181,6 +183,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     uint32_t index = GetFadeLength(byteLength, input);
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
+#endif
     // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
         auto ret = SUCCESS;

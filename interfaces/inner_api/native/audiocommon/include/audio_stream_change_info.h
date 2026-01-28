@@ -57,8 +57,8 @@ public:
         int32_t clientUIDTemp = clientUID;
         RendererState rendererStateTemp = rendererState;
         if (clientInfo_) {
-            clientUIDTemp =  clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
-            rendererStateTemp =  clientInfo_.value().hasSystemPermission_ ? rendererState : RENDERER_INVALID;
+            clientUIDTemp = clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
+            rendererStateTemp = clientInfo_.value().hasSystemPermission_ ? rendererState : RENDERER_INVALID;
             clientInfo_ = std::nullopt;
         }
         return parcel.WriteInt32(createrUID)
@@ -150,8 +150,8 @@ public:
         int32_t clientUIDTemp = clientUID;
         CapturerState capturerStateTemp = capturerState;
         if (clientInfo_) {
-            clientUIDTemp =  clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
-            capturerStateTemp =  clientInfo_.value().hasSystemPermission_ ? capturerState : CAPTURER_INVALID;
+            clientUIDTemp = clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
+            capturerStateTemp = clientInfo_.value().hasSystemPermission_ ? capturerState : CAPTURER_INVALID;
             clientInfo_ = std::nullopt;
         }
         return parcel.WriteInt32(createrUID)

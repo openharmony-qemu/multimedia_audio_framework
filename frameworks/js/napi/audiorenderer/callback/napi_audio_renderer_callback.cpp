@@ -209,7 +209,7 @@ void NapiAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRende
         AUDIO_ERR_LOG("OnJsCallbackInterrupt: jsCb.get() is null");
         return;
     }
-    
+
     AudioRendererJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 

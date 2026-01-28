@@ -300,6 +300,8 @@ int32_t HpaeInnerCapturerManager::Init(bool isReload)
 int32_t HpaeInnerCapturerManager::InitSinkInner(bool isReload)
 {
     Trace trace("HpaeInnerCapturerManager::InitSinkInner");
+    AUDIO_INFO_LOG("init devicename:%s,channel:%{public}u,rate:%{public}u", sinkInfo_.deviceName.c_str(),
+        sinkInfo_.channels, sinkInfo_.samplingRate);
     int32_t checkRet = CheckFramelen(sinkInfo_);
     if (checkRet != SUCCESS) {
         TriggerCallback(isReload ? RELOAD_AUDIO_SINK_RESULT : INIT_DEVICE_RESULT,

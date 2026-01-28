@@ -18,12 +18,12 @@
 using OHOS::AudioStandard::OHAudioResourceManager;
 using OHOS::AudioStandard::OHAudioWorkgroup;
 
-static OHOS::AudioStandard::OHAudioResourceManager *convertResourceManager(OH_AudioResourceManager* resourceManager)
+static OHOS::AudioStandard::OHAudioResourceManager *convertResourceManager(OH_AudioResourceManager *resourceManager)
 {
     return (OHAudioResourceManager*) resourceManager;
 }
 
-static OHOS::AudioStandard::OHAudioWorkgroup *convertWorkgroup(OH_AudioWorkgroup* group)
+static OHOS::AudioStandard::OHAudioWorkgroup *convertWorkgroup(OH_AudioWorkgroup *group)
 {
     return (OHAudioWorkgroup*) group;
 }
@@ -35,7 +35,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioResourceManager(OH_AudioResourceMa
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     OHAudioResourceManager *audioResourceManager = OHAudioResourceManager::GetInstance();
-    *resourceManager = (OH_AudioResourceManager*)audioResourceManager;
+    *resourceManager = (OH_AudioResourceManager *)audioResourceManager;
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
@@ -68,7 +68,10 @@ OH_AudioCommon_Result OH_AudioResourceManager_ReleaseWorkgroup(OH_AudioResourceM
 
 OH_AudioCommon_Result OH_AudioWorkgroup_AddCurrentThread(OH_AudioWorkgroup *group, int32_t *tokenId)
 {
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "workgroup is nullptr");
+    if (group == nullptr || tokenId == nullptr) {
+        AUDIO_ERR_LOG("invalid OH_AudioWorkgroup or tokenId param");
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
     *tokenId = gettid();
     if (convertWorkgroup(group)->AddThread(*tokenId)) {
         return AUDIOCOMMON_RESULT_SUCCESS;
@@ -135,5 +138,5 @@ bool OHAudioResourceManager::ReleaseWorkgroup(OHAudioWorkgroup *group)
     group = nullptr;
     return true;
 }
-} //namespace AudioStandard
-} //namespace OHOS
+} // namespace AudioStandard
+} // namespace OHOS

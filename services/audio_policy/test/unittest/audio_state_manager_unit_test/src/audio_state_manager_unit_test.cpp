@@ -206,7 +206,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_007, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredMediaRenderDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 
@@ -219,7 +219,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_008, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredCallRenderDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 
@@ -232,7 +232,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_009, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredCallCaptureDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 
@@ -245,7 +245,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Leve
 {
     AudioStateManager::GetAudioStateManager().UpdatePreferredRecordCaptureDeviceConnectState(
         ConnectState::CONNECTED);
-    EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
+    EXPECT_EQ(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
 
@@ -396,6 +396,40 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_014, TestSize.Leve
     deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     EXPECT_EQ(deviceDesc->deviceType_, DEVICE_TYPE_SPEAKER);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
+}
+
+/**
+* @tc.name  : Test IsPreferredDevice.
+* @tc.number: IsPreferredDevice_001
+* @tc.desc  : Test IsPreferredDevice.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsPreferredDevice_001, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
+    stateManager.preferredMediaRenderDevice_ = preferredDevice;
+    stateManager.preferredCallCaptureDevice_ = preferredDevice;
+    stateManager.preferredRingRenderDevice_ = preferredDevice;
+    stateManager.preferredRecordCaptureDevice_ = preferredDevice;
+    stateManager.preferredToneRenderDevice_ = preferredDevice;
+    stateManager.preferredRecognitionCaptureDevice_ = preferredDevice;
+    AudioUsrSelectManager::GetAudioUsrSelectManager().recordDeviceInfoList_.clear();
+    stateManager.forcedDeviceMapList_.clear();
+
+    auto desc = AudioDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE);
+    EXPECT_FALSE(stateManager.IsPreferredDevice(desc));
+
+    stateManager.forcedDeviceMapList_.push_back({
+        {-1, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE)}
+    });
+    EXPECT_TRUE(stateManager.IsPreferredDevice(desc));
+
+    stateManager.preferredRecognitionCaptureDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE);
+    EXPECT_TRUE(stateManager.IsPreferredDevice(desc));
+
+    stateManager.forcedDeviceMapList_.clear();
+    stateManager.preferredRecognitionCaptureDevice_ = preferredDevice;
 }
 } // namespace AudioStandard
 } // namespace OHOS

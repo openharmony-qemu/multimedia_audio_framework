@@ -269,6 +269,35 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecognitionCapt
     return preferredRecognitionCaptureDevice_;
 }
 
+bool AudioStateManager::IsPreferredDevice(AudioDeviceDescriptor &desc)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDescs = {
+        preferredMediaRenderDevice_,
+        preferredCallCaptureDevice_,
+        preferredRingRenderDevice_,
+        preferredRecordCaptureDevice_,
+        preferredToneRenderDevice_,
+        preferredRecognitionCaptureDevice_,
+        AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(-1, SOURCE_TYPE_MIC)
+    };
+    bool isPreferred = std::any_of(preferredDescs.begin(), preferredDescs.end(), [&desc](const auto &preferred) {
+        return preferred && preferred->deviceType_ == desc.deviceType_ && preferred->macAddress_ == desc.macAddress_ &&
+            preferred->networkId_ == desc.networkId_;
+    });
+    if (isPreferred) {
+        return true;
+    }
+
+    return std::any_of(forcedDeviceMapList_.begin(), forcedDeviceMapList_.end(), [&desc](const auto &map) {
+        return std::any_of(map.begin(), map.end(), [&desc](const auto &pair) {
+            return pair.second && pair.second->deviceType_ == desc.deviceType_ &&
+                pair.second->macAddress_ == desc.macAddress_ && pair.second->networkId_ == desc.networkId_;
+        });
+    });
+}
+
 void AudioStateManager::UpdatePreferredMediaRenderDeviceConnectState(ConnectState state)
 {
     CHECK_AND_RETURN_LOG(preferredMediaRenderDevice_ != nullptr, "preferredMediaRenderDevice_ is nullptr");
