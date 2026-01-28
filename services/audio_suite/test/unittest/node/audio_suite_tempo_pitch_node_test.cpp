@@ -102,15 +102,13 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
         .Times(g_expectedGetOutputPortCalls).WillRepeatedly(::testing::Return(&inputNodeOutputPort));
 
     std::string option_value = std::to_string(speed) + "," + std::to_string(pitch);
-    int32_t ret = node->SetOptions("speedAndPitch", option_value);
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    EXPECT_EQ(node->SetOptions("speedAndPitch", option_value), SUCCESS);
     node->Connect(mockInputNode_);
     CHECK_AND_RETURN_RET(inputNodeOutputPort.GetInputNum() == 1, ERROR);
     OutputPort<AudioSuitePcmBuffer*>* nodeOutputPort = node->GetOutputPort();
 
     size_t frameSizeInput = buffer->GetDataSize();
     CHECK_AND_RETURN_RET(frameSizeInput > 0, ERROR);
-    // Read input file
     std::vector<uint8_t> inputfileBuffer = ReadInputFile(inputFile, frameSizeInput);
     CHECK_AND_RETURN_RET(inputfileBuffer.empty() == false, ERROR);
     std::ofstream outFile(outputFile, std::ios::binary | std::ios::out);

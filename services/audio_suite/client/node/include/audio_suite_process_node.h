@@ -91,7 +91,7 @@ protected:
     bool secondCall = false;
     bool needCache = false;
     
-    virtual int32_t CalculationNeedBytes(uint32_t frameLengthMs);
+    virtual uint32_t CalculationNeedBytes(uint32_t frameLengthMs);
     int32_t InitCacheLength(uint32_t needDataLength);
     int32_t ProcessedDataToNextNode();
 

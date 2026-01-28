@@ -190,7 +190,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
     int32_t ret = node_->SetBypassEffectNode(true);
     EXPECT_EQ(ret, SUCCESS);
 
-     ret = node_->DoProcess(NEED_DATA_LENGTH);
+    ret = node_->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, ERROR);
 
     std::unique_ptr<AudioSuitePcmBuffer> buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);

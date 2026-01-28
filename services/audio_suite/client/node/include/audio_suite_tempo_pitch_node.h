@@ -32,7 +32,7 @@ public:
     int32_t Init() override;
     int32_t DeInit() override;
     int32_t SetOptions(std::string name, std::string value) override;
-    int32_t CalculationNeedBytes(uint32_t frameLengthMs) override;
+    uint32_t CalculationNeedBytes(uint32_t frameLengthMs) override;
 
 private:
     std::vector<AudioSuitePcmBuffer *> SignalProcess(
