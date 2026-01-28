@@ -576,6 +576,40 @@ HWTEST_F(AudioStateManagerUnitTest, IsSamePreferred_003, TestSize.Level1)
 
     EXPECT_TRUE(stateManager.IsSamePreferred(uid, preferred, recordMap));
 }
+
+/**
+* @tc.name  : Test IsPreferredDevice.
+* @tc.number: IsPreferredDevice_001
+* @tc.desc  : Test IsPreferredDevice.
+*/
+HWTEST_F(AudioStateManagerUnitTest, IsPreferredDevice_001, TestSize.Level1)
+{
+    auto &stateManager = AudioStateManager::GetAudioStateManager();
+    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
+    stateManager.preferredMediaRenderDevice_ = preferredDevice;
+    stateManager.preferredCallCaptureDevice_ = preferredDevice;
+    stateManager.preferredRingRenderDevice_ = preferredDevice;
+    stateManager.preferredRecordCaptureDevice_ = preferredDevice;
+    stateManager.preferredToneRenderDevice_ = preferredDevice;
+    stateManager.preferredRecognitionCaptureDevice_ = preferredDevice;
+    AudioUsrSelectManager::GetAudioUsrSelectManager().recordDeviceInfoList_.clear();
+    stateManager.forcedDeviceMapList_.clear();
+
+    auto desc = AudioDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE);
+    EXPECT_FALSE(stateManager.IsPreferredDevice(desc));
+
+    stateManager.forcedDeviceMapList_.push_back({
+        {-1, std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE)}
+    });
+    EXPECT_TRUE(stateManager.IsPreferredDevice(desc));
+
+    stateManager.preferredRecognitionCaptureDevice_ =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE);
+    EXPECT_TRUE(stateManager.IsPreferredDevice(desc));
+
+    stateManager.forcedDeviceMapList_.clear();
+    stateManager.preferredRecognitionCaptureDevice_ = preferredDevice;
+}
 } // namespace AudioStandard
 } // namespace OHOS
  
