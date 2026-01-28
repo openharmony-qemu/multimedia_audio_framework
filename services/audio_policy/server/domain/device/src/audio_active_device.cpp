@@ -385,6 +385,8 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
     auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
+    int32_t ownerUid = AudioStateManager::GetAudioStateManager().GetAudioSceneOwnerUid();
+    int32_t callerUid = AudioStateManager::GetAudioStateManager().GetPreferredUid(uid);
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
             (*itr)->isEnable_ = true;
@@ -394,12 +396,14 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(**itr), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
+        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     } else {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
+        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
         HandleNegtiveBt(deviceType);
 #endif
     }
