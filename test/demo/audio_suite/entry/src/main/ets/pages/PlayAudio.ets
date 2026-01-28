@@ -94,8 +94,6 @@ export struct PlayAudio {
             }.visibility(this.isPlay ? Visibility.Visible : Visibility.None)
         }
         .width(StyleConst.FULL_WIDTH)
-        // .height('200')
-        // .borderWidth('3')
         .margin($r('app.float.margin_35'))
     }
 
@@ -118,7 +116,6 @@ export struct PlayAudio {
         if (this.playCurrentTime >= this.pitchTotalAudioTime) {
             this.renderState = audioNapi.getRendererState();
             this.isPlay = false;
-            // 需要重新重头开始播放
         }
     }
 }

@@ -209,16 +209,17 @@ export struct TimeLine {
     this.intervalWidth = 2;
     // Number of small divisions visible
     const scaleNum = Math.floor(this.viewWidth / this.intervalWidth) + 2;
-    // middleLineDuration是左侧多少个20ms   (TimeMsUnit.ONE_SECOND / this.intervalWidth)  是 1 毫秒的长度
+    // middleLineDuration is the number of 20 ms (TimeMsUnit.ONE_SECOND / this.intervalWidth)
+    // on the left side, which is a length of 1 millisecond.
     const middleLineDuration = (this.viewWidth / 2) * (TimeMsUnit.TWENTY_MILLISECONDS / this.intervalWidth);
-    // 表示画布最左侧边缘对应的实际时间戳（毫秒）
+    // Indicates the actual timestamp (in milliseconds) corresponding to the leftmost edge of the canvas.
     this.leftTime = this._currentTime - middleLineDuration;
     // let leftTime = 0;
     // [Start draw_scale_2]
     // Find the first tick (aligned to 20 ms)
     let firstTick = Math.floor(this.leftTime / TimeMsUnit.TWENTY_MILLISECONDS);
     this.currentFirstTick = firstTick;
-    // xPosition 表示的是当前时间相对于最近的前一个 20 毫秒刻度的位置偏移量, 故xPosition<=0
+    // xPosition indicates the offset of the current time from the previous 20 ms time scale. Therefore, xPosition <= 0.
     this.xPosition =
       (firstTick * TimeMsUnit.TWENTY_MILLISECONDS - this.leftTime) * (this.intervalWidth / TimeMsUnit.TWENTY_MILLISECONDS);
     Logger.info(TAG, `scaleNum: ${scaleNum}， viewWidth： ${this.viewWidth}, intervalWidth: ${this.intervalWidth}, middleLineDuration: ${middleLineDuration}, leftTime: ${this.leftTime}, firstTick: ${firstTick}, xPosition: ${this.xPosition}`);
@@ -288,11 +289,11 @@ export struct TimeLine {
   private getHourMinute(timeIndex: number): string {
     // Logger.info(TAG, `getHourMinute timeIndex: ${timeIndex}`);
     const milliseconds = Math.floor(timeIndex % 1000);
-    const totalSeconds = Math.floor(timeIndex / 1000); // 将毫秒转换为秒
-    const hours = Math.floor(totalSeconds / 3600) % 24; // 计算小时数，并确保不超过24小时
-    const remainingSecondsAfterHours = totalSeconds % 3600; // 剩余的秒数
-    const minutes = Math.floor(remainingSecondsAfterHours / 60); // 计算剩余的分钟数
-    const seconds = remainingSecondsAfterHours % 60; // 计算剩余的秒数
+    const totalSeconds = Math.floor(timeIndex / 1000); // Convert milliseconds to seconds
+    const hours = Math.floor(totalSeconds / 3600) % 24; // Calculate the number of hours and ensure it does not exceed 24 hours
+    const remainingSecondsAfterHours = totalSeconds % 3600; // Remaining seconds
+    const minutes = Math.floor(remainingSecondsAfterHours / 60); // Calculate the remaining number of minutes
+    const seconds = remainingSecondsAfterHours % 60; // Calculate the remaining number of seconds
 
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }

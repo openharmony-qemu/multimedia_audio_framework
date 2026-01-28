@@ -32,7 +32,7 @@ const int BIT_32 = 32;
 const int OFFSET_BIT_24 = 3;
 const int BIT_DEPTH_TWO = 2;
 
-// 解析 napi 字符串参数
+// Parsing napi string parameters
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result)
 {
     size_t size;
@@ -330,14 +330,14 @@ uint32_t Read24Bit(const uint8_t *p)
 
 void SetAudioFormat(const int sampleRate, const int channels, const int bitsPerSample)
 {
-    // 设置采样率
+    // Set the sampling rate.
     g_audioFormatInput.samplingRate = SetSamplingRate(sampleRate);
-    // 设置声道
+    // Set the audio channel
     g_audioFormatInput.channelCount = channels;
     g_audioFormatInput.channelLayout = SetChannelLayout(channels);
-    // 设置位深
+    // Set bit depth
     g_audioFormatInput.sampleFormat = SetSampleFormat(bitsPerSample);
-    // 设置编码格式
+    // Set the encoding format
     g_audioFormatInput.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
     
     g_audioFormatOutput.samplingRate = g_audioFormatInput.samplingRate;
@@ -347,7 +347,7 @@ void SetAudioFormat(const int sampleRate, const int channels, const int bitsPerS
     g_audioFormatOutput.encodingType = g_audioFormatInput.encodingType;
 }
 
-// 获取音频的时长(ms)
+// Obtain the audio duration(ms)
 long GetAudioDuration(long pcmDataLength, int sampleRate, int channels, int bitsPerSample)
 {
     int bits = UINT_1;
@@ -376,7 +376,7 @@ long GetAudioDuration(long pcmDataLength, int sampleRate, int channels, int bits
     return UINT_0;
 }
 
-// 获取一秒音频的大小
+// Obtain the size of an audio file of one second.
 long GetAudioSize(int sampleRate, int channels, int bitsPerSample)
 {
     int bits = UINT_1;
@@ -453,13 +453,13 @@ bool AddWriteDataBuffer(const std::string inputId, const long oldStartTime, cons
         return false;
     }
     std::vector<uint8_t> newPcmData;
-    // 提取指定范围的数据
+    // Extract data within a specified range
     if (endIndex >= it->second.size()) {
         if (isCopyMultiple) {
             size_t totalLength = endIndex - startIndex;
             size_t available = it->second.size() - startIndex;
             newPcmData.reserve(totalLength);
-            // 复制第一段有效数据
+            // Copy the first segment of valid data
             if (available > 0) {
                 newPcmData.insert(newPcmData.end(), it->second.begin() + startIndex, it->second.end());
             }
@@ -508,7 +508,7 @@ bool UpdateWriteDataBuffer(const std::string inputId, const long startTime, long
         return false;
     }
     std::vector<uint8_t> newPcmData;
-    // 提取指定范围的数据
+    // Extract data within a specified range
     if (endIndex >= it->second.size()) {
         newPcmData = std::vector<uint8_t>(it->second.begin() + startIndex, it->second.end());
     } else {
@@ -555,7 +555,7 @@ bool SetWriteDataBuffer(const std::string inputId, const long originStartTime, c
     if (newStartTime != 0) {
         newKey = inputId.c_str() + std::to_string(newStartTime);
     }
-    // 如果新旧键相同，无需操作
+    // If the old and new keys are the same, no action is required.
     if (oldKey == newKey) {
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, UTILS_TAG,
                      "setWriteDataBuffer: oldKey and newKey are identical, skipping update");
@@ -568,14 +568,14 @@ bool SetWriteDataBuffer(const std::string inputId, const long originStartTime, c
                      "setWriteDataBuffer g_writeDataBufferMap failed, key is not exist");
         return false;
     }
-    // 提取值并删除旧键
-    auto value = std::move(it->second); // 移动语义避免拷贝
-    g_writeDataBufferMap.erase(it);     // 删除旧键值对
-    // 插入新键值对（若newKey存在则覆盖）
+    // Extract the value and delete the old key
+    auto value = std::move(it->second); // Move semantics avoids copying
+    g_writeDataBufferMap.erase(it);     // Delete old key-value pairs
+    // Insert a new key-value pair (overwriting if newKey exists)
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, UTILS_TAG, "setWriteDataBuffer newKey: %{public}s", newKey.c_str());
     auto [newIt, inserted] = g_writeDataBufferMap.insert({newKey, std::move(value)});
     if (!inserted) {
-        // 如果newKey已存在，覆盖原有值
+        // If newKey already exists, overwrite the existing value.
         newIt->second = std::move(value);
         OH_LOG_Print(LOG_APP, LOG_WARN, GLOBAL_RESMGR, UTILS_TAG,
                      "setWriteDataBuffer: newKey already exists, overwriting value");

@@ -6,17 +6,17 @@
 #include <js_native_api.h>
 #include <js_native_api_types.h>
 
-// 注册回调，获取音频播放的finished的值
+// Register a callback to obtain the finished value of audio playback.
 napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info)
 {
     size_t argc = 1;
     napi_value args[1];
     napi_value callback;
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // 创建全局引用
+    // Creating a Global Reference
     napi_create_reference(env, args[0], 1, &callbackAudioRendererRef);
 
-    // 创建线程安全函数
+    // Creating Thread-Safe Functions
     napi_value global;
     napi_get_global(env, &global);
     napi_get_reference_value(env, callbackAudioRendererRef, &callback);
@@ -35,10 +35,10 @@ napi_value RegisterStringCallback(napi_env env, napi_callback_info info)
     napi_value args[1];
     napi_value callback;
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // 创建全局引用
+    // Creating a Global Reference
     napi_create_reference(env, args[0], 1, &callbackStringRef);
 
-    // 创建线程安全函数
+    // Creating Thread-Safe Functions
     napi_value global;
     napi_get_global(env, &global);
     napi_get_reference_value(env, callbackStringRef, &callback);
@@ -57,10 +57,10 @@ napi_value RegisterAudioCacheCallback(napi_env env, napi_callback_info info)
     napi_value args[1];
     napi_value callback;
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // 创建全局引用
+    // Creating a Global Reference
     napi_create_reference(env, args[0], 1, &callbackAudioCacheRef);
 
-    // 创建线程安全函数
+    // Creating Thread-Safe Functions
     napi_value global;
     napi_get_global(env, &global);
     napi_get_reference_value(env, callbackAudioCacheRef, &callback);
@@ -79,10 +79,10 @@ napi_value RegisterAudioFormatCallback(napi_env env, napi_callback_info info)
     napi_value args[1];
     napi_value callback;
     napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
-    // 创建全局引用
+    // Creating a Global Reference
     napi_create_reference(env, args[0], 1, &callbackStringArrayRef);
 
-    // 创建线程安全函数
+    // Creating Thread-Safe Functions
     napi_value global;
     napi_get_global(env, &global);
     napi_get_reference_value(env, callbackStringArrayRef, &callback);
@@ -99,7 +99,7 @@ napi_value RegisterAudioFormatCallback(napi_env env, napi_callback_info info)
 napi_value UnregisterFinishedCallback(napi_env env, napi_callback_info info)
 {
     if (tsfnBoolean != nullptr) {
-        // 释放线程安全函数
+        // Releasing Thread-Safe Functions
         napi_release_threadsafe_function(tsfnBoolean, napi_tsfn_release);
         tsfnBoolean = nullptr;
     }
@@ -113,7 +113,7 @@ napi_value UnregisterFinishedCallback(napi_env env, napi_callback_info info)
 napi_value UnregisterAudioFormatCallback(napi_env env, napi_callback_info info)
 {
     if (tsfnStringArray != nullptr) {
-        // 释放线程安全函数
+        // Releasing Thread-Safe Functions
         napi_release_threadsafe_function(tsfnStringArray, napi_tsfn_release);
         tsfnStringArray = nullptr;
     }
@@ -127,7 +127,7 @@ napi_value UnregisterAudioFormatCallback(napi_env env, napi_callback_info info)
 napi_value UnregisterStringCallback(napi_env env, napi_callback_info info)
 {
     if (tsfnString != nullptr) {
-        // 释放线程安全函数
+        // Releasing Thread-Safe Functions
         napi_release_threadsafe_function(tsfnString, napi_tsfn_release);
         tsfnString = nullptr;
     }
@@ -141,7 +141,7 @@ napi_value UnregisterStringCallback(napi_env env, napi_callback_info info)
 napi_value UnregisterAudioCacheCallback(napi_env env, napi_callback_info info)
 {
     if (tsfnAudioCache != nullptr) {
-        // 释放线程安全函数
+        // Releasing Thread-Safe Functions
         napi_release_threadsafe_function(tsfnAudioCache, napi_tsfn_release);
         tsfnAudioCache = nullptr;
     }

@@ -7,16 +7,16 @@
 
 #include <js_native_api_types.h>
 
-// 音频播放
+// Audio playback
 napi_ref callbackAudioRendererRef = nullptr;
 
-// 获取音频播放的finished的值
+// Obtains the finished value of audio playback.
 napi_ref callbackStringRef = nullptr;
 
-// 判断音频是否在缓存中
+// Determines whether the audio is in the cache.
 napi_ref callbackAudioCacheRef = nullptr;
 
-// 获取wav格式
+// Obtain the WAV format.
 napi_ref callbackStringArrayRef = nullptr;
 
 napi_value RegisterFinishedCallback(napi_env env, napi_callback_info info);

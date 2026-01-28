@@ -62,7 +62,7 @@ bool Timeline::DeleteAllAudioTrack()
         audioTrack.assets.clear();  // 清空每个 AudioTrack 中的 assets
     }
     audioTrackMap.clear();  // 清空整个 map
-    OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "deleteAllAudioTrack success");
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "deleteAllAudioTrack success");
     return true;
 }
 
@@ -75,7 +75,7 @@ bool Timeline::UpdateAudioTrack(AudioTrack& track)
         return false;
     }
     it->second = track;
-    OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                  "updateAudioTrack trackId: %{public}s success", track.trackId.c_str());
     return true;
 }
@@ -110,7 +110,7 @@ bool Timeline::SetAudioTrack(const std::string& trackId, AudioTrack& track)
 bool Timeline::SetAudioTrackSilent(const std::vector<std::string>& trackIds, const std::vector<bool>& isSilents)
 {
     if (trackIds.size() != isSilents.size()) {
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
                      "setAudioTrackSilent trackIds.size(): %{public}zu is not equal isSilents.size(): %{public}zu",
                      trackIds.size(), isSilents.size());
         return false;

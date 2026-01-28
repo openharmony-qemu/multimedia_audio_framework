@@ -56,7 +56,7 @@ export function copyOneAudioAsset(
     return false;
   }
   const lastStartTime = audioAssetArray[audioAssetArray.length-1].startTime;
-  Logger.error(TAG,
+  Logger.info(TAG,
     ` copyOneAudioAsset lastStartTime is :${lastStartTime}`);
   const audioAsset = audioAssetArray[astIdx];
   let duration = audioAsset.duration ?? 0;
