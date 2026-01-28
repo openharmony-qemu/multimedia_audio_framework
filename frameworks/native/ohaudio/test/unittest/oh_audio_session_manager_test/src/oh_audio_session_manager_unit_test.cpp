@@ -42,6 +42,18 @@ void MyDeviceCallback(OH_AudioDeviceDescriptorArray *devices,
     return;
 }
 
+void MyAvailableCallback(OH_AudioDevice_ChangeType type,
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
+{
+    return;
+}
+
+void MyInputDeviceCallBack(OH_AudioDeviceDescriptorArray *devices,
+    OH_AudioStream_DeviceChangeReason changeReason)
+{
+    return;
+}
+
 /**
  * @tc.name  : Test OH_AudioManager_GetAudioSessionManager.
  * @tc.number: OH_AudioManager_GetAudioSessionManager_001
