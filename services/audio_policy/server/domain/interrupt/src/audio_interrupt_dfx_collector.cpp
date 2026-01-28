@@ -20,6 +20,7 @@
 #include "audio_interrupt_dfx_collector.h"
 #include "media_monitor_manager.h"
 #include "running_process_info.h"
+#include "audio_system_manager.h"
 #include "dfx_msg_manager.h"
 
 namespace OHOS {
