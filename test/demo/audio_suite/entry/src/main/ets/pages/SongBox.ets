@@ -3,7 +3,7 @@
  */
 
 import { importSongs } from '../utils/importSongs/ImportSongs';
-import { SongInfo } from '../utils/importSongs/InterfaceInfo';
+import { SongInfo } from '../utils/InterfaceInfo';
 import audioNapi from 'libentry.so';
 import fileUri from '@ohos.file.fileuri';
 import fs, { ReadOptions } from '@ohos.file.fs';
