@@ -408,6 +408,7 @@ void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDevic
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
                 std::make_shared<AudioDeviceDescriptor>());
         }
+        audioUsrSelectManager_.RestoreMediaControllerPreferredInputDevice(desc);
     }
 }
 

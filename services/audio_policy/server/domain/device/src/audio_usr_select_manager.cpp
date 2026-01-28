@@ -90,7 +90,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    // 判断设备是不是存在且处于连接状态
+    // 判断设备是不是存在且处于连接状�?
     bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
 
     if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || category == PREFERRED_LOW_LATENCY) {
@@ -255,7 +255,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSystemSelectInner(int32_t i
         }
     } else {
         for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-            recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
+            recordDeviceInfo.activeSelectedDevice_ = std::make_shared<AudioDeviceDescriptor>();
+            recordDeviceInfo.selectedDevice_ = std::make_shared<AudioDeviceDescriptor>();
         }
     }
 }
@@ -308,6 +309,14 @@ void AudioUsrSelectManager::UpdateAppIsBackState(int32_t uid, AppIsBackState app
         default:
             return;
     }
+}
+
+void AudioUsrSelectManager::RestoreMediaControllerPreferredInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN(mcSelectedFlag_ && desc->IsSameDeviceDesc(*mcInputPreferred_));
+    RecordDeviceInfo recordDeviceInfo;
+    UpdateRecordDeviceInfoForSystemSelectInner(-1, recordDeviceInfo, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

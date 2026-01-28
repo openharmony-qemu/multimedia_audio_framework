@@ -61,6 +61,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
     void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info, bool mcFlag = false);
     void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
+    void RestoreMediaControllerPreferredInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
 private:
     AudioUsrSelectManager() {};
