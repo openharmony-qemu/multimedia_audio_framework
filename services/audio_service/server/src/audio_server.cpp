@@ -86,7 +86,6 @@ constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr uint32_t DEFAULT_SINK_LATENCY_MS = 40;
 constexpr uint32_t PRIMARY_SINK_LATENCY_MS = 100;
 uint32_t AudioServer::paDaemonTid_;
-std::string g_playtaskId = "0";
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
@@ -1108,9 +1107,9 @@ int32_t AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
     for (const std::string &key : subKeys) {
-        result.push_back(std::make_pair(key, g_playtaskId));
+        result.push_back(std::make_pair(key, playTaskId_));
     }
-    AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", g_playtaskId.c_str());
+    AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", playTaskId_.c_str());
     return SUCCESS;
 }
 
@@ -1732,8 +1731,8 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     if (networkId.find("taskId") != std::string::npos) {
         size_t colon_pos = networkId.find(":");
         size_t brace_pos = networkId.find("}");
-        g_playtaskId = networkId.substr(colon_pos + 1, brace_pos - colon_pos - 1);
-        AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", g_playtaskId.c_str());
+        playTaskId_ = networkId.substr(colon_pos + 1, brace_pos - colon_pos - 1);
+        AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", playTaskId_.c_str());
         return SUCCESS;
     }
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId.c_str());
@@ -1751,6 +1750,20 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
+
+int32_t AudioServer::NotifyTaskIdProxy(const std::string &taskId, bool connected)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
+    if (taskId.find("taskId") != std::string::npos) {
+        size_t colon_pos = taskId.find(":");
+        size_t brace_pos = taskId.find("}");
+        playTaskId_ = taskId.substr(colon_pos + 1, brace_pos - colon_pos - 1);
+        AUDIO_INFO_LOG("NotifyTaskIdProxy taskId %{public}s", playTaskId_.c_str());
+    }
+    return SUCCESS;
+}
 
 inline bool IsParamEnabled(std::string key, bool &isEnabled)
 {

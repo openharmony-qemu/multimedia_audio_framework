@@ -677,7 +677,8 @@ void AudioDeviceDescriptor::SetExtraDeviceInfo(const DStatusInfo &statusInfo, bo
     if (statusInfo.model == "hiplay") { model_ = "hiplay"; }
     networkId_ = statusInfo.networkId;
     dmDeviceType_ = statusInfo.dmDeviceType;
-    connectState_ = dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX ? VIRTUAL_CONNECTED : CONNECTED;
+    connectState_ = (dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX || dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST) ?
+        VIRTUAL_CONNECTED : CONNECTED;
     dmDeviceInfo_ = hasSystemPermission ? statusInfo.dmDeviceInfo : "";
 }
 
