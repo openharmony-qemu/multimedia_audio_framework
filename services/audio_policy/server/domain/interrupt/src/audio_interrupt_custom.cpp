@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string CELIA_APP_NAME = "vassistant";
+const std::string CELIA_APP_NAME = "com.huawei.hmos.vassistant";
 
 static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuState, InterruptHint>> ULTRASONIC_MAP = {
     {{SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
@@ -58,11 +58,12 @@ void AudioInterruptCustom::UltraSonicCustomFocus(const AudioInterrupt &incomingI
     }
 
     std::pair<SourceType, SourceType> ultraSonicFocus = {activeSourceType, incomingSourceType};
-    if (ULTRASONIC_MAP.count(ultraSonicFocus) > 0) {
+    auto it = ULTRASONIC_MAP.find(ultraSonicFocus);
+    if (it != ULTRASONIC_MAP.end()) {
         AUDIO_INFO_LOG("incomingSourceType %{public}d activeSourceType %{public}d set incomingState is %{public}d",
-            incomingSourceType, activeSourceType, ULTRASONIC_MAP.at(ultraSonicFocus).first);
-        incomingState = ULTRASONIC_MAP.at(ultraSonicFocus).first;
-        interruptEvent.hintType = ULTRASONIC_MAP.at(ultraSonicFocus).second;
+            incomingSourceType, activeSourceType, it->second.first);
+        incomingState = it->second.first;
+        interruptEvent.hintType = it->second.second;
     }
 }
 
@@ -87,9 +88,7 @@ void AudioInterruptCustom::CeliaCustomFocus(const AudioInterrupt &incomingInterr
         interruptEvent.hintType = it->second.second;
         AUDIO_INFO_LOG("Two streams can mix because of %{public}s, incoming %{public}d, active %{public}d",
             appName.c_str(), incomingSourceType, activeStreamType);
-        return;
     }
-    return;
 }
 
 void AudioInterruptCustom::ProcessActiveStreamCustomFocus(const AudioInterrupt &incomingInterrupt,
@@ -120,10 +119,11 @@ void AudioInterruptCustom::UpdateUltraSonicCustomFocus(const AudioInterrupt &cur
     }
 
     std::pair<SourceType, SourceType> ultraSonicFocus = {activeSourceType, incomingSourceType};
-    if (ULTRASONIC_STRATEGY_MAP.count(ultraSonicFocus) > 0) {
+    auto it = ULTRASONIC_STRATEGY_MAP.find(ultraSonicFocus);
+    if (it != ULTRASONIC_STRATEGY_MAP.end()) {
         AUDIO_INFO_LOG("activeSourceType %{public}d incomingSourceType %{public}d set activeState is %{public}d",
-            activeSourceType, incomingSourceType, ULTRASONIC_STRATEGY_MAP.at(ultraSonicFocus));
-        focusEntry.hintType = ULTRASONIC_STRATEGY_MAP.at(ultraSonicFocus);
+            activeSourceType, incomingSourceType, it->second);
+        focusEntry.hintType = it->second;
     }
 }
 
