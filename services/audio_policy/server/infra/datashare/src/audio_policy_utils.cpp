@@ -29,7 +29,6 @@
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
-#include "audio_adapter_manager.h"
 
 #include "audio_server_proxy.h"
 
