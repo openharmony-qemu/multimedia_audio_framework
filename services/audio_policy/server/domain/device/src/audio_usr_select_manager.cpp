@@ -90,14 +90,14 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    // 判断设备是不是存在且处于连接状�?
+    // 判断设备是不是存在且处于连接状态
     bool isConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(desc);
 
     if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || category == PREFERRED_LOW_LATENCY) {
         return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
     }
 
-    // 如果是直播或录像且设备为sco，需要判断是否存在可用的高清设备
+    // 濡������存����褰���涓�璁惧�涓�sco锛���瑕��ゆ������瀛��ㄥ���ㄧ��楂�娓�璁惧�
     if (sourceType == SOURCE_TYPE_CAMCORDER || sourceType == SOURCE_TYPE_LIVE || category == PREFERRED_HIGH_QUALITY) {
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
