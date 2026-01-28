@@ -359,13 +359,6 @@ void OnGetAudioEnhancePropertyCbFuzzTest()
     impl_->OnGetAudioEnhancePropertyCb(result);
 }
 
-void OnSetOutputDeviceSinkCbFuzzTest()
-{
-    SetUp();
-    int32_t result = GetData<int32_t>();
-    impl_->OnSetOutputDeviceSinkCb(result);
-}
-
 void HandleSourceAudioStreamRemovedFuzzTest()
 {
     SetUp();
@@ -373,7 +366,7 @@ void HandleSourceAudioStreamRemovedFuzzTest()
     impl_->HandleSourceAudioStreamRemoved(sessionId);
 }
 
-typedef void (*TestFuncs[33])();
+typedef void (*TestFuncs[32])();
 
 TestFuncs g_testFuncs = {
     OpenAudioPortFuzzTest,
@@ -407,7 +400,6 @@ TestFuncs g_testFuncs = {
     OnGetAudioEffectPropertyCbFuzzTest,
     OnGetAudioEnhancePropertyCbV3FuzzTest,
     OnGetAudioEnhancePropertyCbFuzzTest,
-    OnSetOutputDeviceSinkCbFuzzTest,
     HandleSourceAudioStreamRemovedFuzzTest,
 };
 

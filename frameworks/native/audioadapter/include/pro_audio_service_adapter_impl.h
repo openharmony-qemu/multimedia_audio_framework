@@ -84,12 +84,10 @@ public:
     virtual void OnGetAudioEffectPropertyCb(int32_t result) override;
     virtual void OnGetAudioEnhancePropertyCbV3(int32_t result) override;
     virtual void OnGetAudioEnhancePropertyCb(int32_t result) override;
-    virtual void OnSetOutputDeviceSinkCb(int32_t result) override;
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) override;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     void updateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
-    virtual void SetOutputDeviceSink(int32_t device, const std::string &sinkName) override;
 
 private:
     std::mutex lock_;
@@ -119,7 +117,6 @@ private:
     bool isFinishGetAudioEffectProperty_ = false;
     bool isFinishGetAudioEnhancePropertyV3_ = false;
     bool isFinishGetAudioEnhanceProperty_ = false;
-    bool isFinishSetOutputDeviceSink_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

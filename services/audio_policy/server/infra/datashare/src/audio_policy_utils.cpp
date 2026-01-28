@@ -619,7 +619,7 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
         case DeviceType::DEVICE_TYPE_NEARLINK: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-            AudioAdapterManager::GetInstance().SetOutputDeviceSink(deviceType, sinkName);
+            AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
         }
         default:
