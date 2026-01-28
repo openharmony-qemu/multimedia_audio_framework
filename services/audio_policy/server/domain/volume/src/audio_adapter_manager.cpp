@@ -3714,12 +3714,6 @@ void AudioAdapterManager::SetMuteFromRemote(std::string networkId, bool mute)
     SendVolumeKeyEventCbWithUpdateUi(STREAM_MUSIC, desc);
 }
 
-void AudioAdapterManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
-{
-    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
-    audioServiceAdapter_->SetOutputDeviceSink(device, sinkName);
-}
-
 void AudioAdapterManager::SendVolumeKeyEventCbWithUpdateUi(AudioStreamType streamType,
     std::shared_ptr<AudioDeviceDescriptor> device)
 {

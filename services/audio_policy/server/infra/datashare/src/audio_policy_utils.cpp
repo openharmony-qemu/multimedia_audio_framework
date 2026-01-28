@@ -30,7 +30,6 @@
 #include "audio_recovery_device.h"
 #include "audio_bus_selector.h"
 #include "audio_bundle_manager.h"
-#include "audio_adapter_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -625,7 +624,7 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
         case DeviceType::DEVICE_TYPE_NEARLINK: {
             std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
-            AudioAdapterManager::GetInstance().SetOutputDeviceSink(deviceType, sinkName);
+            AudioServerProxy::GetInstance().SetOutputDeviceSinkProxy(deviceType, sinkName);
             break;
         }
         default:
