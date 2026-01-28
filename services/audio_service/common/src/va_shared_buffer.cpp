@@ -117,12 +117,6 @@ void VAAudioSharedMemory::Close()
         size_ = 0;
         AUDIO_INFO_LOG("%{public}s munmap done", name_.c_str());
     }
-
-    if (fd_ >= 0) {
-        (void)CloseFd(fd_);
-        fd_ = INVALID_FD;
-        AUDIO_INFO_LOG("%{public}s close fd done", name_.c_str());
-    }
 }
 
 uint8_t *VAAudioSharedMemory::GetBase()
