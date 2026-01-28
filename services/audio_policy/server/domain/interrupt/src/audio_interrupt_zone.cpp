@@ -259,25 +259,9 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
     return SUCCESS;
 }
 
-int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zoneId,
-    const std::string &deviceTag, const AudioFocusList &interrupts)
+void AudioInterruptZoneManager::UpdateFocusListForInject(const std::string &deviceTag, AudioFocusList &newFocusList,
+    AudioFocusList &activeFocusList, AudioFocusIterator &oldDeviceList)
 {
-    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
-    CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
-        "audio zone permission deny");
-
-    auto &tempMap = service_->zonesMap_;
-    CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
-        ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
-    CHECK_AND_RETURN_RET_LOG(!deviceTag.empty(), ERR_INVALID_PARAM,
-        "device tag is invalid for zone %{public}d", zoneId);
-
-    AUDIO_INFO_LOG("inject interrupt size %{public}zu with device tag %{public}s to zone %{public}d",
-        interrupts.size(), deviceTag.c_str(), zoneId);
-    AudioFocusList newFocusList = interrupts;
-    AudioFocusList activeFocusList;
-    AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceTag);
-
     for (auto &itNew : newFocusList) {
         auto isPresent = [itNew, deviceTag](const std::list<std::pair<AudioInterrupt,
             AudioFocuState>>::iterator &iter) {
@@ -302,6 +286,27 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
             oldDeviceList.erase(itOld);
         }
     }
+}
+
+int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zoneId,
+    const std::string &deviceTag, const AudioFocusList &interrupts)
+{
+    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, ERR_INVALID_PARAM, "interrupt service is nullptr");
+    CHECK_AND_RETURN_RET_LOG(CheckAudioInterruptZonePermission(), ERR_INVALID_PARAM,
+        "audio zone permission deny");
+
+    auto &tempMap = service_->zonesMap_;
+    CHECK_AND_RETURN_RET_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
+        ERR_INVALID_PARAM, "zone %{public}d not exist", zoneId);
+    CHECK_AND_RETURN_RET_LOG(!deviceTag.empty(), ERR_INVALID_PARAM,
+        "device tag is invalid for zone %{public}d", zoneId);
+
+    AUDIO_INFO_LOG("inject interrupt size %{public}zu with device tag %{public}s to zone %{public}d",
+        interrupts.size(), deviceTag.c_str(), zoneId);
+    AudioFocusList newFocusList = interrupts;
+    AudioFocusList activeFocusList;
+    AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceTag);
+    UpdateFocusListForInject(deviceTag, newFocusList, activeFocusList, oldDeviceList);
 
     AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d before remove",
         tempMap[zoneId]->audioFocusInfoList.size(), zoneId);
@@ -391,7 +396,7 @@ int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
 
 std::vector<int32_t> AudioInterruptZoneManager::FindAudioZonesByPid(int32_t pid)
 {
-    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, {0}, "service is nullptr");
+    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, {}, "service is nullptr");
     std::vector<int32_t> zoneIds = {};
     for (const auto &zone : service_->zonesMap_) {
         CHECK_AND_CONTINUE(zone.second != nullptr);
