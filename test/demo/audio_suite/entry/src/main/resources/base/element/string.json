@@ -38,15 +38,15 @@
     },
     {
       "name": "auto_test_desc",
-      "value": "一键执行预定义\n音频编辑场景"
+      "value": "预定场景 一键执行"
     },
     {
       "name": "mixing_console_playing",
-      "value": "混音台（实时播放）"
+      "value": "混音台(实时播放)"
     },
     {
       "name": "mixing_console_cascade",
-      "value": "混音台（级联）"
+      "value": "混音台(级联)"
     },
     {
       "name": "mixing_console_desc",
@@ -65,6 +65,14 @@
       "value": "管线级联 轻松实现"
     },
     {
+      "name": "audio_track_edit",
+      "value": "音轨编辑"
+    },
+    {
+      "name": "audio_track_edit_desc",
+      "value": "简洁音轨 编辑无忧"
+    },
+    {
       "name": "add",
       "value": "+"
     },
@@ -79,6 +87,22 @@
     {
       "name": "renderer",
       "value": "渲染"
+    },
+    {
+      "name": "PAUSE",
+      "value": "暂停"
+    },
+    {
+      "name": "CONTINUE",
+      "value": "继续"
+    },
+    {
+      "name": "STOP",
+      "value": "停止"
+    },
+    {
+      "name": "audio_waves",
+      "value": "音频波"
     }
   ]
 }

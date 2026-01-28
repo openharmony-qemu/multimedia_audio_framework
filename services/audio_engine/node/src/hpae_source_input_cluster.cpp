@@ -247,10 +247,10 @@ void HpaeSourceInputCluster::SetInjectState(bool isInjecting)
 }
 
 void HpaeSourceInputCluster::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid)
+    uint32_t sessionId, SourceType source, CapturerState state)
 {
     CHECK_AND_RETURN(sourceInputNode_ != nullptr);
-    sourceInputNode_->NotifyStreamChangeToSource(change, sessionId, source, state, appUid);
+    sourceInputNode_->NotifyStreamChangeToSource(change, sessionId, source, state);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

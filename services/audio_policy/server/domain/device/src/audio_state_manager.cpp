@@ -89,60 +89,16 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
     }
 }
 
-bool AudioStateManager::IsRepeatedPreferredCallRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
-    const int32_t callerUid)
+int32_t AudioStateManager::GetPreferredUid(int32_t uid)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return IsRepeatedPreferredCallRenderer(preferred, callerUid, ownerUid_, forcedDeviceMapList_);
-}
-
-bool AudioStateManager::IsRepeatedPreferredCallRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
-    const int32_t callerUid, const int32_t ownerUid,
-    const std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> &forcedList) const
-{
-    CHECK_AND_RETURN_RET(preferred != nullptr, true);
-    if (preferred->deviceType_ == DEVICE_TYPE_NONE) {
-        if (callerUid == CLEAR_UID) {
-            return forcedList.empty();
-        } else if (callerUid == SYSTEM_UID || callerUid == ownerUid) {
-            auto findFun = [ownerUid](const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> &record) {
-                return !record.empty() && (record.begin()->first == SYSTEM_UID || record.begin()->first == ownerUid);
-            };
-            return !any_of(forcedList.begin(), forcedList.end(), findFun);
-        } else {
-            auto findFun = [callerUid](const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> &record) {
-                return !record.empty() && record.begin()->first == callerUid;
-            };
-            return !any_of(forcedList.begin(), forcedList.end(), findFun);
-        }
+    int32_t callerUid = uid;
+    if (audioClientInfoMgrCallback_ != nullptr) {
+        auto callerPid = IPCSkeleton::GetCallingPid();
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
+        bool ret = false;
+        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
     }
-
-    if (forcedList.empty()) {
-        return false;
-    }
-
-    if (!IsSamePreferred(callerUid, preferred, forcedList.back())) {
-        return false;
-    }
-
-    return true;
-}
-
-bool AudioStateManager::IsSamePreferred(const int32_t uid, const std::shared_ptr<AudioDeviceDescriptor> &preferred,
-    const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> &recordMap) const
-{
-    CHECK_AND_RETURN_RET(preferred != nullptr, false);
-    CHECK_AND_RETURN_RET(!recordMap.empty(), false);
-
-    if (uid != recordMap.begin()->first) {
-        return false;
-    }
-
-    if (!preferred->IsSameDeviceDescPtr(recordMap.begin()->second)) {
-        return false;
-    }
-
-    return true;
+    return callerUid;
 }
 
 void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -311,6 +267,35 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecognitionCapt
 {
     lock_guard<std::mutex> lock(mutex_);
     return preferredRecognitionCaptureDevice_;
+}
+
+bool AudioStateManager::IsPreferredDevice(AudioDeviceDescriptor &desc)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDescs = {
+        preferredMediaRenderDevice_,
+        preferredCallCaptureDevice_,
+        preferredRingRenderDevice_,
+        preferredRecordCaptureDevice_,
+        preferredToneRenderDevice_,
+        preferredRecognitionCaptureDevice_,
+        AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(-1, SOURCE_TYPE_MIC)
+    };
+    bool isPreferred = std::any_of(preferredDescs.begin(), preferredDescs.end(), [&desc](const auto &preferred) {
+        return preferred && preferred->deviceType_ == desc.deviceType_ && preferred->macAddress_ == desc.macAddress_ &&
+            preferred->networkId_ == desc.networkId_;
+    });
+    if (isPreferred) {
+        return true;
+    }
+
+    return std::any_of(forcedDeviceMapList_.begin(), forcedDeviceMapList_.end(), [&desc](const auto &map) {
+        return std::any_of(map.begin(), map.end(), [&desc](const auto &pair) {
+            return pair.second && pair.second->deviceType_ == desc.deviceType_ &&
+                pair.second->macAddress_ == desc.macAddress_ && pair.second->networkId_ == desc.networkId_;
+        });
+    });
 }
 
 void AudioStateManager::UpdatePreferredMediaRenderDeviceConnectState(ConnectState state)

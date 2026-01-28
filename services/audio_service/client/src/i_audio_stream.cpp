@@ -96,8 +96,13 @@ std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::Cre
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+#ifdef MULTI_ALARM_LEVEL
     streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
     streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+#else
+    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ALARM;
+    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_ALARM;
+#endif
 
     IAudioStream::CreateStreamMap(streamMap);
     return streamMap;
@@ -128,8 +133,13 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
+#ifdef MULTI_ALARM_LEVEL
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+#else
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ALARM;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_ALARM;
+#endif
 }
 
 int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)

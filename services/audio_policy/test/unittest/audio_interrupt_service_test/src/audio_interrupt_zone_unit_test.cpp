@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "audio_unit_test.h"
 #include "audio_interrupt_unit_test.h"
 using namespace testing::ext;
 
@@ -172,6 +173,277 @@ HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_006, TestSize.Level
     auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_007
+* @tc.desc  : Test ReleaseAudioInterruptZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_007, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamUsage == STREAM_USAGE_MOVIE;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::STOP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        return 0;
+    };
+    auto ret = audioInterruptZoneManager->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(getZoneFunc, nullptr);
+    MockNative::Resume();
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_008
+* @tc.desc  : Test ReleaseAudioInterruptZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_008, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamUsage == STREAM_USAGE_MOVIE;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->context.backStrategy_ = MediaBackStrategy::KEEP;
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        return 0;
+    };
+    auto ret = audioInterruptZoneManager->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(getZoneFunc, nullptr);
+    MockNative::Resume();
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_009
+* @tc.desc  : Test ReleaseAudioInterruptZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_009, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamUsage == STREAM_USAGE_INVALID;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::KEEP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        return 0;
+    };
+    auto ret = audioInterruptZoneManager->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(getZoneFunc, nullptr);
+    MockNative::Resume();
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_010
+* @tc.desc  : Test ReleaseAudioInterruptZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_010, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamUsage == STREAM_USAGE_MEDIA;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::KEEP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::MUTED});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
+        const std::string &streamTag, const StreamUsage &usage)->int32_t {
+        return 0;
+    };
+    auto ret = audioInterruptZoneManager->ReleaseAudioInterruptZone(zoneId, getZoneFunc);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(getZoneFunc, nullptr);
+    MockNative::Resume();
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_011
+* @tc.desc  : Test InjectInterruptToAudioZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_011, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::STOP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    auto ret = audioInterruptZoneManager->InjectInterruptToAudioZone(zoneId, interruptZone->audioFocusInfoList);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(audioInterruptZoneManager->service_->zonesMap_.empty());
+    MockNative::Resume();
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_012
+* @tc.desc  : Test InjectInterruptToAudioZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_012, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 1;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::STOP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    AudioInterrupt a2;
+    a2.streamId = 2;
+    AudioFocusList interrupts;
+    interrupts.push_back({a2, AudioFocuState::ACTIVE});
+    auto ret = audioInterruptZoneManager->InjectInterruptToAudioZone(zoneId, interrupts);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(audioInterruptZoneManager->service_->zonesMap_.empty());
+    MockNative::Resume();
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_013
+* @tc.desc  : Test InjectInterruptToAudioZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_013, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 0;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::STOP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    AudioInterrupt a2;
+    a2.streamId = 0;
+    AudioFocusList interrupts;
+    interrupts.push_back({a2, AudioFocuState::PAUSE});
+    auto ret = audioInterruptZoneManager->InjectInterruptToAudioZone(zoneId, interrupts);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_FALSE(audioInterruptZoneManager->service_->zonesMap_.empty());
+    MockNative::Resume();
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_014
+* @tc.desc  : Test TryActiveAudioFocusForZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_014, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 0;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::STOP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    audioInterruptZoneManager->TryActiveAudioFocusForZone(zoneId, interruptZone->audioFocusInfoList);
+    EXPECT_TRUE(interruptZone->audioFocusInfoList.size() > 0);
+
+    interruptZone->audioFocusInfoList.clear();
+    audioInterruptZoneManager->TryActiveAudioFocusForZone(zoneId, interruptZone->audioFocusInfoList);
+    EXPECT_TRUE(interruptZone->audioFocusInfoList.size() == 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -8,7 +8,7 @@ import fs from '@ohos.file.fs';
 import { common } from '@kit.AbilityKit';
 import { picker } from '@kit.CoreFileKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { SongInfo } from '../utils/importSongs/InterfaceInfo';
+import { SongInfo } from '../utils/InterfaceInfo';
 import { MainTitleTextModifier, saveFileBuffer } from '../utils/ExportFile';
 import { taskpool } from '@kit.ArkTS';
 import { SymbolGlyphModifier, TextModifier } from '@kit.ArkUI';

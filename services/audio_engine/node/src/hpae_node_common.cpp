@@ -320,7 +320,6 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     }
     sinkInfo.deviceNetId = audioModuleInfo.networkId;
     sinkInfo.deviceClass = audioModuleInfo.className;
-    sinkInfo.busAddress = audioModuleInfo.busAddress;
     sinkInfo.suspendTime = audioModuleInfo.suspendIdleTimeout;
     AUDIO_INFO_LOG("HpaeManager::deviceNetId: %s, deviceClass: %s, suspend_time: %{public}u",
         sinkInfo.deviceNetId.c_str(),
@@ -581,7 +580,6 @@ void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
     nodeInfo.effectInfo = streamInfo.effectInfo;
     nodeInfo.fadeType = streamInfo.fadeType;
     nodeInfo.sourceType = streamInfo.sourceType;
-    nodeInfo.encoding = streamInfo.encoding;
 }
 
 RendererState ConvertHpaeToRendererState(HpaeSessionState state)

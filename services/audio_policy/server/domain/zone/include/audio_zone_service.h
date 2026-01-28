@@ -84,9 +84,9 @@ public:
     int32_t EnableAudioZoneInterruptReport(pid_t clientPid, int32_t zoneId,
         const std::string &deviceTag, bool enable);
 
-    int32_t ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+    AudioInterruptResult ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    int32_t DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
@@ -104,6 +104,7 @@ public:
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool CheckExistUidInAudioZone();
+    void NotifyStreamSilentChange(uint32_t streamId);
 
     AudioScene GetAudioSceneFromAllZones();
 

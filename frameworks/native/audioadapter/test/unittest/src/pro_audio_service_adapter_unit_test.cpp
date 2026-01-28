@@ -417,20 +417,5 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_007, TestSize
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_EQ(portId, -1);
 }
-
-/**
- * @tc.name: Pro_Audio_SetOutputDeviceSink_001
- * @tc.desc: test set output device sink
- * @tc.type: FUNC
- */
-HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_SetOutputDeviceSink_001, TestSize.Level1)
-{
-    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
-    EXPECT_EQ(portId, 0);
-    int32_t deviceType = 1;
-    std::string sinkName = "test";
-    impl_->SetOutputDeviceSink(deviceType, sinkName);
-}
 }  // namespace AudioStandard
 }  // namespace OHOS

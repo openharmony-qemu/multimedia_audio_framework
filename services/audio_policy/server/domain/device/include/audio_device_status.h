@@ -83,6 +83,7 @@ public:
     void HandTaskIdStatus(DStatusInfo &statusInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    void OnConnectFailed(AudioDeviceDescriptor &desc);
     uint16_t GetDmDeviceType();
     void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);

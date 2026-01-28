@@ -9,8 +9,8 @@
 #include <string>
 #include "napi/native_api.h"
 #include "hilog/log.h"
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audio_suite_engine.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
 #include "NodeManager.h"
 #include "callback/RegisterCallback.h"
 #include "audioSuiteError/AudioSuiteError.h"
@@ -67,6 +67,7 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     g_multiRenderFrameFlag = true;
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation: operation success");
+    g_threadPipelineManager->multiRenderFrameFlag = true;
     delete[] argv;
     return ret;
 }

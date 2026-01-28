@@ -18,6 +18,7 @@
 
 #include "audio_pipe_manager.h"
 #include "audio_injector_policy.h"
+#include "audio_definition_adapter_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -846,6 +847,38 @@ bool AudioPipeManager::IsStreamUltraFast(uint32_t sessionId)
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             CHECK_AND_CONTINUE(desc->GetSessionId() == sessionId);
             return desc->GetUltraFastFlag();
+        }
+    }
+    return false;
+}
+
+bool AudioPipeManager::HasRunningRecognitionCapturerStream()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    bool hasRunningRecognitionCapturerStream = false;
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if ((desc->streamStatus_ == STREAM_STATUS_STARTED) && (desc->audioMode_ == AUDIO_MODE_RECORD) &&
+            (desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+            desc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION)) {
+                return true;
+            }
+        }
+    }
+    AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
+    return hasRunningRecognitionCapturerStream;
+}
+
+bool AudioPipeManager::IsOnPrimaryAdapter(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (pipeInfo->adapterName_ == ADAPTER_TYPE_PRIMARY &&
+            pipeInfo->streamDescMap_.find(sessionId) != pipeInfo->streamDescMap_.end()) {
+            return true;
         }
     }
     return false;

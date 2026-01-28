@@ -24,6 +24,7 @@ export interface Node {
   id: string;
   type: NodeType;
   color?: BackColor;
+  isByPass?: boolean;
   balanceBandGains?: number[];
   soundFiledType?: SoundFiledType;
   environmentType?: EnvironmentType;
@@ -31,11 +32,8 @@ export interface Node {
   audioSeparationType?: AudioSeparationType;
   soundSpeed?: number;
   soundTone?: number;
-  generalVoiceChangeType?: GeneralVoiceChangeType;
-  pureVoiceChangeType?: PureVoiceChangeType;
-  pureVoiceChangeGender?: PureVoiceChangeGenderOption;
-  pureVoiceChangePitch?: number;
   spaceRender?: SpaceRender;
+  voiceChange?: VoiceChange;
 }
 
 export interface  OutSong {
@@ -58,19 +56,58 @@ export interface NavigationParams {
 }
 
 export enum BackColor {
-  FIELD_COLOR = '#9869E0',
-  SEPARATION_COLOR = '#9869E0',
-  NR_COLOR = '#9869E0',
-  EQ_COLOR = '#9869E0',
-  VB_COLOR = '#9869E0',
+  FIELD_COLOR = '#FFC107',
+  SEPARATION_COLOR = '#4ECDC4',
+  NR_COLOR = '#FF6F61',
+  EQ_COLOR = '#ffc46e98',
+  VB_COLOR = '#2A5C9B',
   MIXER_COLOR = '#9869E0',
   INPUT_COLOR = '#9869E0',
   OUTPUT_COLOR = '#9869E0',
-  ENV_COLOR = '#9869E0',
-  SOUND_SPEED_TONE = '#9869E0',
-  SPACE_RENDER_COLOR = '#9869E0',
-  GENERAL_VOICE_CHANGE = '#9869E0',
-  PURE_VOICE_CHANGE = '#9869E0'
+  ENV_COLOR = '#D3A26F',
+  SOUND_SPEED_TONE = '#4A90E2',
+  SPACE_RENDER_COLOR = '#8BC34A',
+  GENERAL_VOICE_CHANGE = '#005B96',
+  PURE_VOICE_CHANGE = '#FFD700',
+  VOICE_CHANGE = '#FFD700',
+  EFFECT = '#00BFFF'
+}
+
+export interface AudioTrack {
+  audioTrackId: string;
+  //是否静音
+  isSilent: boolean;
+  //是否独奏
+  isSolo: boolean;
+  audioAssetArray?: Array<AudioAsset>;
+}
+
+export interface AudioAsset {
+  assetId: number;
+  uri: string;
+  songName?: string | Resource;
+  songType?: string;
+  //音频资源上的效果节点
+  nodes?: Array<Node>;
+  singerName?: string | Resource;
+  albumCover?: PixelMap;
+  albumName?: string | Resource;
+  //wav音频文件buffer
+  wavBuffer?: ArrayBuffer;
+  //跳过wav头的pcmbuffer
+  pcmBuffer?: ArrayBuffer;
+  //通道数
+  channels: number;
+  //采样率
+  sampleRate: number;
+  //位深
+  bitsPerSample: number;
+  //音频文件fd
+  fd?: number;
+  //音频开始时间
+  startTime?: number;
+  //音频时长
+  duration?: number | undefined;
 }
 
 export enum NodeType {
@@ -88,14 +125,16 @@ export enum NodeType {
   'VB' = '美化',
   'GENERAL_VOICE_CHANGE' = '通用变声',
   'PURE_VOICE_CHANGE' = '传统变声',
-  'SPACE_RENDER' = '空间渲染',
+  'VOICE_CHANGE' = '变声',
+  'EFFECT' = '效果',
+  'SPACE_RENDER' = '3D',
   'SOUND_SPEED_TONE' = '音速音调'
 }
 
 export const InputStringToNodeTypeMap:Map<string, NodeType> = new Map([
   ["INPUT", NodeType.INPUT],
   ["OUTPUT", NodeType.OUTPUT],
-  ["SEPARATION", NodeType.SEPARATION],
+  ["AISS", NodeType.SEPARATION],
   ["NR", NodeType.NR],
   ["VB", NodeType.VB],
   ["MIXER", NodeType.MIXER],
@@ -123,7 +162,9 @@ export const ColorMap = new Map<NodeType, BackColor>([
   [NodeType.SOUND_SPEED_TONE, BackColor.SOUND_SPEED_TONE],
   [NodeType.SPACE_RENDER, BackColor.SPACE_RENDER_COLOR],
   [NodeType.GENERAL_VOICE_CHANGE, BackColor.GENERAL_VOICE_CHANGE],
-  [NodeType.PURE_VOICE_CHANGE, BackColor.PURE_VOICE_CHANGE]
+  [NodeType.PURE_VOICE_CHANGE, BackColor.PURE_VOICE_CHANGE],
+  [NodeType.VOICE_CHANGE, BackColor.VOICE_CHANGE],
+  [NodeType.EFFECT, BackColor.EFFECT]
 ])
 
 export enum SoundFiledType {
@@ -372,3 +413,45 @@ export enum BitsPerSampleMode {
   INT = 0,
   FLOAT = 1,
 }
+
+// 音轨编辑
+export const AudioWaveColorMap: Record<string, string> = {
+  'MUSIC_1': '#B86E43',
+  'MUSIC_2': '#AB8336',
+  'MUSIC_3': '#638F32',
+  'MUSIC_4': '#376C90',
+  'MUSIC_5': '#378F88',
+  'MUSIC_AUDIO_WAVES_1': '#f7d0b9',
+  'MUSIC_AUDIO_WAVES_2': '#eed9ae',
+  'MUSIC_AUDIO_WAVES_3': '#d1edb2',
+  'MUSIC_AUDIO_WAVES_4': '#afd3ec',
+  'MUSIC_AUDIO_WAVES_5': '#a4ede7',
+};
+
+export enum RecordParamDefault {
+  sampleRate = 44100,
+  channels = 2,
+  bitsPerSample = 32
+}
+
+// 变声参数
+export interface VoiceChange {
+  type: NodeType.GENERAL_VOICE_CHANGE | NodeType.PURE_VOICE_CHANGE;
+  generalVoiceChange?: GeneralVoiceChangeType;
+  pureVoiceChangeGender?: PureVoiceChangeGenderOption;
+  pureVoiceChangeVocalPart?: PureVoiceChangeVocalPartOption;
+  pureVoiceChangeType?: PureVoiceChangeType;
+  pureVoiceSoundTone?: number;
+}
+
+//枚举类型均衡器频带值
+export const balanceBandGainsMap = new Map<number, number[]>([
+  [1, [3, 5, 2, -4, 1, 2, -3, 1, 4, 5]],
+  [2, [0, 0, 2, 0, 0, 4, 4, 2, 2, 5]],
+  [3, [2, 3, 2, 1, 0, 0, -5, -5, -5, -6]],
+  [4, [4, 3, 2, -3, 0, 0, 5, 4, 2, 0]],
+  [5, [2, 0, 2, 3, 6, 5, -1, 3, 4, 4]],
+  [6, [5, 2, 1, -1, -5, -5, -2, 1, 2, 4]],
+  [7, [1, 4, 5, 3, -2, -2, 2, 3, 5, 5]],
+  [8, [6, 4, 4, 2, 0, 1, 3, 3, 5, 4]]
+]);

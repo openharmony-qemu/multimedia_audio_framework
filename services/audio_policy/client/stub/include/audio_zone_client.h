@@ -17,7 +17,7 @@
 #define AUDIO_ZONE_CLIENT_H
 
 #include "standard_audio_zone_client_stub.h"
-#include "audio_zone_manager.h"
+#include "audio_zone_types.h"
 
 namespace OHOS {
 namespace AudioStandard {

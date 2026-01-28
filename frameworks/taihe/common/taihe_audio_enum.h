@@ -117,10 +117,12 @@ public:
     static OHOS::AudioStandard::StreamUsage GetNativeStreamUsage(int32_t streamUsage);
     static OHOS::AudioStandard::StreamUsage GetNativeStreamUsageFir(int32_t streamUsage);
     static OHOS::AudioStandard::AudioScene GetJsAudioScene(OHOS::AudioStandard::AudioScene audioScene);
+    static AudioVolumeMode GetJsAudioVolumeMode(OHOS::AudioStandard::AudioVolumeMode audioVolumeMode);
     static AudioVolumeType GetJsAudioVolumeType(OHOS::AudioStandard::AudioStreamType volumeType);
     static AudioVolumeType GetJsAudioVolumeTypeMore(OHOS::AudioStandard::AudioStreamType volumeType);
     static StreamUsage GetJsStreamUsage(OHOS::AudioStandard::StreamUsage streamUsage);
     static StreamUsage GetJsStreamUsageFir(OHOS::AudioStandard::StreamUsage streamUsage);
+    static StreamUsage GetJsStreamUsageSec(OHOS::AudioStandard::StreamUsage streamUsage);
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
@@ -130,10 +132,13 @@ public:
     static bool IsLegalInputArgumentVolumeMode(int32_t volumeMode);
     static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
     static bool IsValidSourceType(int32_t intValue);
+    static bool IsLegalBluetoothAndNearlinkPreferredRecordCategory(uint32_t category);
     static bool IsLegalDeviceUsage(int32_t usage);
     static bool IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType);
     static bool IsLegalInputArgumentSessionScene(int32_t scene);
     static bool IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode);
+    static bool IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset);
+    static bool IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset);
 
     static ConnectType ToTaiheConnectType(OHOS::AudioStandard::ConnectType type);
     static DeviceRole ToTaiheDeviceRole(OHOS::AudioStandard::DeviceRole type);
@@ -172,7 +177,13 @@ public:
         OHOS::AudioStandard::OutputDeviceChangeRecommendedAction action);
     static AudioLoopbackStatus ToTaiheAudioLoopbackStatus(OHOS::AudioStandard::AudioLoopbackStatus status);
     static ohos::multimedia::audio::RenderTarget ToTaiheRenderTarget(OHOS::AudioStandard::RenderTarget target);
-    
+    static BluetoothAndNearlinkPreferredRecordCategory ToTaiheBluetoothAndNearlinkPreferredRecordCategory(
+        OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory category);
+    static AudioLoopbackReverbPreset ToTaiheAudioLoopbackReverbPreset(
+        OHOS::AudioStandard::AudioLoopbackReverbPreset preset);
+    static AudioLoopbackEqualizerPreset ToTaiheAudioLoopbackEqualizerPreset(
+        OHOS::AudioStandard::AudioLoopbackEqualizerPreset preset);
+
     static const std::map<std::string, int32_t> deviceTypeMap;
 };
 } // namespace ANI::Audio

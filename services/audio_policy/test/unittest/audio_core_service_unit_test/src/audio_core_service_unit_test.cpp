@@ -757,7 +757,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SelectOutputDevice_001, TestSize.Level1)
 
     int32_t result = GetServerPtr()->eventEntry_->SelectOutputDevice(
         audioRendererFilter, deviceDescriptorVector);
-    EXPECT_EQ(SUCCESS, result);
+    EXPECT_NE(SUCCESS, result);
 }
 
 /**

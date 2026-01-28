@@ -107,6 +107,11 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
     bool updateScene = false;
     auto &releaseZone = tempMap[zoneId];
     for (auto it = releaseZone->audioFocusInfoList.begin(); it != releaseZone->audioFocusInfoList.end(); it++) {
+        if (it->second == PLACEHOLDER) {
+            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", it->first.streamUsage);
+            MoveAudioInterruptToZone(it->first, it->second, destZoneId);
+            continue;
+        }
         if (((it->second != ACTIVE && it->second != DUCK) ||
             (it->first.streamUsage == STREAM_USAGE_UNKNOWN ||
             it->first.streamUsage == STREAM_USAGE_MEDIA ||
@@ -183,6 +188,8 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
                 service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
                 SendInterruptEventForMigration(*itFocus, toZoneId);
             }
+        } else if (itFocus->second == PLACEHOLDER) {
+            MoveAudioInterruptToZone(itFocus->first, itFocus->second, toZoneId);
         } else {
             ForceStopAudioFocusInZone(zoneId, itFocus->first);
         }
@@ -366,6 +373,7 @@ void AudioInterruptZoneManager::TryResumeAudioFocusForZone(int32_t zoneId)
     service_->ResumeAudioFocusList(zoneId, false);
 }
 
+// Deprecated: Use FindAudioZonesByPid instead
 int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
 {
     CHECK_AND_RETURN_RET_LOG(service_ != nullptr, AudioInterruptService::ZONEID_DEFAULT, "service is nullptr");
@@ -379,6 +387,20 @@ int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
     }
     AUDIO_WARNING_LOG("pid %{public}d not in audio zone, use default", pid);
     return AudioInterruptService::ZONEID_DEFAULT;
+}
+
+std::vector<int32_t> AudioInterruptZoneManager::FindAudioZonesByPid(int32_t pid)
+{
+    CHECK_AND_RETURN_RET_LOG(service_ != nullptr, {0}, "service is nullptr");
+    std::vector<int32_t> zoneIds = {};
+    for (const auto &zone : service_->zonesMap_) {
+        CHECK_AND_CONTINUE(zone.second != nullptr);
+        for (const auto &it : zone.second->audioFocusInfoList) {
+            CHECK_AND_CONTINUE(it.first.pid == pid);
+            zoneIds.push_back(zone.first);
+        }
+    }
+    return zoneIds;
 }
 
 bool AudioInterruptZoneManager::CheckAudioInterruptZonePermission()
@@ -399,6 +421,18 @@ void AudioInterruptZoneManager::UpdateContextForAudioZone(int32_t zoneId, const 
     tempMap[zoneId]->context = context;
     AUDIO_INFO_LOG("update zone %{public}d context as %{public}d:%{public}d", zoneId,
         tempMap[zoneId]->context.focusStrategy_, tempMap[zoneId]->context.backStrategy_);
+}
+
+void AudioInterruptZoneManager::MoveAudioInterruptToZone(const AudioInterrupt &interrupt, const AudioFocuState state,
+    const int32_t zoneId)
+{
+    CHECK_AND_RETURN_LOG(service_ != nullptr, "interrupt service is nullptr");
+    auto &tempMap = service_->zonesMap_;
+    CHECK_AND_RETURN_LOG(tempMap.find(zoneId) != tempMap.end() && tempMap[zoneId] != nullptr,
+        "zone %{public}d not exist", zoneId);
+
+    auto &focusInfoList = tempMap[zoneId]->audioFocusInfoList;
+    focusInfoList.emplace_back(std::make_pair(interrupt, state));
 }
 
 } // namespace AudioStandard

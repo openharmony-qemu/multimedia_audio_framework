@@ -2245,6 +2245,22 @@ enum LatencyFlag : uint32_t {
     LATENCY_FLAG_HARDWARE = 1U << 31,
     LATENCY_FLAG_ALL = 0XFFFFFFFF
 };
+
+struct AudioInterruptResult {
+    bool needSetAudioScene;
+    AudioScene targetAudioScene;
+    int32_t ownerUid;
+    int32_t ownerPid;
+    int32_t retCode;
+    AudioInterruptResult()
+        : needSetAudioScene(false),
+          targetAudioScene(AUDIO_SCENE_INVALID),
+          ownerUid(-1),
+          ownerPid(-1),
+          retCode(0)
+    {
+    }
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

@@ -142,8 +142,7 @@ void AudioMicrophoneDescriptorAddAudioCapturerMicrophoneDescriptorFuzzTest()
     sptr<MicrophoneDescriptor> microphoneDescriptor = new MicrophoneDescriptor();
     audioMicrophoneDescriptor.connectedMicrophones_.push_back(microphoneDescriptor);
     audioMicrophoneDescriptor.AddAudioCapturerMicrophoneDescriptor(sessionId, devType);
-    delete microphoneDescriptor;
-    microphoneDescriptor = nullptr;
+    audioMicrophoneDescriptor.connectedMicrophones_.clear();
 }
 
 void AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest()
@@ -154,8 +153,7 @@ void AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest()
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.clear();
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionId, microphoneDescriptor});
     audioMicrophoneDescriptor.GetAudioCapturerMicrophoneDescriptors(sessionId);
-    delete microphoneDescriptor;
-    microphoneDescriptor = nullptr;
+    audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.clear();
 }
 
 void AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest()
@@ -173,8 +171,7 @@ void AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest()
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionId, microphoneDescriptor});
     audioMicrophoneDescriptor.UpdateAudioCapturerMicrophoneDescriptor(devType);
     audioMicrophoneDescriptor.GetAvailableMicrophones();
-    delete microphoneDescriptor;
-    microphoneDescriptor = nullptr;
+    audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.clear();
 }
 
 void AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorFuzzTest()

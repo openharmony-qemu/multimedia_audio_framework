@@ -24,6 +24,7 @@
 #include "taihe_param_utils.h"
 #include "taihe_appvolume_change_callback.h"
 #include "taihe_active_volume_type_change_callback.h"
+#include "taihe_dfx_utils.h"
 
 namespace ANI::Audio {
 constexpr double VOLUME_DEFAULT_DOUBLE = 0.0;
@@ -1128,5 +1129,164 @@ std::shared_ptr<TaiheAudioVolumeKeyEvent> AudioVolumeManagerImpl::GetVolumeEvent
         }
     }
     return cb;
+}
+
+int32_t AudioVolumeManagerImpl::GetSystemVolumePercentage(AudioVolumeType volumeType)
+{
+    int32_t emptySysVolPercentage = 0;
+    int32_t volType = volumeType.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return emptySysVolPercentage;
+    }
+
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volType failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType");
+        return emptySysVolPercentage;
+    }
+
+    if (audioSystemMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSystemMngr_ is nullptr!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY, "audioSystemMngr_ is nullptr");
+        return emptySysVolPercentage;
+    }
+
+    int32_t systemVolume = audioSystemMngr_->GetVolumeDegree(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+    return systemVolume;
+}
+
+void AudioVolumeManagerImpl::SetSystemVolumePercentageSync(AudioVolumeType volumeType, int32_t percentage)
+{
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+
+    int32_t volType = volumeType.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED);
+        return;
+    }
+
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return;
+    }
+
+    int32_t intValue = audioSystemMngr_->SetVolumeDegree(
+        TaiheAudioEnum::GetNativeAudioVolumeType(volType), percentage);
+    CHECK_AND_RETURN(intValue != OHOS::AudioStandard::SUCCESS);
+    if (intValue == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return;
+    } else if (intValue == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
+        return;
+    } else if (intValue == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+        return;
+    } else {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "failed");
+        return;
+    }
+}
+
+int32_t AudioVolumeManagerImpl::GetMinSystemVolumePercentage(AudioVolumeType volumeType)
+{
+    int32_t emptyMinSysVolPercentage = 0;
+    int32_t volType = volumeType.get_value();
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return emptyMinSysVolPercentage;
+    }
+
+    if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
+        AUDIO_ERR_LOG("get volType failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of volType must be enum AudioVolumeType");
+        return emptyMinSysVolPercentage;
+    }
+
+    OHOS::AudioStandard::TaiheDfxUtils::SendVolumeApiInvokeEvent(static_cast<int32_t>(getuid()),
+        "getMinSystemVolumePercentage", volType);
+
+    if (audioSystemMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSystemMngr_ is nullptr!");
+        return emptyMinSysVolPercentage;
+    }
+    int32_t minSystemVolume = audioSystemMngr_->GetMinVolumeDegree(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
+    return minSystemVolume;
+}
+
+void AudioVolumeManagerImpl::OnVolumePercentageChange(callback_view<void(VolumeEvent const& data)> callback)
+{
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    RegisterVolumeDegreeChangeCallback(cacheCallback, VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME, this);
+}
+
+void AudioVolumeManagerImpl::RegisterVolumeDegreeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+    const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl)
+{
+    CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
+    std::lock_guard<std::mutex> lock(audioVolMngrImpl->mutex_);
+    CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl->audioSystemMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+    if (audioVolMngrImpl->volumeDegreeCallbackTaihe_ == nullptr) {
+        audioVolMngrImpl->volumeDegreeCallbackTaihe_ = std::make_shared<TaiheAudioVolumeKeyEventEx>();
+        int32_t ret = audioVolMngrImpl->audioSystemMngr_->RegisterVolumeDegreeCallback(
+            audioVolMngrImpl->cachedClientId_, audioVolMngrImpl->volumeDegreeCallbackTaihe_);
+        CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS,
+            TaiheAudioError::ThrowErrorAndReturn(ret), "Register Failed %{public}d", ret);
+    }
+    std::shared_ptr<TaiheAudioVolumeKeyEventEx> cb =
+        std::static_pointer_cast<TaiheAudioVolumeKeyEventEx>(audioVolMngrImpl->volumeDegreeCallbackTaihe_);
+    CHECK_AND_RETURN_RET_LOG(cb, TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "callback is nullptr");
+    cb->SaveCallbackReference(cbName, callback);
+}
+
+void AudioVolumeManagerImpl::OffVolumePercentageChange(optional_view<callback<void(VolumeEvent const& data)>> callback)
+{
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
+    if (callback.has_value()) {
+        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+    }
+    UnregisterVolumeDegreeChangeCallback(cacheCallback, this);
+}
+
+void AudioVolumeManagerImpl::UnregisterVolumeDegreeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+    AudioVolumeManagerImpl *audioVolMngrImpl)
+{
+    CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
+    std::lock_guard<std::mutex> lock(audioVolMngrImpl->mutex_);
+    CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl->audioSystemMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+
+    std::shared_ptr<TaiheAudioVolumeKeyEventEx> cb =
+        std::static_pointer_cast<TaiheAudioVolumeKeyEventEx>(audioVolMngrImpl->volumeDegreeCallbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "static_pointer_cast failed");
+
+    if (callback != nullptr) {
+        cb->RemoveCallbackReference(callback);
+    }
+    if (callback == nullptr || cb->GetVolumeKeyEventCbListSize() == 0) {
+        int32_t ret = audioVolMngrImpl->audioSystemMngr_->UnregisterVolumeDegreeCallback(
+            audioVolMngrImpl->cachedClientId_, audioVolMngrImpl->volumeDegreeCallbackTaihe_);
+        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnregisterVolumeDegreeCallback Failed");
+        audioVolMngrImpl->volumeDegreeCallbackTaihe_.reset();
+        audioVolMngrImpl->volumeDegreeCallbackTaihe_ = nullptr;
+        cb->RemoveAllCallbackReference();
+    }
 }
 } // namespace ANI::Audio

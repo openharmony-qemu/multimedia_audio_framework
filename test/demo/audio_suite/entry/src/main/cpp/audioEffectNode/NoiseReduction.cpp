@@ -8,8 +8,8 @@
 #include <string>
 #include "napi/native_api.h"
 #include "hilog/log.h"
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audio_suite_engine.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
 #include "NodeManager.h"
 #include "callback/RegisterCallback.h"
 #include "audioSuiteError/AudioSuiteError.h"
@@ -48,10 +48,6 @@ napi_value addNoiseReduction(napi_env env, napi_callback_info info)
     }
     std::string selectNodeId;
     status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], selectNodeId);
-    if (status != napi_ok) {
-        napi_create_int32(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
-        return ret;
-    }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, NR_TAG, "uuid:%{public}s, inputId:%{public}s, "
                  "selectNodeId:%{public}s", uuidStr.c_str(), inputIdStr.c_str(), selectNodeId.c_str());
 

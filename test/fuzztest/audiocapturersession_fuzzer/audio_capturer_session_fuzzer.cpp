@@ -164,14 +164,14 @@ void Test(FuzzedDataProvider& fdp)
     ReloadSourceForEffectFuzzTest,
     GetEnhancePropByNameFuzzTest,
     ReloadSourceForEffectDifferentArgsFuzzTest,
-});
+    });
     func(fdp);
 }
 void Init()
 {
 }
 } // namespace AudioStandard
-} // namesapce OHOS
+} // namespace OHOS
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {

@@ -229,7 +229,7 @@ int32_t HWDecodingRendererStream::GetCurrentPosition(uint64_t &framePosition, ui
     int64_t timeNanoSec = 0;
     int32_t ret = sink_->GetPresentationPosition(framePosition, timeSec, timeNanoSec);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed");
-    timestamp = timeSec * SECOND_TO_NANOSECOND + timeNanoSec;
+    timestamp = static_cast<uint64_t>(timeSec * SECOND_TO_NANOSECOND + timeNanoSec);
     lock.unlock();
     return SUCCESS;
 }
@@ -360,6 +360,10 @@ void HWDecodingRendererStream::SetStreamIndex(uint32_t index)
 {
     AUDIO_INFO_LOG("Using sessionId %{public}d", index);
     streamIndex_ = index;
+}
+
+void HWDecodingRendererStream::AbortCallback(int32_t abortTimes)
+{
 }
 
 uint32_t HWDecodingRendererStream::GetStreamIndex()

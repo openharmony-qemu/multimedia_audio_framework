@@ -29,6 +29,11 @@
             "name": "pipelineCascad",
             "pageSourceFile": "src/main/ets/pages/PipelineCascad.ets",
             "buildFunction": "PipelineCascadBuilder"
-          }
+        },
+        {
+            "name": "audioTrackEdit",
+            "pageSourceFile": "src/main/ets/pages/AudioTrackEdit.ets",
+            "buildFunction": "AudioTrackEditBuilder"
+        }
      ]
 }

@@ -289,6 +289,12 @@ void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, c
     coreService_->OnPrivacyDeviceSelected(devType, macAddress);
 }
 
+void AudioCoreService::EventEntry::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->OnConnectFailed(desc);
+}
+
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

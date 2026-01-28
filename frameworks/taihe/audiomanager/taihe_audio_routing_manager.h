@@ -48,6 +48,8 @@ public:
     void SelectOutputDeviceSync(array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceByFilterSync(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices);
+    void SelectOutputDeviceByFilterWithStrategySync(AudioRendererFilter const &filter,
+        array_view<AudioDeviceDescriptor> outputAudioDevices, AudioDevcieSelectStrategy strategy);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceByFilter(AudioRendererFilter const &filter);
     void SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,
@@ -72,6 +74,10 @@ public:
     void OffPreferOutputDeviceChangeForRendererInfo(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>>
         callback);
     void OffDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback);
+    void OnPreferredOutputDeviceChangeByFilter(AudioRendererFilter const &filters,
+        callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
+    void OffPreferredOutputDeviceChangeByFilter(
+        optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
 
 private:
     static void RegisterDeviceChangeCallback(DeviceFlag deviceFlag, std::shared_ptr<uintptr_t> &callback,
@@ -86,6 +92,9 @@ private:
             AudioRoutingManagerImpl *audioRoutingManagerImpl);
     static void RegisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void RegisterPreferredOutputDeviceChangeByFilterCallback(AudioRendererFilter const &filters,
+        std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
+        AudioRoutingManagerImpl *audioRoutingManagerImpl);
     static void UnregisterDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
         AudioRoutingManagerImpl *audioRoutingManagerImpl);
     static void UnregisterAvailableDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
