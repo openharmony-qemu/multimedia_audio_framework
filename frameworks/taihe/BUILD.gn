@@ -134,6 +134,7 @@ taihe_shared_library("audio_taihe") {
 
   external_deps = [
     "ability_runtime:abilitykit_native",
+    "ability_runtime:napi_common",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
