@@ -423,9 +423,11 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
-        case InternalDeviceType::DEVICE_TYPE_MIC:
-        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
+        case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_NEARLINK_IN:
             portName = ResolvePrimaryMicPort(routeFlag);
             AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
             break;
@@ -435,13 +437,13 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;
             break;
-        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
+        case DeviceType::DEVICE_TYPE_WAKEUP:
             portName = PRIMARY_WAKEUP;
             break;
-        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
+        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
             portName = FILE_SOURCE;
             break;
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             portName = BLUETOOTH_MIC;
             break;
         case InternalDeviceType::DEVICE_TYPE_ACCESSORY:
