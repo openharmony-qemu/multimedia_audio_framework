@@ -76,8 +76,8 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
 
 int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInfo)
 {
-    AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s",
-        streamInfo.sessionId, sourceInfo_.deviceName.c_str());
+    AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s,channel:%{public}u,rate:%{public}u",
+        streamInfo.sessionId, sourceInfo_.deviceName.c_str(), streamInfo.channels, streamInfo.samplingRate);
     HpaeNodeInfo nodeInfo;
     ConfigNodeInfo(nodeInfo, streamInfo);
     HpaeProcessorType sceneType = TransSourceTypeToSceneType(streamInfo.sourceType);
@@ -714,6 +714,8 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
 
 int32_t HpaeCapturerManager::InitCapturerManager()
 {
+    AUDIO_INFO_LOG("deviceName:%{public}s,channel:%{public}u,rate:%{public}u", sourceInfo_.sourceName.c_str(),
+        sourceInfo_.channels, sourceInfo_.samplingRate);
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
