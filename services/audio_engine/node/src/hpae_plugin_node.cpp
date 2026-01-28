@@ -24,6 +24,8 @@ HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
     outputStream_(this), enableProcess_(true), silenceData_(pcmBufferInfo_)
       
 {
+    AUDIO_INFO_LOG("NodeId:%{public}u,rate:%{public}u,channle:%{public}u", nodeInfo.nodeId,
+        nodeInfo.samplingRate, nodeInfo.channels);
     silenceData_.Reset();
     silenceData_.SetBufferValid(false);
     silenceData_.SetBufferSilence(true);

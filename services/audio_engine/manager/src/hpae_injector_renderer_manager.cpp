@@ -600,10 +600,9 @@ int32_t HpaeInjectorRendererManager::CreateInputSession(const HpaeStreamInfo &st
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceName = sinkInfo_.deviceName;
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d",
-        nodeInfo.streamType,
-        nodeInfo.sessionId,
-        nodeInfo.sceneType);
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d,"
+        "channels:%{public}u,rate:%{public}u", nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.sceneTyp,
+        nodeInfo.channels, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     return SUCCESS;
 }
 
