@@ -160,10 +160,10 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::SetParameter(const std::string &paramTyp
 
     stData_.piDataIn = reinterpret_cast<IMEDIA_INT32 *>(dataIn_.data());
     stData_.piDataOut = reinterpret_cast<IMEDIA_INT32 *>(dataOut_.data());
-    stData_.iSize = nodeParameter_.frameLen;
+    stData_.iSize = static_cast<int32_t>(nodeParameter_.frameLen);
     stData_.iEnable_SWS = 1;
     stData_.iData_Format16 = 1;
-    stData_.iData_Channel = nodeParameter_.inChannels;
+    stData_.iData_Channel = static_cast<int32_t>(nodeParameter_.inChannels);
     stData_.iMasterVolume = MASTERVOLUME;
 
     AUDIO_INFO_LOG("Set Env Parameter Success");
@@ -212,7 +212,7 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, 
     for (size_t i = 0; i < frameLen_; i++) {
         pcmOut[i] = ((unsigned int)dataOut_[i] >> TWO_BYTES_WIDTH);
     }
-    
+
     AUDIO_DEBUG_LOG("iMedia_Env_Apply End");
     return ret;
 }

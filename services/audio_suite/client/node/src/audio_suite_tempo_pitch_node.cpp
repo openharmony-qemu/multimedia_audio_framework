@@ -102,7 +102,7 @@ float ParseStringToSpeedRate(const std::string &str, char delimiter)
     return 0.0f;
 }
 
-int32_t AudioSuiteTempoPitchNode::CalculationNeedBytes(uint32_t frameLengthMs)
+uint32_t AudioSuiteTempoPitchNode::CalculationNeedBytes(uint32_t frameLengthMs)
 {
     uint32_t dataBytes = 0;
     dataBytes = static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / speedRate)) * RESIZE_EXPAND_RATE +
@@ -140,7 +140,7 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteTempoPitchNode::SignalProcess(
 
     int32_t ret = algoInterface_->Apply(algorithmInput_, algorithmOutput_);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, retPcmBuffer, "Node SignalProcess Apply failed");
-    frameOutBytes = ret * sizeof(int16_t);
+    frameOutBytes = static_cast<uint32_t>(ret * sizeof(int16_t));
     
     return retPcmBuffer;
 }

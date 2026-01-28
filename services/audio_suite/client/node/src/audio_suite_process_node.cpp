@@ -45,7 +45,7 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
     resultNumber = 1;
 }
 
-int32_t AudioSuiteProcessNode::CalculationNeedBytes(uint32_t frameLengthMs)
+uint32_t AudioSuiteProcessNode::CalculationNeedBytes(uint32_t frameLengthMs)
 {
     uint32_t dataBytes = 0;
     PcmBufferFormat pcmFormat = GetAudioNodeInPcmFormat();
@@ -165,7 +165,7 @@ int32_t AudioSuiteProcessNode::ProcessedDataToNextNode()
 
         for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
             outputPcmBuffer[idx].Reset();
-            CHECK_AND_RETURN_RET_LOG(algoRetPcmBuffer[idx] != nullptr && 
+            CHECK_AND_RETURN_RET_LOG(algoRetPcmBuffer[idx] != nullptr &&
                                      algoRetPcmBuffer[idx]->GetPcmData() != nullptr,
                                      ERR_OPERATION_FAILED,
                                      "node %{public}d do SignalProcess failed, return a nullptr.",
@@ -199,7 +199,7 @@ int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
         secondCall = true;
     }
 
-    if ((GetNodeBypassStatus() == true)) {
+    if ((GetNodeBypassStatus() == true) && cachedBuffer[0].GetSize() == 0) {
         pcmDurationMs_ = needDataLength;
         preOutputs = ReadProcessNodePreOutputData();
         if (!preOutputs.empty()) {

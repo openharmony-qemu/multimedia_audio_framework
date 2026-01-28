@@ -72,7 +72,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
     CHECK_AND_RETURN_RET_LOG(ret == 0 && pitchAlgoHandle_, ERROR, "load pitch algo handle fail");
 
     uint32_t replyData = 0;
-    int32_t sampleRate = nodeParameter_.inSampleRate;
+    uint32_t sampleRate = nodeParameter_.inSampleRate;
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     AudioEffectTransInfo cmdInfo = {sizeof(int32_t), &sampleRate};
     ret = (*pitchAlgoHandle_)->command(pitchAlgoHandle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -179,7 +179,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
     CHECK_AND_RETURN_RET_LOG(pitchAlgoHandle_ != nullptr, ERROR,
         "Apply para pitchAlgoHandle_ is nullptr, need init first");
 
-    int32_t frameLen = nodeParameter_.frameLen;
+    int32_t frameLen = static_cast<int32_t>(nodeParameter_.frameLen);
     int32_t outFrameLen = -1;
     int32_t copyRet = -1;
     int16_t *pcmIn = reinterpret_cast<int16_t *>(pcmInBuf[0]);

@@ -37,10 +37,10 @@ AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(Nod
     AUDIO_INFO_LOG("AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl()");
     stData_.piDataIn = dataIn_.data();
     stData_.piDataOut = dataOut_.data();
-    stData_.iSize = nc.frameLen;
+    stData_.iSize = static_cast<int32_t>(nc.frameLen);
     stData_.iEnable_SWS = AUDIO_SURROUND_ENABLE_SWS;
     stData_.iData_Format16 = AUDIO_SURROUND_PCM_16_BIT;
-    stData_.iData_Channel = nc.inChannels;
+    stData_.iData_Channel = static_cast<int32_t>(nc.inChannels);
     stData_.iMasterVolume = AUDIO_SURROUND_MASTER_VOLUME;
     nodeParameter_ = nc;
 }
