@@ -60,9 +60,9 @@ std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSessio
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.effectInfo = streamInfo.effectInfo;
-    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d,"
-        "channels:%{public}u,rate:%{public}u", nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.sceneTyp,
-        nodeInfo.channels, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u,channels:%{public}u,rate:%{public}u",
+        nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.channels,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNode->SetAppUid(streamInfo.uid);
     AddNodeToMap(sinkInputNode);

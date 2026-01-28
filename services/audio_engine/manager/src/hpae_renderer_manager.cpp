@@ -83,9 +83,9 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
-    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d,"
-        "channels:%{public}u,rate:%{public}u", nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.sceneTyp,
-        nodeInfo.channels, nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u,channels:%{public}u,rate:%{public}u",
+        nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.channels,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     CreateProcessCluster(nodeInfo);
     return SUCCESS;
 }
