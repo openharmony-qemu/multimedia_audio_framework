@@ -49,19 +49,19 @@ void AudioCollaborationManagerUnitTest::SetUp(void) {}
 void AudioCollaborationManagerUnitTest::TearDown(void) {}
 
 /**
-* @tc.name   : Test updateCollaborativeProductId API
+* @tc.name   : Test UpdateCollaborativeProductId API
 * @tc.number : updateCollaborativeProductId_001
-* @tc.desc   : Test updateCollaborativeProductId interface(using empty use case).
+* @tc.desc   : Test UpdateCollaborativeProductId interface(using empty use case).
 */
 HWTEST(AudioCollaborationManagerUnitTest, updateCollaborativeProductId_001, TestSize.Level1)
 {
     std::string productId = "11_123456";
 
-    AudioCollaborationManager::GetInstance()->updateCollaborativeProductId(productId);
+    AudioCollaborationManager::GetInstance()->UpdateCollaborativeProductId(productId);
     EXPECT_EQ(AudioCollaborationManager::GetInstance()->productId_, "11");
 
     productId = "00014B_07_4113";
-    AudioCollaborationManager::GetInstance()->updateCollaborativeProductId(productId);
+    AudioCollaborationManager::GetInstance()->UpdateCollaborativeProductId(productId);
     EXPECT_EQ(AudioCollaborationManager::GetInstance()->productId_, "00014B");
 }
 

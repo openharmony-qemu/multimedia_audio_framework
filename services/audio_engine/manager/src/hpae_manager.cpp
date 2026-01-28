@@ -2779,10 +2779,10 @@ std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
     return sessionIds;
 }
 
-void HpaeManager::updateCollaborativeProductId(const std::string &productId)
+void HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     auto request = [productId]() {
-        HpaePolicyManager::GetInstance().updateCollaborativeProductId(productId);
+        HpaePolicyManager::GetInstance().UpdateCollaborativeProductId(productId);
     };
 
     SendRequest(request, __func__);
