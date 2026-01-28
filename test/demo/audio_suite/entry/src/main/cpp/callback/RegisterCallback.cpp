@@ -84,7 +84,7 @@ void CallStringThread(napi_env env, napi_value js_callback, void *context, void 
     napi_value resultValue;
     napi_create_string_utf8(env, result.c_str(), NAPI_AUTO_LENGTH, &resultValue);
     napi_call_function(env, NULL, js_callback, 1, &resultValue, NULL);
-    delete data; 
+    delete data;
 }
 
 void CallStringCallback(const std::string &result)
