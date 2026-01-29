@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 #include "RegisterCallback.h"
@@ -100,7 +100,7 @@ void CallStringCallback(const std::string &result)
     napi_call_threadsafe_function(tsfnString, data, napi_tsfn_blocking);
 }
 
-void CallAudioCacheThread(napi_env env, napi_value js_callback, void *context, void *data)
+void CallAudioCacheThread(napi_env env, napi_value js_callback, void *data)
 {
     int result = *(int *)data;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, REGISTERCALLBACK_TAG,

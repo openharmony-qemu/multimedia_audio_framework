@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 #include "Utils.h"
@@ -521,13 +521,13 @@ bool UpdateWriteDataBuffer(const std::string inputId, const long startTime, long
     return true;
 }
 
-bool DeleteWriteDataBuffer(const std::string inputId, const long startTime)
+bool DeleteWriteDataBuffer(const std::string inputId, const long originStartTime)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, UTILS_TAG,
                  "deleteWriteDataBuffer start g_writeDataBufferMap.size: %{public}d", g_writeDataBufferMap.size());
     std::string key = inputId;
-    if (startTime != 0) {
-        key = inputId.c_str() + std::to_string(startTime);
+    if (originStartTime != 0) {
+        key = inputId.c_str() + std::to_string(originStartTime);
     }
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, UTILS_TAG, "deleteWriteDataBuffer key: %{public}s", key.c_str());
     auto it = g_writeDataBufferMap.find(key);

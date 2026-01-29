@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 #ifndef AUDIOEDITTESTAPP_TIMELINE_H
@@ -38,13 +38,13 @@ public:
     bool DeleteAllAudioTrack();
     bool UpdateAudioTrack(AudioTrack& track);
     AudioTrack* GetAudioTrack(const std::string& trackId);
-    bool SetAudioTrack(const std::string& trackId, AudioTrack& track);
+    bool SetAudioTrack(const std::string& trackId, const AudioTrack& track);
     bool SetAudioTrackSilent(const std::vector<std::string>& trackIds, const std::vector<bool>& isSilents);
     // AudioAsset
-    bool CheckIndex(long &startIndex, long &endIndex, std::string &oldKey);
-    bool AddAudioAsset(const std::string &trackId, AudioAsset &asset, long oldStartTime, std::vector<long> &indexs,
-                       bool isCopyMultiple);
-    bool UpdateAudioAsset(const std::string& trackId, AudioAsset& asset, long startIndex, long endIndex);
+    bool CheckIndex(const long &startIndex, const long &endIndex, const std::string &oldKey) const;
+    bool AddAudioAsset(const std::string &trackId, const AudioAsset &asset, const long oldStartTime,
+                       std::vector<long> &indexs, const bool isCopyMultiple);
+    bool UpdateAudioAsset(const std::string& trackId, AudioAsset& asset, const long startIndex, const long endIndex);
     bool DeleteAudioAsset(const std::string& trackId, const long startTime);
     AudioAsset* GetAudioAsset(const std::string& trackId, const long startTime);
     bool SetAudioAsset(const std::string& trackId, const long startTime, AudioAsset& asset);
@@ -62,7 +62,7 @@ public:
     // PcmBuffer Operation
     bool GetPcmBuffer(void* pcmBuffer, const std::string& trackId, const long startTime);
     
-    void ResetCurrent(const long currentTime);
+    void ResetCurrent(const long currentTimeTemp);
 private:
     Timeline() = default;
 private:

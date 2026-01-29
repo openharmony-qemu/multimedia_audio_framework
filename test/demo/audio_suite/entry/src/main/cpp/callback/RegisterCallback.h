@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 #ifndef REGISTERCALLBACK_H
@@ -35,7 +35,7 @@ void CallStringThread(napi_env env, napi_value js_callback, void *context, void 
 
 void CallStringCallback(const std::string &result);
 
-void CallAudioCacheThread(napi_env env, napi_value js_callback, void *context, void *data);
+void CallAudioCacheThread(napi_env env, napi_value js_callback, void *data);
 
 void CallAudioCacheCallback(int result);
 
