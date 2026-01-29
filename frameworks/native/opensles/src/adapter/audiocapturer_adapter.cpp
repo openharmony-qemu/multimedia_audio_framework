@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioCapturerAdapter"xx
+#define LOG_TAG "AudioCapturerAdapter"
 #endif
 
 #include <common.h>
@@ -36,7 +36,7 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
 
 shared_ptr<AudioCapturer> AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
-    AUDIO_INFO_LOG("id: %{public}lu", id);
+    AUDIO_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
     auto it = captureMap_.find(id);
     if (it == captureMap_.end()) {
         AUDIO_ERR_LOG("GetAudioCapturerById: %{public}lu not found", id);
@@ -47,7 +47,7 @@ shared_ptr<AudioCapturer> AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id
 
 void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 {
-    AUDIO_INFO_LOG("id: %{public}lu", id);
+    AUDIO_INFO_LOG("AudioCapturerAdapter::EraseAudioCapturerById: %{public}lu", id);
     captureMap_.erase(id);
     callbackMap_.erase(id);
 }
@@ -55,7 +55,7 @@ void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSource *dataSource,
     SLDataSink *dataSink, AudioStreamType streamType)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter");
     SLDataFormat_PCM *pcmFormat = (SLDataFormat_PCM *)dataSink->pFormat;
     AudioCapturerParams capturerParams;
     ConvertPcmFormat(pcmFormat, &capturerParams);
