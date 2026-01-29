@@ -17,9 +17,10 @@
 #endif
 
 #include "napi_audio_capturer.h"
-
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
 #include "xpower_event_js.h"
+#endif
 #endif
 #include "audio_errors.h"
 #include "audio_system_manager.h"
@@ -64,7 +65,7 @@ void NapiAudioCapturer::Destructor(napi_env env, void *nativeObject, void *final
     }
     auto obj = static_cast<NapiAudioCapturer *>(nativeObject);
     ObjectRefMap<NapiAudioCapturer>::DecreaseRef(obj);
-    AUDIO_INFO_LOG("delete obj done");
+    AUDIO_INFO_LOG("Decrease obj count");
 }
 
 napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &constructor)
@@ -144,8 +145,12 @@ unique_ptr<NapiAudioCapturer> NapiAudioCapturer::CreateAudioCapturerNativeObject
         capturerOptions.capturerInfo.capturerFlags = 0;
     }
     capturerOptions.capturerInfo.recorderType = RECORDER_TYPE_ARKTS_AUDIO_RECORDER;
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     napiCapturer->audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions);
-
+#else
+    std::string cacheDir = "/data/storage/el2/base/temp";
+    napiCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions, cacheDir);
+#endif
     if (napiCapturer->audioCapturer_ == nullptr) {
         AUDIO_ERR_LOG("Capturer Create failed");
         NapiAudioCapturer::isConstructSuccess_ = NAPI_ERR_SYSTEM;
@@ -367,7 +372,7 @@ napi_value NapiAudioCapturer::CreateMicInAudioCapturer(napi_env env, napi_callba
         NapiAudioError::ThrowError(env, "CreateMicInAudioCapturer failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
- 
+
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
             NAPI_ERR_INVALID_PARAM);
@@ -376,7 +381,7 @@ napi_value NapiAudioCapturer::CreateMicInAudioCapturer(napi_env env, napi_callba
             NAPI_ERR_INVALID_PARAM);
     };
     context->GetCbInfo(env, info, inputParser);
- 
+
     auto complete = [env, context](napi_value &output) {
         output = CreateAudioCapturerWrapper(env, context->capturerOptions);
         if (NapiAudioCapturer::isConstructSuccess_ != SUCCESS) {
@@ -384,7 +389,7 @@ napi_value NapiAudioCapturer::CreateMicInAudioCapturer(napi_env env, napi_callba
             NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
         }
     };
- 
+
     return NapiAsyncWork::Enqueue(env, context, "CreateMicInAudioCapturer", nullptr, complete);
 }
 
@@ -536,8 +541,10 @@ napi_value NapiAudioCapturer::Start(napi_env env, napi_callback_info info)
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
+#ifdef FEATURE_HIVIEW_ENABLE
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     HiviewDFX::ReportXPowerJsStackSysEvent(env, "STREAM_CHANGE", "SRC=Audio");
+#endif
 #endif
     return NapiAsyncWork::Enqueue(env, context, "Start", executor, complete);
 }
@@ -615,6 +622,7 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
+#ifndef IOS_PLATFORM
     if ((!firstReadCalled_.exchange(true, std::memory_order_relaxed)) &&
         (getpid() == gettid())) {
         auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
@@ -628,6 +636,7 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
                 capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::read);
         }
     }
+#endif
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
@@ -1203,7 +1212,7 @@ napi_value NapiAudioCapturer::RegisterPositionCallback(napi_env env, napi_value 
     int64_t markPosition = 0;
     NapiParamUtils::GetValueInt64(env, markPosition, argv[PARAM1]);
 
-    AUDIO_INFO_LOG("NapiAudioCapturer:RegisterPositionCallback start! %{public}" PRId64, markPosition);
+    AUDIO_INFO_LOG("NapiAudioCapturer:RegisterPositionCallback start!");
     if (markPosition > 0) {
         napiCapturer->positionCbNapi_ = std::make_shared<NapiCapturerPositionCallback>(env);
         CHECK_AND_RETURN_RET_LOG(napiCapturer->positionCbNapi_ != nullptr,
@@ -1318,6 +1327,7 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
     cb->AddCallbackReference(cbName, argv[PARAM1]);
     cb->CreateReadDataTsfn(env);
 
+#ifndef IOS_PLATFORM
     if ((!firstRegReadCbCalled_.exchange(true, std::memory_order_relaxed)) &&
         (getpid() == gettid())) {
         AudioCapturerInfo capturerInfo = {};
@@ -1326,6 +1336,7 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
         NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
             capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::readCb);
     }
+#endif
 
     AUDIO_INFO_LOG("Register Callback is successful");
 }
