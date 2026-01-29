@@ -15,6 +15,7 @@
 #include <cstring>
 #include "audio_collaborative_service_unit_test.h"
 #include "audio_errors.h"
+#include "audio_core_service.h"
 
 using namespace testing::ext;
 using namespace testing;
