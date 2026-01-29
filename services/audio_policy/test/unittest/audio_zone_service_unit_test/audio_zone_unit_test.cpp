@@ -75,7 +75,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_002, TestSize.Level1)
     zone->RemoveKey(AudioZoneBindKey(2, "", "temp"));
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "temp")), false);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), true);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), false);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "d1", "test")), false);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1)), true);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1, "")), true);
 }

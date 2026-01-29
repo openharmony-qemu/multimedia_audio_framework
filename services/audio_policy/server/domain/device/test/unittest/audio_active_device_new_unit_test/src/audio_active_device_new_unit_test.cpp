@@ -378,11 +378,11 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, IsAvailableFrontDeviceInVector, TestSize.
 {
     auto tmp = std::make_shared<AudioActiveDevice>();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    EXPECT_NE(tmp->IsAvailableFrontDeviceInVector(descs), false);
+    EXPECT_EQ(tmp->IsAvailableFrontDeviceInVector(descs), false);
     descs.push_back(nullptr);
-    EXPECT_NE(tmp->IsAvailableFrontDeviceInVector(descs), false);
+    EXPECT_EQ(tmp->IsAvailableFrontDeviceInVector(descs), false);
     descs[0] = std::make_shared<AudioDeviceDescriptor>();
-    EXPECT_NE(tmp->IsAvailableFrontDeviceInVector(descs), true);
+    EXPECT_EQ(tmp->IsAvailableFrontDeviceInVector(descs), true);
 }
 
 /**
@@ -395,10 +395,10 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, GetRealUid, TestSize.Level4)
     auto tmp = std::make_shared<AudioActiveDevice>();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->callerUid_ = 0;
-    EXPECT_NE(tmp->GetRealUid(streamDesc), 0);
+    EXPECT_EQ(tmp->GetRealUid(streamDesc), 0);
     streamDesc->callerUid_ = MEDIA_SERVICE_UID;
     streamDesc->appInfo_.appUid = 0;
-    EXPECT_NE(tmp->GetRealUid(streamDesc), 0);
+    EXPECT_EQ(tmp->GetRealUid(streamDesc), 0);
 }
 
 } // namespace AudioStandard
