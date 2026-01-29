@@ -44,7 +44,7 @@ private:
     struct AudioCapturerDeviceChangeJsCallback {
         napi_ref callback_;
         napi_env env_;
-        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);s
+        AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     };
 
     void OnJsCallbackCapturerDeviceInfo(napi_ref method, const AudioDeviceDescriptor &deviceInfo);
