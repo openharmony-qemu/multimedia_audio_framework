@@ -136,16 +136,16 @@ void NapiAudioSpatializationEnabledChangeCallback::RemoveAllSpatializationEnable
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) {
-        for (auto it = spatializationEnabledChangeCbList.begin();
-            it != spatializationEnabledChangeCbList.end(); ++it) {
-            napi_delete_reference(env, (*it)->cb_);
+        for (auto it = spatializationEnabledChangeCbList_.begin();
+            it != spatializationEnabledChangeCbList_.end(); ++it) {
+            napi_delete_reference(env_, (*it)->cb_);
             (*it)->cb_ = nullptr;
         }
         spatializationEnabledChangeCbList_.clear();
     } else if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
         for (auto it = spatializationEnabledChangeCbForAnyDeviceList_.begin();
             it != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
-            napi_delete_reference(env, (*it)->cb_);
+            napi_delete_reference(env_, (*it)->cb_);
             (*it)->cb_ = nullptr;
         }
         spatializationEnabledChangeCbForAnyDeviceList_.clear();
@@ -542,14 +542,14 @@ void NapiAudioHeadTrackingEnabledChangeCallback::RemoveAllHeadTrackingEnabledCha
     if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
         for (auto it = headTrackingEnabledChangeCbList_.begin();
             it != headTrackingEnabledChangeCbList_.end(); ++it) {
-            napi_delete_reference(env, (*it)->cb_);
+            napi_delete_reference(env_, (*it)->cb_);
             (*it)->cb_ = nullptr;
         }
         headTrackingEnabledChangeCbList_.clear();
     } else if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
         for (auto it = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
             it != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
-            napi_delete_reference(env, (*it)->cb_);
+            napi_delete_reference(env_, (*it)->cb_);
             (*it)->cb_ = nullptr;
         }
         headTrackingEnabledChangeCbForAnyDeviceList_.clear();
