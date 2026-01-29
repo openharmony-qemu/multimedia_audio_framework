@@ -59,6 +59,7 @@ public:
         (const AudioParamKey key, const std::string &condition), (override));
 
     MOCK_METHOD(int32_t, SetVolume, (float left, float right), (override));
+    MOCK_METHOD(int32_t, SetVolumeWithRamp, (float left, float right, uint32_t durationMs), (override));
     MOCK_METHOD(int32_t, GetVolume, (float &left, float &right), (override));
 
     MOCK_METHOD(int32_t, GetLatency, (uint32_t &latency), (override));

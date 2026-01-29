@@ -287,6 +287,12 @@ int32_t FastAudioRenderSink::SetVolume(float left, float right)
     return SUCCESS;
 }
 
+int32_t FastAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("FastAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t FastAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;

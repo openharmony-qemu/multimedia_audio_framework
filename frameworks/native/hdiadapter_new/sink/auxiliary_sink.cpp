@@ -319,6 +319,12 @@ int32_t AuxiliarySink::SetVolume(float left, float right)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t AuxiliarySink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_WARNING_LOG("not supported");
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t AuxiliarySink::GetVolume(float &left, float &right)
 {
     AUDIO_WARNING_LOG("not supported");

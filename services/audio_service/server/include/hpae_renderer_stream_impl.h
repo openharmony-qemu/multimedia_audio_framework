@@ -123,8 +123,7 @@ private:
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
-    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
-        std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
+    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType, std::string volumeDeviceClass);
     uint64_t GetOffloadLatency();
     bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
     void UpdateInnerCapWriteState(bool isWriteFirst);

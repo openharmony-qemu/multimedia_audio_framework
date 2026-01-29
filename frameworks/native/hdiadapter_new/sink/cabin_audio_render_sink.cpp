@@ -180,6 +180,12 @@ int32_t CabinAudioRenderSink::SetVolume(float left, float right)
     return 0;
 }
 
+int32_t CabinAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("CabinAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t CabinAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;

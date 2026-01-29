@@ -91,6 +91,7 @@ public:
     int32_t GetVolumeDataCount(int64_t &volumeData) override { return SUCCESS; }
 
     int32_t SetVolume(float left, float right) override { return SUCCESS; }
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override { return SUCCESS; }
     int32_t GetVolume(float &left, float &right) override { return SUCCESS; }
 
     int32_t GetLatency(uint32_t &latency) override { return SUCCESS; }
