@@ -532,6 +532,8 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_026, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
+    const uint64_t testSessionId = 12345;
+    
     uint32_t sessionId = 0;
     SessionOperation operation = SESSION_OPERATION_START;
     audioCapturerSession->ReloadCaptureSession(sessionId, operation);
