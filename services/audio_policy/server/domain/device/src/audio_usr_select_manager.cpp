@@ -255,7 +255,8 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSystemSelectInner(int32_t i
         }
     } else {
         for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-            recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
+            recordDeviceInfo.activeSelectedDevice_ = std::make_shared<AudioDeviceDescriptor>();
+            recordDeviceInfo.selectedDevice_ = std::make_shared<AudioDeviceDescriptor>();
         }
     }
 }
@@ -308,6 +309,14 @@ void AudioUsrSelectManager::UpdateAppIsBackState(int32_t uid, AppIsBackState app
         default:
             return;
     }
+}
+
+void AudioUsrSelectManager::RestoreMediaControllerPreferredInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN(mcSelectedFlag_ && desc->IsSameDeviceDesc(*mcInputPreferred_));
+    RecordDeviceInfo recordDeviceInfo;
+    UpdateRecordDeviceInfoForSystemSelectInner(-1, recordDeviceInfo, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

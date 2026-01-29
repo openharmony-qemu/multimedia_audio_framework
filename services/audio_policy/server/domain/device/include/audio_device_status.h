@@ -48,7 +48,7 @@
 #include "audio_a2dp_offload_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_device_capability.h"
-
+#include "audio_usr_select_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -110,7 +110,8 @@ private:
         audioEcManager_(AudioEcManager::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
-        audioRouteMap_(AudioRouteMap::GetInstance()) {}
+        audioRouteMap_(AudioRouteMap::GetInstance()),
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
     ~AudioDeviceStatus() {}
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
@@ -204,6 +205,7 @@ private:
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioPolicyConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;
+    AudioUsrSelectManager& audioUsrSelectManager_;
 
     bool remoteCapturerSwitch_ = false;
     std::vector<std::pair<AudioDeviceDescriptor, bool>> pnpDeviceList_;
