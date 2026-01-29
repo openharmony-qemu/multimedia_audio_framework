@@ -1861,7 +1861,8 @@ int32_t AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 bool AudioProcessInClientInner::CheckStaticAndOperate()
 {
     if (processConfig_.rendererInfo.isStatic) {
-        return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
+        return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback() ||
+            audioBuffer_->IsFirstFrame();
     } else {
         int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
         if ((writableSizeInFrame > 0) &&
