@@ -108,7 +108,9 @@ void NapiAudioSpatializationEnabledChangeCallback::RemoveSpatializationEnabledCh
             it != spatializationEnabledChangeCbList_.end(); ++it) {
             bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
             if (isSameCallback) {
-                AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: find js callback, erase it");
+                AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: find js callback, delete it");
+                napi_delete_reference(env, (*it)->cb_);
+                (*it)->cb_ = nullptr;
                 spatializationEnabledChangeCbList_.erase(it);
                 return;
             }
@@ -118,7 +120,9 @@ void NapiAudioSpatializationEnabledChangeCallback::RemoveSpatializationEnabledCh
             it != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
             bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
             if (isSameCallback) {
-                AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: find js callback, erase it");
+                AUDIO_INFO_LOG("RemoveSpatializationEnabledChangeCallbackReference: find js callback, delete it");
+                napi_delete_reference(env, (*it)->cb_);
+                (*it)->cb_ = nullptr;
                 spatializationEnabledChangeCbForAnyDeviceList_.erase(it);
                 return;
             }
@@ -132,8 +136,18 @@ void NapiAudioSpatializationEnabledChangeCallback::RemoveAllSpatializationEnable
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME)) {
+        for (auto it = spatializationEnabledChangeCbList.begin();
+            it != spatializationEnabledChangeCbList.end(); ++it) {
+            napi_delete_reference(env, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+        }
         spatializationEnabledChangeCbList_.clear();
     } else if (!cbName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
+        for (auto it = spatializationEnabledChangeCbForAnyDeviceList_.begin();
+            it != spatializationEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+            napi_delete_reference(env, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+        }
         spatializationEnabledChangeCbForAnyDeviceList_.clear();
     }
     AUDIO_INFO_LOG("RemoveAllSpatializationEnabledChangeCallbackReference: remove all js callbacks success");
@@ -498,7 +512,9 @@ void NapiAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChange
         for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); ++it) {
             bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
             if (isSameCallback) {
-                AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: find js callback, erase it");
+                AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: find js callback, delete it");
+                napi_delete_reference(env, (*it)->cb_);
+                (*it)->cb_ = nullptr;
                 headTrackingEnabledChangeCbList_.erase(it);
                 return;
             }
@@ -508,7 +524,9 @@ void NapiAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChange
             it != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
             bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
             if (isSameCallback) {
-                AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: find js callback, erase it");
+                AUDIO_INFO_LOG("RemoveHeadTrackingEnabledChangeCallbackReference: find js callback, delete it");
+                napi_delete_reference(env, (*it)->cb_);
+                (*it)->cb_ = nullptr;
                 headTrackingEnabledChangeCbForAnyDeviceList_.erase(it);
                 return;
             }
@@ -522,8 +540,18 @@ void NapiAudioHeadTrackingEnabledChangeCallback::RemoveAllHeadTrackingEnabledCha
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
+        for (auto it = headTrackingEnabledChangeCbList_.begin();
+            it != headTrackingEnabledChangeCbList_.end(); ++it) {
+            napi_delete_reference(env, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+        }
         headTrackingEnabledChangeCbList_.clear();
     } else if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
+        for (auto it = headTrackingEnabledChangeCbForAnyDeviceList_.begin();
+            it != headTrackingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
+            napi_delete_reference(env, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+        }
         headTrackingEnabledChangeCbForAnyDeviceList_.clear();
     }
     AUDIO_INFO_LOG("RemoveAllHeadTrackingEnabledChangeCallbackReference: remove all js callbacks success");

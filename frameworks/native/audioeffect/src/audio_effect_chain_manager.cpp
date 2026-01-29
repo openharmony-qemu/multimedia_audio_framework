@@ -404,7 +404,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetSystemLoadState(systemLoadState_);
     audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState_);
     audioEffectChain->SetEarphoneProduct(earphoneProduct_);
-    audioEffectChain->SetOutdoorMode(outdoorModle_);
+    audioEffectChain->SetOutdoorMode(outdoorMode_);
     audioEffectChain->SetSuperLoudnessMode(superLoudnessMode_);
 }
 
@@ -996,6 +996,10 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 audioEffectChain->SetFoldState(value);
                 paramUpdated = true;
                 break;
+            case HDI_SYSTEMLOAD_STATE:
+                audioEffectChain->SetSystemLoadState(value);
+                paramUpdated = true;
+                break;
             case HDI_LID_STATE:
                 audioEffectChain->SetLidState(value);
                 paramUpdated = true;
@@ -1006,10 +1010,6 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 break;
             case HDI_SUPER_LOUDNESS_MODE:
                 audioEffectChain->SetSuperLoudnessMode(value);
-                paramUpdated = true;
-                break;
-            case HDI_SYSTEMLOAD_STATE:
-                audioEffectChain->SetSystemLoadState(value);
                 paramUpdated = true;
                 break;
             default:
@@ -1045,7 +1045,7 @@ void AudioEffectChainManager::UpdateParamExtra(
     } else if (mainkey == "audio_effect" && subkey == SYSTEM_LOAD_SUBKEY) {
         updateParam(systemLoadState_, HDI_SYSTEMLOAD_STATE);
     } else if (mainkey == "audio_effect" && subkey == "outdoor_mode") {
-        updateParam(outdoorModle_, HDI_OUTDOOR_MODE);
+        updateParam(outdoorMode_, HDI_OUTDOOR_MODE);
     } else if (mainkey == "LOUD_VOLUME_MODE" && subkey == "super_loudness_mode") {
         updateParam(superLoudnessMode_, HDI_SUPER_LOUDNESS_MODE);
     } else {
@@ -1344,8 +1344,8 @@ std::shared_ptr<AudioEffectChain> AudioEffectChainManager::CreateAudioEffectChai
 int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::string &sceneType)
 {
     Trace trace("AudioEffectChainManager::CheckAndReleaseCommonEffectChain: " + sceneType);
-    HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]release effect chain for scene type: %{public}s",
-        sceneType.c_str());
+    HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]release effect chain for scene "
+        "type: %{public}s", sceneType.c_str());
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;

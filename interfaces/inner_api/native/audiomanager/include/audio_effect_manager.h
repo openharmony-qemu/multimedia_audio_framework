@@ -19,6 +19,7 @@
 #include <iostream>
 #include <map>
 #include "audio_effect.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
