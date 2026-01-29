@@ -271,6 +271,23 @@ int32_t OffloadAudioRenderSink::SetVolume(float left, float right)
     return SetVolumeInner(left, right);
 }
 
+int32_t OffloadAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("OffloadAudioRenderSink::SetVolumeWithRamp::set offload vol "\
+        "left: %{public}f, right: %{public}f, durationMs: %{public}u", left, right, durationMs);
+    std::lock_guard<std::mutex> lock(switchDeviceMutex_);
+    Trace trace("OffloadAudioRenderSink::SetVolume");
+
+    leftVolume_ = left;
+    rightVolume_ = right;
+
+    if (switchDeviceMute_) {
+        AUDIO_WARNING_LOG("mute for switch device, store volume, left: %{public}f, right: %{public}f", left, right);
+        return SUCCESS;
+    }
+    return SetVolumeInner(left, right, durationMs);
+}
+
 int32_t OffloadAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
@@ -744,11 +761,12 @@ void OffloadAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
     }
 }
 
-int32_t OffloadAudioRenderSink::SetVolumeInner(float left, float right)
+int32_t OffloadAudioRenderSink::SetVolumeInner(float left, float right, uint32_t durationMs)
 {
     AudioXCollie audioXCollie("OffloadAudioRenderSink::SetVolumeInner", TIMEOUT_SECONDS_10, nullptr, nullptr,
         AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AUDIO_INFO_LOG("set offload vol, left: %{public}f, right: %{public}f", left, right);
+    AUDIO_INFO_LOG("set offload vol, left: %{public}f, right: %{public}f, durationMs: %{public}u",
+        left, right, durationMs);
 
     CHECK_AND_RETURN_RET_LOG(!isFlushing_, ERR_OPERATION_FAILED, "during flushing");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE,
@@ -763,12 +781,42 @@ int32_t OffloadAudioRenderSink::SetVolumeInner(float left, float right)
         volume = (left + right) / HALF_FACTOR;
     }
 
-    int32_t ret = audioRender_->SetVolume(audioRender_, volume);
+    int32_t ret = SUCCESS;
+    if (durationMs == 0) {
+        CHECK_AND_RETURN_RET_LOG(NeedToSetOffloadVolume(volume), ret, "No need to set volume. Return SUCCESS.");
+        ret = audioRender_->SetVolume(audioRender_, volume);
+    } else {
+        ret = audioRender_->SetVolumeWithRamp(audioRender_, volume, durationMs);
+    }
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("set volume fail");
     }
+    offloadVolume_ = volume;
+    durationMs_ = durationMs;
+    setVolumeTime_ = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch());
 
     return ret;
+}
+
+bool OffloadAudioRenderSink::NeedToSetOffloadVolume(const float newVolume)
+{
+    if (!FLOAT_COMPARE_EQ(newVolume, offloadVolume_)) {
+        AUDIO_INFO_LOG("newVolume: %{public}f, oldVolume: %{public}f. Not equal.", newVolume, offloadVolume_);
+        return true;
+    }
+    if (durationMs_ == 0) {
+        AUDIO_INFO_LOG("durationMs_ is zero.");
+        return true;
+    }
+    std::chrono::milliseconds currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch());
+    if (currentTime - setVolumeTime_ > std::chrono::milliseconds(durationMs_)) {
+        AUDIO_INFO_LOG("The volume fade time has ended.");
+        return true;
+    }
+    AUDIO_INFO_LOG("The volume fade time has not yet ended, and the volume has not changed.");
+    return false;
 }
 
 // must be called with sinkMutex_ held

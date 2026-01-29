@@ -324,6 +324,12 @@ int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
     return SetVolumeInner(left, right);
 }
 
+int32_t RemoteOffloadAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t RemoteOffloadAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
