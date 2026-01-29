@@ -80,11 +80,6 @@ public:
         return sharedAudioCapturer_->GetAudioTime(timestamp, base);
     }
 
-    bool GetFirstPkgTimeStampInfo(int64_t &firstTs) const override
-    {
-        return sharedAudioCapturer_->GetFirstPkgTimeStampInfo(firstTs);
-    }
-
     bool Pause() const override
     {
         return sharedAudioCapturer_->Pause();
@@ -290,6 +285,11 @@ public:
         return sharedAudioCapturer_->GetAudioTimestampInfo(timestamp, base);
     }
 
+    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
+    {
+        return sharedAudioCapturer_->SetInterruptEventCallbackType(callbackType);
+    }
+
     bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override
     {
         return sharedAudioCapturer_->GetTimeStampInfo(timestamp, base);
@@ -299,16 +299,11 @@ public:
     {
         return 0;
     }
- 
+
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override
     {
         return;
-    }
-
-    void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
-    {
-        return sharedAudioCapturer_->SetInterruptEventCallbackType(callbackType);
     }
 
     ~SharedCapturerWrapper() override = default;

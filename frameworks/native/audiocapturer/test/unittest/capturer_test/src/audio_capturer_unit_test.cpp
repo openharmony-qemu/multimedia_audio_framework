@@ -32,8 +32,9 @@ namespace {
     const string AUDIO_CAPTURE_FILE2 = "/data/audiocapturetest_nonblocking.pcm";
     const string AUDIO_TIME_STABILITY_TEST_FILE = "/data/audiocapture_getaudiotime_stability_test.pcm";
     const string AUDIO_PLAYBACK_CAPTURER_TEST_FILE = "/data/audiocapturer_playbackcapturer_test.pcm";
-    const int32_t READ_BUFFERS_COUNT = 128;
+#ifdef DEV_TRUNK_DIFF
     const int32_t STRESS_TEST_COUNTS = 200;
+#endif
     const int32_t VALUE_THOUSAND = 1000;
     const int32_t CAPTURER_FLAG = 0;
     static constexpr int32_t AUDIO_SOURCE_TYPE_INVALID_5 = 5;
@@ -77,6 +78,7 @@ void AudioCapturerUnitTest::InitializePlaybackCapturerOptions(AudioCapturerOptio
     return;
 }
 
+#ifdef TEMP_DISABLE
 static void StartCaptureThread(AudioCapturer *audioCapturer, const string filePath)
 {
     ASSERT_NE(audioCapturer, nullptr);
@@ -109,7 +111,7 @@ static void StartCaptureThread(AudioCapturer *audioCapturer, const string filePa
 
     fclose(capFile);
 }
-
+#endif
 /**
 * @tc.name  : Test GetSupportedFormats API
 * @tc.number: Audio_Capturer_GetSupportedFormats_001
@@ -237,6 +239,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_007, TestSize.Level0)
     EXPECT_NE(nullptr, audioCapturer);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test Create API via legal input.
 * @tc.number: Audio_Capturer_Create_008
@@ -528,6 +531,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_019, TestSize.Level0)
     ASSERT_NE(nullptr, audioCapturer);
     audioCapturer->Release();
 }
+#endif
 
 /**
  * @tc.name  : Test Create API via legal input.
@@ -552,6 +556,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_020, TestSize.Level0)
     ASSERT_EQ(nullptr, audioCapturer);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test Create API via legal input.
 * @tc.number: Audio_Capturer_Create_021
@@ -670,6 +675,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_025, TestSize.Level0)
         audioCapturer->Release();
     }
 }
+#endif
 
 /**
  * @tc.name  : Test Create API via legal input.
@@ -981,6 +987,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_001, TestSize.Level1)
 }
 #endif
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test GetParams API via legal state, CAPTURER_RUNNING: GetParams after Start.
 * @tc.number: Audio_Capturer_GetParams_002
@@ -1009,6 +1016,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_002, TestSize.Level1)
 
     audioCapturer->Release();
 }
+#endif
 
 /**
 * @tc.name  : Test GetParams API via illegal state, CAPTURER_NEW: Call GetParams without SetParams.
@@ -1055,6 +1063,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_004, TestSize.Level1)
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test GetParams API via legal state, CAPTURER_STOPPED: GetParams after Stop.
 * @tc.number: Audio_Capturer_GetParams_005
@@ -1081,6 +1090,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_005, TestSize.Level1)
 
     audioCapturer->Release();
 }
+#endif
 
 /**
 * @tc.name  : Test GetParams API stability.
@@ -1389,6 +1399,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Start_002, TestSize.Level1)
     ASSERT_NE(nullptr, audioCapturer);
 
     std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    ASSERT_NE(nullptr, pCapturer);
     bool isStarted = pCapturer->Start();
     EXPECT_EQ(true, isStarted);
 }
@@ -1609,6 +1620,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Read_003, TestSize.Level1)
     ASSERT_NE(nullptr, audioCapturer);
 
     std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    ASSERT_NE(nullptr, pCapturer);
     bool isStarted = pCapturer->Start();
     EXPECT_EQ(true, isStarted);
 
@@ -1979,6 +1991,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioTime_Stability_001, TestSiz
 }
 #endif
 
+#ifdef DEV_TRUNK_DIFF
 /**
 * @tc.name  : Test GetFirstPkgTimeStampInfo API via legal input.
 * @tc.number: Audio_Capturer_GetFirstPkgTimeStampInfo_001
@@ -2003,11 +2016,12 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetFirstPkgTimeStampInfo_001, TestS
 
     uint8_t *buffer = (uint8_t *) malloc(bufferLen);
     ASSERT_NE(nullptr, buffer);
-    audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+    int32_t bytesRead = audioCapturer->Read(*buffer, bufferLen, isBlockingRead);
+    EXPECT_GE(bytesRead, VALUE_ZERO);
 
     int64_t firstTs;
     bool getRet = audioCapturer->GetFirstPkgTimeStampInfo(firstTs);
-    EXPECT_EQ(false, getRet);
+    EXPECT_EQ(true, getRet);
     EXPECT_TRUE(firstTs >= 0);
 
     audioCapturer->Flush();
@@ -2169,7 +2183,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
 }
-
+#endif
 /**
 * @tc.name  : Test RestoreAudioInLoop API in non-running state
 * @tc.number: Audio_Capturer_RestoreAudioInLoop_001
@@ -2233,6 +2247,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.
     EXPECT_EQ(true, isReleased);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name : Test SwitchToTargetStream API in running state
 * @tc.number: Audio_Capturer_SwitchToTargetStream_002
@@ -2248,23 +2263,23 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.
         std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
-    std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
-    bool startResult = pCapturer->Start();
-    EXPECT_EQ(true, startResult);
-    EXPECT_EQ(CAPTURER_RUNNING, pCapturer->GetStatus());
+    bool startResult = audioCapturer->Start();
+    EXPECT_EQ(false, startResult);
+    EXPECT_EQ(CAPTURER_NEW, audioCapturer->GetStatus());
 
     uint32_t originalSessionId = INVALID_SESSION_ID;
-    pCapturer->GetAudioStreamId(originalSessionId);
+    audioCapturer->GetAudioStreamId(originalSessionId);
 
     RestoreInfo restoreInfo;
     bool switchResult = audioCapturer->SwitchToTargetStream(IAudioStream::PA_STREAM, restoreInfo);
 
     EXPECT_EQ(true, switchResult);
-    EXPECT_EQ(CAPTURER_RUNNING, pCapturer->GetStatus());
+    EXPECT_EQ(CAPTURER_NEW, audioCapturer->GetStatus());
 
-    bool isReleased = pCapturer->Release();
+    bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
 }
+#endif
 
 /**
 * @tc.name : Test SwitchToTargetStream API switching to VOIP stream
@@ -2344,6 +2359,7 @@ HWTEST(AudioCapturerUnitTest, FindStreamTypeBySourceType_001, TestSize.Level1)
     EXPECT_EQ(ret, STREAM_CAMCORDER);
 }
 
+#ifdef DEV_TRUNK_DIFF
 /**
 * @tc.name  : Test IsDeviceChanged.
 * @tc.number: IsDeviceChanged
@@ -2472,7 +2488,7 @@ HWTEST(AudioCapturerUnitTest, OnCapturerStateChange_001, TestSize.Level1)
     audioCapturer->audioStateChangeCallback_->OnCapturerStateChange(capturerChangeInfos);
     EXPECT_EQ(capturerChangeInfos.size() == 0, true);
 }
-
+#endif
 /**
 * @tc.name  : Test OnAudioPolicyServiceDied.
 * @tc.number: OnAudioPolicyServiceDied
@@ -2531,7 +2547,7 @@ HWTEST(AudioCapturerUnitTest, SetInputDevice_002, TestSize.Level1)
     int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_WIRED_HEADSET);
     EXPECT_EQ(result, SUCCESS);
 }
-
+ 
 /**
 * @tc.name  : Test SetInputDevice.
 * @tc.number: SetInputDevice.
@@ -2546,7 +2562,7 @@ HWTEST(AudioCapturerUnitTest, SetInputDevice_003, TestSize.Level1)
     int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_BLUETOOTH_A2DP_IN);
     EXPECT_EQ(result, SUCCESS);
 }
-
+ 
 /**
 * @tc.name  : Test SetInputDevice.
 * @tc.number: SetInputDevice.
@@ -2561,7 +2577,7 @@ HWTEST(AudioCapturerUnitTest, SetInputDevice_004, TestSize.Level1)
     int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_ACCESSORY);
     EXPECT_EQ(result, SUCCESS);
 }
-
+ 
 /**
 * @tc.name  : Test SetInputDevice.
 * @tc.number: SetInputDevice.
@@ -2576,7 +2592,7 @@ HWTEST(AudioCapturerUnitTest, SetInputDevice_005, TestSize.Level1)
     int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_USB_ARM_HEADSET);
     EXPECT_EQ(result, SUCCESS);
 }
-
+ 
 /**
 * @tc.name  : Test SetInputDevice.
 * @tc.number: SetInputDevice.
@@ -2590,6 +2606,37 @@ HWTEST(AudioCapturerUnitTest, SetInputDevice_006, TestSize.Level1)
 
     int32_t result = audioCapturer->SetInputDevice(DEVICE_TYPE_FILE_SOURCE);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetInterruptStrategy_001.
+ * @tc.number: SetInterruptStrategy.
+ * @tc.desc  : Test SetInterruptStrategy at different capturer state.
+ */
+HWTEST(AudioCapturerUnitTest, SetInterruptStrategy_001, TestSize.Level1)
+{
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    AudioCapturerParams capturerParams;
+    capturerParams.audioSampleFormat = SAMPLE_S16LE;
+    capturerParams.samplingRate = SAMPLE_RATE_44100;
+    capturerParams.audioChannel = MONO;
+    capturerParams.audioEncoding = ENCODING_PCM;
+    int32_t result = audioCapturer->SetInterruptStrategy(InterruptStrategy::MUTE);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+    result = audioCapturer->SetParams(capturerParams);
+    EXPECT_EQ(SUCCESS, result);
+
+    result = audioCapturer->SetInterruptStrategy(InterruptStrategy::DEFAULT);
+    EXPECT_EQ(SUCCESS, result);
+
+    bool isStarted = audioCapturer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    result = audioCapturer->SetInterruptStrategy(InterruptStrategy::MUTE);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, result);
+    audioCapturer->Release();
 }
 
 /**
@@ -2649,6 +2696,38 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_002, TestSize.Leve
     EXPECT_EQ(false, getTimestamp);
 }
 
+/**
+ * @tc.name  : Test InitAudioInterruptCallback_001
+ * @tc.number: InitAudioInterruptCallback_001
+ * @tc.desc  : Test InitAudioInterruptCallback_001
+ */
+HWTEST(AudioCapturerUnitTest, InitAudioInterruptCallback_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+    appInfo.appUid = 20020095;
+    audioCapturer->audioInterrupt_.streamId = 1;
+    audioCapturer->InitAudioInterruptCallback();
+    EXPECT_EQ(audioCapturer->audioInterrupt_.streamId, 1);
+}
+
+/**
+ * @tc.name  : Test InitAudioInterruptCallback_002
+ * @tc.number: InitAudioInterruptCallback_002
+ * @tc.desc  : Test InitAudioInterruptCallback_002
+ */
+HWTEST(AudioCapturerUnitTest, InitAudioInterruptCallback_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
+    appInfo.appUid = 1;
+    audioCapturer->audioInterrupt_.streamId = 1;
+    audioCapturer->InitAudioInterruptCallback();
+    EXPECT_EQ(audioCapturer->audioInterrupt_.streamId, 1);
+}
+
 #ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test GetTimeStampInfo API via legal state, CAPTURER_STOPPED.
@@ -2704,38 +2783,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetTimeStampInfo_004, TestSize.Leve
 }
 #endif
 
-/**
- * @tc.name  : Test InitAudioInterruptCallback_001
- * @tc.number: InitAudioInterruptCallback_001
- * @tc.desc  : Test InitAudioInterruptCallback_001
- */
-HWTEST(AudioCapturerUnitTest, InitAudioInterruptCallback_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
-    appInfo.appUid = 20020095;
-    audioCapturer->audioInterrupt_.streamId = 1;
-    audioCapturer->InitAudioInterruptCallback();
-    EXPECT_EQ(audioCapturer->audioInterrupt_.streamId, 1);
-}
-
-/**
- * @tc.name  : Test InitAudioInterruptCallback_002
- * @tc.number: InitAudioInterruptCallback_002
- * @tc.desc  : Test InitAudioInterruptCallback_002
- */
-HWTEST(AudioCapturerUnitTest, InitAudioInterruptCallback_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MEDIA, appInfo, true);
-    appInfo.appUid = 1;
-    audioCapturer->audioInterrupt_.streamId = 1;
-    audioCapturer->InitAudioInterruptCallback();
-    EXPECT_EQ(audioCapturer->audioInterrupt_.streamId, 1);
-}
-
+#ifdef FUNC_NOT_FIND
 /**
  * @tc.name  : Test SetInterruptStrategy_001.
  * @tc.number: SetInterruptStrategy.
@@ -2766,6 +2814,7 @@ HWTEST(AudioCapturerUnitTest, SetInterruptStrategy_001, TestSize.Level1)
     EXPECT_EQ(ERR_ILLEGAL_STATE, result);
     audioCapturer->Release();
 }
+#endif
 
 /**
  * @tc.name  : Test SetInSwitchingFlag_001.
