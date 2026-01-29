@@ -124,11 +124,11 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
         result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt, zoneID);
         if (result == SUCCESS) {
             isAudioFocusApplied_ = false;
-            thread switchThread(&AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration, audioPolicyServer_);
-            switchThread.detach();
         } else {
             AUDIO_WARNING_LOG("Deactivate audio interrupt failed, err = %{public}d", result);
         }
+        thread switchThread(&AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration, audioPolicyServer_);
+        switchThread.detach();
     }
 }
 
