@@ -996,12 +996,12 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 audioEffectChain->SetFoldState(value);
                 paramUpdated = true;
                 break;
-            case HDI_SYSTEMLOAD_STATE:
-                audioEffectChain->SetSystemLoadState(value);
-                paramUpdated = true;
-                break;
             case HDI_LID_STATE:
                 audioEffectChain->SetLidState(value);
+                paramUpdated = true;
+                break;
+            case HDI_SYSTEMLOAD_STATE:
+                audioEffectChain->SetSystemLoadState(value);
                 paramUpdated = true;
                 break;
             case HDI_OUTDOOR_MODE:
