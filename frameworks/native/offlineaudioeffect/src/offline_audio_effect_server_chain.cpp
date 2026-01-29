@@ -41,7 +41,7 @@ constexpr uint32_t MAX_DESCRIPTOR_NUM = 20;
 constexpr uint32_t MAX_CMD_LEN = 10;
 constexpr uint32_t MAX_REPLY_LEN = 10;
 constexpr uint32_t MAX_TIME_INTERVAL_MS = 160; // ms
-constexpr uint32_t PARAM_MAX_SIZE = 1000;
+constexpr size_t PARAM_MAX_SIZE = 1000;
 // key for effectName, value for (libName, effectId)
 static std::map<std::string, std::pair<std::string, std::string>> g_chainName2infoMap;
 static std::mutex g_chainMutex;

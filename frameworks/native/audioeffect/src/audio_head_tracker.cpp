@@ -142,8 +142,7 @@ void HeadTracker::SetHeadPostureData(HeadPostureData headPostureData)
 int32_t HeadTracker::CheckPostureDataIsValid(HeadPostureData *headPostureDataTmp)
 {
     float epsilonVal = std::numeric_limits<float>::epsilon();
-    if (headPostureDataTmp == nullptr ||
-        fabs(headPostureDataTmp->w) > LIMIT_FABS_VAL + epsilonVal ||
+    if (fabs(headPostureDataTmp->w) > LIMIT_FABS_VAL + epsilonVal ||
         fabs(headPostureDataTmp->x) > LIMIT_FABS_VAL + epsilonVal ||
         fabs(headPostureDataTmp->y) > LIMIT_FABS_VAL + epsilonVal ||
         fabs(headPostureDataTmp->z) > LIMIT_FABS_VAL + epsilonVal) {
