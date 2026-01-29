@@ -251,6 +251,7 @@ enum DmDeviceType {
     DM_DEVICE_TYPE_UWB = 0x06C,
     DM_DEVICE_TYPE_NEARLINK_SCO = 0x032,
     DM_DEVICE_TYPE_WIFI_SOUNDBOX = 0xA,
+    DM_DEVICE_TYPE_MUSIC_HOST = 0xA15,
 };
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
