@@ -1615,6 +1615,13 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -4832,6 +4839,13 @@ ohos_unittest("audio_device_status_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
@@ -5618,6 +5632,13 @@ ohos_unittest("audio_client_tracker_callback_listener_unit_test") {
     "-Wno-macro-redefined",
     "-fno-access-control",
   ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   external_deps = [
     "bluetooth:btframework",
