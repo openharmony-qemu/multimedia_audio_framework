@@ -218,7 +218,7 @@ AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChanne
     return static_cast<AudioChannel>((order + 1) * (order + 1));
 }
 
-DeviceType AudioDefinitionPolicyUtils::GetDeviceTypeFromStr(const std::string deviceTypeStr)
+DeviceType AudioDefinitionPolicyUtils::GetDeviceTypeFromStr(const std::string &deviceTypeStr)
 {
     if (deviceTypeStrToEnum.contains(deviceTypeStr)) {
         return deviceTypeStrToEnum.at(deviceTypeStr);

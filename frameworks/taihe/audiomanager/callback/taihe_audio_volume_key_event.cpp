@@ -117,4 +117,139 @@ bool TaiheAudioVolumeKeyEvent::ContainSameJsCallback(std::shared_ptr<uintptr_t> 
 {
     return TaiheParamUtils::IsSameRef(callback, callback_);
 }
+
+TaiheAudioVolumeKeyEventEx::TaiheAudioVolumeKeyEventEx()
+{
+    AUDIO_INFO_LOG("Constructor");
+}
+
+TaiheAudioVolumeKeyEventEx::~TaiheAudioVolumeKeyEventEx()
+{
+    AUDIO_INFO_LOG("Destructor");
+}
+
+void TaiheAudioVolumeKeyEventEx::OnVolumeDegreeEvent(OHOS::AudioStandard::VolumeEvent volumeEvent)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_PRERELEASE_LOGI("OnVolumeDegreeEvent is called volumeType=%{public}d, volumeDegree=%{public}d,"
+        "isUpdateUi=%{public}d", volumeEvent.volumeType, volumeEvent.volumeDegree, volumeEvent.updateUi);
+
+    for (auto &item : audioVolumeKeyEventCbList_) {
+        std::unique_ptr<AudioVolumeKeyEventJsCallback> cb = std::make_unique<AudioVolumeKeyEventJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory");
+        cb->callback = item;
+        cb->callbackName = VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME;
+        cb->volumeEvent.volumeType = volumeEvent.volumeType;
+        cb->volumeEvent.volume = volumeEvent.volume;
+        cb->volumeEvent.volumeDegree = volumeEvent.volumeDegree;
+        cb->volumeEvent.updateUi = volumeEvent.updateUi;
+        cb->volumeEvent.volumeGroupId = volumeEvent.volumeGroupId;
+        cb->volumeEvent.networkId = volumeEvent.networkId;
+        OnJsCallbackVolumeEvent(cb);
+    }
+}
+
+void TaiheAudioVolumeKeyEventEx::SaveCallbackReference(const std::string &callbackName,
+    std::shared_ptr<uintptr_t> callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_LOG(callbackName == VOLUME_DEGREE_CHANGE_EVENT_CALLBACK_NAME,
+        "Unknown callback type: %{public}s", callbackName.c_str());
+    for (auto &item : audioVolumeKeyEventCbList_) {
+        if (item == nullptr) {
+            continue;
+        }
+        bool isSameCallback = TaiheParamUtils::IsSameRef(callback, item->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "has same callback, nothing to do");
+    }
+
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    audioVolumeKeyEventCbList_.push_back(cb);
+    AUDIO_INFO_LOG("save callback ref success, list size [%{public}zu]", audioVolumeKeyEventCbList_.size());
+
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
+}
+
+void TaiheAudioVolumeKeyEventEx::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = audioVolumeKeyEventCbList_.begin(); it != audioVolumeKeyEventCbList_.end(); ++it) {
+        std::shared_ptr<AutoRef> temp = (*it);
+        if (temp == nullptr) {
+            continue;
+        }
+        bool isSameCallback = TaiheParamUtils::IsSameRef(callback, temp->cb_);
+        if (isSameCallback) {
+            AUDIO_INFO_LOG("find key event callback, remove it");
+            temp->cb_ = nullptr;
+            audioVolumeKeyEventCbList_.erase(it);
+            return;
+        }
+    }
+    AUDIO_INFO_LOG("remove nothing");
+}
+
+void TaiheAudioVolumeKeyEventEx::RemoveAllCallbackReference()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto &item : audioVolumeKeyEventCbList_) {
+        if (item == nullptr) {
+            continue;
+        }
+        item->cb_ = nullptr;
+    }
+    audioVolumeKeyEventCbList_.clear();
+    AUDIO_INFO_LOG("remove all js callback success");
+}
+
+int32_t TaiheAudioVolumeKeyEventEx::GetVolumeKeyEventCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return static_cast<int32_t>(audioVolumeKeyEventCbList_.size());
+}
+
+void TaiheAudioVolumeKeyEventEx::OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb)
+{
+    if (jsCb == nullptr || jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackVolumeEvent: jsCb.get() is null");
+        return;
+    }
+    CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
+    AudioVolumeKeyEventJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+    auto sharePtr = shared_from_this();
+    auto task = [event, sharePtr]() {
+        if (sharePtr != nullptr) {
+            sharePtr->SafeJsCallbackVolumeEventWork(event);
+        }
+    };
+    mainHandler_->PostTask(task, "OnVolumePercentageChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
+}
+
+void TaiheAudioVolumeKeyEventEx::SafeJsCallbackVolumeEventWork(AudioVolumeKeyEventJsCallback *event)
+{
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackVolumeEvent: no memory");
+    std::shared_ptr<AudioVolumeKeyEventJsCallback> safeContext(
+        static_cast<AudioVolumeKeyEventJsCallback*>(event),
+        [](AudioVolumeKeyEventJsCallback *ptr) {
+            if (ptr != nullptr) {
+                delete ptr;
+            }
+    });
+    std::string request = event->callbackName;
+
+    do {
+        std::shared_ptr<taihe::callback<void(VolumeEvent const& data)>> cacheCallback =
+            std::reinterpret_pointer_cast<taihe::callback<void(VolumeEvent const& data)>>(event->callback->cb_);
+        CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "%{public}s get reference value fail", request.c_str());
+        (*cacheCallback)(TaiheParamUtils::SetValueVolumeEvent(event->volumeEvent));
+    } while (0);
+}
 } // namespace ANI::Audio

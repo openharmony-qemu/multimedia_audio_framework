@@ -633,9 +633,11 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
 
         AudioPipeRole currentRole = PIPE_ROLE_NONE;
         for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
-            if (currentRole == pipeInfo->role_ && pipeInfo->paProp_.busAddress_.empty()) {
-                continue;
-            }
+#ifdef MULTI_BUS_ENABLE
+            CHECK_AND_CONTINUE(!pipeInfo->paProp_.busAddress_.empty());
+#else
+            CHECK_AND_CONTINUE(currentRole != pipeInfo->role_);
+#endif
             currentRole = pipeInfo->role_;
             CHECK_AND_CONTINUE_LOG(pipeInfo->name_.find(MODULE_SINK_OFFLOAD) == std::string::npos,
                 "skip offload out sink.");

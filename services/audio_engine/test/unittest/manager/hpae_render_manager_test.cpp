@@ -2623,46 +2623,6 @@ HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_004, TestSize.
 /**
  * @tc.name  : Test IsBypassSpatializationForStereo
  * @tc.type  : FUNC
- * @tc.number: IsBypassSpatializationForStereo_005
- * @tc.desc  : AudioVivid should continue -> bypass false.
- */
-HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_005, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-
-    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-
-    HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_MOVIE;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    streamInfo.encoding = ENCODING_AUDIOVIVID;
-
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), false);
-}
-
-/**
- * @tc.name  : Test IsBypassSpatializationForStereo
- * @tc.type  : FUNC
  * @tc.number: IsBypassSpatializationForStereo_006
  * @tc.desc  : multi streams: first skipped, second meets condition -> bypass false.
  */
@@ -2705,65 +2665,6 @@ HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_006, TestSize.
     EXPECT_EQ(offloadManager->CreateStream(streamB), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID + 1), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), false);
-}
-
-/**
- * @tc.name  : Test IsBypassSpatializationForStereo
- * @tc.type  : FUNC
- * @tc.number: IsBypassSpatializationForStereo_007
- * @tc.desc  : multi streams: first two do not meet condition, third meets -> bypass false.
- */
-HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_007, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-
-    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-
-    HpaeStreamInfo s1;
-    s1.channels = STEREO;
-    s1.samplingRate = SAMPLE_RATE_48000;
-    s1.format = SAMPLE_F32LE;
-    s1.frameLen = FRAME_LENGTH_960;
-    s1.sessionId = TEST_STREAM_SESSION_ID;
-    s1.streamType = STREAM_GAME;
-    s1.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-
-    EXPECT_EQ(offloadManager->CreateStream(s1), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-
-    HpaeStreamInfo s2 = s1;
-    s2.sessionId = TEST_STREAM_SESSION_ID + 1;
-    s2.streamType = STREAM_MUSIC;
-    s2.encoding = ENCODING_PCM;
-
-    EXPECT_EQ(offloadManager->CreateStream(s2), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID + 1), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-
-    HpaeStreamInfo s3 = s2;
-    s3.sessionId = s2.sessionId + 1;
-    s3.streamType = STREAM_SPEECH;
-    s3.encoding = ENCODING_AUDIOVIVID;
-
-    EXPECT_EQ(offloadManager->CreateStream(s3), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(s3.sessionId), SUCCESS);
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), false);
 }
@@ -2817,7 +2718,7 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = "remote";
+    sinkInfo.deviceClass = "remote_offload";
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
     sinkInfo.frameLen = FRAME_LENGTH_960;

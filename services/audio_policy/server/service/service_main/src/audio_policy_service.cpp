@@ -429,6 +429,11 @@ void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::
     audioDeviceLock_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
+void AudioPolicyService::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    audioDeviceLock_.OnConnectFailed(desc);
+}
+
 void AudioPolicyService::LoadEffectLibrary()
 {
     // IPC -> audioservice load library

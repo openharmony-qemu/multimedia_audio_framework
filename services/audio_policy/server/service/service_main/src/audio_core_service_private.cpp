@@ -728,7 +728,7 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
     Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDescriptor->macAddress_);
     std::string productId;
     device.GetDeviceProductId(productId);
-    AudioCollaborativeService::GetAudioCollaborativeService().updateCollaborativeProductId(productId);
+    AudioCollaborativeService::GetAudioCollaborativeService().UpdateCollaborativeProductId(productId);
     AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
 
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
@@ -1465,6 +1465,11 @@ void AudioCoreService::OnPrivacyDeviceSelected(DeviceType devType, const std::st
     audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
+void AudioCoreService::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    audioDeviceStatus_.OnConnectFailed(desc);
+}
+
 void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->moduleInfo_.className == "remote_offload");
@@ -1790,8 +1795,7 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
                 deviceType, streamDesc->sessionId_);
             AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
             if (!AudioCoreServiceUtils::IsDualStreamWhenRingDual(streamType) &&
-                AudioPolicyUtils::GetInstance().IsOnPrimarySink(streamDesc->newDeviceDescs_.front(),
-                    streamDesc->sessionId_)) {
+                pipeManager_ != nullptr && pipeManager_->IsOnPrimaryAdapter(streamDesc->sessionId_)) {
                 streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(streamDesc->sessionId_, streamType));
                 audioPolicyManager_.SetDualStreamVolumeMute(streamDesc->sessionId_, true);
             }
@@ -2767,14 +2771,14 @@ void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDe
 void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
     if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
     for (const auto &changeInfo : rendererChangeInfos) {
-        if (changeInfo != nullptr && AudioPolicyUtils::GetInstance().IsOnPrimarySink(
-            changeInfo->outputDeviceInfo, changeInfo->sessionId)) {
+        if (changeInfo != nullptr && pipeManager_->IsOnPrimaryAdapter(changeInfo->sessionId)) {
             AudioStreamType streamType = streamCollector_.GetStreamType(changeInfo->sessionId);
             streamsWhenRingDualOnPrimarySpeaker_.push_back(make_pair(changeInfo->sessionId, streamType));
             audioPolicyManager_.SetDualStreamVolumeMute(changeInfo->sessionId, true);
@@ -2827,7 +2831,8 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
 
     std::vector<SleepStrategy> strategies = {
         {
-            [&]() { return reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsNewDeviceAvailable(); },
+            [&]() { return reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsNewDeviceAvailable() ||
+                reason.IsSelectedDeviceConnectFailed(); },
             {BASE_DEVICE_SWITCH_SLEEP_US, BASE_DEVICE_SWITCH_SLEEP_US}
         },
         {
@@ -2843,11 +2848,8 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
-            {BASE_DEVICE_SWITCH_SLEEP_US}
-        },
-        {
-            [&]() { return reason.IsCollaborativeStateChange(); },
+            [&]() { return (reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) ||
+                reason.IsCollaborativeStateChange(); },
             {BASE_DEVICE_SWITCH_SLEEP_US}
         },
     };
@@ -2899,7 +2901,8 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault()) {
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault() ||
+        reason.IsSelectedDeviceConnectFailed()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;

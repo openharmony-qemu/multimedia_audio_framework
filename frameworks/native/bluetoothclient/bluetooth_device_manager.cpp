@@ -246,9 +246,12 @@ AudioDeviceDescriptor MediaBluetoothDeviceManager::HandleConnectDeviceInner(cons
 
 void MediaBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDevice &device)
 {
+    auto isConnecting = IsA2dpBluetoothDeviceConnecting(device.GetDeviceAddr());
     RemoveDeviceInConfigVector(device, connectingDevices_);
     if (!IsA2dpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_INFO_LOG("The device is already disconnected, ignore disconnect action.");
+        CHECK_AND_RETURN_LOG(isConnecting, "The device is already disconnected, ignore disconnect action.");
+        AUDIO_INFO_LOG("The device connection failed.");
+        HandleConnectFailedInner(device.GetDeviceAddr());
         return;
     }
     RemoveDeviceInConfigVector(device, privacyDevices_);
@@ -261,6 +264,15 @@ void MediaBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDe
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     NotifyToUpdateAudioDevice(device, desc, DeviceStatus::REMOVE);
+}
+
+void MediaBluetoothDeviceManager::HandleConnectFailedInner(const std::string &macAddress)
+{
+    auto desc = AudioDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc.macAddress_ = macAddress;
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "HandleConnectFailedInner, device observer is null");
+    g_deviceObserver->OnConnectFailed(desc);
 }
 
 void MediaBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &device)
@@ -821,9 +833,12 @@ AudioDeviceDescriptor HfpBluetoothDeviceManager::HandleConnectDeviceInner(const 
 
 void HfpBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDevice &device)
 {
+    auto isConnecting = IsHfpBluetoothDeviceConnecting(device.GetDeviceAddr());
     RemoveDeviceInConfigVector(device, connectingDevices_);
     if (!IsHfpBluetoothDeviceExist(device.GetDeviceAddr())) {
-        AUDIO_INFO_LOG("The device is already disconnected, ignore disconnect action.");
+        CHECK_AND_RETURN_LOG(isConnecting, "The device is already disconnected, ignore disconnect action.");
+        AUDIO_INFO_LOG("The device connection failed.");
+        HandleConnectFailedInner(device.GetDeviceAddr());
         return;
     }
     RemoveDeviceInConfigVector(device, privacyDevices_);
@@ -836,6 +851,15 @@ void HfpBluetoothDeviceManager::HandleDisconnectDevice(const BluetoothRemoteDevi
     AudioDeviceDescriptor desc;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     NotifyToUpdateAudioDevice(device, desc, DeviceStatus::REMOVE);
+}
+
+void HfpBluetoothDeviceManager::HandleConnectFailedInner(const std::string &macAddress)
+{
+    auto desc = AudioDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::DEVICE_ROLE_NONE);
+    desc.macAddress_ = macAddress;
+    std::lock_guard<std::mutex> observerLock(g_observerLock);
+    CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "HandleConnectFailedInner, device observer is null");
+    g_deviceObserver->OnConnectFailed(desc);
 }
 
 void HfpBluetoothDeviceManager::HandleWearDevice(const BluetoothRemoteDevice &device)

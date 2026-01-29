@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../config.gni")
 
-module_output_path = "multimedia_audio_framework/bluetooth_client"
+module_output_path = "audio_framework/audio_framework_policy/bluetooth_client"
 
 config("bluetooth_client_private_config") {
   visibility = [ ":*" ]

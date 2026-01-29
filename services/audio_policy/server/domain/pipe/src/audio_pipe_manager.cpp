@@ -18,6 +18,7 @@
 
 #include "audio_pipe_manager.h"
 #include "audio_injector_policy.h"
+#include "audio_definition_adapter_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -868,6 +869,19 @@ bool AudioPipeManager::HasRunningRecognitionCapturerStream()
     }
     AUDIO_INFO_LOG("Has Running Recognition stream : %{public}d", hasRunningRecognitionCapturerStream);
     return hasRunningRecognitionCapturerStream;
+}
+
+bool AudioPipeManager::IsOnPrimaryAdapter(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (pipeInfo->adapterName_ == ADAPTER_TYPE_PRIMARY &&
+            pipeInfo->streamDescMap_.find(sessionId) != pipeInfo->streamDescMap_.end()) {
+            return true;
+        }
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

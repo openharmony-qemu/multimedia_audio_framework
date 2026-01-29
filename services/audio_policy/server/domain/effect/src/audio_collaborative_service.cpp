@@ -113,6 +113,8 @@ int32_t AudioCollaborativeService::SetCollaborativePlaybackEnabledForDevice(
         [](void *) {
             AUDIO_ERR_LOG("SetCollaborativePlaybackEnabledForDevice timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    CHECK_AND_RETURN_RET_LOG(AudioCoreService::GetCoreService() != nullptr &&
+        AudioCoreService::GetCoreService()->GetEventEntry() != nullptr,  ERR_OPERATION_FAILED, "nullptr");
     AudioCoreService::GetCoreService()->GetEventEntry()->
         FetchOutputDeviceAndRoute("SetCollaborativePlaybackEnabledForDevice");
     return SUCCESS;
@@ -192,10 +194,10 @@ AudioCollaborativeService::~AudioCollaborativeService()
     AUDIO_ERR_LOG("~AudioCollaborativeService");
 }
 
-void AudioCollaborativeService::updateCollaborativeProductId(const std::string &productId)
+void AudioCollaborativeService::UpdateCollaborativeProductId(const std::string &productId)
 {
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
-    audioPolicyManager_.updateCollaborativeProductId(productId);
+    audioPolicyManager_.UpdateCollaborativeProductId(productId);
 }
 
 void AudioCollaborativeService::LoadCollaborationConfig()

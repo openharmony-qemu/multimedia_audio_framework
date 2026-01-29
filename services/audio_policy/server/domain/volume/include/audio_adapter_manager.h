@@ -349,12 +349,11 @@ public:
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
-    void updateCollaborativeProductId(const std::string &productId);
+    void UpdateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
     void SetMuteFromRemote(std::string networkId, bool mute);
-    void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
 
     class RemoteVolumeCallback : public AudioParameterCallback {
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,

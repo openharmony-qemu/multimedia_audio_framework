@@ -1728,11 +1728,17 @@ void CapturerInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
 
-    info.frameMarkPosition = static_cast<uint64_t>(capturerMarkPosition_);
-    info.capturePositionCb = capturerPositionCallback_;
+    {
+        std::lock_guard<std::mutex> lock(markReachMutex_);
+        info.frameMarkPosition = static_cast<uint64_t>(capturerMarkPosition_);
+        info.capturePositionCb = capturerPositionCallback_;
+    }
 
-    info.framePeriodNumber = static_cast<uint64_t>(capturerPeriodSize_);
-    info.capturePeriodPositionCb = capturerPeriodPositionCallback_;
+    {
+        std::lock_guard<std::mutex> lock(periodReachMutex_);
+        info.framePeriodNumber = static_cast<uint64_t>(capturerPeriodSize_);
+        info.capturePeriodPositionCb = capturerPeriodPositionCallback_;
+    }
 
     info.capturerReadCallback = readCb_;
 }

@@ -2878,8 +2878,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
         false, audioInterrupt.streamId)) {
         return SUCCESS;
     } else {
-        ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
-            isUpdatedAudioStrategy);
+        ret = UpdateAudioSceneAfterActivateInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
     }
     if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",
@@ -2887,6 +2886,17 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     }
 
     return ret;
+}
+
+int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+    bool isUpdatedAudioStrategy)
+{
+    std::lock_guard<std::mutex> lock(focusUpdateMutex_);
+    AudioInterruptResult result =
+        AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
+    CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
+    SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
+    return result.retCode;
 }
 
 int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
@@ -2911,9 +2921,19 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
             audioInterrupt.streamUsage);
         StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(audioInterrupt.uid,
             audioInterrupt.streamId);
-        return AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt);
+        return UpdateAudioSceneAfterDeactivateInterrupt(zoneId, audioInterrupt);
     }
     return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId,
+    const AudioInterrupt &audioInterrupt)
+{
+    std::lock_guard<std::mutex> lock(focusUpdateMutex_);
+    AudioInterruptResult result = AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt);
+    CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
+    SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
+    return result.retCode;
 }
 
 int32_t AudioPolicyServer::ActivatePreemptMode()
@@ -5117,7 +5137,7 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
 
     bool isStandalone = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
         IPCSkeleton::GetCallingUid(), true);
-    int32_t ret = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone);
+    int32_t ret = UpdateAudioSceneAfterActivateSession(zoneId, callerPid, strategy, isStandalone);
     if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(callerPid)) &&
         (eventEntry_ != nullptr)) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioSession",
@@ -5130,6 +5150,16 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     }
 
     return ret;
+}
+
+int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
+    const AudioSessionStrategy &strategy, const bool isStandalone)
+{
+    std::lock_guard<std::mutex> lock(focusUpdateMutex_);
+    AudioInterruptResult result = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone);
+    CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
+    SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
+    return result.retCode;
 }
 
 int32_t AudioPolicyServer::DeactivateAudioSession()
@@ -5761,6 +5791,12 @@ int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
 int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
     return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
+}
+
+int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)
+{
+    AudioZoneService::GetInstance().NotifyStreamSilentChange(streamId);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

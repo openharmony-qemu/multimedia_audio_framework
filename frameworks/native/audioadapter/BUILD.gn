@@ -50,7 +50,7 @@ ohos_shared_library("pro_audio_service_adapter") {
   ]
 
   deps = [
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../audioutils:audio_utils",

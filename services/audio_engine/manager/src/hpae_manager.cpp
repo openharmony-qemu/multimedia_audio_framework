@@ -1433,18 +1433,17 @@ void HpaeManager::EnqueuePendingTransition(uint32_t sessionId, HpaeSessionState 
 int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
     auto request = [this, streamInfo]() {
-        AUDIO_INFO_LOG("streamType is %{public}d sessionId %{public}u sourceType is %{public}d",
-            streamInfo.streamType,
-            streamInfo.sessionId,
-            streamInfo.sourceType);
+        AUDIO_INFO_LOG("streamType is %{public}d sessionId %{public}u sourceType is %{public}d,"
+            "channels:%{public}u,rate:%{public}u", streamInfo.streamType, streamInfo.sessionId,
+            streamInfo.sourceType, streamInfo.channels,
+            streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate);
         if (INNER_SOURCE_TYPE_SET.count(streamInfo.sourceType) != 0) {
             return CreateStreamForCapInner(streamInfo);
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             std::string deviceName = streamInfo.deviceName == "" ? defaultSink_ : streamInfo.deviceName;
             AUDIO_INFO_LOG("devicename:%s, sessionId:%{public}u", deviceName.c_str(), streamInfo.sessionId);
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, deviceName),
-                "can not find sink[%s] in rendererManagerMap_",
-                deviceName.c_str());
+                "can not find sink[%s] in rendererManagerMap_", deviceName.c_str());
             int32_t ret = rendererManagerMap_[deviceName]->CreateStream(streamInfo);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Create stream:%{public}i failed.", streamInfo.sessionId);
             rendererIdSinkNameMap_[streamInfo.sessionId] = deviceName;
@@ -1455,8 +1454,7 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
             std::string deviceName = streamInfo.deviceName == "" ? defaultSource_ : streamInfo.deviceName;
             AUDIO_INFO_LOG("source:%{public}s, sessionId:%{public}u", deviceName.c_str(), streamInfo.sessionId);
             CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, deviceName),
-                "can not find source[%{public}s] in capturerManagerMap_",
-                deviceName.c_str());
+                "can not find source[%{public}s] in capturerManagerMap_", deviceName.c_str());
             int32_t ret = capturerManagerMap_[deviceName]->CreateStream(streamInfo);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Create stream:%{public}i failed.", streamInfo.sessionId);
             capturerIdSourceNameMap_[streamInfo.sessionId] = deviceName;
@@ -2196,12 +2194,10 @@ void HpaeManager::InitAudioEffectChainManager(const std::vector<EffectChain> &ef
 
 void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
 {
-    auto request = [this, device, sinkName]() {
-        HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
-        auto serviceCallback = serviceCallback_.lock();
-        if (serviceCallback != nullptr) {
-            serviceCallback->OnSetOutputDeviceSinkCb(SUCCESS);
-        }
+    ScheduleReportData(getpid(), gettid(), "audio_server");
+    HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
+    UnscheduleReportData(getpid(), gettid(), "audio_server");
+    auto request = [this, sinkName]() {
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
         CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%s] in rendererManagerMap_", sinkName.c_str());
         rendererManager->RefreshProcessClusterByDevice();
@@ -2783,10 +2779,10 @@ std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
     return sessionIds;
 }
 
-void HpaeManager::updateCollaborativeProductId(const std::string &productId)
+void HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     auto request = [productId]() {
-        HpaePolicyManager::GetInstance().updateCollaborativeProductId(productId);
+        HpaePolicyManager::GetInstance().UpdateCollaborativeProductId(productId);
     };
 
     SendRequest(request, __func__);
@@ -2868,7 +2864,7 @@ void HpaeManager::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->TriggerAppsUidUpdate(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
-            AUDIO_INFO_LOG("capturer apps uid update sessionId: %{public}u deviceName:%{public}s",
+            AUDIO_INFO_LOG("capturer apps uid update sessionId: %{public}u deviceName:%s",
                 sessionId, capturerIdSourceNameMap_[sessionId].c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
                 "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());

@@ -697,7 +697,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove;
     bool ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
-    EXPECT_EQ(stream->streamAction_, AUDIO_STREAM_ACTION_DEFAULT);
+    EXPECT_EQ(stream->streamAction_, AUDIO_STREAM_ACTION_NEW);
     EXPECT_FALSE(ret);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;

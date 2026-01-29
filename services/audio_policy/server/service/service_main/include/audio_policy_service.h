@@ -139,6 +139,8 @@ public:
 
     void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
 
+    void OnConnectFailed(AudioDeviceDescriptor &desc);
+
     void LoadEffectLibrary();
 
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,

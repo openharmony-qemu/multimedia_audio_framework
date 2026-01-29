@@ -119,6 +119,11 @@ enum CommunicationDeviceType: i32 {
   SPEAKER = 2
 }
 
+enum AudioDevcieSelectStrategy: i32 {
+  SELECT_STRATEGY_DEFAULT = 0,
+  SELECT_STRATEGY_INDEPENDENT = 1,
+}
+
 enum AudioRingMode: i32 {
   RINGER_MODE_SILENT = 0,
   RINGER_MODE_VIBRATE = 1,
@@ -197,6 +202,8 @@ enum StreamUsage: i32 {
   STREAM_USAGE_ULTRASONIC = 16,
   STREAM_USAGE_VIDEO_COMMUNICATION = 17,
   STREAM_USAGE_VOICE_CALL_ASSISTANT = 21,
+  STREAM_USAGE_ANNOUNCEMENT = 22,
+  STREAM_USAGE_EMERGENCY = 23,
 }
 
 enum InterruptRequestType: i32 {
@@ -246,6 +253,7 @@ struct AudioRendererOptions {
 enum AudioPrivacyType: i32 {
   PRIVACY_TYPE_PUBLIC = 0,
   PRIVACY_TYPE_PRIVATE = 1,
+  PRIVACY_TYPE_SHARED = 2,
 }
 
 enum InterruptMode: i32 {
@@ -384,8 +392,13 @@ interface AudioRoutingManager {
 
   @gen_async("selectOutputDeviceByFilter")
   @gen_promise("selectOutputDeviceByFilter")
-  SelectOutputDeviceByFilterSync(filter: AudioRendererFilter, outputAudioDevices:
-      Array<AudioDeviceDescriptor>): void;
+  @overload("SelectOutputDeviceByFilterSync")
+  SelectOutputDeviceByFilterSync(filter: AudioRendererFilter, outputAudioDevices: Array<AudioDeviceDescriptor>): void;
+
+  @gen_promise("selectOutputDeviceByFilter")
+  @overload("SelectOutputDeviceByFilterSync")
+  SelectOutputDeviceByFilterWithStrategySync(filter: AudioRendererFilter,
+    outputAudioDevices: Array<AudioDeviceDescriptor>, strategy: AudioDevcieSelectStrategy): void;
 
   @gen_async("selectInputDevice")
   @gen_promise("selectInputDevice")
@@ -423,12 +436,14 @@ interface AudioRoutingManager {
   OnDeviceChange(deviceFlag: DeviceFlag, callback: (data: DeviceChangeAction) => void): void;
   OnAvailableDeviceChange(deviceUsage: DeviceUsage, callback: (data: DeviceChangeAction) => void): void;
   OnPreferOutputDeviceChangeForRendererInfo(rendererInfo: AudioRendererInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
+  OnPreferredOutputDeviceChangeByFilter(filter: AudioRendererFilter, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
 
   OffMicBlockStatusChanged(callback: Optional<(data: DeviceBlockStatusInfo) => void>): void;
   OffPreferredInputDeviceChangeForCapturerInfo(callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
   OffPreferOutputDeviceChangeForRendererInfo(callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
   OffDeviceChange(callback: Optional<(data: DeviceChangeAction) => void>): void;
   OffAvailableDeviceChange(callback: Optional<(data: DeviceChangeAction) => void>): void;
+  OffPreferredOutputDeviceChangeByFilter(callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
 }
 
 interface AudioStreamManager {
@@ -451,6 +466,8 @@ interface AudioStreamManager {
   IsStreamActive(streamUsage: StreamUsage): bool;
 
   IsAcousticEchoCancelerSupported(sourceType: SourceType): bool;
+
+  IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType: SourceType): bool;
 
   IsRecordingAvailable(capturerInfo: AudioCapturerInfo): bool;
 
@@ -523,12 +540,20 @@ interface AudioVolumeManager {
 
   ForceVolumeKeyControlType(volumeType: AudioVolumeType, duration: i32): void;
 
+  GetSystemVolumePercentage(volumeType: AudioVolumeType): i32;
+
+  @gen_promise("setSystemVolumePercentage")
+  SetSystemVolumePercentageSync(volumeType: AudioVolumeType, percentage: i32): void;
+
+  GetMinSystemVolumePercentage(volumeType: AudioVolumeType): i32;
+
   OnVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnAppVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnActiveVolumeTypeChange(callback: (data: AudioVolumeType) => void): void;
   OnSystemVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnAppVolumeChangeForUid(uid: i32, callback: (data: VolumeEvent) => void): void;
   OnStreamVolumeChange(streamUsage: StreamUsage, callback: (data: StreamVolumeEvent) => void): void;
+  OnVolumePercentageChange(callback: (data: VolumeEvent) => void): void;
 
   OffVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffAppVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
@@ -536,6 +561,7 @@ interface AudioVolumeManager {
   OffActiveVolumeTypeChange(callback: Optional<(data: AudioVolumeType)=> void>): void;
   OffSystemVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffStreamVolumeChange(callback: Optional<(data: StreamVolumeEvent)=> void>): void;
+  OffVolumePercentageChange(callback: Optional<(data: VolumeEvent)=> void>): void;
 }
 
 interface AudioVolumeGroupManager {
@@ -661,6 +687,7 @@ struct AudioDeviceDescriptor {
   @readonly encodingTypes: Optional<Array<AudioEncodingType>>;
   @readonly spatializationSupported: Optional<bool>;
   @readonly dmDeviceType: Optional<i32>;
+  @readonly highQualityRecordingSupported: Optional<bool>;
   @readonly model: Optional<String>;
   @readonly capabilities: Optional<Array<AudioStreamInfo>>;
 }
@@ -672,6 +699,7 @@ struct VolumeEvent {
   volumeGroupId: i32;
   networkId: String;
   volumeMode: Optional<AudioVolumeMode>;
+  percentage: Optional<i32>;
 }
 
 struct StreamVolumeEvent {
@@ -811,6 +839,18 @@ struct CurrentOutputDeviceChangedEvent {
   recommendedAction: OutputDeviceChangeRecommendedAction;
 }
 
+enum BluetoothAndNearlinkPreferredRecordCategory: i32 {
+  PREFERRED_NONE = 0,
+  PREFERRED_DEFAULT = 1,
+  PREFERRED_LOW_LATENCY = 2,
+  PREFERRED_HIGH_QUALITY = 3,
+}
+
+struct CurrentInputDeviceChangedEvent {
+  devices: Array<AudioDeviceDescriptor>;
+  changeReason: AudioStreamDeviceChangeReason;
+}
+
 interface AudioSessionManager {
   @gen_promise("activateAudioSession")
   ActivateAudioSessionSync(strategy: AudioSessionStrategy): void;
@@ -831,13 +871,32 @@ interface AudioSessionManager {
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
 
+  GetAvailableDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
+
+  @gen_promise("selectMediaInputDevice")
+  SelectMediaInputDeviceSync(inputAudioDevice: AudioDeviceDescriptor): void;
+
+  GetSelectedMediaInputDevice(): AudioDeviceDescriptor;
+
+  @gen_promise("clearSelectedMediaInputDevice")
+  ClearSelectedMediaInputDeviceSync(): void;
+
+  @gen_promise("setBluetoothAndNearlinkPreferredRecordCategory")
+  SetBluetoothAndNearlinkPreferredRecordCategorySync(category: BluetoothAndNearlinkPreferredRecordCategory): void;
+
+  GetBluetoothAndNearlinkPreferredRecordCategory(): BluetoothAndNearlinkPreferredRecordCategory;
+
   OnAudioSessionDeactivated(callback: (data: AudioSessionDeactivatedEvent) => void): void;
   OnAudioSessionStateChanged(callback: (data: AudioSessionStateChangedEvent) => void): void;
   OnCurrentOutputDeviceChanged(callback: (data: CurrentOutputDeviceChangedEvent) => void): void;
+  OnCurrentInputDeviceChanged(callback: (data: CurrentInputDeviceChangedEvent) => void): void;
+  OnAvailableDeviceChange(deviceUsage: DeviceUsage, callback: (data: DeviceChangeAction) => void): void;
 
   OffAudioSessionDeactivated(callback: Optional<(data: AudioSessionDeactivatedEvent) => void>): void;
   OffAudioSessionStateChanged(callback: Optional<(data: AudioSessionStateChangedEvent) => void>): void;
   OffCurrentOutputDeviceChanged(callback: Optional<(data: CurrentOutputDeviceChangedEvent) => void>): void;
+  OffCurrentInputDeviceChanged(callback: Optional<(data: CurrentInputDeviceChangedEvent) => void>): void;
+  OffAvailableDeviceChange(callback: Optional<(data: DeviceChangeAction) => void>): void;
 }
 
 enum EffectFlag: i32 {
@@ -942,7 +1001,7 @@ interface AudioCapturer {
   OnMarkReach(frame: i64, callback: (data: i64) => void): void;
 
   OffStateChange(callback: Optional<(data: AudioState) => void>): void;
-  OffAudioInterrupt(callback: Optional<(data: InterruptEvent) => void>): void;
+  OffAudioInterrupt(): void;
   OffInputDeviceChange(callback: Optional<(data:  Array<AudioDeviceDescriptor>) => void>): void;
   OffAudioCapturerChange(callback: Optional<(data: AudioCapturerChangeInfo) => void>): void;
   OffReadData(callback: Optional<(data: @arraybuffer Array<u8>) => void>): void;
@@ -1291,6 +1350,19 @@ union AsrProcessingControllerOrNull {
 }
 function CreateAsrProcessingController(audioCapturer: AudioCapturer): AsrProcessingControllerOrNull;
 
+enum AudioLoopbackReverbPreset: i32 {
+  ORIGINAL = 1,
+  KTV = 2,
+  THEATER = 3,
+  CONCERT = 4,
+}
+
+enum AudioLoopbackEqualizerPreset: i32 {
+  FLAT = 1,
+  FULL = 2,
+  BRIGHT = 3,
+}
+
 interface AudioLoopback {
   @gen_promise("getStatus")
   GetStatusSync(): AudioLoopbackStatus;
@@ -1300,6 +1372,14 @@ interface AudioLoopback {
 
   @gen_promise("enable")
   EnableSync(enable: bool): bool;
+
+  SetReverbPreset(preset: AudioLoopbackReverbPreset): bool;
+
+  GetReverbPreset(): AudioLoopbackReverbPreset;
+
+  SetEqualizerPreset(preset: AudioLoopbackEqualizerPreset): bool;
+
+  GetEqualizerPreset(): AudioLoopbackEqualizerPreset;
 
   OnStatusChange(callback: (data: AudioLoopbackStatus) => void): void;
   OffStatusChange(callback: Optional<(data: AudioLoopbackStatus) => void>): void;

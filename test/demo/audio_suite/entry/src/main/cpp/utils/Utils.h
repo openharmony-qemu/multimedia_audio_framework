@@ -8,7 +8,7 @@
 #include <string>
 #include "audioSuiteError/AudioSuiteError.h"
 #include "napi/native_api.h"
-#include "ohaudio/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
 #include "ohaudio/native_audiostream_base.h"
 
 extern const char* STR_0;
@@ -56,6 +56,13 @@ struct FieldEffectParams {
     std::string selectedNodeId;
 };
 
+struct AudioFormat {
+    int32_t sampleRate = 0;
+    int32_t channels = 0;
+    int32_t bitsPerSample = 0;
+    long startTime = 0;
+};
+
 napi_status ParseNapiString(napi_env env, napi_value value, std::string &result);
 
 void GetBitsPerSampleAndStreamFormat(const OH_AudioFormat& g_audioFormatOutput,
@@ -71,7 +78,7 @@ OH_AudioChannelLayout SetChannelLayout(int32_t channels);
 OH_Audio_SampleFormat SetSampleFormat(int32_t bitsPerSample);
 
 // Bit depth conversion
-void ConvertBitsPerSample(unsigned int& bitsPerSample, unsigned int& bitsPerSampleMode);
+void ConvertBitsPerSample(unsigned int& bitsPerSample, const unsigned int& bitsPerSampleMode);
 
 int32_t GetBitsPerSample(OH_Audio_SampleFormat sampleFormat);
 
@@ -82,4 +89,36 @@ napi_value ReturnResult(napi_env env, AudioSuiteResult result);
 void FreeBuffer(char **buffer);
 
 void FreeBufferOfVoid(void **buffer);
+
+void ConvertToFloat(int format, unsigned inputSampleCount, void *src, float *dst);
+
+void ConvertFromU8ToFloat(unsigned n, const uint8_t *a, float *b);
+
+void ConvertFrom16BitToFloat(unsigned n, const int16_t *a, float *b);
+
+void ConvertFrom24BitToFloat(unsigned n, const uint8_t *a, float *b);
+
+void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b);
+
+uint32_t Read24Bit(const uint8_t *p);
+
+void SetAudioFormat(const int sampleRate, const int channels, const int bitsPerSample);
+
+long GetAudioDuration(long pcmDataLength, int sampleRate, int channels, int bitsPerSample);
+
+long GetAudioSize(int sampleRate, int channels, int bitsPerSample);
+
+int GetBit(int bitsPerSample);
+
+bool AddWriteDataBuffer(const std::string inputId, const long oldStartTime, const long newStartTime,
+                        std::vector<long> indexs, bool isCopyMultiple);
+
+bool UpdateWriteDataBuffer(const std::string inputId, const long startTime, long startIndex, long endIndex);
+
+bool DeleteWriteDataBuffer(const std::string inputId, const long originStartTime);
+
+bool SetWriteDataBuffer(const std::string inputId, const long originStartTime, const long newStartTime);
+
+OH_AudioStream_SampleFormat ConvertInt2AudioStream(const int32_t sampleFormat);
+
 #endif //#define AUDIOEDITTESTAPP_UTILS_H

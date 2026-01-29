@@ -630,10 +630,10 @@ bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout ch
     return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
-void HpaeManagerImpl::updateCollaborativeProductId(const std::string &productId)
+void HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->updateCollaborativeProductId(productId);
+    manager_->UpdateCollaborativeProductId(productId);
 }
 
 void HpaeManagerImpl::LoadCollaborationConfig()

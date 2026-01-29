@@ -31,6 +31,9 @@ ohos_unittest("audio_engine_client_manager_unit_test") {
 
   deps = [
     "../../../:audio_client",
+    "../../../:audio_engine_manager",
+    "../../../:audio_policy_manager",
+    "../../../:audio_stream_client",
   ]
 
   external_deps = [

@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <shared_mutex>
 #include "audio_device_descriptor.h"
+#include "audio_usr_select_manager.h"
 #include "istandard_audio_policy_manager_listener.h"
 
 namespace OHOS {
@@ -46,8 +47,8 @@ public:
     // Set call render device selected by the user
     void SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const int32_t uid = INVALID_UID, const std::string caller = "");
-    bool IsRepeatedPreferredCallRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
-        const int32_t callerUid);
+
+    int32_t GetPreferredUid(int32_t uid);
 
     // Set call capture device selected by the user
     void SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
@@ -90,6 +91,8 @@ public:
     // Get tone render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredToneRenderDevice();
 
+    bool IsPreferredDevice(AudioDeviceDescriptor &desc);
+
     void SetPreferredRecognitionCaptureDevice(const shared_ptr<AudioDeviceDescriptor> &desc);
     shared_ptr<AudioDeviceDescriptor> GetPreferredRecognitionCaptureDevice();
 
@@ -110,12 +113,6 @@ public:
     int32_t SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
 
-private:
-    bool IsRepeatedPreferredCallRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
-        const int32_t callerUid, const int32_t ownerUid,
-        const std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> &forcedList) const;
-    bool IsSamePreferred(const int32_t uid, const std::shared_ptr<AudioDeviceDescriptor> &preferred,
-        const std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> &recordMap) const;
 private:
     AudioStateManager() {};
     ~AudioStateManager() {};

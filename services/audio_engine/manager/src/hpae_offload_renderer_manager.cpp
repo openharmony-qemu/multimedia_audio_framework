@@ -61,6 +61,9 @@ std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSessio
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.effectInfo = streamInfo.effectInfo;
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u,channels:%{public}u,rate:%{public}u",
+        nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.channels,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNode->SetAppUid(streamInfo.uid);
     AddNodeToMap(sinkInputNode);
@@ -572,7 +575,8 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
 
 int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
-    AUDIO_INFO_LOG("init");
+    AUDIO_INFO_LOG("init devicename:%s,channel:%{public}u,rate:%{public}u", sinkInfo_.deviceName.c_str(),
+        sinkInfo_.channels, sinkInfo_.samplingRate);
     HpaeNodeInfo nodeInfo;
     int32_t checkRet = CheckFramelen(sinkInfo_);
     if (checkRet != SUCCESS) {
@@ -985,8 +989,8 @@ bool HpaeOffloadRendererManager::IsBypassSpatializationForStereo()
 void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS,
-            "Not remote, no need trigger appsUid update");
+        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
+        CHECK_AND_RETURN(sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS);
         appsUid_.clear();
         if (curNode_ != nullptr &&
             (curNode_->GetState() == HPAE_SESSION_RUNNING ||

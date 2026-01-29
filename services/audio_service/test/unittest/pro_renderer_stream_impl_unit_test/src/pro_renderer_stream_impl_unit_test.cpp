@@ -20,7 +20,6 @@
 #include "pro_renderer_stream_impl.h"
 #include "renderer_in_server.h"
 #include "ipc_stream_in_server.h"
-#include "parameter.h"
 
 using namespace testing::ext;
 
@@ -187,7 +186,7 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_001, TestSize.Level1)
     rendererStreamImpl->resample_.reset();
 
     int32_t ret = rendererStreamImpl->InitParams();
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -249,18 +248,13 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_003, TestSize.Level1)
  */
 HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
 {
-    SetParameter("persist.multimedia.3dadirecttest", std::to_string(1).c_str());
-    int32_t realSysVal = 0;
-    for (int i = 0; i < 50; i++) {
-        GetSysPara("persist.multimedia.3dadirecttest", realSysVal);
-        if (realSysVal == 1) break;
-        usleep(10000);
-    }
     AudioProcessConfig processConfig;
     processConfig.streamInfo.channels = CHANNEL_8;
     processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
     processConfig.streamInfo.format = SAMPLE_S16LE;
     processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_5POINT1POINT2;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
 
     auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
     rendererStreamImpl->status_ = I_STATUS_INVALID;
@@ -269,7 +263,6 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_FALSE(rendererStreamImpl->isNeedResample_);
     EXPECT_FALSE(rendererStreamImpl->isNeedMcr_);
-    SetParameter("persist.multimedia.3dadirecttest", std::to_string(0).c_str());
 }
 
 /**
@@ -280,16 +273,19 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
 HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_002, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
-    processConfig.streamInfo.channels = CHANNEL_6;
+    processConfig.streamInfo.channels = CHANNEL_10;
     processConfig.streamInfo.samplingRate = SAMPLE_RATE_44100;
     processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_7POINT1POINT2;
     processConfig.streamType = STREAM_MUSIC;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
 
     auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
     rendererStreamImpl->status_ = I_STATUS_INVALID;
 
     int32_t ret = rendererStreamImpl->InitParams();
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     EXPECT_TRUE(rendererStreamImpl->isNeedResample_);
     EXPECT_TRUE(rendererStreamImpl->isNeedMcr_);
 }
@@ -674,7 +670,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_005, TestSize.Level1)
 
     const BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, ERR_WRITE_BUFFER);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1574,28 +1570,46 @@ HWTEST(ProRendererStreamImplUnitTest, InitBasicInfo_001, TestSize.Level0)
 /**
  *@tc.name  : Test InitBasicInfo API
  *@tc.type  : FUNC
- *@tc.number: InitBasicInfo_002
+ *@tc.number: InitBasicInfo_3DA_DIRECT_002
 */
 HWTEST(ProRendererStreamImplUnitTest, InitBasicInfo_002, TestSize.Level0)
 {
-    SetParameter("persist.multimedia.3dadirecttest", std::to_string(1).c_str());
-    int32_t realSysVal = 0;
-    for (int i = 0; i < 50; i++) {
-        GetSysPara("persist.multimedia.3dadirecttest", realSysVal);
-        if (realSysVal == 1) break;
-        usleep(10000);
-    }
-    AudioStreamInfo streamInfo;
-    AudioProcessConfig processConfig = InitProcessConfig();
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_8;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, false);
 
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.channels = STEREO;
-    rendererStreamImpl->InitBasicInfo(streamInfo);
-    EXPECT_EQ(rendererStreamImpl->minBufferSize_, 1024 * 2 * 2); // 1024 for samples 2 for stereo 2 bit format
-    SetParameter("persist.multimedia.3dadirecttest", std::to_string(0).c_str());
+    rendererStreamImpl->InitBasicInfo(processConfig.streamInfo);
+    uint32_t metadataSize = 19824;
+    uint32_t audiovividSamples = 1024;
+    uint32_t expectedMinBufSize = audiovividSamples * 8 * 2 + metadataSize; // 8 for channel 2 bit format
+    EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, audiovividSamples);
+    EXPECT_EQ(rendererStreamImpl->minBufferSize_, expectedMinBufSize);
+}
+
+/**
+ *@tc.name  : Test InitBasicInfo API
+ *@tc.type  : FUNC
+ *@tc.number: InitBasicInfo_3DA_DIRECT_003
+*/
+HWTEST(ProRendererStreamImplUnitTest, InitBasicInfo_003, TestSize.Level0)
+{
+    AudioProcessConfig processConfig;
+    processConfig.streamInfo.channels = CHANNEL_8;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
+    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
+        std::make_shared<ProRendererStreamImpl>(processConfig, false);
+
+    rendererStreamImpl->InitBasicInfo(processConfig.streamInfo);
+    EXPECT_EQ(rendererStreamImpl->spanSizeInFrame_, 960); // 48kHz smaplingRate 20ms span
+    EXPECT_EQ(rendererStreamImpl->minBufferSize_, 15360); // 960 * 2 * 8
 }
 
 /**

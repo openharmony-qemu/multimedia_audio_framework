@@ -151,7 +151,7 @@ public:
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
 
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
-    void updateCollaborativeProductId(const std::string &productId) override;
+    void UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
     
     // interface for auxiliarySink

@@ -83,10 +83,9 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
-    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d",
-        nodeInfo.streamType,
-        nodeInfo.sessionId,
-        nodeInfo.sceneType);
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u,channels:%{public}u,rate:%{public}u",
+        nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.channels,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     CreateProcessCluster(nodeInfo);
     return SUCCESS;
 }
@@ -324,9 +323,9 @@ int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
     auto request = [this, streamInfo]() {
         Trace trace("HpaeRendererManager::CreateStream id[" +
             std::to_string(streamInfo.sessionId) + "]");
-        AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %s",
-            streamInfo.sessionId,
-            sinkInfo_.deviceName.c_str());
+        AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %s,channels:%{public}u,rate:%{public}u",
+            streamInfo.sessionId, sinkInfo_.deviceName.c_str(), streamInfo.channels,
+            streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate);
         CreateInputSession(streamInfo);
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
         sessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
@@ -1015,7 +1014,8 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
 
 int32_t HpaeRendererManager::InitManager(bool isReload)
 {
-    AUDIO_INFO_LOG("init devicename:%s", sinkInfo_.deviceName.c_str());
+    AUDIO_INFO_LOG("init devicename:%s,channel:%{public}u,rate:%{public}u", sinkInfo_.deviceName.c_str(),
+        sinkInfo_.channels, sinkInfo_.samplingRate);
     HpaeNodeInfo nodeInfo;
     int32_t checkRet = CheckFramelen(sinkInfo_);
     if (checkRet != SUCCESS) {
@@ -1733,7 +1733,8 @@ void HpaeRendererManager::SetCollDelayCount()
 void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(IsRemoteDevice(), "Not remote, no need trigger appsUid update");
+        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
+        CHECK_AND_RETURN(IsRemoteDevice());
         appsUid_.clear();
         for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
             if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||

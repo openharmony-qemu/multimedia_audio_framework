@@ -489,6 +489,7 @@ public:
         SET_INPUT_DEVICE = 1004,
         CALL_OR_RING_TO_DEFAULT = 1005,
         COLLABORATIVE_STATE_CHANGE = 1006,
+        SELECTED_DEVICE_CONNECT_FAILED = 1007,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -575,6 +576,11 @@ public:
     bool IsCollaborativeStateChange() const
     {
         return reason_ == ExtEnum::COLLABORATIVE_STATE_CHANGE;
+    }
+
+    bool IsSelectedDeviceConnectFailed() const
+    {
+        return reason_ == ExtEnum::SELECTED_DEVICE_CONNECT_FAILED;
     }
 
 private:

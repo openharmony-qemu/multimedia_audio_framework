@@ -25,13 +25,14 @@
 namespace ANI::Audio {
 using namespace OHOS::HiviewDFX;
 
-AudioSessionManagerImpl::AudioSessionManagerImpl() : audioSessionMngr_(nullptr) {}
+AudioSessionManagerImpl::AudioSessionManagerImpl() : audioMngr_(nullptr), audioSessionMngr_(nullptr) {}
 
-AudioSessionManagerImpl::AudioSessionManagerImpl(OHOS::AudioStandard::AudioSessionManager *audioSessionMngr)
-    : audioSessionMngr_(nullptr)
+AudioSessionManagerImpl::AudioSessionManagerImpl(std::shared_ptr<AudioSessionManagerImpl> obj)
+    : audioMngr_(nullptr), audioSessionMngr_(nullptr)
 {
-    if (audioSessionMngr != nullptr) {
-        audioSessionMngr_ = audioSessionMngr;
+    if (obj != nullptr) {
+        audioMngr_ = obj->audioMngr_;
+        audioSessionMngr_ = obj->audioSessionMngr_;
     }
 }
 
@@ -39,12 +40,14 @@ AudioSessionManagerImpl::~AudioSessionManagerImpl() = default;
 
 AudioSessionManager AudioSessionManagerImpl::CreateSessionManagerWrapper()
 {
-    auto *audioSessionMngr = OHOS::AudioStandard::AudioSessionManager::GetInstance();
-    if (audioSessionMngr == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Failed to get AudioSessionManager instance");
+    std::shared_ptr<AudioSessionManagerImpl> audioSessionMngrImpl = std::make_shared<AudioSessionManagerImpl>();
+    if (audioSessionMngrImpl == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngrImpl is nullptr");
         return make_holder<AudioSessionManagerImpl, AudioSessionManager>(nullptr);
     }
-    return make_holder<AudioSessionManagerImpl, AudioSessionManager>(audioSessionMngr);
+    audioSessionMngrImpl->audioMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();
+    audioSessionMngrImpl->audioSessionMngr_ = OHOS::AudioStandard::AudioSessionManager::GetInstance();
+    return make_holder<AudioSessionManagerImpl, AudioSessionManager>(audioSessionMngrImpl);
 }
 
 void AudioSessionManagerImpl::ActivateAudioSessionSync(AudioSessionStrategy const &strategy)
@@ -549,5 +552,330 @@ std::shared_ptr<TaiheAudioSessionDeviceCallback> AudioSessionManagerImpl::GetAud
         }
     }
     return cb;
+}
+
+void AudioSessionManagerImpl::SelectMediaInputDeviceSync(AudioDeviceDescriptor const& inputAudioDevice)
+{
+    bool bArgTransFlag = true;
+    std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
+        std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
+    TaiheParamUtils::GetAudioDeviceDescriptor(deviceDescriptor, bArgTransFlag, inputAudioDevice);
+
+    if (audioSessionMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngr_ is nullptr");
+        return;
+    }
+    if (!bArgTransFlag) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+        return;
+    }
+    int32_t intValue = audioSessionMngr_->SelectInputDevice(deviceDescriptor);
+    if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectInputDevice failed");
+        return;
+    }
+}
+
+array<AudioDeviceDescriptor> AudioSessionManagerImpl::GetAvailableDevices(DeviceUsage deviceUsage)
+{
+    std::vector<AudioDeviceDescriptor> emptyResult;
+    int32_t intValue = deviceUsage.get_value();
+    if (!TaiheAudioEnum::IsLegalDeviceUsage(intValue)) {
+        AUDIO_ERR_LOG("invalid deviceusage");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceUsage must be enum DeviceUsage");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioSessionMngr_ != nullptr,
+        array<AudioDeviceDescriptor>(emptyResult), "audioSessionMngr_ is nullptr");
+    OHOS::AudioStandard::AudioDeviceUsage usage = static_cast<OHOS::AudioStandard::AudioDeviceUsage>(intValue);
+
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> availableDescs =
+        audioSessionMngr_->GetAvailableDevices(usage);
+
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> availableSptrDescs;
+    for (const auto &availableDesc : availableDescs) {
+        std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> dec =
+            std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>(*availableDesc);
+        CHECK_AND_BREAK_LOG(dec != nullptr, "dec mallac failed,no memery.");
+        availableSptrDescs.push_back(dec);
+    }
+    return TaiheParamUtils::SetDeviceDescriptors(availableSptrDescs);
+}
+
+AudioDeviceDescriptor AudioSessionManagerImpl::GetSelectedMediaInputDevice()
+{
+    AudioDeviceDescriptor emptyDesciptor = TaiheParamUtils::MakeEmptyDeviceDescriptor();
+    if (audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "can not get session");
+        return emptyDesciptor;
+    }
+    std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> descriptor =
+        audioSessionMngr_->GetSelectedInputDevice();
+    if (descriptor == nullptr) {
+        AUDIO_ERR_LOG("GetSelectedMediaInputDevice Failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "get selected input device error");
+        return emptyDesciptor;
+    }
+    return TaiheParamUtils::SetDeviceDescriptor(descriptor);
+}
+
+void AudioSessionManagerImpl::ClearSelectedMediaInputDeviceSync()
+{
+    if (audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Internal variable exception.");
+        return;
+    }
+
+    int32_t intValue = audioSessionMngr_->ClearSelectedInputDevice();
+    if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
+        return;
+    }
+}
+
+void AudioSessionManagerImpl::SetBluetoothAndNearlinkPreferredRecordCategorySync(
+    BluetoothAndNearlinkPreferredRecordCategory category)
+{
+    uint32_t recCategory = category.get_value();
+    if (!TaiheAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(recCategory)) {
+        TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: category wrong value");
+    }
+
+    if (audioSessionMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngr_ is nullptr");
+        return;
+    }
+
+    auto recordCategory = static_cast<OHOS::AudioStandard::BluetoothAndNearlinkPreferredRecordCategory>(recCategory);
+    int32_t intValue = audioSessionMngr_->PreferBluetoothAndNearlinkRecord(recordCategory);
+    if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "PreferBluetoothAndNearlinkRecord failed");
+        return;
+    }
+}
+
+BluetoothAndNearlinkPreferredRecordCategory AudioSessionManagerImpl::GetBluetoothAndNearlinkPreferredRecordCategory()
+{
+    if (audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "can not get session");
+        return BluetoothAndNearlinkPreferredRecordCategory::key_t::PREFERRED_NONE;
+    }
+
+    auto ret = audioSessionMngr_->GetPreferBluetoothAndNearlinkRecord();
+    return TaiheAudioEnum::ToTaiheBluetoothAndNearlinkPreferredRecordCategory(ret);
+}
+
+void AudioSessionManagerImpl::OnCurrentInputDeviceChanged(
+    callback_view<void(CurrentInputDeviceChangedEvent const& data)> callback)
+{
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    RegisterAudioSessionInputDeviceCallback(cacheCallback, this);
+}
+
+void AudioSessionManagerImpl::RegisterAudioSessionInputDeviceCallback(std::shared_ptr<uintptr_t> &callback,
+    AudioSessionManagerImpl *taiheSessionManager)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("OnAudioSessionInputDeviceCallback failed, callback function is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "callback function is nullptr");
+        return;
+    }
+
+    if ((taiheSessionManager == nullptr) || (taiheSessionManager->audioSessionMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioSessionManagerImpl can not get session mgr taihe instance");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "can not get session mgr taihe instance");
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(taiheSessionManager->sessionInputDeviceCbMutex_);
+    CHECK_AND_RETURN_LOG(GetAudioSessionInputDeviceCallback(callback, taiheSessionManager) == nullptr,
+        "The callback function already registered.");
+
+    std::shared_ptr<OHOS::AudioStandard::AudioSessionCurrentInputDeviceChangedCallback> deviceChangedCallback =
+        std::make_shared<TaiheAudioSessionInputDeviceCallback>();
+    if (deviceChangedCallback == nullptr) {
+        AUDIO_ERR_LOG("AudioSessionManagerImpl: Memory Allocation Failed!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Memory Allocation Failed!");
+        return;
+    }
+
+    int32_t ret =
+        taiheSessionManager->audioSessionMngr_->SetAudioSessionCurrentInputDeviceChangeCallback(deviceChangedCallback);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("SetAudioSessionCurrentInputDeviceChangeCallback is failed, ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
+
+    std::shared_ptr<TaiheAudioSessionInputDeviceCallback> cb =
+        std::static_pointer_cast<TaiheAudioSessionInputDeviceCallback>(deviceChangedCallback);
+    taiheSessionManager->sessionInputDeviceCallbackList_.push_back(cb);
+    cb->SaveCallbackReference(callback);
+
+    AUDIO_INFO_LOG("RegisterAudioSessionInputDeviceCallback is successful");
+}
+
+void AudioSessionManagerImpl::OffCurrentInputDeviceChanged(
+    optional_view<callback<void(CurrentInputDeviceChangedEvent const& data)>> callback)
+{
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
+    if (callback.has_value()) {
+        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+    }
+    UnregisterSessionInputDeviceCallback(cacheCallback, this);
+}
+
+void AudioSessionManagerImpl::UnregisterSessionInputDeviceCallback(std::shared_ptr<uintptr_t> &callback,
+    AudioSessionManagerImpl *taiheSessionManager)
+{
+    AUDIO_INFO_LOG("UnregisterCallback input device");
+
+    CHECK_AND_RETURN_LOG(taiheSessionManager != nullptr, "taiheSessionManager is null.");
+    CHECK_AND_RETURN_LOG(taiheSessionManager->audioSessionMngr_ != nullptr, "audio session mgr instance is null.");
+    CHECK_AND_RETURN_LOG(!taiheSessionManager->sessionInputDeviceCallbackList_.empty(),
+        "Not register callback function, no need unregister.");
+
+    if (callback == nullptr) {
+        int32_t ret =
+            taiheSessionManager->audioSessionMngr_->UnsetAudioSessionCurrentInputDeviceChangeCallback(std::nullopt);
+        if (ret != OHOS::AudioStandard::SUCCESS) {
+            AUDIO_ERR_LOG("UnsetAudioSessionCurrentInputDeviceChangeCallback is failed, ret = %{public}d", ret);
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+            return;
+        }
+
+        for (auto it = taiheSessionManager->sessionInputDeviceCallbackList_.rbegin();
+            it != taiheSessionManager->sessionInputDeviceCallbackList_.rend(); ++it) {
+            std::shared_ptr<TaiheAudioSessionInputDeviceCallback> cb =
+                std::static_pointer_cast<TaiheAudioSessionInputDeviceCallback>(*it);
+            cb.reset();
+        }
+        taiheSessionManager->sessionInputDeviceCallbackList_.clear();
+        return;
+    }
+
+    std::shared_ptr<TaiheAudioSessionInputDeviceCallback> cb =
+        GetAudioSessionInputDeviceCallback(callback, taiheSessionManager);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "The callback function not registered.");
+    std::shared_ptr<OHOS::AudioStandard::AudioSessionCurrentInputDeviceChangedCallback> deviceCallback =
+        std::static_pointer_cast<OHOS::AudioStandard::AudioSessionCurrentInputDeviceChangedCallback>(cb);
+
+    int32_t ret =
+        taiheSessionManager->audioSessionMngr_->UnsetAudioSessionCurrentInputDeviceChangeCallback(deviceCallback);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("UnsetAudioSessionCurrentInputDeviceChangeCallback is failed, ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
+
+    taiheSessionManager->sessionInputDeviceCallbackList_.remove(cb);
+    cb.reset();
+}
+
+std::shared_ptr<TaiheAudioSessionInputDeviceCallback> AudioSessionManagerImpl::GetAudioSessionInputDeviceCallback(
+    std::shared_ptr<uintptr_t> &callback, AudioSessionManagerImpl *taiheSessionManager)
+{
+    CHECK_AND_RETURN_RET_LOG(taiheSessionManager != nullptr, nullptr, "taiheSessionManager is nullptr");
+    std::shared_ptr<TaiheAudioSessionInputDeviceCallback> cb = nullptr;
+    for (auto &iter : taiheSessionManager->sessionInputDeviceCallbackList_) {
+        if (iter == nullptr) {
+            continue;
+        }
+
+        if (iter->ContainSameJsCallback(callback)) {
+            cb = iter;
+        }
+    }
+    return cb;
+}
+
+void AudioSessionManagerImpl::OnAvailableDeviceChange(DeviceUsage deviceUsage,
+    callback_view<void(DeviceChangeAction const& data)> callback)
+{
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    RegisterAvaiableDeviceChangeCallback(deviceUsage, cacheCallback, this);
+}
+
+void AudioSessionManagerImpl::RegisterAvaiableDeviceChangeCallback(DeviceUsage deviceUsage,
+    std::shared_ptr<uintptr_t> &callback, AudioSessionManagerImpl *taiheSessionManager)
+{
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("OnAudioSessionInputDeviceCallback failed, callback function is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "callback function is nullptr");
+        return;
+    }
+
+    if ((taiheSessionManager == nullptr) || (taiheSessionManager->audioSessionMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioSessionManagerImpl can not get session mgr taihe instance");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "can not get session mgr taihe instance");
+        return;
+    }
+
+    int32_t flag = deviceUsage.get_value();
+    AUDIO_INFO_LOG("RegisterAvaiableDeviceChangeCallback:On deviceUsage: %{public}d", flag);
+    if (!TaiheAudioEnum::IsLegalDeviceUsage(flag)) {
+        TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceUsage must be enum DeviceUsage");
+    }
+
+    OHOS::AudioStandard::AudioDeviceUsage usage = static_cast<OHOS::AudioStandard::AudioDeviceUsage>(flag);
+    if (!taiheSessionManager->availableDeviceChangeCallbackTaihe_) {
+        taiheSessionManager->availableDeviceChangeCallbackTaihe_ =
+            std::make_shared<TaiheAudioSessionAvailableDeviceChangeCallback>();
+    }
+    CHECK_AND_RETURN_LOG(taiheSessionManager->availableDeviceChangeCallbackTaihe_ != nullptr,
+        "RegisterAvaiableDeviceChangeCallback: Memory Allocation Failed !");
+
+    int32_t ret = taiheSessionManager->audioMngr_->SetAvailableDeviceChangeCallback(usage,
+        taiheSessionManager->availableDeviceChangeCallbackTaihe_);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowError(ret),
+        "RegisterAvaiableDeviceChangeCallback: Registering Device Change Callback Failed %{public}d", ret);
+
+    std::shared_ptr<TaiheAudioSessionAvailableDeviceChangeCallback> cb =
+        std::static_pointer_cast<TaiheAudioSessionAvailableDeviceChangeCallback>(
+        taiheSessionManager->availableDeviceChangeCallbackTaihe_);
+    cb->SaveSessionAvailbleDeviceChangeCbRef(usage, callback);
+}
+
+void AudioSessionManagerImpl::OffAvailableDeviceChange(
+    optional_view<callback<void(DeviceChangeAction const& data)>> callback)
+{
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
+    if (callback.has_value()) {
+        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+    }
+    UnregisterAvailableDeviceChangeCallback(cacheCallback, this);
+}
+
+void AudioSessionManagerImpl::UnregisterAvailableDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
+    AudioSessionManagerImpl *taiheSessionManager)
+{
+    CHECK_AND_RETURN_LOG(taiheSessionManager != nullptr, "taiheSessionManager is null.");
+    CHECK_AND_RETURN_LOG(taiheSessionManager->audioSessionMngr_ != nullptr, "audio session mgr instance is null.");
+
+    if (taiheSessionManager->availableDeviceChangeCallbackTaihe_ != nullptr) {
+        std::shared_ptr<TaiheAudioSessionAvailableDeviceChangeCallback> cb =
+            std::static_pointer_cast<TaiheAudioSessionAvailableDeviceChangeCallback>(
+            taiheSessionManager->availableDeviceChangeCallbackTaihe_);
+        if (callback == nullptr || cb->GetSessionAvailbleDeviceChangeCbListSize() == 0) {
+            int32_t ret =
+                taiheSessionManager->audioMngr_->UnsetAvailableDeviceChangeCallback(OHOS::AudioStandard::D_ALL_DEVICES);
+            CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnsetAvailableDeviceChangeCallback Failed");
+
+            taiheSessionManager->availableDeviceChangeCallbackTaihe_.reset();
+            taiheSessionManager->availableDeviceChangeCallbackTaihe_ = nullptr;
+            cb->RemoveAllSessionAvailbleDeviceChangeCb();
+            return;
+        }
+        cb->RemoveSessionAvailbleDeviceChangeCbRef(callback);
+    } else {
+        AUDIO_ERR_LOG("UnregisterAvailableDeviceChangeCallback: availableDeviceChangeCallbackTaihe_ is null");
+    }
 }
 } // namespace ANI::Audio

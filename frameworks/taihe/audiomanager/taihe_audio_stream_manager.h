@@ -41,6 +41,7 @@ public:
     bool IsActiveSync(AudioVolumeType volumeType);
     bool IsStreamActive(StreamUsage streamUsage);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool IsRecordingAvailable(AudioCapturerInfo capturerInfo);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
     void OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback);

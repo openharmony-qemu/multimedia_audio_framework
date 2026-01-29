@@ -98,6 +98,7 @@ napi_status getvoiceChangeModeParameters(napi_env env, napi_value *argv, int &vo
         LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG,
         "audioEditTest SetEquailizerMode equailizerMode: %{public}d, equailizerId: %{public}s, inputId: %{public}s",
         voiceChangeMode, VoiceChangeId.c_str(), inputId.c_str());
+    delete [] argv;
     return status;
 }
 
@@ -157,6 +158,7 @@ napi_value StartGeneralVoiceChange(napi_env env, napi_callback_info info)
     if (result != AUDIOSUITE_SUCCESS) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG, "StartGeneralVoiceChange ERROR!");
         napi_create_int64(env, result, &ret);
+        delete [] argv;
         return ret;
     }
 
@@ -165,6 +167,7 @@ napi_value StartGeneralVoiceChange(napi_env env, napi_callback_info info)
         if (insertRes == (int)AudioSuiteResult::NODE_MANAGER_OPERATION_ERROR) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG, "addEffectNodeToNodeManager ERROR!");
             napi_create_int64(env, insertRes, &ret);
+            delete [] argv;
             return ret;
         }
     } else {
@@ -172,12 +175,14 @@ napi_value StartGeneralVoiceChange(napi_env env, napi_callback_info info)
         if (result != OH_AudioSuite_Result::AUDIOSUITE_SUCCESS) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG, "StartGeneralVoiceChange insertNode ERROR!");
             napi_create_int64(env, result, &ret);
+            delete [] argv;
             return ret;
         }
     }
 
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG, "StartGeneralVoiceChange: operation success");
+    delete [] argv;
     return ret;
 }
 
@@ -206,39 +211,44 @@ napi_value ResetGeneralVoiceChange(napi_env env, napi_callback_info info)
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, CHANGE_TAG,
                      "SetGeneralVoiceChangeType ERROR---%{public}d", result);
         napi_create_int64(env, result, &ret);
+        delete [] argv;
         return ret;
     }
 
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG, "resetGeneralVoiceChangeEffect: operation success");
+    delete [] argv;
     return ret;
 }
 
-void parsePureVoiceChangeArguments(napi_callback_info info, napi_env env, PureVoiceChangeParam &params)
+void parsePureVoiceChangeArguments(napi_callback_info info, napi_env env, PureVoiceChangeParam* params)
 {
+    if (params == nullptr) {
+        return;
+    }
     size_t argc = 6;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], params.inputId);
-    ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], params.effectNodeId);
-    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_2], &params.gender);
+    ParseNapiString(env, argv[NAPI_ARGV_INDEX_0], params->inputId);
+    ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], params->effectNodeId);
+    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_2], &params->gender);
     double pitchDouble = 0;
     napi_get_value_double(env, argv[NAPI_ARGV_INDEX_3], &pitchDouble);
     const int precision = 10;
-    params.pitch = std::round(pitchDouble * precision) / static_cast<double>(precision);
-    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_4], &params.optionType);
-    ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], params.selectedNodeId);
+    params->pitch = std::round(pitchDouble * precision) / static_cast<double>(precision);
+    napi_get_value_int32(env, argv[NAPI_ARGV_INDEX_4], &params->optionType);
+    ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], params->selectedNodeId);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG, "inputId:%{public}s, uuid:%{public}s, gender:%{public}d,"
                  "pitch:%{public}f, optionType:%{public}d, selectedNodeId:%{public}s",
-                 params.inputId.c_str(), params.effectNodeId.c_str(), params.gender,
-                 params.pitch, params.optionType, params.selectedNodeId.c_str());
+                 params->inputId.c_str(), params->effectNodeId.c_str(), params->gender,
+                 params->pitch, params->optionType, params->selectedNodeId.c_str());
 }
 
 napi_value StartPureVoiceChange(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG, "audioEditTest---startPureVoiceChangeEffect---IN");
     PureVoiceChangeParam params;
-    parsePureVoiceChangeArguments(info,  env, params);
+    parsePureVoiceChangeArguments(info,  env, &params);
 
     Node node;
     napi_value ret;
@@ -276,7 +286,7 @@ napi_value ResetPureVoiceChange(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, CHANGE_TAG, "audioEditTest---resetPureVoiceChangeEffect---IN");
     PureVoiceChangeParam params;
-    parsePureVoiceChangeArguments(info,  env, params);
+    parsePureVoiceChangeArguments(info,  env, &params);
 
     OH_AudioSuite_PureVoiceChangeOption option =
         getPureVoiceChangeOptionByMode(params.gender, params.pitch,  params.optionType);

@@ -70,6 +70,11 @@ public:
     void OffActiveVolumeTypeChange(optional_view<callback<void(AudioVolumeType)>> callback);
     void OffSystemVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
     void OffStreamVolumeChange(optional_view<callback<void(StreamVolumeEvent const&)>> callback);
+    int32_t GetSystemVolumePercentage(AudioVolumeType volumeType);
+    void SetSystemVolumePercentageSync(AudioVolumeType volumeType, int32_t percentage);
+    int32_t GetMinSystemVolumePercentage(AudioVolumeType volumeType);
+    void OnVolumePercentageChange(callback_view<void(VolumeEvent const& data)> callback);
+    void OffVolumePercentageChange(optional_view<callback<void(VolumeEvent const& data)>> callback);
 
 private:
     static void RegisterCallback(std::shared_ptr<uintptr_t> &callback,
@@ -84,6 +89,8 @@ private:
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void RegisterStreamVolumeChangeCallback(StreamUsage streamUsage, std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void RegisterVolumeDegreeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterAppVolumeChangeForUidCallback(std::shared_ptr<uintptr_t> &callback,
@@ -96,6 +103,8 @@ private:
         AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterStreamVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void UnregisterVolumeDegreeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioVolumeManagerImpl *audioVolMngrImpl);
 
     static std::shared_ptr<TaiheAudioVolumeKeyEvent> GetVolumeEventTaiheCallback(std::shared_ptr<uintptr_t> callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
@@ -107,6 +116,7 @@ private:
     OHOS::AudioStandard::AudioSystemManager *audioSystemMngr_;
     int32_t cachedClientId_ = -1;
     std::shared_ptr<OHOS::AudioStandard::VolumeKeyEventCallback> volumeKeyEventCallbackTaihe_ = nullptr;
+    std::shared_ptr<OHOS::AudioStandard::VolumeKeyEventCallback> volumeDegreeCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::StreamVolumeChangeCallback> streamVolumeChangeCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::SystemVolumeChangeCallback> systemVolumeChangeCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioManagerAppVolumeChangeCallback>

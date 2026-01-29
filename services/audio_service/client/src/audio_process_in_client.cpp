@@ -1667,8 +1667,9 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
             return true;
         }
 
-        uint32_t writableSizeInFrame = static_cast<uint32_t>(audioBuffer_->GetWritableDataFrames());
-        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) >= spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) &&
+            ((totalSizeInFrame_ - static_cast<uint32_t>(writableSizeInFrame)) >= spanSizeInFrame_)) {
             return true;
         }
         return false;
@@ -1862,8 +1863,9 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
     if (processConfig_.rendererInfo.isStatic) {
         return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
     } else {
-        uint32_t writableSizeInFrame = static_cast<uint32_t>(audioBuffer_->GetWritableDataFrames());
-        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) &&
+            ((totalSizeInFrame_ - static_cast<uint32_t>(writableSizeInFrame)) < spanSizeInFrame_)) {
             return true;
         }
     }
