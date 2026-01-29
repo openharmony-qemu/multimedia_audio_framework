@@ -249,7 +249,7 @@ void AudioLimiter::ProcessAlgo(float *inBuffer, float *outBuffer)
     float tempMaxLevel = std::max(maxEnvelopeLevel, curMaxLev_);
     curMaxLev_ = maxEnvelopeLevel;
     float targetGain = 1.0f;
-    if (tempMaxLevel > FLOAT_EPS_NUM) {
+    if (tempMaxLevel > FLOAT_EPS_NUM && tempMaxLevel != 0.0f) {
         targetGain = tempMaxLevel > threshold_ ? threshold_ / tempMaxLevel : targetGain;
     }
     float lastGain = gain_;
