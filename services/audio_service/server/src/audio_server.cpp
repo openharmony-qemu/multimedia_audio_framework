@@ -1904,8 +1904,8 @@ bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.audioMode == AUDIO_MODE_PLAYBACK && NotContain(RENDERER_SUPPORTED_CHANNELS,
-        config.streamInfo.channels)) {
+    if (config.audioMode == AUDIO_MODE_PLAYBACK && (config.rendererInfo.rendererFlags != AUDIO_FLAG_3DA_DIRECT) &&
+        NotContain(RENDERER_SUPPORTED_CHANNELS, config.streamInfo.channels)) {
         AUDIO_ERR_LOG("Check format failed invalid renderer channels:%{public}d", config.streamInfo.channels);
         return false;
     }
