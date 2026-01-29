@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #ifndef AUDIO_WORKGROUP_CALLBACK_IMPL_H
 #define AUDIO_WORKGROUP_CALLBACK_IMPL_H
- 
+
 #include "audio_workgroup_callback_stub.h"
 #include "audio_workgroup_ipc.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
 class AudioWorkgroupCallbackImpl : public AudioWorkgroupCallbackStub {
@@ -34,5 +34,5 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
- 
+
 #endif // AUDIO_WORKGROUP_CALLBACK_IMPL_H
