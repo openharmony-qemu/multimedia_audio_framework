@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 #include "Timeline.h"
@@ -59,9 +59,9 @@ bool Timeline::DeleteAudioTrack(const std::string &trackId)
 bool Timeline::DeleteAllAudioTrack()
 {
     for (auto& [trackId, audioTrack] : audioTrackMap) {
-        audioTrack.assets.clear();  // 清空每个 AudioTrack 中的 assets
+        audioTrack.assets.clear();  // Clear the assets from each AudioTrack.
     }
-    audioTrackMap.clear();  // 清空整个 map
+    audioTrackMap.clear();  // Clear the entire map
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "deleteAllAudioTrack success");
     return true;
 }
@@ -93,7 +93,7 @@ AudioTrack* Timeline::GetAudioTrack(const std::string& trackId)
     return nullptr;
 }
 
-bool Timeline::SetAudioTrack(const std::string& trackId, AudioTrack& track)
+bool Timeline::SetAudioTrack(const std::string& trackId, const AudioTrack& track)
 {
     auto it = audioTrackMap.find(trackId);
     if (it != audioTrackMap.end()) {
@@ -132,7 +132,7 @@ bool Timeline::SetAudioTrackSilent(const std::vector<std::string>& trackIds, con
     return true;
 }
 
-// 获取音频的时长(ms)
+// Audio acquisition duration (ms)
 long GetIndexMultiple(int channels, int bitsPerSample)
 {
     int bits = UINT_1;
@@ -158,7 +158,7 @@ long GetIndexMultiple(int channels, int bitsPerSample)
     return  bits * channels;
 }
 
-bool Timeline::CheckIndex(long &startIndex, long &endIndex, std::string &oldKey)
+bool Timeline::CheckIndex(const long &startIndex, const long &endIndex, const std::string &oldKey) const
 {
     auto item = g_writeDataBufferMap.find(oldKey);
     if (item == g_writeDataBufferMap.end()) {
@@ -176,8 +176,8 @@ bool Timeline::CheckIndex(long &startIndex, long &endIndex, std::string &oldKey)
     return false;
 }
 
-bool Timeline::AddAudioAsset(const std::string &trackId, AudioAsset &asset, long oldStartTime,
-                             std::vector<long> &indexs, bool isCopyMultiple)
+bool Timeline::AddAudioAsset(const std::string &trackId, const AudioAsset &asset, const long oldStartTime,
+                             std::vector<long> &indexs, const bool isCopyMultiple)
 {
     long startIndex = indexs[ARG_0];
     long endIndex = indexs[ARG_1];
@@ -231,7 +231,7 @@ bool Timeline::AddAudioAsset(const std::string &trackId, AudioAsset &asset, long
     return true;
 }
 
-bool Timeline::UpdateAudioAsset(const std::string& trackId, AudioAsset& asset, long startIndex, long endIndex)
+bool Timeline::UpdateAudioAsset(const std::string& trackId, AudioAsset& asset, const long startIndex, const long endIndex)
 {
     auto it = audioTrackMap.find(trackId);
     if (it == audioTrackMap.end()) {
@@ -259,13 +259,13 @@ bool Timeline::UpdateAudioAsset(const std::string& trackId, AudioAsset& asset, l
     };
     for (auto iter = it->second.assets.begin(); iter != it->second.assets.end();) {
         if (iter->second.startTime == asset.startTime) {
-            iter = it->second.assets.erase(iter); // 删除当前元素并更新迭代器
+            iter = it->second.assets.erase(iter); // Remove the current element and update the iterator
         } else {
-            ++iter; // 移动到下一个元素
+            ++iter; // Move to the next element
         }
     }
     assetMap.emplace(asset.startTime, newAsset);
-    // 重新计算最大结束时间（确保绝对正确）
+    // Recalculate the maximum end time (to ensure absolute accuracy)
     long maxEnd = 0;
     for (const auto& [_, assetVal] : assetMap) {
         if (assetVal.endTime > maxEnd) maxEnd = assetVal.endTime;
@@ -292,7 +292,7 @@ bool Timeline::DeleteAudioAsset(const std::string& trackId, const long startTime
     auto assetIt = assetMap.find(startTime);
     if (assetIt != assetMap.end()) {
         assetMap.erase(assetIt);
-      // 重新计算最大结束时间（确保绝对正确）
+      // Recalculate the maximum end time (to ensure absolute accuracy)
         long maxEnd = 0;
         for (const auto& [_, assetVal] : assetMap) {
             if (assetVal.endTime > maxEnd) maxEnd = assetVal.endTime;
@@ -489,7 +489,6 @@ void Timeline::ResetCurrent(const long currentTimeTemp)
 {
     for (auto& pair : audioTrackMap) {
         auto& track = pair.second;
-        // 给 currentTime 重新赋值，这里假设我们将其设置为 maxEndTime
         track.currentTime = currentTimeTemp;
     }
 }
