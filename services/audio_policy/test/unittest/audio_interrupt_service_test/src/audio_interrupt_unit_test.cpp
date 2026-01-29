@@ -25,6 +25,7 @@
 #include "binder_invoker.h"
 #include "invoker_factory.h"
 #include "ipc_thread_skeleton.h"
+#include "i_hpae_manager.h"
 
 using namespace testing::ext;
 
@@ -94,6 +95,7 @@ sptr<AudioPolicyServer> GetPolicyServerTest()
     static sptr<AudioPolicyServer> server =
         sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
     if (!g_hasServerInit) {
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
