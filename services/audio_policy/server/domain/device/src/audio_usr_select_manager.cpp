@@ -97,7 +97,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
         return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
     }
 
-    // 濡������存����褰���涓�璁惧�涓�sco锛���瑕��ゆ������瀛��ㄥ���ㄧ��楂�娓�璁惧�
+    // 如果是直播或录像且设备为sco，需要判断是否存在可用的高清设备
     if (sourceType == SOURCE_TYPE_CAMCORDER || sourceType == SOURCE_TYPE_LIVE || category == PREFERRED_HIGH_QUALITY) {
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
