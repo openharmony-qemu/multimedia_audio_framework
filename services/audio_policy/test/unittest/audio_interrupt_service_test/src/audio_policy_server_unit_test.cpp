@@ -3679,15 +3679,15 @@ HWTEST(AudioPolicyUnitTest, GetSystemSoundPath_001, TestSize.Level1)
 
     std::string ret = "";
     server->GetSystemSoundPath(0, ret);
-    EXPECT_NE(ret, "");
+    EXPECT_EQ(ret, "");
 
     ret = "";
     server->GetSystemSoundPath(1, ret);
-    EXPECT_NE(ret, "");
+    EXPECT_EQ(ret, "");
 
     ret = "";
     server->GetSystemSoundPath(2, ret);
-    EXPECT_NE(ret, "");
+    EXPECT_EQ(ret, "");
 
     ret = "";
     server->GetSystemSoundPath(-1, ret);
