@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string CELIA_APP_NAME = "com.huawei.hmos.vassistant";
+const std::string CELIA_APP_NAME = "vassistant";
 
 static const std::map<std::pair<SourceType, SourceType>, std::pair<AudioFocuState, InterruptHint>> ULTRASONIC_MAP = {
     {{SOURCE_TYPE_VOICE_CALL, SOURCE_TYPE_ULTRASONIC}, {ACTIVE, INTERRUPT_HINT_NONE}},
