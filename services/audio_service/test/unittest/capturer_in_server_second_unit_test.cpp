@@ -113,7 +113,6 @@ public:
         return bufferDesc;
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
-    void AbortCallback(int32_t abortTimes) override { return; }
 };
 
 /**
