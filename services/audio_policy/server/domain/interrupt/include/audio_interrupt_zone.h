@@ -79,6 +79,8 @@ private:
     void ForceStopAllAudioFocusInZone(std::shared_ptr<AudioInterruptZone> &zone);
     void SendInterruptEventForMigration(const std::pair<AudioInterrupt, AudioFocuState> &audioInterrupt,
         const int32_t toZoneId);
+    void UpdateFocusListForInject(const std::string &deviceTag, AudioFocusList &newFocusList,
+        AudioFocusList &activeFocusList, AudioFocusIterator &oldDeviceList);
     void MoveAudioInterruptToZone(const AudioInterrupt &interrupt, const AudioFocuState state,
         const int32_t zoneId);
 
