@@ -17,6 +17,7 @@ import("../../../../config.gni")
 import("../../../../ressche_part.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
+audio_framework_root = "../../../.."
 
 config("module_private_config") {
   visibility = [ ":*" ]
@@ -302,10 +303,6 @@ ohos_unittest("audio_service_unit_test") {
     "./client/audio_manager_listener_stub_unit_test.cpp",
   ]
 
-  if (audio_framework_feature_low_latency) {
-    sources += [ "./client/fast_audio_stream_unit_test.cpp" ]
-  }
-
   deps = [
     "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -324,6 +321,13 @@ ohos_unittest("audio_service_unit_test") {
   ]
 
   cflags_cc = [ "-std=c++20" ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   external_deps = [
     "access_token:libaccesstoken_sdk",

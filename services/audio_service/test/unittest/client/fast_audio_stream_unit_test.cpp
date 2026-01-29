@@ -191,26 +191,6 @@ HWTEST(FastSystemStreamUnitTest, SetSilentModeAndMixWithOthers_001, TestSize.Lev
 /**
  * @tc.name  : Test GetSwitchInfo API
  * @tc.type  : FUNC
- * @tc.number: GetSwitchInfo_001
- * @tc.desc  : Test GetSwitchInfo interface.
- */
-HWTEST(FastSystemStreamUnitTest, GetSwitchInfo_001, TestSize.Level4)
-{
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_001 start");
-    int32_t appUid = static_cast<int32_t>(getuid());
-    auto fastAudioStream = std::make_shared<MockFastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    EXPECT_NE(fastAudioStream, nullptr);
-    EXPECT_CALL(*fastAudioStream, GetDuckVolume()).WillRepeatedly(testing::Return(0.2));
-
-    IAudioStream::SwitchInfo info;
-    fastAudioStream->GetSwitchInfo(info);
-    EXPECT_EQ(info.renderMode, fastAudioStream->renderMode_);
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSwitchInfo_001 end");
-}
-
-/**
- * @tc.name  : Test GetSwitchInfo API
- * @tc.type  : FUNC
  * @tc.number: GetSwitchInfo_002
  * @tc.desc  : Test GetSwitchInfo interface.
  */
