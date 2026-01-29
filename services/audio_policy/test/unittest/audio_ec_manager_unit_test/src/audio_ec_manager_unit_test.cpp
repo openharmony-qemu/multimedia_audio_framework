@@ -639,6 +639,7 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_018, TestSize.Level1)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
 
+    ecManager.SetOpenedNormalSource(SOURCE_TYPE_MIC);
     EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_MIC);
 
     ecManager.Init(1, 0);
