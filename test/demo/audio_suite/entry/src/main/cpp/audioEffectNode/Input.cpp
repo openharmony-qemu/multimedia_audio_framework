@@ -340,7 +340,7 @@ void UpdateCurrentTimeAndFinished(bool *&finished, AudioTrack *&track, const lon
     }
 }
 
-void ProcessCallBack(void *&audioData,const int32_t &audioDataSize,const std::string &inputId, AudioTrack *&track,
+void ProcessCallBack(void *&audioData, const int32_t &audioDataSize, const std::string &inputId, AudioTrack *&track,
                      long &oneAudioTime)
 {
     for (auto &pair : track->assets) {
