@@ -608,10 +608,10 @@ void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortInd
     AUDIO_INFO_LOG("Injector::UpdateAudioPortInfo finish.");
 }
 
-void ProAudioServiceAdapterImpl::updateCollaborativeProductId(const std::string &productId)
+void ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
     lock_guard<mutex> lock(lock_);
-    IHpaeManager::GetHpaeManager().updateCollaborativeProductId(productId);
+    IHpaeManager::GetHpaeManager().UpdateCollaborativeProductId(productId);
 }
 
 void ProAudioServiceAdapterImpl::LoadCollaborationConfig()

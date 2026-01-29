@@ -253,7 +253,7 @@ private:
     bool btOffloadEnabled_ = false;
     bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
-    bool btOffloadSupported_ = true;
+    bool btOffloadSupported_ = false;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool isDefaultEffectChainExisted_ = false;
     int32_t defaultEffectChainCount_ = 0;

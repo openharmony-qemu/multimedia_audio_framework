@@ -46,7 +46,7 @@ public:
     // current device change, map state unchanged
     void UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice);
     bool GetRealCollaborativeState();
-    void updateCollaborativeProductId(const std::string &productId);
+    void UpdateCollaborativeProductId(const std::string &productId);
     bool IsCollaborativePlaybackOpenedOrReservedForDevice(
         const AudioDeviceDescriptor &selectedAudioDevice);
 private:

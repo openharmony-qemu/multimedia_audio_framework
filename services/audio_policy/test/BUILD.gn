@@ -2410,6 +2410,7 @@ ohos_unittest("audio_collaborative_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
+    "media_foundation:media_monitor_common",
   ]
 
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_collaborative_service_unit_test.cpp" ]

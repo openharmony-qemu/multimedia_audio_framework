@@ -134,6 +134,7 @@ OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
         connectedProcessCluster_.insert(nodeInfo.sceneType);
@@ -143,7 +144,6 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
         inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
         HILOG_COMM_INFO("[Connect]HpaeCoBufferNode connect to preNode");
     }
-
     // reset status flag
     enqueueCount_ = 1;
     enqueueRunning_ = false;
@@ -240,8 +240,8 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
         if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_INFO_LOG("Dequeue data failed");
             outputStream_.WriteDataToOutput(&silenceData_);
         } else {
             outputStream_.WriteDataToOutput(&coBufferOut_);
