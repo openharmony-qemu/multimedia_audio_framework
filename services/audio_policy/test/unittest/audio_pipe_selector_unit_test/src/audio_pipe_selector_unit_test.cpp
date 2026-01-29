@@ -1324,6 +1324,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_003, TestSize.Level1)
     pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
     newPipeInfoList.push_back(pipe2);
 
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
+
     audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
     EXPECT_NE(newPipeInfoList.size(), 0);
 }
