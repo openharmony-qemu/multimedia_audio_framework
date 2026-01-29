@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioCapturerAdapter"
+#define LOG_TAG "AudioCapturerAdapter"xx
 #endif
 
 #include <common.h>
