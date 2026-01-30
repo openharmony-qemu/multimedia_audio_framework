@@ -56,7 +56,6 @@ private:
     AudioSessionService &sessionService_;
 };
 
-
 } // namespace AudioStandard
 } // namespace OHOS
 
