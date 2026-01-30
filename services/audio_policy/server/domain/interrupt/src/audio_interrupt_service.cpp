@@ -268,7 +268,7 @@ void AudioInterruptService::DeactivateAudioSessionErrorEvent(
     }
 }
 
-void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, AudioInterrupt &audioInterrupt)
+void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt)
 {
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
