@@ -26,6 +26,7 @@ namespace AudioStandard {
 struct SleVolumeConfigInfo {
     AudioVolumeType volumeType = STREAM_DEFAULT;
     int32_t volumeLevel = -1;
+    int32_t volumeDegree = -1;
     bool isMute = false;
 
     SleVolumeConfigInfo() = default;
@@ -107,6 +108,8 @@ public:
     int32_t SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute);
     int32_t SetNearlinkDeviceVolumeLevel(const std::string &device, AudioStreamType streamType,
         const int32_t volumeLevel);
+    int32_t SetNearlinkDeviceVolumeDegree(const std::string &device, AudioStreamType streamType, int32_t volumeDegree);
+    int32_t GetVolumeDegreeByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
     int32_t GetVolumeLevelByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
 
     uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid = INVALID_UID);

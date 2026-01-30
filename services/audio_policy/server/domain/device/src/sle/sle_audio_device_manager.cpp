@@ -497,6 +497,39 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel(const std::string &d
     return SUCCESS;
 }
 
+int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeDegree(const std::string &device, AudioStreamType streamType,
+    int32_t volumeDegree)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(device) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (streamType == STREAM_MUSIC) {
+        deviceVolumeConfigInfo_[device].first.volumeDegree = volumeDegree;
+    } else if (streamType == STREAM_VOICE_CALL) {
+        if (volumeDegree > 0) {
+            deviceVolumeConfigInfo_[device].second.volumeDegree = volumeDegree;
+        } else {
+            return ERR_INVALID_PARAM;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t SleAudioDeviceManager::GetVolumeDegreeByVolumeType(AudioVolumeType volumeType,
+    const AudioDeviceDescriptor &deviceDesc)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(deviceDesc.macAddress_) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (volumeType == STREAM_MUSIC) {
+        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
+            deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeDegree;
+    } else if (volumeType == STREAM_VOICE_CALL) {
+        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeDegree;
+    }
+    return 0;
+}
+
 int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volumeType,
     const AudioDeviceDescriptor &deviceDesc)
 {

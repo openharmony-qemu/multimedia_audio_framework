@@ -762,17 +762,27 @@ int32_t VolumeDataMaintainer::GetSystemVolumeForEffect(DeviceType deviceType, Au
     return DEFAULT_SYSTEM_VOLUME_FOR_EFFECT;
 }
 
-std::string VolumeDataMaintainer::GetVolumeKey(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType)
+std::string VolumeDataMaintainer::GetVolumeKey(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioStreamType streamType, VolumeKeyType keyType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, "", "GetVolumeKey device is null");
-    if (Util::IsDualToneStreamType(streamType)) {
-        return GetVolumeKeyForDataShare(DEVICE_TYPE_SPEAKER, streamType, LOCAL_NETWORK_ID);
+    std::string ret;
+    do {
+        if (Util::IsDualToneStreamType(streamType)) {
+            ret = GetVolumeKeyForDataShare(DEVICE_TYPE_SPEAKER, streamType, LOCAL_NETWORK_ID);
+            break;
+        }
+        if (device->volumeBehavior_.isReady && device->volumeBehavior_.databaseVolumeName != "") {
+            ret = GetVolumeKeyForDatabaseVolumeName(device->volumeBehavior_.databaseVolumeName, streamType);
+            break;
+        }
+        ret = GetVolumeKeyForDataShare(device->deviceType_, streamType, device->networkId_);
+    } while (false);
+
+    if (keyType == VolumeKeyType::VOLUME_KEY_TYPE_DEGREE && !ret.empty()) {
+        ret += "_degree";
     }
-    if (device->volumeBehavior_.isReady && device->volumeBehavior_.databaseVolumeName != "") {
-        return GetVolumeKeyForDatabaseVolumeName(device->volumeBehavior_.databaseVolumeName, streamType);
-    }
-    return GetVolumeKeyForDataShare(device->deviceType_, streamType, device->networkId_);
+    return ret;
 }
 
 std::string VolumeDataMaintainer::GetMuteKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType)
@@ -805,6 +815,7 @@ void VolumeDataMaintainer::DeInitDeviceVolumeMap(std::shared_ptr<AudioDeviceDesc
     CHECK_AND_RETURN_LOG(device != nullptr, "DeInitDeviceVolumeMap device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     volumeLevelMap_.erase(device->GetName());
+    volumeDegreeMap_.erase(device->GetName());
     AUDIO_INFO_LOG("DeInitDeviceVolumeMap device %{public}s", device->GetName().c_str());
 }
 
@@ -813,6 +824,7 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
     CHECK_AND_RETURN_LOG(device != nullptr, "LoadDeviceVolumeMapFromDb device is null");
     AUDIO_INFO_LOG("LoadDeviceVolumeMapFromDb device %{public}s", device->GetName().c_str());
     std::vector<IntValueInfo> infos;
+    std::vector<IntValueInfo> degreeInfos;
     std::vector<AudioStreamType> volumeList = volumeList_;
     if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device)) {
         volumeList = DISTRIBUTED_VOLUME_TYPE_LIST;
@@ -820,6 +832,7 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
     for (auto stream : volumeList) {
         int32_t dftVolume = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(device, stream);
         int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(device, stream);
+        int32_t dftDegree = VolumeUtils::VolumeLevelToDegree(dftVolume, maxVolume);
         IntValueInfo info {
             .key = GetVolumeKey(device, stream),
             .defaultValue = dftVolume,
@@ -827,7 +840,16 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
             .maxValue = maxVolume,
         };
         infos.push_back(info);
-        AUDIO_INFO_LOG("Load %{public}s dftValue %{public}d", info.key.c_str(), dftVolume);
+
+        IntValueInfo degreeInfo {
+            .key = GetVolumeKey(device, stream, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE),
+            .defaultValue = dftDegree,
+            .value = dftDegree,
+            .maxValue = MAX_VOLUME_DEGREE,
+        };
+        degreeInfos.push_back(degreeInfo);
+        AUDIO_INFO_LOG("Load %{public}s dftValue %{public}d, dftDegree %{public}d",
+            info.key.c_str(), dftVolume, dftDegree);
     }
 
     bool readDb = false;
@@ -842,11 +864,12 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
         std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
         AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         audioSettingProvider.GetIntValues(infos, "system");
+        audioSettingProvider.GetIntValues(degreeInfos, "system");
     }
+
     for (size_t i = 0; i < volumeList.size(); i++) {
         SaveVolumeToMap(device, volumeList[i], infos[i].value);
-        int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(infos[i].value, infos[i].maxValue);
-        SaveVolumeDegreeToMap(device, volumeList[i], volumeDegree);
+        SaveVolumeDegreeToMap(device, volumeList[i], degreeInfos[i].value);
     }
 }
 
@@ -1118,13 +1141,12 @@ int32_t VolumeDataMaintainer::SaveVolumeDegreeToDb(std::shared_ptr<AudioDeviceDe
             return SUCCESS;
         }
     }
-    std::string volumeKey = GetVolumeKey(device, streamType);
+    std::string volumeKey = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE);
     if (!volumeKey.compare("")) {
         AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported",
             device->GetName().c_str(), streamType);
         return ERROR;
     }
-    volumeKey += "_degree";
 
     {
         std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
@@ -1148,13 +1170,12 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromDb(std::shared_ptr<AudioDevice
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
     int32_t volumeDegree = 0;
-    std::string volumeKey = GetVolumeKey(device, streamType);
+    std::string volumeKey = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE);
     if (!volumeKey.compare("")) {
         AUDIO_ERR_LOG("[device %{public}s, streamType %{public}d] is not supported",
             device->GetName().c_str(), streamType);
         return volumeDegree;
     }
-    volumeKey += "_degree";
 
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeDegree, "system");

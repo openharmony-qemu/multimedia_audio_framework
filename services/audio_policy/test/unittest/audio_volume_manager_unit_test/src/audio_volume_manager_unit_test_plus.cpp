@@ -310,6 +310,31 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_114, TestSize.Level1)
 
     auto ret = audioVolumeManager->SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
     EXPECT_NE(ret, SUCCESS);
+
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeLevel2 = 2;
+    int32_t volumeDegree2 = 8;
+    audioVolumeManager->curOutputDeviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volumeLevel2,
+        VolumeKeyType::VOLUME_KEY_TYPE_LEVEL);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volumeDegree2,
+        VolumeKeyType::VOLUME_KEY_TYPE_DEGREE);
+    EXPECT_NE(ret, SUCCESS);
+
+    int32_t retDegree = audioVolumeManager->GetSystemVolumeDegree(streamType);
+    EXPECT_NE(volumeDegree2, retDegree);
+
+    audioVolumeManager->curOutputDeviceType_ = DEVICE_TYPE_NEARLINK;
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volumeLevel2,
+        VolumeKeyType::VOLUME_KEY_TYPE_LEVEL);
+    EXPECT_NE(ret, SUCCESS);
+    ret = audioVolumeManager->SetSystemVolumeExternal(streamType, volumeDegree2,
+        VolumeKeyType::VOLUME_KEY_TYPE_DEGREE);
+    EXPECT_NE(ret, SUCCESS);
+
+    retDegree = audioVolumeManager->GetSystemVolumeDegree(streamType);
+    EXPECT_NE(volumeDegree2, retDegree);
 }
 
 /**
@@ -330,6 +355,18 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_115, TestSize.Level1)
 
     auto ret = audioVolumeManager->SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
     EXPECT_NE(ret, SUCCESS);
+
+
+    std::string macAddress2 = "11:22:33:44:55:77";
+    int32_t volumeDegree = 10;
+    audioVolumeManager->audioA2dpDevice_.AddA2dpDevice(macAddress, {.absVolumeSupport = true});
+    EXPECT_NE(audioVolumeManager->audioA2dpDevice_.SetA2dpDeviceVolumeDegree(macAddress2, volumeDegree), true);
+    audioVolumeManager->audioA2dpDevice_.AddA2dpDevice(macAddress2, {});
+    EXPECT_NE(audioVolumeManager->audioA2dpDevice_.SetA2dpDeviceVolumeDegree(macAddress2, volumeDegree), true);
+    EXPECT_EQ(audioVolumeManager->audioA2dpDevice_.SetA2dpDeviceVolumeDegree(macAddress, volumeDegree), true);
+    A2dpDeviceConfigInfo info;
+    audioVolumeManager->audioA2dpDevice_.GetA2dpDeviceInfo(macAddress, info);
+    EXPECT_EQ(info.volumeDegree, volumeDegree);
 }
 
 /**
