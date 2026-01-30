@@ -615,8 +615,8 @@ HWTEST_F(AudioInterruptServiceUnitTest, GetAppState_001, TestSize.Level4)
     pids.push_back (appPid);
     appManager.KillProcessesByPids(pids);
 
-    audioInterruptService_->GetAppState(appPid);
-    EXPECT_TRUE(audioInterruptService_->GetAppState(appPid) != 0);
+    AudioInterruptUtils::GetAppState(appPid);
+    EXPECT_TRUE(AudioInterruptUtils::GetAppState(appPid) != 0);
 }
 
 /**
