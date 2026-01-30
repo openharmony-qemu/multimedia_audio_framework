@@ -39,6 +39,7 @@
 #include "async_action_handler.h"
 #include "audio_interrupt_custom.h"
 #include "audio_stream_collector.h"
+#include "audio_interrupt_dfx.h"
 
 
 namespace OHOS {
@@ -231,8 +232,6 @@ private:
         AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     void UpdateMapFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
-    bool IsMediaStream(AudioStreamType audioStreamType);
-    std::string GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt);
     std::string GetCurrentBundleName(uint32_t uid);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
@@ -291,6 +290,10 @@ private:
     void WriteServiceStartupError();
     // systemapp debug interfaces
     void WriteCallSessionEvent(int32_t strategyValue);
+    void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid);
+ 	void DeactivateAudioSessionErrorEvent(const std::vector<AudioInterrupt> &streamsInSession,
+ 	    const int32_t callerPid);
+ 	void AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
 
     // interfaces about audio session.
     void AddActiveInterruptToSession(const int32_t callerPid);
@@ -332,7 +335,6 @@ private:
 
     bool IsHandleIter(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         AudioFocuState oldState, std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew);
-    uint8_t GetAppState(int32_t appPid);
     void WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, const AudioInterrupt &audioInterrupt);
     void WriteStopDfxMsg(const AudioInterrupt &audioInterrupt);
     void WriteSessionTimeoutDfxEvent(const int32_t pid);
@@ -431,6 +433,7 @@ private:
     std::unordered_set<uint32_t> mutedGameSessionId_;
 
     std::unique_ptr<AudioInterruptCustom> interruptCustom_;
+    std::unique_ptr<AudioInterruptDfx> interruptDfx_;
 
     AudioStreamCollector& streamCollector_;
 };
