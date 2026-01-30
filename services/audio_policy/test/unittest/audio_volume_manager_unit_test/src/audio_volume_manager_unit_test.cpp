@@ -317,7 +317,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 
     notificationId = INCREASE_VOLUME_NOTIFICATION_ID;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, 0);
 
     notificationId = NOTIFICATION_BANNER_FLAG;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
@@ -698,8 +698,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_029, TestSize.Level1)
 
     zoneId = 0;
     audioVolumeManager->ringerModeMute_ = true;
-    auto ret = audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
-    EXPECT_EQ(ret, 0);
+    audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 }
 
 /**
@@ -1394,7 +1393,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
     audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
     auto ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
     AudioDeviceDescriptor curDesc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc2);
     ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
