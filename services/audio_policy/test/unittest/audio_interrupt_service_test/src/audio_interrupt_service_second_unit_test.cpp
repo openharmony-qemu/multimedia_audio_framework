@@ -1128,7 +1128,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_038, TestSize.
     EXPECT_TRUE(ret);
 
     AudioStreamType audioStreamType = STREAM_ALARM;
-    ret = audioInterruptService->IsMediaStream(audioStreamType);
+    ret = AudioInterruptUtils::IsMediaStream(audioStreamType);
     EXPECT_FALSE(ret);
 }
 
