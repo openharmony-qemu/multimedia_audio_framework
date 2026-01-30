@@ -224,7 +224,7 @@ void AudioCollaborativeService::UpdateCollaborativeStateToHdi(bool collaborative
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
     std::string keyValue = std::string("collaborative_state=") + (collaborativeState ? "true" : "false");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
     AUDIO_INFO_LOG("UpdateCollaborativeStateToHdi, value: %{public}s", keyValue.c_str());
