@@ -50,6 +50,7 @@ public:
     virtual void NotifyStreamChangeToSink(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state) {};
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
+    virtual void SetCollaborationState(bool collaborationState) {};
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

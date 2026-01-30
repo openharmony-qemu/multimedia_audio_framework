@@ -157,6 +157,9 @@ private:
     void DeleteNodesByTraversal(uint32_t sessionId);
     void StopOuputNode();
     void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state);
+    void DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType);
+    void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
+    void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
 
 private:
 
@@ -181,6 +184,7 @@ private:
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
+    bool coBufferNodeIsConnectedBt_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

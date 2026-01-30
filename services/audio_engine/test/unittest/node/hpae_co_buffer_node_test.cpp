@@ -136,8 +136,10 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, Process_001, TestSize.Level0)
     std::string deviceClass = "file_io";
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(sinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    coBufferNode->enqueueRunning_ = true;
     sinkOutputNode->DoProcess();
     EXPECT_EQ(coBufferNode->Reset(), true);
+    coBufferNode->enqueueRunning_ = false;
     sinkOutputNode->DoProcess();
     EXPECT_EQ(coBufferNode->ResetAll(), true);
     coBufferNode->ProcessOutputFrameInner();
