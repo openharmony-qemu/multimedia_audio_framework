@@ -311,6 +311,21 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
     return streamDescs;
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsCopy()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        CHECK_AND_CONTINUE(it->pipeRole_ == PIPE_ROLE_OUTPUT);
+        for (auto &desc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            streamDescs.push_back(std::make_shared<AudioStreamDescriptor>(desc));
+        }
+    }
+    return streamDescs;
+}
+
 std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllInputStreamDescs()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -513,6 +528,13 @@ std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetModemCommunicationSt
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     CHECK_AND_RETURN_RET_LOG(!modemCommunicationIdMap_.empty(), nullptr, "ModemCommunicationMap is empty!");
     return modemCommunicationIdMap_.begin()->second;
+}
+
+std::shared_ptr<AudioStreamDescriptor> AudioPipeManager::GetModemCommunicationStreamDescCopy()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    CHECK_AND_RETURN_RET_LOG(!modemCommunicationIdMap_.empty(), nullptr, "ModemCommunicationMap is empty!");
+    return std::make_shared<AudioStreamDescriptor>(modemCommunicationIdMap_.begin()->second);
 }
 
 std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetModemCommunicationMap()

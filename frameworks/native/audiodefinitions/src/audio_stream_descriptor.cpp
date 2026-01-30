@@ -71,9 +71,24 @@ AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDe
         CHECK_AND_CONTINUE(deviceDesc != nullptr);
         oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
     }
-    streamStatus_ = streamDescriptor->streamStatus_;
+
+    streamInfo_ = streamDescriptor->streamInfo_;
+    audioMode_ = streamDescriptor->audioMode_;
+    audioFlag_ = streamDescriptor->audioFlag_;
+    routeFlag_ = streamDescriptor->routeFlag_;
+    oldRouteFlag_ = streamDescriptor->oldRouteFlag_;
+    createTimeStamp_ = streamDescriptor->createTimeStamp_;
+    startTimeStamp_ = streamDescriptor->startTimeStamp_;
+    rendererInfo_ = streamDescriptor->rendererInfo_;
+    capturerInfo_ = streamDescriptor->capturerInfo_;
+    appInfo_ = streamDescriptor->appInfo_;
     sessionId_ = streamDescriptor->sessionId_;
-    rendererInfo_.streamUsage = streamDescriptor->rendererInfo_.streamUsage;
+    callerUid_ = streamDescriptor->callerUid_;
+    callerPid_ = streamDescriptor->callerPid_;
+    streamStatus_ = streamDescriptor->streamStatus_;
+    streamAction_ = streamDescriptor->streamAction_;
+    bundleName_ = streamDescriptor->bundleName_;
+    ultraFastStream_ = streamDescriptor->ultraFastStream_;
 }
 
 void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
