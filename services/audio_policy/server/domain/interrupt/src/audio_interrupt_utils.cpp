@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-std::string AudioInterruptUtils::GetAudioInterruptBundleName(AudioInterrupt &audioInterrupt)
+std::string AudioInterruptUtils::GetAudioInterruptBundleName(const AudioInterrupt &audioInterrupt)
 {
     if (audioInterrupt.bundleName.empty()) {
         auto info = AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid);
