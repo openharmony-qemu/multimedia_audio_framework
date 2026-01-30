@@ -270,8 +270,9 @@ int32_t HpaeOutputCluster::SetAuxiliarySinkEnable(bool isEnabled)
     return hpaeSinkOutputNode_->SetAuxiliarySinkEnable(isEnabled);
 }
 
-void SetCollaborationState(bool collaborationState)
+void HpaeOutputCluster::SetCollaborationState(bool collaborationState)
 {
+    CHECK_AND_RETURN_LOG(hpaeSinkOutputNode_ != nullptr, "sinkOutputNode is null");
     hpaeSinkOutputNode_->SetCollaborationState(collaborationState);
 }
 }  // namespace HPAE
