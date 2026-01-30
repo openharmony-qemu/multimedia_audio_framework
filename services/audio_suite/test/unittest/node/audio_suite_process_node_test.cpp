@@ -88,7 +88,7 @@ public:
             SAMPLE_RATE_48000};
         node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
         node_->InitOutputStream();
-        node_->nodeNeedDataDuration_ = 20;
+        node_->nodeNeedDataDuration_ = NEED_DATA_LENGTH;
         TestReadTapCallBack::testFlag = false;
     }
     void TearDown() override
