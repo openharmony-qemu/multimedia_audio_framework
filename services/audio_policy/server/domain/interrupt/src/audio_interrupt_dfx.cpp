@@ -111,7 +111,7 @@ bool AudioInterruptDfx::IsInterruptErrorEvent(AudioStreamType sceneStreamType, A
     return false;
 }
 
-void AudioInterruptDfx::AddInterruptErrorEvent(AudioInterrupt &audioInterrupt, const int32_t callerPid)
+void AudioInterruptDfx::AddInterruptErrorEvent(const AudioInterrupt &audioInterrupt, const int32_t callerPid)
 {
     AudioFocusErrorEvent interruptError;
     AudioStreamType sceneStreamType = sessionService_.GenerateFakeAudioInterrupt(callerPid).audioFocusType.streamType;
