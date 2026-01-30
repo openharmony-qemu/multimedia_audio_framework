@@ -45,7 +45,7 @@ public:
     virtual int32_t Connect(const BluetoothRemoteDevice &device) = 0;
     virtual int32_t IsInbandRingingEnabled(bool &isEnabled) = 0;
     virtual int32_t GetLastError() = 0;
-    virtual std::string GetLastOpration() = 0;
+    virtual std::string GetLastOperation() = 0;
 
 protected:
     BluetoothHfpInterface() {}

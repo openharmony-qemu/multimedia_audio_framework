@@ -50,7 +50,7 @@ public:
         return 0;
     }
 
-    std::string GetLastOpration() override
+    std::string GetLastOperation() override
     {
         return "";
     }
