@@ -152,7 +152,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::SetParameter(const std::string &p
     AudioEffectTransInfo cmdInfo = {sizeof(float), &pitchRate_};
     ret = (*pitchAlgoHandle_)->command(pitchAlgoHandle_, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "Set pitch param error %{public}d", ret);
-
+    CHECK_AND_RETURN_RET_LOG(speedRate_ != 0, ERROR, "speedRate is zero.");
     expendSize_ = static_cast<int32_t>(std::ceil(nodeParameter_.frameLen / speedRate_)) * EXPAND_FRAME_RATE +
         EXPAND_FRAME_SIZE;
     tempDataOut_.resize(expendSize_);

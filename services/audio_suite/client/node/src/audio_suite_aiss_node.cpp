@@ -23,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+const uint32_t AISS_OUTPUT_NUM = 2;
 
 AudioSuiteAissNode::AudioSuiteAissNode()
     : AudioSuiteProcessNode(NODE_TYPE_AUDIO_SEPARATION)
@@ -55,14 +56,13 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_ERR_LOG("InitAlgorithm failed");
         return ERROR;
     }
-    uint32_t outputNum = 2;
-    resultNumber = outputNum;
+    resultNumber_ = AISS_OUTPUT_NUM;
     SetAudioNodeFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeParameter.inChannels},
         static_cast<AudioSampleFormat>(nodeParameter.inFormat),
         static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
     
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     isInit_ = true;
     AUDIO_DEBUG_LOG("AudioSuiteAissNode Init success");
     return SUCCESS;
@@ -73,8 +73,8 @@ int32_t AudioSuiteAissNode::DeInit()
     isInit_ = false;
     if (algoInterface_ != nullptr) {
         algoInterface_->Deinit();
+        algoInterface_ = nullptr;
     }
-    algoInterface_ = nullptr;
     
     AUDIO_DEBUG_LOG("AudioSuiteAissNode DeInit success");
     return SUCCESS;

@@ -57,7 +57,7 @@ int32_t AudioSuiteEqNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter.inFormat),
         static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
 
     isEqNodeInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEqNode::Init end");
@@ -77,22 +77,6 @@ int32_t AudioSuiteEqNode::DeInit()
         return SUCCESS;
     }
     return ERROR;
-}
-
-int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
-{
-    AUDIO_INFO_LOG("AudioSuiteEqNode::SetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(name == setBandGains, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!value.empty(), ERROR, "Value is empty");
-
-    paraName_ = name;
-    paraValue_ = value;
-
-    int32_t ret = algoInterface_->SetParameter(value, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed");
-    AUDIO_INFO_LOG("SetOptions SUCCESS");
-    return SUCCESS;
 }
 
 }  // namespace AudioSuite

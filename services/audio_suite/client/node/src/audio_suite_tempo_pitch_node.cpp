@@ -65,7 +65,7 @@ int32_t AudioSuiteTempoPitchNode::Init()
         static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
 
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteTempoPitchNode::Init end");
     return SUCCESS;
@@ -105,7 +105,8 @@ float ParseStringToSpeedRate(const std::string &str, char delimiter)
 uint32_t AudioSuiteTempoPitchNode::CalculationNeedBytes(uint32_t frameLengthMs)
 {
     uint32_t dataBytes = 0;
-    dataBytes = static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / speedRate)) * RESIZE_EXPAND_RATE +
+    CHECK_AND_RETURN_RET_LOG(speedRate_ != 0, ERROR, "speedRate is zero.");
+    dataBytes = static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / speedRate_)) * RESIZE_EXPAND_RATE +
                         RESIZE_EXPAND_BYTES;
     return dataBytes;
 }
@@ -119,8 +120,8 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
     paraValue_ = value;
     int32_t ret = algoInterface_->SetParameter(name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "TempoPitchNode SetOptions ERROR");
-    speedRate = ParseStringToSpeedRate(value, ',');
-    if (FLOAT_COMPARE_EQ(speedRate, 0.0f)) {
+    speedRate_ = ParseStringToSpeedRate(value, ',');
+    if (FLOAT_COMPARE_EQ(speedRate_, 0.0f)) {
         AUDIO_ERR_LOG("TempoPitchNode ParseStringToSpeedRate ERROR");
         return ERROR;
     }
@@ -131,18 +132,19 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
 std::vector<AudioSuitePcmBuffer *> AudioSuiteTempoPitchNode::SignalProcess(
     const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, retPcmBuffer, "algoInterface_ is nullptr, need Init first");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), retPcmBuffer, "Inputs list is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, retPcmBuffer, "Input data is nullptr");
-    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), retPcmBuffer, "Invalid input format");
-
-    algorithmInput_[0] = inputs[0]->GetPcmData();
-
-    int32_t ret = algoInterface_->Apply(algorithmInput_, algorithmOutput_);
-    CHECK_AND_RETURN_RET_LOG(ret >= 0, retPcmBuffer, "Node SignalProcess Apply failed");
-    frameOutBytes = static_cast<uint32_t>(ret * sizeof(int16_t));
+    std::vector<AudioSuitePcmBuffer *> retError{ nullptr };
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, retError, "algoInterface_ is nullptr, need Init first");
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), retError, "Inputs list is empty");
+    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, retError, "Input data is nullptr");
+    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), retError, "Invalid input format");
+ 
+    algoInput_[0] = inputs[0]->GetPcmData();
+ 
+    int32_t ret = algoInterface_->Apply(algoInput_, algoOutput_);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, retError, "Node SignalProcess Apply failed");
+    frameOutBytes_ = static_cast<uint32_t>(ret * sizeof(int16_t));
     
-    return retPcmBuffer;
+    return intermediateResult_;
 }
 
 }  // namespace AudioSuite

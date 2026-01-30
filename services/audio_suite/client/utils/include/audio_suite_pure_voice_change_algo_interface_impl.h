@@ -81,7 +81,6 @@ private:
     std::vector<char> scratchBuf_;
     void *libHandle_{nullptr};
     AudioSuiteLibraryManager algoLibrary_;
-    uint32_t maxSamplePoint = 76800;
 };
 
 }  // namespace AudioSuite

@@ -32,7 +32,7 @@ static constexpr uint32_t REQUEST_DATA_TRY_COUNTS = 3;
 static constexpr uint32_t CACHE_FRAME_DEFAULT_LEN = 3;
 static constexpr uint32_t CACHE_FRAME_SAMPLE_RATE_11025_LEN = 2;
 
-AudioInputNode::AudioInputNode(AudioFormat format) : AudioNode(AudioNodeType::NODE_TYPE_INPUT, format), inPcmFormat()
+AudioInputNode::AudioInputNode(AudioFormat format) : AudioNode(AudioNodeType::NODE_TYPE_INPUT, format)
 {
     AUDIO_INFO_LOG("numChannels:%{public}u, channelLayout:%{public}" PRIu64 "sampleFormat:%{public}u,"
         "sampleRate:%{public}d, encodingType:%{public}d", format.audioChannelInfo.numChannels,
@@ -48,7 +48,7 @@ int32_t AudioInputNode::Init()
 {
     outputStream_.SetOutputPort(GetSharedInstance());
     uint32_t doubleFrame = 2;
-    inPcmFormat = GetAudioNodeInPcmFormat();
+    PcmBufferFormat inPcmFormat = GetAudioNodeInPcmFormat();
     if (GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025) {
         inPcmData_.ResizePcmBuffer(inPcmFormat, PCM_DATA_DURATION_40_MS);
         inPcmFormat.sampleRate = SAMPLE_RATE_16000;
@@ -72,11 +72,31 @@ int32_t AudioInputNode::DeInit()
 int32_t AudioInputNode::Flush()
 {
     AUDIO_INFO_LOG("AudioInputNode::Flush");
-    initFlag_ = false;
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
     convert_.Reset();
     outputStream_.ResetResampleCfg();
+    return SUCCESS;
+}
+
+inline int32_t AudioInputNode::InitCacheBuffer(uint32_t needDataLength)
+{
+    int32_t ret = outPcmData_.ResizePcmBuffer(outPcmData_.GetPcmBufferFormat(), needDataLength);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR, "outPcmData Failed to initialize storage.");
+    uint32_t singleRequestSize =
+        singleRequestSize_ >= outPcmData_.GetDataSize() ? singleRequestSize_ : outPcmData_.GetDataSize();
+    
+    uint32_t frames = GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025
+                            ? CACHE_FRAME_SAMPLE_RATE_11025_LEN
+                            : CACHE_FRAME_DEFAULT_LEN;
+    cachedBuffer_.ResizeBuffer(singleRequestSize * frames);
+ 
+    singleRequestSize = needDataLength >= inPcmData_.GetDataDuration() ? needDataLength : inPcmData_.GetDataDuration();
+    ret = inPcmData_.ResizePcmBuffer(inPcmData_.GetPcmBufferFormat(), singleRequestSize);
+    if (GetAudioNodeFormat().rate != AudioSamplingRate::SAMPLE_RATE_11025) {
+        singleRequestSize_ = inPcmData_.GetDataSize();
+    }
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR, "inPcmData Failed to initialize storage.");
     return SUCCESS;
 }
 
@@ -99,15 +119,10 @@ OutputPort<AudioSuitePcmBuffer*>* AudioInputNode::GetOutputPort()
 
 int32_t AudioInputNode::DoProcess(uint32_t needDataLength)
 {
-    if (!initFlag_) {
-        outPcmData_.ResizePcmBuffer(inPcmFormat, needDataLength);
-        singleRequestSize_ =
-            singleRequestSize_ >= outPcmData_.GetDataSize() ? singleRequestSize_ : outPcmData_.GetDataSize();
-        uint32_t frames = GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025
-                              ? CACHE_FRAME_SAMPLE_RATE_11025_LEN
-                              : CACHE_FRAME_DEFAULT_LEN;
-        cachedBuffer_.ResizeBuffer(singleRequestSize_ * frames);
-        initFlag_ = true;
+    if (nextNodeNeedDataLength_ != needDataLength) {
+        int32_t ret = InitCacheBuffer(needDataLength);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ERROR, "Failed to initialize storage.");
+        nextNodeNeedDataLength_ = needDataLength;
     }
     CHECK_AND_RETURN_RET(GetDataFromUser() == SUCCESS, ERR_WRITE_FAILED, "Get data from user fail");
     CHECK_AND_RETURN_RET(GeneratePushBuffer() == SUCCESS, ERR_WRITE_FAILED, "Get data from buffer fail");
@@ -173,7 +188,7 @@ int32_t AudioInputNode::GetDataFromUser()
 
         if ((singleGetSize == inPcmData_.GetDataSize()) || isFinished) {
             AudioSuitePcmBuffer *ConverPcmData =
-                convert_.Process(&inPcmData_, outPcmData_.GetPcmBufferFormat(), inPcmData_.GetDataDuration());
+                convert_.Process(&inPcmData_, outPcmData_.GetPcmBufferFormat());
             CHECK_AND_RETURN_RET_LOG(ConverPcmData != nullptr, ERR_INVALID_PARAM, "convert pcm format fail");
 
             int32_t ret = cachedBuffer_.PushData(ConverPcmData->GetPcmData(), ConverPcmData->GetDataSize());
@@ -195,13 +210,13 @@ int32_t AudioInputNode::GetDataFromUser()
 
 int32_t AudioInputNode::GeneratePushBuffer()
 {
-    CHECK_AND_RETURN_RET_LOG(
-        cachedBuffer_.GetSize() != 0, ERROR, "cachedBuffer not data %{public}d", cachedBuffer_.GetSize());
-    outPcmData_.Reset();
-    uint32_t copyByteLength =
-        cachedBuffer_.GetSize() <= outPcmData_.GetDataSize() ? cachedBuffer_.GetSize() : outPcmData_.GetDataSize();
- 
-    int32_t ret = cachedBuffer_.GetData(outPcmData_.GetPcmData(), copyByteLength);
+    CHECK_AND_RETURN_RET_LOG(cachedBuffer_.GetSize() >= outPcmData_.GetDataSize(),
+        ERROR,
+        "cachedBuffer not data%{public}d",
+        cachedBuffer_.GetSize());
+
+    int32_t ret = cachedBuffer_.GetData(outPcmData_.GetPcmData(), outPcmData_.GetDataSize());
+
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get data from cachedBuffer fail");
 
     outPcmData_.SetIsFinished(GetAudioNodeDataFinishedFlag() && (cachedBuffer_.GetSize() == 0));

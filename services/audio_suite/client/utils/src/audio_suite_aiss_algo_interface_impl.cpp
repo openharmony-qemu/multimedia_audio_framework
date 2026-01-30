@@ -35,7 +35,7 @@ constexpr int32_t CHANNEL_1 = 1;
 constexpr int32_t CHANNEL_2 = 2;
 constexpr int32_t CHANNEL_3 = 3;
 constexpr int32_t CHANNEL_4 = 4;
-constexpr size_t NUM_TWO = 2;
+constexpr size_t NUMBER_OF_OUTPUT = 2;
 const std::string AISS_NAME = "aiss";
 const std::string AISS_PROPERTY = "AISSVX";
 const std::string AISS_LIB = "AISSLIB";
@@ -140,7 +140,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::GetParameter(const std::string& paramTy
 int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::vector<uint8_t*>& v2)
 {
     CHECK_AND_RETURN_RET_LOG(!v1.empty(), ERROR, "Input parameter vector is empty");
-    CHECK_AND_RETURN_RET_LOG(v2.size() == NUM_TWO, ERROR, "Output parameter vector size is not equal 2");
+    CHECK_AND_RETURN_RET_LOG(v2.size() == NUMBER_OF_OUTPUT, ERROR, "Output parameter vector size is not equal 2");
     for (uint8_t* ptr : v1) {
         if (ptr == nullptr) {
             AUDIO_ERR_LOG("Input parameter is nullptr");

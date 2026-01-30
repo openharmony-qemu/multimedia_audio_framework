@@ -101,14 +101,14 @@ int32_t AudioSuiteFormatConversion::Resample(AudioSuitePcmBuffer *in, AudioSuite
 }
 
 AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(
-    AudioSuitePcmBuffer *inPcmBuffer, PcmBufferFormat &outFormat, uint32_t needDataLength)
+    AudioSuitePcmBuffer *inPcmBuffer, PcmBufferFormat &outFormat)
 {
     CHECK_AND_RETURN_RET_LOG(inPcmBuffer != nullptr, nullptr, "nullptr");
     if (inPcmBuffer->IsSameFormat(outFormat)) {
         return inPcmBuffer;
     }
 
-    uint32_t duration = needDataLength;
+    uint32_t duration = inPcmBuffer->GetDataDuration();
 
     AudioSuitePcmBuffer *in = inPcmBuffer;
     if (in->GetSampleFormat() != SAMPLE_F32LE) {

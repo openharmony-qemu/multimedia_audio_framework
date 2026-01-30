@@ -51,7 +51,7 @@ public:
         if (!inputs.empty()) {
             // simulate a signal process.
             if (inputs[0] == nullptr) {
-                return retPcmBuffer;
+                return intermediateResult_;
             }
             uint8_t *unProcessedData = inputs[0]->GetPcmData();
             if (unProcessedData != nullptr) {
@@ -59,7 +59,7 @@ public:
             }
             return inputs;
         }
-        return retPcmBuffer;
+        return intermediateResult_;
     }
 };
 class TestReadTapCallBack : public SuiteNodeReadTapDataCallback {
@@ -88,6 +88,7 @@ public:
             SAMPLE_RATE_48000};
         node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
         node_->InitOutputStream();
+        node_->nodeNeedDataDuration_ = 20;
         TestReadTapCallBack::testFlag = false;
     }
     void TearDown() override

@@ -42,7 +42,7 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
     CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter) == SUCCESS),
         "node: %{public}d GetNodeParameter failed.", nodeType);
-    resultNumber = 1;
+    resultNumber_ = 1;
 }
 
 uint32_t AudioSuiteProcessNode::CalculationNeedBytes(uint32_t frameLengthMs)
@@ -63,165 +63,175 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteProcessNode::SignalProcess(
     CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, retError, "Input data is nullptr");
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), retError, "Invalid input format");
 
-    algorithmInput_[0] = inputs[0]->GetPcmData();
+    algoInput_[0] = inputs[0]->GetPcmData();
     int32_t ret =
-        algoInterface_->Apply(algorithmInput_, algorithmOutput_);
+        algoInterface_->Apply(algoInput_, algoOutput_);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, retError, "Node SignalProcess Apply failed");
 
-    return retPcmBuffer;
+    return intermediateResult_;
 }
 
 int32_t AudioSuiteProcessNode::InitCacheLength(uint32_t needDataLength)
 {
-    frameOutBytes = CalculationNeedBytes(pcmDurationMs_);
-    algoOutPcmBuffer_.resize(resultNumber);
-    outputPcmBuffer.resize(resultNumber);
-    cachedBuffer.resize(resultNumber);
+    requestPreNodeDuration_ = nodeNeedDataDuration_;
+    frameOutBytes_ = CalculationNeedBytes(requestPreNodeDuration_);
+    algoOutPcmBuffer_.resize(resultNumber_);
+    downStreamData_.resize(resultNumber_);
+    cachedBuffer_.resize(resultNumber_);
+    // The buffer size is twice the maximum length of the data in the current node and the next node.
     uint32_t doubleLength = 2;
 
-    for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
-        int32_t ret = outputPcmBuffer[idx].ResizePcmBuffer(
+    for (size_t idx = 0; idx < downStreamData_.size(); ++idx) {
+        int32_t ret = downStreamData_[idx].ResizePcmBuffer(
             GetAudioNodeInPcmFormat(), needDataLength);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Target buffer allocation failed.");
         CHECK_AND_RETURN_RET_LOG(
-            outputPcmBuffer[idx].GetPcmData() != nullptr, ERROR, "The target buffer pointer is null.");
-
+            downStreamData_[idx].GetPcmData() != nullptr, ERROR, "The target buffer pointer is null.");
+        
         uint32_t needByteLength =
-            outputPcmBuffer[idx].GetDataSize() >= frameOutBytes ? outputPcmBuffer[idx].GetDataSize() : frameOutBytes;
-        ret = cachedBuffer[idx].ResizeBuffer(needByteLength * doubleLength);
+            downStreamData_[idx].GetDataSize() >= frameOutBytes_ ? downStreamData_[idx].GetDataSize() : frameOutBytes_;
+        ret = cachedBuffer_[idx].ResizeBuffer(needByteLength * doubleLength);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Circular buffer allocation failed.");
 
-        ret = algoOutPcmBuffer_[idx].ResizePcmBuffer(GetAudioNodeInPcmFormat(), pcmDurationMs_);
+        ret = algoOutPcmBuffer_[idx].ResizePcmBuffer(GetAudioNodeInPcmFormat(), requestPreNodeDuration_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Algorithm result buffer allocation failed.");
         CHECK_AND_RETURN_RET_LOG(
             algoOutPcmBuffer_[idx].GetPcmData() != nullptr, ERROR, "The algorithm result buffer pointer is empty.");
 
-        algoOutPcmBuffer_[idx].ResizePcmBuffer(frameOutBytes);
-        CHECK_AND_RETURN_RET_LOG(algoOutPcmBuffer_[idx].GetDataSize() == CalculationNeedBytes(pcmDurationMs_),
+        ret = algoOutPcmBuffer_[idx].ResizePcmBuffer(frameOutBytes_);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Resetting byte count failed.");
+        CHECK_AND_RETURN_RET_LOG(algoOutPcmBuffer_[idx].GetDataSize() == CalculationNeedBytes(requestPreNodeDuration_),
             ERROR,
             "Target buffer size error.");
 
-        algorithmOutput_.emplace_back(algoOutPcmBuffer_[idx].GetPcmData());
-        retPcmBuffer.emplace_back(&algoOutPcmBuffer_[idx]);
-        needCache = (!algoOutPcmBuffer_[idx].IsSameLength(outputPcmBuffer[idx].GetDataSize()));
+        algoOutput_.emplace_back(algoOutPcmBuffer_[idx].GetPcmData());
+        intermediateResult_.emplace_back(&algoOutPcmBuffer_[idx]);
+        needCache_ = (!algoOutPcmBuffer_[idx].IsSameLength(downStreamData_[idx].GetDataSize()));
     }
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::ObtainProcessedData()
 {
-    preOutputs = ReadProcessNodePreOutputData();
+    std::vector<AudioSuitePcmBuffer *> preOutputs = ReadProcessNodePreOutputData();
     if (preOutputs.empty()) {
         AUDIO_ERR_LOG("node %{public}d can't get pcmbuffer from prenodes", GetNodeType());
         return ERROR;
     }
-    if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
-        AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
 
-         // for dfx
-        auto startTime = std::chrono::steady_clock::now();
+    AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
+    // for dfx
+    auto startTime = std::chrono::steady_clock::now();
 
-        Trace trace("AudioSuiteProcessNode::SignalProcess Start");
-        algoRetPcmBuffer = SignalProcess(preOutputs);
-        trace.End();
+    Trace trace("AudioSuiteProcessNode::SignalProcess Start");
+    algoProcessedResult_ = SignalProcess(preOutputs);
+    trace.End();
 
-         // for dfx
-        auto endTime = std::chrono::steady_clock::now();
-        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-        CheckEffectNodeProcessTime(algoRetPcmBuffer[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
+    // for dfx
+    auto endTime = std::chrono::steady_clock::now();
+    auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+    CheckEffectNodeProcessTime(algoProcessedResult_[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
+    return SUCCESS;
+}
+
+int32_t AudioSuiteProcessNode::ProcessWithCache()
+{
+    requestPreNodeDuration_ = nodeNeedDataDuration_;
+    while (downStreamData_[0].GetDataSize() > cachedBuffer_[0].GetSize() && !GetAudioNodeDataFinishedFlag() &&
+           !GetNodeBypassStatus()) {
+        int32_t ret = ObtainProcessedData();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to retrieve data from the preceding node.");
+        for (size_t idx = 0; idx < algoProcessedResult_.size(); ++idx) {  // 用algoProcessedResult_的size
+            CHECK_AND_RETURN_RET_LOG(
+                algoProcessedResult_[idx] != nullptr && algoProcessedResult_[idx]->GetPcmData() != nullptr,
+                ERR_OPERATION_FAILED,
+                "node %{public}d do SignalProcess failed, return a nullptr.",
+                GetNodeType());
+
+            cachedBuffer_[idx].PushData(algoProcessedResult_[idx]->GetPcmData(), frameOutBytes_);
+        }
+    }
+    for (size_t idx = 0; idx < downStreamData_.size(); ++idx) {
+        downStreamData_[idx].Reset();
+        uint32_t CopyDataLength = cachedBuffer_[idx].GetSize() <= downStreamData_[idx].GetDataSize()
+                                      ? cachedBuffer_[idx].GetSize()
+                                      : downStreamData_[idx].GetDataSize();
+        int32_t ret = cachedBuffer_[idx].GetData(downStreamData_[idx].GetPcmData(), CopyDataLength);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get data from cachedBuffer_ fail");
+        downStreamData_[idx].SetIsFinished(GetAudioNodeDataFinishedFlag() && cachedBuffer_[idx].GetSize() == 0);
+        outputStream_.WriteDataToOutput(&downStreamData_[idx]);
     }
     return SUCCESS;
 }
 
-int32_t AudioSuiteProcessNode::ProcessedDataToNextNode()
+int32_t AudioSuiteProcessNode::ProcessDirectly()
 {
-    if (needCache) {
-        while (outputPcmBuffer[0].GetDataSize() > cachedBuffer[0].GetSize() && !GetAudioNodeDataFinishedFlag()) {
-            int32_t ret = ObtainProcessedData();
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to retrieve data from the preceding node.");
-            for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
-                CHECK_AND_RETURN_RET_LOG(
-                    algoRetPcmBuffer[idx] != nullptr && algoRetPcmBuffer[idx]->GetPcmData() != nullptr,
-                    ERR_OPERATION_FAILED,
-                    "node %{public}d do SignalProcess failed, return a nullptr.",
-                    GetNodeType());
+    requestPreNodeDuration_ = nodeNeedDataDuration_;
+    int32_t ret = ObtainProcessedData();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to retrieve data from the preceding node.");
 
-                cachedBuffer[idx].PushData(algoRetPcmBuffer[idx]->GetPcmData(), frameOutBytes);
-            }
-        }
-        for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
-            outputPcmBuffer[idx].Reset();
-            uint32_t CopyDataLength = cachedBuffer[idx].GetSize() <= outputPcmBuffer[idx].GetDataSize()
-                                           ? cachedBuffer[idx].GetSize()
-                                           : outputPcmBuffer[idx].GetDataSize();
-            int32_t ret = cachedBuffer[idx].GetData(outputPcmBuffer[idx].GetPcmData(), CopyDataLength);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get data from cachedBuffer fail");
-            outputPcmBuffer[idx].SetIsFinished(GetAudioNodeDataFinishedFlag() && cachedBuffer[idx].GetSize() == 0);
-            outputStream_.WriteDataToOutput(&outputPcmBuffer[idx]);
-        }
-    } else {
-        int32_t ret = ObtainProcessedData();
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to retrieve data from the preceding node.");
-
-        for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
-            outputPcmBuffer[idx].Reset();
-            CHECK_AND_RETURN_RET_LOG(algoRetPcmBuffer[idx] != nullptr &&
-                                     algoRetPcmBuffer[idx]->GetPcmData() != nullptr,
-                                     ERR_OPERATION_FAILED,
-                                     "node %{public}d do SignalProcess failed, return a nullptr.",
-                                     GetNodeType());
-            CHECK_AND_RETURN_RET_LOG(algoRetPcmBuffer[idx]->GetDataSize() <= outputPcmBuffer[idx].GetDataSize(),
-                ERROR,
-                "Insufficient target buffer size.");
-            int32_t ret = memcpy_s(outputPcmBuffer[idx].GetPcmData(),
-                outputPcmBuffer[idx].GetDataSize(),  // Copy the first frame 20ms data
-                algoRetPcmBuffer[idx]->GetPcmData(),
-                algoRetPcmBuffer[idx]->GetDataSize());
-            CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy failed, ret is %{public}d.", ret);
-            outputPcmBuffer[idx].SetIsFinished(GetAudioNodeDataFinishedFlag());
-            outputStream_.WriteDataToOutput(&outputPcmBuffer[idx]);
-        }
+    for (size_t idx = 0; idx < downStreamData_.size(); ++idx) {
+        downStreamData_[idx].Reset();
+        CHECK_AND_RETURN_RET_LOG(
+            algoProcessedResult_[idx] != nullptr && algoProcessedResult_[idx]->GetPcmData() != nullptr,
+            ERR_OPERATION_FAILED,
+            "node %{public}d do SignalProcess failed, return a nullptr.",
+            GetNodeType());
+        CHECK_AND_RETURN_RET_LOG(algoProcessedResult_[idx]->GetDataSize() <= downStreamData_[idx].GetDataSize(),
+            ERROR,
+            "Insufficient target buffer size.");
+        int32_t ret = memcpy_s(downStreamData_[idx].GetPcmData(),
+            downStreamData_[idx].GetDataSize(),  // Copy the first frame 20ms data
+            algoProcessedResult_[idx]->GetPcmData(),
+            algoProcessedResult_[idx]->GetDataSize());
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy failed, ret is %{public}d.", ret);
+        downStreamData_[idx].SetIsFinished(GetAudioNodeDataFinishedFlag());
+        outputStream_.WriteDataToOutput(&downStreamData_[idx]);
     }
+    return SUCCESS;
+}
+
+int32_t AudioSuiteProcessNode::ProcessBypassMode(uint32_t needDataLength)
+{
+    requestPreNodeDuration_ = needDataLength;
+    std::vector<AudioSuitePcmBuffer *> preOutputs = ReadProcessNodePreOutputData();
+    CHECK_AND_RETURN_RET_LOG(
+        !preOutputs.empty(), ERROR, "node %{public}d can't get pcmbuffer from prenodes.", GetNodeType());
+    AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
+    for (size_t idx = 0; idx < downStreamData_.size(); ++idx) {
+        preOutputs[0]->SetIsFinished(GetAudioNodeDataFinishedFlag());
+        outputStream_.WriteDataToOutput(preOutputs[0]);
+    }
+
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
 {
     CHECK_AND_RETURN_RET_LOG(needDataLength <= maxRequestLength, ERROR, "Request data length error.");
-    if (GetAudioNodeDataFinishedFlag() && cachedBuffer[0].GetSize() == 0) {
+    if (GetAudioNodeDataFinishedFlag() && cachedBuffer_[0].GetSize() == 0) {
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
         return SUCCESS;
     }
 
-    if (!secondCall) {
+    if (nextNeedDataLength_ != needDataLength) {
         int32_t ret = InitCacheLength(needDataLength);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to initialize buffer.");
-        secondCall = true;
+        nextNeedDataLength_ = needDataLength;
     }
-
-    if ((GetNodeBypassStatus() == true) && cachedBuffer[0].GetSize() == 0) {
-        pcmDurationMs_ = needDataLength;
-        preOutputs = ReadProcessNodePreOutputData();
-        if (!preOutputs.empty()) {
-            AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
-            for (size_t idx = 0; idx < outputPcmBuffer.size(); ++idx) {
-                preOutputs[0]->SetIsFinished(GetAudioNodeDataFinishedFlag());
-                outputStream_.WriteDataToOutput(preOutputs[0]);
-            }
-        } else {
-            AUDIO_ERR_LOG("node %{public}d can't get pcmbuffer from prenodes", GetNodeType());
-            return ERROR;
-        }
-        return SUCCESS;
+    int32_t ret = 0;
+    if ((GetNodeBypassStatus() == true) && cachedBuffer_[0].GetSize() == 0) {
+        ret = ProcessBypassMode(needDataLength);
+    } else if (!needCache_) {
+        ret = ProcessDirectly();
+    } else {
+        ret = ProcessWithCache();
     }
-
-    int32_t ret = ProcessedDataToNextNode();
+    
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to process node data.");
 
     AUDIO_DEBUG_LOG("node type = %{public}d set "
-                    "pcmbuffer IsFinished: %{public}d.",
-        GetNodeType(),
-        GetAudioNodeDataFinishedFlag());
+                    "pcmbuffer IsFinished: %{public}d.", GetNodeType(), GetAudioNodeDataFinishedFlag());
     return SUCCESS;
 }
 
@@ -244,7 +254,7 @@ std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutp
             continue;
         }
         std::vector<AudioSuitePcmBuffer *> outputData = o.first->PullOutputData(
-            GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(), pcmDurationMs_);
+            GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(), requestPreNodeDuration_);
         if (!outputData.empty() && (outputData[0] != nullptr)) {
             if (outputData[0]->GetIsFinished()) {
                 finishedPrenodeSet.insert(o.second);
@@ -267,7 +277,6 @@ int32_t AudioSuiteProcessNode::SetOptions(std::string name, std::string value)
 
     int32_t ret = algoInterface_->SetParameter(name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed %{public}d", ret);
-    AUDIO_INFO_LOG("SetOptions SUCCESS");
     return SUCCESS;
 }
 
@@ -279,7 +288,6 @@ int32_t AudioSuiteProcessNode::GetOptions(std::string name, std::string &value)
 
     int32_t ret = algoInterface_->GetParameter(name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetParameter failed");
-    AUDIO_INFO_LOG("GetOptions SUCCESS");
     return SUCCESS;
 }
 
@@ -287,24 +295,23 @@ int32_t AudioSuiteProcessNode::Flush()
 {
     // for dfx
     CheckEffectNodeOvertimeCount();
-
-    uint32_t singleFrameMs = 20;
-    secondCall = false;
-    needCache = false;
-    pcmDurationMs_ = singleFrameMs;
-    frameOutBytes = 0;
-    resultNumber = 1;
-    cachedBuffer.resize(0);
-    outputPcmBuffer.resize(0);
-    algoRetPcmBuffer.resize(0);
-    retPcmBuffer.resize(0);
-    preOutputs.resize(0);
-    nextNeedDataLength = 0;
-    algorithmInput_.resize(1);
-    algorithmOutput_.resize(0);
+    secondCall_ = false;
+    needCache_ = false;
+    nodeNeedDataDuration_ = 0;
+    requestPreNodeDuration_ = 0;
+    frameOutBytes_ = 0;
+    downStreamData_.resize(0);
+    algoProcessedResult_.resize(0);
+    intermediateResult_.resize(0);
+    nextNeedDataLength_ = 0;
+    algoInput_.resize(1);
+    algoOutput_.resize(0);
     algoInterface_ = nullptr ;
 
     algoOutPcmBuffer_.resize(0);
+    for (int32_t i = 0; i < cachedBuffer_.size(); i++) {
+        cachedBuffer_[i].ClearBuffer();
+    }
 
     CHECK_AND_RETURN_RET_LOG(DeInit() == SUCCESS, ERROR, "DeInit failed");
     CHECK_AND_RETURN_RET_LOG(Init() == SUCCESS, ERROR, "Init failed");
@@ -313,6 +320,7 @@ int32_t AudioSuiteProcessNode::Flush()
     }
     finishedPrenodeSet.clear();
     outputStream_.ResetResampleCfg();
+    
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
 }

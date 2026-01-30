@@ -206,14 +206,12 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, 
     }
 
     ret = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData_);
-    AUDIO_DEBUG_LOG("applyAlgo end");
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_SWS_Apply ERROR:%{public}d", ret);
 
     for (size_t i = 0; i < frameLen_; i++) {
         pcmOut[i] = ((unsigned int)dataOut_[i] >> TWO_BYTES_WIDTH);
     }
 
-    AUDIO_DEBUG_LOG("iMedia_Env_Apply End");
     return ret;
 }
 }  // namespace AudioSuite

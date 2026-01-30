@@ -59,41 +59,48 @@ public:
     {
         return &outputStream_;
     }
-    int32_t ObtainProcessedData();
+    
 
 protected:
-    OutputPort<AudioSuitePcmBuffer *> outputStream_;
-    InputPort<AudioSuitePcmBuffer *> inputStream_;
+    
     virtual std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs);
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
-    std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
-    NodeParameter nodeParameter;
+    virtual uint32_t CalculationNeedBytes(uint32_t frameLengthMs);
+    int32_t InitCacheLength(uint32_t needDataLength);
+    int32_t ProcessBypassMode(uint32_t needDataLength);
+    int32_t ProcessDirectly();
+    int32_t ProcessWithCache();
+    int32_t ObtainProcessedData();
+    int32_t InitOutputStream();
     // for dfx
     void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
     void CheckEffectNodeOvertimeCount();
-    int32_t InitOutputStream();
-    bool isOutputPortInit_ = false;
-    uint32_t pcmDurationMs_ = 20;
-    uint32_t frameOutBytes = 0;
-    uint32_t resultNumber = 1;
-    std::vector<AudioSuiteRingBuffer> cachedBuffer;
-    std::vector<AudioSuitePcmBuffer> outputPcmBuffer;
-    std::vector<AudioSuitePcmBuffer *> algoRetPcmBuffer;
-    std::vector<AudioSuitePcmBuffer *> retPcmBuffer;
-    std::vector<AudioSuitePcmBuffer *> preOutputs;
-    uint32_t nextNeedDataLength = 0;
-    std::vector<uint8_t *> algorithmInput_{nullptr};
-    std::vector<uint8_t *> algorithmOutput_;
-    std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_{ nullptr };
- 
-    std::vector<AudioSuitePcmBuffer> algoOutPcmBuffer_;
- 
-    bool secondCall = false;
-    bool needCache = false;
+
+    std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
+    OutputPort<AudioSuitePcmBuffer *> outputStream_;
+    InputPort<AudioSuitePcmBuffer *> inputStream_;
     
-    virtual uint32_t CalculationNeedBytes(uint32_t frameLengthMs);
-    int32_t InitCacheLength(uint32_t needDataLength);
-    int32_t ProcessedDataToNextNode();
+    uint32_t nodeNeedDataDuration_ = 0;
+    uint32_t requestPreNodeDuration_ = 0;
+    uint32_t frameOutBytes_ = 0;
+    uint32_t resultNumber_ = 1;
+    uint32_t nextNeedDataLength_ = 0;
+
+    std::vector<AudioSuitePcmBuffer> algoOutPcmBuffer_;
+    std::vector<AudioSuiteRingBuffer> cachedBuffer_;
+    std::vector<AudioSuitePcmBuffer> downStreamData_;
+
+    std::vector<AudioSuitePcmBuffer *> algoProcessedResult_;
+    std::vector<AudioSuitePcmBuffer *> intermediateResult_;
+    
+    std::vector<uint8_t *> algoInput_{nullptr};
+    std::vector<uint8_t *> algoOutput_;
+    std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_{ nullptr };
+    NodeParameter nodeParameter;
+ 
+    bool secondCall_ = false;
+    bool needCache_ = false;
+    bool isOutputPortInit_ = false;
 
 private:
     // for dfx
