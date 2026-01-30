@@ -61,8 +61,9 @@ public:
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
     int32_t ResetAllProxy();
     void HandleFreezeStateChange(const int32_t pid, bool isFreeze);
-    void WriteAppStateChangeSysEvent(int32_t pid, AppState appState, bool isAdd);
-    void RecoryAppState();
+    void WriteBackTaskChangeSysEvent(int32_t pid, bool hasBackTask, bool isAdd);
+    void WriteAvSessionChangeSysEvent(int32_t pid, bool hasSession, bool isAdd);
+    void RecoveryAppState();
     bool IsAppInBackState(int32_t pid);
 
 private:
