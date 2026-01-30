@@ -60,9 +60,7 @@ public:
         return &outputStream_;
     }
     
-
 protected:
-    
     virtual std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs);
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     virtual uint32_t CalculationNeedBytes(uint32_t frameLengthMs);
