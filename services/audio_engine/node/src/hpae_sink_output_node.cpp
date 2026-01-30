@@ -632,7 +632,7 @@ void HpaeSinkOutputNode::CheckAndSetCollDelayForRenderFrameFailed()
     }
 }
 
-void SetCollaborationState(bool collaborationState)
+void HpaeSinkOutputNode::SetCollaborationState(bool collaborationState)
 {
     collaborationState_ = collaborationState;
     AUDIO_INFO_LOG("collaborationState: %{public}d", collaborationState);
