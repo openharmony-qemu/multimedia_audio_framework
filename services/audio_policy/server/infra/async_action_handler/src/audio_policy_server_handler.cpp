@@ -907,6 +907,10 @@ void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t cli
 {
     if (IsForceGetZoneDevice(pidUidMap_[clientPid])) {
         int32_t zoneId = AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId();
+        if (zoneId == 0) {
+            AudioStreamType streamType = STREAM_DEFAULT;
+            AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
+        }
         if (zoneId > 0) {
             deviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
                 STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
