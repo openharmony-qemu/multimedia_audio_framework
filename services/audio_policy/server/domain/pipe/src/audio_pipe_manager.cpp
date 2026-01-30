@@ -860,7 +860,7 @@ bool AudioPipeManager::HasFastOutputPipe()
     return false;
 }
 
-bool AudioPipeManager::IsStreamUltraFast(uint32_t sessionId)
+bool AudioPipeManager::IsStreamUseUltraFastRoute(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &pipeInfo : curPipeList_) {
@@ -868,7 +868,7 @@ bool AudioPipeManager::IsStreamUltraFast(uint32_t sessionId)
         for (auto &desc : pipeInfo->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             CHECK_AND_CONTINUE(desc->GetSessionId() == sessionId);
-            return desc->GetUltraFastFlag();
+            return pipeInfo->GetUltraFastFlag();
         }
     }
     return false;

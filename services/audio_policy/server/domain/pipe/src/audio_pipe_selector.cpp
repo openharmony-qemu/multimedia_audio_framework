@@ -303,7 +303,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
         GetStreamPropInfoWithBusSelector(streamDesc, streamPropInfo);
         if (newPipeIter != newPipeInfoList.end()) {
             MatchRemoteOffloadPipe(streamPropInfo, *newPipeIter, streamDesc);
-
+            MatchUltraFastPipe(*newPipeIter, streamDesc);
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
             continue;
@@ -423,7 +423,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
-    ProcessUltraFastWhenCreate(streamDesc);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
     for (auto &pipeInfo : pipeInfoList) {
@@ -747,7 +746,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.name_ = pipeInfoPtr->name_;
     info.InitAudioStreamInfo();
 
-    if (streamDesc->GetUltraFastFlag()) {
+    if (streamDesc->IsUltraFastRequested() && !AudioPipeManager::GetPipeManager()->HasRunningStream()) {
         info.SetUltraFastFlag(true);
     }
 }
@@ -859,7 +858,7 @@ bool AudioPipeSelector::IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescri
 }
 
 bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,
-    const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo)
 {
     for (auto &pipeInfo : selectedPipeInfoList) {
@@ -891,6 +890,7 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
             streamDesc->ResetToNormalRoute(false);
             return FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
         }
+        MatchUltraFastPipe(pipeInfo, streamDesc);
 
         pipeInfo->streamDescriptors_.push_back(streamDesc);
         pipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -912,6 +912,14 @@ void AudioPipeSelector::MatchRemoteOffloadPipe(const std::shared_ptr<PipeStreamP
     AUDIO_INFO_LOG("existing mismatching remote offload pipe need to recreate to match music format");
     UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, *pipeInfo);
     pipeInfo->pipeAction_ = PIPE_ACTION_RELOAD;
+}
+
+void AudioPipeSelector::MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN(streamDesc != nullptr && pipeInfo != nullptr, "streamDesc or pipeInfo is nullptr");
+    CHECK_AND_RETURN(pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST);
+    streamDesc->SetUltraFastImplemented(pipeInfo->GetUltraFastFlag());
 }
 
 bool AudioPipeSelector::IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
@@ -976,25 +984,6 @@ int32_t AudioPipeSelector::SetCustomAudioMix(const std::string &zoneName, const 
 #else
     return SUCCESS;
 #endif
-}
-
-void AudioPipeSelector::ProcessUltraFastWhenCreate(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
-{
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-    CHECK_AND_RETURN(streamDesc->GetUltraFastFlag());
-    bool hasRunningStream = AudioPipeManager::GetPipeManager()->HasRunningStream();
-    if (hasRunningStream) {
-        AUDIO_INFO_LOG("Other stream is running, session %{public}u cannot use ultra fast mode",
-            streamDesc->sessionId_);
-        streamDesc->SetUltraFastFlag(false);
-        return;
-    }
-    bool hasFastOutputPipe = AudioPipeManager::GetPipeManager()->HasFastOutputPipe();
-    if (hasFastOutputPipe) {
-        AUDIO_INFO_LOG("Fast output pipe exists, session %{public}u cannot use ultra fast mode",
-            streamDesc->sessionId_);
-        streamDesc->SetUltraFastFlag(false);
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

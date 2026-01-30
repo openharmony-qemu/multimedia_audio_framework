@@ -166,5 +166,10 @@ bool AudioPipeInfo::GetUltraFastFlag() const
 {
     return ultraFastPipe_;
 }
+
+bool AudioPipeInfo::HasStream()
+{
+    return !streamDescriptors_.empty();
+}
 } // AudioStandard
 } // namespace OHOS
