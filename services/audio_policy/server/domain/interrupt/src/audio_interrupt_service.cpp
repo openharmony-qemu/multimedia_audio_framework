@@ -1975,13 +1975,6 @@ int32_t AudioInterruptService::SetQueryBundleNameListCallback(const sptr<IRemote
     return SUCCESS;
 }
 
-std::string AudioInterruptService::GetCurrentBundleName(uint32_t uid)
-{
-    CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, "", "policyServer nullptr");
-    auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
-    return info.name;
-}
-
 void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
