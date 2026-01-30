@@ -232,7 +232,6 @@ private:
         AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     void UpdateMapFocusStrategy(const std::string &bundleName,
         AudioFocusEntry &focusEntry, bool isExistMediaStream, SourceType incomingSourceType);
-    std::string GetCurrentBundleName(uint32_t uid);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
         AudioFocusEntry &focusEntry);
     void UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
