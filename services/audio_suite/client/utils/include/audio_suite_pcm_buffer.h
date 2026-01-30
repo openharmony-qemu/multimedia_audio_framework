@@ -98,14 +98,11 @@ private:
     std::vector<uint8_t, AlignedAllocator<uint8_t, MEMORY_ALIGN_BYTE_NUM>> pcmDataBuffer_;
 
     PcmBufferFormat pcmBufferFormat_;
-    uint32_t frameLen_ = 0;             // Frame length, single-channel sample count: sample rate * (20/40) / 1000
-    uint32_t sampleCount_ = 0;          // Total sample count: number of channels * sample rate * (20/40) / 1000
+    uint32_t frameLen_ = 0;             // Frame length, single-channel sample count: sample rate * (duration_) / 1000
+    uint32_t sampleCount_ = 0;          // Total sample count: number of channels * sample rate * (duration_) / 1000
     uint32_t dataByteSize_ = 0;         // Data size. Unit: Bytes.
-    uint32_t frames_ = 0;               // Number of frames, unit: 20ms
-    uint32_t duration_ = 0;             // Single frame duration, 20ms/40ms
-    uint32_t maxRequestLength = 100;    // Maximum request length
-    uint32_t maxRequestByteLength = 307200;
-    bool isFinished_ = false;
+    uint32_t frames_ = 0;               // Number of frames
+    uint32_t duration_ = 0;             // Single frame duration
 };
 }
 }

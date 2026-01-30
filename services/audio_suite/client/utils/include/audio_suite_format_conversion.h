@@ -33,7 +33,7 @@ class AudioSuiteFormatConversion {
 public:
     ~AudioSuiteFormatConversion() = default;
 
-    AudioSuitePcmBuffer *Process(AudioSuitePcmBuffer *inPcmBuffer, PcmBufferFormat &outFormat, uint32_t needDataLength);
+    AudioSuitePcmBuffer *Process(AudioSuitePcmBuffer *inPcmBuffer, PcmBufferFormat &outFormat);
     void Reset();
 
 private:

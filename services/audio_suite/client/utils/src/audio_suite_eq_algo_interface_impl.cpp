@@ -147,16 +147,16 @@ std::vector<int> ParseStringToIntArray(const std::string &str, char delimiter)
     return result;
 }
 
-int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &sEQLGain, const std::string &sEQRGain)
+int32_t AudioSuiteEqAlgoInterfaceImpl::SetParameter(const std::string &envName, const std::string &sEQGain)
 {
     AUDIO_INFO_LOG("Set eq param start");
     para_.sFrameLen = nodeParameter_.frameLen;
     para_.sEQLRBands = setEqParam(EQUALIZER_BANDS_NUM, EQUALIZER_BANDS_NUM);
 
-    std::vector<int> gainsL = ParseStringToIntArray(sEQLGain, ':');
-    std::vector<int> gainsR = ParseStringToIntArray(sEQRGain, ':');
+    std::vector<int> gainsL = ParseStringToIntArray(sEQGain, ':');
+    std::vector<int> gainsR = ParseStringToIntArray(sEQGain, ':');
     CHECK_AND_RETURN_RET(!gainsL.empty() && !gainsR.empty(), ERROR);
-    AUDIO_INFO_LOG("Set EQLGain to %{public}s, EQRGain to %{public}s", sEQLGain.c_str(), sEQRGain.c_str());
+    AUDIO_INFO_LOG("Set EQLGain to %{public}s, EQRGain to %{public}s", sEQGain.c_str(), sEQGain.c_str());
 
     size_t i = 0;
     while (i < gainsL.size() && i < gainsR.size() && i < EQUALIZER_BANDS_NUM) {

@@ -37,9 +37,7 @@ AudioSuitePureVoiceChangeNode::AudioSuitePureVoiceChangeNode()
 
 AudioSuitePureVoiceChangeNode::~AudioSuitePureVoiceChangeNode()
 {
-    if (isInit_) {
-        DeInit();
-    }
+    DeInit();
 }
 
 int32_t AudioSuitePureVoiceChangeNode::Init()
@@ -67,7 +65,7 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
 
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
 
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
 
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::Init end");
@@ -76,15 +74,15 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
 
 int32_t AudioSuitePureVoiceChangeNode::DeInit()
 {
-    if (algoInterface_ != nullptr) {
-        algoInterface_->Deinit();
-        algoInterface_ = nullptr;
-    }
-
     if (isInit_) {
         isInit_ = false;
         AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::DeInit end");
         return SUCCESS;
+    }
+
+    if (algoInterface_ != nullptr) {
+        algoInterface_->Deinit();
+        algoInterface_ = nullptr;
     }
     return ERROR;
 }

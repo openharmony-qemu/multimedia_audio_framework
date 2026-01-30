@@ -193,8 +193,7 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, CalculationNeedBytesTest001, TestSize.Lev
 {
     std::shared_ptr<AudioSuiteTempoPitchNode> node = std::make_shared<AudioSuiteTempoPitchNode>();
     node->Init();
-
-    node->speedRate = 1.0;
+    node->speedRate_ = 1.0;
 
     int32_t ret = node->CalculationNeedBytes(needDataLength);
     EXPECT_EQ(ret, frameBytes);

@@ -57,7 +57,7 @@ int32_t AudioSuiteSoundFieldNode::Init()
         static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
 
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init end");
     return SUCCESS;
 }

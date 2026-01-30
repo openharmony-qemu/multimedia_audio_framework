@@ -59,6 +59,9 @@ public:
 
 protected:
     NodeParameter nodeParameter_;
+    static constexpr uint32_t MAX_SAMPLE_POINT = 80000;
+    static constexpr uint32_t MAX_CHANNEL_COUNT = 4;
+    static constexpr uint32_t MAX_SAMPLE_RATE = 192000;
 };
 
 }

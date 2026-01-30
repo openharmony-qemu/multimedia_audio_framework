@@ -25,6 +25,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+const uint32_t MAX_REQUEST_TIME_LENGTH = 100;
+const uint32_t MAX_REQUEST_BYTE_LENGTH = 307200;
+
 AudioSuitePcmBuffer::AudioSuitePcmBuffer(PcmBufferFormat format)
 {
     pcmBufferFormat_ = format;
@@ -153,7 +156,7 @@ int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format)
 
 int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format, uint32_t duration)
 {
-    CHECK_AND_RETURN_RET_LOG(duration <= maxRequestLength, ERROR, "Exceeding the maximum request data length.");
+    CHECK_AND_RETURN_RET_LOG(duration <= MAX_REQUEST_TIME_LENGTH, ERROR, "Exceeding the maximum request data length.");
     if (IsSameFormat(format) && (duration == duration_)) {
         return 0;
     }
@@ -167,13 +170,19 @@ int32_t AudioSuitePcmBuffer::ResizePcmBuffer(PcmBufferFormat format, uint32_t du
 
 int32_t AudioSuitePcmBuffer::ResizePcmBuffer(uint32_t bytelength)
 {
-    CHECK_AND_RETURN_RET_LOG(bytelength <= maxRequestByteLength, ERROR, "Exceeding the maximum request data length.");
+    CHECK_AND_RETURN_RET_LOG(
+        bytelength <= MAX_REQUEST_BYTE_LENGTH, ERROR, "Exceeding the maximum request data length.");
     if (dataByteSize_ == bytelength) {
         return 0;
     }
- 
+
     dataByteSize_ = bytelength;
- 
+
+    sampleCount_ = dataByteSize_ / AudioSuiteUtil::GetSampleSize(pcmBufferFormat_.sampleFormat);
+    frameLen_ = sampleCount_ / pcmBufferFormat_.channelCount;
+    duration_ = frameLen_ * SECONDS_TO_MS / pcmBufferFormat_.sampleRate;
+    frames_ = duration_ / PCM_DATA_DEFAULT_DURATION_20_MS;
+
     pcmDataBuffer_.assign(dataByteSize_, 0);
     return 0;
 }

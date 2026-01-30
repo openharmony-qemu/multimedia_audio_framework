@@ -45,6 +45,7 @@ public:
 private:
     int32_t GetDataFromUser();
     int32_t GeneratePushBuffer();
+    int32_t InitCacheBuffer(uint32_t needDataLength);
 
     OutputPort<AudioSuitePcmBuffer*> outputStream_;
     std::shared_ptr<InputNodeRequestDataCallBack> reqDataCallback_ = nullptr;
@@ -54,10 +55,8 @@ private:
     AudioSuiteRingBuffer cachedBuffer_;
     uint32_t singleRequestSize_ = 0;
     uint32_t inPcmDataGetSize_ = 0;
+    uint32_t nextNodeNeedDataLength_ = 0;
     AudioSuiteFormatConversion convert_;
-    PcmBufferFormat inPcmFormat;
-    bool initFlag_ = false;
-};
 }
 }
 }
