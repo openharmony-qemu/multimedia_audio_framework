@@ -47,7 +47,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList, const int32_t callerPid);
     void DeactivateAudioSessionErrorEvent(
         const std::vector<AudioInterrupt> &streamsInSession, const int32_t callerPid);
-    void AddinterruptErrorEvent(AudioInterrupt &audioInterrupt, const int32_t callerPid);
+    void AddInterruptErrorEvent(AudioInterrupt &audioInterrupt, const int32_t callerPid);
 
 private:
     void WriteAudioInterruptErrorEvent(const AudioFocusErrorEvent &interruptError);
