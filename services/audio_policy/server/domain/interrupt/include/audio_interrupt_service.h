@@ -290,9 +290,9 @@ private:
     // systemapp debug interfaces
     void WriteCallSessionEvent(int32_t strategyValue);
     void ActivateAudioSessionErrorEvent(const int32_t zoneId, const int32_t callerPid);
- 	void DeactivateAudioSessionErrorEvent(const std::vector<AudioInterrupt> &streamsInSession,
+    void DeactivateAudioSessionErrorEvent(const std::vector<AudioInterrupt> &streamsInSession,
  	    const int32_t callerPid);
- 	void AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    void AddInterruptErrorEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
 
     // interfaces about audio session.
     void AddActiveInterruptToSession(const int32_t callerPid);
