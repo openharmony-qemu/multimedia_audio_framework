@@ -1012,7 +1012,7 @@ int32_t RendererInClientInner::SetAudioEffectMode(AudioEffectMode effectMode)
 
 int64_t RendererInClientInner::GetFramesWritten()
 {
-    std::shared_lock<std::shared_mutex> lock(periodReachMutex_);
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
     return totalBytesWritten_ / static_cast<int64_t>(sizePerFrameInByte_);
 }
 
@@ -1431,7 +1431,7 @@ void RendererInClientInner::SetRendererPeriodPositionCallback(int64_t periodPosi
     const std::shared_ptr<RendererPeriodPositionCallback> &callback)
 {
     // waiting for review
-    std::lock_guard<std::shared_mutex> lock(periodReachMutex_);
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr, "RendererPeriodPositionCallback is nullptr");
     rendererPeriodPositionCallback_ = callback;
     rendererPeriodSize_ = periodPosition;
@@ -1442,7 +1442,7 @@ void RendererInClientInner::SetRendererPeriodPositionCallback(int64_t periodPosi
 void RendererInClientInner::UnsetRendererPeriodPositionCallback()
 {
     // waiting for review
-    std::lock_guard<std::shared_mutex> lock(periodReachMutex_);
+    std::lock_guard<std::mutex> lock(periodReachMutex_);
     rendererPeriodPositionCallback_ = nullptr;
     rendererPeriodSize_ = 0;
     totalBytesWritten_ = 0;
@@ -1593,7 +1593,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderPositionCb = rendererPositionCallback_;
     lock.unlock();
 
-    std::unique_lock<std::shared_mutex> perlock(periodReachMutex_);
+    std::unique_lock<std::mutex> perlock(periodReachMutex_);
     info.framePeriodNumber = static_cast<uint64_t>(rendererPeriodSize_);
     info.renderPeriodPositionCb = rendererPeriodPositionCallback_;
     perlock.unlock();
@@ -1739,7 +1739,7 @@ void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
     }
 
     {
-        std::lock_guard<std::shared_mutex> lock(periodReachMutex_);
+        std::lock_guard<std::mutex> lock(periodReachMutex_);
         rendererPeriodWritten_ += static_cast<int64_t>((bytesWritten / sizePerFrameInByte_));
         AUDIO_DEBUG_LOG("Frame period number: %{public}" PRId64", Total frames written: %{public}" PRId64,
             static_cast<int64_t>(rendererPeriodWritten_), static_cast<int64_t>(totalBytesWritten_));
@@ -1777,7 +1777,7 @@ void RendererInClientInner::HandleRenderMarkReachedEvent(int64_t rendererMarkPos
 void RendererInClientInner::HandleRenderPeriodReachedEvent(int64_t rendererPeriodNumber)
 {
     AUDIO_DEBUG_LOG("Start HandleRenderPeriodReachedEvent");
-    std::shared_lock<std::shared_mutex> lock(periodReachMutex_);
+    std::unique_lock<std::mutex> lock(periodReachMutex_);
     if (rendererPeriodPositionCallback_) {
         rendererPeriodPositionCallback_->OnPeriodReached(rendererPeriodNumber);
     }
