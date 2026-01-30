@@ -507,6 +507,7 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
     if (GetDeviceClass() != "primary") {
         return;
     }
+    CHECK_AND_RETURN(collaborationState_ == false);
     if (pcmBuffer->IsSilence() && streamRunningNum_ > 0) {
         if (!isDisplayPaPowerState_) {
             AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}" PRId64 "]s", WAIT_CLOSE_PA_TIME);
@@ -629,6 +630,12 @@ void HpaeSinkOutputNode::CheckAndSetCollDelayForRenderFrameFailed()
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is nullptr");
         statusCallback->SetCollDelayCount();
     }
+}
+
+void HpaeSinkOutputNode::SetCollaborationState(bool collaborationState)
+{
+    collaborationState_ = collaborationState;
+    AUDIO_INFO_LOG("collaborationState: %{public}d", collaborationState);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

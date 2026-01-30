@@ -269,6 +269,12 @@ int32_t HpaeOutputCluster::SetAuxiliarySinkEnable(bool isEnabled)
         "sinkOutputNode is null");
     return hpaeSinkOutputNode_->SetAuxiliarySinkEnable(isEnabled);
 }
+
+void HpaeOutputCluster::SetCollaborationState(bool collaborationState)
+{
+    CHECK_AND_RETURN_LOG(hpaeSinkOutputNode_ != nullptr, "sinkOutputNode is null");
+    hpaeSinkOutputNode_->SetCollaborationState(collaborationState);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -62,6 +62,7 @@ public:
         uint32_t sessionId, StreamUsage usage, RendererState state);
     int32_t SetAuxiliarySinkEnable(bool isEnabled);
     void CheckAndSetCollDelayForRenderFrameFailed();
+    void SetCollaborationState(bool collaborationState);
 
 private:
     void HandleRemoteTiming();
@@ -107,6 +108,7 @@ private:
     HighResolutionTimer intervalTimer_;
 #endif
     std::atomic<size_t> collRenderFrameFailedCount_ = 0;
+    std::atomic<bool> collaborationState_ = false;
 };
 
 }  // namespace HPAE

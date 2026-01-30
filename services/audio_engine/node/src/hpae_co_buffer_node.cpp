@@ -30,6 +30,7 @@ static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t DEFAULT_CO_LATENCY = 260;
 static constexpr int32_t DEFAULT_WAIT_COUNT = 10;
 static constexpr int32_t COLLABORATION_CHANNELS = 2;
+static constexpr float COLL_SMALL_SIGNAL_NUM = 1e-6;
 
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
@@ -50,6 +51,10 @@ HpaeCoBufferNode::HpaeCoBufferNode()
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     waitCountThreshold_ = DEFAULT_WAIT_COUNT;
+
+    for (int i = 0; i < silenceData_.GetFrameLen() * silenceData_.GetChannelCount(); i++) {
+        silenceData_.GetPcmDataBuffer()[i] += COLL_SMALL_SIGNAL_NUM;
+    }
 }
 
 HpaeCoBufferNode::~HpaeCoBufferNode()
@@ -86,7 +91,11 @@ void HpaeCoBufferNode::DoProcess()
     std::unique_lock<std::mutex> lock(mutex_);
     
     // return if enqueue is not running
-    CHECK_AND_RETURN_LOG(enqueueRunning_, "Dequeue failed, Enqueue is not running");
+    if (enqueueRunning_ == false) {
+        outputStream_.WriteDataToOutput(&silenceData_);
+        AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
+        return;
+    }
     
     // process output buffer
     ProcessOutputFrameInner();

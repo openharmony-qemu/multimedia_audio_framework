@@ -56,6 +56,7 @@ public:
     void NotifyStreamChangeToSink(StreamChangeType change,
         uint32_t sessionId, StreamUsage usage, RendererState state) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
+    void SetCollaborationState(bool collaborationState) override;
 
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;

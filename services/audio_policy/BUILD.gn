@@ -354,6 +354,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
     "../audio_engine:hpae_engine_manager",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   external_deps = [
