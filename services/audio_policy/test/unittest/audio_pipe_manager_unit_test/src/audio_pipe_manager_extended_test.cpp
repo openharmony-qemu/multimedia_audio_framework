@@ -459,41 +459,41 @@ HWTEST_F(AudioPipeManagerUnitTest, HasFastOutputPipe_005, TestSize.Level1)
 }
 
 /**
- * @tc.name: AudioPipeManager_IsStreamUltraFast_001
- * @tc.desc: Test IsStreamUltraFast when curPipeList_ is empty
+ * @tc.name: AudioPipeManager_IsStreamUseUltraFastRoute_001
+ * @tc.desc: Test IsStreamUseUltraFastRoute when curPipeList_ is empty
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_001, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_001, TestSize.Level1)
 {
     AudioPipeManager pipeManager;
     uint32_t sessionId = 1001;
 
-    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    bool result = pipeManager.IsStreamUseUltraFastRoute(sessionId);
     EXPECT_EQ(false, result);
 }
 
 /**
- * @tc.name: AudioPipeManager_IsStreamUltraFast_002
- * @tc.desc: Test IsStreamUltraFast when pipeInfo is nullptr
+ * @tc.name: AudioPipeManager_IsStreamUseUltraFastRoute_002
+ * @tc.desc: Test IsStreamUseUltraFastRoute when pipeInfo is nullptr
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_002, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_002, TestSize.Level1)
 {
     AudioPipeManager pipeManager;
     uint32_t sessionId = 1001;
 
     pipeManager.curPipeList_.push_back(nullptr);
 
-    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    bool result = pipeManager.IsStreamUseUltraFastRoute(sessionId);
     EXPECT_EQ(false, result);
 }
 
 /**
- * @tc.name: AudioPipeManager_IsStreamUltraFast_003
- * @tc.desc: Test IsStreamUltraFast when streamDescriptors_ is empty
+ * @tc.name: AudioPipeManager_IsStreamUseUltraFastRoute_003
+ * @tc.desc: Test IsStreamUseUltraFastRoute when streamDescriptors_ is empty
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_003, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_003, TestSize.Level1)
 {
     AudioPipeManager pipeManager;
     uint32_t sessionId = 1001;
@@ -502,16 +502,16 @@ HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_003, TestSize.Level1)
     pipeInfo->streamDescriptors_.clear();
     pipeManager.curPipeList_.push_back(pipeInfo);
 
-    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    bool result = pipeManager.IsStreamUseUltraFastRoute(sessionId);
     EXPECT_EQ(false, result);
 }
 
 /**
- * @tc.name: AudioPipeManager_IsStreamUltraFast_004
- * @tc.desc: Test IsStreamUltraFast when desc is nullptr
+ * @tc.name: AudioPipeManager_IsStreamUseUltraFastRoute_004
+ * @tc.desc: Test IsStreamUseUltraFastRoute when desc is nullptr
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_004, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_004, TestSize.Level1)
 {
     AudioPipeManager pipeManager;
     uint32_t sessionId = 1001;
@@ -520,16 +520,16 @@ HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_004, TestSize.Level1)
     pipeInfo->streamDescriptors_.push_back(nullptr);
     pipeManager.curPipeList_.push_back(pipeInfo);
 
-    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    bool result = pipeManager.IsStreamUseUltraFastRoute(sessionId);
     EXPECT_EQ(false, result);
 }
 
 /**
- * @tc.name: AudioPipeManager_IsStreamUltraFast_005
- * @tc.desc: Test IsStreamUltraFast when sessionId does not match
+ * @tc.name: AudioPipeManager_IsStreamUseUltraFastRoute_005
+ * @tc.desc: Test IsStreamUseUltraFastRoute when sessionId does not match
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_005, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_005, TestSize.Level1)
 {
     AudioPipeManager pipeManager;
     uint32_t targetSessionId = 1001;
@@ -542,51 +542,47 @@ HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_005, TestSize.Level1)
     pipeInfo->streamDescriptors_.push_back(streamDesc);
     pipeManager.curPipeList_.push_back(pipeInfo);
 
-    bool result = pipeManager.IsStreamUltraFast(targetSessionId);
+    bool result = pipeManager.IsStreamUseUltraFastRoute(targetSessionId);
     EXPECT_EQ(false, result);
 }
 
 /**
- * @tc.name: AudioPipeManager_IsStreamUltraFast_006
- * @tc.desc: Test IsStreamUltraFast when sessionId matches and ultraFast flag is true
+ * @tc.name: AudioPipeManager_IsStreamUseUltraFastRoute_006
+ * @tc.desc: Test IsStreamUseUltraFastRoute when sessionId matches and ultraFast flag is true
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_006, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_006, TestSize.Level1)
 {
     AudioPipeManager pipeManager;
     uint32_t sessionId = 1001;
 
     auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->SetUltraFastFlag(true);
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->sessionId_ = sessionId;
-    streamDesc->SetUltraFastFlag(true);
+    streamDesc->SetUltraFastImplemented(true);
 
     pipeInfo->streamDescriptors_.push_back(streamDesc);
     pipeManager.curPipeList_.push_back(pipeInfo);
 
-    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    bool result = pipeManager.IsStreamUseUltraFastRoute(sessionId);
     EXPECT_EQ(true, result);
 }
 
 /**
- * @tc.name: AudioPipeManager_IsStreamUltraFast_007
- * @tc.desc: Test IsStreamUltraFast when sessionId matches and ultraFast flag is false
+ * @tc.name: AudioPipeManager_IsStreamUseUltraFastRoute_007
+ * @tc.desc: Test IsStreamUseUltraFastRoute when sessionId matches and ultraFast flag is false
  * @tc.type: FUNC
  */
-HWTEST_F(AudioPipeManagerUnitTest, IsStreamUltraFast_007, TestSize.Level1)
+HWTEST_F(AudioPipeManagerUnitTest, IsStreamUseUltraFastRoute_007, TestSize.Level1)
 {
     AudioPipeManager pipeManager;
     uint32_t sessionId = 1001;
 
     auto pipeInfo = std::make_shared<AudioPipeInfo>();
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = sessionId;
-    streamDesc->SetUltraFastFlag(false);
-
-    pipeInfo->streamDescriptors_.push_back(streamDesc);
     pipeManager.curPipeList_.push_back(pipeInfo);
 
-    bool result = pipeManager.IsStreamUltraFast(sessionId);
+    bool result = pipeManager.IsStreamUseUltraFastRoute(sessionId);
     EXPECT_EQ(false, result);
 }
 } // namespace AudioStandard

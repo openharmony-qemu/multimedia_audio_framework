@@ -224,6 +224,12 @@ private:
     void WaitForReadableSpace() const;
 
     bool CheckStaticAndOperate();
+
+    void CalcClientSpanInfo();
+
+    void CalcClientSpanBasedOnServerSize();
+
+    void CalcDefaultClientSpanSize();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -640,16 +646,7 @@ bool AudioProcessInClientInner::InitAudioBuffer()
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
     serverSpanSizeInMs_ = static_cast<float>(spanSizeInFrame_) * static_cast<float>(MILLISECOND_PER_SECOND) /
         static_cast<float>(processConfig_.streamInfo.samplingRate);
-    
-    if (abs(DEFAULT_FAST_SPAN_SIZE_FLOAT_IN_MS - serverSpanSizeInMs_) < std::numeric_limits<float>::epsilon() &&
-        processConfig_.audioMode == AUDIO_MODE_PLAYBACK && processConfig_.isUltraFast == false) {
-        clientSpanSizeInFrame_ =
-            DEFAULT_FAST_SPAN_SIZE_INT_IN_MS * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
-        clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
-    } else {
-        clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
-        clientSpanSizeInFrame_ = spanSizeInFrame_;
-    }
+    CalcClientSpanInfo();
     
     if ((processConfig_.audioMode != AUDIO_MODE_PLAYBACK) && (!isVoipMmap_)) {
         clientSpanSizeInByte_ = spanSizeInByte_;
@@ -657,9 +654,9 @@ bool AudioProcessInClientInner::InitAudioBuffer()
 
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
         "spanSizeInByte_ %{public}zu, serverSpanSizeInMs_ %{public}f, clientSpanSizeInFrame_ %{public}zu, "
-        "isUltraFast %{public}d",
+        "ultraFastFlag %{public}u",
         totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, serverSpanSizeInMs_,
-        clientSpanSizeInFrame_, processConfig_.isUltraFast);
+        clientSpanSizeInFrame_, processConfig_.ultraFastFlag);
 
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(callbackBuffer_ != nullptr, false, "Init callbackBuffer_ failed.");
@@ -724,7 +721,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
     std::unique_lock<std::mutex> statusLock(loopMutex_);
     callbackLoop_ = std::thread([this, weakStream] {
         ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
-        if (processConfig_.isUltraFast) {
+        if (processConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED)) {
             BindBigAndMidCore();
             threadPriority = THREAD_PRIORITY_4;
         }
@@ -1904,5 +1901,31 @@ void AudioProcessInClientInner::SetIsFirstFrame(bool value)
     audioBuffer_->SetIsFirstFrame(value);
 }
 
+void AudioProcessInClientInner::CalcClientSpanInfo()
+{
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK) {
+        CalcClientSpanBasedOnServerSize();
+        return;
+    }
+
+    if (!(processConfig_.ultraFastFlag & ULTRA_REQUESTED) && (processConfig_.ultraFastFlag & ULTRA_IMPLEMENTED)) {
+        CalcDefaultClientSpanSize();
+    } else {
+        CalcClientSpanBasedOnServerSize();
+    }
+}
+
+void AudioProcessInClientInner::CalcClientSpanBasedOnServerSize()
+{
+    clientSpanSizeInFrame_ = spanSizeInFrame_;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
+}
+
+void AudioProcessInClientInner::CalcDefaultClientSpanSize()
+{
+    clientSpanSizeInFrame_ =
+        DEFAULT_FAST_SPAN_SIZE_INT_IN_MS * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
+    clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
+}
 } // namespace AudioStandard
 } // namespace OHOS

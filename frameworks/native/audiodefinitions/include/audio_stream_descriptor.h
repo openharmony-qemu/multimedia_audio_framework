@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include "parcel.h"
 #include "audio_device_descriptor.h"
 #include "audio_stream_enum.h"
@@ -314,14 +315,48 @@ public:
         return false;
     }
 
-    void SetUltraFastFlag(const bool ultraFastFlag)
+    uint32_t GetUltraFastFlag()
     {
-        ultraFastStream_ = ultraFastFlag;
+        std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
+        return ultraFastFlag_;
     }
 
-    bool GetUltraFastFlag() const
+    void ResetUltraFastFlag()
     {
-        return ultraFastStream_;
+        std::lock_guard<std::shared_mutex> lock(ultraFastFlagLock_);
+        ultraFastFlag_ = ULTRA_NONE;
+    }
+
+    void SetUltraFastRequested(bool fastRequested)
+    {
+        std::lock_guard<std::shared_mutex> lock(ultraFastFlagLock_);
+        if (fastRequested) {
+            ultraFastFlag_ |= ULTRA_REQUESTED;
+        } else {
+            ultraFastFlag_ &= ~ULTRA_REQUESTED;
+        }
+    }
+
+    bool IsUltraFastRequested()
+    {
+        std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
+        return (ultraFastFlag_ & ULTRA_REQUESTED);
+    }
+
+    void SetUltraFastImplemented(bool fastImplemented)
+    {
+        std::lock_guard<std::shared_mutex> lock(ultraFastFlagLock_);
+        if (fastImplemented) {
+            ultraFastFlag_ |= ULTRA_IMPLEMENTED;
+        } else {
+            ultraFastFlag_ &= ~ULTRA_IMPLEMENTED;
+        }
+    }
+
+    bool IsUltraFastImplemented()
+    {
+        std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
+        return (ultraFastFlag_ & ULTRA_IMPLEMENTED);
     }
 
     int32_t GetRealUid() const;
@@ -337,7 +372,8 @@ private:
     void DumpDeviceAttrs(std::string &dumpString);
 
     std::mutex lock_;
-    bool ultraFastStream_ = false;
+    std::shared_mutex ultraFastFlagLock_;
+    uint32_t ultraFastFlag_ = ULTRA_NONE;
 };
 } // namespace AudioStandard
 } // namespace OHOS

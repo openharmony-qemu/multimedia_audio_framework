@@ -109,7 +109,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
-    config.isUltraFast = info.isUltraFast;
+    config.ultraFastFlag = info.ultraFastFlag;
     AUDIO_DEBUG_LOG("%{public}s: originalSessionId:%{public}u",
         logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
