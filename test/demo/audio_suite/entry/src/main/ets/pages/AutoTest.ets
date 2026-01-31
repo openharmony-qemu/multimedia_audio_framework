@@ -411,20 +411,27 @@ export struct AutoTest {
           })
       }.height('5%')
 
-
       Column() {
-        if (this.displayPipelineInfoList.length > 0) {
-          List() {
-            ForEach(this.displayPipelineInfoList, (displayPipelineInfo: DisplayPipelineInfo, index: number) => {
-              ListItem() {
-                this.PipelineGraphArea(displayPipelineInfo, index+1)
-              }
-            })
+        Column() {
+          if (this.displayPipelineInfoList.length > 0) {
+            List() {
+              ForEach(this.displayPipelineInfoList, (displayPipelineInfo: DisplayPipelineInfo, index: number) => {
+                ListItem() {
+                  this.PipelineGraphArea(displayPipelineInfo, index+1)
+                }
+              })
+            }
           }
-        }
-      }.height('75%').width('100%').padding(2)
 
-      Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
+          Text(this.executeResultMessage)
+            .fontSize(16)
+            .fontColor(this.executeResultSuccess ? 0x00FF00 : 0xFF0000)
+            .margin({ bottom: 25 })
+            .visibility(this.showExecuteResult ? Visibility.Visible : Visibility.None)
+            .padding(15)
+        }
+        .layoutWeight(1)
+
         Column() {
           Text(`执行进度: ${this.currentFileIndex}/${this.totalFilesCount}`)
             .fontSize(16)
@@ -435,13 +442,13 @@ export struct AutoTest {
             .margin({ bottom: 20 })
         }
         .visibility(this.isExecutingAll ? Visibility.Visible : Visibility.None)
+      }
+      .height('75%')
+      .width('100%')
+      .padding(2)
+      .justifyContent(FlexAlign.SpaceBetween)
 
-        Text(this.executeResultMessage)
-          .fontSize(16)
-          .fontColor(this.executeResultSuccess ? 0x00FF00 : 0xFF0000)
-          .margin({ bottom: 20 })
-          .visibility(this.showExecuteResult ? Visibility.Visible : Visibility.None)
-
+      Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
         Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceAround, alignItems: ItemAlign.Center }) {
           Button() {
             Text(this.exeOneStateEffect ? `执行选中用例` : `执行中...`)
@@ -694,6 +701,7 @@ export struct AutoTest {
   }
 
   async executeAllFile() {
+    const startTime = new Date().getTime();
     try {
       this.isExecutingAll = true;
       this.failedCases = [];
@@ -713,11 +721,14 @@ export struct AutoTest {
         }
       }
 
+      const endTime = new Date().getTime();
+      const totalTime = (endTime - startTime) / 1000;
+
       if (this.failedCases.length > 0) {
-        this.executeResultMessage = `执行完成！失败用例: \n${this.failedCases.join('\n')}`;
+        this.executeResultMessage = `执行完成！总耗时: ${totalTime.toFixed(2)}秒\n共${this.totalFilesCount}个用例，成功${this.totalFilesCount - this.failedCases.length}个，失败${this.failedCases.length}个\n失败用例：\n${this.failedCases.join('\n')}`;
         this.executeResultSuccess = false;
       } else {
-        this.executeResultMessage = `全部用例执行成功！`;
+        this.executeResultMessage = `全部用例执行成功！总耗时: ${totalTime.toFixed(2)}秒`;
         this.executeResultSuccess = true;
       }
       this.showExecuteResult = true;

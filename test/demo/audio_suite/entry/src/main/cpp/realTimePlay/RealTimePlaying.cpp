@@ -275,9 +275,9 @@ napi_value ModifyRenderTrack(napi_env env, napi_callback_info info)
                      trackIdsNotRender.size());
     }
     const std::vector<bool> isSilents(trackIdsNotRender.size(), true);
-    Timeline::getInstance().setAudioTrackSilent(trackIdsNotRender, isSilents);
+    Timeline::GetInstance().SetAudioTrackSilent(trackIdsNotRender, isSilents);
     const std::vector<bool> isNotSilents(trackIdsRender.size(), false);
-    Timeline::getInstance().setAudioTrackSilent(trackIdsRender, isNotSilents);
+    Timeline::GetInstance().SetAudioTrackSilent(trackIdsRender, isNotSilents);
     napi_value napiValue;
     delete[] argv;
     return napiValue;
