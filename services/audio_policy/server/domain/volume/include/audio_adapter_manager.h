@@ -578,6 +578,7 @@ private:
     std::mutex ringerNoMuteDeviceMutex_;
     std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
     std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
+    std::mutex deviceConnectMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
