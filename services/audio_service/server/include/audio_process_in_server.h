@@ -62,7 +62,6 @@ private:
     IHandler *handler_ = nullptr;
 };
 
-
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream,
     public IHandler {
 public:
