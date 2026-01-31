@@ -120,7 +120,7 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_004, TestSize.Level0)
     ret = wg->RemoveThread(tokenId);
     EXPECT_EQ(ret, true);
     wg->Stop();
-    ret = wg->Start(0, 20);
+    ret = wg->Start(0, 20);xx
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
