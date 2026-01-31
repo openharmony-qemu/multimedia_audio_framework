@@ -86,12 +86,13 @@ private:
     void UpdateBufferTimeStamp(size_t readLen);
     void RebuildCaptureInjector();
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
-    void RecordOverflowStatus(bool currentStatus);
     void HandleOperationStopped(CapturerStage stage);
     void OnHandle(uint32_t code, int64_t data) override;
     void InitCallbackHandler();
     void ReleaseCallbackHandler();
     void NotifyVoIPStart(SourceType sourceType, int32_t uid);
+    void ResetAsrFlag();
+    void RecordOverflowStatus(bool currentStatus);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;

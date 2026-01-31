@@ -132,7 +132,7 @@ struct AudioStreamParams {
     uint8_t ecFormat = 0;
     uint8_t ecChannels = 0;
     uint64_t ecChannelLayout = 0ULL;
-    bool isUltraFast = false;
+    uint32_t ultraFastFlag = 0;
 };
 
 // sampling rate

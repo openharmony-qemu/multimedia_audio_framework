@@ -1241,7 +1241,7 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
     deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
-    isUltraFast = pipeManager_->IsStreamUltraFast(sessionId);
+    isUltraFast = pipeManager_->IsStreamUseUltraFastRoute(sessionId);
     return SUCCESS;
 }
 
@@ -3670,7 +3670,7 @@ bool AudioCoreService::IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor>
         streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
         return false;
     }
-    streamDesc->SetUltraFastFlag(true);
+    streamDesc->SetUltraFastRequested(true);
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
     AUDIO_INFO_LOG("Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
     return true;

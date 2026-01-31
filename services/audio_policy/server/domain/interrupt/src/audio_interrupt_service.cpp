@@ -1350,25 +1350,25 @@ int32_t AudioInterruptService::GetStreamTypePriority(AudioStreamType streamType)
     return STREAM_DEFAULT_PRIORITY;
 }
 
+int32_t AudioInterruptService::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto &item : zonesMap_) {
+        AudioStreamType streamInFocus = GetStreamInFocusInternal(0, item.first, true);
+        if (streamInFocus != STREAM_DEFAULT) {
+            zoneId = item.first;
+            streamType = streamInFocus;
+            return SUCCESS;
+        }
+    }
+    streamType = defaultVolumeType_;
+    return SUCCESS;
+}
+
 AudioStreamType AudioInterruptService::GetStreamInFocus(const int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (zoneId != 0) {
-        return GetStreamInFocusInternal(0, zoneId);
-    }
-    AudioStreamType streamInFocus = STREAM_DEFAULT;
-    int32_t focusPriority = STREAM_DEFAULT_PRIORITY;
-    for (const auto &item : zonesMap_) {
-        CHECK_AND_CONTINUE_LOG(item.second != nullptr, "AudioInterruptZone is null");
-        AudioStreamType curStreamInFocus = GetStreamInFocusInternal(0, item.second->zoneId);
-        int32_t curPriority = GetStreamTypePriority(curStreamInFocus);
-        if (curPriority < focusPriority) {
-            focusPriority = curPriority;
-            streamInFocus = curStreamInFocus;
-        }
-    }
-    AUDIO_INFO_LOG("streamInFocus is %{public}d", streamInFocus);
-    return streamInFocus == STREAM_DEFAULT ? defaultVolumeType_ : streamInFocus;
+    return GetStreamInFocusInternal(0, zoneId);
 }
 
 AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneId)
@@ -1377,7 +1377,8 @@ AudioStreamType AudioInterruptService::GetStreamInFocusByUid(const int32_t uid, 
     return GetStreamInFocusInternal(uid, zoneId);
 }
 
-AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId)
+AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId,
+    bool returnDefault)
 {
     AudioStreamType streamInFocus = STREAM_DEFAULT;
 
@@ -1422,6 +1423,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
         }
     }
     JUDGE_AND_INFO_LOG(isGetFocusForLog_ == false, "focus session is %{public}d", focusSession);
+    CHECK_AND_RETURN_RET_LOG(!returnDefault, streamInFocus, "return default");
     return streamInFocus == STREAM_DEFAULT ? defaultVolumeType_ : streamInFocus;
 }
 

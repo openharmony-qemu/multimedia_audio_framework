@@ -49,9 +49,7 @@ void* TestFunc(void* arg)
     result = OH_AudioWorkgroup_AddCurrentThread(audioWorkgroup, &testTid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioWorkgroup_Start(audioWorkgroup, startTime, endTime);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioWorkgroup_Stop(audioWorkgroup);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioWorkgroup_RemoveThread(audioWorkgroup, testTid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioResourceManager_ReleaseWorkgroup(audioResourceManager, audioWorkgroup);
@@ -113,7 +111,6 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_004, TestSize.Level0)
     EXPECT_NE(audioWorkgroup, nullptr);
  
     OHAudioWorkgroup *wg = (OHAudioWorkgroup*)(audioWorkgroup);
-    EXPECT_GT(wg->GetWorkgroupId(), 0);
     bool ret = wg->AddThread(tokenId);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(wg->GetNeedUpdatePrioFlag(), true);

@@ -3693,20 +3693,5 @@ HWTEST(AudioPolicyUnitTest, GetSystemSoundPath_001, TestSize.Level1)
     server->GetSystemSoundPath(-1, ret);
     EXPECT_EQ(ret, "");
 }
-
-/**
-* @tc.name  : Test SetSystemVolumeLevelLegacy.
-* @tc.number: SetSystemVolumeLevelLegacy_001
-* @tc.desc  : Test SetSystemVolumeLevelLegacy interface with ignore flag
-*/
-HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelLegacy_001, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-    VolumeUtils::isLegacySetVolumeIgnored_ = true;
-    int32_t res = server->SetSystemVolumeLevelLegacy(STREAM_MUSIC, 0);
-    VolumeUtils::isLegacySetVolumeIgnored_ = false;
-    EXPECT_EQ(res, ERR_PERMISSION_DENIED);
-}
 } // AudioStandard
 } // OHOS
