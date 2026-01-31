@@ -25,10 +25,11 @@
 #include "capturer_clock_manager.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CapturerInServer : public IStatusCallback, public IReadCallback,
+class CapturerInServer : public IStatusCallback, public IReadCallback, public IHandler,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
     CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
@@ -87,6 +88,10 @@ private:
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
     void RecordOverflowStatus(bool currentStatus);
     void HandleOperationStopped(CapturerStage stage);
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+    void ReleaseCallbackHandler();
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -138,6 +143,9 @@ private:
     std::atomic<bool> lastOverflowStatus_ = false;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     bool hasRequestUserPrivacyAuthority_ = false;
+
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

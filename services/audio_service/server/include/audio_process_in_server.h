@@ -31,6 +31,7 @@
 #include "format_converter.h"
 #include "audio_static_buffer_processor.h"
 #include "audio_static_buffer_provider.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,7 +54,17 @@ private:
     int64_t createTime_ = 0;
 };
 
-class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
+class AudioProcessInServerHandler : public IHandler {
+public:
+    AudioProcessInServerHandler(IHandler* handler);
+    void OnHandle(uint32_t code, int64_t data) override;
+private:
+    IHandler *handler_ = nullptr;
+};
+
+
+class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream,
+    public IHandler {
 public:
 
     enum HandleRendererDataType : uint32_t {
@@ -217,6 +228,10 @@ private:
     int32_t ProcessAndSetStaticBuffer();
     void MarkStaticFadeOut(bool isRefresh);
     void MarkStaticFadeIn();
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+    void ReleaseCallbackHandler();
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -294,6 +309,10 @@ private:
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
+
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+    std::shared_ptr<AudioProcessInServerHandler> handler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS
