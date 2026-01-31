@@ -19,7 +19,6 @@
 #include "gtest/gtest.h"
 
 #include "audio_volume_parser.h"
-#include "audio_xml_node_mock.h"
 
 namespace OHOS {
 namespace AudioStandard {
