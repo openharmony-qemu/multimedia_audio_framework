@@ -69,7 +69,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_002, TestSize.
     propertyArray.property.push_back(effectProperty);
     
     int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-    EXPECT_NEEQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
+    EXPECT_EQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
 }
 
 /**
