@@ -309,7 +309,7 @@ int32_t AudioSuiteProcessNode::Flush()
     algoInterface_ = nullptr ;
 
     algoOutPcmBuffer_.resize(0);
-    for (int32_t i = 0; i < cachedBuffer_.size(); i++) {
+    for (uint32_t i = 0; i < cachedBuffer_.size(); i++) {
         cachedBuffer_[i].ClearBuffer();
     }
 
