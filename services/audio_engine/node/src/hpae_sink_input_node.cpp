@@ -172,7 +172,7 @@ void HpaeSinkInputNode::DoProcess()
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
-    if (ret != SUCCESS) {
+    if (ret != 0) {
         if (pipeType != PIPE_TYPE_UNKNOWN) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
@@ -359,6 +359,11 @@ bool HpaeSinkInputNode::QueryUnderrun()
     return writeCallback->OnQueryUnderrun();
 }
 
+bool HpaeSinkInputNode::IsDrain()
+{
+    return isDrain_;
+}
+
 void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
 {
     if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
@@ -369,11 +374,6 @@ void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("SessionId:%{public}u, update pullDataCount for 100ms frameLen", GetSessionId());
         pullDataCount_ = 0;
     }
-}
-
-bool HpaeSinkInputNode::IsDrain()
-{
-    return isDrain_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

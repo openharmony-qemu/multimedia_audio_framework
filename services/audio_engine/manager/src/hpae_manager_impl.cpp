@@ -596,6 +596,12 @@ void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSession
     manager_->DeleteStreamVolumeToEffect(stringSessionID);
 }
 
+bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
 // interfaces for injector
 void HpaeManagerImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
 {
@@ -622,12 +628,6 @@ int32_t HpaeManagerImpl::PeekAudioData(
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
-}
-
-bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
-    return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
 void HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &productId)

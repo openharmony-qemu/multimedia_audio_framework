@@ -143,7 +143,7 @@ OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
         connectedProcessCluster_.insert(nodeInfo.sceneType);

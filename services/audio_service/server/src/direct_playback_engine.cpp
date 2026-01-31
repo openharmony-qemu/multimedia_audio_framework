@@ -81,8 +81,8 @@ int32_t DirectPlayBackEngine::Start()
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink!");
-    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first!");
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
     latency_ = 0;
     if (!isStart_) {
         ret = sink->Start();

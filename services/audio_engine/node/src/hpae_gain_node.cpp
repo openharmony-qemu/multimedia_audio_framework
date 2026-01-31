@@ -33,6 +33,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
 #ifndef CONFIG_FACTORY_VERSION
 static constexpr float FADE_LOW = 0.0f;
 static constexpr float FADE_HIGH = 1.0f;
@@ -262,15 +263,16 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     }
 
     remainDurationMs = CalcRemainDurationMs(durationMs, frameLen, &curSystemGain, &preSystemGain);
-    
+
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeGainNode::DoGain, curSystemGain: " +
         std::to_string(curSystemGain) + ", preSystemGain: " + std::to_string(preSystemGain)+ ", durationMs" +
         std::to_string(durationMs));
     CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
-    AUDIO_DEBUG_LOG("curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f " \
-        "durationMs: %{public}u deviceClass :%{public}s", curSystemGain, preSystemGain, systemStepGain,
-        durationMs, GetDeviceClass().c_str());
+    AUDIO_DEBUG_LOG(
+        "curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f " \
+        "durationMs: %{public}u deviceClass :%{public}s",
+        curSystemGain, preSystemGain, systemStepGain, durationMs, GetDeviceClass().c_str());
     if (audioVolume->IsSameVolume(0.0f, curSystemGain) && audioVolume->IsSameVolume(0.0f, preSystemGain)) {
         SilenceData(input);
         input->SetBufferSilence(true);

@@ -102,7 +102,7 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     }
 
     outPcmBuffer_->SetBufferValid(processLength != 0);
-    CHECK_AND_RETURN_RET(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
+    CHECK_AND_RETURN_RET_LOG(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
 
     int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
@@ -134,6 +134,7 @@ void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<
     const auto port = preNode->GetOutputPort(nodeInfo, true);
     inputStream_.DisConnect(port);
 #ifdef ENABLE_HIDUMP_DFX
+    CHECK_AND_RETURN_LOG(port != nullptr, "port is nullptr");
     if (auto callback = GetNodeStatusCallback().lock()) {
         callback->OnNotifyDfxNodeInfo(false, port->GetNodeId(), GetNodeId());
     }
