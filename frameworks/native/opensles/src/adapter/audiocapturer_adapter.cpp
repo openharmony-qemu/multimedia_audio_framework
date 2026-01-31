@@ -80,7 +80,7 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
 
 SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 state)
 {
-    AUDIO_INFO_LOG("state: %{public}lu.", state);
+    AUDIO_INFO_LOG("AudioCapturerAdapter::SetCaptureStateAdapter state: %{public}lu.", state);
     shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");
