@@ -149,6 +149,7 @@ public:
     void OnUserUnlocked();
     void SetUserId(const int32_t newId, const int32_t oldId);
     void NotifyStreamSilentChange(uint32_t streamId);
+    int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     std::future<void> stopFuture_;
 
     AudioScene GetHighestPriorityAudioSceneFromAllZones();
@@ -325,7 +326,7 @@ private:
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
 
-    AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId);
+    AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId, bool returnDefault = false);
 
     bool SwitchHintType(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         InterruptEventInternal &interruptEvent, std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList);
@@ -399,7 +400,7 @@ private:
     std::shared_ptr<AsyncActionHandler> asyncHandler_ = nullptr;
 
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> focusCfgMap_ = {};
-    std::unordered_map<int32_t, std::shared_ptr<AudioInterruptZone>> zonesMap_;
+    std::map<int32_t, std::shared_ptr<AudioInterruptZone>> zonesMap_;
 
     std::map<int32_t, std::shared_ptr<AudioInterruptClient>> interruptClients_;
 
