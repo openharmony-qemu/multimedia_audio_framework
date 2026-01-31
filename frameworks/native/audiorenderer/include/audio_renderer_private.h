@@ -162,6 +162,7 @@ public:
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    bool ResetStaticPlayPosition() override;
 
     bool IsVirtualKeyboard(const int32_t flags);
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
@@ -225,7 +226,7 @@ private:
         IAudioStream::SwitchInfo &info);
     bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, RendererState previousState,
         IAudioStream::SwitchInfo &info);
-    bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream, RestoreInfo restoreInfo,
+    bool ResetStaticPlayPosition(std::shared_ptr<IAudioStream> newAudioStream, RestoreInfo restoreInfo,
         RendererState previousState, IAudioStream::SwitchInfo &switchInfo);
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);

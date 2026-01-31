@@ -68,7 +68,7 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
             IncreaseCurrentLoopTimes();
             sharedBuffer_->IncreaseBufferEndCallbackSendTimes();
             curStaticDataPos_ = 0;
-            if (IsLoopEnd()) {
+            if (currentLoopTimes_ == totalLoopTimes_) {
                 sharedBuffer_->SetIsNeedSendLoopEndCallback(true);
                 memset_s(inputData + offset, remainSize, 0, remainSize);
                 offset += remainSize;
@@ -92,7 +92,6 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
 
 int32_t AudioStaticBufferProvider::ProcessFadeInOutIfNeed(int8_t *inputData, size_t requestDataLen)
 {
-    std::unique_lock<std::mutex> lock(fadeMutex_);
     CHECK_AND_RETURN_RET(needFadeIn_ || needFadeOut_, SUCCESS);
     Trace traceFade("CopyDataFromSharedBuffer " + std::string(needFadeOut_ ? "FadeOutData" : "FadeInData"));
     int32_t ret = AudioStaticBufferProcessor::ProcessFadeInOut(inputData, requestDataLen, streamInfo_, needFadeOut_);
@@ -122,6 +121,7 @@ int32_t AudioStaticBufferProvider::CheckIsValid(int8_t *inputData,
 
 void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &staticBufferInfo)
 {
+    std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE, "SetStaticBufferInfo invalid param");
     totalLoopTimes_ = staticBufferInfo.totalLoopTimes_;
     currentLoopTimes_ = staticBufferInfo.currentLoopTimes_;
@@ -130,6 +130,7 @@ void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &stat
 
 int32_t AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
 {
+    std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr, ERR_NULL_POINTER, "Not in static mode");
     staticBufferInfo.totalLoopTimes_ = totalLoopTimes_;
     staticBufferInfo.currentLoopTimes_ = currentLoopTimes_;
@@ -165,7 +166,7 @@ void AudioStaticBufferProvider::SetLoopTimes(int64_t times)
 void AudioStaticBufferProvider::RefreshBufferStatus()
 {
     // fadeout needs to be done before resfresh bufferStatus
-    if (needFadeOut_ && !IsLoopEnd()) {
+    if (needFadeOut_ && currentLoopTimes_ != totalLoopTimes_) {
         Trace trace1("RefreshBufferStatus need delay Refresh");
         delayRefreshBufferStatus_ = true;
         return;
@@ -199,7 +200,7 @@ int32_t AudioStaticBufferProvider::IncreaseCurrentLoopTimes()
 void AudioStaticBufferProvider::NeedProcessFadeIn()
 {
     Trace trace("NeedProcessFadeIn");
-    std::unique_lock<std::mutex> lock(fadeMutex_);
+    std::unique_lock<std::mutex> lock(eventMutex_);
     needFadeIn_ = true;
     playFinished_ = false;
 }
@@ -207,18 +208,19 @@ void AudioStaticBufferProvider::NeedProcessFadeIn()
 void AudioStaticBufferProvider::NeedProcessFadeOut()
 {
     Trace trace("NeedProcessFadeOut");
-    std::unique_lock<std::mutex> lock(fadeMutex_);
+    std::unique_lock<std::mutex> lock(eventMutex_);
     needFadeOut_ = true;
 }
 
 bool AudioStaticBufferProvider::IsLoopEnd()
 {
+    std::unique_lock<std::mutex> lock(eventMutex_);
     return currentLoopTimes_ == totalLoopTimes_;
 }
 
 bool AudioStaticBufferProvider::NeedProvideData()
 {
-    if (IsLoopEnd() || playFinished_) {
+    if (currentLoopTimes_ == totalLoopTimes_ || playFinished_) {
         Trace tracezero("GetDataFromStaticBuffer ZeroData LoopEnd");
         return false;
     }
@@ -241,6 +243,12 @@ bool AudioStaticBufferProvider::NeedProvideData()
         return false;
     }
     return true;
+}
+
+void AudioStaticBufferProvider::ResetStaticPlayPosition()
+{
+    std::unique_lock<std::mutex> lock(eventMutex_);
+    RefreshBufferStatus();
 }
 
 } // namespace AudioStandard

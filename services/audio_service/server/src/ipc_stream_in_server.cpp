@@ -618,5 +618,13 @@ int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)
         "GetLatencyWithFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return rendererInServer_->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(flag));
 }
+
+int32_t IpcStreamInServer::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "ResetStaticPlayPosition failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->ResetStaticPlayPosition();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

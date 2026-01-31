@@ -2481,13 +2481,13 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     UpdateRendererAudioStream(newAudioStream);
     newAudioStream->NotifyRouteUpdate(flag, networkId);
     newAudioStream->SetRenderTarget(switchInfo.target);
-    switchResult = RestartAudioStream(newAudioStream, restoreInfo, previousState, switchInfo);
+    switchResult = ResetStaticPlayPosition(newAudioStream, restoreInfo, previousState, switchInfo);
     CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
     return switchResult;
 }
 
-bool AudioRendererPrivate::RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
+bool AudioRendererPrivate::ResetStaticPlayPosition(std::shared_ptr<IAudioStream> newAudioStream,
     RestoreInfo restoreInfo, RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     // Start new stream if old stream was in running state.
@@ -3251,5 +3251,26 @@ int32_t AudioRendererPrivate::GetCurrentBackMuteStatus(bool &backMute)
     }
     return SUCCESS;
 }
+
+// Only can be used in static mode
+bool AudioRendererPrivate::ResetStaticPlayPosition()
+{
+    Trace trace("KeyAction AudioRenderer::ResetStaticPlayPosition" + std::to_string(sessionID_));
+    AUDIO_INFO_LOG("StreamClientState for Renderer::ResetStaticPlayPosition");
+
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, false,
+        "ResetStaticPlayPosition failed. Illegal state:%{public}u", state);
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
+        "ResetStaticPlayPosition failed. Switching state: %{public}d", isSwitching_);
+    return audioStream_->ResetStaticPlayPosition();
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -1454,7 +1454,7 @@ void AudioProcessInServer::MarkStaticFadeOut(bool isRefresh)
     }
     // Refresh needs to be called after fadeout
     if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->RefreshBufferStatus();
+        staticBufferProvider_->ResetStaticPlayPosition();
     }
 }
 
@@ -1463,6 +1463,17 @@ void AudioProcessInServer::MarkStaticFadeIn()
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
     staticBufferProvider_->NeedProcessFadeIn();
+}
+
+int32_t AudioProcessInServer::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, ERR_ILLEGAL_STATE);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr");
+
+    staticBufferProvider_->NeedProcessFadeOut();
+    staticBufferProvider_->ResetStaticPlayPosition();
+    staticBufferProvider_->NeedProcessFadeIn();
+    return SUCCESS;
 }
 
 } // namespace AudioStandard

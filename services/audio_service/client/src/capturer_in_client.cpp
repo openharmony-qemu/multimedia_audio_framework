@@ -1993,6 +1993,12 @@ void CapturerInClientInner::SetBundleName(std::string &name)
 {
     bundleName = name;
 }
+
+bool CapturerInClientInner::ResetStaticPlayPosition()
+{
+    AUDIO_ERR_LOG("Not Support!");
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H

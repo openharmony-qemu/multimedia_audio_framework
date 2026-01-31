@@ -176,6 +176,8 @@ public:
 
     void SetIsFirstFrame(bool value) override;
 
+    int32_t ResetStaticPlayPosition() override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 private:
@@ -1904,6 +1906,15 @@ void AudioProcessInClientInner::SetIsFirstFrame(bool value)
     CHECK_AND_RETURN_LOG(processConfig_.rendererInfo.isStatic, "not support!");
     CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer is nullptr");
     audioBuffer_->SetIsFirstFrame(value);
+}
+
+int32_t AudioProcessInClientInner::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "processProxy_ is nullptr");
+
+    ExitStandByIfNeed();
+    return processProxy_->ResetStaticPlayPosition();
 }
 
 } // namespace AudioStandard

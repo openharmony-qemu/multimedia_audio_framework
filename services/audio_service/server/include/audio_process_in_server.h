@@ -179,6 +179,8 @@ public:
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
     int32_t SetStaticRenderRate(uint32_t renderRate) override;
+
+    int32_t ResetStaticPlayPosition() override;
 public:
     const AudioProcessConfig processConfig_;
 

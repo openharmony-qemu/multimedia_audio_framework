@@ -2095,5 +2095,16 @@ void RendererInClientInner::UpdateStopState()
     AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
 }
 
+bool RendererInClientInner::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "Not in Static Mode"); 
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
+
+    int32_t ret = ipcStream_->ResetStaticPlayPosition();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "ResetStaticPlayPosition fail!");
+    return true;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
