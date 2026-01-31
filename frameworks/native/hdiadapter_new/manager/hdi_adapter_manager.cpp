@@ -185,7 +185,7 @@ int32_t HdiAdapterManager::LoadAdapter(HdiDeviceManagerType type, const std::str
 
 void HdiAdapterManager::UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force)
 {
-    SetRemoteHdiInvalidState(type, force);
+    SetRemoteHdiInvalidState(type, adapterName, force);
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
     CHECK_AND_RETURN(deviceManager != nullptr);
     deviceManager->UnloadAdapter(adapterName, force);
@@ -450,15 +450,15 @@ void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool try
     IncRefCount(id);
 }
 
-void HdiAdapterManager::SetRemoteHdiInvalidState(HdiDeviceManagerType type, bool force)
+void HdiAdapterManager::SetRemoteHdiInvalidState(HdiDeviceManagerType type, const std::string &networkId, bool force)
 {
     CHECK_AND_RETURN(type == HDI_DEVICE_MANAGER_TYPE_REMOTE && force);
-    auto limitFunc = [](uint32_t id) -> bool {
+    auto limitFunc = [networkId](uint32_t id) -> bool {
         std::string info = IdHandler::GetInstance().ParseInfo(id);
         if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE ||
             IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_FAST ||
             IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_OFFLOAD) {
-            return true;
+            return info == networkId;
         }
         return false;
     };
