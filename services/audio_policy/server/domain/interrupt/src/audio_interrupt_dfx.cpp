@@ -53,7 +53,7 @@ void AudioInterruptDfx::WriteAudioInterruptErrorEvent(const AudioFocusErrorEvent
 }
 
 void AudioInterruptDfx::ActivateAudioSessionErrorEvent(
-    const std::list<std::pair<AudioInterrupt, AudioFocuState>>& audioFocusInfoList, const int32_t callerPid)
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList, const int32_t callerPid)
 {
     AudioFocusErrorEvent interruptError;
     for (const auto& item : audioFocusInfoList) {
