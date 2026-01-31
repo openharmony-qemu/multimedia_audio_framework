@@ -1976,13 +1976,14 @@ static AudioSampleFormat ParseSinkAudioSampleFormat(const std::string &format)
 {
     if (format == "u8") {
         return SAMPLE_U8;
-    } else if (format == "s16le") {
+    } else if (format == "s16le" || format == "s16") {
         return SAMPLE_S16LE;
-    } else if (format == "s24le") {
+    } else if (format == "s24le" || format == "s24") {
         return SAMPLE_S24LE;
-    } else if (format == "s32le") {
+    } else if (format == "s32le" || format == "s32") {
         return SAMPLE_S32LE;
     }
+    AUDIO_ERR_LOG("invalid param: %{public}s", format.c_str());
     return INVALID_WIDTH;
 }
 
