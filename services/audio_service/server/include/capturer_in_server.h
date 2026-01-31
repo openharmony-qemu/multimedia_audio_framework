@@ -86,7 +86,7 @@ private:
     void RebuildCaptureInjector();
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
     void HandleOperationStopped(CapturerStage stage);
-    void ResetAsrFlag()
+    void ResetAsrFlag();
     void RecordOverflowStatus(bool currentStatus);
 
     std::mutex statusLock_;
