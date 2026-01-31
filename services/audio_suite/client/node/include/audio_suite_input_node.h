@@ -57,7 +57,7 @@ private:
     uint32_t inPcmDataGetSize_ = 0;
     uint32_t nextNodeNeedDataLength_ = 0;
     AudioSuiteFormatConversion convert_;
-}
+};
 }
 }
 #endif

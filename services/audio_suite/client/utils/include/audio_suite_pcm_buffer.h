@@ -103,6 +103,7 @@ private:
     uint32_t dataByteSize_ = 0;         // Data size. Unit: Bytes.
     uint32_t frames_ = 0;               // Number of frames
     uint32_t duration_ = 0;             // Single frame duration
+    bool isFinished_ = false;
 };
 }
 }
