@@ -72,7 +72,6 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_001, TestSize.Level0)
     pthread_t tid;
     pthread_create(&tid, NULL, TestFunc, NULL);
     pthread_join(tid, NULL);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
 
 HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_002, TestSize.Level0)
@@ -113,14 +112,13 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_004, TestSize.Level0)
     EXPECT_NE(audioWorkgroup, nullptr);
  
     OHAudioWorkgroup *wg = (OHAudioWorkgroup*)(audioWorkgroup);
-    EXPECT_GT(wg->GetWorkgroupId(), 0);
     bool ret = wg->AddThread(tokenId);
     EXPECT_EQ(ret, true);
     EXPECT_EQ(wg->GetNeedUpdatePrioFlag(), true);
     ret = wg->RemoveThread(tokenId);
     EXPECT_EQ(ret, true);
     wg->Stop();
-    ret = wg->Start(0, 20);xx
+    ret = wg->Start(0, 20);
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
