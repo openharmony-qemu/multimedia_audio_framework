@@ -1241,7 +1241,7 @@ function GetAudioManager(): AudioManager;
 
 union AudioCapturerOrNull {
   type_audioCapturer: AudioCapturer;
-  @null type_null;
+  type_null: @null unit;
 }
 @gen_async("createAudioCapturer")
 @gen_promise("createAudioCapturer")
@@ -1249,7 +1249,7 @@ function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturerOr
 
 union AudioRendererOrNull {
   type_audioRenderer: AudioRenderer;
-  @null type_null;
+  type_null: @null unit;
 }
 @gen_async("createAudioRenderer")
 @gen_promise("createAudioRenderer")
@@ -1257,7 +1257,7 @@ function CreateAudioRendererSync(options: AudioRendererOptions): AudioRendererOr
 
 union TonePlayerOrNull {
   type_tonePlayer: TonePlayer;
-  @null type_null;
+  type_null: @null unit;
 }
 @gen_async("createTonePlayer")
 @gen_promise("createTonePlayer")
@@ -1346,7 +1346,7 @@ interface AsrProcessingController {
 
 union AsrProcessingControllerOrNull {
   type_asrProcessingController: AsrProcessingController;
-  @null type_null;
+  type_null: @null unit;
 }
 function CreateAsrProcessingController(audioCapturer: AudioCapturer): AsrProcessingControllerOrNull;
 
@@ -1387,7 +1387,7 @@ interface AudioLoopback {
 
 union AudioLpback {
   type_audioLpback: AudioLoopback;
-  @null type_null;
+  type_null: @null unit;
 }
 
 @gen_promise("createAudioLoopback")
