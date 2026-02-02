@@ -255,6 +255,38 @@ void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest(FuzzedDataProvi
     AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
 }
 
+void GetPreferredCallRenderDeviceForUidFuzzTest(FuzzedDataProvider& fdp)
+{
+    int32_t clientUid = GetData<int32_t>();
+    vector<int32_t> uidList = {
+        SYSTEM_UID,
+        clientUid,
+        0,
+    };
+    uint32_t index = GetData<uint32_t>() % uidList.size();
+    int32_t testId = uidList[index];
+    std::string currentActivePort = "test";
+    AudioStateManager::GetAudioStateManager().forcedDeviceMapList_.clear();
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> forcedDeviceMap;
+    forcedDeviceMap.insert({testId, desc});
+    AudioStateManager::GetAudioStateManager().forcedDeviceMapList_.push_back(forcedDeviceMap);
+    AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(clientUid);
+}
+
+void SetAudioVKBInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    sptr<IStandardAudioPolicyManagerListener> callback = sptr<IStandardAudioPolicyManagerListener>();
+    AudioStateManager::GetAudioStateManager().SetAudioVKBInfoMgrCallback(callback);
+}
+
+void CheckVKBInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::string bundleName = "testName";
+    bool isValid = GetData<bool>();
+    AudioStateManager::GetAudioStateManager().CheckVKBInfo(bundleName, isValid);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -277,6 +309,9 @@ void Test(FuzzedDataProvider& fdp)
     SetAudioClientInfoMgrCallbackFuzzTest,
     SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest,
     SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest,
+    GetPreferredCallRenderDeviceForUidFuzzTest,
+    SetAudioVKBInfoMgrCallbackFuzzTest,
+    CheckVKBInfoFuzzTest,
     });
     func(fdp);
 }

@@ -351,7 +351,8 @@ group("audio_fuzz_test") {
     "fuzztest/hstandardaudioservicestub_fuzzer:fuzztest",
     "fuzztest/haudioworkgroupcallbackimpl_fuzzer:fuzztest",
     "fuzztest/hipcstreamlistenerimpl_fuzzer:fuzztest",
-    "fuzztest/haudiomanagerlistenerstubimpl_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioroutermap_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audiousrselectmanager_fuzzer:fuzztest",
   ]
 
   if (audio_framework_feature_audiosuite_support) {
