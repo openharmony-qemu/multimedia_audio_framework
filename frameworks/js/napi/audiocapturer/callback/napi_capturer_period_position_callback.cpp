@@ -98,7 +98,7 @@ void NapiCapturerPeriodPositionCallback::SafeJsCallbackCapturerPeriodPositionWor
         static_cast<CapturerPeriodPositionJsCallback*>(data),
         [](CapturerPeriodPositionJsCallback *ptr) {
             delete ptr;
-            ptr = nullptr；
+            ptr = nullptr;
     });
     CHECK_AND_RETURN_LOG(event->callback != nullptr, "callback is nullptr");
     napi_ref callback = event->callback->cb_;
