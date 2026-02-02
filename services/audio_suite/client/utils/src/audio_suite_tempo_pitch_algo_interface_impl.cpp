@@ -26,6 +26,11 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
+static const std::string PITCH_LIB = "PITCHLIB";
+static constexpr int32_t EXPAND_FRAME_SIZE = 256;
+static constexpr int32_t EXPAND_FRAME_RATE = 2;
+static constexpr int32_t ALGO_PARAM_LENGTH = 2;
+
 AudioSuiteTempoPitchAlgoInterfaceImpl::AudioSuiteTempoPitchAlgoInterfaceImpl(NodeParameter &nc)
 {
     nodeParameter_ = nc;

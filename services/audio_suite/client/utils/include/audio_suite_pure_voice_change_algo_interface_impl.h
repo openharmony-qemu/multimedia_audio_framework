@@ -37,21 +37,6 @@ using FunVoiceMphInit = int (*)(char *handle, char *scratchBuf);
 using FunVoiceMphApply = int (*)(char *handle, char *scratchBuf, AudioVoiceMphData *data);
 using FunVoiceMphSetPara = int (*)(char *handle, SpeakerSex gender, AudioVoiceMphTradType type, float pitch);
 
-static const std::unordered_map<std::string, AudioVoiceMphTradType> pureTypeMap = {
-    {"1", AUDIO_VOICE_MPH_TRAD_CARTOON},
-    {"2", AUDIO_VOICE_MPH_TRAD_CUTE},
-    {"3", AUDIO_VOICE_MPH_TRAD_FEMALE},
-    {"4", AUDIO_VOICE_MPH_TRAD_MALE},
-    {"5", AUDIO_VOICE_MPH_TRAD_MONSTER},
-    {"6", AUDIO_VOICE_MPH_TRAD_ROBOTS},
-    {"7", AUDIO_VOICE_MPH_TRAD_SEASONED}
-} ;
-
-static const std::unordered_map<std::string, SpeakerSex> pureSexTypeMap = {
-    {"1", VMP_TRAD_FEMALE},
-    {"2", VMP_TRAD_MALE}
-} ;
-
 struct VoiceMphingAlgoApi {
     FunVoiceMphGetSize getSize{nullptr};
     FunVoiceMphInit initAlgo{nullptr};
