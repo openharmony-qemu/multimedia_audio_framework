@@ -536,6 +536,8 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 {
     Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
         + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     volDeviceDesc = desc;
     AUDIO_INFO_LOG("streamType: %{public}d, device: %{public}s, volumeLevel:%{public}d",
@@ -3488,6 +3490,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     CHECK_AND_RETURN_LOG(desc->deviceRole_ == OUTPUT_DEVICE, "%{public}s is not output", desc->GetName().c_str());
     CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false, not init");
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
         desc->volumeBehavior_.controlMode == HILINK_MODE) {
         UpdateVolumeWhenPassThroughDeviceConnect(desc);
@@ -3509,6 +3513,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
 
 int32_t AudioAdapterManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
 {
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_OPERATION_FAILED, "device is null");
     AUDIO_INFO_LOG("streamType: %{public}d, device:%{public}s, volumeDegree:%{public}d",
