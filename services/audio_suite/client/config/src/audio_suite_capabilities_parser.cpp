@@ -24,6 +24,19 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
+static const std::map<std::string, AudioNodeType>
+    NODE_TYPE_MAP = {{"EQUALIZER", NODE_TYPE_EQUALIZER},
+        {"NOISE_REDUCTION", NODE_TYPE_NOISE_REDUCTION},
+        {"AUDIO_MIXER", NODE_TYPE_AUDIO_MIXER},
+        {"SOUND_FIELD", NODE_TYPE_SOUND_FIELD},
+        {"AUDIO_SEPARATION", NODE_TYPE_AUDIO_SEPARATION},
+        {"VOICE_BEAUTIFIER", NODE_TYPE_VOICE_BEAUTIFIER},
+        {"ENVIRONMENT_EFFECT", NODE_TYPE_ENVIRONMENT_EFFECT},
+        {"PURE_CHANGE", NODE_TYPE_PURE_VOICE_CHANGE},
+        {"GENERAL_CHANGE", NODE_TYPE_GENERAL_VOICE_CHANGE},
+        {"TEMPO_PITCH", NODE_TYPE_TEMPO_PITCH},
+        {"SPACE_RENDER", NODE_TYPE_SPACE_RENDER}};
+
 AudioSuiteCapabilitiesParser::AudioSuiteCapabilitiesParser()
 {
     AUDIO_DEBUG_LOG("AudioSuiteCapabilitiesParser ctor");
