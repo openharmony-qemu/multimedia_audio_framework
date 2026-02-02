@@ -525,6 +525,67 @@ void AudioDeviceStatusOnDeviceConfigurationChangedFuzzTest(FuzzedDataProvider& f
     OnStop();
 }
 
+void AudioDeviceStatusTriggerDeviceInfoUpdatedCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    desc.push_back(descriptor);
+    audioDeviceStatus.TriggerDeviceInfoUpdatedCallback(desc);
+    OnStop();
+}
+
+void AudioDeviceStatusActivateNewDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    std::string networkId = "testnetworkId";
+    DeviceType deviceType = GetData<DeviceType>();
+    bool isRemote = GetData<bool>();
+    audioDeviceStatus.ActivateNewDevice(networkId, deviceType, isRemote);
+    OnStop();
+}
+
+void AudioDeviceStatusHandleOfflineDistributedDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
+    descriptor->networkId_ = LOCAL_NETWORK_ID;
+    descriptor->deviceType_ = GetData<DeviceType>();
+    audioDeviceStatus.audioConnectedDevice_.connectedDevices_.push_back(descriptor);
+    audioDeviceStatus.HandleOfflineDistributedDevice();
+    OnStop();
+}
+
+void AudioDeviceStatusRestoreNewA2dpPortFuzzTest(FuzzedDataProvider& fdp)
+{
+    vector<string> moduleInfoNameList = {
+        "sink",
+        "Speaker",
+    };
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> descriptor = std::make_shared<AudioStreamDescriptor>();
+    streamDescs.push_back(descriptor);
+
+    AudioModuleInfo moduleInfo;
+    uint32_t moduleInfoNameCount = GetData<uint32_t>() % moduleInfoNameList.size();
+    moduleInfo.role = moduleInfoNameList[moduleInfoNameCount];
+    std::string currentActivePort = "test";
+    audioDeviceStatus.GetDmDeviceType();
+    audioDeviceStatus.RestoreNewA2dpPort(streamDescs, moduleInfo, currentActivePort);
+    OnStop();
+}
+
+void AudioDeviceStatusGetPaIndexByPortNameFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    std::string portName = "testName";
+    AudioIOHandle audioIOHandle = GetData<uint32_t>();
+    audioDeviceStatus.audioIOHandleMap_.IOHandles_.insert({portName, audioIOHandle});
+    audioDeviceStatus.GetPaIndexByPortName(portName);
+    OnStop();
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -552,6 +613,11 @@ void Test(FuzzedDataProvider& fdp)
     OnForcedDeviceSelectedFuzzTest,
     AudioDeviceStatusLoadAccessoryModuleFuzzTest,
     AudioDeviceStatusOnDeviceConfigurationChangedFuzzTest,
+    AudioDeviceStatusTriggerDeviceInfoUpdatedCallbackFuzzTest,
+    AudioDeviceStatusActivateNewDeviceFuzzTest,
+    AudioDeviceStatusHandleOfflineDistributedDeviceFuzzTest,
+    AudioDeviceStatusRestoreNewA2dpPortFuzzTest,
+    AudioDeviceStatusGetPaIndexByPortNameFuzzTest,
     });
     func(fdp);
 }
