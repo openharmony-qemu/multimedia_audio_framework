@@ -96,7 +96,6 @@ public:
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
-    bool IsBypassSpatializationForStereo() override;
 
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
     OffloadCallbackData GetOffloadCallbackData() noexcept override;
@@ -118,7 +117,8 @@ private:
     void RemoveNodeFromMap(uint32_t sessionId);
     void SetCurrentNode();
     void StopOuputNode();
-    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state);
+    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state,
+        uint32_t appUid = INVALID_UID);
     
     std::shared_ptr<HpaeSinkInputNode> curNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkInputNode>> sinkInputNodeMap_;

@@ -1862,19 +1862,6 @@ int32_t AudioEffectChainManager::UpdateSpatializationStateInner(AudioSpatializat
     return SUCCESS;
 }
 
-void AudioEffectChainManager::SetBypassSpatializationForStereo(bool bypass)
-{
-    std::lock_guard<std::mutex> lock(dynamicMutex_);
-    CHECK_AND_RETURN_LOG(bypassSpatializationForStereo_ != bypass,
-        "no need to update bypassSpatializationForStereo_ %{public}d", bypassSpatializationForStereo_);
-    AUDIO_INFO_LOG("AudioEffectChainManager::SetBypassSpatializationForStereo %{public}d", bypass);
-    bypassSpatializationForStereo_ = bypass;
-    CHECK_AND_RETURN(spatializationEnabled_ && (deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO || deviceType_ == DEVICE_TYPE_NEARLINK));
-    AudioSpatializationState spatializationState = {spatializationEnabled_, headTrackingEnabled_};
-    UpdateSpatializationEnabled(spatializationState);
-}
-
 int32_t AudioEffectChainManager::ReturnEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels,
     uint64_t &channelLayout)
 {

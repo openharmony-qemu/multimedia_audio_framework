@@ -220,7 +220,8 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
     auto request = [this, streamInfo]() {
         CreateOutputSession(streamInfo);
         SetSessionState(streamInfo.sessionId, HPAE_SESSION_PREPARED);
-        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, CAPTURER_PREPARED);
+        NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, CAPTURER_PREPARED,
+            sourceOutputNodeMap_[streamInfo.sessionId]->GetAppUid());
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -528,14 +529,14 @@ void HpaeCapturerManager::UpdateAppsUidAndSessionId()
     }
 }
 void HpaeCapturerManager::NotifyStreamChangeToSource(
-    StreamChangeType change, uint32_t sessionId, CapturerState state)
+    StreamChangeType change, uint32_t sessionId, CapturerState state, uint32_t appUid)
 {
     SourceType source = SOURCE_TYPE_INVALID;
     if (sourceOutputNodeMap_.find(sessionId) != sourceOutputNodeMap_.end()) {
         source = sourceOutputNodeMap_[sessionId]->GetSourceType();
     }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
-        sourceInputClusterMap_[mainMicType_]->NotifyStreamChangeToSource(change, sessionId, source, state);
+        sourceInputClusterMap_[mainMicType_]->NotifyStreamChangeToSource(change, sessionId, source, state, appUid);
     }
 }
 
@@ -942,7 +943,7 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");
     }
     NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, sessionId,
-        ConvertHpaeToCapturerState(moveInfo.sessionInfo.state));
+        ConvertHpaeToCapturerState(moveInfo.sessionInfo.state), sourceOutputNodeMap_[sessionId]->GetAppUid());
 }
 
 int32_t HpaeCapturerManager::MoveAllStream(const std::string &sourceName, const std::vector<uint32_t>& sessionIds,
@@ -1060,7 +1061,7 @@ int32_t HpaeCapturerManager::DumpSourceInfo()
 void HpaeCapturerManager::CheckIfAnyStreamRunning()
 {
     CHECK_AND_RETURN_LOG(!sessionNodeMap_.empty(), "no stream need start");
-    for (auto &sessionPair : sessionNodeMap_) {
+    for (auto &sessionPair :sessionNodeMap_) {
         if (sessionPair.second.state == HPAE_SESSION_RUNNING) {
             ConnectOutputSession(sessionPair.first);
             CHECK_AND_RETURN_LOG(CapturerSourceStart() == SUCCESS, "CapturerSourceStart error.");

@@ -140,6 +140,7 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
 
     // interfaces for injector
     void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
@@ -149,8 +150,6 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
-
-    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     void UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
     

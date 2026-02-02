@@ -160,7 +160,6 @@ public:
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct);
-    void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
     bool IsEffectChainFading(const std::string &sceneType);
 private:

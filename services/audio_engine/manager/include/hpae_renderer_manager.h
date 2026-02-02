@@ -100,7 +100,6 @@ public:
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
-    bool IsBypassSpatializationForStereo() override;
     void SetCollDelayCount() override;
 
 private:
@@ -156,7 +155,8 @@ private:
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
     void StopOuputNode();
-    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state);
+    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId,
+        RendererState state, uint32_t appUid = INVALID_UID);
     void DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType);
     void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
     void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
