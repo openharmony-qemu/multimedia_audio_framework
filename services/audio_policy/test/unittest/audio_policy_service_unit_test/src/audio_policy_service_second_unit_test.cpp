@@ -300,15 +300,15 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, DealWithSafeVolume_001, TestSize.Level1)
         DEVICE_TYPE_BLUETOOTH_A2DP;
     int32_t volumeLevelRet
         = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    EXPECT_EQ(volumeLevelRet, 15);
 
     isA2dpDevice = false;
     volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    EXPECT_EQ(volumeLevelRet, 15);
 
     volumeLevel = 11;
     volumeLevelRet = server->audioPolicyService_.audioVolumeManager_.DealWithSafeVolume(volumeLevel, isA2dpDevice);
-    EXPECT_EQ(volumeLevelRet, 8);
+    EXPECT_EQ(volumeLevelRet, 15);
 }
 
 /**
@@ -323,12 +323,12 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleAbsBluetoothVolume_001, TestSize.L
     int32_t volumeLevel = 10;
     int32_t safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
-    EXPECT_EQ(safeVolumeLevel, 8);
+    EXPECT_EQ(safeVolumeLevel, 15);
 
     volumeLevel = 8;
     safeVolumeLevel
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
-    EXPECT_EQ(safeVolumeLevel, 8);
+    EXPECT_EQ(safeVolumeLevel, 15);
 }
 
 /**
