@@ -113,10 +113,6 @@ public:
     virtual std::string GetDeviceHDFDumpInfo() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) {return 0;};
     virtual int32_t SetSinkVirtualOutputNode(const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode);
-    virtual bool IsBypassSpatializationForStereo()
-    {
-        return true;
-    }
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; }
 
 private:

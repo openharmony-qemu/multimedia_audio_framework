@@ -51,6 +51,7 @@ public:
     int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     int32_t SetVolume(float left, float right) override;
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override;
     int32_t GetVolume(float &left, float &right) override;
 
     int32_t GetLatency(uint32_t &latency) override;
@@ -89,7 +90,8 @@ private:
     void AdjustStereoToMono(char *data, uint64_t len);
     void AdjustAudioBalance(char *data, uint64_t len);
     void CheckUpdateState(char *data, uint64_t len);
-    int32_t SetVolumeInner(float left, float right);
+    int32_t SetVolumeInner(float left, float right, uint32_t durationMs = 0);
+    bool NeedToSetOffloadVolume(const float newVolume);
     void UpdateSinkState(bool started);
     int32_t FlushInner(void);
     void CheckFlushThread();
@@ -117,6 +119,9 @@ private:
     bool isNeedRestart_ = false;
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
+    float offloadVolume_ = 0.0f;
+    uint32_t durationMs_ = 0;
+    std::chrono::milliseconds setVolumeTime_ = std::chrono::milliseconds(0);
     uint32_t hdiRenderId_ = HDI_INVALID_ID;
     struct IAudioRender *audioRender_ = nullptr;
     bool audioMonoState_ = false;

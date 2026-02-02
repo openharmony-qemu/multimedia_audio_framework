@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -937,7 +937,7 @@ HWTEST(AudioManagerInterruptUnitTest, RegisterFocusInfoChangeCallback_005, TestS
  * @tc.name    : SetAppConcurrencyMode_001
  * @tc.desc    : Test set app concurrency mode
  * @tc.type    : FUNC
- * @tc.require : issueICU2E0
+ * @tc.require : issueICS6Y9
  */
 HWTEST(AudioManagerInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1)
 {
@@ -951,7 +951,7 @@ HWTEST(AudioManagerInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1
  * @tc.name    : SetAppSilentOnDisplay_001
  * @tc.desc    : Test set app slient on display
  * @tc.type    : FUNC
- * @tc.require : issueICU2E0
+ * @tc.require : issueICS6Y9
  */
 HWTEST(AudioManagerInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1)
 {
@@ -959,5 +959,6 @@ HWTEST(AudioManagerInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1
     auto ret = AudioSystemManager::GetInstance()->SetAppSilentOnDisplay(displayId);
     EXPECT_EQ(ret, ERR_SYSTEM_PERMISSION_DENIED);
 }
+
 }
 }

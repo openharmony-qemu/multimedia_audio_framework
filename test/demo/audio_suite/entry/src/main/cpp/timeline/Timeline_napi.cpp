@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 #include "Timeline_napi.h"
@@ -60,7 +60,7 @@ napi_value DeleteAudioTrack(napi_env env, napi_callback_info info)
     return result;
 }
 
-bool IsTypeOrArray(napi_env &env, napi_value *&argv, napi_valuetype &type, bool &isArray)
+bool IsTypeOrArray(const napi_env &env, napi_value *&argv, napi_valuetype &type, bool &isArray)
 {
     napi_typeof(env, argv[NAPI_ARGV_INDEX_1], &type);
     if (type != napi_object) {
@@ -77,7 +77,7 @@ bool IsTypeOrArray(napi_env &env, napi_value *&argv, napi_valuetype &type, bool 
     return false;
 }
 
-bool ProcessIsArray(napi_env &env, napi_value *&argv, napi_valuetype &type, bool &isArray)
+bool ProcessIsArray(const napi_env &env, napi_value *&argv, const napi_valuetype &type, bool &isArray)
 {
     if (type != napi_object) {
         napi_throw_type_error(env, "EINVAL", "trackIds must be an array");
@@ -92,7 +92,7 @@ bool ProcessIsArray(napi_env &env, napi_value *&argv, napi_valuetype &type, bool
     }
     return false;
 }
-bool IsNotEquels(napi_env &env, napi_value *&argv, uint32_t &trackIdsLength, uint32_t &isSilentLength)
+bool IsNotEquels(const napi_env &env, napi_value *&argv, const uint32_t &trackIdsLength, const uint32_t &isSilentLength)
 {
     if (trackIdsLength != isSilentLength) {
         napi_throw_error(env, "EINVAL", "Arrays must be the same length");
@@ -187,7 +187,7 @@ napi_value AddAudioAsset(napi_env env, napi_callback_info info)
     }
     long startIndex = indexs[ARG_0];
     long endIndex = indexs[ARG_1];
-    //平铺复制标记
+    //Tile Copy Multiple
     bool isCopyMultiple = false;
     status = napi_get_value_bool(env, argv[NAPI_ARGV_INDEX_4], &isCopyMultiple);
     delete [] argv;

@@ -1379,10 +1379,10 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
     ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
-    if (!isExistLoopback_) {
-        ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart +
-            channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel);
-    }
+    int32_t val = std::accumulate(channelVolumes.volStart, channelVolumes.volStart +
+        channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
+    val = isExistLoopback_ ? 1 : val;
+    ZeroVolumeCheck(val);
 }
 
 // call with listLock_ hold
@@ -1446,7 +1446,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
 
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(
         streamType, appUid, processList_[i]->GetAudioSessionId()));
-    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(appUid, volumeMode);
     int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
         processBufferList_[i]->GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);

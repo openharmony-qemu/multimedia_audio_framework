@@ -706,7 +706,7 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAvailableDeviceChangeCallback(
     }
 
     std::lock_guard<std::mutex> lock(availableDeviceCbMutex_);
-    if (availebleDeviceCallbacks_.count(callback) != 0) {
+    if (availableDeviceCallbacks_.count(callback) != 0) {
         AUDIO_INFO_LOG("callback already registed");
         return AUDIOCOMMON_RESULT_SUCCESS;
     }
@@ -721,7 +721,7 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAvailableDeviceChangeCallback(
         AUDIO_ERR_LOG("failed to SetAvailableDeviceChangeCallback.");
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
-    availebleDeviceCallbacks_.emplace(callback, ohAudioAvailableDeviceCallback);
+    availableDeviceCallbacks_.emplace(callback, ohAudioAvailableDeviceCallback);
 
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -733,7 +733,7 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAvailableDeviceChangeCallback(
         AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioMngr_ is null");
 
     std::lock_guard<std::mutex> lock(availableDeviceCbMutex_);
-    if ((callback == nullptr) || (availebleDeviceCallbacks_.count(callback) == 0)) {
+    if ((callback == nullptr) || (availableDeviceCallbacks_.count(callback) == 0)) {
         AUDIO_ERR_LOG("invalid callback or callback not registered");
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
@@ -743,7 +743,7 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAvailableDeviceChangeCallback(
         AUDIO_ERR_LOG("failed to UnsetAvailableDeviceChangeCallback.");
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
-    availebleDeviceCallbacks_.erase(callback);
+    availableDeviceCallbacks_.erase(callback);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 

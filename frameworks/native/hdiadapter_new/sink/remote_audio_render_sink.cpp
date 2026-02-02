@@ -144,13 +144,13 @@ int32_t RemoteAudioRenderSink::Start(void)
                 validState_.store(true);
             }
         }
-    
+
         if (started_.load()) {
             AUDIO_INFO_LOG("already started");
             isThreadRunning_.store(false);
             return;
         }
-    
+
         CHECK_AND_RETURN(IsValidState());
         std::shared_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
         for (auto &it : audioRenderWrapperMap_) {
@@ -312,6 +312,12 @@ int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
         int32_t ret = wrapper.second.audioRender_->SetVolume(volume);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "set volume fail, ret: %{public}d", ret);
     }
+    return SUCCESS;
+}
+
+int32_t RemoteAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("RemoteAudioRenderSink::SetVolumeWithRamp in");
     return SUCCESS;
 }
 

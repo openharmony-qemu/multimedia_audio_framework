@@ -502,9 +502,15 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         AudioPolicyUtils::GetInstance().GetDevicesStr(audioDeviceDescriptors).c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, ERR_INVALID_PARAM, "No device to exclude");
-    std::string taskid = "{\"taskId\":\"0\"}";
-    AudioServerProxy::GetInstance().NotifyTaskIdInfoProxy(taskid, true);
-    AUDIO_INFO_LOG("taskId clean success!");
+    for (const auto& deviceDesc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERROR_INVALID_PARAM, "deviceDesc is null");
+        AUDIO_INFO_LOG("deviceDesc->dmDeviceType_ %{public}d", deviceDesc->dmDeviceType_);
+        if (deviceDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST) {
+            std::string taskId = "{\"taskId\":\"0\"}";
+            AudioServerProxy::GetInstance().NotifyTaskIdInfoProxy(taskId, false);
+            AUDIO_INFO_LOG("taskId clean success!, is not connected");
+        }
+    }
     if (audioDeviceDescriptors.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         audioDeviceDescriptors.front()->macAddress_.empty()) {
         AudioPolicyUtils::GetInstance().SetScoExcluded(true);

@@ -80,6 +80,8 @@ public:
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
         std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
         bool isConnected);
+    void HandTaskIdStatus(DStatusInfo &statusInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
     void OnConnectFailed(AudioDeviceDescriptor &desc);
     uint16_t GetDmDeviceType();

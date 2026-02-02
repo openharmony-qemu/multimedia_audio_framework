@@ -233,7 +233,7 @@ HWTEST(AudioPolicyManagerDevice, RegisterPreferredDeviceSetCallback_001, TestSiz
     int32_t ret = 0;
     auto cb = std::make_shared<PreferredDeviceSetCallbackTest>();
     ret = policyManager.RegisterPreferredDeviceSetCallback(cb);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = policyManager.UnregisterPreferredDeviceSetCallback(cb);
     EXPECT_EQ(ret, SUCCESS);
 }

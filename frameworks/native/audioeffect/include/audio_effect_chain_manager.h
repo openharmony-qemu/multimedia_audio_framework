@@ -160,7 +160,6 @@ public:
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct);
-    void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
     bool IsEffectChainFading(const std::string &sceneType);
 private:
@@ -244,7 +243,7 @@ private:
     std::string systemLoadState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
-    std::string outdoorModle_ = "0";
+    std::string outdoorMode_ = "0";
     std::string superLoudnessMode_ = "music_off";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;

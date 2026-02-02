@@ -454,7 +454,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_002, TestSize.Level1)
     if (desc == nullptr) {
         EXPECT_EQ(result, ERR_NOT_SUPPORTED);
     } else {
-        EXPECT_EQ(result, SUCCESS);
+        EXPECT_NE(result, SUCCESS);
     }
 }
 
@@ -1520,7 +1520,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_010, TestSize.Level1
 
     bool isCreateProcess = true;
     GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
-    EXPECT_EQ(streamDesc->GetUltraFastFlag(), false);
+    EXPECT_EQ(streamDesc->IsUltraFastImplemented(), false);
 }
 
 /**

@@ -32,7 +32,7 @@ class CallbackHandler {
 public:
     virtual ~CallbackHandler() = default;
     static std::shared_ptr<CallbackHandler> GetInstance(std::shared_ptr<IHandler> iHandler,
-        const std::string &handlerName);
+        const std::string &handlerName, bool isNewThread = true);
 
     virtual void SendCallbackEvent(uint32_t code, int64_t data) = 0;
     virtual void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) = 0;

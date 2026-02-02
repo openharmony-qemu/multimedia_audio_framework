@@ -95,7 +95,8 @@ vector<shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::DecideRingRenderDevi
         !AudioStateManager::GetAudioStateManager().IsExcludedDevice(ALL_MEDIA_DEVICES, activeScoDevice) &&
         activeScoDevice->connectState_ != SUSPEND_CONNECTED && !activeScoDevice->exceptionFlag_,
         descs, "activeScoDevice is nullptr");
-    AUDIO_INFO_LOG("Adding active SCO device:deviceType=%{public}d", activeScoDevice->deviceType_);
+    AUDIO_INFO_LOG("Adding active SCO device:deviceType=%{public}d, hasScoState = %{public}d",
+        activeScoDevice->deviceType_, hasScoState);
     descs.push_back(activeScoDevice);
 
     bool needDefaultDevice = false;

@@ -134,13 +134,12 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = isMoveAble_;
     streamInfo.privacyType = processConfig_.privacyType;
-    streamInfo.encoding = processConfig_.streamInfo.encoding;
     AUDIO_INFO_LOG("channels %{public}u channelLayout %{public}" PRIu64 " samplingRate %{public}u format %{public}u "
         "frameLen %{public}zu streamType %{public}u sessionId %{public}u streamClassType %{public}u "
-        "sourceType %{public}d fadeType %{public}d encoding %{public}d", streamInfo.channels, streamInfo.channelLayout,
+        "sourceType %{public}d fadeType %{public}d", streamInfo.channels, streamInfo.channelLayout,
         streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate, streamInfo.format,
         streamInfo.frameLen, streamInfo.streamType, streamInfo.sessionId, streamInfo.streamClassType,
-        streamInfo.sourceType, streamInfo.fadeType, streamInfo.encoding);
+        streamInfo.sourceType, streamInfo.fadeType);
     auto &hpaeManager = IHpaeManager::GetHpaeManager();
     int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "CreateStream is error");
@@ -775,7 +774,7 @@ size_t HpaeRendererStreamImpl::GetWritableSize()
 }
 
 void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
-    std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId)
+    std::string volumeDeviceClass)
 {
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     float lastVolume = AudioVolume::GetInstance()->GetVolume(sessionId, streamType, volumeDeviceClass, &volumes);
@@ -784,10 +783,8 @@ void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamTy
     float volume = 0.0f;
 
     uint32_t step = static_cast<uint32_t>((volumes.durationMs + DUCK_UNDUCK_STEP_TIME - 1) / DUCK_UNDUCK_STEP_TIME);
-    std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass, deviceNetId);
-    if (audioRendererSinkInstance == nullptr || step == 0) {
-        AUDIO_ERR_LOG("Renderer is null or step error.");
-        return;
+    if (step == 0) {
+        AUDIO_ERR_LOG("step error.");
     }
     float volumeStep = (volumeHistory - lastVolume) / step;
     for (uint32_t i = 0; i < step; i++) {
@@ -808,7 +805,6 @@ void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamTy
         }
         AUDIO_DEBUG_LOG("sessionId: %{public}d, volume: %{public}f", sessionId, volume);
         AudioVolume::GetInstance()->SetHistoryVolume(sessionId, volume);
-        audioRendererSinkInstance->SetVolume(volume, volume);
     }
     return;
 }
@@ -819,7 +815,6 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
         return ERR_OPERATION_FAILED;
     }
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    bool notEnableRmap = true;
     std::string deviceClass;
     std::string deviceNetId;
     {
@@ -830,30 +825,33 @@ int32_t HpaeRendererStreamImpl::OffloadSetVolume()
     AudioStreamType streamType = processConfig_.streamType;
     std::string volumeDeviceClass = deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD ? "remote" : "offload";
     float volume = AudioVolume::GetInstance()->GetVolume(streamIndex_, streamType, volumeDeviceClass, &volumes);
-    AUDIO_INFO_LOG("sessionID %{public}u, deviceClass %{public}s, volume: %{public}f", streamIndex_,
-        volumeDeviceClass.c_str(), volume);
+    AUDIO_INFO_LOG("sessionID %{public}u, deviceClass %{public}s, volume: %{public}f, durationMs: %{public}u",
+        streamIndex_, volumeDeviceClass.c_str(), volume, volumes.durationMs);
     uint32_t sessionId = streamIndex_;
     if (!IsVolumeSame(volumes.volumeHistory, volume, AUDIO_VOLUME_EPSILON)) {
         if (volumes.durationMs != 0) {
-            notEnableRmap = false;
+            AUDIO_INFO_LOG("volumes.durationMs != 0!");
             offloadVolumeRmap_ = std::async(std::launch::async,
-                [this, sessionId, streamType, volumeDeviceClass, deviceClass, deviceNetId] {
-                OffloadVolumeRmap(sessionId, streamType, volumeDeviceClass, deviceClass, deviceNetId);
+                [this, sessionId, streamType, volumeDeviceClass] {
+                OffloadVolumeRmap(sessionId, streamType, volumeDeviceClass);
             });
         } else {
             AudioVolume::GetInstance()->SetHistoryVolume(streamIndex_, volume);
         }
         AudioVolume::GetInstance()->Monitor(streamIndex_, true);
     }
-    if (!notEnableRmap) {
-        return SUCCESS;
-    }
     std::shared_ptr<IAudioRenderSink> audioRendererSinkInstance = GetRenderSinkInstance(deviceClass, deviceNetId);
     if (audioRendererSinkInstance == nullptr) {
         AUDIO_ERR_LOG("Renderer is null.");
         return ERROR;
     }
-    return audioRendererSinkInstance->SetVolume(volume, volume);
+    int32_t result = SUCCESS;
+    if (volumes.durationMs != 0) {
+        result = audioRendererSinkInstance->SetVolumeWithRamp(volume, volume, volumes.durationMs);
+    } else {
+        result = audioRendererSinkInstance->SetVolume(volume, volume);
+    }
+    return result;
 }
 
 int32_t HpaeRendererStreamImpl::SetOffloadDataCallbackState(int32_t state)

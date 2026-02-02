@@ -43,7 +43,6 @@ static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
-static const std::string SPEAKER_SINK_NAME = "Speaker";
 
 HpaeManagerThread::~HpaeManagerThread()
 {
@@ -114,7 +113,6 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(CONNECT_CO_BUFFER_NODE, &HpaeManager::HandleConnectCoBufferNode);
     RegisterHandler(DISCONNECT_CO_BUFFER_NODE, &HpaeManager::HandleDisConnectCoBufferNode);
     RegisterHandler(INIT_SOURCE_RESULT, &HpaeManager::HandleInitSourceResult);
-    RegisterHandler(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO, &HpaeManager::HandleBypassSpatializationForStereo);
 }
 
 HpaeManager::~HpaeManager()
@@ -629,7 +627,7 @@ int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
         lock.lock();
     }
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-        HILOG_COMM_WARN("[CloseOutAudioPort]can not find sinkName: %{public}s in rendererManagerMap_",
+        HILOG_COMM_WARN("[CloseOutAudioPort]can not find sink[%{public}s] in rendererManagerMap_",
             sinkName.c_str());
         return SUCCESS;
     }
@@ -768,7 +766,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             return;
         }
         
-        if (!SafeGetMap(rendererManagerMap_, name)) {
+        if (!SafeGetMap(capturerManagerMap_, name)) {
             AUDIO_WARNING_LOG("source: %s not exist, do not change default source", name.c_str());
             return;
         }
@@ -862,6 +860,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
             }
             return;
         }
+
         std::string name = capturerIdSourceNameMap_[sourceOutputId];
         if (sourceName == name) {
             HILOG_COMM_INFO("[MoveSourceOutputByIndexOrName]source:%{public}s is the same, no need move",
@@ -1193,6 +1192,7 @@ void HpaeManager::HandleMoveAllSinkInputs(
             sinkInputs_[sessionId].sinkName = sinkName;
         }
     }
+
     if (moveType == MOVE_PREFER) {
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[sinkName]);
@@ -2207,10 +2207,8 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
 
 int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    auto request = [this, spatializationState]() {
+    auto request = [spatializationState]() {
         HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
-        adaptiveSpatialRenderingEnabled_ = spatializationState.adaptiveSpatialRenderingEnabled;
-        UpdateBypassSpatializationForStereo();
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2618,6 +2616,11 @@ void HpaeManager::DeleteStreamVolumeToEffect(const std::string stringSessionID)
     SendRequest(request, __func__);
 }
 
+bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
 // interfaces for injector
 void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
 {
@@ -2694,11 +2697,6 @@ int32_t HpaeManager::PeekAudioData(
     CHECK_AND_RETURN_RET_LOG(sinkVirtualOutputNode != nullptr, ERROR_INVALID_PARAM,
         "sinkPort[%{public}u] not exit", sinkPortIndex);
     return sinkVirtualOutputNode->PeekAudioData(buffer, bufferSize, streamInfo);
-}
-
-bool HpaeManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
-{
-    return HpaePolicyManager::GetInstance().IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
 void HpaeManager::DeleteRendererManager(const std::string &name)
@@ -2794,30 +2792,6 @@ void HpaeManager::LoadCollaborationConfig()
         HpaePolicyManager::GetInstance().LoadCollaborationConfig();
     };
 
-    SendRequest(request, __func__);
-}
-
-void HpaeManager::UpdateBypassSpatializationForStereo()
-{
-    bool bypass = adaptiveSpatialRenderingEnabled_;
-    for (auto it = rendererManagerMap_.begin(); it != rendererManagerMap_.end(); ++it) {
-        CHECK_AND_CONTINUE(it->first == BT_SINK_NAME || it->first == SPEAKER_SINK_NAME);
-        bypass = bypass && it->second->IsBypassSpatializationForStereo();
-        CHECK_AND_CONTINUE(!bypass);
-        break;
-    }
-
-    CHECK_AND_RETURN(bypassSpatializationForStereo_ != bypass);
-    bypassSpatializationForStereo_ = bypass;
-    AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
-    HpaePolicyManager::GetInstance().SetBypassSpatializationForStereo(bypass);
-}
-
-void HpaeManager::HandleBypassSpatializationForStereo()
-{
-    auto request = [this]() {
-        UpdateBypassSpatializationForStereo();
-    };
     SendRequest(request, __func__);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 #include <thread>
@@ -134,8 +134,8 @@ bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t* sampleRate, int32_t* 
     return true;
 }
 
-void GetPcmBuffer(OH_AVDemuxer *&demuxer, uint32_t &trackIndex, OH_AVBuffer *&pcmBuffer,
-                  std::shared_ptr<char> &totalBuffer, OH_AVCodecBufferAttr &info)
+void GetPcmBuffer(OH_AVDemuxer *&demuxer, const uint32_t &trackIndex, OH_AVBuffer *&pcmBuffer,
+                  const std::shared_ptr<char> &totalBuffer, OH_AVCodecBufferAttr &info)
 {
     int32_t ret;
     bool flag = true;
@@ -328,7 +328,7 @@ bool CheckParameters(OH_AudioNode *audioNode, void *audioData, bool *finished)
     return true;
 }
 
-void UpdateCurrentTimeAndFinished(bool *&finished, AudioTrack *&track, long &oneAudioTime)
+void UpdateCurrentTimeAndFinished(bool *&finished, AudioTrack *&track, const long &oneAudioTime)
 {
     track->currentTime = track->currentTime + oneAudioTime;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, INPUT_TAG,
@@ -340,7 +340,7 @@ void UpdateCurrentTimeAndFinished(bool *&finished, AudioTrack *&track, long &one
     }
 }
 
-void ProcessCallBack(void *&audioData, int32_t &audioDataSize, std::string &inputId, AudioTrack *&track,
+void ProcessCallBack(void *&audioData, const int32_t &audioDataSize, const std::string &inputId, AudioTrack *&track,
                      long &oneAudioTime)
 {
     for (auto &pair : track->assets) {

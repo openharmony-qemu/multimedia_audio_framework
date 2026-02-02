@@ -21,7 +21,6 @@
 #include "audio_device_info.h"
 #include "audio_device_descriptor.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 class ICoreServiceProvider {
@@ -40,12 +39,12 @@ public:
     virtual int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) = 0;
 
     virtual ~ICoreServiceProvider() = default;
+    virtual int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) = 0;
     virtual int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId) = 0;
     virtual int32_t StartInjection(uint32_t sessionId) = 0;
     virtual void RemoveIdForInjector(uint32_t streamId) = 0;
     virtual void ReleaseCaptureInjector() = 0;
     virtual void RebuildCaptureInjector(uint32_t streamId) = 0;
-    virtual int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) = 0;
     virtual void OnCheckActiveMusicTime(const std::string &reason) = 0;
     virtual int32_t CaptureConcurrentCheck(uint32_t sessionID) = 0;
 };

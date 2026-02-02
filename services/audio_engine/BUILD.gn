@@ -70,7 +70,8 @@ ohos_shared_library("audio_engine_utils") {
 }
 
 config("audio_engine_plugins_config") {
-  include_dirs = [ "plugin/resample/include" ]
+  include_dirs =
+      [ "plugin/resample/include" ]
 }
 
 ohos_shared_library("audio_engine_plugins") {

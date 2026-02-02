@@ -105,7 +105,7 @@ public:
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
     bool CheckExistUidInAudioZone();
     void NotifyStreamSilentChange(uint32_t streamId);
-
+    int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     AudioScene GetAudioSceneFromAllZones();
 
 private:

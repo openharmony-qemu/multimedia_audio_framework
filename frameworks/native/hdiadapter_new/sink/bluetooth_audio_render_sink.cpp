@@ -421,6 +421,12 @@ int32_t BluetoothAudioRenderSink::SetVolume(float left, float right)
     return ret;
 }
 
+int32_t BluetoothAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("BluetoothAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t BluetoothAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;

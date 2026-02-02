@@ -661,6 +661,15 @@ void AudioPolicyServer::TriggerMuteCheck()
     }
 }
 
+void AudioPolicyServer::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType)
+{
+    if (zoneId != 0) {
+        streamType = GetCurrentStreamInFocus(zoneId);
+        return;
+    }
+    AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
+}
+
 int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
 {
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && IsContinueAddVol()) {
@@ -672,7 +681,8 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
     } else {
-        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(GetCurrentStreamInFocus(zoneId));
+        GetActiveAudioInterruptZone(zoneId, streamInFocus);
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);
     }
     bool active = false;
     IsStreamActive(streamInFocus, active);
@@ -1135,10 +1145,6 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volume
 int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int32_t volumeLevel)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
-    if (VolumeUtils::IsLegacySetVolumeIgnored() && !PermissionUtil::VerifySystemPermission()) {
-        AUDIO_WARNING_LOG("set volume legacy is not allowed for third hap");
-        return ERR_PERMISSION_DENIED;
-    }
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }

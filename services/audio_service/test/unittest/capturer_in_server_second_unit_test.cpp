@@ -69,6 +69,7 @@ public:
     void GetByteSizePerFrame(size_t &byteSizePerFrame) const override { return; }
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override { spanSizeInFrame = 0; }
     int32_t DropBuffer() override { return 0; }
+    void AbortCallback(int32_t abortTimes) override { return; }
     void SetStreamIndex(uint32_t index) override { return; }
     uint32_t GetStreamIndex() override { return 0; }
     int32_t Start() override { return 0; }
@@ -84,7 +85,6 @@ public:
         return bufferDesc;
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
-    void AbortCallback(int32_t abortTimes) override { return; }
 };
 
 class ICapturerStreamTest2 : public ICapturerStream {
@@ -97,6 +97,7 @@ public:
     void GetByteSizePerFrame(size_t &byteSizePerFrame) const override { return; }
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override { spanSizeInFrame = 1; }
     int32_t DropBuffer() override { return 0; }
+    void AbortCallback(int32_t abortTimes) override { return; }
     void SetStreamIndex(uint32_t index) override { return; }
     uint32_t GetStreamIndex() override { return 0; }
     int32_t Start() override { return 0; }
@@ -112,7 +113,6 @@ public:
         return bufferDesc;
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
-    void AbortCallback(int32_t abortTimes) override { return; }
 };
 
 /**

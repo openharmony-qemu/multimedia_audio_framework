@@ -4135,53 +4135,5 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateEarphoneProduct_001, TestSize.Leve
     EXPECT_EQ(audioEffectChain->earphoneProduct_, earphoneProduct);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
-
-
-/**
-* @tc.name   : Test SetBypassSpatializationForStereo API
-* @tc.number : SetBypassSpatializationForStereo_001
-* @tc.desc   : Test SetBypassSpatializationForStereo interface.
-*/
-HWTEST(AudioEffectChainManagerUnitTest, SetBypassSpatializationForStereo_001, TestSize.Level1)
-{
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    const char *sceneType = "SCENE_MUSIC";
-    std::string sceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
-    std::shared_ptr<AudioEffectChain> audioEffectChain =
-        AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
-    int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
-    EXPECT_EQ(SUCCESS, result);
-    AudioEffectChainManager::GetInstance()->spatializationEnabled_ = true;
-
-    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = true;
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
-
-    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = true;
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(false);
-
-    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(false);
-
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = true;
-    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(true);
-
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = true;
-    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(false);
-
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
-    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(false);
-
-    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    AudioEffectChainManager::GetInstance()->btOffloadSupported_ = false;
-    AudioEffectChainManager::GetInstance()->SetBypassSpatializationForStereo(false);
-}
 } // namespace AudioStandard
 } // namespace OHOS

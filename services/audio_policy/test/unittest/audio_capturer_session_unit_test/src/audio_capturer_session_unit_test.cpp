@@ -532,10 +532,19 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_026, TestSize.Level1)
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
 
-    uint32_t sessionId = 0;
+    const uint64_t testSessionId = 12345;
+    AudioStreamInfo streamInfo;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    audioCapturerSession->OnCapturerSessionAdded(testSessionId, sessionInfo, streamInfo);
+    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
+
+    sessionInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCapturerSession->OnCapturerSessionAdded(testSessionId + 1, sessionInfo, streamInfo);
+
     SessionOperation operation = SESSION_OPERATION_START;
-    audioCapturerSession->ReloadCaptureSession(sessionId, operation);
-    EXPECT_NE(audioCapturerSession->ReloadCaptureSession(sessionId, operation), ERROR);
+    auto ret = audioCapturerSession->ReloadCaptureSession(testSessionId + 1, operation);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

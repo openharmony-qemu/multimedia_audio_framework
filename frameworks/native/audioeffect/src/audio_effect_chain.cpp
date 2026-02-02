@@ -245,7 +245,7 @@ void AudioEffectChain::BuildEffectParamData(int32_t *data)
     data[LID_STATE_INDEX] = static_cast<int32_t>(lidState_);
     data[ABS_VOLUME_STATE] = static_cast<int32_t>(absVolumeState_);
     data[EARPHONE_PRODUCT] = static_cast<int32_t>(earphoneProduct_);
-    data[OUTDOOR_MODE] = static_cast<int32_t>(outdoorModle_);
+    data[OUTDOOR_MODE] = static_cast<int32_t>(outdoorMode_);
     data[SUPER_LOUDNESS_MODE] = static_cast<int32_t>(superLoudnessMode_);
     data[SYSTEMLOAD_STATE_INDEX] = static_cast<int32_t>(systemLoadState_);
 }
@@ -733,10 +733,10 @@ bool AudioEffectChain::IsEffectChainFading()
     return fadingCounts_ != 0;
 }
 
-void AudioEffectChain::SetOutdoorMode(const std::string &outdoorModle)
+void AudioEffectChain::SetOutdoorMode(const std::string &outdoorMode)
 {
-    CHECK_AND_RETURN_LOG(StringConverter(outdoorModle, outdoorModle_),
-        "convert invalid outdoorModle: %{public}s", outdoorModle.c_str());
+    CHECK_AND_RETURN_LOG(StringConverter(outdoorMode, outdoorMode_),
+        "convert invalid outdoorMode: %{public}s", outdoorMode.c_str());
 }
 
 void AudioEffectChain::SetSuperLoudnessMode(const std::string &superLoudnessMode)

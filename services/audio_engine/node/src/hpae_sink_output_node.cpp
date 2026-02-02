@@ -420,6 +420,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
+
     return SUCCESS;
 }
 
@@ -451,11 +452,11 @@ int32_t HpaeSinkOutputNode::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 }
 
 void HpaeSinkOutputNode::NotifyStreamChangeToSink(StreamChangeType change,
-    uint32_t sessionId, StreamUsage usage, RendererState state)
+    uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
     CHECK_AND_RETURN_LOG(audioRendererSink_->IsInited(), "audioRendererSink_ not init");
-    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state);
+    audioRendererSink_->NotifyStreamChangeToSink(change, sessionId, usage, state, appUid);
     UpdateAuxiliarySinkState(change, sessionId, usage, state);
 }
 
@@ -507,6 +508,7 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
     if (GetDeviceClass() != "primary") {
         return;
     }
+    CHECK_AND_RETURN(collaborationState_ == false);
     if (pcmBuffer->IsSilence() && streamRunningNum_ > 0) {
         if (!isDisplayPaPowerState_) {
             AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}" PRId64 "]s", WAIT_CLOSE_PA_TIME);
@@ -629,6 +631,12 @@ void HpaeSinkOutputNode::CheckAndSetCollDelayForRenderFrameFailed()
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is nullptr");
         statusCallback->SetCollDelayCount();
     }
+}
+
+void HpaeSinkOutputNode::SetCollaborationState(bool collaborationState)
+{
+    collaborationState_ = collaborationState;
+    AUDIO_INFO_LOG("collaborationState: %{public}d", collaborationState);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

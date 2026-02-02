@@ -98,3 +98,40 @@ ohos_unittest("bluetooth_hfp_manager_unit_test") {
     "bluetooth:btframework",
   ]
 }
+
+ohos_unittest("bluetooth_a2dp_manager_unit_test") {
+  module_out_path = module_output_path
+  testonly = true
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+  sources = [
+    "bluetooth_a2dp_manager_test.cpp",
+    "../bluetooth_sco_manager.cpp",
+    "../bluetooth_device_utils.cpp",
+    "../audio_bluetooth_manager.cpp",
+    "../bluetooth_device_manager.cpp",
+    "../bluetooth_hfp_interface.cpp",
+  ]
+
+  configs = [ ":bluetooth_client_private_config" ]
+
+  deps = [
+    "../../audioutils:audio_utils",
+    "../../../../services/audio_policy:audio_foundation",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "bluetooth:btframework",
+  ]
+}

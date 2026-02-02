@@ -291,6 +291,12 @@ int32_t MultichannelAudioRenderSink::SetVolume(float left, float right)
     return ret;
 }
 
+int32_t MultichannelAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("MultichannelAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t MultichannelAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
@@ -364,7 +370,6 @@ int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool s
         return SUCCESS;
     }
 
-    std::lock_guard<std::shared_mutex> lock(audioSceneMutex_);
     if (audioScene != currentAudioScene_) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
@@ -379,7 +384,6 @@ int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool s
 
 int32_t MultichannelAudioRenderSink::GetAudioScene(void)
 {
-    std::shared_lock<std::shared_mutex> lock(audioSceneMutex_);
     return currentAudioScene_;
 }
 

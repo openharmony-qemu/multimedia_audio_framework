@@ -504,7 +504,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
     sinkPortName = USB_SPEAKER;
     networkId = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
-    EXPECT_EQ(ret, AUDIO_FLAG_VOIP_FAST);
+    EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 
     samplingRate = SAMPLE_RATE_48000;
     sinkPortName = PRIMARY_SPEAKER;

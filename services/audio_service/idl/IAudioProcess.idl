@@ -25,7 +25,7 @@ interface IAudioProcess {
     void Start();
     void Pause([in] boolean isFlush);
     void Resume();
-    void Stop([in] int stage); // AudioProcessStage stage = AUDIO_PROC_STAGE_STOP
+    void Stop([in] int stage);
     void RequestHandleInfo();
     [oneway] void RequestHandleInfoAsync(); // default
     void Release([in] boolean isSwitchStream); // isSwitchStream = false
