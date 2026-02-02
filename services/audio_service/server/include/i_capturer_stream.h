@@ -45,6 +45,7 @@ public:
     virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
     virtual int32_t DropBuffer() = 0;
     virtual void AbortCallback(int32_t abortTimes) = 0;
+    virtual void TriggerAppsUidUpdate() { return; }
 };
 } // namespace AudioStandard
 } // namespace OHOS

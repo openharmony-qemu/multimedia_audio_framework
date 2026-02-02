@@ -87,6 +87,7 @@ public:
     {
         return ERR_NOT_SUPPORTED;
     }
+    virtual void TriggerAppsUidUpdate() { return; }
 };
 
 struct CaptureInfo {

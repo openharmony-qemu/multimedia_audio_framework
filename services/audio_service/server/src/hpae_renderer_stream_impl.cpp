@@ -1136,5 +1136,11 @@ void HpaeRendererStreamImpl::OnNotifyHdiData(const std::pair<uint64_t, TimePoint
     std::unique_lock<std::shared_mutex> lock(latencyMutex_);
     hdiPos_ = hdiPos;
 }
+
+void HpaeRendererStreamImpl::TriggerAppsUidUpdate()
+{
+    AUDIO_INFO_LOG("%{public}u Enter", streamIndex_);
+    IHpaeManager::GetHpaeManager().TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

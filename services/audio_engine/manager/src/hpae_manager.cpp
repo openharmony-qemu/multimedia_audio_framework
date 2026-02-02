@@ -2823,6 +2823,33 @@ int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
     SendRequest(request, __func__);
     return SUCCESS;
 }
+
+void HpaeManager::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId)
+{
+    auto request = [this, streamClassType, sessionId]() {
+        AUDIO_INFO_LOG("Trigger apps uid update sessionId: %{public}u streamClassType:%{public}d",
+            sessionId, streamClassType);
+        if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
+            rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            AUDIO_INFO_LOG("renderer apps uid update sessionId: %{public}u deviceName:%s",
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+            rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->TriggerAppsUidUpdate(sessionId);
+        } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
+                   capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
+            AUDIO_INFO_LOG("capturer apps uid update sessionId: %{public}u deviceName:%s",
+                sessionId, capturerIdSourceNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
+            capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->TriggerAppsUidUpdate(sessionId);
+        } else {
+            AUDIO_WARNING_LOG("Can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
+                streamClassType, sessionId);
+        }
+    };
+    SendRequest(request, __func__);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

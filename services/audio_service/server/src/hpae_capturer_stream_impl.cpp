@@ -236,5 +236,12 @@ void HpaeCapturerStreamImpl::AbortCallback(int32_t abortTimes)
 {
     abortFlag_ += abortTimes;
 }
+
+void HpaeCapturerStreamImpl::TriggerAppsUidUpdate()
+{
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    IHpaeManager::GetHpaeManager().TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_RECORD,
+        processConfig_.originalSessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
