@@ -171,6 +171,7 @@ void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(
         static_cast<CapturerReadDataJsCallback*>(data),
         [](CapturerReadDataJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     SafeJsCallbackCapturerReadDataWorkInner(event);
 
