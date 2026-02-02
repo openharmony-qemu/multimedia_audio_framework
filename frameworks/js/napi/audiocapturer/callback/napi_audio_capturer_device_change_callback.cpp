@@ -96,12 +96,14 @@ void NapiAudioCapturerDeviceChangeCallback::SafeJsCallbackCapturerDeviceInfoWork
     napi_env env, napi_value js_cb, void *context, void *data)
 {
     AudioCapturerDeviceChangeJsCallback *event = reinterpret_cast<AudioCapturerDeviceChangeJsCallback *>(data);
+
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback_) != nullptr,
         "OnJsCallbackCapturerDeviceInfo: no memory");
     std::shared_ptr<AudioCapturerDeviceChangeJsCallback> safeContext(
         static_cast<AudioCapturerDeviceChangeJsCallback*>(data),
         [](AudioCapturerDeviceChangeJsCallback *ptr) {
             delete ptr;
+            pt = nullptr;
     });
     napi_ref callback = event->callback_;
     napi_handle_scope scope = nullptr;

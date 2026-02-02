@@ -102,6 +102,7 @@ void NapiAudioCapturerInfoChangeCallback::SafeJsCallbackCapturerChangeInfoWork(
         static_cast<AudioCapturerChangeInfoJsCallback*>(data),
         [](AudioCapturerChangeInfoJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     if (event == nullptr || event->callback_ == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackCapturerChangeInfo: no memory");
@@ -141,7 +142,7 @@ void NapiAudioCapturerInfoChangeCallback::OnJsCallbackCapturerChangeInfo(napi_re
     CHECK_AND_RETURN_LOG(method != nullptr, "method is nullptr");
     AudioCapturerChangeInfoJsCallback *event =
         new AudioCapturerChangeInfoJsCallback {method, env_, capturerChangeInfo};
-    
+
     napi_acquire_threadsafe_function(acInfoChgTsfn_);
     napi_call_threadsafe_function(acInfoChgTsfn_, event, napi_tsfn_blocking);
 }
