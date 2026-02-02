@@ -60,7 +60,9 @@ void AudioInterruptDfx::ActivateAudioSessionErrorEvent(
         if (item.first.pid == callerPid && item.first.audioFocusType.sourceType == SOURCE_TYPE_INVALID) {
             interruptError.rendererInfo += "streamType: " + std::to_string(item.first.audioFocusType.streamType) +
                 " sourceType: " + std::to_string(item.first.audioFocusType.sourceType) + ";";
-            interruptError.appName = item.first.bundleName;
+            if (interruptError.appName.empty()) {
+                interruptError.appName = AudioInterruptUtils::GetAudioInterruptBundleName(item.first);
+            }
         }
     }
     if (!interruptError.rendererInfo.empty()) {
@@ -82,7 +84,9 @@ void AudioInterruptDfx::DeactivateAudioSessionErrorEvent(
         if (item.pid == callerPid) {
             interruptError.rendererInfo += "streamType: " + std::to_string(item.audioFocusType.streamType) +
                 " sourceType: " + std::to_string(item.audioFocusType.sourceType) + ";";
-            interruptError.appName = item.bundleName;
+            if (interruptError.appName.empty()) {
+                interruptError.appName = AudioInterruptUtils::GetAudioInterruptBundleName(item);
+            }
         }
     }
     if (!interruptError.rendererInfo.empty()) {
