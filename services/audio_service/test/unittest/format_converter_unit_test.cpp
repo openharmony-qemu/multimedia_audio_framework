@@ -27,7 +27,6 @@ namespace {
 const size_t BUFFER_LENGTH_FOUR = 4;
 const size_t BUFFER_LENGTH_EIGHT = 8;
 constexpr size_t NUMBER2 = 2;
-constexpr size_t NUMBER3 = 3;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER8 = 8;
 constexpr size_t NUMBER1000 = 1000;
