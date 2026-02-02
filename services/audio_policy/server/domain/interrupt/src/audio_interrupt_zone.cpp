@@ -308,9 +308,13 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
     AudioFocusIterator oldDeviceList = QueryAudioFocusFromZone(zoneId, deviceTag);
     UpdateFocusListForInject(deviceTag, newFocusList, activeFocusList, oldDeviceList);
 
-    AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d before remove",
-        tempMap[zoneId]->audioFocusInfoList.size(), zoneId);
+    size_t focusListSize = tempMap[zoneId]->audioFocusInfoList.size();
+    AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d before remove", focusListSize, zoneId);
     RemoveAudioZoneInterrupts(zoneId, oldDeviceList);
+    if (focusListSize != tempMap[zoneId]->audioFocusInfoList.size()) {
+        AUDIO_INFO_LOG("exist inject focus removed, try resume focus");
+        TryResumeAudioFocusForZone(zoneId);
+    }
     TryActiveAudioFocusForZone(zoneId, activeFocusList);
     return SUCCESS;
 }
@@ -356,8 +360,6 @@ void AudioInterruptZoneManager::TryActiveAudioFocusForZone(int32_t zoneId, Audio
             bool updateScene = false;
             service_->ActivateAudioInterruptInternal(zoneId, itActive.first, false, updateScene);
         }
-    } else {
-        TryResumeAudioFocusForZone(zoneId);
     }
     AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d after active",
         service_->zonesMap_[zoneId]->audioFocusInfoList.size(), zoneId);
@@ -372,9 +374,6 @@ void AudioInterruptZoneManager::TryResumeAudioFocusForZone(int32_t zoneId)
     auto &focusList = service_->zonesMap_[zoneId]->audioFocusInfoList;
     CHECK_AND_RETURN_LOG(focusList.size() > 0, "focus list is empty");
 
-    for (auto it = focusList.begin(); it != focusList.end(); ++it) {
-        CHECK_AND_RETURN(it->second != ACTIVE);
-    }
     service_->ResumeAudioFocusList(zoneId, false);
 }
 
