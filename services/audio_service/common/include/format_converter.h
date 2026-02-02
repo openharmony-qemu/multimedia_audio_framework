@@ -116,6 +116,7 @@ private:
 
     static FormatHandlerMap formatHandlers;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FORMAT_CONVERTER_H

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "audio_errors.h"
@@ -26,10 +27,15 @@ namespace {
 const size_t BUFFER_LENGTH_FOUR = 4;
 const size_t BUFFER_LENGTH_EIGHT = 8;
 constexpr size_t NUMBER2 = 2;
+constexpr size_t NUMBER3 = 3;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER8 = 8;
+constexpr size_t NUMBER1000 = 1000;
 constexpr float FLOAT_SCALE_16 = 1.0f / (1 << (16 - 1));
 constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (32 - 1));
+constexpr size_t BIT_8 = 8;
+constexpr size_t BIT_24 = 24;
+constexpr size_t LOW_LATENCY_EACH_FRAME_TIME_MS = 5;
 }
 class FormatConverterUnitTest : public testing::Test {
 public:
@@ -430,6 +436,35 @@ HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_004, TestSize.Level
     EXPECT_EQ(ret, true);
 
     ret = FormatConverter::DataAccumulationWithoutVolume(srcDataList, dstData);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: DataAccumulationFromVolume_005
+ * @tc.desc  : Test DataAccumulationFromVolume interface:S24
+ */
+HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_005, TestSize.Level0)
+{
+    size_t srcBufferLen = (SAMPLE_RATE_48000 / NUMBER1000 * LOW_LATENCY_EACH_FRAME_TIME_MS) * (BIT_24 / BIT_8) * STEREO;
+    uint8_t srcBuffer[srcBufferLen];
+    std::fill_n(srcBuffer, srcBufferLen, 0);
+    BufferDesc srcDesc = {srcBuffer, srcBufferLen, srcBufferLen};
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, STEREO};
+    srcData.bufferDesc = srcDesc;
+    std::vector<AudioStreamData> srcDataList = {srcData};
+
+    size_t dstBufferLen = (SAMPLE_RATE_48000 / NUMBER1000 * LOW_LATENCY_EACH_FRAME_TIME_MS) * (BIT_24 / BIT_8) * STEREO;
+    uint8_t dstBuffer[dstBufferLen];
+    std::fill_n(dstBuffer, dstBufferLen, 0);
+    BufferDesc dstDesc = {dstBuffer, dstBufferLen, dstBufferLen};
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, STEREO};
+    dstData.bufferDesc = dstDesc;
+
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
     EXPECT_EQ(ret, true);
 }
 
