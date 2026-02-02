@@ -2592,7 +2592,9 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
-        FetchOutputDeviceAndRoute("UpdateTracker_1");
+        if (!audioSceneManager_.IsPhoneCallOrChatScene()) {
+            FetchOutputDeviceAndRoute("UpdateTracker_1");
+        }
     }
 
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;

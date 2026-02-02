@@ -54,6 +54,7 @@ public:
     bool IsVoiceCallRelatedScene();
     bool IsInPhoneCallScene();
     bool IsHangUpScene();
+    bool IsPhoneCallOrChatScene() const;
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
