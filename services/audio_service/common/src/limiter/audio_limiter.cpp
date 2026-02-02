@@ -36,7 +36,7 @@ const int32_t AUDIO_FORMAT_PCM_FLOAT = 4;
 const int32_t PROC_COUNT = 4;              // process 4 times
 const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;  // 2 channel for stereo
 const int32_t AUDIO_LMT_ALGO_BYTE_PER_SAMPLE = sizeof(float);
-constexpr float FLOAT_EPS_NUM = 1e-6;
+constexpr float FLOAT_EPS_NUM = 1e-6f;
 #if USE_ARM_NEON == 1
 const int32_t NEON_FRAME_PER_ITER = 4; // 4 stereo frame in a NEON process
 const int32_t NEON_SAMPLE_PER_ITER = 8; // 8 sample in 4 stereo frame (LR)
