@@ -35,8 +35,6 @@ AudioSuiteMixerNode::AudioSuiteMixerNode()
     : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_AUDIO_MIXER,
           AudioFormat{{DEFAULT_CHANNEL_LAYOUT, DEFAULT_CHANNEL_COUNT}, DEFAULT_SAMPLE_FORMAT, DEFAULT_SAMPLE_RATE}),
       tmpOutput_(
-          PcmBufferFormat{DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_CHANNEL_LAYOUT, DEFAULT_SAMPLE_FORMAT}),
-      mixerOutput_(
           PcmBufferFormat{DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_CHANNEL_LAYOUT, DEFAULT_SAMPLE_FORMAT})
 {}
 
@@ -57,7 +55,6 @@ void AudioSuiteMixerNode::SetAudioNodeFormat(AudioFormat audioFormat)
 
     PcmBufferFormat newPcmFormat = GetAudioNodeInPcmFormat();
     tmpOutput_.ResizePcmBuffer(newPcmFormat);
-    mixerOutput_.ResizePcmBuffer(newPcmFormat);
 
     int32_t ret = InitAudioLimiter();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to Init Mixer node");
@@ -87,7 +84,7 @@ int32_t AudioSuiteMixerNode::Init()
     int32_t ret = InitAudioLimiter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init Mixer node");
 
-    pcmDurationMs_ = PCM_DATA_DEFAULT_DURATION_20_MS;
+    nodeNeedDataDuration_  = PCM_DATA_DEFAULT_DURATION_20_MS;
     AUDIO_INFO_LOG("AudioSuiteMixerNode::Init end");
     return SUCCESS;
 }
@@ -102,31 +99,32 @@ int32_t AudioSuiteMixerNode::DeInit()
     return SUCCESS;
 }
 
-AudioSuitePcmBuffer *AudioSuiteMixerNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
+std::vector<AudioSuitePcmBuffer *> AudioSuiteMixerNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
-    CHECK_AND_RETURN_RET_LOG(limiter_ != nullptr, nullptr, "limiter_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuitePcmBuffer inputs is nullptr");
-
+    std::vector<AudioSuitePcmBuffer *> retError{ nullptr };
+    CHECK_AND_RETURN_RET_LOG(limiter_ != nullptr, retError, "limiter_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), retError, "AudioSuitePcmBuffer inputs is nullptr");
+ 
     tmpOutput_.Reset();
     float *outData = reinterpret_cast<float *>(tmpOutput_.GetPcmData());
     float *inData = nullptr;
     for (auto input : inputs) {
-        CHECK_AND_RETURN_RET_LOG(input != nullptr, nullptr, "Input pcm buffer is nullptr");
-        CHECK_AND_RETURN_RET_LOG(input->IsSameFormat(tmpOutput_), nullptr, "Invalid inputPcmBuffer format");
+        CHECK_AND_RETURN_RET_LOG(input != nullptr, retError, "Input pcm buffer is nullptr");
+        CHECK_AND_RETURN_RET_LOG(input->IsSameFormat(tmpOutput_), retError, "Invalid inputPcmBuffer format");
         CHECK_AND_RETURN_RET_LOG(input->GetSampleCount() == tmpOutput_.GetSampleCount(),
-            nullptr, "Invalid inputPcmBuffer data");
+            retError, "Invalid inputPcmBuffer data");
         inData = reinterpret_cast<float *>(input->GetPcmData());
-        CHECK_AND_RETURN_RET_LOG(inData != nullptr, nullptr, "Input data is nullptr");
+        CHECK_AND_RETURN_RET_LOG(inData != nullptr, retError, "Input data is nullptr");
         for (size_t idx = 0; idx < tmpOutput_.GetSampleCount(); ++idx) {
             outData[idx] += inData[idx];
         }
     }
-
+ 
     limiter_->Process(tmpOutput_.GetSampleCount(),
         reinterpret_cast<float *>(tmpOutput_.GetPcmData()),
-        reinterpret_cast<float *>(mixerOutput_.GetPcmData()));
-
-    return &mixerOutput_;
+        reinterpret_cast<float *>(algoOutput_[0]));
+ 
+    return intermediateResult_;
 }
 
 }  // namespace AudioSuite

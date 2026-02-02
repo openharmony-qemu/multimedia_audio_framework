@@ -50,7 +50,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::TempoInit(std::string soName)
     bool loadAlgoApiFail = tempoAlgoApi_.create == nullptr || tempoAlgoApi_.destroy == nullptr ||
                            tempoAlgoApi_.setParam == nullptr || tempoAlgoApi_.apply == nullptr;
     CHECK_AND_RETURN_RET_LOG(!loadAlgoApiFail, ERROR, "load tempo algorithm function fail");
-    tempoAlgoHandle_ = tempoAlgoApi_.create(INIT_ALGO_SAMPLE_RATE);
+    tempoAlgoHandle_ = tempoAlgoApi_.create(nodeParameter_.inSampleRate);
     CHECK_AND_RETURN_RET_LOG(tempoAlgoHandle_, ERROR, "create algoHandle fail");
     return SUCCESS;
 }
@@ -72,7 +72,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::PitchInit(std::string soName)
     CHECK_AND_RETURN_RET_LOG(ret == 0 && pitchAlgoHandle_, ERROR, "load pitch algo handle fail");
 
     uint32_t replyData = 0;
-    int32_t sampleRate = INIT_ALGO_SAMPLE_RATE;
+    uint32_t sampleRate = nodeParameter_.inSampleRate;
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
     AudioEffectTransInfo cmdInfo = {sizeof(int32_t), &sampleRate};
     ret = (*pitchAlgoHandle_)->command(pitchAlgoHandle_, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -152,8 +152,8 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::SetParameter(const std::string &p
     AudioEffectTransInfo cmdInfo = {sizeof(float), &pitchRate_};
     ret = (*pitchAlgoHandle_)->command(pitchAlgoHandle_, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "Set pitch param error %{public}d", ret);
-
-    expendSize_ = static_cast<int32_t>(std::ceil(TEMPO_PITCH_ALGO_FRAME_LEN / speedRate_)) * EXPAND_FRAME_RATE +
+    CHECK_AND_RETURN_RET_LOG(speedRate_ != 0, ERROR, "speedRate is zero.");
+    expendSize_ = static_cast<int32_t>(std::ceil(nodeParameter_.frameLen / speedRate_)) * EXPAND_FRAME_RATE +
         EXPAND_FRAME_SIZE;
     tempDataOut_.resize(expendSize_);
     AUDIO_INFO_LOG("Set tempo:%{public}f, pitch:%{public}f successful", speedRate_, pitchRate_);
@@ -179,7 +179,7 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
     CHECK_AND_RETURN_RET_LOG(pitchAlgoHandle_ != nullptr, ERROR,
         "Apply para pitchAlgoHandle_ is nullptr, need init first");
 
-    int32_t frameLen = TEMPO_PITCH_ALGO_FRAME_LEN;
+    int32_t frameLen = static_cast<int32_t>(nodeParameter_.frameLen);
     int32_t outFrameLen = -1;
     int32_t copyRet = -1;
     int16_t *pcmIn = reinterpret_cast<int16_t *>(pcmInBuf[0]);

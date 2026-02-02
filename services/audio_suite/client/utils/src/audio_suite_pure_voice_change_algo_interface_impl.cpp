@@ -31,7 +31,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 namespace {
-constexpr int32_t DEFAULT_FRAME_LEN = 640;
 constexpr int32_t NUMBER_OF_PARAMETER = 3;
 constexpr int32_t NUMBER_OF_CHANNEL = 2;
 const float PCM_SAMPLE_AVERAGE_FACTOR = 0.5f;
@@ -115,8 +114,11 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Init()
     handle_.resize(memSize.stateSize);
     scratchBuf_.resize(memSize.scratchSize);
 
-    inBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
-    outBuf_.resize(DEFAULT_FRAME_LEN * sizeof(float));
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.frameLen < MAX_SAMPLE_POINT,
+        ERROR,
+        "The algorithm returned more than the maximum number of sample points.");
+    inBuf_.resize(nodeParameter_.frameLen * sizeof(float));
+    outBuf_.resize(nodeParameter_.frameLen * sizeof(float));
 
     ret = vmAlgoApi_.initAlgo(handle_.data(), scratchBuf_.data());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "Init pure algo fail");
@@ -200,8 +202,8 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
     int16_t *inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t *outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
 
-    int32_t src_index = 0;
-    for (int32_t i = 0; i < DEFAULT_FRAME_LEN; i++, src_index += NUMBER_OF_CHANNEL) {
+    uint32_t src_index = 0;
+    for (uint32_t i = 0; i < nodeParameter_.frameLen; i++, src_index += NUMBER_OF_CHANNEL) {
         inBuf_[i] = (static_cast<float>(inPcm[src_index]) + static_cast<float>(inPcm[src_index + 1])) *
                     PCM_SAMPLE_AVERAGE_FACTOR * PCM_SAMPLE_SCALE_FACTOR;
     }
@@ -218,7 +220,7 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "apply vmalgo fail.");
 
     int32_t outIndex = 0;
-    for (int32_t i = 0; i < DEFAULT_FRAME_LEN; i++) {
+    for (uint32_t i = 0; i < nodeParameter_.frameLen; i++) {
         float sample = outBuf_[i] * PCM_SAMPLE_CLIP_MAX;
         int16_t outSample = static_cast<int16_t>((sample > PCM_SAMPLE_CLIP_MAX)   ? INT16_MAX
                                                  : (sample < PCM_SAMPLE_CLIP_MIN) ? INT16_MIN

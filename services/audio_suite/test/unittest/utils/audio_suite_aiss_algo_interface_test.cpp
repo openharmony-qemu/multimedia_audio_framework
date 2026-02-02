@@ -33,6 +33,11 @@ using namespace AudioStandard;
 using namespace AudioSuite;
 using namespace testing::ext;
 
+const uint32_t PCM_FORMAT_32BIT = 4;
+const uint32_t AUDIO_SAMPLE_RATE_48K = 48000;
+const uint32_t FRAME_LENGTH = 960;
+const uint32_t INPUT_CHANNEL_COUNT = 2;
+const uint32_t OUTPUT_CHANNEL_COUNT = 4;
 class AudioSuiteAissAlgoInterfaceImplTest : public testing::Test {
 public:
     void SetUp()
@@ -42,6 +47,13 @@ public:
         }
         nc.soName = "libaudio_aiss_intergration.z.so";
         nc.soPath = "/system/lib64/";
+        nc.frameLen = FRAME_LENGTH;
+        nc.outSampleRate = AUDIO_SAMPLE_RATE_48K;
+        nc.inSampleRate = AUDIO_SAMPLE_RATE_48K;
+        nc.inChannels = INPUT_CHANNEL_COUNT;
+        nc.outChannels = OUTPUT_CHANNEL_COUNT;
+        nc.inFormat = PCM_FORMAT_32BIT;
+        nc.outFormat = PCM_FORMAT_32BIT;
     };
     void TearDown()
     {

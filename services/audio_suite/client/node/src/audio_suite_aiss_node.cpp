@@ -23,6 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+const uint32_t AISS_OUTPUT_NUM = 2;
 
 AudioSuiteAissNode::AudioSuiteAissNode()
     : AudioSuiteProcessNode(NODE_TYPE_AUDIO_SEPARATION)
@@ -35,55 +36,6 @@ AudioSuiteAissNode::~AudioSuiteAissNode()
     DeInit();
 }
 
-int32_t AudioSuiteAissNode::DoProcess()
-{
-    CHECK_AND_RETURN_RET_LOG(GetAudioNodeDataFinishedFlag() != true, SUCCESS, "AudioSuiteProcessNode"
-        "DoProcess:Current node type = %{public}d does not have more data to process.", GetNodeType());
-    CHECK_AND_RETURN_RET_LOG(Init() == SUCCESS, ERROR, "AudioSuiteAissNode init failed");
-
-    AudioSuitePcmBuffer* tempOut = nullptr;
-    std::vector<AudioSuitePcmBuffer*>& preOutputs = ReadProcessNodePreOutputData();
-    if ((GetNodeBypassStatus() == false) && !preOutputs.empty()) {
-        AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d need "
-            "do SignalProcess.", GetNodeType());
-        Trace trace("AudioSuiteAissNode::SignalProcess Start");
-        auto startTime = std::chrono::steady_clock::now();
-        tempOut = SignalProcess(preOutputs);
-        trace.End();
-        if (tempOut == nullptr) {
-            AUDIO_ERR_LOG("AudioSuiteAissNode::DoProcess: do SignalProcess failed, return a nullptr");
-            return ERR_OPERATION_FAILED;
-        }
-        tmpHumanSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
-        tmpBkgSoundOutput_.SetIsFinished(GetAudioNodeDataFinishedFlag());
-        outputStream_.WriteDataToOutput(&tmpHumanSoundOutput_);
-        outputStream_.WriteDataToOutput(&tmpBkgSoundOutput_);
-        // for dfx
-        auto endTime = std::chrono::steady_clock::now();
-        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-        CheckEffectNodeProcessTime(tempOut->GetDataDuration(), static_cast<uint64_t>(processDuration));
-    } else if (!preOutputs.empty()) {
-        AUDIO_DEBUG_LOG("AudioSuiteProcessNode::DoProcess: node type = %{public}d signalProcess "
-            "is not enabled.", GetNodeType());
-        tempOut = preOutputs[0];
-        if (tempOut == nullptr) {
-            AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d get a null pcmbuffer "
-                "from prenode", GetNodeType());
-            return ERR_INVALID_READ;
-        }
-        tempOut->SetIsFinished(GetAudioNodeDataFinishedFlag());
-        tmpHumanSoundOutput_ = *tempOut;
-        tmpBkgSoundOutput_ = *tempOut;
-        outputStream_.WriteDataToOutput(tempOut);
-        outputStream_.WriteDataToOutput(tempOut);
-    } else {
-        AUDIO_ERR_LOG("AudioSuiteProcessNode::DoProcess: node %{public}d can't get "
-            "pcmbuffer from prenodes", GetNodeType());
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
 int32_t AudioSuiteAissNode::Init()
 {
     if (isInit_ == true) {
@@ -94,34 +46,23 @@ int32_t AudioSuiteAissNode::Init()
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;
     }
-    if (!aissAlgo_) {
-        aissAlgo_ =
+    if (!algoInterface_) {
+        algoInterface_ =
             AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_AUDIO_SEPARATION, nodeParameter);
     }
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create Aiss algoInterface");
 
-    if (aissAlgo_->Init() != SUCCESS) {
+    if (algoInterface_->Init() != SUCCESS) {
         AUDIO_ERR_LOG("InitAlgorithm failed");
         return ERROR;
     }
-
+    resultNumber_ = AISS_OUTPUT_NUM;
     SetAudioNodeFormat(AudioFormat{{CH_LAYOUT_STEREO, nodeParameter.inChannels},
         static_cast<AudioSampleFormat>(nodeParameter.inFormat),
         static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
     
-    tmpOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
-        nodeParameter.outChannels,
-        CH_LAYOUT_QUAD,
-        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
-    tmpHumanSoundOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
-            nodeParameter.inChannels,
-            CH_LAYOUT_STEREO,
-            static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
-    tmpBkgSoundOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
-            nodeParameter.inChannels,
-            CH_LAYOUT_STEREO,
-            static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
     isInit_ = true;
     AUDIO_DEBUG_LOG("AudioSuiteAissNode Init success");
     return SUCCESS;
@@ -130,34 +71,13 @@ int32_t AudioSuiteAissNode::Init()
 int32_t AudioSuiteAissNode::DeInit()
 {
     isInit_ = false;
-    if (aissAlgo_ != nullptr) {
-        aissAlgo_->Deinit();
+    if (algoInterface_ != nullptr) {
+        algoInterface_->Deinit();
+        algoInterface_ = nullptr;
     }
-    aissAlgo_ = nullptr;
     
     AUDIO_DEBUG_LOG("AudioSuiteAissNode DeInit success");
     return SUCCESS;
-}
-
-AudioSuitePcmBuffer* AudioSuiteAissNode::SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs)
-{
-    CHECK_AND_RETURN_RET_LOG(aissAlgo_ != nullptr, nullptr, "aissAlgo_ is nullptr, need Init first");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "Inputs list is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "Input data is nullptr");
-    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid input format");
-    uint32_t background = 2;
-    uint32_t humanVoice = 1;
-
-    tmpin_[0] = inputs[0]->GetPcmData();
-    tmpout_[0] = tmpOutput_.GetPcmData();
-    tmpout_[humanVoice] = tmpHumanSoundOutput_.GetPcmData();
-    tmpout_[background] = tmpBkgSoundOutput_.GetPcmData();
-
-    int32_t ret = aissAlgo_->Apply(tmpin_, tmpout_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteAissNode SignalProcess Apply failed");
-
-    AUDIO_DEBUG_LOG("AudioSuiteAissNode SignalProcess success");
-    return &tmpOutput_;
 }
 
 }  // namespace AudioSuite

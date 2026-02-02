@@ -18,6 +18,7 @@
 
 #include "audio_effect.h"
 #include "audio_errors.h"
+#include "audio_suite_pcm_buffer.h"
 #include "audio_suite_algo_interface.h"
 
 namespace OHOS {
@@ -63,6 +64,8 @@ private:
     AudioBuffer outAudioBuffer_;
 
     AudioSuiteLibraryManager algoLibrary_;
+
+    AudioSuitePcmBuffer outputPcmbuffer_;
 };
 
 } // namespace AudioSuite

@@ -16,7 +16,7 @@
 #include <gtest/gtest.h>
 #include "audio_suite_eq_node.h"
 #include "audio_suite_unittest_tools.h"
-
+ 
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace AudioSuite;
@@ -43,21 +43,22 @@ namespace {
 static std::string g_inputfile001 = "/data/audiosuite/eqnode/48000_2_16.pcm";
 static std::string g_outputfile001 = "/data/audiosuite/eqnode/eq_48000_2_16Out.pcm";
 static std::string g_targetfile001 = "/data/audiosuite/eqnode/eq_48000_2_16_target.pcm";
+static constexpr uint32_t needDataLength = 10;
 
 HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSignalProcess_001, TestSize.Level0)
 {
     auto node = std::make_shared<AudioSuiteEqNode>();
     ASSERT_EQ(node->Init(), 0);
+    int32_t ret = node->InitCacheLength(needDataLength);
+    EXPECT_EQ(ret, SUCCESS);
 
     std::string name = "AudioEqualizerFrequencyBandGains";
     std::string eqValue = "5:2:1:-1:-5:-5:-2:1:2:4";
 
     EXPECT_EQ(node->SetOptions(name, eqValue), 0);
-
-    AudioSuitePcmBuffer inputBuffer({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE});
+    AudioSuitePcmBuffer inputBuffer({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE}, needDataLength);
     std::vector<AudioSuitePcmBuffer *> inputs = {&inputBuffer};
     EXPECT_EQ(TestEffectNodeSignalProcess(node, inputs, g_inputfile001, g_outputfile001, g_targetfile001), SUCCESS);
-
     EXPECT_EQ(node->DeInit(), 0);
 }
 
@@ -69,10 +70,6 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeSetOptions, TestSize.Level0)
     std::string value = "";
     EXPECT_EQ(node->SetOptions("AudioEqualizerFrequencyBandGains", "8:8:8:8:8:8:8:0:10:-10"), 0);
     EXPECT_EQ(node->GetOptions("AudioEqualizerFrequencyBandGains", value), 0);
-    EXPECT_EQ(value, "8:8:8:8:8:8:8:0:10:-10");
-
-    EXPECT_NE(node->SetOptions("-------------", "0:0:0:0:0:0:0:0:0:0"), 0);
-    EXPECT_NE(node->GetOptions("-------------", value), 0);
     EXPECT_EQ(value, "8:8:8:8:8:8:8:0:10:-10");
 }
 

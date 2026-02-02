@@ -32,6 +32,8 @@ namespace {
 static std::string g_inputPcmFilePath = "/data/audiosuite/nr/ainr_input_16000_1_S16LE.pcm";
 static std::string g_targetPcmFilePath = "/data/audiosuite/nr/ainr_target_16000_1_S16LE.pcm";
 static std::string g_outputPcmFilePath = "/data/audiosuite/nr/ainr_output_16000_1_S16LE.pcm";
+const uint32_t FRAME_LENGTH = 160;
+const uint32_t INPUT_CHANNEL_COUNT = 1;
 
 class AudioSuiteNrAlgoInterfaceImplUnitTest : public testing::Test {
 public:
@@ -50,6 +52,8 @@ void AudioSuiteNrAlgoInterfaceImplUnitTest::SetUp(void)
     }
     nc.soName = "libimedia_vqe_ainr.z.so";
     nc.soPath = "/system/lib64/";
+    nc.inChannels = INPUT_CHANNEL_COUNT;
+    nc.frameLen = FRAME_LENGTH;
     std::filesystem::remove(g_outputPcmFilePath);
 }
 

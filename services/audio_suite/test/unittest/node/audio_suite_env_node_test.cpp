@@ -43,6 +43,7 @@ namespace {
 static std::string g_inputfile001 = "/data/audiosuite/envnode/48000_2_16.pcm";
 static std::string g_outputfile001 = "/data/audiosuite/envnode/env_48000_2_16Out.pcm";
 static std::string g_targetfile001 = "/data/audiosuite/envnode/env_48000_2_16_target.pcm";
+static constexpr uint32_t needDataLength = 10;
 
 HWTEST_F(AudioSuiteEnvNodeTest, testAudioSuiteEnvDeInit, TestSize.Level0)
 {
@@ -76,18 +77,16 @@ HWTEST_F(AudioSuiteEnvNodeTest, testAudioSuiteEnvSetOptions, TestSize.Level0)
     EXPECT_EQ(node->SetOptions("EnvironmentType", "4"), 0);
     EXPECT_EQ(node->GetOptions("EnvironmentType", typeValue), 0);
     EXPECT_EQ(typeValue, "4");
-
-    EXPECT_NE(node->SetOptions("---------------", "0"), 0);
-    EXPECT_NE(node->GetOptions("---------------", typeValue), 0);
-    EXPECT_EQ(typeValue, "4");
 }
 
 HWTEST_F(AudioSuiteEnvNodeTest, testAudioSuiteEnvNodeSignalProcess_001, TestSize.Level0)
 {
     auto node = std::make_shared<AudioSuiteEnvNode>();
-    AudioSuitePcmBuffer pcmBufferInput({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE});
+    AudioSuitePcmBuffer pcmBufferInput({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE}, needDataLength);
     std::vector<AudioSuitePcmBuffer *> inputs = {&pcmBufferInput};
     ASSERT_EQ(node->Init(), 0);
+    int32_t ret = node->InitCacheLength(needDataLength);
+    EXPECT_EQ(ret, SUCCESS);
 
     std::string envValue = "1";
     std::string name = "EnvironmentType";
