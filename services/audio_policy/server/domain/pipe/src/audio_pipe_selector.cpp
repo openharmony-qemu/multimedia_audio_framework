@@ -692,8 +692,15 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
     moduleInfo.macAddress = deviceDesc->macAddress_;
     if (deviceDesc->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
         CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().empty(), "audio streamInfo empty");
-        CHECK_AND_RETURN_LOG(!deviceDesc->GetAudioStreamInfo().back().samplingRate.empty(), "samplingRate set empty");
-        moduleInfo.rate = to_string(*(deviceDesc->GetAudioStreamInfo().back().samplingRate.begin()));
+        const DeviceStreamInfo deviceAudioStreamInfo = deviceDesc->GetAudioStreamInfo().back();
+
+        CHECK_AND_RETURN_LOG(!deviceAudioStreamInfo.samplingRate.empty(), "samplingRate set empty");
+        moduleInfo.rate = to_string(*(deviceAudioStreamInfo.samplingRate.begin()));
+
+        CHECK_AND_RETURN_LOG(AudioDefinitionPolicyUtils::enumToFormatStr.find(deviceAudioStreamInfo.format) !=
+            AudioDefinitionPolicyUtils::enumToFormatStr.end(),
+            "Not found %{public}u in enumToFormatStr", static_cast<uint32_t>(deviceAudioStreamInfo.format));
+        moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[deviceAudioStreamInfo.format];
     }
 }
 

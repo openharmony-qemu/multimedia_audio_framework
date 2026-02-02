@@ -19,6 +19,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_injector_policy.h"
 #include "audio_definition_adapter_info.h"
+#include "audio_definition_policy_utils.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -273,6 +274,13 @@ AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPi
             return streamInfo;
         }
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(rate);
+        // format conversion is supported only when the high-resolution(96k) low-latency route is used
+        CHECK_AND_RETURN_RET(streamInfo.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000, streamInfo);
+        const std::string &format = pipeInfo->moduleInfo_.format;
+        CHECK_AND_RETURN_RET_LOG(AudioDefinitionPolicyUtils::formatStrToEnum.find(format) !=
+            AudioDefinitionPolicyUtils::formatStrToEnum.end(), streamInfo,
+            "Not found %{public}s in formatStrToEnum", format.c_str());
+        streamInfo.format = AudioDefinitionPolicyUtils::formatStrToEnum[format];
     }
     return streamInfo;
 }

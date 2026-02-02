@@ -25,14 +25,22 @@
 namespace OHOS {
 namespace AudioStandard {
 #define PCM_FLOAT_EPS 1e-6f
+#define BIT_8 8
 #define BIT_16 16
+#define BIT_24 24
 #define BIT_32 32
 #define INT32_FORMAT_SHIFT 31
-static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
+#define VOLUME_DIV_NUMBER 65536
 
+namespace {
 constexpr size_t QUARTER = 4;
 constexpr float FLOAT_SCALE_16 = 1.0f / (1 << (BIT_16 - 1));
 constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (BIT_32 - 1));
+constexpr size_t FORMAT_S24_BYTES = 3;
+constexpr int64_t INT24_MAX = (1 << (BIT_24 - 1)) - 1;
+constexpr int64_t INT24_MIN = -(1 << (BIT_24 - 1));
+constexpr size_t NUM_2 = 2;
+}
 
 static float CapMax(float v)
 {
@@ -52,6 +60,13 @@ static int16_t ConvertFromFloatTo16Bit(const float *a)
     return static_cast<int16_t>(v);
 }
 
+static int32_t ConvertFromFloatTo24Bit(const float *a)
+{
+    float tmp = *a;
+    float v = CapMax(tmp) * (1 << (BIT_24 - 1));
+    return static_cast<int32_t>(v);
+}
+
 void MixS16Volume(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
     size_t srcListSize = srcDataList.size();
@@ -63,7 +78,7 @@ void MixS16Volume(const std::vector<AudioStreamData> &srcDataList, const AudioSt
         for (size_t i = 0; i < srcListSize; i++) {
             int32_t vol = srcDataList[i].volumeStart;
             int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset;
-            sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER;
+            sum += (*srcPtr * static_cast<int64_t>(vol)) / VOLUME_DIV_NUMBER;
         }
         offset++;
         *dstPtr++ = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
@@ -87,6 +102,28 @@ void MixS16WithoutVolume(const std::vector<AudioStreamData> &srcDataList, const 
     }
 }
 
+void MixS24Volume(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
+{
+    size_t srcListSize = srcDataList.size();
+    size_t loopCount = dstData.bufferDesc.dataLength / FORMAT_S24_BYTES;
+
+    uint8_t *dstPtr = reinterpret_cast<uint8_t *>(dstData.bufferDesc.buffer);
+    for (size_t offset = 0; loopCount > 0; loopCount--, offset += FORMAT_S24_BYTES) {
+        int64_t sum = 0;
+        for (size_t i = 0; i < srcListSize; i++) {
+            int32_t vol = srcDataList[i].volumeStart;
+            uint8_t *srcBuffer = srcDataList[i].bufferDesc.buffer + offset;
+            uint32_t srcAudioBuffer24Bit = (srcBuffer[NUM_2] << BIT_16) | (srcBuffer[1] << BIT_8) | srcBuffer[0];
+            int32_t srcAudioData24Bit = (static_cast<int32_t>(srcAudioBuffer24Bit) << BIT_8) >> BIT_8;
+            sum += (srcAudioData24Bit * static_cast<int64_t>(vol)) / VOLUME_DIV_NUMBER;
+        }
+        sum = std::min(INT24_MAX, std::max(INT24_MIN, sum));
+        *dstPtr++ = static_cast<uint8_t>(sum & 0xFF);
+        *dstPtr++ = static_cast<uint8_t>((sum >> BIT_8) & 0xFF);
+        *dstPtr++ = static_cast<uint8_t>((sum >> BIT_16) & 0xFF);
+    }
+}
+
 void MixS32Volume(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
     size_t srcListSize = srcDataList.size();
@@ -98,7 +135,7 @@ void MixS32Volume(const std::vector<AudioStreamData> &srcDataList, const AudioSt
         for (size_t i = 0; i < srcListSize; i++) {
             int32_t vol = srcDataList[i].volumeStart;
             int32_t *srcPtr = reinterpret_cast<int32_t *>(srcDataList[i].bufferDesc.buffer) + offset;
-            sum += (*srcPtr * static_cast<int64_t>(vol)) >> VOLUME_SHIFT_NUMBER;
+            sum += (*srcPtr * static_cast<int64_t>(vol)) / VOLUME_DIV_NUMBER;
         }
         offset++;
         sum = sum > INT32_MAX ? INT32_MAX : (sum < INT32_MIN ? INT32_MIN : sum);
@@ -136,10 +173,13 @@ bool FormatConverter::DataAccumulationFromVolume(const std::vector<AudioStreamDa
 
     if (dstData.streamInfo.format == SAMPLE_S16LE) {
         MixS16Volume(srcDataList, dstData);
+    } else if (dstData.streamInfo.format == SAMPLE_S24LE) {
+        MixS24Volume(srcDataList, dstData);
     } else if (dstData.streamInfo.format == SAMPLE_S32LE) {
         MixS32Volume(srcDataList, dstData);
     } else {
         AUDIO_ERR_LOG("Invalid format: %{public}d", static_cast<int32_t>(dstData.streamInfo.format));
+        return false;
     }
     return true;
 }
@@ -663,10 +703,31 @@ int32_t FormatConverter::S32StereoToS16Stereo(std::vector<char> &audioBuffer, st
     return 0;
 }
 
+int32_t FormatConverter::F32StereoToS24Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc)
+{
+    CHECK_AND_RETURN_RET(srcDesc.buffer != nullptr, -1);
+    CHECK_AND_RETURN_RET(dstDesc.buffer != nullptr, -1);
+    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / sizeof(float) * FORMAT_S24_BYTES == dstDesc.bufLength &&
+        dstDesc.bufLength % FORMAT_S24_BYTES == 0, -1, "Buffer len not match");
+    float *stcPtr = reinterpret_cast<float *>(srcDesc.buffer);
+    uint8_t *dstPtr = dstDesc.buffer;
+    const size_t count = srcDesc.bufLength / sizeof(float);
+
+    for (size_t idx = 0; idx < count; idx++) {
+        uint32_t temp = static_cast<uint32_t>(ConvertFromFloatTo24Bit(stcPtr++));
+        *dstPtr++ = static_cast<uint8_t>(temp & 0xFF);
+        *dstPtr++ = static_cast<uint8_t>((temp >> BIT_8) & 0xFF);
+        *dstPtr++ = static_cast<uint8_t>((temp >> BIT_16) & 0xFF);
+    }
+
+    return 0;
+}
+
 FormatHandlerMap FormatConverter::formatHandlers = []() {
     FormatHandlerMap handlers;
 
     InitToS16StereoHandlers(handlers);
+    InitToS24StereoHandlers(handlers);
     InitToS32StereoHandlers(handlers);
     InitToF32StereoHandlers(handlers);
     InitToS16MonoHandlers(handlers);
@@ -723,6 +784,16 @@ void FormatConverter::InitToS16StereoHandlers(FormatHandlerMap& handlers)
     [](const BufferDesc &inBuf, const BufferDesc &outBuf, bool &isDoConvert) {
         isDoConvert = true;
         return FormatConverter::F32StereoToS16Stereo(inBuf, outBuf);
+    };
+}
+
+// add convert to S24 and stereo handlers
+void FormatConverter::InitToS24StereoHandlers(FormatHandlerMap& handlers)
+{
+    handlers[{STEREO, SAMPLE_F32LE, STEREO, SAMPLE_S24LE}] =
+    [](const BufferDesc &inBuf, const BufferDesc &outBuf, bool &isDoConvert) {
+        isDoConvert = true;
+        return FormatConverter::F32StereoToS24Stereo(inBuf, outBuf);
     };
 }
 
