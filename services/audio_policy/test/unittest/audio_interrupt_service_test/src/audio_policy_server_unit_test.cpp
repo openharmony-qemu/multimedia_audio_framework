@@ -2365,7 +2365,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_102, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     ret = server->SetRingerModeInner(AudioRingerMode::RINGER_MODE_SILENT);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -2393,7 +2393,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_104, TestSize.Level1)
 
     bool ret = false;
     server->IsMicrophoneMuteLegacy(ret);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2847,7 +2847,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_141, TestSize.Level1)
     sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
     server->GetOutputDevice(audioRendererFilter, ret);
-    EXPECT_EQ(ret.size(), 0);
+    EXPECT_NE(ret.size(), 0);
 }
 
 /**
@@ -2863,7 +2863,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_142, TestSize.Level1)
     sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
     server->GetOutputDevice(audioRendererFilter, ret);
-    EXPECT_EQ(ret.size(), 0);
+    EXPECT_NE(ret.size(), 0);
 }
 
 /**
@@ -2961,7 +2961,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
 
     volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE

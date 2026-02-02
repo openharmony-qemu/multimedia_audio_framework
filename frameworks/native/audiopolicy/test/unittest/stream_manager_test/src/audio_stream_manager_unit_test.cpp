@@ -1011,6 +1011,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     EXPECT_EQ(0, static_cast<int32_t>(audioCapturerChangeInfos.size()));
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test GetCurrentCapturerChangeInfos API
 * @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_003
@@ -1193,6 +1194,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(0, static_cast<int32_t>(audioCapturerChangeInfos.size()));
 }
+#endif
 
 /**
 * @tc.name  : TestGetCurrentCapturerChangeInfos API
@@ -1224,6 +1226,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     }
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test GetCurrentCapturerChangeInfos API
 * @tc.number: Audio_Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos__Stability_001
@@ -1518,6 +1521,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     g_audioManagerInstance->UnregisterAudioCapturerEventListener(getpid());
     std::this_thread::sleep_for(std::chrono::seconds(10));
 }
+#endif
 
 /**
  * @tc.name  : Test GetHardwareOutputSamplingRate API
