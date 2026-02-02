@@ -70,16 +70,6 @@ struct SessionEffectInfo {
     int32_t systemVolumeType;
 };
 
-const std::vector<AudioChannelLayout> AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS {
-    CH_LAYOUT_STEREO,
-    CH_LAYOUT_5POINT1,
-    CH_LAYOUT_5POINT1POINT2,
-    CH_LAYOUT_7POINT1,
-    CH_LAYOUT_5POINT1POINT4,
-    CH_LAYOUT_7POINT1POINT2,
-    CH_LAYOUT_7POINT1POINT4
-};
-
 struct EffectBufferAttr {
     float *bufIn;
     float *bufOut;
