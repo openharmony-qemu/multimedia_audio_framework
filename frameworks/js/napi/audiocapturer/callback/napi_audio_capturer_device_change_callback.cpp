@@ -103,7 +103,7 @@ void NapiAudioCapturerDeviceChangeCallback::SafeJsCallbackCapturerDeviceInfoWork
         static_cast<AudioCapturerDeviceChangeJsCallback*>(data),
         [](AudioCapturerDeviceChangeJsCallback *ptr) {
             delete ptr;
-            pt = nullptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback_;
     napi_handle_scope scope = nullptr;
