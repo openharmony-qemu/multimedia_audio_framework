@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-inline onst std::string STATUS_CHANGE_CALLBACK_NAME = "statusChange";
+inline const std::string STATUS_CHANGE_CALLBACK_NAME = "statusChange";
 
 class NapiAudioLoopbackCallback : public AudioLoopbackCallback,
     public NapiAudioLoopbackCallbackInner {
