@@ -533,15 +533,10 @@ bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
     return false;
 }
 
-bool AudioZone::CheckExistUidInZone()
+bool AudioZone::CheckExistDeviceInZone()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    for (const auto &it : keys_) {
-        if (it.GetUid() > 0) {
-            return true;
-        }
-    }
-    return false;
+    return !devices_.empty() && devices_.front().first != nullptr;
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioZone::GetDeviceDescriptor(DeviceType type, std::string networkId)
