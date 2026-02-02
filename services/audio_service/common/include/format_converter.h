@@ -76,6 +76,9 @@ public:
     static int32_t F32MonoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
+    // to S24 Stereo
+    static int32_t F32StereoToS24Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+
     // to S32 Stereo
     static int32_t S16MonoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t S16StereoToS32Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
@@ -105,6 +108,7 @@ public:
     static int32_t S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted);
 private:
     static void InitToS16StereoHandlers(FormatHandlerMap& handlers);
+    static void InitToS24StereoHandlers(FormatHandlerMap& handlers);
     static void InitToS32StereoHandlers(FormatHandlerMap& handlers);
     static void InitToF32StereoHandlers(FormatHandlerMap& handlers);
     static void InitToS16MonoHandlers(FormatHandlerMap& handlers);
@@ -112,7 +116,6 @@ private:
 
     static FormatHandlerMap formatHandlers;
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FORMAT_CONVERTER_H
