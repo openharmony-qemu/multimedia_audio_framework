@@ -867,6 +867,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
         .audioMode = config.audioMode,
         .streamType = config.streamType,
         .isUltraFast = isUltraFast
+        .isLoopback = config.rendererInfo.isLoopback
     };
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         GetAudioEndpointForDevice(endpointConfig, IsEndpointTypeVoip(config, deviceInfo));

@@ -54,6 +54,7 @@ struct AudioEndpointConfig {
     AudioMode audioMode;
     AudioStreamType streamType;
     bool isUltraFast;
+    bool isLoopback;
 };
 
 class AudioEndpoint : public IProcessStatusListener {

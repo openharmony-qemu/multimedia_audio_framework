@@ -680,6 +680,7 @@ IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioEndpointConfig &endpo
     }
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     attr.address = endpointConfig.deviceInfo.GetMacAddress();
+    attr.isLoopback = endpointConfig.isLoopback;
     return attr;
 }
 
