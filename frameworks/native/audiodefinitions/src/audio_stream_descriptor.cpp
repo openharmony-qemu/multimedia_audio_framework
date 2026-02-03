@@ -60,7 +60,7 @@ AudioStreamDescriptor::AudioStreamDescriptor(
 {
 }
 
-AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> &streamDescriptor)
+AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> streamDescriptor)
 {
     CHECK_AND_RETURN_LOG(streamDescriptor != nullptr, "Error input parameter");
     for (auto &deviceDesc : streamDescriptor->newDeviceDescs_) {
