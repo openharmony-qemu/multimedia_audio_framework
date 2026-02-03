@@ -767,7 +767,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
         }
         
         if (!SafeGetMap(capturerManagerMap_, name)) {
-            AUDIO_WARNING_LOG("source: %s not exist, do not change default source", name.c_str());
+            AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
             return;
         }
         std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(defaultSource_);
