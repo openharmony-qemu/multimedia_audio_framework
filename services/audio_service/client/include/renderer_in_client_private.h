@@ -324,8 +324,6 @@ private:
 
     void CheckOperations();
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
-
     void CheckFrozenStateInStaticMode();
 
     int32_t CallStartWhenInStandby();
