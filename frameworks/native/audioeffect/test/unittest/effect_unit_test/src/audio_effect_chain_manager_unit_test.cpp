@@ -2695,6 +2695,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_004, Te
 {
     std::string sceneType = "test";
     std::string  scene = "SCENE_DEFAULT";
+    std::string defaultSceneTypeAndDeviceKey = "SCENE_DEFAULT_&_DEVICE_TYPE_SPEAKER";
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
     auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
     EXPECT_EQ(ret, ERROR);
@@ -2706,7 +2707,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_004, Te
     std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain0, audioEffectChain});
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
-
+//
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 2;
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
