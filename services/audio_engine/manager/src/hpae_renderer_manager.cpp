@@ -468,6 +468,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     }
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         noneStreamTime_ = 0;
+        UpdateAppsUid();
         outputCluster_->Start();
     }
     return SUCCESS;
@@ -944,6 +945,7 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
             }
         } else if (outputCluster_ != nullptr && outputCluster_->GetState() != STREAM_MANAGER_RUNNING &&
             CheckIsStreamRunning()) {
+            UpdateAppsUid();
             outputCluster_->Start();
         }
     };
@@ -1729,6 +1731,23 @@ void HpaeRendererManager::SetCollDelayCount()
 {
     CHECK_AND_RETURN_LOG(hpaeCoBufferNode_ != nullptr, "hpaeCoBufferNode is nullptr");
     hpaeCoBufferNode_->SetDelayCount(COLL_ALING_COUNT);
+}
+
+void HpaeRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
+        CHECK_AND_RETURN(IsRemoteDevice());
+        appsUid_.clear();
+        for (const auto &sinkInputNodePair : sinkInputNodeMap_) {
+            if (sinkInputNodePair.second->GetState() == HPAE_SESSION_RUNNING ||
+                sinkInputNodePair.first == sessionId) {
+                appsUid_.emplace_back(sinkInputNodePair.second->GetAppUid());
+            }
+        }
+        outputCluster_->UpdateAppsUid(appsUid_);
+    };
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -1147,60 +1147,12 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
 }
 
 /**
-* @tc.name  : Test GetCurrentCapturerChangeInfos API
-* @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007
-* @tc.desc  : Test GetCurrentCapturerChangeInfos interface. Returns current two capturer stream information
-*             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
-*/
-HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioCapturerOptions capturerOptions;
-    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-
-    AudioStreamManagerUnitTest::InitializeCapturerOptions(capturerOptions);
-    unique_ptr<AudioCapturer> audioFirstCapturer = AudioCapturer::Create(capturerOptions);
-    unique_ptr<AudioCapturer> audioSecondCapturer = AudioCapturer::Create(capturerOptions);
-    ASSERT_NE(nullptr, audioFirstCapturer);
-    ASSERT_NE(nullptr, audioSecondCapturer);
-
-    bool isStarted = audioFirstCapturer->Start();
-    EXPECT_EQ(true, isStarted);
-    isStarted = audioSecondCapturer->Start();
-    EXPECT_EQ(true, isStarted);
-
-    audioCapturerChangeInfos.clear();
-    ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(2, static_cast<int32_t>(audioCapturerChangeInfos.size()));
-    EXPECT_EQ(2, audioCapturerChangeInfos[0]->capturerState);
-
-    bool isStopped = audioFirstCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
-
-    isStopped = audioSecondCapturer->Stop();
-    EXPECT_EQ(true, isStopped);
-
-    bool isReleased = audioFirstCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-
-    isReleased = audioSecondCapturer->Release();
-    EXPECT_EQ(true, isReleased);
-
-    std::this_thread::sleep_for(std::chrono::seconds(WAIT_TIME));
-    audioCapturerChangeInfos.clear();
-    ret = AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
-    EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(0, static_cast<int32_t>(audioCapturerChangeInfos.size()));
-}
-
-/**
 * @tc.name  : TestGetCurrentCapturerChangeInfos API
-* @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_008
+* @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007
 * @tc.desc  : Test GetCurrentRendererChangeInfos interface to display streams details
 *             CAPTURER_PREPARED:1 CAPTURER_RUNNING:2 CAPTURER_STOPPED:3 CAPTURER_RELEASED:4 CAPTURER_PAUSED:5
 */
-HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_008, TestSize.Level1)
+HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_007, TestSize.Level1)
 {
     int32_t ret = -1;
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;

@@ -155,6 +155,8 @@ public:
     
     // interface for auxiliarySink
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
+
+    void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

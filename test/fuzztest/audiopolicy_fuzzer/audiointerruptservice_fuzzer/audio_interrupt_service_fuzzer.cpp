@@ -22,6 +22,7 @@
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_interrupt_service.h"
+#include "audio_interrupt_utils.h"
 
 using namespace std;
 
@@ -1055,7 +1056,7 @@ void AudioInterruptServiceIsMediaStreamFuzzTest(const uint8_t *rawData, size_t s
     }
     AudioStreamType audioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
 
-    interruptService->IsMediaStream(audioStreamType);
+    AudioInterruptUtils::IsMediaStream(audioStreamType);
 }
 
 void AudioInterruptServiceUpdateAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)

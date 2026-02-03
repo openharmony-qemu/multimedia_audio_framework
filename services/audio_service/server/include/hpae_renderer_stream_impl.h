@@ -105,6 +105,7 @@ public:
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
+    void TriggerAppsUidUpdate() override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
