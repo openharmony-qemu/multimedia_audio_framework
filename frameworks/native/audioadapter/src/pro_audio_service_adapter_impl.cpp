@@ -196,7 +196,7 @@ int32_t ProAudioServiceAdapterImpl::SetDefaultSource(string name)
     Trace trace("SetDefaultSource:" + name);
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().SetDefaultSource(name);
-    AUDIO_INFO_LOG("[%s]", name.c_str());
+    AUDIO_INFO_LOG("[%{public}s]", GetEncryptStr(name).c_str());
     return SUCCESS;
 }
 
@@ -246,10 +246,8 @@ int32_t ProAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
     uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
-    AUDIO_INFO_LOG("sinkInputId %{public}d, sinkIndex %{public}d, sinkName %s",
-        sinkInputId,
-        sinkIndex,
-        sinkName.c_str());
+    AUDIO_INFO_LOG("sinkInputId %{public}d, sinkIndex %{public}d, sinkName %{public}s",
+        sinkInputId, sinkIndex, GetEncryptStr(sinkName).c_str());
     AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName", HPAE_SERVICE_IMPL_TIMEOUT,
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] MoveSinkInputByIndexOrName timeout");
