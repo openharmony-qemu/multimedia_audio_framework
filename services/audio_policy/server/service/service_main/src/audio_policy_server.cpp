@@ -360,6 +360,7 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 
 void AudioPolicyServer::OnStop()
 {
+    AUDIO_INFO_LOG("Audio policy server on stop");
     audioPolicyService_.Deinit();
     coreService_->DeInit();
 #ifdef USB_ENABLE
@@ -367,6 +368,7 @@ void AudioPolicyServer::OnStop()
 #endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
+    AUDIO_INFO_LOG("Audio policy server stopped successfully");
     return;
 }
 
