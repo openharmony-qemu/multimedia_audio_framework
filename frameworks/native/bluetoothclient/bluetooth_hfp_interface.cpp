@@ -50,7 +50,7 @@ public:
     int32_t IsInbandRingingEnabled(bool &isEnabled) override;
 
     int32_t GetLastError() override;
-    std::string GetLastOpration() override;
+    std::string GetLastOperation() override;
 
 private:
     int32_t lastErrno_ = 0;
@@ -213,7 +213,7 @@ int32_t BluetoothHfpWrapInterface::GetLastError()
     return lastErrno_;
 }
 
-std::string BluetoothHfpWrapInterface::GetLastOpration()
+std::string BluetoothHfpWrapInterface::GetLastOperation()
 {
     std::unique_lock<std::mutex> lock(oprLock_);
     return lastOpr_;

@@ -30,6 +30,7 @@ static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t DEFAULT_CO_LATENCY = 260;
 static constexpr int32_t DEFAULT_WAIT_COUNT = 10;
 static constexpr int32_t COLLABORATION_CHANNELS = 2;
+static constexpr float COLL_SMALL_SIGNAL_NUM = 1e-6;
 
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
@@ -50,6 +51,10 @@ HpaeCoBufferNode::HpaeCoBufferNode()
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     waitCountThreshold_ = DEFAULT_WAIT_COUNT;
+
+    for (int i = 0; i < silenceData_.GetFrameLen() * silenceData_.GetChannelCount(); i++) {
+        silenceData_.GetPcmDataBuffer()[i] += COLL_SMALL_SIGNAL_NUM;
+    }
 }
 
 HpaeCoBufferNode::~HpaeCoBufferNode()
@@ -86,7 +91,11 @@ void HpaeCoBufferNode::DoProcess()
     std::unique_lock<std::mutex> lock(mutex_);
     
     // return if enqueue is not running
-    CHECK_AND_RETURN_LOG(enqueueRunning_, "Dequeue failed, Enqueue is not running");
+    if (enqueueRunning_ == false) {
+        outputStream_.WriteDataToOutput(&silenceData_);
+        AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
+        return;
+    }
     
     // process output buffer
     ProcessOutputFrameInner();
@@ -134,6 +143,7 @@ OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
         connectedProcessCluster_.insert(nodeInfo.sceneType);
@@ -143,7 +153,6 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
         inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
         HILOG_COMM_INFO("[Connect]HpaeCoBufferNode connect to preNode");
     }
-
     // reset status flag
     enqueueCount_ = 1;
     enqueueRunning_ = false;
@@ -240,8 +249,8 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
         if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_INFO_LOG("Dequeue data failed");
             outputStream_.WriteDataToOutput(&silenceData_);
         } else {
             outputStream_.WriteDataToOutput(&coBufferOut_);

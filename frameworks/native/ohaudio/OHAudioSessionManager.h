@@ -206,7 +206,7 @@ private:
     std::map<OH_AudioSession_CurrentOutputDeviceChangedCallback,
         std::shared_ptr<OHAudioSessionDeviceCallback>> sessionDeviceCallbacks_;
     std::map<OH_AudioSession_AvailableDeviceChangedCallback,
-        std::shared_ptr<OHAudioAvailableDeviceCallback>> availebleDeviceCallbacks_;
+        std::shared_ptr<OHAudioAvailableDeviceCallback>> availableDeviceCallbacks_;
     std::map<OH_AudioSession_CurrentInputDeviceChangedCallback,
         std::shared_ptr<OHAudioSessionInputDeviceCallback>> sessionInputDeviceCallbacks_;
 

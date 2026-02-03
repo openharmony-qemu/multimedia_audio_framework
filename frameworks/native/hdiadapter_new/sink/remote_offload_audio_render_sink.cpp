@@ -324,6 +324,12 @@ int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
     return SetVolumeInner(left, right);
 }
 
+int32_t RemoteOffloadAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t RemoteOffloadAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
@@ -718,15 +724,13 @@ int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &
     std::unordered_set<int32_t> lastAppsUid = appsUid_;
     std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
     appsUid_ = std::move(appsUidSet);
-    if (appsUid_ != lastAppsUid || appInfoNeedReset_) {
-        appInfoNeedReset_ = true;
+    if (appsUid_ != lastAppsUid) {
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "audioRender_ is null");
         CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
         std::string appInfoStr = GenerateAppsUidStr(appsUid_);
         int32_t ret = audioRender_->SetExtraParams(appInfoStr.c_str());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
         AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
-        appInfoNeedReset_ = false;
     }
     return SUCCESS;
 }
@@ -939,6 +943,8 @@ int32_t RemoteOffloadAudioRenderSink::CreateRender(void)
         << attr_.channel << "," << attr_.channelLayout;
     SetAudioParameter(AudioParamKey::NONE, "", val.str());
     deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, shared_from_this());
+    int32_t ret = audioRender_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    AUDIO_INFO_LOG("set app info params, ret: %{public}d", ret);
     validState_.store(true);
     return SUCCESS;
 }

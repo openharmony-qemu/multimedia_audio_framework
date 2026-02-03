@@ -242,12 +242,6 @@ void SetPaPowerFuzzTest()
     GetAdaptorBlueToothSink()->SetPaPower(flag);
 }
 
-void ReleaseRenderIdFuzzTest()
-{
-    g_renderId = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP,
-        true);
-}
-
 typedef void (*TestFuncs[22])();
 
 TestFuncs g_testFuncs = {

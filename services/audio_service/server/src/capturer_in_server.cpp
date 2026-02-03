@@ -34,6 +34,9 @@
 #include "volume_tools.h"
 #include "core_service_handler.h"
 #include "stream_dfx_manager.h"
+#ifdef FEATURE_CALL_MANAGER
+#include "call_manager_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +47,12 @@ namespace {
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+#ifdef FEATURE_CALL_MANAGER
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
+#endif
+enum CallbackHandlerEvent : uint32_t {
+    NOTIFY_VOIP_START = 0,
+};
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -537,6 +546,9 @@ int32_t CapturerInServer::Start()
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
         filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
         ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
+    if (stream_ != nullptr) {
+        stream_->TriggerAppsUidUpdate();
+    }
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -573,7 +585,7 @@ int32_t CapturerInServer::StartInner()
         CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
-    AudioService::GetInstance()->NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
+    NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
@@ -724,6 +736,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AudioService::GetInstance()->RemoveCapturer(streamIndex_, isSwitchStream);
+    ReleaseCallbackHandler();
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_RELEASED) {
         AUDIO_INFO_LOG("Already released");
@@ -977,6 +990,52 @@ inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
     std::atomic_store(&lastStatus_, status_);
     int32_t ret = CoreServiceHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
+}
+
+void CapturerInServer::InitCallbackHandler()
+{
+    CHECK_AND_RETURN(status_ != I_STATUS_RELEASED);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ == nullptr);
+    callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(),
+        "OS_AudioCallbackHandler", false);
+}
+
+void CapturerInServer::ReleaseCallbackHandler()
+{
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->ReleaseEventRunner();
+    callbackHandler_ = nullptr;
+}
+
+void CapturerInServer::OnHandle(uint32_t code, int64_t data)
+{
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}" PRIu64 "", code, data);
+    switch (code) {
+        case NOTIFY_VOIP_START : {
+#ifdef FEATURE_CALL_MANAGER
+            std::shared_ptr<Telephony::CallManagerClient> callManager =
+                DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+            CHECK_AND_RETURN_LOG(callManager != nullptr, "get callmanager failed");
+            callManager->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+            int32_t ret = callManager->NotifyVoIPAudioStreamStart(data);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+#endif
+            break;
+        }
+        default :
+            break;
+    }
+}
+
+void CapturerInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+    CHECK_AND_RETURN(sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+    InitCallbackHandler();
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->SendCallbackEvent(NOTIFY_VOIP_START, uid);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

@@ -49,6 +49,7 @@
 #include "audio_ec_manager.h"
 #include "audio_adapter_manager.h"
 #include "audio_pipe_manager.h"
+#include "audio_usr_select_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -118,7 +119,8 @@ private:
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-        pipeManager_(AudioPipeManager::GetPipeManager()) {}
+        pipeManager_(AudioPipeManager::GetPipeManager()),
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
     ~AudioDeviceCommon() {}
 
     void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &updatedDesc,
@@ -195,6 +197,7 @@ private:
     AudioA2dpDevice& audioA2dpDevice_;
     std::shared_ptr<AudioPipeManager> pipeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
+    AudioUsrSelectManager& audioUsrSelectManager_;
 };
 
 }

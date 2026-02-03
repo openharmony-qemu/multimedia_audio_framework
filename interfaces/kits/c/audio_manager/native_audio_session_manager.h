@@ -560,7 +560,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_UnregisterCurrentOutputDeviceChange
  * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
  *     pointer variable which will be set the audio device descriptors value
  *     Do not release the audioDeviceDescriptorArray pointer separately
- *     instead call {@link OH_AudioRoutingManager_ReleaseDevices} to release the DeviceDescriptor array
+ *     instead call {@link OH_AudioSessionManager_ReleaseDevices} to release the DeviceDescriptor array
  *     when it is no use anymore.
  * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds.
  *     or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails.
@@ -743,7 +743,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_ReleaseDevice(
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}
  *     returned by the {@link #OH_AudioManager_GetAudioSessionManager}.
- * @param enable {@code true} to enable mute suggestion while registering session state change event callback.
+ * @param enable Sets true to enable mute suggestion while registering session state change event callback.
  * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
  *     or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} Parameter validation fails.
  *     or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} Function is called without setting
@@ -759,11 +759,10 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}
  * returned by the {@link #OH_AudioManager_GetAudioSessionManager}.
- * @return {@code true} if there is other application playing audio in media usage.
+ * @return True if there is other application playing audio in media usage.
  * @since 23
  */
 bool OH_AudioSessionManager_IsOtherMediaPlaying(OH_AudioSessionManager *audioSessionManager);
-
 #ifdef __cplusplus
 }
 #endif

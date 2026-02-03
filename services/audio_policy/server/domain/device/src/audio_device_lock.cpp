@@ -145,6 +145,12 @@ void AudioDeviceLock::OnPrivacyDeviceSelected(DeviceType devType, const std::str
     audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);
 }
 
+void AudioDeviceLock::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
+    audioDeviceStatus_.OnConnectFailed(desc);
+}
+
 int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {

@@ -1506,12 +1506,12 @@ HWTEST_F(AudioPipeManagerUnitTest, IsCaptureVoipCall_003, TestSize.Level1)
 
     std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
     pipe1->adapterName_ = "aaa";
-    pipe1->routeFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
+    pipe1->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
     pipe1->id_ = 123;
 
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     desc->streamStatus_ = STREAM_STATUS_STARTED;
-    desc->routeFlag_ = AUDIO_INPUT_FLAG_VOIP_FAST;
+    desc->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
     pipe1->streamDescriptors_.push_back(desc);
 
     audioPipeManager->AddAudioPipeInfo(pipe1);

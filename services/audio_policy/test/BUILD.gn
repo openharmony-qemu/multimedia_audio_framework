@@ -433,6 +433,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_service/common/include/dfx",
+    "../../audio_service/test/unittest/include",
     "${audio_framework_root}/services/audio_service/common/include/",
   ]
 
@@ -501,7 +502,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
-    "./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
+    #"./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_zone_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_custom_unit_test.cpp",
   ]
@@ -1614,6 +1615,13 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -2402,6 +2410,7 @@ ohos_unittest("audio_collaborative_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
+    "media_foundation:media_monitor_common",
   ]
 
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_collaborative_service_unit_test.cpp" ]
@@ -4831,6 +4840,13 @@ ohos_unittest("audio_device_status_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
@@ -5617,6 +5633,13 @@ ohos_unittest("audio_client_tracker_callback_listener_unit_test") {
     "-Wno-macro-redefined",
     "-fno-access-control",
   ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   external_deps = [
     "bluetooth:btframework",

@@ -728,7 +728,7 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
     Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDescriptor->macAddress_);
     std::string productId;
     device.GetDeviceProductId(productId);
-    AudioCollaborativeService::GetAudioCollaborativeService().updateCollaborativeProductId(productId);
+    AudioCollaborativeService::GetAudioCollaborativeService().UpdateCollaborativeProductId(productId);
     AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
 
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
@@ -1241,7 +1241,7 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
     deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
-    isUltraFast = pipeManager_->IsStreamUltraFast(sessionId);
+    isUltraFast = pipeManager_->IsStreamUseUltraFastRoute(sessionId);
     return SUCCESS;
 }
 
@@ -1463,6 +1463,11 @@ void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::str
 void AudioCoreService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);
+}
+
+void AudioCoreService::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    audioDeviceStatus_.OnConnectFailed(desc);
 }
 
 void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
@@ -2587,7 +2592,9 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
-        FetchOutputDeviceAndRoute("UpdateTracker_1");
+        if (!audioSceneManager_.IsPhoneCallOrChatScene()) {
+            FetchOutputDeviceAndRoute("UpdateTracker_1");
+        }
     }
 
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
@@ -2765,8 +2772,12 @@ void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDe
  */
 void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_.front() != nullptr, "Invalid streamDesc");
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
+    if (!IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->deviceType_)) {
+        return;
+    }
     if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
         return;
     }
@@ -2826,7 +2837,8 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
 
     std::vector<SleepStrategy> strategies = {
         {
-            [&]() { return reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsNewDeviceAvailable(); },
+            [&]() { return reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsNewDeviceAvailable() ||
+                reason.IsSelectedDeviceConnectFailed(); },
             {BASE_DEVICE_SWITCH_SLEEP_US, BASE_DEVICE_SWITCH_SLEEP_US}
         },
         {
@@ -2842,11 +2854,8 @@ void AudioCoreService::SleepForSwitchDevice(std::shared_ptr<AudioStreamDescripto
             {BASE_DEVICE_SWITCH_SLEEP_US, OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US}
         },
         {
-            [&]() { return reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME; },
-            {BASE_DEVICE_SWITCH_SLEEP_US}
-        },
-        {
-            [&]() { return reason.IsCollaborativeStateChange(); },
+            [&]() { return (reason.IsUnknown() && oldSinkName == REMOTE_CAST_INNER_CAPTURER_SINK_NAME) ||
+                reason.IsCollaborativeStateChange(); },
             {BASE_DEVICE_SWITCH_SLEEP_US}
         },
     };
@@ -2898,7 +2907,8 @@ void AudioCoreService::SetVoiceCallMuteForSwitchDevice()
 void AudioCoreService::MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
     AudioStreamDeviceChangeReasonExt reason)
 {
-    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault()) {
+    if (reason.IsOverride() || reason.IsSetDefaultOutputDevice() || reason.IsCallOrRingToDefault() ||
+        reason.IsSelectedDeviceConnectFailed()) {
         int64_t muteTime = SELECT_DEVICE_MUTE_MS;
         if (newSinkName == OFFLOAD_PRIMARY_SPEAKER || oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
             muteTime = SELECT_OFFLOAD_DEVICE_MUTE_MS;
@@ -3666,7 +3676,7 @@ bool AudioCoreService::IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor>
         streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
         return false;
     }
-    streamDesc->SetUltraFastFlag(true);
+    streamDesc->SetUltraFastRequested(true);
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
     AUDIO_INFO_LOG("Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
     return true;

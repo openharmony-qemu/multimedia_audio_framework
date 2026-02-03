@@ -51,6 +51,7 @@ interface IStandardAudioService {
     void GetAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
     void SetAudioParameter([in] String networkId, [in] int key, [in] String condition, [in] String value);
     void NotifyDeviceInfo([in] String networkId, [in] boolean connected);
+    void NotifyTaskIdProxy([in] String taskId, [in] boolean connected);
     void CheckRemoteDeviceState([in] String networkId, [in] int deviceRole, [in] boolean isStartDevice);
     void SetVoiceVolume([in] float volume);
     void SetAudioMonoState([in] boolean audioMono);

@@ -71,9 +71,24 @@ AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDe
         CHECK_AND_CONTINUE(deviceDesc != nullptr);
         oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
     }
-    streamStatus_ = streamDescriptor->streamStatus_;
+
+    streamInfo_ = streamDescriptor->streamInfo_;
+    audioMode_ = streamDescriptor->audioMode_;
+    audioFlag_ = streamDescriptor->audioFlag_;
+    routeFlag_ = streamDescriptor->routeFlag_;
+    oldRouteFlag_ = streamDescriptor->oldRouteFlag_;
+    createTimeStamp_ = streamDescriptor->createTimeStamp_;
+    startTimeStamp_ = streamDescriptor->startTimeStamp_;
+    rendererInfo_ = streamDescriptor->rendererInfo_;
+    capturerInfo_ = streamDescriptor->capturerInfo_;
+    appInfo_ = streamDescriptor->appInfo_;
     sessionId_ = streamDescriptor->sessionId_;
-    rendererInfo_.streamUsage = streamDescriptor->rendererInfo_.streamUsage;
+    callerUid_ = streamDescriptor->callerUid_;
+    callerPid_ = streamDescriptor->callerPid_;
+    streamStatus_ = streamDescriptor->streamStatus_;
+    streamAction_ = streamDescriptor->streamAction_;
+    bundleName_ = streamDescriptor->bundleName_;
+    ultraFastFlag_ = streamDescriptor->ultraFastFlag_;
 }
 
 void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
@@ -96,7 +111,7 @@ void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
     streamDesc.oldDeviceDescs_ = oldDeviceDescs_;
     streamDesc.newDeviceDescs_ = newDeviceDescs_;
     streamDesc.bundleName_ = bundleName_;
-    streamDesc.ultraFastStream_ = ultraFastStream_;
+    streamDesc.ultraFastFlag_ = ultraFastFlag_;
 }
 
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
@@ -123,7 +138,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_) &&
         parcel.WriteInt32(oldOriginalFlag_) &&
         ecStreamInfo_.Marshalling(parcel) &&
-        parcel.WriteBool(ultraFastStream_);
+        parcel.WriteUint8(ultraFastFlag_);
 }
 
 AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
@@ -155,7 +170,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->UnmarshallingDeviceDescVector(parcel, info->newDeviceDescs_);
     info->oldOriginalFlag_ = parcel.ReadInt32();
     info->ecStreamInfo_.UnmarshallingSelf(parcel);
-    info->ultraFastStream_ = parcel.ReadBool();
+    info->ultraFastFlag_ = parcel.ReadUint8();
 
     return info;
 }
@@ -238,7 +253,7 @@ void AudioStreamDescriptor::DumpRendererStreamAttrs(std::string &dumpString)
         rendererInfo_.originalFlag, rendererInfo_.rendererFlags);
     AppendFormat(dumpString, "    - OffloadAllowed: %d\n", rendererInfo_.isOffloadAllowed);
     if (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
-        AppendFormat(dumpString, "    - UltralFastStream: %d\n", ultraFastStream_);
+        AppendFormat(dumpString, "    - UltralFastFlag: %u\n", ultraFastFlag_);
     }
 }
 

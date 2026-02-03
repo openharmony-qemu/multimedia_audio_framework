@@ -352,20 +352,19 @@ int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, c
     auto itr = std::find_if(deviceList.begin(), deviceList.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != deviceList.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
+    int32_t ownerUid = AudioStateManager::GetAudioStateManager().GetAudioSceneOwnerUid();
+    int32_t callerUid = AudioStateManager::GetAudioStateManager().GetPreferredUid(uid);
     if (!active) {
-        auto desc = std::make_shared<AudioDeviceDescriptor>();
-        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
-            SUCCESS, "redundant preferred call renderer");
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, desc, uid, "SetDeviceActive");
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
+        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
         HandleNegtiveBt(deviceType);
 #endif
     } else {
-        const auto &desc = *itr;
-        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
-            SUCCESS, "redundant preferred call renderer");
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, desc, uid, "SetDeviceActive");
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr, uid, "SetDeviceActive");
 #ifdef BLUETOOTH_ENABLE
+        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     }
@@ -386,27 +385,25 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
     auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
     CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
         "Requested device not available %{public}d ", deviceType);
-    const auto &desc = *itr;
+    int32_t ownerUid = AudioStateManager::GetAudioStateManager().GetAudioSceneOwnerUid();
+    int32_t callerUid = AudioStateManager::GetAudioStateManager().GetPreferredUid(uid);
     if (active) {
         if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-            auto Desc = std::make_shared<AudioDeviceDescriptor>(*desc);
-            Desc->isEnable_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(Desc, ENABLE_UPDATE);
+            (*itr)->isEnable_ = true;
+            audioDeviceManager_.UpdateDevicesListInfo(std::make_shared<AudioDeviceDescriptor>(**itr), ENABLE_UPDATE);
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
         }
-        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
-            SUCCESS, "redundant preferred call renderer");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(desc), uid, "SetCallDeviceActive");
+            std::make_shared<AudioDeviceDescriptor>(**itr), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
+        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
         HandleActiveBt(deviceType, (*itr)->macAddress_);
 #endif
     } else {
-        CHECK_AND_RETURN_RET_LOG(!AudioStateManager::GetAudioStateManager().IsRepeatedPreferredCallRenderer(desc, uid),
-            SUCCESS, "redundant preferred call renderer");
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), uid, "SetCallDeviceActive");
 #ifdef BLUETOOTH_ENABLE
+        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
         HandleNegtiveBt(deviceType);
 #endif
     }
@@ -482,8 +479,8 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
-    descs.push_back(AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDesc());
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
+    descs.push_back(AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDescCopy());
     activeOutputDevices_.clear();
     volumeTypeDeviceMap_.clear();
     streamUsageDeviceMap_.clear();
@@ -651,7 +648,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int32_t appUid)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
     for (auto desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
@@ -667,7 +664,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolume(int32_t appUid)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
     for (auto desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr && GetRealUid(desc) == appUid);

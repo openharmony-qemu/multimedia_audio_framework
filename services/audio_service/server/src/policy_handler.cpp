@@ -136,7 +136,7 @@ bool PolicyHandler::GetSharedVolume(AudioVolumeType streamType, DeviceType devic
         index >= IPolicyProvider::GetVolumeVectorSize()) {
         return false;
     }
-    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     vol.isMute = volumeVector_[index].isMute;
     vol.volumeFloat = volumeVector_[index].volumeFloat * mdmMuteFactor;
     vol.volumeInt = volumeVector_[index].volumeInt;

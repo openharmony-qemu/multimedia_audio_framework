@@ -95,6 +95,7 @@ bool AudioAdapterManager::Init()
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
     auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
+    lowerVolumeInfos_ = audiovolumeParser->GetLowerVolumeInfoCfg();
     AudioVolumeUtils::GetInstance().Init();
     defaultVolumeTypeList_ = (VolumeUtils::IsPCVolumeEnable()) ? PC_VOLUME_TYPE_LIST : BASE_VOLUME_TYPE_LIST;
     volumeDataMaintainer_.SetVolumeList(defaultVolumeTypeList_);
@@ -536,6 +537,8 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 {
     Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
         + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     volDeviceDesc = desc;
     AUDIO_INFO_LOG("streamType: %{public}d, device: %{public}s, volumeLevel:%{public}d",
@@ -1191,7 +1194,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     bool isScoActive = audioActiveDevice_.IsDeviceInActiveOutputDevices(DEVICE_TYPE_BLUETOOTH_SCO, false);
     AudioVolume::GetInstance()->SetScoActive(isScoActive);
 
-    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
     for (auto &streamDesc : streamDescs) {
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
         auto desc = streamDesc->newDeviceDescs_.front();
@@ -1298,12 +1301,44 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
         SetVolumeLimit(MAX_STREAM_VOLUME);
     }
 
-    volume = std::min(volume, volumeLimit_.load());
+    float volumeReduction = streamInCall ? GetVolumeReductionRatio(streamType) : 0;
+    float expect = volumeLimit_.load();
+    if (volumeType != voiceCallType &&
+        volumeReduction > std::numeric_limits<float>::epsilon() &&
+        volumeReduction < MAX_STREAM_VOLUME + std::numeric_limits<float>::epsilon()) {
+        expect *= volumeReduction;
+        AUDIO_INFO_LOG("expect:%{public}f volume:%{public}f, volumeReduction:%{public}f",
+            expect, volume, volumeReduction);
+        expect = expect > std::numeric_limits<float>::epsilon() ? expect : volumeLimit_.load();
+    }
+
+    volume = std::min(volume, expect);
+}
+
+float AudioAdapterManager::GetVolumeReductionRatio(AudioStreamType streamType)
+{
+    float volumeReduction = 0;
+    auto iter = lowerVolumeInfos_.find(streamType);
+    CHECK_AND_RETURN_RET_LOG(iter != lowerVolumeInfos_.end(), volumeReduction,
+        "streamType:%{public}d is not supported", streamType);
+    auto info = iter->second;
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, volumeReduction, "info is null");
+
+    float duckedDb = info->duckedDb;
+    CHECK_AND_RETURN_RET_LOG(duckedDb <= std::numeric_limits<float>::epsilon(), volumeReduction,
+        "duckedDb:%{public}f should be negative", duckedDb);
+
+    const int base = 10;
+    const int divider = 20;
+    volumeReduction = pow(base, duckedDb / divider);
+    AUDIO_INFO_LOG("volumeReduction:%{public}f", volumeReduction);
+
+    return volumeReduction;
 }
 
 void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
 {
-    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
     for (auto &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
@@ -3488,6 +3523,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     CHECK_AND_RETURN_LOG(desc->deviceRole_ == OUTPUT_DEVICE, "%{public}s is not output", desc->GetName().c_str());
     CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false, not init");
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
         desc->volumeBehavior_.controlMode == HILINK_MODE) {
         UpdateVolumeWhenPassThroughDeviceConnect(desc);
@@ -3509,6 +3546,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
 
 int32_t AudioAdapterManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
 {
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_OPERATION_FAILED, "device is null");
     AUDIO_INFO_LOG("streamType: %{public}d, device:%{public}s, volumeDegree:%{public}d",
@@ -3613,7 +3652,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
-    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
     for (auto &streamDesc : streamDescs) {
         auto device = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(device != nullptr && device->GetName() == desc->GetName());
@@ -3668,10 +3707,10 @@ void AudioAdapterManager::SetOffloadVolumeForStreamVolumeChange(int32_t sessionI
     SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
 }
 
-void AudioAdapterManager::updateCollaborativeProductId(const std::string &productId)
+void AudioAdapterManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
-    audioServiceAdapter_->updateCollaborativeProductId(productId);
+    audioServiceAdapter_->UpdateCollaborativeProductId(productId);
 }
 
 void AudioAdapterManager::LoadCollaborationConfig()
@@ -3712,12 +3751,6 @@ void AudioAdapterManager::SetMuteFromRemote(std::string networkId, bool mute)
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is not exist");
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, mute);
     SendVolumeKeyEventCbWithUpdateUi(STREAM_MUSIC, desc);
-}
-
-void AudioAdapterManager::SetOutputDeviceSink(int32_t device, const std::string &sinkName)
-{
-    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
-    audioServiceAdapter_->SetOutputDeviceSink(device, sinkName);
 }
 
 void AudioAdapterManager::SendVolumeKeyEventCbWithUpdateUi(AudioStreamType streamType,
@@ -3776,8 +3809,8 @@ void AudioAdapterManager::SetRemoteVolumeForPassThroughDevice(std::shared_ptr<Au
     int32_t volumeLevel)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
-    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE);
-    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == HILINK_MODE);
+    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
+        device->volumeBehavior_.controlMode == HILINK_MODE);
 
     int32_t maxRet = GetMaxVolumeLevel(STREAM_MUSIC, device);
     int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, maxRet);
@@ -3788,8 +3821,8 @@ void AudioAdapterManager::SetRemoteVolumeForPassThroughDevice(std::shared_ptr<Au
 void AudioAdapterManager::UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
-    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE);
-    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == HILINK_MODE);
+    CHECK_AND_RETURN(device->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
+        device->volumeBehavior_.controlMode == HILINK_MODE);
 
     int32_t maxRet = GetMaxVolumeLevel(STREAM_MUSIC, device);
     int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(device->volumeBehavior_.controlInitVolume, maxRet);

@@ -155,6 +155,8 @@ public:
 
     bool GetUltraFastFlag() const;
 
+    bool HasStream();
+
 private:
     void DumpCommonAttrs(std::string &dumpString);
 

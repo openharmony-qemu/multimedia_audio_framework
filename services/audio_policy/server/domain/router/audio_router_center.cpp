@@ -172,10 +172,7 @@ bool AudioRouterCenter::IsAlarmFollowRingStrategy(AudioScene audioScene, StreamU
     auto &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
     const bool isRingScene = (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING);
     const bool isAlarmUsage = (streamUsage == STREAM_USAGE_ALARM);
-    const bool isRingtoneRunning =
-        (streamCollector.IsStreamRunning(STREAM_USAGE_RINGTONE) ||
-        streamCollector.IsStreamRunning(STREAM_USAGE_VOICE_RINGTONE));
-    return isRingScene && isAlarmUsage && isRingtoneRunning;
+    return isRingScene && isAlarmUsage;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(

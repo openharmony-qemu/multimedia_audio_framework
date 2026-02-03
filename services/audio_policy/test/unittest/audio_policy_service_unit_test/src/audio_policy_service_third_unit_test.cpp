@@ -69,7 +69,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_002, TestSize.
     propertyArray.property.push_back(effectProperty);
     
     int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
+    EXPECT_EQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
 }
 
 /**
@@ -88,7 +88,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_003, TestSize.
     propertyArray.property.push_back(effectProperty);
     
     int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
+    EXPECT_EQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
 }
 
 /**
@@ -1130,6 +1130,79 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
     server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
     EXPECT_NE(server, nullptr);
 }
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_004
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_004, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+ 
+    DStatusInfo statusInfo;
+    bool isStop = false;
+    statusInfo.dmDeviceInfo = "taskId : 9";
+    statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
+    server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
+    EXPECT_EQ(statusInfo.model, "unknown");
+}
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_005
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_005, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+ 
+    DStatusInfo statusInfo;
+    bool isStop = false;
+    statusInfo.dmDeviceInfo = "9";
+    statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
+    server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
+    EXPECT_EQ(statusInfo.model, "unknown");
+}
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_006
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_006, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+ 
+    DStatusInfo statusInfo;
+    bool isStop = false;
+    statusInfo.dmDeviceInfo = "taskId : 9";
+    statusInfo.connectType = ConnectType::CONNECT_TYPE_LOCAL;
+    server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
+    EXPECT_EQ(statusInfo.model, "unknown");
+}
+
+/**
+ * @tc.name  : Test OnDeviceStatusUpdated.
+ * @tc.number: OnDeviceStatusUpdated_007
+ * @tc.desc  : Test AudioPolicyService interfaces.
+ */
+ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_007, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+ 
+    DStatusInfo statusInfo;
+    bool isStop = false;
+    statusInfo.dmDeviceInfo = "9";
+    statusInfo.connectType = ConnectType::CONNECT_TYPE_LOCAL;
+    server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
+    EXPECT_EQ(statusInfo.model, "unknown");
+}
+
 
 /**
  * @tc.name  : Test OnServiceDisconnected.

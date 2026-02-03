@@ -70,16 +70,6 @@ struct SessionEffectInfo {
     int32_t systemVolumeType;
 };
 
-const std::vector<AudioChannelLayout> AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS {
-    CH_LAYOUT_STEREO,
-    CH_LAYOUT_5POINT1,
-    CH_LAYOUT_5POINT1POINT2,
-    CH_LAYOUT_7POINT1,
-    CH_LAYOUT_5POINT1POINT4,
-    CH_LAYOUT_7POINT1POINT2,
-    CH_LAYOUT_7POINT1POINT4
-};
-
 struct EffectBufferAttr {
     float *bufIn;
     float *bufOut;
@@ -160,7 +150,6 @@ public:
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
     void UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct);
-    void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
     bool IsEffectChainFading(const std::string &sceneType);
 private:
@@ -244,7 +233,7 @@ private:
     std::string systemLoadState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
-    std::string outdoorModle_ = "0";
+    std::string outdoorMode_ = "0";
     std::string superLoudnessMode_ = "music_off";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
@@ -253,7 +242,7 @@ private:
     bool btOffloadEnabled_ = false;
     bool spkOffloadEnabled_ = false;
     bool initializedLogFlag_ = true;
-    bool btOffloadSupported_ = true;
+    bool btOffloadSupported_ = false;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool isDefaultEffectChainExisted_ = false;
     int32_t defaultEffectChainCount_ = 0;

@@ -596,6 +596,12 @@ void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSession
     manager_->DeleteStreamVolumeToEffect(stringSessionID);
 }
 
+bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
+    return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
 // interfaces for injector
 void HpaeManagerImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo)
 {
@@ -624,16 +630,10 @@ int32_t HpaeManagerImpl::PeekAudioData(
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
 
-bool HpaeManagerImpl::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout)
-{
-    CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
-    return manager_->IsChannelLayoutSupportedForDspEffect(channelLayout);
-}
-
-void HpaeManagerImpl::updateCollaborativeProductId(const std::string &productId)
+void HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->updateCollaborativeProductId(productId);
+    manager_->UpdateCollaborativeProductId(productId);
 }
 
 void HpaeManagerImpl::LoadCollaborationConfig()
@@ -646,6 +646,12 @@ int32_t HpaeManagerImpl::SetAuxiliarySinkEnable(bool isEnabled)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERROR, "manager is nullptr");
     return manager_->SetAuxiliarySinkEnable(isEnabled);
+}
+
+void HpaeManagerImpl::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->TriggerAppsUidUpdate(streamClassType, sessionId);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

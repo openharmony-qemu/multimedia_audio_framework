@@ -147,5 +147,27 @@ HWTEST_F(RemoteFastAudioCaptureSourceUnitTest, RemoteFastSourceUnitTest_004, Tes
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
+/**
+ * @tc.name   : Test RemoteFastSource API
+ * @tc.number : RemoteFastSourceUnitTest_005
+ * @tc.desc   : Test remote fast source update app uid
+ */
+HWTEST_F(RemoteFastAudioCaptureSourceUnitTest, RemoteFastSourceUnitTest_005, TestSize.Level1)
+{
+    EXPECT_TRUE(source_ && source_->IsInited());
+    std::vector<int32_t> appsUid = {};
+    source_->UpdateAppsUid(appsUid);
+    appsUid.push_back(20000001);
+    appsUid.push_back(20000002);
+    source_->UpdateAppsUid(appsUid);
+    int32_t ret = source_->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    source_->UpdateAppsUid(appsUid);
+    appsUid.clear();
+    source_->UpdateAppsUid(appsUid);
+    ret = source_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

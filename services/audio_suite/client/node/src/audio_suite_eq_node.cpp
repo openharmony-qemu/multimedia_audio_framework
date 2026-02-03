@@ -45,21 +45,20 @@ int32_t AudioSuiteEqNode::Init()
         AUDIO_ERR_LOG("AudioSuiteEqNode::Init failed, already inited");
         return ERROR;
     }
+    
     if (!isOutputPortInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;
     }
-    eqAlgoInterfaceImpl_ = std::make_shared<AudioSuiteEqAlgoInterfaceImpl>(nodeParameter);
-    eqAlgoInterfaceImpl_->Init();
+    algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_EQUALIZER, nodeParameter);
+    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create equalizer algoInterface");
+    algoInterface_->Init();
     SetAudioNodeFormat(AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
         static_cast<AudioSampleFormat>(nodeParameter.inFormat),
         static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
-    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
-        nodeParameter.outChannels,
-        EQ_ALGO_CHANNEL_LAYOUT,
-        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
     CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+
     isEqNodeInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEqNode::Init end");
     return SUCCESS;
@@ -67,9 +66,9 @@ int32_t AudioSuiteEqNode::Init()
 
 int32_t AudioSuiteEqNode::DeInit()
 {
-    if (eqAlgoInterfaceImpl_ != nullptr) {
-        eqAlgoInterfaceImpl_->Deinit();
-        eqAlgoInterfaceImpl_ = nullptr;
+    if (algoInterface_ != nullptr) {
+        algoInterface_->Deinit();
+        algoInterface_ = nullptr;
     }
 
     if (isEqNodeInit_) {
@@ -78,47 +77,6 @@ int32_t AudioSuiteEqNode::DeInit()
         return SUCCESS;
     }
     return ERROR;
-}
-
-AudioSuitePcmBuffer *AudioSuiteEqNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
-{
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteEqNode SignalProcess inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr, "AudioSuiteEqNode SignalProcess inputs[0] is nullptr");
-    CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), nullptr, "Invalid inputs format");
-
-    tmpIn_[0] = inputs[0]->GetPcmData();
-    tmpOut_[0] = outPcmBuffer_.GetPcmData();
-    CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, nullptr, "eqAlgoInterfaceImpl_ is nullptr");
-    int32_t ret = eqAlgoInterfaceImpl_->Apply(tmpIn_, tmpOut_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteEqNode SignalProcess Apply failed");
-    return &outPcmBuffer_;
-}
-
-int32_t AudioSuiteEqNode::SetOptions(std::string name, std::string value)
-{
-    AUDIO_INFO_LOG("AudioSuiteEqNode::SetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(name == setBandGains, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
-    CHECK_AND_RETURN_RET_LOG(eqAlgoInterfaceImpl_ != nullptr, ERROR, "eqAlgoInterfaceImpl_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!value.empty(), ERROR, "Value is empty");
-
-    paraName_ = name;
-    paraValue_ = value;
-
-    int32_t ret = eqAlgoInterfaceImpl_->SetParameter(value, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed");
-    AUDIO_INFO_LOG("SetOptions SUCCESS");
-    return SUCCESS;
-}
-
-int32_t AudioSuiteEqNode::GetOptions(std::string name, std::string &value)
-{
-    AUDIO_INFO_LOG("AudioSuiteEqNode::GetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(name == setBandGains, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
-    CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "Eq BandGains is empty");
-
-    value = paraValue_;
-    AUDIO_INFO_LOG("GetOptions SUCCESS");
-    return SUCCESS;
 }
 
 }  // namespace AudioSuite

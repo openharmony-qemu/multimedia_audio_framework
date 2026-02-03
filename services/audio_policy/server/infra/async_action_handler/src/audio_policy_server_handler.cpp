@@ -907,6 +907,10 @@ void AudioPolicyServerHandler::ValidatePreferredOutputDeviceCallback(int32_t cli
 {
     if (IsForceGetZoneDevice(pidUidMap_[clientPid])) {
         int32_t zoneId = AudioActiveDevice::GetInstance().GetAdjustVolumeZoneId();
+        if (zoneId == 0) {
+            AudioStreamType streamType = STREAM_DEFAULT;
+            AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
+        }
         if (zoneId > 0) {
             deviceDescs = AudioZoneService::GetInstance().FetchOutputDevices(zoneId,
                 STREAM_USAGE_UNKNOWN, 0, ROUTER_TYPE_DEFAULT);
@@ -1729,9 +1733,11 @@ void AudioPolicyServerHandler::HandleDeviceConfigChangedEvent(const AppExecFwk::
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     CHECK_AND_RETURN_LOG(eventContextObj->descriptor != nullptr, "EventContextObj->descriptor get nullptr");
-    CHECK_AND_RETURN_LOG(AudioCoreService::GetCoreService()->GetEventEntry() != nullptr,
-        "AudioCoreService GetEventEntry get nullptr");
-    AudioCoreService::GetCoreService()->GetEventEntry()->HandleDeviceConfigChanged(eventContextObj->descriptor);
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_LOG(audioCoreService != nullptr, "AudioCoreService is nullptr");
+    std::shared_ptr<AudioCoreService::EventEntry> eventEntry = audioCoreService->GetEventEntry();
+    CHECK_AND_RETURN_LOG(eventEntry != nullptr, "AudioCoreService GetEventEntry get nullptr");
+    eventEntry->HandleDeviceConfigChanged(eventContextObj->descriptor);
 }
 
 void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(

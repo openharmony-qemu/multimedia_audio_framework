@@ -123,7 +123,7 @@ void NapiCapturerReadDataCallback::OnReadData(size_t length)
 void NapiCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr<CapturerReadDataJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCapturerReadDataCallback: jsCb.get() is null");
+        AUDIO_ERR_LOG("readData Js Callback is null");
         return;
     }
 
@@ -171,6 +171,7 @@ void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(
         static_cast<CapturerReadDataJsCallback*>(data),
         [](CapturerReadDataJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     SafeJsCallbackCapturerReadDataWorkInner(event);
 

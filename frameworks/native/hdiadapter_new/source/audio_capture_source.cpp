@@ -26,15 +26,15 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "audio_schedule.h"
-#include "util/id_handler.h"
 #include "util/hdi_dfx_utils.h"
+#include "util/id_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "manager/hdi_monitor.h"
-#include "capturer_clock_manager.h"
 #include "audio_setting_provider.h"
+#include "capturer_clock_manager.h"
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
 
@@ -714,10 +714,9 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
     return channelLayout;
 }
 
-
 uint64_t AudioCaptureSource::GetChannelCountByChannelLayout(uint64_t channelLayout)
 {
-    AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
+    AudioChannel channel = AudioChannel::STEREO;
     AudioChannelLayout layout = static_cast<AudioChannelLayout>(channelLayout);
     if (MAP_LAYOUT_TO_CHANNEL.find(layout) != MAP_LAYOUT_TO_CHANNEL.end()) {
         return static_cast<uint64_t>(MAP_LAYOUT_TO_CHANNEL.at(layout));
@@ -1141,7 +1140,6 @@ int32_t AudioCaptureSource::InitCapture(void)
         AUDIO_INFO_LOG("capture already inited");
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("In, openMicL %{public}u, halName: %{public}s", openMic_, halName_.c_str());
     int32_t ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
     if (openMic_) {
@@ -1325,7 +1323,7 @@ void AudioCaptureSource::CaptureThreadLoop(void)
 
 int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice)
 {
-    AUDIO_INFO_LOG("current active device: %{public}d, inputDevice: %{public}d", currentActiveDevice_, inputDevice);
+    AUDIO_INFO_LOG("device: %{public}d, currentActiveDevice: %{public}d", inputDevice, currentActiveDevice_);
     if (currentActiveDevice_ == inputDevice) {
         AUDIO_INFO_LOG("input device not change, device: %{public}d, sourceType: %{public}d", inputDevice,
             attr_.sourceType);

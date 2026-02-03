@@ -349,12 +349,11 @@ public:
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
-    void updateCollaborativeProductId(const std::string &productId);
+    void UpdateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
     void SetMuteFromRemote(std::string networkId, bool mute);
-    void SetOutputDeviceSink(int32_t device, const std::string &sinkName);
 
     class RemoteVolumeCallback : public AudioParameterCallback {
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
@@ -453,6 +452,7 @@ private:
     bool IsPaRoute(uint32_t routeFlag);
     void DepressVolume(float &volume, int32_t volumeLevel,
         AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
+    float GetVolumeReductionRatio(AudioStreamType streamUsage);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
@@ -516,6 +516,7 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
+    LowerVolumeInfoMap lowerVolumeInfos_;
     AudioRingerMode ringerMode_ = RINGER_MODE_NORMAL;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
@@ -579,6 +580,7 @@ private:
     std::mutex ringerNoMuteDeviceMutex_;
     std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
     std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
+    std::mutex deviceConnectMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

@@ -475,6 +475,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
             return;
         case AUDIO_FLAG_ULTRA_FAST:
+            streamDesc->ResetUltraFastFlag();
             CHECK_AND_RETURN(!IsSupportUltraFast(streamDesc));
             break;
         default:

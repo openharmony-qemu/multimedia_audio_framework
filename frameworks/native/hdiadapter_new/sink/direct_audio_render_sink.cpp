@@ -42,7 +42,7 @@ DirectAudioRenderSink::~DirectAudioRenderSink()
         testThread_.join();
     }
 }
- 
+
 int32_t DirectAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
@@ -119,7 +119,7 @@ void DirectAudioRenderSink::StartTestThread(void)
         }
     });
 }
- 
+
 int32_t DirectAudioRenderSink::Stop(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
@@ -200,7 +200,7 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
         int64_t stamp = ClockTime::GetCurNano();
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
         CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
-    
+
         Trace trace("DirectAudioRenderSink::RenderFrame");
         int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t *>(&data),
             static_cast<uint32_t>(len), &writeLen);
@@ -244,6 +244,12 @@ int32_t DirectAudioRenderSink::SetVolume(float left, float right)
     float volume = (left + right) / half;
     int32_t ret = audioRender_->SetVolume(audioRender_, volume);
     return ret;
+}
+
+int32_t DirectAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("DirectAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
 }
 
 int32_t DirectAudioRenderSink::GetVolume(float &left, float &right)

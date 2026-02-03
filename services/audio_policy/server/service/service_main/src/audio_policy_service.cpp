@@ -138,7 +138,7 @@ void AudioPolicyService::CreateRecoveryThread()
     RecoveryDevicesThread_ = std::make_unique<std::thread>([this] {
         audioRecoveryDevice_.RecoverExcludedOutputDevices();
         audioRecoveryDevice_.RecoveryPreferredDevices();
-        audioBackgroundManager_.RecoryAppState();
+        audioBackgroundManager_.RecoveryAppState();
     });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
 }
@@ -427,6 +427,11 @@ void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::s
 void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
 {
     audioDeviceLock_.OnPrivacyDeviceSelected(devType, macAddress);
+}
+
+void AudioPolicyService::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    audioDeviceLock_.OnConnectFailed(desc);
 }
 
 void AudioPolicyService::LoadEffectLibrary()

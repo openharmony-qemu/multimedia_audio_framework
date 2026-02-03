@@ -117,32 +117,34 @@ static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
 
 static void ParseDeviceExtraInfo(std::string &info, DStatusInfo &statusInfo)
 {
-    std::string deviceExtraCapsStr;
     std::string deviceExtraInfoStr;
     auto pos = info.find(DEVICE_EXTRA_INFO_PREFIX);
-    auto postask = info.find(DEVICE_STREAM_INFO_PREFIX);
-    if (pos != std::string::npos) {
-        pos += DEVICE_EXTRA_INFO_PREFIX.length();
-        auto endPos = info.find(";", pos);
-        deviceExtraInfoStr = endPos == std::string::npos ? info.substr(pos) : info.substr(pos, endPos - pos);
-    }
+    CHECK_AND_RETURN_LOG(pos != std::string::npos, "invalid info");
+    pos += DEVICE_EXTRA_INFO_PREFIX.length();
+    auto endPos = info.find(";", pos);
+    deviceExtraInfoStr = endPos == std::string::npos ? info.substr(pos) : info.substr(pos, endPos - pos);
 
-    if (postask != std::string::npos) {
-        postask += DEVICE_STREAM_INFO_PREFIX.length();
-        auto endtask = info.find(";", postask);
-        deviceExtraCapsStr += endtask == std::string::npos ? info.substr(postask) :
-            info.substr(postask, endtask - postask);
-    }
     std::vector<std::string> strList = SplitStr(deviceExtraInfoStr, ',');
-    CHECK_AND_RETURN_LOG(strList.size() == 3 || strList.size() == 1, "invalid extra info num"); // 3、1:member num
-    statusInfo.dmDeviceInfo = deviceExtraInfoStr; // str: deviceSN,dmDeviceType,isStereo
-    if (deviceExtraInfoStr == "taskId") {
-        statusInfo.dmDeviceInfo = deviceExtraCapsStr;
-        statusInfo.dmDeviceType = static_cast<uint16_t>(std::stoul("A15", nullptr, HEX_BASE));
-    }
-    if (strList.size() == 3) { //3：strList size
-        statusInfo.dmDeviceType = static_cast<uint16_t>(HexStrToNum(strList[1])); // 1: dmDeviceType
-    }
+    CHECK_AND_RETURN_LOG(strList.size() == 3, "invalid extra info num"); // 3:member num
+    statusInfo.dmDeviceInfo = deviceExtraInfoStr;
+    statusInfo.dmDeviceType = static_cast<uint16_t>(HexStrToNum(strList[1])); // : 1 dmDeviceType
+}
+
+static void ParseTaskIdExtraInfo(std::string &info, DStatusInfo &statusInfo)
+{
+    AUDIO_INFO_LOG("ParseTaskIdExtraInfo: %{public}s %{public}d", info.c_str(), statusInfo.dmDeviceType);
+    std::string deviceExtraCapsStr;
+    auto pos = info.find(DEVICE_STREAM_INFO_PREFIX);
+    CHECK_AND_RETURN_LOG(pos != std::string::npos, "invalid info");
+    pos += DEVICE_STREAM_INFO_PREFIX.length();
+    auto endPos = info.find(";", pos);
+    deviceExtraCapsStr = endPos == std::string::npos ? info.substr(pos) : info.substr(pos, endPos - pos);
+    std::vector<std::string> strList = SplitStr(deviceExtraCapsStr, ',');
+    CHECK_AND_RETURN_LOG(strList.empty(), "strList is empty");
+    AUDIO_INFO_LOG("deviceExtraCapsStr: %{public}s", deviceExtraCapsStr.c_str());
+    statusInfo.dmDeviceInfo = deviceExtraCapsStr;
+    statusInfo.dmDeviceType = DM_DEVICE_TYPE_MUSIC_HOST;
+    AUDIO_INFO_LOG("ParseTaskIdExtraInfo success: %{public}s %{public}d", info.c_str(), statusInfo.dmDeviceType);
 }
 
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
@@ -168,6 +170,9 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
         ReceiveRemoteOffloadInfo(info, statusInfo);
         ParseDeviceExtraInfo(info, statusInfo);
+        if (info.find("taskId") != std::string::npos) {
+            ParseTaskIdExtraInfo(info, statusInfo);
+        }
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
         devListener->WriteDistributedDeviceChangedEvent(info, statusInfo, serviceStatus->status);
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {

@@ -91,12 +91,14 @@ vector<shared_ptr<AudioDeviceDescriptor>> PairDeviceRouter::DecideRingRenderDevi
     )
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
-    if (hasScoState && activeScoDevice != nullptr && activeScoDevice->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        AUDIO_INFO_LOG("Adding active SCO device:deviceType=%{public}d", activeScoDevice->deviceType_);
-        descs.push_back(activeScoDevice);
-    } else {
-        return descs;
-    }
+    CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr &&
+        !AudioStateManager::GetAudioStateManager().IsExcludedDevice(ALL_MEDIA_DEVICES, activeScoDevice) &&
+        activeScoDevice->connectState_ != SUSPEND_CONNECTED && !activeScoDevice->exceptionFlag_,
+        descs, "activeScoDevice is nullptr");
+    AUDIO_INFO_LOG("Adding active SCO device:deviceType=%{public}d, hasScoState = %{public}d",
+        activeScoDevice->deviceType_, hasScoState);
+    descs.push_back(activeScoDevice);
+
     bool needDefaultDevice = false;
     switch (streamUsage) {
         case STREAM_USAGE_ALARM:

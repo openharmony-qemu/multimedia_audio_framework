@@ -38,9 +38,10 @@ public:
 
     int32_t AddUnprocessStream(int32_t appUid) override;
 
+    int32_t GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId) override;
+
     uint64_t GetLatency() noexcept override;
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
-    int32_t GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId) override;
 
 private:
     std::mutex streamMapMutex_;

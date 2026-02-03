@@ -908,6 +908,25 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceStatus::GetDeviceByStatusInfo(
     return std::make_shared<AudioDeviceDescriptor>(deviceDesc);
 }
 
+void AudioDeviceStatus::HandTaskIdStatus(DStatusInfo &statusInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+{
+    AUDIO_INFO_LOG("HandTaskIdStatus");
+    DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
+    if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
+        AudioServerProxy::GetInstance().NotifyTaskIdInfoProxy(statusInfo.dmDeviceInfo, true);
+    }
+    AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType),
+    statusInfo.mappingInterruptId, statusInfo.mappingVolumeId, statusInfo.networkId);
+    deviceDesc.SetExtraDeviceInfo(statusInfo, PermissionUtil::VerifySystemPermission());
+    AudioCoreService::GetCoreService()->NotifyRemoteRouteStateChange(statusInfo.networkId,
+        DEVICE_TYPE_SPEAKER, true);
+    std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(deviceDesc);
+    descForCb.push_back(audioDescriptor);
+    TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
+    TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
+}
+
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
     HILOG_COMM_INFO("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
@@ -925,17 +944,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
     if (statusInfo.dmDeviceInfo.find("taskId") != std::string::npos) {
-        DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
-        if (statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED) {
-            AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(statusInfo.dmDeviceInfo, true);
-        }
-        AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType),
-        statusInfo.mappingInterruptId, statusInfo.mappingVolumeId, statusInfo.networkId);
-        deviceDesc.SetExtraDeviceInfo(statusInfo, PermissionUtil::VerifySystemPermission());
-        std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(deviceDesc);
-        descForCb.push_back(audioDescriptor);
-        TriggerDeviceChangedCallback(descForCb, statusInfo.isConnected);
-        TriggerAvailableDeviceChangedCallback(descForCb, statusInfo.isConnected);
+        HandTaskIdStatus(statusInfo, descForCb);
         return;
     }
     int32_t ret = HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
@@ -1100,12 +1109,12 @@ void AudioDeviceStatus::AddEarpiece()
 bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo)
 {
     auto devType = AudioPolicyUtils::GetInstance().GetDeviceType(moduleInfo.name);
-    
+
+    bool needOpenPort = (devType != DEVICE_TYPE_MIC);
 #ifdef MULTI_BUS_ENABLE
-    if (moduleInfo.role == ROLE_SINK) {
-#else
-    if (devType != DEVICE_TYPE_MIC) {
+    needOpenPort = (moduleInfo.role == ROLE_SINK);
 #endif
+    if (needOpenPort) {
         audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
 
         if (devType == DEVICE_TYPE_SPEAKER) {
@@ -1183,12 +1192,12 @@ void AudioDeviceStatus::AddDevice(const PolicyAdapterInfo &adapterInfo, const Ad
 
     std::list<DeviceStreamInfo> streamInfos = {};
     for (const auto &pipe : adapterInfo.pipeInfos) {
-        if (pipe == nullptr) { continue; }
+        CHECK_AND_CONTINUE(pipe != nullptr);
         if (std::find(deviceInfo.supportPipes_.begin(), deviceInfo.supportPipes_.end(), pipe->name_) ==
             deviceInfo.supportPipes_.end()) { continue; }
         
         for (const auto &spi : pipe->streamPropInfos_) {
-            if (spi == nullptr) { continue; }
+            CHECK_AND_CONTINUE(spi != nullptr);
             streamInfos.emplace_back(static_cast<AudioSamplingRate>(spi->sampleRate_), AudioEncodingType::ENCODING_PCM,
                 spi->format_, spi->channelLayout_);
         }
@@ -1208,9 +1217,7 @@ void AudioDeviceStatus::AddPreloadDevices()
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap = {};
     audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
     for (const auto &adapterPair : adapterInfoMap) {
-        if (adapterPair.second == nullptr) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(adapterPair.second != nullptr);
         const auto &adapterInfo = *(adapterPair.second);
         for (const auto &deviceInfo : adapterInfo.deviceInfos) {
             if (deviceInfo != nullptr && deviceInfo->preload_) {
@@ -1366,6 +1373,14 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     }
     audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2 param");
+}
+
+void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    CHECK_AND_RETURN(AudioStateManager::GetAudioStateManager().IsPreferredDevice(desc));
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::SELECTED_DEVICE_CONNECT_FAILED};
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnConnectFailed", reason);
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnConnectFailed", reason);
 }
 
 void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bool isConnected,
@@ -1526,13 +1541,12 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap = UserSelectDeviceMapInit();
+    auto audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
             UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>());
-            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
-                make_shared<AudioDeviceDescriptor>(desc)};
-            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
+            audioUsrSelectManager_.RestoreMediaControllerPreferredInputDevice(audioDescriptor);
 #ifdef BLUETOOTH_ENABLE
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
@@ -1543,9 +1557,10 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceCategory_ == BT_HEADPHONE && desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
+            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {audioDescriptor};
+            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             auto usage = audioDeviceManager_.GetDeviceUsage(desc);
-            auto audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
             if (audioDescriptor->networkId_ == LOCAL_NETWORK_ID && audioDescriptor->IsSameDeviceDesc(
                 *AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
                 "OnPreferredStateUpdated_1", ROUTER_TYPE_USER_SELECT).front()) && (usage & MEDIA) == MEDIA) {
@@ -1742,9 +1757,8 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         AUDIO_INFO_LOG("Update audioStreamInfo success");
     }
 
-    if (capability.isSupportHiLinkControl_) {
-        device.volumeBehavior_.controlMode = HILINK_MODE;
-    }
+    device.volumeBehavior_.controlMode = capability.isSupportHiLinkControl_ ?
+        HILINK_MODE : device.volumeBehavior_.controlMode;
 
     if (capability.isSupportRemoteVolume_) {
         device.volumeBehavior_.controlMode = PASS_THROUGH_MODE;

@@ -26,6 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 static const char *ENCODING_EAC3_NAME = "eac3";
 static const char *FAST_DISTRIBUTE_TAG = "fast_distributed";
+constexpr int32_t LENGTH_OF_PAIR = 2;
 
 // LCOV_EXCL_START
 bool AudioPolicyConfigParser::LoadConfiguration()
@@ -307,6 +308,25 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     } else if (attributeInfo.name_ == "support_ultra_fast") {
         AUDIO_INFO_LOG("Support ultra fast");
         supportUltraFast_ = (attributeInfo.value_ == "true");
+    } else if (attributeInfo.name_ == "notuse_vendorid_productid") {
+        if (attributeInfo.value_ == "All") {
+            pipeInfo->allUsbDeviceDisable_ = true;
+            AUDIO_INFO_LOG("All usb devices diasble");
+            return;
+        }
+        std::list<std::string> productList = {};
+        std::string tmpValue = attributeInfo.value_;
+        SplitStringToList(tmpValue, productList, ";");
+        for (auto product : productList) {
+            std::list<std::string> productIdAndVendorId = {};
+            SplitStringToList(product, productIdAndVendorId, "-");
+            if (productIdAndVendorId.size() == LENGTH_OF_PAIR) {
+                int32_t vendorId = std::stoi(*productIdAndVendorId.begin());
+                int32_t productId = std::stoi(*productIdAndVendorId.end());
+                pipeInfo->DisableUsbDeviceSet_.insert({productId, vendorId});
+                AUDIO_INFO_LOG("diasable usb device vendorId: %{public}d, productId: %{public}d", vendorId, productId);
+            }
+        }
     }
 }
 
@@ -633,9 +653,11 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
 
         AudioPipeRole currentRole = PIPE_ROLE_NONE;
         for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
-            if (currentRole == pipeInfo->role_ && pipeInfo->paProp_.busAddress_.empty()) {
-                continue;
-            }
+#ifdef MULTI_BUS_ENABLE
+            CHECK_AND_CONTINUE(!pipeInfo->paProp_.busAddress_.empty());
+#else
+            CHECK_AND_CONTINUE(currentRole != pipeInfo->role_);
+#endif
             currentRole = pipeInfo->role_;
             CHECK_AND_CONTINUE_LOG(pipeInfo->name_.find(MODULE_SINK_OFFLOAD) == std::string::npos,
                 "skip offload out sink.");
@@ -719,6 +741,8 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
     audioModuleInfo.fixedLatency = pipeInfo->paProp_.fixedLatency_;
     audioModuleInfo.renderInIdleState = pipeInfo->paProp_.renderInIdleState_;
     audioModuleInfo.suspendIdleTimeout = pipeInfo->suspendIdleTimeout_;
+    audioModuleInfo.allUsbDeviceDisable_ = pipeInfo->allUsbDeviceDisable_;
+    audioModuleInfo.DisableUsbDeviceSet_ = pipeInfo->DisableUsbDeviceSet_;
 }
 
 std::string AudioPolicyConfigParser::GetAudioModuleInfoName(std::string &pipeInfoName,

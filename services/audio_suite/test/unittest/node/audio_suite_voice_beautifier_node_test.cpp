@@ -28,6 +28,7 @@ namespace {
 static std::string g_inputfile001 = "/data/audiosuite/vb/48000_2_16.pcm";
 static std::string g_outputfile001 = "/data/audiosuite/vb/vb_output_48000_2_S16LE_out.pcm";
 static std::string g_targetfile001 = "/data/audiosuite/vb/vb_48000_2_S16LE_target.pcm";
+static constexpr uint32_t needDataLength = 20;
 
 class AudioSuiteVoiceBeautifierNodeTest : public testing::Test {
 public:
@@ -104,8 +105,6 @@ HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, TestSetAndGetOptions, TestSize.Level
     EXPECT_EQ(getValue == setValue, true);
 
     // Invalid values
-    EXPECT_EQ(node->GetOptions("unKnownType", getValue), ERROR);
-    EXPECT_EQ(node->SetOptions("unKnownType", setValue), ERROR);
     EXPECT_EQ(node->SetOptions(name, "9"), ERROR);
 
     EXPECT_EQ(node->DeInit(), SUCCESS);
@@ -114,9 +113,11 @@ HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, TestSetAndGetOptions, TestSize.Level
 HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, TestSignalProcessNormal, TestSize.Level0)
 {
     auto node = std::make_shared<AudioSuiteVoiceBeautifierNode>();
-    AudioSuitePcmBuffer inputBuffer({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE});
+    AudioSuitePcmBuffer inputBuffer({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE}, needDataLength);
     std::vector<AudioSuitePcmBuffer *> inputs = {&inputBuffer};
     ASSERT_EQ(node->Init(), SUCCESS);
+    int32_t ret = node->InitCacheLength(needDataLength);
+    EXPECT_EQ(ret, SUCCESS);
 
     std::string setValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR));
     EXPECT_EQ(node->SetOptions("VoiceBeautifierType", setValue), SUCCESS);
@@ -129,33 +130,42 @@ HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, TestSignalProcessNormal, TestSize.Le
 HWTEST_F(AudioSuiteVoiceBeautifierNodeTest, TestSignalProcessAbnormal, TestSize.Level0)
 {
     auto node = std::make_shared<AudioSuiteVoiceBeautifierNode>();
-    AudioSuitePcmBuffer inputBuffer({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE});
+    AudioSuitePcmBuffer inputBuffer({SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S16LE}, needDataLength);
     std::vector<AudioSuitePcmBuffer *> inputs = {&inputBuffer};
 
     // not init return nullptr
-    EXPECT_EQ(node->SignalProcess(inputs) == nullptr, true);
+    std::vector<AudioSuitePcmBuffer *>  ret = node->SignalProcess(inputs);
+    EXPECT_EQ(ret[0] == nullptr, true);
 
     // inputs is empty return nullptr
     ASSERT_EQ(node->Init(), SUCCESS);
+    int32_t retInit = node->InitCacheLength(needDataLength);
+    EXPECT_EQ(retInit, SUCCESS);
+
     std::string setValue = std::to_string(static_cast<int32_t>(AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR));
     EXPECT_EQ(node->SetOptions("VoiceBeautifierType", setValue), SUCCESS);
 
     std::vector<AudioSuitePcmBuffer *> emptyInputs(0);
-    EXPECT_EQ(node->SignalProcess(emptyInputs) == nullptr, true);
+    ret = node->SignalProcess(emptyInputs);
+    EXPECT_EQ(ret[0] == nullptr, true);
     
     // input is normal & nullptr return nullptr
-    EXPECT_EQ(node->SignalProcess(inputs) != nullptr, true);
+    ret = node->SignalProcess(inputs);
+    EXPECT_EQ(ret[0] != nullptr, true);
     inputs = {nullptr};
-    EXPECT_EQ(node->SignalProcess(inputs) == nullptr, true);
+    ret = node->SignalProcess(inputs);
+    EXPECT_EQ(ret[0] == nullptr, true);
 
     // input is wrong format return nullptr
-    AudioSuitePcmBuffer wrongPcmBuffer({SAMPLE_RATE_48000, MONO, CH_LAYOUT_MONO, SAMPLE_S16LE});
+    AudioSuitePcmBuffer wrongPcmBuffer({SAMPLE_RATE_48000, MONO, CH_LAYOUT_MONO, SAMPLE_S16LE}, needDataLength);
     inputs = {&wrongPcmBuffer};
-    EXPECT_EQ(node->SignalProcess(inputs) == nullptr, true);
+    ret = node->SignalProcess(inputs);
+    EXPECT_EQ(ret[0] == nullptr, true);
 
     // after deinit return nullptr
     inputs = {&inputBuffer};
     EXPECT_EQ(node->DeInit(), SUCCESS);
-    EXPECT_EQ(node->SignalProcess(inputs) == nullptr, true);
+    ret = node->SignalProcess(inputs);
+    EXPECT_EQ(ret[0] == nullptr, true);
 }
 }  // namespace

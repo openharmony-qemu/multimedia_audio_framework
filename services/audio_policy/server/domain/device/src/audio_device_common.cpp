@@ -408,6 +408,7 @@ void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDevic
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_RECORD_CAPTURE,
                 std::make_shared<AudioDeviceDescriptor>());
         }
+        audioUsrSelectManager_.RestoreMediaControllerPreferredInputDevice(desc);
     }
 }
 
@@ -421,10 +422,6 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     audioDeviceManager_.GetAllConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_, descForCb);
     ClearPreferredDevices(descForCb);
-
-    std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
-        make_shared<AudioDeviceDescriptor>(updatedDesc)};
-    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
 
     audioConnectedDevice_.DelConnectedDevice(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_);
@@ -477,6 +474,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     AudioAdapterManager::GetInstance().QueryDeviceVolumeBehavior(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+    std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
+        make_shared<AudioDeviceDescriptor>(updatedDesc)};
+    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     if (updatedDesc.connectState_ == VIRTUAL_CONNECTED) {

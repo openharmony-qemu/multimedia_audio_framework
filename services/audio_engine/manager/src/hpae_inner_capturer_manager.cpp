@@ -115,9 +115,7 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
         if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
             sinkInputs.emplace_back(it.second);
             sessionIds.emplace_back(it.first);
-            idStr.append("[");
-            idStr.append(std::to_string(it.first));
-            idStr.append("],");
+            idStr.append("[").append(std::to_string(it.first)).append("],");
         }
     }
     for (const auto &it : sessionIds) {
@@ -163,6 +161,7 @@ int32_t HpaeInnerCapturerManager::MoveStream(uint32_t sessionId, const std::stri
                 "innercapture", sinkName, "not find session node");
             return;
         }
+
         if (sinkName.empty()) {
             AUDIO_ERR_LOG("[StartMove] session:%{public}u failed,sinkName is empty", sessionId);
             TriggerCallback(MOVE_SESSION_FAILED, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, MOVE_SINGLE, sinkName);
@@ -1011,7 +1010,7 @@ bool HpaeInnerCapturerManager::SetSessionFade(uint32_t sessionId, IOperation ope
     std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
     sessionGainNode = rendererSceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
     if (sessionGainNode == nullptr || !IsRunning()) {
-        AUDIO_WARNING_LOG("session %{public}d do not have gain node or sink no running", sessionId);
+        AUDIO_WARNING_LOG("session %{public}d do not have gain node!", sessionId);
         if (operation != OPERATION_STARTED) {
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
             SetSessionStateForRenderer(sessionId, state);

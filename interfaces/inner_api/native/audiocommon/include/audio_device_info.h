@@ -251,6 +251,7 @@ enum DmDeviceType {
     DM_DEVICE_TYPE_UWB = 0x06C,
     DM_DEVICE_TYPE_NEARLINK_SCO = 0x032,
     DM_DEVICE_TYPE_WIFI_SOUNDBOX = 0xA,
+    DM_DEVICE_TYPE_MUSIC_HOST = 0xA15,
 };
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
@@ -489,6 +490,7 @@ public:
         SET_INPUT_DEVICE = 1004,
         CALL_OR_RING_TO_DEFAULT = 1005,
         COLLABORATIVE_STATE_CHANGE = 1006,
+        SELECTED_DEVICE_CONNECT_FAILED = 1007,
     };
 
     operator AudioStreamDeviceChangeReason() const
@@ -575,6 +577,11 @@ public:
     bool IsCollaborativeStateChange() const
     {
         return reason_ == ExtEnum::COLLABORATIVE_STATE_CHANGE;
+    }
+
+    bool IsSelectedDeviceConnectFailed() const
+    {
+        return reason_ == ExtEnum::SELECTED_DEVICE_CONNECT_FAILED;
     }
 
 private:

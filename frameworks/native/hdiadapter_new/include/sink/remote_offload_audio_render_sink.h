@@ -89,6 +89,7 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
 
     int32_t SetVolume(float left, float right) override;
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override;
     int32_t GetVolume(float &left, float &right) override;
 
     int32_t GetLatency(uint32_t &latency) override;
@@ -219,7 +220,6 @@ private:
     int64_t lastSystemTimeNS_ = 0;
     int64_t lastHdiTimeSec_ = 0;
     int64_t lastHdiTimeNanoSec_ = 0;
-    bool appInfoNeedReset_ = false;
     std::unordered_set<int32_t> appsUid_;
 };
 

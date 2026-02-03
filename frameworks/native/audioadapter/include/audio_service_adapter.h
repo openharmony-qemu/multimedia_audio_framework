@@ -269,7 +269,7 @@ public:
      *
      * @return {@link true} if support, {@link false} otherwise
      */
-    virtual void updateCollaborativeProductId(const std::string &productId) = 0;
+    virtual void UpdateCollaborativeProductId(const std::string &productId) = 0;
 
     /**
      * @brief Load Collaboration Config
@@ -277,13 +277,6 @@ public:
      * @return {@link true} if support, {@link false} otherwise
      */
     virtual void LoadCollaborationConfig() = 0;
-
-    /**
-     * @brief Load Collaboration Config
-     *
-     * @return void
-     */
-    virtual void SetOutputDeviceSink(int32_t device, const std::string &sinkName) = 0;
 
     virtual ~AudioServiceAdapter();
 };

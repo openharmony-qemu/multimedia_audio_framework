@@ -125,6 +125,12 @@ int32_t FileAudioRenderSink::SetVolume(float left, float right)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t FileAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("FileAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t FileAudioRenderSink::GetVolume(float &left, float &right)
 {
     AUDIO_INFO_LOG("not support");

@@ -19,6 +19,7 @@
 #include "audio_collaborative_service.h"
 #include "media_monitor_manager.h"
 #include "audio_core_service.h"
+#include "manager/hdi_adapter_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -113,6 +114,8 @@ int32_t AudioCollaborativeService::SetCollaborativePlaybackEnabledForDevice(
         [](void *) {
             AUDIO_ERR_LOG("SetCollaborativePlaybackEnabledForDevice timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    CHECK_AND_RETURN_RET_LOG(AudioCoreService::GetCoreService() != nullptr &&
+        AudioCoreService::GetCoreService()->GetEventEntry() != nullptr,  ERR_OPERATION_FAILED, "nullptr");
     AudioCoreService::GetCoreService()->GetEventEntry()->
         FetchOutputDeviceAndRoute("SetCollaborativePlaybackEnabledForDevice");
     return SUCCESS;
@@ -146,6 +149,7 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
             HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current device %{public}s is not in "
                 "addressToCollaborativeEnabledMap_, close collaborative service",
                 GetEncryptAddr(curDeviceAddress_).c_str());
+            UpdateCollaborativeStateToHdi(isCollaborativeStateEnabled_);
             return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_);
         }
         return SUCCESS;
@@ -155,6 +159,7 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         isCollaborativeStateEnabled_ = isCurrentCollaborativeEnabled;
         HILOG_COMM_INFO("[UpdateCollaborativeStateReal]current collaborative enabled state changed to %{public}d "
             "for Mac address %{public}s", isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
+        UpdateCollaborativeStateToHdi(isCollaborativeStateEnabled_);
         return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_); // send to HpaeManager
     }
     AUDIO_INFO_LOG("No need to real collaborative state: %{public}d", isCollaborativeStateEnabled_);
@@ -192,10 +197,10 @@ AudioCollaborativeService::~AudioCollaborativeService()
     AUDIO_ERR_LOG("~AudioCollaborativeService");
 }
 
-void AudioCollaborativeService::updateCollaborativeProductId(const std::string &productId)
+void AudioCollaborativeService::UpdateCollaborativeProductId(const std::string &productId)
 {
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
-    audioPolicyManager_.updateCollaborativeProductId(productId);
+    audioPolicyManager_.UpdateCollaborativeProductId(productId);
 }
 
 void AudioCollaborativeService::LoadCollaborationConfig()
@@ -213,6 +218,16 @@ bool AudioCollaborativeService::IsCollaborativePlaybackOpenedOrReservedForDevice
     CHECK_AND_RETURN_RET_LOG(it != addressToCollaborativeEnabledMap_.end(), false,
         "address %{public}s is not in map", GetEncryptAddr(selectedAudioDevice.macAddress_).c_str());
     return it->second == COLLABORATIVE_OPENED || it->second == COLLABORATIVE_RESERVED;
+}
+
+void AudioCollaborativeService::UpdateCollaborativeStateToHdi(bool collaborativeState)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    std::string keyValue = std::string("collaborative_state=") + (collaborativeState ? "true" : "false");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", keyValue);
+    AUDIO_INFO_LOG("UpdateCollaborativeStateToHdi, value: %{public}s", keyValue.c_str());
 }
 } // AudioStandard
 } // OHOS

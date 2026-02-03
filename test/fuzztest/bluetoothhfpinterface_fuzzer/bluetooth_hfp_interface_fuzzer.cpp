@@ -67,9 +67,9 @@ void GetLastErrorFuzzTest()
     BluetoothHfpInterface::GetInstance().GetLastError();
 }
 
-void GetLastOprationFuzzTest()
+void GetLastOperationFuzzTest()
 {
-    BluetoothHfpInterface::GetInstance().GetLastOpration();
+    BluetoothHfpInterface::GetInstance().GetLastOperation();
 }
 
 vector<TestFuncs> g_testFuncs = {
@@ -79,7 +79,7 @@ vector<TestFuncs> g_testFuncs = {
     ConnectFuzzTest,
     IsInbandRingingEnabledFuzzTest,
     GetLastErrorFuzzTest,
-    GetLastOprationFuzzTest
+    GetLastOperationFuzzTest
 };
 
 } // namespace AudioStandard

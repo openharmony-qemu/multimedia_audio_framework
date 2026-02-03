@@ -1031,7 +1031,6 @@ int32_t AudioDeviceManager::SetDeviceVolumeBehavior(const std::string &networkId
 {
     AUDIO_INFO_LOG("SetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
         networkId.c_str(), deviceType);
-    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     remoteInfoNetworkId_ = networkId;
     remoteInfoDeviceType_ = deviceType;
     for (auto &desc : connectedDevices_) {

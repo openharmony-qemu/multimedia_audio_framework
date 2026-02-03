@@ -73,9 +73,9 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
 
     // Register Callback
     ret = hpaeManager.RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo.sessionId, shared_from_this());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterStatusCallback is error!");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterStatusCallback is error");
     ret = hpaeManager.RegisterReadCallback(streamInfo.sessionId, shared_from_this());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterReadCallback is error!");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterReadCallback is error");
     return SUCCESS;
 }
 
@@ -172,7 +172,8 @@ int32_t HpaeCapturerStreamImpl::OnStreamData(AudioCallBackCapturerStreamInfo &ca
         latency_ = callBackStreamInfo.latency;
         framesRead_ = callBackStreamInfo.framesRead;
     }
-    if (auto callback = readCallback_.lock()) {
+    auto callback = readCallback_.lock();
+    if (callback != nullptr) {
         return callback->OnReadData(callBackStreamInfo.outputData, callBackStreamInfo.requestDataLen);
     }
     return SUCCESS;
@@ -234,6 +235,13 @@ uint32_t HpaeCapturerStreamImpl::GetStreamIndex()
 void HpaeCapturerStreamImpl::AbortCallback(int32_t abortTimes)
 {
     abortFlag_ += abortTimes;
+}
+
+void HpaeCapturerStreamImpl::TriggerAppsUidUpdate()
+{
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
+    IHpaeManager::GetHpaeManager().TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_RECORD,
+        processConfig_.originalSessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1170,7 +1170,8 @@ int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 bool RendererInClientInner::CheckStaticAndOperate()
 {
     if (rendererInfo_.isStatic) {
-        return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback();
+        return clientBuffer_->IsNeedSendLoopEndCallback() || clientBuffer_->IsNeedSendBufferEndCallback() ||
+            clientBuffer_->IsFirstFrame();
     } else {
         return CheckBufferNeedWrite();
     }

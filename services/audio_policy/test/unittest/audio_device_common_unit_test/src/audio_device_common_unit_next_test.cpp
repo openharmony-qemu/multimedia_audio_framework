@@ -203,42 +203,6 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
 }
 
 /**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_001
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, ScoInputDeviceFetchedForRecongnition_001, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    bool handleFlag = false;
-    std::string address = "00:11:22:33:44:55";
-    ConnectState connectState = DEACTIVE_CONNECTED;
-
-    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(result, ERROR);
-}
-
-/**
-* @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
-* @tc.number: ScoInputDeviceFetchedForRecongnition_002
-* @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, ScoInputDeviceFetchedForRecongnition_002, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    bool handleFlag = true;
-    std::string address = "00:11:22:33:44:55";
-    ConnectState connectState = DEACTIVE_CONNECTED;
-
-    int32_t result = audioDeviceCommon.ScoInputDeviceFetchedForRecongnition(handleFlag, address, connectState);
-    EXPECT_EQ(result, ERROR);
-}
-
-/**
 * @tc.name  : Test IsSameDevice
 * @tc.number: IsSameDevice_001
 * @tc.desc  : Test IsSameDevice interface.

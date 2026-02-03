@@ -42,6 +42,7 @@ static constexpr AudioSamplingRate SPACE_RENDER_ALGO_SAMPLE_RATE = SAMPLE_RATE_4
 static constexpr AudioSampleFormat SPACE_RENDER_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
 static constexpr AudioChannel SPACE_RENDER_ALGO_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
+static constexpr uint32_t NEED_DATA_LENGTH = 20;
 
 std::string g_fileNameOne = "/data/audiosuite/sr/48000_2_16.pcm";
 std::string g_outFilename = "/data/audiosuite/sr/out.pcm";
@@ -80,21 +81,26 @@ void DoSignalProcess(std::string inputFile, std::string outputFile,
     std::ofstream outProcessedFile(outputFile, std::ios::binary);
 
     node->Init();
+    int32_t ret = node->InitCacheLength(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret, SUCCESS);
     node->SetOptions(name, value);
+
     AudioSuitePcmBuffer buffer(PcmBufferFormat{
         SPACE_RENDER_ALGO_SAMPLE_RATE, SPACE_RENDER_ALGO_CHANNEL_COUNT,
-          SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT});
+          SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT}, NEED_DATA_LENGTH);
     uint32_t dataSize = buffer.GetDataSize();
 
     std::vector<AudioSuitePcmBuffer *> inputs;
     bool exitLoop = false;
+    std::vector<AudioSuitePcmBuffer *> outPcmbuffer;
     while (!exitLoop) {
         file1.read(reinterpret_cast<char *>(buffer.GetPcmData()), dataSize);
         if (file1.eof()) {
             exitLoop = true;
         } else {
             inputs = {&buffer};
-            outProcessedFile.write(reinterpret_cast<const char *>((node->SignalProcess(inputs))->GetPcmData()),
+            outPcmbuffer = node->SignalProcess(inputs);
+            outProcessedFile.write(reinterpret_cast<const char *>(outPcmbuffer[0]->GetPcmData()),
                 dataSize);
             inputs.clear();
         }
@@ -239,16 +245,4 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderGetParameterParams001, TestSize.L
     EXPECT_EQ(ERROR, ret);
 }
  
-HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderDoProcess001, TestSize.Level0)
-{
-    std::shared_ptr<AudioSuiteSpaceRenderNode> node = std::make_shared<AudioSuiteSpaceRenderNode>();
- 
-    node->SetAudioNodeDataFinishedFlag(true);
-    int32_t ret = node->DoProcess();
-    EXPECT_EQ(SUCCESS, ret);
- 
-    node->SetAudioNodeDataFinishedFlag(false);
-    ret = node->DoProcess();
-    EXPECT_EQ(ERROR, ret);
-}
 }  // namespace
