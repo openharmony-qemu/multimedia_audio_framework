@@ -274,13 +274,12 @@ AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPi
             return streamInfo;
         }
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(rate);
-        // format conversion is supported only when the high-resolution(96k) low-latency route is used
         CHECK_AND_RETURN_RET(streamInfo.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000, streamInfo);
         const std::string &format = pipeInfo->moduleInfo_.format;
-        CHECK_AND_RETURN_RET_LOG(AudioDefinitionPolicyUtils::formatStrToEnum.find(format) !=
-            AudioDefinitionPolicyUtils::formatStrToEnum.end(), streamInfo,
+        auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
+        CHECK_AND_RETURN_RET_LOG(it != AudioDefinitionPolicyUtils::formatStrToEnum.end(), streamInfo,
             "Not found %{public}s in formatStrToEnum", format.c_str());
-        streamInfo.format = AudioDefinitionPolicyUtils::formatStrToEnum[format];
+        streamInfo.format = *it;
     }
     return streamInfo;
 }

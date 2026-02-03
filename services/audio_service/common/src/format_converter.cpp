@@ -39,7 +39,6 @@ constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (BIT_32 - 1));
 constexpr size_t FORMAT_S24_BYTES = 3;
 constexpr int64_t INT24_MAX = (1 << (BIT_24 - 1)) - 1;
 constexpr int64_t INT24_MIN = -(1 << (BIT_24 - 1));
-constexpr size_t NUM_2 = 2;
 }
 
 static float CapMax(float v)
@@ -63,7 +62,7 @@ static int16_t ConvertFromFloatTo16Bit(const float *a)
 static int32_t ConvertFromFloatTo24Bit(const float *a)
 {
     float tmp = *a;
-    float v = CapMax(tmp) * (1 << (BIT_24 - 1));
+    float v = CapMax(tmp) * INT24_MAX;
     return static_cast<int32_t>(v);
 }
 
@@ -113,7 +112,7 @@ void MixS24Volume(const std::vector<AudioStreamData> &srcDataList, const AudioSt
         for (size_t i = 0; i < srcListSize; i++) {
             int32_t vol = srcDataList[i].volumeStart;
             uint8_t *srcBuffer = srcDataList[i].bufferDesc.buffer + offset;
-            uint32_t srcAudioBuffer24Bit = (srcBuffer[NUM_2] << BIT_16) | (srcBuffer[1] << BIT_8) | srcBuffer[0];
+            uint32_t srcAudioBuffer24Bit = (srcBuffer[2] << BIT_16) | (srcBuffer[1] << BIT_8) | srcBuffer[0];
             int32_t srcAudioData24Bit = (static_cast<int32_t>(srcAudioBuffer24Bit) << BIT_8) >> BIT_8;
             sum += (srcAudioData24Bit * static_cast<int64_t>(vol)) / VOLUME_DIV_NUMBER;
         }
@@ -179,7 +178,6 @@ bool FormatConverter::DataAccumulationFromVolume(const std::vector<AudioStreamDa
         MixS32Volume(srcDataList, dstData);
     } else {
         AUDIO_ERR_LOG("Invalid format: %{public}d", static_cast<int32_t>(dstData.streamInfo.format));
-        return false;
     }
     return true;
 }
