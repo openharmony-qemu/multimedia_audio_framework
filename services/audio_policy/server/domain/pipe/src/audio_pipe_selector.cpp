@@ -700,7 +700,7 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
         auto it = AudioDefinitionPolicyUtils::enumToFormatStr.find(deviceAudioStreamInfo.format);
         CHECK_AND_RETURN_LOG(it != AudioDefinitionPolicyUtils::enumToFormatStr.end(),
             "Not found %{public}u in enumToFormatStr", static_cast<uint32_t>(deviceAudioStreamInfo.format));
-        moduleInfo.format = *it;
+        moduleInfo.format = it->second;
     }
 }
 
