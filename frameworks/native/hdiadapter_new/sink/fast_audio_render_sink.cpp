@@ -55,7 +55,7 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     return SUCCESS;
 }
 
-void FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices, bool isLoopback) 
+void FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices, bool isLoopback)
 {
     CHECK_AND_RETURN(isLoopback);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
