@@ -4999,6 +4999,14 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAllZones_001, T
     audioInterruptZone1->audioFocusInfoList.emplace_back(fakeAudioInterrupt, AudioFocuState{ACTIVE});
     interruptService->zonesMap_[1] = audioInterruptZone1;
 
+    fakeAudioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
+    fakeAudioInterrupt.streamId = SESSION_ID_TEST + 3;
+    fakeAudioInterrupt.audioFocusType.isPlay = true;
+    fakeAudioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    auto audioInterruptZone2 = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone2->audioFocusInfoList.emplace_back(fakeAudioInterrupt, AudioFocuState{ACTIVE});
+    interruptService->zonesMap_[2] = audioInterruptZone2;
+
     auto audioScene = interruptService->GetHighestPriorityAudioSceneFromAllZones();
     EXPECT_NE(audioScene, AUDIO_SCENE_DEFAULT);
 }
