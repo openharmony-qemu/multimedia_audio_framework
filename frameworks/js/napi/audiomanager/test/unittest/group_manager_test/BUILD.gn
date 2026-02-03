@@ -14,7 +14,7 @@
 import("//build/test.gni")
 
 module_output_path =
-    "audio_framework/audio_framework_route/audio_volume_group_manager_js"
+    "audio_framework/audio_framework_policy/audio_volume_group_manager_js"
 
 ohos_js_unittest("AudioGroupManagerJsUnitTest") {
   module_out_path = module_output_path
