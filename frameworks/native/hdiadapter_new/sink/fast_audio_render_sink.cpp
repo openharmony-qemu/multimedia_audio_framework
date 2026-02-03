@@ -47,8 +47,10 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
-    std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)}; 
-    DoSetOutputRoute(devices); 
+    if (attr.isLoopback) {
+        std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)}; 
+        DoSetOutputRoute(devices);
+    }
     sinkInited_ = true;
     InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_FAST);
 
