@@ -1776,6 +1776,10 @@ int32_t RendererInServer::DisableInnerCapHandle(int32_t innerCapId)
 
 int32_t RendererInServer::InitDupStream(int32_t innerCapId)
 {
+    if (processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
+        AUDIO_WARNING_LOG("InitDupStream failed: innerCap is not supported in 3DA Direct due to Metadta constraints");
+        return ERR_NOT_SUPPORTED;
+    }
     AUDIO_INFO_LOG("InitDupStream for innerCapId:%{public}d", innerCapId);
     Trace trace(traceTag_ + "InitDupStream innerCapId:" + std::to_string(innerCapId));
     std::lock_guard<std::mutex> lock(dupMutex_);
