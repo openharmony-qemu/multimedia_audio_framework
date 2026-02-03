@@ -87,6 +87,7 @@ audio_ohos_library("audio_suite") {
       "client/node/src/audio_suite_channel.cpp",
       "client/node/src/audio_suite_node.cpp",
       "client/node/src/audio_suite_space_render_node.cpp",
+      "client/utils/src/thread_pool.cpp",
       "client/utils/src/audio_suite_manager_thread.cpp",
       "client/utils/src/audio_suite_common.cpp",
       "client/utils/src/audio_suite_pcm_buffer.cpp",

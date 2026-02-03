@@ -344,7 +344,7 @@ std::shared_ptr<AudioNode> AudioSuitePipeline::CreateNodeForType(AudioNodeBuilde
         node = std::make_shared<AudioSuiteSoundFieldNode>();
     } else if (builder.nodeType == NODE_TYPE_AUDIO_MIXER) {
         AUDIO_INFO_LOG("Create AudioSuiteMixerNode");
-        node = std::make_shared<AudioSuiteMixerNode>();
+        node = std::make_shared<AudioSuiteMixerNode>(pipelineCfg_.maxInputNodeNum_);
     } else if (builder.nodeType == NODE_TYPE_AUDIO_SEPARATION) {
         AUDIO_INFO_LOG("Create AudioSuiteAissNode");
         node = std::make_shared<AudioSuiteAissNode>();
