@@ -72,7 +72,7 @@ private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
-    void DoSetOutputRoute(std::vector<DeviceType> &outputDevices);
+    void DoSetOutputRoute(std::vector<DeviceType> &outputDevices, bool isLoopback);
     int32_t CreateRender(void);
     void UpdateSinkState(bool started);
 
