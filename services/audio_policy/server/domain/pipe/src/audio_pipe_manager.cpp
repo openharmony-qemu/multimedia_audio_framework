@@ -279,7 +279,7 @@ AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPi
         auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
         CHECK_AND_RETURN_RET_LOG(it != AudioDefinitionPolicyUtils::formatStrToEnum.end(), streamInfo,
             "Not found %{public}s in formatStrToEnum", format.c_str());
-        streamInfo.format = *it;
+        streamInfo.format = it->second;
     }
     return streamInfo;
 }
