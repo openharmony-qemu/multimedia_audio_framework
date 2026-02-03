@@ -698,7 +698,7 @@ void AudioPipeSelector::UpdateMouleInfoWitchDevice(const std::shared_ptr<AudioDe
         moduleInfo.rate = to_string(*(deviceAudioStreamInfo.samplingRate.begin()));
 
         auto it = AudioDefinitionPolicyUtils::enumToFormatStr.find(deviceAudioStreamInfo.format);
-        CHECK_AND_RETURN_LOG(it != udioDefinitionPolicyUtils::enumToFormatStr.end(),
+        CHECK_AND_RETURN_LOG(it != AudioDefinitionPolicyUtils::enumToFormatStr.end(),
             "Not found %{public}u in enumToFormatStr", static_cast<uint32_t>(deviceAudioStreamInfo.format));
         moduleInfo.format = *it;
     }
