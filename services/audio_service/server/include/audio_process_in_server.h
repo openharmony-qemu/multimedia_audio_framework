@@ -148,6 +148,8 @@ public:
     virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
 
+    void NotifyMuteStateChange(bool muteFlag);
+
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
     std::time_t GetStartMuteTime() override;

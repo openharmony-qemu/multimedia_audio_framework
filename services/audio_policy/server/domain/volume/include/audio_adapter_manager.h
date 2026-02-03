@@ -135,6 +135,8 @@ public:
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
+    int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
+
     bool GetStreamMute(AudioStreamType streamType);
 
     bool GetAppMute(int32_t appUid);

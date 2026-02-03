@@ -626,6 +626,12 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_002, TestSize.Level1)
     ret = audioEndpointInner->OnStart(processStream);
     EXPECT_EQ(SUCCESS, ret);
 
+    ret = audioEndpointInner->OnStreamMute(processStream, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStreamMute(processStream, false);
+    EXPECT_EQ(SUCCESS, ret);
+
     ret = audioEndpointInner->OnPause(processStream);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -652,6 +658,12 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_003, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioEndpointInner->OnStart(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStreamMute(processStream, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStreamMute(processStream, false);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioEndpointInner->OnPause(processStream);

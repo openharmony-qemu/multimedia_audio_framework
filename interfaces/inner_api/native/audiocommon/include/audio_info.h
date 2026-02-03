@@ -109,6 +109,8 @@ constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
 
 // For common stream
 constexpr uint32_t STREAM_ID_INVALID = 0;
+constexpr uint32_t UID_INVALID = 0;
+constexpr bool MUTE_INVALID = false;
 
 //#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
 // Maximun number of sine waves in a tone segment
@@ -2211,6 +2213,10 @@ struct CapturerStreamInfo {
     CapturerState state_ = CAPTURER_INVALID;
 
     std::string bundleName_ = "";
+
+    bool mute_ = MUTE_INVALID;
+
+    int32_t uid_ = UID_INVALID;
 };
 
 /**

@@ -111,6 +111,8 @@ public:
 
     virtual int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) = 0;
 
+    virtual int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute) = 0;
+
     virtual bool GetStreamMute(AudioStreamType streamType) = 0;
 
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
