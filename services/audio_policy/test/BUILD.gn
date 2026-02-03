@@ -6779,7 +6779,7 @@ ohos_unittest("user_select_router_ext_unit_test") {
 }
 
 ohos_unittest("audio_injector_policy_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = audio_route_module_output_path
   include_dirs = ["./unittest/audio_injector_policy_unit_test/include",
                   "../../audio_policy/server/service/service_main/include",
                   "../../audio_policy/common/include",
