@@ -866,7 +866,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
         .adapterName = adapterName,
         .audioMode = config.audioMode,
         .streamType = config.streamType,
-        .isUltraFast = isUltraFast
+        .isUltraFast = isUltraFast,
         .isLoopback = config.rendererInfo.isLoopback
     };
     std::shared_ptr<AudioEndpoint> audioEndpoint =
