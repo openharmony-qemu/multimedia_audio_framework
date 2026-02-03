@@ -77,13 +77,13 @@ void AudioSuiteMixerTest::TearDown()
 namespace {
 HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNode, TestSize.Level0)
 {
-    std::shared_ptr<AudioSuiteMixerNode> audioSuiteMixerNode =std::make_shared<AudioSuiteMixerNode>();
+    std::shared_ptr<AudioSuiteMixerNode> audioSuiteMixerNode =std::make_shared<AudioSuiteMixerNode>(5);
     EXPECT_EQ(audioSuiteMixerNode->GetSampleRate(), audioFormat.rate);
 }
 
 HWTEST_F(AudioSuiteMixerTest, constructHpaeMixerNodeReadFile, TestSize.Level0)
 {
-    auto node = std::make_shared<AudioSuiteMixerNode>();
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
     node->Init();
     int32_t ret = node->InitCacheLength(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);

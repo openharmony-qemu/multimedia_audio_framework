@@ -62,7 +62,7 @@ public:
     
 protected:
     virtual std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs);
-    std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
+    virtual std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
     virtual uint32_t CalculationNeedBytes(uint32_t frameLengthMs);
     int32_t InitCacheLength(uint32_t needDataLength);
     int32_t ProcessBypassMode(uint32_t needDataLength);
