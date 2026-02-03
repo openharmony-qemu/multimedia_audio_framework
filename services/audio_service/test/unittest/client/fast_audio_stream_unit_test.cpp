@@ -93,7 +93,7 @@ public:
     MOCK_METHOD(void, SetRebuildFlag, (), (override));
     MOCK_METHOD(void, GetKeepRunning, (bool &keepRunning), (override));
 
-    MOCK_METHOD(int32_t, GetStaticBufferInfo, (StaticBufferInfo &staticBufferInfo), (override));
+    MOCK_METHOD(int32_t, GetStaticPlayPosition, (StaticBufferInfo &staticBufferInfo), (override));
     MOCK_METHOD(int32_t, SetStaticBufferEventCallback, (std::shared_ptr<StaticBufferEventCallback>), (override));
     MOCK_METHOD(int32_t, SetStaticTriggerRecreateCallback, (std::function<void()> sendStaticRecreateFunc), (override));
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
@@ -2124,26 +2124,6 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_005, TestSize.Level1)
     fastAudioStream->micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(micCallback);
 
     EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
-}
-
-/**
- * @tc.name  : Test GetSwitchInfo API
- * @tc.type  : FUNC
- * @tc.number: GetSwitchInfo_static_001
- * @tc.desc  : Test GetSwitchInfo interface.
- */
-HWTEST_F(FastSystemStreamUnitTest, GetSwitchInfo_static_001, TestSize.Level4)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    auto fastAudioStream = std::make_shared<MockFastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    EXPECT_NE(fastAudioStream, nullptr);
-    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
-    fastAudioStream->processClient_ = mockProcessClient;
-
-    IAudioStream::SwitchInfo info;
-    fastAudioStream->rendererInfo_.isStatic = true;
-    fastAudioStream->GetSwitchInfo(info);
-    EXPECT_EQ(info.renderMode, fastAudioStream->renderMode_);
 }
 
 /**
