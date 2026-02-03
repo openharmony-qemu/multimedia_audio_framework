@@ -295,6 +295,7 @@ void AudioPolicyServer::Init()
 void AudioPolicyServer::OnStart()
 {
     AUDIO_INFO_LOG("Audio policy server on start");
+    AUDIO_INFO_LOG("Audio policy server initialization started");
     DlopenUtils::Init();
     Init();
     bool res = false;
