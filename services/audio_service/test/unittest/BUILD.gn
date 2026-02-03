@@ -18,6 +18,7 @@ import("../../../../ressche_part.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
 audio_engine_module_output_path = "audio_framework/audio_framework_engine/audio_balance"
+
 audio_policy_module_output_path = "audio_framework/audio_framework_policy/audio_balance"
 audio_framework_root = "../../../.."
 
@@ -590,7 +591,7 @@ ohos_unittest("hpae_renderer_stream_impl_unit_test") {
 
 ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
   testonly = true
-  module_out_path = maudio_engine_module_output_path
+  module_out_path = audio_engine_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
