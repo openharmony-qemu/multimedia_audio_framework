@@ -890,7 +890,7 @@ void AudioEffectChainCheckAndReleaseCommonEffectChainFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({effectChain0, audioEffectChain});
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
 
-    audioEffectChainManager->defaultEffectChainCount_ = GetData<int32_t>();
+    audioEffectChainManager->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = GetData<int32_t>();
     audioEffectChainManager->CheckAndReleaseCommonEffectChain(sceneType);
     audioEffectChainManager->ResetInfo();
 }
