@@ -871,9 +871,8 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
             return;
         }
         std::shared_ptr<IHpaeCapturerManager> oldCaptureManager = GetCapturerManagerById(sourceOutputId);
-        AUDIO_INFO_LOG("start move session:%{public}u, [%{public}s] --> [%{public}s], state:%{public}d",
-            sourceOutputId, GetEncryptStr(name).c_str(), GetEncryptStr(sourceName).c_str(),
-            capturerIdStreamInfoMap_[sourceOutputId].state);
+        AUDIO_INFO_LOG("start move session:%{public}u, [%{public}s] --> [%{public}s], state:%{public}d",	 
+            sourceOutputId, name.c_str(), sourceName.c_str(), capturerIdStreamInfoMap_[sourceOutputId].state);
         movingIds_.emplace(sourceOutputId, capturerIdStreamInfoMap_[sourceOutputId].state);
         oldCaptureManager->MoveStream(sourceOutputId, sourceName);
     };
