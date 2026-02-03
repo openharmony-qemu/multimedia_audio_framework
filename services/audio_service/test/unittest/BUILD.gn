@@ -18,8 +18,7 @@ import("../../../../ressche_part.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
 audio_engine_module_output_path = "audio_framework/audio_framework_engine/audio_balance"
-
-audio_policy_module_output_path = "audio_framework/audio_framework_policy/audio_balance"
+audio_policy_module_output_path = "audio_framework/audio_framework_policy/audio_volume"
 audio_framework_root = "../../../.."
 
 config("module_private_config") {
@@ -677,7 +676,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
 
 ohos_unittest("volume_tools_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_policy_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../interfaces/inner_api/native/audiocommon/include",
@@ -939,7 +938,7 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
 
 ohos_unittest("audio_process_in_client_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_route_lowLatency/audio_process_in_client"
 
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
@@ -1079,7 +1078,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
 
 ohos_unittest("audio_process_in_client_second_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_route_lowLatency/audio_process_in_client"
 
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
