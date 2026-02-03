@@ -20,6 +20,9 @@
 #include <unordered_map>
 #include <string>
 #include <regex>
+#include <cstdlib>
+#include <cerrno>
+#include <climits>
 
 #include "audio_device_info.h"
 #include "audio_stream_info.h"
