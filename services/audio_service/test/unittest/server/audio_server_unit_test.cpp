@@ -577,5 +577,6 @@ HWTEST(AudioServerUnitTest, NeedDelayCreateSink_001, TestSize.Level1)
     EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_MMAP), false);
 }
 
+/add
 } // namespace AudioStandard
 } //

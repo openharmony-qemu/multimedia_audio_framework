@@ -309,5 +309,7 @@ HWTEST_F(AudioToolCalculateUnitTest, SafeAbsTest_004, TestSize.Level1)
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0], static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1 + 1); // sum_abs=(INT_MAX+1) + 1
 }
+
+/add
 }
 }

@@ -290,5 +290,7 @@ HWTEST(IAudioStreamUnitTest, CheckCapturerAudioStreamInfo_001, TestSize.Level1)
     params.format = INVALID_WIDTH;
     EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), ERR_NOT_SUPPORTED);
 }
+
+//add
 } // namespace AudioStandard
 } // namespace OHOS
