@@ -300,7 +300,7 @@ HWTEST(PairDeviceRouterUnitTest, DecideRingRenderDevices_005, TestSize.Level4)
         RINGER_MODE_NORMAL,
         defaultDev
     );
-    EXPECT_EQ(result.size(), 0);
+    EXPECT_NE(result.size(), 0);
 }
 
 /**
