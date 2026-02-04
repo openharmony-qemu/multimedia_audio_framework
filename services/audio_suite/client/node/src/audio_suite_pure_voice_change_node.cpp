@@ -53,19 +53,19 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         AUDIO_ERR_LOG("InitOutputStream SUCCESS");
     }
     algoInterface_ =
-        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeParameter);
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create nr algoInterface");
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
-    nodeParameter.inChannels = STEREO;
-    nodeParameter.outChannels = STEREO;
-    SetAudioNodeFormat(AudioFormat{{VMPH_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
-        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
-        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
+    nodeParameter_.inChannels = STEREO;
+    nodeParameter_.outChannels = STEREO;
+    SetAudioNodeFormat(AudioFormat{{VMPH_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
 
-    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
 
-    nodeNeedDataDuration_  = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    nodeNeedDataDuration_  = (nodeParameter_.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter_.inSampleRate;
 
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuitePureVoiceChangeNode::Init end");
