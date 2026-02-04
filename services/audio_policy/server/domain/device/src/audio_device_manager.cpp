@@ -1204,6 +1204,21 @@ AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDevicesListInfo(
     return reason;
 }
 
+void AudioDeviceManager::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceCategory_ == BT_GLASSES) {
+        ++desc.glassesWearCount_;
+        AUDIO_INFO_LOG("glasses wear count: %{public}u", desc.glassesWearCount_);
+        if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+            desc.connectTimeStamp_ = GetCurrentTimeMS();
+        } else {
+            desc.connectTimeStamp_ = GetCurrentTimeMS() - AudioDeviceDescriptor::TEN_YEARS_MS;
+        }
+    } else {
+        desc.connectTimeStamp_ = GetCurrentTimeMS();
+    }
+}
+
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
@@ -1220,10 +1235,13 @@ bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceD
                 RemoveBtFromOtherList(devDesc);
             } else {
                 // Update connectTimeStamp_ when wearing headphones that support wear detection
-                desc->connectTimeStamp_ = GetCurrentTimeMS();
+                UpdateDeviceConnectTimestamp(*desc);
                 AddBtToOtherList(desc);
             }
-            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
+
+            if (desc->glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+                AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
+            }
         }
         updateFlag = true;
     }

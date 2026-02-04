@@ -1553,7 +1553,7 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
 #endif
         } else {
-            if (desc.deviceCategory_ == BT_HEADPHONE && desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
+            if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
             std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {make_shared<AudioDeviceDescriptor>(desc)};
@@ -1588,6 +1588,55 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
 #ifdef BLUETOOTH_ENABLE
     ClearActiveHfpDevice(desc, updateCommand, reason);
 #endif
+}
+
+void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor &desc)
+{
+    auto audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
+    audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
+    auto existed = audioDeviceManager_.GetExistedDevice(audioDescriptor);
+    CHECK_AND_RETURN_LOG(existed != nullptr && existed->deviceType_ != DEVICE_TYPE_NONE, "desc doesn't in connected");
+    CHECK_AND_RETURN_LOG(existed->networkId_ == LOCAL_NETWORK_ID, "desc isn't local");
+
+    auto usage = audioDeviceManager_.GetDeviceUsage(desc);
+    AudioStateManager &stateManager = AudioStateManager::GetAudioStateManager();
+
+    auto mediaFetched = *AudioRouterCenter::GetAudioRouterCenter()
+        .FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT)
+        .front();
+    if ((usage & MEDIA) == MEDIA &&
+        NeedClearPreferredWhenCategoryUpdated(*existed, mediaFetched, *stateManager.GetPreferredMediaRenderDevice())) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
+            std::make_shared<AudioDeviceDescriptor>());
+    }
+
+    auto callFetched = *AudioRouterCenter::GetAudioRouterCenter()
+        .FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "ClearPreferredWhenCategoryUpdated_2",
+            ROUTER_TYPE_USER_SELECT)
+        .front();
+    if ((usage & VOICE) == VOICE &&
+        NeedClearPreferredWhenCategoryUpdated(*existed, callFetched, *stateManager.GetPreferredCallRenderDevice())) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
+        AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
+#ifdef BLUETOOTH_ENABLE
+        CheckAndActiveHfpDevice(desc);
+#endif
+    }
+}
+
+bool AudioDeviceStatus::NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
+    const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred)
+{
+    if (!updated.IsSameDeviceDesc(fetched)) {
+        return false;
+    }
+
+    if (updated.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+        return true;
+    }
+
+    return updated.IsSameDeviceDesc(preferred);
 }
 
 void AudioDeviceStatus::UpdateAllUserSelectDevice(

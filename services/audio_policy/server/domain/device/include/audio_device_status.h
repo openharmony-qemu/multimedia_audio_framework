@@ -137,6 +137,9 @@ private:
     int32_t HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, AudioStreamDeviceChangeReasonExt &reason);
     void OnPreferredDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor, DeviceType activeInputDevice);
+    void ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor &desc);
+    bool NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
+        const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred);
     void UpdateDeviceList(AudioDeviceDescriptor &updatedDesc, bool isConnected,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
