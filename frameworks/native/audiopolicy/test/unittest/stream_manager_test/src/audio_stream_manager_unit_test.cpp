@@ -1011,7 +1011,6 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     EXPECT_EQ(0, static_cast<int32_t>(audioCapturerChangeInfos.size()));
 }
 
-#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test GetCurrentCapturerChangeInfos API
 * @tc.number: Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos_003
@@ -1177,7 +1176,6 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentCaptu
     }
 }
 
-#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test GetCurrentCapturerChangeInfos API
 * @tc.number: Audio_Audio_Stream_Change_Listner_GetCurrentCapturerChangeInfos__Stability_001
