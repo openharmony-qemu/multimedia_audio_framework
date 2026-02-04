@@ -16,7 +16,9 @@
 #include "gtest/gtest.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#define private public
 #include "capturer_in_server.h"
+#undef private
 
 using namespace testing::ext;
 
@@ -1065,6 +1067,111 @@ HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_006, TestSize.Lev
 
     capturerInServer_->UpdateBufferTimeStamp(12);
     EXPECT_EQ(capturerInServer_->lastPosInc_, 6);
-}xx
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: OnReadData_002.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    const size_t testDataSize = 0;
+    auto testData = std::make_unique<int8_t[]>(testDataSize);
+ 
+    int32_t result = capturerInServer_->OnReadData(testData.get(), testDataSize);
+    EXPECT_EQ(result, ERR_READ_FAILED);
+}
+ 
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: OnReadData_003.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_003, TestSize.Level4)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    const size_t testDataSize = 1000;
+    auto testData = std::make_unique<int8_t[]>(testDataSize);
+ 
+    int32_t result = capturerInServer_->OnReadData(testData.get(), testDataSize);
+    EXPECT_EQ(result, ERR_READ_FAILED);
+}
+ 
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: OnReadData_004.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_004, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    size_t length = 0;
+    bool currentStatus = false;
+    int32_t result = capturerInServer_->OnReadData(length);
+    capturerInServer_->RecordOverflowStatus(currentStatus);
+    EXPECT_EQ(result, SUCCESS);
+}
+ 
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: OnReadData_005.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_005, TestSize.Level4)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    size_t length = 0;
+    bool currentStatus = false;
+    int32_t result = capturerInServer_->OnReadData(length);
+    capturerInServer_->RecordOverflowStatus(currentStatus);
+    EXPECT_EQ(result, SUCCESS);
+}
+ 
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: OnReadData_006.
+ * @tc.desc  : Test OnReadData interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_006, TestSize.Level4)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    size_t length = 0;
+    bool currentStatus = true;
+    int32_t result = capturerInServer_->OnReadData(length);
+    capturerInServer_->RecordOverflowStatus(currentStatus);
+    EXPECT_EQ(result, SUCCESS);
+}
+ 
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: RequestUserPrivacyAuthority_001.
+ * @tc.desc  : Test RequestUserPrivacyAuthority interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, RequestUserPrivacyAuthority_001, TestSize.Level4)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->RequestUserPrivacyAuthority();
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
 } // namespace AudioStandard
 } // namespace OHOS
