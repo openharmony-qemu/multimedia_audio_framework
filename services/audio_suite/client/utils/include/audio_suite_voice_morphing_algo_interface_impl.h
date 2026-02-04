@@ -36,26 +36,6 @@ struct VoiceMorphingAlgoApi {
     FunAudioVoiceMorphingApply apply{nullptr};
 };
 
-static const std::unordered_map<std::string, AudioVoiceMorphingType> voiceBeautifierTypeMap = {
-    {"1", AUDIO_VOICE_MORPH_CLEAR},
-    {"2", AUDIO_VOICE_MORPH_THEATRE},
-    {"3", AUDIO_VOICE_MORPH_CD},
-    {"4", AUDIO_VOICE_MORPH_RECORDING_STUDIO}
-};
-
-static const std::unordered_map<std::string, AudioVoiceMorphingType> generalVoiceChangeTypeMap = {
-    {"1", AUDIO_VOICE_MPH_CUTE},
-    {"2", AUDIO_VOICE_MPH_CYBERPUNK},
-    {"3", AUDIO_VOICE_MPH_FEMALE},
-    {"4", AUDIO_VOICE_MPH_MALE},
-    {"5", AUDIO_VOICE_MPH_MIX},
-    {"6", AUDIO_VOICE_MPH_MONSTER},
-    {"7", AUDIO_VOICE_MPH_SEASONED},
-    {"8", AUDIO_VOICE_MPH_SYNTH},
-    {"9", AUDIO_VOICE_MPH_TRILL},
-    {"10", AUDIO_VOICE_MPH_WAR}
-};
-
 class AudioSuiteVoiceMorphingAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
 public:
     AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeParameter &nc);

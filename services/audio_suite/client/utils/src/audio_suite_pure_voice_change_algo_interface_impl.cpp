@@ -39,6 +39,21 @@ const float PCM_SAMPLE_CLIP_MAX = 32767.0f;
 const float PCM_SAMPLE_CLIP_MIN = -32768.0f;
 static const float AUDIO_VOICE_MORPHING_PITCH_MIN = 0.3f;
 static const float AUDIO_VOICE_MORPHING_PITCH_MAX = 3.0f;
+
+static const std::unordered_map<std::string, AudioVoiceMphTradType> pureTypeMap = {
+    {"1", AUDIO_VOICE_MPH_TRAD_CARTOON},
+    {"2", AUDIO_VOICE_MPH_TRAD_CUTE},
+    {"3", AUDIO_VOICE_MPH_TRAD_FEMALE},
+    {"4", AUDIO_VOICE_MPH_TRAD_MALE},
+    {"5", AUDIO_VOICE_MPH_TRAD_MONSTER},
+    {"6", AUDIO_VOICE_MPH_TRAD_ROBOTS},
+    {"7", AUDIO_VOICE_MPH_TRAD_SEASONED}
+};
+
+static const std::unordered_map<std::string, SpeakerSex> pureSexTypeMap = {
+    {"1", VMP_TRAD_FEMALE},
+    {"2", VMP_TRAD_MALE}
+};
 }
 
 AudioSuitePureVoiceChangeAlgoInterfaceImpl::AudioSuitePureVoiceChangeAlgoInterfaceImpl(NodeParameter &nc)
