@@ -59,7 +59,7 @@ public:
     {
         return &outputStream_;
     }
-    
+
 protected:
     virtual std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs);
     std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
@@ -77,6 +77,7 @@ protected:
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
     OutputPort<AudioSuitePcmBuffer *> outputStream_;
     InputPort<AudioSuitePcmBuffer *> inputStream_;
+    AudioSuiteFormatConversion convert_;
     
     uint32_t nodeNeedDataDuration_ = 0;
     uint32_t requestPreNodeDuration_ = 0;
@@ -94,7 +95,7 @@ protected:
     std::vector<uint8_t *> algoInput_{nullptr};
     std::vector<uint8_t *> algoOutput_;
     std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_{ nullptr };
-    NodeParameter nodeParameter;
+    NodeParameter nodeParameter_;
  
     bool secondCall_ = false;
     bool needCache_ = false;

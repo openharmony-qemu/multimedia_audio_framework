@@ -265,9 +265,9 @@ static bool RunFormatConversionTest(const FormatConversionInfo& info,
     auto ret = outputNode->Connect(inputNode);
     EXPECT_EQ(ret, SUCCESS);
 
-    outputNode->needDataLength = SINGLE_FRAME_NEED_LENGTH;
+    outputNode->needDataLength_ = SINGLE_FRAME_NEED_LENGTH;
     if (info.outputFormat.rate == SAMPLE_RATE_11025) {
-        outputNode->needDataLength = DOUBLE_FRAME_NEED_LENGTH;
+        outputNode->needDataLength_ = DOUBLE_FRAME_NEED_LENGTH;
     }
 
     inputFile.seekg(HEADER_SIZE, std::ios::beg);
@@ -497,11 +497,11 @@ HWTEST_F(AudioSuiteOutputNodeTest, SetAudioNodeFormat_001, TestSize.Level0)
     outputNode->Init();
     
     outputNode->SetAudioNodeFormat(format);
-    EXPECT_EQ(outputNode->needDataLength, 20);
+    EXPECT_EQ(outputNode->needDataLength_, 20);
  
     format.rate = AudioSamplingRate::SAMPLE_RATE_11025;
     outputNode->SetAudioNodeFormat(format);
-    EXPECT_EQ(outputNode->needDataLength, 40);
+    EXPECT_EQ(outputNode->needDataLength_, 40);
 }
  
 }

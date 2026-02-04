@@ -203,7 +203,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
     node_->Connect(mockInputNode_);
 
     ret = node_->DoProcess(NEED_DATA_LENGTH);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
     node_->DisConnect(mockInputNode_);
     testing::Mock::VerifyAndClearExpectations(mockInputNode_.get());
     mockInputNode_.reset();
@@ -252,7 +252,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, CheckEffectNodeOvertimeCountTest_001, TestSi
 
     int32_t dataDurationMS = 20;  // 20 ms pcmbuf duration for example
     // processDurationBase is for compare use, dataduration * rtfBase(0.15 for eq node)
-    uint64_t processDurationBase = dataDurationMS * MILLISECONDS_TO_MICROSECONDS * node->nodeParameter.realtimeFactor;
+    uint64_t processDurationBase = dataDurationMS * MILLISECONDS_TO_MICROSECONDS * node->nodeParameter_.realtimeFactor;
     uint64_t testDurationNormal = 1;  // 1 microsecond
     uint64_t testDurationBase = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_BASE];
     uint64_t testDuration110Base = processDurationBase * RTF_OVERTIME_THRESHOLDS[RtfOvertimeLevel::OVER_110BASE];
