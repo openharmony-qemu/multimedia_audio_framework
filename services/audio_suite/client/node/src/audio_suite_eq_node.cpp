@@ -57,7 +57,8 @@ int32_t AudioSuiteEqNode::Init()
         static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
         static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    nodeNeedDataDuration_  = (nodeParameter_.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter_.inSampleRate;
+    nodeNeedDataDuration_ =
+        static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
 
     isEqNodeInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteEqNode::Init end");
