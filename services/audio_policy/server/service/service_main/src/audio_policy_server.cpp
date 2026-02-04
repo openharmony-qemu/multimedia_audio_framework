@@ -4410,11 +4410,17 @@ int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(uint32_t ses
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "obj is null");
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(callingUid, sessionID), ERR_UNKNOWN,
+        "The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 
 int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(uint32_t sessionID)
 {
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(callingUid, sessionID), ERR_UNKNOWN,
+        "The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
     return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
 }
 
