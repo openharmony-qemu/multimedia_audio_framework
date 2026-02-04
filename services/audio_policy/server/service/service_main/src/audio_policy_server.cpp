@@ -2693,7 +2693,7 @@ bool AudioPolicyServer::VerifySessionId(uint32_t sessionId, uint32_t clientUid)
         "The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, false, "coreService_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(callingUid, sessionId), false,
-        "The sessionId %{public}u does not belong to uid %{public}u!", false, callingUid);
+        "The sessionId %{public}u does not belong to uid %{public}u!", sessionId, callingUid);
     return true;
 }
 

@@ -243,7 +243,7 @@ void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<Audio
         uint32_t sessionId = streamDesc->sessionId_;
         CHECK_AND_CONTINUE_LOG(routeUpdateCallback_.count(sessionId) != 0, "sessionId %{public}u not registed",
             sessionId);
-        auto callback = routeUpdateCallback_[sessionId];
+        auto callback = routeUpdateCallback_[sessionId].listener;
         CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "device desc is nullptr");
