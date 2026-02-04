@@ -138,8 +138,10 @@ HWTEST_F(HpaeRemoteOutputClusterTest, TransStreamUsageToSplitSceneType_01, TestS
 
     std::string mode3 = "part1:part2:part3";
     EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_NAVIGATION, mode3), HPAE_SCENE_SPLIT_NAVIGATION);
-    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_VOICE_COMMUNICATION, mode3), HPAE_SCENE_SPLIT_COMMUNICATION);
-    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_VIDEO_COMMUNICATION, mode3), HPAE_SCENE_SPLIT_COMMUNICATION);
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_VOICE_COMMUNICATION, mode3),
+        HPAE_SCENE_SPLIT_COMMUNICATION);
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_VIDEO_COMMUNICATION, mode3),
+        HPAE_SCENE_SPLIT_COMMUNICATION);
     EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MEDIA, mode3), HPAE_SCENE_SPLIT_MEDIA);
     EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MEDIA, "1:2:3:4"), HPAE_SCENE_SPLIT_MEDIA);
 }

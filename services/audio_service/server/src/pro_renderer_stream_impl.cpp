@@ -417,7 +417,7 @@ void ProRendererStreamImpl::WriteToSinkBuffer(const BufferDesc &bufferDesc, uint
             return;
         }
         auto ret = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(),
-                bufferDesc.buffer, bufferDesc.bufLength);
+            bufferDesc.buffer, bufferDesc.bufLength);
         if (ret != EOK) {
             AUDIO_ERR_LOG("memcpy_s failed");
         }
