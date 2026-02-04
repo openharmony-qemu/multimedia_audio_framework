@@ -501,6 +501,141 @@ HWTEST_F(HpaeSinkOutputNodeTest, CheckAndSetCollDelayForRenderFrameFailed, TestS
     hpaeSinkOutputNode->CheckAndSetCollDelayForRenderFrameFailed();
     EXPECT_EQ(hpaeSinkOutputNode->collRenderFrameFailedCount_.load(), 0);
 }
+
+/**
+ * @tc.name  : SetAuxiliarySinkEnable_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test enabling auxiliary sink when it's not yet created.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, SetAuxiliarySinkEnable_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    hpaeSinkOutputNode->auxiliarySink_ = nullptr;
+    hpaeSinkOutputNode->sinkOutAttr_.sinkName = "Auxiliary_Speaker";
+
+    int32_t result = hpaeSinkOutputNode->SetAuxiliarySinkEnable(true);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(hpaeSinkOutputNode->auxSinkEnable_);
+}
+
+/**
+ * @tc.name  : SetAuxiliarySinkEnable_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test disabling auxiliary sink.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, SetAuxiliarySinkEnable_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    hpaeSinkOutputNode->auxSinkEnable_ = true;
+    hpaeSinkOutputNode->auxiliarySink_ = std::make_shared<MockAudioRenderSink>();
+
+    int32_t result = hpaeSinkOutputNode->SetAuxiliarySinkEnable(false);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_FALSE(hpaeSinkOutputNode->auxSinkEnable_);
+}
+
+/**
+ * @tc.name  : GetLatency_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetLatency when audioRendererSink_ is valid.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetLatency_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+
+    uint32_t mockLatency = 50;
+    EXPECT_CALL(*mockSink, GetLatency(::testing::_))
+        .WillOnce(DoAll(SetArgReferee<0>(mockLatency), Return(0)));
+
+    uint32_t result = hpaeSinkOutputNode->GetLatency();
+    EXPECT_EQ(result, mockLatency);
+}
+
+/**
+ * @tc.name  : GetLatency_002
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetLatency when audioRendererSink_ is nullptr (Defensive path).
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, GetLatency_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    hpaeSinkOutputNode->audioRendererSink_ = nullptr;
+
+    uint32_t result = hpaeSinkOutputNode->GetLatency();
+    EXPECT_EQ(result, static_cast<uint32_t>(ERROR));
+}
+
+/**
+ * @tc.name  : RenderSinkReset_Resume_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Reset and Resume with valid and null sink pointers.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, RenderSinkReset_Resume_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+
+    hpaeSinkOutputNode->audioRendererSink_ = nullptr;
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkReset(), ERROR);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkResume(), ERROR);
+
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+    EXPECT_CALL(*mockSink, Reset()).WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkReset(), SUCCESS);
+
+    hpaeSinkOutputNode->SetSinkState(STREAM_MANAGER_SUSPENDED);
+
+    EXPECT_CALL(*mockSink, Resume()).WillOnce(Return(SUCCESS));
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkResume(), SUCCESS);
+
+    EXPECT_EQ(hpaeSinkOutputNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    EXPECT_CALL(*mockSink, Resume()).WillOnce(Return(ERR_OPERATION_FAILED));
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkResume(), ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Reset_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test the topology disconnection logic in Reset.
+ */
+HWTEST_F(HpaeSinkOutputNodeTest, Reset_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+
+    HpaeNodeInfo inputInfo;
+    inputInfo.sessionId = 80001;
+    auto inputNode = std::make_shared<HpaeSinkInputNode>(inputInfo);
+
+    hpaeSinkOutputNode->Connect(inputNode);
+
+    EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 1);
+
+    bool result = hpaeSinkOutputNode->Reset();
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
