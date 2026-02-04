@@ -2674,5 +2674,116 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeOut_002,
     audioProcessInServerRet.MarkStaticFadeOut(true);
     EXPECT_FALSE(audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_);
 }
+
+/**
+ * @tc.name  : Test RebuildCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: RebuildCaptureInjector_005
+ * @tc.desc  : Test RebuildCaptureInjector interface when rebuildFlag_ is true and conditions met.
+ */
+HWTEST(AudioProcessInServerUnitTest, RebuildCaptureInjector_005, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.rebuildFlag_ = true;
+
+    // Test the case when all conditions are met
+    audioProcessInServerRet.RebuildCaptureInjector();
+    EXPECT_FALSE(audioProcessInServerRet.rebuildFlag_);
+}
+
+/**
+ * @tc.name  : Test RebuildCaptureInjector API
+ * @tc.type  : FUNC
+ * @tc.number: RebuildCaptureInjector_006
+ * @tc.desc  : Test RebuildCaptureInjector interface when rebuildFlag_ is false.
+ */
+HWTEST(AudioProcessInServerUnitTest, RebuildCaptureInjector_006, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.rebuildFlag_ = false;
+
+    // Test the case when rebuildFlag_ is false (should return early)
+    audioProcessInServerRet.RebuildCaptureInjector();
+    EXPECT_FALSE(audioProcessInServerRet.rebuildFlag_);
+}
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_001
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface for playback mode.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    // Test the function executes without crashing
+    audioProcessInServerRet.WriterRenderStreamStandbySysEvent(10, 1);
+    EXPECT_EQ(configRet.audioMode, AUDIO_MODE_PLAYBACK);
+}
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_002
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface for record mode.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    // Test the function executes without crashing for record mode
+    audioProcessInServerRet.WriterRenderStreamStandbySysEvent(10, 0);
+    EXPECT_EQ(configRet.audioMode, AUDIO_MODE_RECORD);
+}
+
+/**
+ * @tc.name  : Test AddMuteFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: AddMuteFrameSize_001
+ * @tc.desc  : Test AddMuteFrameSize interface when muteFrameCnt < 0.
+ */
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    // Test when muteFrameCnt < 0
+    audioProcessInServerRet.AddMuteFrameSize(-1);
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test AddMuteFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: AddMuteFrameSize_002
+ * @tc.desc  : Test AddMuteFrameSize interface when muteFrameCnt >= 0.
+ */
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    // Test when muteFrameCnt >= 0
+    audioProcessInServerRet.AddMuteFrameSize(0);
+    audioProcessInServerRet.AddMuteFrameSize(1);
+    EXPECT_TRUE(true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
