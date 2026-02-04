@@ -209,6 +209,7 @@ public:
     void LoadCollaborationConfig() override;
 
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
+    void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);

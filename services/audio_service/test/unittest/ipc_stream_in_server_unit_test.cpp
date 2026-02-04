@@ -2467,42 +2467,5 @@ HWTEST(IpcStreamInServerUnitTest, SetTarget_001, TestSize.Level1)
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 
-/**
- * @tc.name  : Test IpcStreamInServer API
- * @tc.type  : FUNC
- * @tc.number: GetStaticBufferInfo
- * @tc.desc  : Test GetStaticBufferInfo interface.
- */
-HWTEST(IpcStreamInServerUnitTest, GetStaticBufferInfo_001, TestSize.Level1)
-{
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
-    StaticBufferInfo bufferInfo{};
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    ipcStreamInServerRet.rendererInServer_ = nullptr;
-    EXPECT_EQ(ipcStreamInServerRet.GetStaticBufferInfo(bufferInfo), ERR_OPERATION_FAILED);
-    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
-        ipcStreamInServerRet.streamListenerHolder_);
-    EXPECT_EQ(ipcStreamInServerRet.GetStaticBufferInfo(bufferInfo), ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test IpcStreamInServer API
- * @tc.type  : FUNC
- * @tc.number: GetStaticBufferInfo
- * @tc.desc  : Test GetStaticBufferInfo interface.
- */
-HWTEST(IpcStreamInServerUnitTest, GetStaticBufferInfo_002, TestSize.Level1)
-{
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
-    StaticBufferInfo bufferInfo{};
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    ipcStreamInServerRet.rendererInServer_ = nullptr;
-    EXPECT_EQ(ipcStreamInServerRet.GetStaticBufferInfo(bufferInfo), ERR_OPERATION_FAILED);
-    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
-        ipcStreamInServerRet.streamListenerHolder_);
-    EXPECT_NE(ipcStreamInServerRet.GetStaticBufferInfo(bufferInfo), SUCCESS);
-}
 }
 }

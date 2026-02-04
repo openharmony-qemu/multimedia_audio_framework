@@ -119,6 +119,9 @@ struct BasicBufferInfo {
 
     std::atomic<uint64_t> bufferEndCallbackSendTimes;
     std::atomic<bool> needSendLoopEndCallback;
+
+    std::atomic<size_t> curStaticDataPos;
+    std::atomic<int64_t> currentLoopTimes;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -263,6 +266,8 @@ public:
     void ResetBufferEndCallbackSendTimes();
     void SetIsNeedSendLoopEndCallback(bool value);
     void SetIsFirstFrame(bool value);
+    void SetStaticPlayPosition(int64_t curLoopTimes, size_t curStaticDataPos);
+    void GetStaticPlayPosition(int64_t &curLoopTimes, size_t &curStaticDataPos);
 
     bool IsNeedSendBufferEndCallback();
     bool IsNeedSendLoopEndCallback();
@@ -270,7 +275,6 @@ public:
 
     void SetStaticMode(bool state);
     bool GetStaticMode();
-    std::shared_ptr<AudioSharedMemory> GetSharedMem();
 
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
 

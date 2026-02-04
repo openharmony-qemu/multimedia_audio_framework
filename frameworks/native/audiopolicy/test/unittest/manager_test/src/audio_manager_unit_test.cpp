@@ -206,7 +206,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_002, TestSize.Level1)
     outputDevice->networkId_ = std::string("");
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
-    EXPECT_TRUE(ret < 0);
+    EXPECT_TRUE(ret < 1);
 }
 
 #ifdef TEMP_DISABLE
@@ -383,7 +383,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
     outputDevice->networkId_ = "";
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_LT(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE

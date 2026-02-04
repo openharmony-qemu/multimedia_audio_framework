@@ -1554,10 +1554,6 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     info.target = renderTarget_;
 
-    if (rendererInfo_.isStatic) {
-        GetStaticBufferInfo(info.staticBufferInfo);
-    }
-    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1594,6 +1590,15 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.unprocessSamples = audioWriteState_.load().unprocessedFramesBytes_ +
         audioWriteState_.load().perPeriodFrame_ +
         lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
+
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
+        clientBuffer_->GetStaticPlayPosition(
+            info.staticBufferInfo.currentLoopTimes_, info.staticBufferInfo.curStaticDataPos_);
+        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
+        info.staticBufferEventCallback = audioStaticBufferEventCallback_;
+    }
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()

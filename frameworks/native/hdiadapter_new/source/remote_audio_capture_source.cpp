@@ -312,7 +312,19 @@ int32_t RemoteAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX_OUT
 
 int32_t RemoteAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
-    return ERR_NOT_SUPPORTED;
+    Trace trace("RemoteAudioCaptureSource:UpdateAppsUid");
+    std::unordered_set<int32_t> lastAppsUid = appsUid_;
+    std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
+    appsUid_ = std::move(appsUidSet);
+    if (appsUid_ != lastAppsUid) {
+        CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "audioCapture_ is null");
+        CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
+        std::string appInfoStr = GenerateAppsUidStr(appsUid_);
+        int32_t ret = audioCapture_->SetExtraParams(appInfoStr.c_str());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
+        AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
+    }
+    return SUCCESS;
 }
 
 void RemoteAudioCaptureSource::SetInvalidState(void)
@@ -435,6 +447,8 @@ int32_t RemoteAudioCaptureSource::CreateCapture(void)
     audioCapture_.ForceSetRefPtr(static_cast<IAudioCapture *>(capture));
     CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED, "create capture fail");
     deviceManager->RegistCaptureSourceCallback(deviceNetworkId_, hdiCaptureId_, shared_from_this());
+    int32_t ret = audioCapture_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    AUDIO_INFO_LOG("set app info params, ret: %{public}d", ret);
     return SUCCESS;
 }
 

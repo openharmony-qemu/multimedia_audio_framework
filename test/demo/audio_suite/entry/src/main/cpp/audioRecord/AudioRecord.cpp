@@ -130,7 +130,7 @@ napi_value AudioCapturerInit(napi_env env, napi_callback_info info)
         delete[] argv;
         return nullptr;
     }
-    setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
+    SetAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
     g_totalSize = g_audioBufferTotalSize;
     long startTime = UINT_0;
     status = napi_get_value_int64(env, argv[ARG_4], &startTime);
@@ -168,7 +168,7 @@ napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info)
     std::string outputId;
     status = ParseNapiString(env, argv[ARG_2], outputId);
     napi_value napiValue;
-    setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
+    SetAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
     g_totalSize = g_audioBufferTotalSize;
     long startTime = 0;
     status = napi_get_value_int64(env, argv[ARG_3], &startTime);
@@ -180,7 +180,7 @@ napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info)
     AudioAsset asset{
         // 相对于时间轴的开始时间
         startTime : startTime,
-        endTime : startTime + getAudioDuration(g_audioBufferTotalSize, g_samplingRate, g_channelCount, g_bitsPerSample),
+        endTime : startTime + GetAudioDuration(g_audioBufferTotalSize, g_samplingRate, g_channelCount, g_bitsPerSample),
         pcmBufferLength : g_totalSize,
         sampleRate : g_samplingRate,
         channels : g_channelCount,
@@ -197,7 +197,7 @@ napi_value MixPlayInitBuffer(napi_env env, napi_callback_info info)
         maxEndTime : asset.endTime,
         currentTime : startTime
     };
-    Timeline::getInstance().addAudioTrack(track);
+    Timeline::GetInstance().AddAudioTrack(track);
     // create input node
     CreateInputNode(env, inputId, napiValue, result);
     ManageOutputNodes(env, inputId, outputId, mixerId, result);
@@ -246,7 +246,7 @@ napi_value RealPlayRecordBuffer(napi_env env, napi_callback_info info)
     }
     std::copy(recordBuffer.begin(), recordBuffer.end(), static_cast<uint8_t *>(data));
     delete[] argv;
-    setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
+    SetAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, RECORD_TAG, "RealPlayRecordBuffer g_bitsPerSample is: %{public}d",
                  g_bitsPerSample);
     return napiValue;
@@ -316,7 +316,7 @@ napi_value MixRecordBuffer(napi_env env, napi_callback_info info)
     status = ParseNapiString(env, argv[ARG_2], outputId);
     napi_value napiValue;
     OH_AudioSuite_Result result;
-    setAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
+    SetAudioFormat(g_samplingRate, g_channelCount, g_bitsPerSample);
     g_totalSize = g_audioBufferTotalSize;
     long startTime = 1000;
     std::string key = inputId;
@@ -326,7 +326,7 @@ napi_value MixRecordBuffer(napi_env env, napi_callback_info info)
     StoreTotalBuffToMap(reinterpret_cast<const char *>(g_recordBuffer.get()), g_audioBufferTotalSize, key);
     AudioAsset asset{
         startTime : startTime,
-        endTime : startTime + getAudioDuration(g_audioBufferTotalSize, g_sampleFormat, g_channelCount, g_bitsPerSample),
+        endTime : startTime + GetAudioDuration(g_audioBufferTotalSize, g_sampleFormat, g_channelCount, g_bitsPerSample),
         pcmBufferLength : g_totalSize,
         sampleRate : g_sampleFormat,
         channels : g_channelCount,
@@ -334,7 +334,7 @@ napi_value MixRecordBuffer(napi_env env, napi_callback_info info)
     };
     AudioTrack
     track{trackId : inputId, isSilent : false, assets : {{0, asset}}, maxEndTime : asset.endTime, currentTime : 0};
-    Timeline::getInstance().addAudioTrack(track);
+    Timeline::GetInstance().AddAudioTrack(track);
     // create input node
     CreateInputNode(env, inputId, napiValue, result);
     ManageOutputNodes(env, inputId, outputId, mixerId, result);

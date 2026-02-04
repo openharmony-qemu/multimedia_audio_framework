@@ -30,6 +30,7 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr uint32_t HISTORY_INTERVAL_S = 7;  // 7s buffer for rewind
+const std::string REMOTE_OFFLOAD_DEVICE_CLASS = "remote_offload";
 }
 
 HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
@@ -269,6 +270,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     converterForLoudness_->RegisterCallback(this);
     renderNoneEffectNode_->AudioOffloadRendererStart(curNode_->GetNodeInfo(), sinkInfo_);
     if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
+        UpdateAppsUid();
         sinkOutputNode_->RenderSinkStart();
     }
     return SUCCESS;
@@ -485,6 +487,7 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
             sinkOutputNode_->RenderSinkStop();
         } else if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && curNode_ &&
             curNode_->GetState() == HPAE_SESSION_RUNNING) {
+            UpdateAppsUid();
             sinkOutputNode_->RenderSinkStart();
         }
     };
@@ -572,8 +575,8 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
 
 int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
-    AUDIO_INFO_LOG("init devicename:%s,channel:%{public}u,rate:%{public}u", sinkInfo_.deviceName.c_str(),
-        sinkInfo_.channels, sinkInfo_.samplingRate);
+    AUDIO_INFO_LOG("init devicename:%{public}s,channel:%{public}u,rate:%{public}u",
+        GetEncryptStr(sinkInfo_.deviceName).c_str(), sinkInfo_.channels, sinkInfo_.samplingRate);
     HpaeNodeInfo nodeInfo;
     int32_t checkRet = CheckFramelen(sinkInfo_);
     if (checkRet != SUCCESS) {
@@ -967,6 +970,21 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
     return SUCCESS;
 }
 
+void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
+        CHECK_AND_RETURN(sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS);
+        appsUid_.clear();
+        if (curNode_ != nullptr &&
+            (curNode_->GetState() == HPAE_SESSION_RUNNING ||
+            curNode_->GetSessionId() == sessionId)) {
+            appsUid_.emplace_back(curNode_->GetAppUid());
+        }
+        sinkOutputNode_->UpdateAppsUid(appsUid_);
+    };
+    SendRequest(request, __func__);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

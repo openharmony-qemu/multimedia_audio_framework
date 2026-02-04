@@ -133,5 +133,10 @@ bool AudioSceneManager::IsHangUpScene()
     return (lastAudioScene_ == AUDIO_SCENE_PHONE_CALL || lastAudioScene_ == AUDIO_SCENE_PHONE_CHAT) &&
         audioScene_ == AUDIO_SCENE_DEFAULT;
 }
+
+bool AudioSceneManager::IsPhoneCallOrChatScene() const
+{
+    return audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT;
+}
 }
 }

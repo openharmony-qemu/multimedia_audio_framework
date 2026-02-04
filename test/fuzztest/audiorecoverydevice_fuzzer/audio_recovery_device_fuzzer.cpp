@@ -539,6 +539,18 @@ void AudioRecoveryDeviceWriteExcludeOutputSysEventsFuzzTest(FuzzedDataProvider& 
     OnStop();
 }
 
+void AudioRecoveryDeviceRefreshVirtualDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    if (audioRecoveryDevice == nullptr || desc == nullptr || g_testDeviceTypes.size() == 0) {
+        return;
+    }
+    desc->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    audioRecoveryDevice->RefreshVirtualDevice(desc);
+    OnStop();
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -561,6 +573,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioRecoveryDeviceSelectFastInputDeviceFuzzTest,
     AudioRecoveryDeviceWriteSelectInputSysEventsFuzzTest,
     AudioRecoveryDeviceWriteExcludeOutputSysEventsFuzzTest,
+    AudioRecoveryDeviceRefreshVirtualDeviceFuzzTest,
     });
     func(fdp);
 }

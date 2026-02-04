@@ -102,6 +102,7 @@ void TaiheAudioCapturerStateCallback::SafeJsCallbackCapturerStateWork(AudioCaptu
         [](AudioCapturerStateJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
 

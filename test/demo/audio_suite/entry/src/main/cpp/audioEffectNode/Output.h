@@ -6,7 +6,7 @@
 #define AUDIOEDITTESTAPP_OUTPUT_H
 
 #include <string>
-#include "ohaudio/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
 #include "./Input.h"
 
 struct AudioRenderContext {

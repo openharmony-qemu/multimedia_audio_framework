@@ -28,7 +28,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string NAPI_AUDIO_LOOPBACK_CLASS_NAME = "AudioLoopback";
+inline const std::string NAPI_AUDIO_LOOPBACK_CLASS_NAME = "AudioLoopback";
 
 class NapiAudioLoopback {
 public:

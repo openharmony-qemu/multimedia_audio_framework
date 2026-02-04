@@ -219,5 +219,27 @@ HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_009, TestSize.Le
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
+/**
+ * @tc.name   : Test RemoteSource API
+ * @tc.number : RemoteSourceUnitTest_010
+ * @tc.desc   : Test remote source update app uid
+ */
+HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_010, TestSize.Level1)
+{
+    EXPECT_TRUE(source_ && source_->IsInited());
+    std::vector<int32_t> appsUid = {};
+    source_->UpdateAppsUid(appsUid);
+    appsUid.push_back(20000001);
+    appsUid.push_back(20000002);
+    source_->UpdateAppsUid(appsUid);
+    int32_t ret = source_->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    source_->UpdateAppsUid(appsUid);
+    appsUid.clear();
+    source_->UpdateAppsUid(appsUid);
+    ret = source_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

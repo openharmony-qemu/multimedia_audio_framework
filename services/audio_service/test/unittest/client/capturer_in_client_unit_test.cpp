@@ -207,8 +207,6 @@ public:
     virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
-
-    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {

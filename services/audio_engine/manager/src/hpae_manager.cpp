@@ -144,7 +144,7 @@ int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspe
             AUDIO_WARNING_LOG("capture not support suspend");
             return;
         } else {
-            AUDIO_WARNING_LOG("can not find suspend sink: %s", audioPortName.c_str());
+            AUDIO_WARNING_LOG("can not find suspend sink: %{public}s", GetEncryptStr(audioPortName).c_str());
             return;
         }
     };
@@ -155,7 +155,7 @@ int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspe
 int32_t HpaeManager::StopAudioPort(const std::string &audioPortName)
 {
     auto request = [this, audioPortName]() {
-        AUDIO_INFO_LOG("HpaeManager::stop audio port: %s", audioPortName.c_str());
+        AUDIO_INFO_LOG("HpaeManager::stop audio port: %{public}s", GetEncryptStr(audioPortName).c_str());
         auto renderManager = GetRendererManagerByName(audioPortName);
         if (renderManager != nullptr) {
             renderManager->StopManager();
@@ -166,7 +166,7 @@ int32_t HpaeManager::StopAudioPort(const std::string &audioPortName)
             captureManager->StopManager();
             return;
         }
-        AUDIO_WARNING_LOG("can not find audio port: %s", audioPortName.c_str());
+        AUDIO_WARNING_LOG("can not find audio port: %{public}s", GetEncryptStr(audioPortName).c_str());
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -176,14 +176,13 @@ bool HpaeManager::SetSinkMute(const std::string &sinkName, bool isMute, bool isS
 {
     auto request = [this, sinkName, isMute, isSync]() {
         // todo for device change
-        AUDIO_INFO_LOG("SetSinkMute sinkName: %s isMute: %{public}d, isSync: %{public}d",
-            sinkName.c_str(),
-            isMute,
-            isSync);
+        AUDIO_INFO_LOG("SetSinkMute sinkName: %{public}s isMute: %{public}d, isSync: %{public}d",
+            GetEncryptStr(sinkName).c_str(), isMute, isSync);
         if (SafeGetMap(rendererManagerMap_, sinkName)) {
             rendererManagerMap_[sinkName]->SetMute(isMute);
         } else {
-            AUDIO_WARNING_LOG("can not find sink: %s for mute:%{public}d", sinkName.c_str(), isMute);
+            AUDIO_WARNING_LOG("can not find sink: %{public}s for mute:%{public}d",
+                GetEncryptStr(sinkName).c_str(), isMute);
         }
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnSetSinkMuteCb(SUCCESS);
@@ -324,7 +323,7 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     if (defaultSink_ == "" && coreSink_ == "") {
         defaultSink_ = audioModuleInfo.name;
         coreSink_ = audioModuleInfo.name;
-        AUDIO_INFO_LOG("SetDefaultSink name: %s", defaultSink_.c_str());
+        AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", GetEncryptStr(defaultSink_).c_str());
     }
 
     if (audioModuleInfo.name == VIRTUAL_INJECTOR) {
@@ -335,8 +334,8 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
         rendererManager->SetSinkVirtualOutputNode(sinkVirtualOutputNodeMap_[sinkSourceIndex]);
     }
     rendererManager->Init(isReload);
-    AUDIO_INFO_LOG(
-        "open sink name: %s end sinkIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
+    AUDIO_INFO_LOG("open sink name: %{public}s end sinkIndex is %{public}u",
+        GetEncryptStr(audioModuleInfo.name).c_str(), sinkSourceIndex);
     return SUCCESS;
 }
 
@@ -375,7 +374,7 @@ int32_t HpaeManager::ReloadCaptureManager(HpaeSourceInfo &sourceInfo, bool isRel
 int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
 {
     if (SafeGetMap(rendererManagerMap_, audioModuleInfo.name)) {
-        AUDIO_INFO_LOG("sink name: %s already open", audioModuleInfo.name.c_str());
+        AUDIO_INFO_LOG("sink name: %{public}s already open", GetEncryptStr(audioModuleInfo.name).c_str());
         if (!rendererManagerMap_[audioModuleInfo.name]->IsInit()) {
             if (ReloadRenderManager(audioModuleInfo) != SUCCESS) {
                 return ERROR;
@@ -502,7 +501,7 @@ uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
                 return;
             }
         
-            AUDIO_INFO_LOG("currect device:%s not exist.", audioModuleInfo.name.c_str());
+            AUDIO_INFO_LOG("currect device:%{public}s not exist.", GetEncryptStr(audioModuleInfo.name).c_str());
             uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
             CreateRendererManager(audioModuleInfo, sinkSourceIndex, true);
         } else if (audioModuleInfo.lib == "libmodule-hdi-source.z.so") {
@@ -517,11 +516,12 @@ uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
                 return;
             }
         
-            AUDIO_INFO_LOG("currect device:%s not exist.", audioModuleInfo.name.c_str());
+            AUDIO_INFO_LOG("currect device:%{public}s not exist.", GetEncryptStr(audioModuleInfo.name).c_str());
             uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
             CreateCaptureManager(sourceInfo, sinkSourceIndex, true);
         } else {
-            AUDIO_ERR_LOG("currect device:%s not support reload.", audioModuleInfo.name.c_str());
+            AUDIO_ERR_LOG("currect device:%{public}s not support reload.",
+                GetEncryptStr(audioModuleInfo.name).c_str());
             OnCallbackOpenOrReloadFailed(true);
             return;
         }
@@ -533,10 +533,10 @@ uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
 void HpaeManager::DumpSinkInfo(std::string deviceName)
 {
     auto request = [this, deviceName]() {
-        AUDIO_INFO_LOG("DumpSinkInfo %s", deviceName.c_str());
+        AUDIO_INFO_LOG("DumpSinkInfo %{public}s", GetEncryptStr(deviceName).c_str());
         if (!SafeGetMap(rendererManagerMap_, deviceName) ||
             rendererManagerMap_[deviceName]->DumpSinkInfo() != SUCCESS) {
-            AUDIO_WARNING_LOG("dump sink %s info error", deviceName.c_str());
+            AUDIO_WARNING_LOG("dump sink %{public}s info error", GetEncryptStr(deviceName).c_str());
             if (auto callback = dumpCallback_.lock()) {
                 std::string dumpStr;
                 callback->OnDumpSinkInfoCb(dumpStr, ERROR);
@@ -675,12 +675,12 @@ int32_t HpaeManager::CloseAudioPort(int32_t audioHandleIndex)
     auto request = [this, audioHandleIndex]() {
         int32_t ret = SUCCESS;
         if (sinkIdSinkNameMap_.find(audioHandleIndex) != sinkIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("CloseAudioPort index: %{public}d name %s",
-                audioHandleIndex, sinkIdSinkNameMap_[audioHandleIndex].c_str());
+            AUDIO_INFO_LOG("CloseAudioPort index: %{public}d name %{public}s",
+                audioHandleIndex, GetEncryptStr(sinkIdSinkNameMap_[audioHandleIndex]).c_str());
             ret = CloseOutAudioPort(sinkIdSinkNameMap_[audioHandleIndex]);
         } else if (sourceIdSourceNameMap_.find(audioHandleIndex) != sourceIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("CloseAudioPort index: %{public}d name %{public}s",
-                audioHandleIndex, sourceIdSourceNameMap_[audioHandleIndex].c_str());
+                audioHandleIndex, GetEncryptStr(sourceIdSourceNameMap_[audioHandleIndex]).c_str());
             ret = CloseInAudioPort(sourceIdSourceNameMap_[audioHandleIndex]);
         }
         if (auto serviceCallback = serviceCallback_.lock()) {
@@ -727,14 +727,14 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERROR_INVALID_PARAM, "invalid sink name");
     auto request = [this, name]() {
-        AUDIO_INFO_LOG("SetDefaultSink name: %s", name.c_str());
+        AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", GetEncryptStr(name).c_str());
         if (name == defaultSink_) {
             AUDIO_INFO_LOG("sink is same as default sink");
             return;
         }
 
         if (!SafeGetMap(rendererManagerMap_, name)) {
-            AUDIO_WARNING_LOG("sink: %s not exist, do not change default sink", name.c_str());
+            AUDIO_WARNING_LOG("sink: %{public}s not exist, do not change default sink", GetEncryptStr(name).c_str());
             return;
         }
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(defaultSink_);
@@ -767,7 +767,7 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
         }
         
         if (!SafeGetMap(capturerManagerMap_, name)) {
-            AUDIO_WARNING_LOG("source: %s not exist, do not change default source", name.c_str());
+            AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
             return;
         }
         std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(defaultSource_);
@@ -978,8 +978,8 @@ int32_t HpaeManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t s
         }
 
         std::shared_ptr<IHpaeRendererManager> oldRendererManager = GetRendererManagerById(sinkInputId);
-        AUDIO_INFO_LOG("start move session:%{public}u, [%s] --> [%s],state:%{public}d",
-            sinkInputId, name.c_str(), sinkName.c_str(), rendererIdStreamInfoMap_[sinkInputId].state);
+        AUDIO_INFO_LOG("start move session:%{public}u, [%{public}s] --> [%{public}s],state:%{public}d", sinkInputId,
+            GetEncryptStr(name).c_str(), GetEncryptStr(sinkName).c_str(), rendererIdStreamInfoMap_[sinkInputId].state);
         movingIds_.emplace(sinkInputId, rendererIdStreamInfoMap_[sinkInputId].state);
         oldRendererManager->MoveStream(sinkInputId, sinkName);
     };
@@ -1077,14 +1077,15 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
 void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName)
 {
     uint32_t sessionId = sinkInputNode->GetNodeInfo().sessionId;
-    AUDIO_INFO_LOG("handle move session:%{public}u to new sink:%s", sessionId, sinkName.c_str());
+    AUDIO_INFO_LOG("handle move session:%{public}u to new sink:%{public}s",
+        sessionId, GetEncryptStr(sinkName).c_str());
     if (MovingSinkStateChange(sessionId, sinkInputNode)) {
         return;
     }
     std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
     if (rendererManager == nullptr) {
-        AUDIO_ERR_LOG("handle move session:%{public}u failed,can not find sink by name:%s",
-            sessionId, sinkName.c_str());
+        AUDIO_ERR_LOG("handle move session:%{public}u failed,can not find sink by name:%{public}s",
+            sessionId, GetEncryptStr(sinkName).c_str());
         if (auto serviceCallback = serviceCallback_.lock()) {
             serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
         }
@@ -1164,16 +1165,17 @@ std::vector<std::shared_ptr<HpaeSinkInputNode>> HpaeManager::GetPerferSinkInputs
 void HpaeManager::HandleMoveAllSinkInputs(
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs, std::string sinkName, MoveSessionType moveType)
 {
-    AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%s", sinkInputs.size(), sinkName.c_str());
+    AUDIO_INFO_LOG("handle move session count:%{public}zu to name:%{public}s",
+        sinkInputs.size(), GetEncryptStr(sinkName).c_str());
     if (moveType != MOVE_ALL) {
         sinkInputs = GetPerferSinkInputs(sinkInputs);
     }
     if (sinkName.empty()) {
-        AUDIO_INFO_LOG("sink name is empty, move to default sink:%s", defaultSink_.c_str());
+        AUDIO_INFO_LOG("sink name is empty, move to default sink:%{public}s", GetEncryptStr(defaultSink_).c_str());
         sinkName = defaultSink_;
     }
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-        AUDIO_WARNING_LOG("can not find sink: %s", sinkName.c_str());
+        AUDIO_WARNING_LOG("can not find sink: %{public}s", GetEncryptStr(sinkName).c_str());
         if (moveType == MOVE_PREFER) {
             if (auto serviceCallback = serviceCallback_.lock()) {
                 serviceCallback->OnOpenAudioPortCb(sinkNameSinkIdMap_[sinkName]);
@@ -1228,7 +1230,7 @@ void HpaeManager::HandleMoveAllSourceOutputs(std::vector<HpaeCaptureMoveInfo> mo
 void HpaeManager::HandleMoveSessionFailed(
     HpaeStreamClassType streamClassType, uint32_t sessionId, MoveSessionType moveType, std::string name)
 {
-    AUDIO_INFO_LOG("handle move session:%{public}u failed to %s", sessionId, name.c_str());
+    AUDIO_INFO_LOG("handle move session:%{public}u failed to %{public}s", sessionId, GetEncryptStr(name).c_str());
     movingIds_.erase(sessionId);
     if (moveType != MOVE_SINGLE) {
         return;
@@ -1291,9 +1293,8 @@ void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callb
 
 void HpaeManager::HandleDumpSinkInfo(std::string deviceName, std::string dumpStr)
 {
-    AUDIO_INFO_LOG("deviceName:%s dumpStr:%{public}s",
-        deviceName.c_str(),
-        dumpStr.c_str());
+    AUDIO_INFO_LOG("deviceName:%{public}s dumpStr:%{public}s",
+        GetEncryptStr(deviceName).c_str(), dumpStr.c_str());
     if (auto ptr = dumpCallback_.lock()) {
         ptr->OnDumpSinkInfoCb(dumpStr, SUCCESS);
     }
@@ -1301,9 +1302,8 @@ void HpaeManager::HandleDumpSinkInfo(std::string deviceName, std::string dumpStr
 
 void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpStr)
 {
-    AUDIO_INFO_LOG("deviceName:%s dumpStr:%{public}s",
-        deviceName.c_str(),
-        dumpStr.c_str());
+    AUDIO_INFO_LOG("deviceName:%{public}s dumpStr:%{public}s",
+        GetEncryptStr(deviceName).c_str(), dumpStr.c_str());
     if (auto ptr = dumpCallback_.lock()) {
         ptr->OnDumpSourceInfoCb(dumpStr, SUCCESS);
     }
@@ -1320,13 +1320,13 @@ void HpaeManager::HandleReloadDeviceResult(std::string deviceName, int32_t resul
         } else if (sourceNameSourceIdMap_.find(deviceName) != sourceNameSourceIdMap_.end()) {
             serviceCallback->OnReloadAudioPortCb(sourceNameSourceIdMap_[deviceName]);
         } else {
-            AUDIO_ERR_LOG("device:%s is not exist.", deviceName.c_str());
+            AUDIO_ERR_LOG("device:%{public}s is not exist.", GetEncryptStr(deviceName).c_str());
             serviceCallback->OnReloadAudioPortCb(SINK_INVALID_ID);
         }
     } else if (serviceCallback) {
         serviceCallback->OnReloadAudioPortCb(SINK_INVALID_ID);
-        AUDIO_INFO_LOG("deviceName:%s result:%{public}d error",
-            deviceName.c_str(), result);
+        AUDIO_INFO_LOG("deviceName:%{public}s result:%{public}d error",
+            GetEncryptStr(deviceName).c_str(), result);
     } else {
         AUDIO_INFO_LOG("OnReloadAudioPortCb is nullptr");
     }
@@ -1334,7 +1334,7 @@ void HpaeManager::HandleReloadDeviceResult(std::string deviceName, int32_t resul
 
 void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
 {
-    AUDIO_INFO_LOG("deviceName:%s result:%{public}d ", deviceName.c_str(), result);
+    AUDIO_INFO_LOG("deviceName:%{public}s result:%{public}d ", GetEncryptStr(deviceName).c_str(), result);
     auto serviceCallback = serviceCallback_.lock();
     if (serviceCallback && result == SUCCESS) {
         if (sinkNameSinkIdMap_.find(deviceName) != sinkNameSinkIdMap_.end()) {
@@ -1342,16 +1342,14 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
         } else if (sourceNameSourceIdMap_.find(deviceName) != sourceNameSourceIdMap_.end()) {
             serviceCallback->OnOpenAudioPortCb(sourceNameSourceIdMap_[deviceName]);
         } else {
-            AUDIO_ERR_LOG("device:%s is not exist.", deviceName.c_str());
+            AUDIO_ERR_LOG("device:%{public}s is not exist.", GetEncryptStr(deviceName).c_str());
             serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
             DeleteAudioport(deviceName);
         }
     } else if (serviceCallback) {
         serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
-        AUDIO_INFO_LOG("HandleInitDeviceResult deviceName:%s "
-                       "result:%{public}d error",
-            deviceName.c_str(),
-            result);
+        AUDIO_INFO_LOG("HandleInitDeviceResult deviceName:%{public}s "
+            "result:%{public}d error", GetEncryptStr(deviceName).c_str(), result);
     } else {
         AUDIO_INFO_LOG("OnOpenAudioPortCb is nullptr");
     }
@@ -1441,9 +1439,10 @@ int32_t HpaeManager::CreateStream(const HpaeStreamInfo &streamInfo)
             return CreateStreamForCapInner(streamInfo);
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
             std::string deviceName = streamInfo.deviceName == "" ? defaultSink_ : streamInfo.deviceName;
-            AUDIO_INFO_LOG("devicename:%s, sessionId:%{public}u", deviceName.c_str(), streamInfo.sessionId);
+            AUDIO_INFO_LOG("devicename:%{public}s, sessionId:%{public}u",
+                GetEncryptStr(deviceName).c_str(), streamInfo.sessionId);
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, deviceName),
-                "can not find sink[%s] in rendererManagerMap_", deviceName.c_str());
+                "can not find sink[%{public}s] in rendererManagerMap_", GetEncryptStr(deviceName).c_str());
             int32_t ret = rendererManagerMap_[deviceName]->CreateStream(streamInfo);
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "Create stream:%{public}i failed.", streamInfo.sessionId);
             rendererIdSinkNameMap_[streamInfo.sessionId] = deviceName;
@@ -1627,10 +1626,10 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
         }
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer Start sessionId: %{public}u deviceName:%s",
-                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer Start sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
@@ -1673,10 +1672,10 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
         }
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer StartWithSyncId sessionId: %{public}u deviceName:%s",
-                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer StartWithSyncId sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->StartWithSyncId(sessionId, syncId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
@@ -1703,10 +1702,10 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
         }
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer Pause sessionId: %{public}u deviceName:%s",
-                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer Pause sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Pause(sessionId);
             EnqueuePendingTransition(sessionId, HPAE_SESSION_PAUSED, OPERATION_PAUSED);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_PAUSING;
@@ -1746,10 +1745,10 @@ int32_t HpaeManager::Flush(HpaeStreamClassType streamClassType, uint32_t session
         }
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer Flush sessionId: %{public}u deviceName:%s",
-                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer Flush sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Flush(sessionId);
             UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_FLUSHED, sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
@@ -1789,10 +1788,10 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
         }
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer Drain sessionId: %{public}u deviceName:%s",
-                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer Drain sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Drain(sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
@@ -1830,10 +1829,10 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
         }
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer Stop sessionId: %{public}u deviceName:%s",
-                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer Stop sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Stop(sessionId);
             EnqueuePendingTransition(sessionId, HPAE_SESSION_STOPPED, OPERATION_STOPPED);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
@@ -1874,9 +1873,8 @@ int32_t HpaeManager::RegisterStatusCallback(HpaeStreamClassType streamClassType,
             "RegisterStatusCallback streamClassType %{public}d, sessionId %{public}u", streamClassType, sessionId);
         if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
             rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer RegisterStatusCallback sessionId: %{public}u deviceName:%s",
-                sessionId,
-                rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer RegisterStatusCallback sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererIdStreamInfoMap_[sessionId].statusCallback = callback;
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
@@ -1901,9 +1899,8 @@ int32_t HpaeManager::RegisterReadCallback(uint32_t sessionId, const std::weak_pt
     auto request = [this, sessionId, callback]() {
         AUDIO_INFO_LOG("RegisterReadCallback sessionId %{public}u", sessionId);
         if (capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
-            AUDIO_INFO_LOG("capturer RegisterReadCallback sessionId: %{public}u deviceName:%s",
-                sessionId,
-                capturerIdSourceNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("capturer RegisterReadCallback sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(capturerIdSourceNameMap_[sessionId]).c_str());
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
                 CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
                     "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
@@ -1934,7 +1931,7 @@ int32_t HpaeManager::SetClientVolume(uint32_t sessionId, float volume)
         AUDIO_INFO_LOG("SetClientVolume sessionId %{public}u %{public}f", sessionId, volume);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetClientVolume(sessionId, volume);
         } else {
             AUDIO_WARNING_LOG("SetClientVolume can not find sessionId, sessionId %{public}u", sessionId);
@@ -1950,7 +1947,7 @@ int32_t HpaeManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
         AUDIO_INFO_LOG("SetLoudnessGain sessionId %{public}u %{public}f", sessionId, loudnessGain);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetLoudnessGain(sessionId, loudnessGain);
         } else {
             AUDIO_WARNING_LOG("SetLoudnessGain can not find sessionId, sessionId %{public}u", sessionId);
@@ -1966,7 +1963,7 @@ int32_t HpaeManager::SetRate(uint32_t sessionId, int32_t rate)
         AUDIO_INFO_LOG("SetRate sessionId %{public}u %{public}d", sessionId, rate);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetRate(sessionId, rate);
         } else {
             AUDIO_WARNING_LOG("SetRate can not find sessionId, sessionId %{public}u", sessionId);
@@ -1982,7 +1979,7 @@ int32_t HpaeManager::SetAudioEffectMode(uint32_t sessionId, int32_t effectMode)
         AUDIO_INFO_LOG("SetAudioEffectMode sessionId %{public}u %{public}d", sessionId, effectMode);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetAudioEffectMode(sessionId, effectMode);
         } else {
             AUDIO_WARNING_LOG("SetAudioEffectMode can not find sessionId, sessionId %{public}u", sessionId);
@@ -2002,7 +1999,7 @@ int32_t HpaeManager::SetPrivacyType(uint32_t sessionId, int32_t privacyType)
     auto request = [this, sessionId, privacyType]() {
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->SetPrivacyType(sessionId, privacyType);
         } else {
             AUDIO_WARNING_LOG("SetPrivacyType can not find sessionId, sessionId %{public}u", sessionId);
@@ -2022,11 +2019,10 @@ int32_t HpaeManager::RegisterWriteCallback(uint32_t sessionId, const std::weak_p
     auto request = [this, sessionId, callback]() {
         AUDIO_INFO_LOG("RegisterWriteCallback sessionId %{public}u", sessionId);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
-            AUDIO_INFO_LOG("renderer RegisterWriteCallback sessionId: %{public}u deviceName:%s",
-                sessionId,
-                rendererIdSinkNameMap_[sessionId].c_str());
+            AUDIO_INFO_LOG("renderer RegisterWriteCallback sessionId: %{public}u deviceName:%{public}s",
+                sessionId, GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->RegisterWriteCallback(sessionId, callback);
         } else {
             AUDIO_WARNING_LOG("RegisterWriteCallback can not find sessionId, sessionId %{public}u", sessionId);
@@ -2073,7 +2069,7 @@ int32_t HpaeManager::UpdateSpatializationState(uint32_t sessionId, bool spatiali
             headTrackingEnabled);
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->UpdateSpatializationState(
                 sessionId, spatializationEnabled, headTrackingEnabled);
         } else {
@@ -2089,7 +2085,7 @@ int32_t HpaeManager::UpdateMaxLength(uint32_t sessionId, uint32_t maxLength)
     auto request = [this, sessionId, maxLength]() {
         if (rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
-                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+                "cannot find device:%{public}s", GetEncryptStr(rendererIdSinkNameMap_[sessionId]).c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->UpdateMaxLength(sessionId, maxLength);
         } else {
             AUDIO_WARNING_LOG("UpdateMaxLength can not find sessionId, sessionId %{public}u", sessionId);
@@ -2148,7 +2144,7 @@ int32_t HpaeManager::GetSessionInfo(
 std::shared_ptr<IHpaeRendererManager> HpaeManager::GetRendererManagerByName(const std::string &sinkName)
 {
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
-        AUDIO_WARNING_LOG("can not find sinkName: %s ", sinkName.c_str());
+        AUDIO_WARNING_LOG("can not find sinkName: %{public}s ", GetEncryptStr(sinkName).c_str());
         return nullptr;
     }
     return rendererManagerMap_[sinkName];
@@ -2199,7 +2195,8 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
     UnscheduleReportData(getpid(), gettid(), "audio_server");
     auto request = [this, sinkName]() {
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
-        CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%s] in rendererManagerMap_", sinkName.c_str());
+        CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%{public}s] in rendererManagerMap_",
+            GetEncryptStr(sinkName).c_str());
         rendererManager->RefreshProcessClusterByDevice();
     };
     SendRequest(request, __func__);
@@ -2329,8 +2326,9 @@ bool HpaeManager::HandleRendererManager(const std::string &sinkName, const HpaeS
 {
     auto rendererManager = SafeGetMap(rendererManagerMap_, sinkName);
     CHECK_AND_RETURN_RET_LOG(rendererManager, false,
-        "can not find sink[%s] in rendererManagerMap_", sinkName.c_str());
-    CHECK_AND_RETURN_RET_LOG(rendererManager->IsInit(), false, "sink[%s] is not init", sinkName.c_str());
+        "can not find sink[%{public}s] in rendererManagerMap_", GetEncryptStr(sinkName).c_str());
+    CHECK_AND_RETURN_RET_LOG(rendererManager->IsInit(), false, "sink[%{public}s] is not init",
+        GetEncryptStr(sinkName).c_str());
     rendererManager->CreateStream(streamInfo);
     if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
         rendererIdSinkNameMap_[streamInfo.sessionId] = sinkName;
@@ -2629,8 +2627,8 @@ void HpaeManager::UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const Audio
             "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
-        CHECK_AND_RETURN_LOG(rendererManager, "sink[%s] is in wrong state",
-            sinkIdSinkNameMap_[sinkPortIndex].c_str());
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            GetEncryptStr(sinkIdSinkNameMap_[sinkPortIndex]).c_str());
         HpaeSinkInfo sinkInfo;
         int32_t ret = TransModuleInfoToHpaeSinkInfo(audioPortInfo, sinkInfo);
         sinkInfo.auxSinkEnable = auxSinkEnable_;
@@ -2677,8 +2675,8 @@ void HpaeManager::RemoveCaptureInjector(
             "sinkPortIndex[%{public}u] not exit", sinkPortIndex);
         std::lock_guard<std::mutex> lock(sinkVirtualOutputNodeMapMutex_);
         auto rendererManager = SafeGetMap(rendererManagerMap_, sinkIdSinkNameMap_[sinkPortIndex]);
-        CHECK_AND_RETURN_LOG(rendererManager, "sink[%s] is in wrong state",
-            sinkIdSinkNameMap_[sinkPortIndex].c_str());
+        CHECK_AND_RETURN_LOG(rendererManager, "sink[%{public}s] is in wrong state",
+            GetEncryptStr(sinkIdSinkNameMap_[sinkPortIndex]).c_str());
         CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
             "sourcePortIndex[%{public}u] not exit", sourcePortIndex);
         auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
@@ -2822,6 +2820,33 @@ int32_t HpaeManager::SetAuxiliarySinkEnable(bool isEnabled)
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeManager::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId)
+{
+    auto request = [this, streamClassType, sessionId]() {
+        AUDIO_INFO_LOG("Trigger apps uid update sessionId: %{public}u streamClassType:%{public}d",
+            sessionId, streamClassType);
+        if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
+            rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            AUDIO_INFO_LOG("renderer apps uid update sessionId: %{public}u deviceName:%s",
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%s", rendererIdSinkNameMap_[sessionId].c_str());
+            rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->TriggerAppsUidUpdate(sessionId);
+        } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
+                   capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
+            AUDIO_INFO_LOG("capturer apps uid update sessionId: %{public}u deviceName:%s",
+                sessionId, capturerIdSourceNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
+                "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
+            capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->TriggerAppsUidUpdate(sessionId);
+        } else {
+            AUDIO_WARNING_LOG("Can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
+                streamClassType, sessionId);
+        }
+    };
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -546,6 +546,9 @@ int32_t CapturerInServer::Start()
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
         filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
         ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
+    if (stream_ != nullptr) {
+        stream_->TriggerAppsUidUpdate();
+    }
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);

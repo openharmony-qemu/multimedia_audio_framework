@@ -130,6 +130,7 @@ void NapiAudioCapturerStateCallback::SafeJsCallbackCapturerStateWork(
         static_cast<AudioCapturerStateJsCallback*>(data),
         [](AudioCapturerStateJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback->cb_;
     napi_handle_scope scope = nullptr;
