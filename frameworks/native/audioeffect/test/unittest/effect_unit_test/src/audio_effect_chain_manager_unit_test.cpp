@@ -1834,6 +1834,46 @@ HWTEST(AudioEffectChainManagerUnitTest, NotifyAndCreateAudioEffectChain_001, Tes
 }
 
 /**
+* @tc.name   : Test NotifyAndCreateAudioEffectChain API
+* @tc.number : NotifyAndCreateAudioEffectChain_002
+* @tc.desc   : Test NotifyAndCreateAudioEffectChain interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, NotifyAndCreateAudioEffectChain_002, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    int32_t result = AudioEffectChainManager::GetInstance()->NotifyAndCreateAudioEffectChain(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    sceneType = "SCENE_VOIP_DOWN";
+    AudioEffectChainManager::GetInstance()->priorSceneList_.push_back("SCENE_VOIP_DOWN");
+    result = AudioEffectChainManager::GetInstance()->NotifyAndCreateAudioEffectChain(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test NotifyAndCreateAudioEffectChain API
+* @tc.number : NotifyAndCreateAudioEffectChain_003
+* @tc.desc   : Test NotifyAndCreateAudioEffectChain interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, NotifyAndCreateAudioEffectChain_003, TestSize.Level1)
+{
+    std::string sceneType = "SCENE_MUSIC";
+    std::string defaultSceneTypeAndDeviceKey = "SCENE_MUSIC_&_DEVICE_TYPE_SPEAKER";
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    AudioEffectChainManager::GetInstance()->maxEffectChainCount_ = 1;
+    int32_t result = AudioEffectChainManager::GetInstance()->NotifyAndCreateAudioEffectChain(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 2;
+    result = AudioEffectChainManager::GetInstance()->NotifyAndCreateAudioEffectChain(sceneType);
+    EXPECT_EQ(SUCCESS, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
 * @tc.name   : Test WaitAndReleaseEffectChain API
 * @tc.number : WaitAndReleaseEffectChain_001
 * @tc.desc   : Test WaitAndReleaseEffectChain interface.
@@ -2695,6 +2735,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_004, Te
 {
     std::string sceneType = "test";
     std::string  scene = "SCENE_DEFAULT";
+    std::string defaultSceneTypeAndDeviceKey = "SCENE_DEFAULT_&_DEVICE_TYPE_SPEAKER";
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = false;
     auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
     EXPECT_EQ(ret, ERROR);
@@ -2706,8 +2747,8 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_004, Te
     std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain0, audioEffectChain});
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
-
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 2;
+//
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 2;
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
     EXPECT_EQ(ret, ERROR);
@@ -3660,7 +3701,7 @@ HWTEST(AudioEffectChainManagerUnitTest, WaitAndReleaseEffectChain_002, TestSize.
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey],
         audioEffectChain);
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 0;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 0;
     AudioEffectChainManager::GetInstance()->WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey,
         defaultSceneTypeAndDeviceKey, 0);
     EXPECT_TRUE(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.empty());
@@ -3686,7 +3727,7 @@ HWTEST(AudioEffectChainManagerUnitTest, WaitAndReleaseEffectChain_003, TestSize.
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey],
         audioEffectChain);
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 0;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 0;
     AudioEffectChainManager::GetInstance()->WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey,
         defaultSceneTypeAndDeviceKey, 1);
     EXPECT_FALSE(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.empty());
@@ -3712,7 +3753,7 @@ HWTEST(AudioEffectChainManagerUnitTest, WaitAndReleaseEffectChain_004, TestSize.
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey],
         audioEffectChain);
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 1;
     AudioEffectChainManager::GetInstance()->WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey,
         defaultSceneTypeAndDeviceKey, 1);
     EXPECT_FALSE(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.empty());
@@ -3738,7 +3779,7 @@ HWTEST(AudioEffectChainManagerUnitTest, WaitAndReleaseEffectChain_005, TestSize.
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey],
         audioEffectChain);
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 1;
     AudioEffectChainManager::GetInstance()->WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey,
         defaultSceneTypeAndDeviceKey, 0);
     EXPECT_FALSE(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.empty());
@@ -3764,7 +3805,7 @@ HWTEST(AudioEffectChainManagerUnitTest, WaitAndReleaseEffectChain_006, TestSize.
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey],
         audioEffectChain);
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 0;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 0;
     AudioEffectChainManager::GetInstance()->WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey,
         defaultSceneTypeAndDeviceKey, 0);
     EXPECT_FALSE(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.empty());
@@ -3790,7 +3831,7 @@ HWTEST(AudioEffectChainManagerUnitTest, WaitAndReleaseEffectChain_007, TestSize.
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey],
         audioEffectChain);
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 1;
     AudioEffectChainManager::GetInstance()->WaitAndReleaseEffectChain(sceneType, sceneTypeAndDeviceKey,
         defaultSceneTypeAndDeviceKey, 1);
     EXPECT_FALSE(AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.empty());
