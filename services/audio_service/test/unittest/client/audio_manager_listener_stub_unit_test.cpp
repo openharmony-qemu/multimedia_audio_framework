@@ -103,6 +103,33 @@ HWTEST(AudioManagerListenerTest, OnDataTransferStateChange_001, TestSize.Level4)
 
     int32_t result = audioManagerListenerStub->OnDataTransferStateChange(callbackId, info);
     EXPECT_EQ(result, SUCCESS);
-}xx
+}
+
+class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
+public:
+    void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
+};
+ 
+/**
+ * @tc.name  : Test AddDataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: AddDataTransferStateChangeCallback_001
+ * @tc.desc  : Test AddDataTransferStateChangeCallback interface.
+ */
+HWTEST(AudioManagerListenerTest, AddDataTransferStateChangeCallback_001, TestSize.Level4)
+{
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    AudioManagerListenerStubImpl audioManagerListenerStubImpl;
+    int listenResult = 1;
+    DataTransferMonitorParam param;
+    std::shared_ptr<DataTransferStateChangeCallbackTest> cb =
+        std::make_shared<DataTransferStateChangeCallbackTest>();
+ 
+    int32_t result = audioManagerListenerStub->AddDataTransferStateChangeCallback(param, cb);
+    EXPECT_EQ(result, listenResult);
+    std::shared_ptr<AudioRendererDataTransferStateChangeCallback> emptyCallback = nullptr;
+    std::vector<int32_t>  removedIds = audioManagerListenerStub->RemoveDataTransferStateChangeCallback(emptyCallback);
+    EXPECT_EQ(removedIds.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
