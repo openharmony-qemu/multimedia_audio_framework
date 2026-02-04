@@ -1472,7 +1472,6 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_CapturerStateCh
     g_audioManagerInstance->UnregisterAudioCapturerEventListener(getpid());
     std::this_thread::sleep_for(std::chrono::seconds(10));
 }
-#endif
 
 /**
  * @tc.name  : Test GetHardwareOutputSamplingRate API
