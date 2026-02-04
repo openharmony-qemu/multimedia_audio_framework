@@ -236,7 +236,7 @@ int32_t AudioSuitePipeline::CreateNode(AudioNodeBuilder builder)
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not CreateNode.");
 
     auto request = [this, builder]() {
-        AUDIO_INFO_LOG("CreateNode enter");
+        AUDIO_DEBUG_LOG("CreateNode enter");
         std::shared_ptr<AudioNode> node = nullptr;
 
         int32_t ret = CreateNodeCheckParme(builder);
@@ -838,7 +838,6 @@ int32_t AudioSuitePipeline::RenderFrame(
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not RenderFrame.");
 
     auto request = [this, audioData, requestFrameSize, responseSize, finishedFlag]() {
-        AUDIO_DEBUG_LOG("AudioSuitePipeline::RenderFrame enter request");
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("RenderFrame failed, pipelineState state is not running.");
             TriggerCallback(RENDER_FRAME, ERR_ILLEGAL_STATE, id_);
@@ -884,7 +883,6 @@ int32_t AudioSuitePipeline::MultiRenderFrame(
     uint8_t **audioDataArray, int32_t arraySize,
     int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag)
 {
-    AUDIO_DEBUG_LOG("AudioSuitePipeline::MultiRenderFrame enter");
     auto request = [this, audioDataArray, arraySize, requestFrameSize, responseSize, finishedFlag]() {
         if (pipelineState_ != PIPELINE_RUNNING) {
             AUDIO_ERR_LOG("MultiRenderFrame failed, pipelineState state is not running.");
