@@ -1415,6 +1415,7 @@ void AudioService::SetDecMaxRendererStreamCnt()
 
 void AudioService::SetIncMaxLoopbackStreamCnt(AudioMode audioMode)
 {
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     if (audioMode == AUDIO_MODE_PLAYBACK) {
         currentLoopbackRendererStreamCnt_++;
     } else {
@@ -1424,6 +1425,7 @@ void AudioService::SetIncMaxLoopbackStreamCnt(AudioMode audioMode)
 
 int32_t AudioService::GetCurrentLoopbackStreamCnt(AudioMode audioMode)
 {
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     if (audioMode == AUDIO_MODE_PLAYBACK) {
         return currentLoopbackRendererStreamCnt_;
     } else {
