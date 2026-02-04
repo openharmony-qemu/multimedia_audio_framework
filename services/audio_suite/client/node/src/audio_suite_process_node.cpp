@@ -32,7 +32,7 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat
     : AudioNode(nodeType, audioFormat)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter) == SUCCESS),
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter_) == SUCCESS),
         "node: %{public}d GetNodeParameter failed.", nodeType);
 }
 
@@ -40,7 +40,7 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
     : AudioNode(nodeType)
 {
     AudioSuiteCapabilities &audioSuiteCapabilities = AudioSuiteCapabilities::GetInstance();
-    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter) == SUCCESS),
+    CHECK_AND_RETURN_LOG((audioSuiteCapabilities.GetNodeParameter(nodeType, nodeParameter_) == SUCCESS),
         "node: %{public}d GetNodeParameter failed.", nodeType);
     resultNumber_ = 1;
 }
@@ -118,27 +118,36 @@ int32_t AudioSuiteProcessNode::ObtainProcessedData()
         AUDIO_ERR_LOG("node %{public}d can't get pcmbuffer from prenodes", GetNodeType());
         return ERROR;
     }
+    if (GetNodeBypassStatus() == false) {
+        AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
+        frameOutBytes_ = CalculationNeedBytes(requestPreNodeDuration_);
+        // for dfx
+        auto startTime = std::chrono::steady_clock::now();
 
-    AUDIO_DEBUG_LOG("node type = %{public}d need do SignalProcess.", GetNodeType());
-    // for dfx
-    auto startTime = std::chrono::steady_clock::now();
+        Trace trace("AudioSuiteProcessNode::SignalProcess Start");
+        algoProcessedResult_ = SignalProcess(preOutputs);
+        trace.End();
 
-    Trace trace("AudioSuiteProcessNode::SignalProcess Start");
-    algoProcessedResult_ = SignalProcess(preOutputs);
-    trace.End();
+        // for dfx
+        auto endTime = std::chrono::steady_clock::now();
+        auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        CheckEffectNodeProcessTime(algoProcessedResult_[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
+    } else {
+        algoProcessedResult_.clear();
+        AudioSuitePcmBuffer *convertData =
+            convert_.Process(preOutputs[0], const_cast<PcmBufferFormat &>(GetAudioNodeInPcmFormat()));
+        CHECK_AND_RETURN_RET_LOG(convertData != nullptr, ERROR, "convertData is nullptr.");
+        frameOutBytes_ = convertData->GetDataSize();
+        algoProcessedResult_.emplace_back(convertData);
+    }
 
-    // for dfx
-    auto endTime = std::chrono::steady_clock::now();
-    auto processDuration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-    CheckEffectNodeProcessTime(algoProcessedResult_[0]->GetDataDuration(), static_cast<uint64_t>(processDuration));
     return SUCCESS;
 }
 
 int32_t AudioSuiteProcessNode::ProcessWithCache()
 {
     requestPreNodeDuration_ = nodeNeedDataDuration_;
-    while (downStreamData_[0].GetDataSize() > cachedBuffer_[0].GetSize() && !GetAudioNodeDataFinishedFlag() &&
-           !GetNodeBypassStatus()) {
+    while (downStreamData_[0].GetDataSize() > cachedBuffer_[0].GetSize() && !GetAudioNodeDataFinishedFlag()) {
         int32_t ret = ObtainProcessedData();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to retrieve data from the preceding node.");
         for (size_t idx = 0; idx < algoProcessedResult_.size(); ++idx) {  // 用algoProcessedResult_的size
@@ -174,12 +183,9 @@ int32_t AudioSuiteProcessNode::ProcessDirectly()
         downStreamData_[idx].Reset();
         CHECK_AND_RETURN_RET_LOG(
             algoProcessedResult_[idx] != nullptr && algoProcessedResult_[idx]->GetPcmData() != nullptr,
-            ERR_OPERATION_FAILED,
-            "node %{public}d do SignalProcess failed, return a nullptr.",
-            GetNodeType());
+            ERR_OPERATION_FAILED, "node %{public}d do SignalProcess failed, return a nullptr.", GetNodeType());
         CHECK_AND_RETURN_RET_LOG(algoProcessedResult_[idx]->GetDataSize() <= downStreamData_[idx].GetDataSize(),
-            ERROR,
-            "Insufficient target buffer size.");
+            ERROR, "Insufficient target buffer size.");
         int32_t ret = memcpy_s(downStreamData_[idx].GetPcmData(),
             downStreamData_[idx].GetDataSize(),  // Copy the first frame 20ms data
             algoProcessedResult_[idx]->GetPcmData(),
@@ -211,7 +217,7 @@ int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
     CHECK_AND_RETURN_RET_LOG(needDataLength <= maxRequestLength, ERROR, "Request data length error.");
     if (GetAudioNodeDataFinishedFlag() && cachedBuffer_[0].GetSize() == 0) {
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
-        return SUCCESS;
+        return ERROR;
     }
 
     if (nextNeedDataLength_ != needDataLength) {
@@ -220,7 +226,7 @@ int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
         nextNeedDataLength_ = needDataLength;
     }
     int32_t ret = 0;
-    if ((GetNodeBypassStatus() == true) && cachedBuffer_[0].GetSize() == 0) {
+    if ((GetNodeBypassStatus() == true) && !needCache_) {
         ret = ProcessBypassMode(needDataLength);
     } else if (!needCache_) {
         ret = ProcessDirectly();
@@ -366,7 +372,7 @@ void AudioSuiteProcessNode::CheckEffectNodeProcessTime(uint32_t dataDurationMS, 
     // for dfx, overtime counter add when realtime factor exceeds the threshold
     uint64_t dataDurationUS = static_cast<uint64_t>(dataDurationMS) * MILLISECONDS_TO_MICROSECONDS;
     for (size_t i = 0; i < RTF_OVERTIME_LEVELS; ++i) {
-        uint64_t thresholdValue = dataDurationUS * nodeParameter.realtimeFactor * RTF_OVERTIME_THRESHOLDS[i];
+        uint64_t thresholdValue = dataDurationUS * nodeParameter_.realtimeFactor * RTF_OVERTIME_THRESHOLDS[i];
         if (processDurationUS >= thresholdValue) {
             rtfOvertimeCounters_[i]++;
         }
