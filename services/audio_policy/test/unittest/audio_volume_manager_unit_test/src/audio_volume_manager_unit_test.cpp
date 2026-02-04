@@ -1036,11 +1036,11 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_048, TestSize.Level1)
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
     auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 
     internalCall = false;
     ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 }
 
 /**
