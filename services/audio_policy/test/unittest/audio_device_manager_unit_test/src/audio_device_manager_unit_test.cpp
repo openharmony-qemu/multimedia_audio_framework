@@ -15,6 +15,7 @@
 
 #include "audio_device_descriptor.h"
 #include "audio_device_manager_unit_test.h"
+#include "audio_policy_utils.h"
 
 using namespace testing::ext;
 
@@ -401,6 +402,59 @@ HWTEST_F(AudioDeviceManagerUnitTest, CheckNearlinkInHQRecordingSupport_001, Test
     result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
         desc, DeviceRole::OUTPUT_DEVICE, DeviceUsage::VOICE);
     EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: UpdateDeviceConnectTimestamp_001.
+ * @tc.desc  : Test UpdateDeviceConnectTimestamp.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceConnectTimestamp_001, TestSize.Level4)
+{
+    AudioDeviceDescriptor desc{DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE};
+
+    auto ts = AudioPolicyUtils::GetInstance().GetCurrentTimeMS();
+
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    EXPECT_GE(desc.connectTimeStamp_, ts);
+
+    desc.deviceCategory_ = BT_GLASSES;
+    desc.glassesWearCount_ = 0;
+    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    EXPECT_GE(desc.connectTimeStamp_, ts);
+
+    desc.deviceCategory_ = BT_GLASSES;
+    desc.glassesWearCount_ = 1;
+    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    EXPECT_LE(desc.connectTimeStamp_, ts);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: UpdateDeviceCategory_001.
+ * @tc.desc  : Test UpdateDeviceCategory.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceCategory_001, TestSize.Level4)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = deviceManager.connectedDevices_;
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceCategory_ = BT_GLASSES;
+
+    deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
+    desc->glassesWearCount_ = 0;
+    EXPECT_TRUE(deviceManager.UpdateDeviceCategory(desc));
+
+    deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
+    desc->glassesWearCount_ = 2;
+    EXPECT_TRUE(deviceManager.UpdateDeviceCategory(desc));
+
+    deviceManager.connectedDevices_ = backup;
 }
 } // namespace AudioStandard
 } // namespace OHOS
