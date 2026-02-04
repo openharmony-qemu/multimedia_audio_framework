@@ -83,3 +83,40 @@ HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerSetRate_03, 
     int32_t ret = SingleStagePolyphaseResamplerSetRate(&state, decimateFactor, interpolateFactor);
     EXPECT_EQ(ret, RESAMPLER_ERR_INVALID_ARG);
 }
+
+/**
+ * @tc.name  : SingleStagePolyphaseResamplerResetMem_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test if all state variables and input memory are cleared to zero.
+ */
+HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerResetMem_001, TestSize.Level1)
+{
+    SingleStagePolyphaseResamplerState state;
+
+    state.inputIndex = 123;
+    state.magicSamples = 45;
+    state.subfilterNum = 6;
+    state.numChannels = 2;
+    state.inputMemorySize = 10;
+
+    uint32_t totalMemSize = state.numChannels * state.inputMemorySize;
+    state.inputMemory = (float*)malloc(totalMemSize * sizeof(float));
+    ASSERT_NE(state.inputMemory, nullptr);
+    for (uint32_t i = 0; i < totalMemSize; i++) {
+        state.inputMemory[i] = 0.85f;
+    }
+
+    int32_t ret = SingleStagePolyphaseResamplerResetMem(&state);
+
+    EXPECT_EQ(ret, RESAMPLER_ERR_SUCCESS);
+    EXPECT_EQ(state.inputIndex, 0);
+    EXPECT_EQ(state.magicSamples, 0);
+    EXPECT_EQ(state.subfilterNum, 0);
+
+    for (uint32_t i = 0; i < totalMemSize; i++) {
+        EXPECT_EQ(state.inputMemory[i], 0.0f);
+    }
+
+    free(state.inputMemory);
+    state.inputMemory = nullptr;
+}

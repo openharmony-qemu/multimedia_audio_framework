@@ -22,6 +22,7 @@
 #include "hpae_sink_input_node.h"
 #include "hpae_remote_output_cluster.h"
 #include "hpae_mixer_node.h"
+#include "hpae_audio_format_converter_node.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -118,6 +119,63 @@ HWTEST_F(HpaeRemoteOutputClusterTest, SetTimeoutStopThd_01, TestSize.Level0)
     hpaeRemoteOutputCluster->Start();
     hpaeRemoteOutputCluster->Stop();
     hpaeRemoteOutputCluster->DisConnect(hpaeMixerNode);
+}
+
+/**
+ * @tc.name  : TransStreamUsageToSplitSceneType_01
+ * @tc.type  : FUNC
+ * @tc.number: TransStreamUsageToSplitSceneType_01
+ * @tc.desc  : Test the conversion from StreamUsage and SplitMode to HpaeProcessorType.
+ */
+HWTEST_F(HpaeRemoteOutputClusterTest, TransStreamUsageToSplitSceneType_01, TestSize.Level0)
+{
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MEDIA, ""), HPAE_SCENE_DEFAULT);
+
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MEDIA, "1"), HPAE_SCENE_SPLIT_MEDIA);
+
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_NAVIGATION, "1:2"), HPAE_SCENE_SPLIT_NAVIGATION);
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MEDIA, "1:2"), HPAE_SCENE_SPLIT_MEDIA);
+
+    std::string mode3 = "part1:part2:part3";
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_NAVIGATION, mode3), HPAE_SCENE_SPLIT_NAVIGATION);
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_VOICE_COMMUNICATION, mode3), HPAE_SCENE_SPLIT_COMMUNICATION);
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_VIDEO_COMMUNICATION, mode3), HPAE_SCENE_SPLIT_COMMUNICATION);
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MEDIA, mode3), HPAE_SCENE_SPLIT_MEDIA);
+    EXPECT_EQ(TransStreamUsageToSplitSceneType(STREAM_USAGE_MEDIA, "1:2:3:4"), HPAE_SCENE_SPLIT_MEDIA);
+}
+
+/**
+ * @tc.name  : UpdateStreamInfo_003
+ * @tc.type  : FUNC
+ * @tc.number: UpdateStreamInfo_003
+ * @tc.desc  : Test UpdateStreamInfo with the correct constructor (two NodeInfo params).
+ */
+HWTEST_F(HpaeRemoteOutputClusterTest, UpdateStreamInfo_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo clusterBaseInfo;
+    clusterBaseInfo.nodeName = "RemoteOutputCluster";
+    clusterBaseInfo.samplingRate = SAMPLE_RATE_48000;
+    auto cluster = std::make_shared<HpaeRemoteOutputCluster>(clusterBaseInfo, sinkInfo);
+
+    HpaeNodeInfo preInfo;
+    preInfo.nodeName = "SourceNode";
+    preInfo.sceneType = HPAE_SCENE_SPLIT_MEDIA;
+    preInfo.streamType = AudioStreamType::STREAM_MUSIC;
+    preInfo.effectInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    auto preNode = std::make_shared<HpaeMixerNode>(preInfo);
+
+    HpaeNodeInfo curInfo = clusterBaseInfo;
+    curInfo.sceneType = HPAE_SCENE_SPLIT_MEDIA;
+    cluster->sceneConverterMap_[HPAE_SCENE_SPLIT_MEDIA] =
+        std::make_shared<HpaeAudioFormatConverterNode>(preInfo, curInfo);
+
+    cluster->sceneMixerMap_[HPAE_SCENE_SPLIT_MEDIA] = std::make_shared<HpaeMixerNode>(preInfo);
+    cluster->UpdateStreamInfo(preNode);
+    auto targetConverter = cluster->sceneConverterMap_[HPAE_SCENE_SPLIT_MEDIA];
+
+    ASSERT_NE(targetConverter, nullptr);
+    EXPECT_EQ(targetConverter->GetNodeInfo().streamType, AudioStreamType::STREAM_MUSIC);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

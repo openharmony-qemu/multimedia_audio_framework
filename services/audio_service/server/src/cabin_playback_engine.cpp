@@ -52,6 +52,7 @@ CabinPlayBackEngine::CabinPlayBackEngine()
       uformat_(sizeof(int32_t)),
       uSampleRate_(0),
       firstSetVolume_(true),
+      latency_(0),
       stream_(nullptr)
 {
     AUDIO_INFO_LOG("Constructor 3da direct");

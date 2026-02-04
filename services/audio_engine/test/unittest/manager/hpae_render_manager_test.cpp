@@ -2549,4 +2549,180 @@ HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->appsUid_.size(), 0);
 }
+
+/**
+ * @tc.name  : AddNodeToSink_001
+ * @tc.type  : FUNC
+ * @tc.number: AddNodeToSink_001
+ * @tc.desc  : Test AddNodeToSink to cover asynchronous node addition logic.
+ */
+HWTEST_F(HpaeRendererManagerTest, AddNodeToSink_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    offloadManager->Init();
+    WaitForMsgProcessing(offloadManager);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 60001;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.channels = STEREO;
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+
+    int32_t ret = offloadManager->AddNodeToSink(node);
+    EXPECT_EQ(ret, SUCCESS);
+
+    WaitForMsgProcessing(offloadManager);
+
+    EXPECT_EQ(offloadManager->IsInit(), true);
+    offloadManager->DeInit();
+}
+
+/**
+ * @tc.name  : AddAllNodesToSink_001
+ * @tc.type  : FUNC
+ * @tc.number: AddAllNodesToSink_001
+ * @tc.desc  : Test AddAllNodesToSink to cover vector traversal and async request logic.
+ */
+HWTEST_F(HpaeRendererManagerTest, AddAllNodesToSink_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    offloadManager->Init();
+    WaitForMsgProcessing(offloadManager);
+
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
+
+    HpaeNodeInfo info1;
+    info1.sessionId = 80001;
+    info1.samplingRate = SAMPLE_RATE_48000;
+    info1.frameLen = FRAME_LENGTH_960;
+    sinkInputs.push_back(std::make_shared<HpaeSinkInputNode>(info1));
+
+    HpaeNodeInfo info2 = info1;
+    info2.sessionId = 80002;
+    sinkInputs.push_back(std::make_shared<HpaeSinkInputNode>(info2));
+
+    int32_t ret = offloadManager->AddAllNodesToSink(sinkInputs, true);
+    EXPECT_EQ(ret, SUCCESS);
+
+    WaitForMsgProcessing(offloadManager);
+
+    EXPECT_NE(offloadManager->sinkInputNodeMap_.find(80001), offloadManager->sinkInputNodeMap_.end());
+    EXPECT_NE(offloadManager->sinkInputNodeMap_.find(80002), offloadManager->sinkInputNodeMap_.end());
+
+    offloadManager->DeInit();
+}
+
+/**
+ * @tc.name  : OffloadMoveAllStream_001
+ * @tc.type  : FUNC
+ * @tc.number: OffloadMoveAllStream_001
+ * @tc.desc  : Test MoveAllStream covering both sync (uninit) and async (init) paths.
+ */
+HWTEST_F(HpaeRendererManagerTest, OffloadMoveAllStream_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+
+    std::string sinkName = "TargetSink";
+    std::vector<uint32_t> sessionIds = {10001, 10002};
+    MoveSessionType moveType = MOVE_ALL;
+
+    EXPECT_EQ(offloadManager->MoveAllStream(sinkName, sessionIds, moveType), SUCCESS);
+
+    offloadManager->Init();
+    WaitForMsgProcessing(offloadManager);
+
+    EXPECT_EQ(offloadManager->MoveAllStream(sinkName, sessionIds, moveType), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    offloadManager->DeInit();
+}
+
+/**
+ * @tc.name  : MoveStream_003
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_003
+ * @tc.desc  : Test MoveStream for error paths (not found, empty sinkName) and success path.
+ */
+HWTEST_F(HpaeRendererManagerTest, MoveStream_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    offloadManager->Init();
+    WaitForMsgProcessing(offloadManager);
+
+    uint32_t activeSid = 95001;
+    uint32_t normalSid = 95002;
+    uint32_t invalidSid = 99999;
+
+    HpaeNodeInfo info1;
+    info1.sessionId = activeSid;
+    auto activeNode = std::make_shared<HpaeSinkInputNode>(info1);
+
+    HpaeNodeInfo info2;
+    info2.sessionId = normalSid;
+    auto normalNode = std::make_shared<HpaeSinkInputNode>(info2);
+
+    offloadManager->sinkInputNodeMap_[activeSid] = activeNode;
+    offloadManager->sinkInputNodeMap_[normalSid] = normalNode;
+    offloadManager->curNode_ = activeNode;
+
+    offloadManager->MoveStream(invalidSid, "NewSink");
+    offloadManager->MoveStream(normalSid, "");
+    offloadManager->MoveStream(normalSid, "ValidSink");
+    offloadManager->MoveStream(activeSid, "ValidSink");
+
+    WaitForMsgProcessing(offloadManager);
+
+    EXPECT_EQ(offloadManager->IsInit(), true);
+}
+
+/**
+ * @tc.name  : OffloadStopManager_001
+ * @tc.type  : FUNC
+ * @tc.number: OffloadStopManager_001
+ * @tc.desc  : Test StopManager for both valid and nullptr sinkOutputNode scenarios.
+ */
+HWTEST_F(HpaeRendererManagerTest, OffloadStopManager_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    offloadManager->Init();
+    WaitForMsgProcessing(offloadManager);
+
+    offloadManager->sinkOutputNode_.reset();
+    EXPECT_EQ(offloadManager->StopManager(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    HpaeNodeInfo nodeInfo;
+    offloadManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    EXPECT_EQ(offloadManager->StopManager(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    offloadManager->DeInit();
+}
+
+HWTEST_F(HpaeRendererManagerTest, OffloadDeactivateThread_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+
+    offloadManager->Init();
+    ASSERT_NE(offloadManager->hpaeSignalProcessThread_, nullptr);
+
+    EXPECT_TRUE(offloadManager->DeactivateThread());
+    EXPECT_EQ(offloadManager->hpaeSignalProcessThread_, nullptr);
+
+    bool requestHandled = false;
+    auto request = [&requestHandled]() { requestHandled = true; };
+
+    offloadManager->SendRequest(request, "UT_Cleanup_Task");
+    offloadManager->DeactivateThread();
+
+    EXPECT_TRUE(requestHandled);
+}
 }  // namespace
