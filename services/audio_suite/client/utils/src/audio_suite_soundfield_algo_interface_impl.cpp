@@ -198,7 +198,8 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Apply(
 
     // apply SoundField algorithm
     int32_t ret = algoApi_.applyAlgo(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, &stData_);
-    CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "Apply SoundField algorithm fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == IMEDIA_SWS_EOK, ret,
+        HILOG_COMM_ERROR("[Apply]SoundField algo apply failed, return error is %{public}d", ret));
 
     // sample data convert from IMEDIA_INT32 to int16_t
     for (size_t i = 0; i < SOUNDFIELD_ALGO_FRAME_LEN; i++) {

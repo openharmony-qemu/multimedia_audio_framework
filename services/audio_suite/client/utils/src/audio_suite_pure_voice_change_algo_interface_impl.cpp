@@ -232,7 +232,8 @@ int32_t AudioSuitePureVoiceChangeAlgoInterfaceImpl::Apply(
 
     int32_t ret = vmAlgoApi_.applyAlgo(handle_.data(), scratchBuf_.data(), &data);
 
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_VOICEMPH_EOK, ERROR, "apply vmalgo fail.");
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == AUDIO_VOICEMPH_EOK, ERROR,
+        HILOG_COMM_ERROR("[Apply]PureVoice algo apply failed, return error is %{public}d", ret));
 
     int32_t outIndex = 0;
     for (uint32_t i = 0; i < nodeParameter_.frameLen; i++) {

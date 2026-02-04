@@ -220,7 +220,7 @@ int32_t AudioSuiteEqAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, s
 
     result = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData_);
     if (IMEDIA_SWS_EOK != result) {
-        AUDIO_ERR_LOG("iMedia_SWS_Apply ERROR:%{public}d", result);
+        HILOG_COMM_ERROR("[Apply]Equalizer algo apply failed, return error is %{public}d", result);
         return result;
     }
 

@@ -73,7 +73,7 @@ int32_t AudioSuiteManager::Init()
     int32_t ret = suiteEngine_->Init();
     if (ret != SUCCESS) {
         suiteEngine_ = nullptr;
-        AUDIO_INFO_LOG("Aduio suite engine init failed. ret = %{public}d.", ret);
+        HILOG_COMM_ERROR("[Init]engine init failed, ret = %{public}d", ret);
         return ret;
     }
 
@@ -92,7 +92,8 @@ int32_t AudioSuiteManager::DeInit()
         pipelineLocks.emplace_back(*lock);
     }
     int32_t ret = suiteEngine_->DeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "suite engine deinit failed, ret = %{public}d.", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        HILOG_COMM_ERROR("[DeInit]engine deinit failed, ret = %{public}d", ret));
 
     suiteEngine_ = nullptr;
     AUDIO_DEBUG_LOG("DeInit leave");
@@ -128,6 +129,8 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId, PipelineWorkMode
     pipelineLockMap_[pipelineId] = std::make_unique<std::mutex>();
     pipelineCallbackMutexMap_[pipelineId] = std::make_unique<std::mutex>();
     pipelineCallbackCVMap_[pipelineId] = std::make_unique<std::condition_variable>();
+    CHECK_AND_CALL_FUNC_RETURN_RET(engineCreateResult_ == SUCCESS, engineCreateResult_,
+        HILOG_COMM_ERROR("[CreatePipeline]engine failed, engineCreateResult_ = %{public}d", engineCreateResult_));
     return engineCreateResult_;
 }
 
@@ -168,6 +171,9 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     pipelineCallbackCVMap_.erase(pipelineId);
 
     AUDIO_DEBUG_LOG("DestroyPipeline leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(destroyPipelineResult_ == SUCCESS, destroyPipelineResult_,
+        HILOG_COMM_ERROR("[DestroyPipeline]engine failed, destroyPipelineResult_ = %{public}d",
+        destroyPipelineResult_));
     return destroyPipelineResult_;
 }
 
@@ -188,6 +194,8 @@ int32_t AudioSuiteManager::StartPipeline(uint32_t pipelineId)
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "StartPipeline timeout");
 
     AUDIO_DEBUG_LOG("StartPipeline leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(startPipelineResult_ == SUCCESS, startPipelineResult_,
+        HILOG_COMM_ERROR("[StartPipeline]engine failed, startPipelineResult_ = %{public}d", startPipelineResult_));
     return startPipelineResult_;
 }
 
@@ -209,6 +217,8 @@ int32_t AudioSuiteManager::StopPipeline(uint32_t pipelineId)
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "StopPipeline timeout");
 
     AUDIO_DEBUG_LOG("StopPipeline leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(stopPipelineResult_ == SUCCESS, stopPipelineResult_,
+        HILOG_COMM_ERROR("[StopPipeline]engine failed, stopPipelineResult_ = %{public}d", stopPipelineResult_));
     return stopPipelineResult_;
 }
 
@@ -260,6 +270,9 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
     WriteSuiteEngineUtilizationStatsEvent(builder.nodeType);
     nodeId = engineCreateNodeId_;
     engineCreateNodeId_ = INVALID_NODE_ID;
+    CHECK_AND_CALL_FUNC_RETURN_RET(engineCreateNodeResult_ == SUCCESS, engineCreateNodeResult_,
+        HILOG_COMM_ERROR("[CreateNode]engine failed, engineCreateNodeResult_ = %{public}d",
+        engineCreateNodeResult_));
     return engineCreateNodeResult_;
 }
 
@@ -284,6 +297,8 @@ int32_t AudioSuiteManager::DestroyNode(uint32_t nodeId)
     }
 
     AUDIO_DEBUG_LOG("DestroyNode leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(destroyNodeResult_ == SUCCESS, destroyNodeResult_,
+        HILOG_COMM_ERROR("[DestroyNode]engine failed, destroyNodeResult_ = %{public}d", destroyNodeResult_));
     return destroyNodeResult_;
 }
 
@@ -304,6 +319,9 @@ int32_t AudioSuiteManager::BypassEffectNode(uint32_t nodeId, bool bypass)
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "BypassEffectNode timeout");
 
     AUDIO_DEBUG_LOG("BypassEffectNode leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(bypassEffectNodeResult_ == SUCCESS, bypassEffectNodeResult_,
+        HILOG_COMM_ERROR("[BypassEffectNode]engine failed, bypassEffectNodeResult_ = %{public}d",
+        bypassEffectNodeResult_));
     return bypassEffectNodeResult_;
 }
 
@@ -347,6 +365,8 @@ int32_t AudioSuiteManager::SetAudioFormat(uint32_t nodeId, AudioFormat audioForm
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetAudioFormat timeout");
 
     AUDIO_DEBUG_LOG("SetAudioFormat leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(setFormatResult_ == SUCCESS, setFormatResult_,
+        HILOG_COMM_ERROR("[SetAudioFormat]engine failed, setFormatResult_ = %{public}d", setFormatResult_));
     return setFormatResult_;
 }
 
@@ -367,6 +387,9 @@ int32_t AudioSuiteManager::SetRequestDataCallback(uint32_t nodeId,
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetRequestDataCallback timeout");
 
     AUDIO_DEBUG_LOG("SetRequestDataCallback leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(setWriteDataResult_ == SUCCESS, setWriteDataResult_,
+        HILOG_COMM_ERROR("[SetRequestDataCallback]engine failed, setWriteDataResult_ = %{public}d",
+        setWriteDataResult_));
     return setWriteDataResult_;
 }
 
@@ -391,6 +414,8 @@ int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
     }
 
     AUDIO_DEBUG_LOG("ConnectNodes leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(connectNodesResult_ == SUCCESS, connectNodesResult_,
+        HILOG_COMM_ERROR("[ConnectNodes]engine failed, connectNodesResult_ = %{public}d", connectNodesResult_));
     return connectNodesResult_;
 }
 
@@ -415,6 +440,9 @@ int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNode
     }
 
     AUDIO_DEBUG_LOG("DisConnectNodes leave");
+    CHECK_AND_CALL_FUNC_RETURN_RET(disConnectNodesResult_ == SUCCESS, disConnectNodesResult_,
+        HILOG_COMM_ERROR("[DisConnectNodes]engine failed, disConnectNodesResult_ = %{public}d",
+        disConnectNodesResult_));
     return disConnectNodesResult_;
 }
 
@@ -430,6 +458,8 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
         value += std::to_string(gains.gains[idx]);
         value += ":";
     }
+    HILOG_COMM_INFO("[SetEqualizerFrequencyBandGains]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -439,8 +469,9 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetEqualizerFrequencyBandGains timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetEqualizerFrequencyBandGains Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetEqualizerFrequencyBandGains]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
 
     return ret;
 }
@@ -454,6 +485,8 @@ int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
     std::string name = "AudioSpaceRenderPositionParams";
     std::string value =
         std::to_string(position.x) + "," + std::to_string(position.y) + "," + std::to_string(position.z);
+    HILOG_COMM_INFO("[SetSpaceRenderPositionParams]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -463,8 +496,9 @@ int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetSpaceRenderPositionParams timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetSpaceRenderPositionParams Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetSpaceRenderPositionParams]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -485,8 +519,9 @@ int32_t AudioSuiteManager::GetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSpaceRenderPositionParams timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR,
-        "GetSpaceRenderPositionParams Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetSpaceRenderPositionParams]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
 
     ParseValue(value, position);
     return SUCCESS;
@@ -502,6 +537,8 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
     std::string value = std::to_string(rotation.x) + "," + std::to_string(rotation.y) + "," +
                         std::to_string(rotation.z) + "," + std::to_string(rotation.surroundTime) + "," +
                         std::to_string(static_cast<int32_t>(rotation.surroundDirection));
+    HILOG_COMM_INFO("[SetSpaceRenderRotationParams]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -512,8 +549,9 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetSpaceRenderRotationParams timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetSpaceRenderRotationParams Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetSpaceRenderRotationParams]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -534,8 +572,9 @@ int32_t AudioSuiteManager::GetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSpaceRenderRotationParams timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR,
-        "GetSpaceRenderRotationParams Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetSpaceRenderRotationParams]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
 
     ParseValue(value, rotation);
     return SUCCESS;
@@ -549,6 +588,8 @@ int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
 
     std::string name = "AudioSpaceRenderExtensionParams";
     std::string value = std::to_string(extension.extRadius) + "," + std::to_string(extension.extAngle);
+    HILOG_COMM_INFO("[SetSpaceRenderExtensionParams]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -559,8 +600,9 @@ int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetSpaceRenderExtensionParams timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetSpaceRenderExtensionParams Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetSpaceRenderExtensionParams]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -581,8 +623,9 @@ int32_t AudioSuiteManager::GetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSpaceRenderExtensionParams timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR,
-        "GetSpaceRenderExtensionParams Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetSpaceRenderExtensionParams]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
 
     ParseValue(value, extension);
     return SUCCESS;
@@ -596,6 +639,8 @@ int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float 
 
     std::string name = "speedAndPitch";
     std::string value = std::to_string(speed) + "," + std::to_string(pitch);
+    HILOG_COMM_INFO("[SetTempoAndPitch]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -605,8 +650,9 @@ int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float 
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetTempoAndPitch timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetTempoAndPitch Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetTempoAndPitch]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -627,8 +673,9 @@ int32_t AudioSuiteManager::GetTempoAndPitch(uint32_t nodeId, float &speed, float
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetTempoAndPitch timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR,
-        "GetTempoAndPitch Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetTempoAndPitch]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
 
     ParseValue(value, speed, pitch);
     return SUCCESS;
@@ -644,6 +691,8 @@ int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
     std::string value = std::to_string(static_cast<int32_t>(option.optionGender)) + "," +
                         std::to_string(static_cast<int32_t>(option.optionType)) + "," +
                         std::to_string(static_cast<float>(option.pitch));
+    HILOG_COMM_INFO("[SetPureVoiceChangeOption]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -653,8 +702,9 @@ int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetPureVoiceChangeOption timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetPureVoiceChangeOption Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetPureVoiceChangeOption]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -675,8 +725,9 @@ int32_t AudioSuiteManager::GetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetPureVoiceChangeOption timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR,
-        "GetPureVoiceChangeOption Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetPureVoiceChangeOption]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
 
     ParseValue(value, option);
     return SUCCESS;
@@ -690,6 +741,8 @@ int32_t AudioSuiteManager::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGener
 
     std::string name = "AudioGeneralVoiceChangeType";
     std::string value = std::to_string(static_cast<int32_t>(type));
+    HILOG_COMM_INFO("[SetGeneralVoiceChangeType]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -699,8 +752,9 @@ int32_t AudioSuiteManager::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGener
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetGeneralVoiceChangeType timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetGeneralVoiceChangeType Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetGeneralVoiceChangeType]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -721,8 +775,9 @@ int32_t AudioSuiteManager::GetGeneralVoiceChangeType(uint32_t nodeId, AudioGener
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishGetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetGeneralVoiceChangeType timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR,
-        "GetGeneralVoiceChangeType Error!, getOptionsResult_ = %{public}d", getOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetGeneralVoiceChangeType]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
 
     int32_t parseValue = StringToInt32(value);
     type = static_cast<AudioGeneralVoiceChangeType>(parseValue);
@@ -737,6 +792,8 @@ int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType sou
 
     std::string name = "SoundFieldType";
     std::string value = std::to_string(static_cast<int32_t>(soundFieldType));
+    HILOG_COMM_INFO("[SetSoundFieldType]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -745,8 +802,9 @@ int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType sou
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetSoundFieldType timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetSoundFieldType Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetSoundFieldType]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -758,6 +816,8 @@ int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType e
 
     std::string name = "EnvironmentType";
     std::string value = std::to_string(static_cast<int32_t>(environmentType));
+    HILOG_COMM_INFO("[SetEnvironmentType]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -766,8 +826,9 @@ int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType e
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetEnvironmentType timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetEnvironmentType Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetEnvironmentType]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -779,6 +840,8 @@ int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifi
 
     std::string name = "VoiceBeautifierType";
     std::string value = std::to_string(static_cast<int32_t>(voiceBeautifierType));
+    HILOG_COMM_INFO("[SetVoiceBeautifierType]engine set name: %{public}s value: %{public}s",
+        name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishSetOptions_ = false;
@@ -787,8 +850,9 @@ int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifi
     bool stopWaiting = callbackCV_.wait_for(
         waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] { return isFinishSetOptions_; });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetVoiceBeautifierType timeout");
-    CHECK_AND_RETURN_RET_LOG(setOptionsResult_ == SUCCESS, ERROR,
-        "SetVoiceBeautifierType Error!, getOptionsResult_ = %{public}d", setOptionsResult_);
+    CHECK_AND_CALL_FUNC_RETURN_RET(setOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[SetVoiceBeautifierType]engine SetOptions failed, setOptionsResult_ = %{public}d",
+        setOptionsResult_));
     return ret;
 }
 
@@ -810,7 +874,9 @@ int32_t AudioSuiteManager::GetEnvironmentType(uint32_t nodeId, EnvironmentType &
         return isFinishGetOptions_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetEnvironmentType timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR, "GetEnvironmentType Error!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetEnvironmentType]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
     int32_t parseValue = StringToInt32(value);
     if (parseValue < static_cast<int32_t>(EnvironmentType::AUDIO_SUITE_ENVIRONMENT_TYPE_CLOSE)
         || parseValue > static_cast<int32_t>(EnvironmentType::AUDIO_SUITE_ENVIRONMENT_TYPE_GRAMOPHONE)) {
@@ -838,7 +904,9 @@ int32_t AudioSuiteManager::GetSoundFieldType(uint32_t nodeId, SoundFieldType &so
         return isFinishGetOptions_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetSoundFieldType timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR, "GetSoundFieldType Error!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetSoundFieldType]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
     int32_t parseValue = StringToInt32(value);
     if (parseValue < static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_CLOSE)
         || parseValue > static_cast<int32_t>(SoundFieldType::AUDIO_SUITE_SOUND_FIELD_WIDE)) {
@@ -868,7 +936,9 @@ int32_t AudioSuiteManager::GetEqualizerFrequencyBandGains(uint32_t nodeId,
         return isFinishGetOptions_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetEqualizerFrequencyBandGains timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR, "GetEqualizerFrequencyBandGains Error!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetEqualizerFrequencyBandGains]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
     int32_t parseValue[EQUALIZER_BAND_NUM] = {0};
     ParseValue(value, parseValue);
     for (size_t idx = 0; idx < sizeof(parseValue) / sizeof(parseValue[0]); idx++) {
@@ -897,7 +967,9 @@ int32_t AudioSuiteManager::GetVoiceBeautifierType(uint32_t nodeId,
         return isFinishGetOptions_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetVoiceBeautifierType timeout");
-    CHECK_AND_RETURN_RET_LOG(getOptionsResult_ == SUCCESS, ERROR, "GetVoiceBeautifierType Error!");
+    CHECK_AND_CALL_FUNC_RETURN_RET(getOptionsResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[GetVoiceBeautifierType]engine GetOptions failed, getOptionsResult_ = %{public}d",
+        getOptionsResult_));
     int32_t parseValue = StringToInt32(value);
     if (parseValue < static_cast<int32_t>(VoiceBeautifierType::AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_CLEAR)
         || parseValue > static_cast<int32_t>(VoiceBeautifierType::AUDIO_SUITE_VOICE_BEAUTIFIER_TYPE_STUDIO)) {
@@ -995,7 +1067,7 @@ int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool *is
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("nodeType: %{public}d is supported  on this device.", nodeType);
     } else {
-        AUDIO_ERR_LOG("Wrong effect nodeType: %{public}d.", nodeType);
+        HILOG_COMM_ERROR("[IsNodeTypeSupported]engine failed, Wrong effect nodeType: %{public}d", nodeType);
         *isSupported = false;
     }
     return SUCCESS;

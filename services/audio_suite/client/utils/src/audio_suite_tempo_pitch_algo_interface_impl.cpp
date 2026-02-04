@@ -215,7 +215,8 @@ int32_t AudioSuiteTempoPitchAlgoInterfaceImpl::Apply(
         };
         int32_t ret = (*pitchAlgoHandle_)->process(pitchAlgoHandle_, &inBuffer, &outBuffer);
         outFrameLen = static_cast<int32_t>(outBuffer.frameLength);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "apply pitch algo fail:%{public}d", ret);
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR,
+            HILOG_COMM_ERROR("[Apply]TempoAndPitch algo apply failed, return error is %{public}d", ret));
     } else {
         copyRet = memcpy_s(pcmOut, expendSize_ * sizeof(int16_t), tempDataOut_.data(), outFrameLen * sizeof(int16_t));
         CHECK_AND_RETURN_RET_LOG(copyRet == 0, ERROR, "output buffer not enough");
