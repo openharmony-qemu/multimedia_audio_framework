@@ -472,6 +472,6 @@ HWTEST(AudioProcessInClientUnitTest, SetStaticRenderRate_001, TestSize.Level4)
     ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
     EXPECT_NE(ptrAudioProcessInClientInner->SetStaticRenderRate(RENDER_RATE_NORMAL), SUCCESS);
 }
-
+xx
 } // namespace AudioStandard
 } // namespace OHOSs

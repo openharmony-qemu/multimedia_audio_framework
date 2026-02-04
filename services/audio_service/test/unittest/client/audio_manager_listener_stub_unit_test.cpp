@@ -103,6 +103,6 @@ HWTEST(AudioManagerListenerTest, OnDataTransferStateChange_001, TestSize.Level4)
 
     int32_t result = audioManagerListenerStub->OnDataTransferStateChange(callbackId, info);
     EXPECT_EQ(result, SUCCESS);
-}
+}xx
 } // namespace AudioStandard
 } // namespace OHOS

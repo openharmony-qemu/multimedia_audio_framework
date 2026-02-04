@@ -1065,6 +1065,6 @@ HWTEST_F(CapturerInServerSecondUnitTest, UpdateBufferTimeStamp_006, TestSize.Lev
 
     capturerInServer_->UpdateBufferTimeStamp(12);
     EXPECT_EQ(capturerInServer_->lastPosInc_, 6);
-}
+}xx
 } // namespace AudioStandard
 } // namespace OHOS
