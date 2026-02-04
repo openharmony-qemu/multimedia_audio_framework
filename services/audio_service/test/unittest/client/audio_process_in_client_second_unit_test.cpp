@@ -512,10 +512,10 @@ HWTEST_F(FastSystemStreamUnitTest, GetLatencyWithFlag_002, TestSize.Level4)
 }
  
 /**
- * @tc.name  : Test GetLatencyWithFlag API
+ * @tc.name  : Test PauseAudioStream API
  * @tc.type  : FUNC
  * @tc.number: PauseAudioStream_001
- * @tc.desc  : Test GetLatencyWithFlag interface.
+ * @tc.desc  : Test PauseAudioStream interface.
  */
 HWTEST_F(FastSystemStreamUnitTest, PauseAudioStream_001, TestSize.Level4)
 {
