@@ -62,7 +62,8 @@ int32_t AudioSuiteAissNode::Init()
         static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
     
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    nodeNeedDataDuration_  = (nodeParameter_.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter_.inSampleRate;
+    nodeNeedDataDuration_ =
+        static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
     isInit_ = true;
     AUDIO_DEBUG_LOG("AudioSuiteAissNode Init success");
     return SUCCESS;
