@@ -16,9 +16,7 @@
 #include "gtest/gtest.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#define private public
 #include "capturer_in_server.h"
-#undef private
 
 using namespace testing::ext;
 
