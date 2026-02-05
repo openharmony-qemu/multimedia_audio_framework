@@ -668,6 +668,9 @@ void AudioPolicyServer::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStream
         return;
     }
     AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
+    if (!AudioZoneService::GetInstance().CheckExistDeviceInAudioZone()) { // zone has not device
+        zoneId = 0;
+    }
 }
 
 int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
