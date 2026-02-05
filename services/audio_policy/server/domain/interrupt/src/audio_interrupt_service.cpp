@@ -902,6 +902,7 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
 
         std::shared_ptr<AudioInterruptClient> client =
             std::make_shared<AudioInterruptClient>(callback, object, deathRecipient);
+        CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM, "create client failed");
         uint32_t callingUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == MEDIA_SA_UID) {
             callingUid = uid;
