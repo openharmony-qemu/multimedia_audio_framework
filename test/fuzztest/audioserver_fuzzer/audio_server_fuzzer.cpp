@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,6 +32,7 @@ const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
 const int32_t NUM_2 = 2;
 const uint32_t LIMIT_MIN = 0;
+const int32_t RES_SCHED_SYS_ABILITY_ID = 1901;
 const int32_t AUDIO_DISTRIBUTED_SERVICE_ID = 3001;
 const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
 const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
@@ -50,6 +51,7 @@ typedef void (*TestPtr)(const uint8_t *, size_t);
 const vector<std::string> g_testKeys = {
     "PCM_DUMP",
     "hpae_effect",
+    "HomeMusic",
     "test",
 };
 const vector<DeviceType> g_testDeviceTypes = {
@@ -156,6 +158,7 @@ const vector<std::string> params = {
 
 const vector<int32_t> gTestSystemAbilityId = {
     0,
+    RES_SCHED_SYS_ABILITY_ID,
     AUDIO_POLICY_SERVICE_ID,
     AUDIO_DISTRIBUTED_SERVICE_ID,
 };
@@ -166,14 +169,25 @@ const vector<std::string> gTestAudioParameterKeys = {
     "AUDIO_EXT_PARAM_KEY_LOWPOWER",
     "bt_headset_nrec",
     "bt_wbs",
-    "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG",
     "mmi",
     "perf_info",
+    "mute_call",
+    "game_record_recognition",
+    "LOUD_VOLUMN_MODE",
+    "pm_kara",
+    "pm_kara_code",
+    "outdoor_mode",
+    "test",
 };
 
 const vector<std::string> tetsNetworkId = {
     "LocalDevice",
     "TestNetwork",
+};
+
+const vector<std::string> gTestTaskId = {
+    "{taskId:1234567890}",
+    "test",
 };
 
 const vector<AudioParamKey> audioParamKey {
@@ -198,6 +212,13 @@ const vector<PlayerType> gPlayerType = {
     PLAYER_TYPE_DEFAULT,
     PLAYER_TYPE_SOUND_POOL,
     PLAYER_TYPE_AV_PLAYER,
+    PLAYER_TYPE_SYSTEM_SOUND_PLAYER,
+};
+
+const vector<StopAudioType> gStopAudioType = {
+    STOP_ALL,
+    STOP_RENDER,
+    STOP_RECORD,
 };
 
 static const vector<string> testPairs = {
@@ -999,6 +1020,7 @@ void AudioServerSetSinkRenderEmptyTest()
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     uint32_t id = provider.ConsumeIntegral<uint32_t>() % NUM_2;
     audioServerPtr->SetSinkRenderEmpty("primary", id);
+    audioServerPtr->SetSinkRenderEmpty("primary", -id);
 }
 
 void AudioServerOnRenderSinkStateChangeTest()
@@ -1171,6 +1193,8 @@ void AudioServerRemoveRendererDataTransferCallbackFuzzTest()
     FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     int32_t testPid = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->RemoveRendererDataTransferCallback(testPid);
+    audioServerPtr->audioDataTransferCbMap_[testPid] = std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
     audioServerPtr->RemoveRendererDataTransferCallback(testPid);
 }
 
@@ -1462,7 +1486,10 @@ void AudioServerPermissionCheckerFuzzTest()
 
 void AudioServerCheckPlaybackPermissionFuzzTest()
 {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     AudioProcessConfig config;
+    config.rendererInfo.streamUsage = g_streamUsages[provider.ConsumeIntegral<uint32_t>() % g_streamUsages.size()];
+    config.rendererInfo.playerType = gPlayerType[provider.ConsumeIntegral<uint32_t>() % gPlayerType.size()];
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     audioServerPtr->CheckPlaybackPermission(config);
@@ -1713,6 +1740,8 @@ void AudioServerForceStopAudioStreamFuzzTest()
     int32_t audioType = provider.ConsumeIntegral<int32_t>();
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->ForceStopAudioStream(audioType);
+    audioType = gStopAudioType[provider.ConsumeIntegral<uint32_t>() % gStopAudioType.size()];
+    audioServerPtr->ForceStopAudioStream(audioType);
 }
 
 void AudioServerStartGroupFuzzTest()
@@ -1754,7 +1783,16 @@ void AudioServerResetRecordConfigSourceTypeFuzzTest()
     if (g_sourceTypes.empty()) {
         return;
     }
-    config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<int32_t>() % g_sourceTypes.size()];
+    config.capturerInfo.sourceType = g_sourceTypes[provider.ConsumeIntegral<uint32_t>() % g_sourceTypes.size()];
+    vector<int32_t> gTestCallingUid = {
+        NUM_2,
+        AudioServer::VASSISTANT_UID,
+        AudioServer::MEDIA_SERVICE_UID,
+    };
+    if (gTestCallingUid.empty()) {
+        return;
+    }
+    config.callerUid = provider.ConsumeIntegral<uint32_t>() % gTestCallingUid.size();
     audioServerPtr->ResetRecordConfig(config, filterConfig);
 }
 
@@ -1930,6 +1968,167 @@ void AudioServerAddAndRemoveCaptureInjectorFuzzTest()
     (void)audioServerPtr->RemoveCaptureInjector(sinkPortidx);
 }
 
+void UpdateArmInstance()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_streamUsages.empty()) {
+        return;
+    }
+    DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
+    DeviceFlag deviceFlag = g_testDeviceFlags[provider.ConsumeIntegral<uint32_t>() % g_testDeviceFlags.size()];
+    std::vector<DeviceType> deviceTypes = {deviceType};
+    BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[provider.ConsumeIntegral<uint32_t>() %
+        testBluetoothOffloadStates.size()];
+    std::string deviceName = provider.ConsumeRandomLengthString();
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
+}
+
+void UpdateDeviceForAllSource()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_streamUsages.empty()) {
+        return;
+    }
+    DeviceType deviceType = g_testDeviceTypes[provider.ConsumeIntegral<uint32_t>() % g_testDeviceTypes.size()];
+    DeviceFlag deviceFlag = DeviceFlag::INPUT_DEVICES_FLAG;
+    std::vector<DeviceType> deviceTypes = {deviceType};
+    BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[provider.ConsumeIntegral<uint32_t>() %
+        testBluetoothOffloadStates.size()];
+    std::string deviceName = provider.ConsumeRandomLengthString();
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
+    deviceFlag = DeviceFlag::ALL_DEVICES_FLAG;
+    (void)audioServerPtr->SetIORoutes(deviceType, deviceFlag, deviceTypes, a2dpOffloadFlag, deviceName);
+}
+
+void OnRemoteDied()
+{
+    sptr<IRemoteObject> remoteObject = nullptr;
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->NotifyProcessStatus();
+    AudioProcessConfig config;
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    vector<int32_t> gTestCallingUid = {
+        AudioServer::VASSISTANT_UID,
+        AudioServer::MEDIA_SERVICE_UID,
+    };
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (gTestCallingUid.empty()) {
+        return;
+    }
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % gTestCallingUid.size();
+    config.audioMode = AUDIO_MODE_RECORD;
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    sptr<ProxyDeathRecipient> recipient = new ProxyDeathRecipient(pid, audioServerPtr.GetRefPtr());
+    remoteObject = audioServerPtr->CreateAudioStream(config, gTestCallingUid[id], pipeinfoGuard);
+    recipient->OnRemoteDied(remoteObject);
+}
+
+void SetReleaseFlag()
+{
+    PipeInfoGuard pipeinfoGuard(0);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    pipeinfoGuard.SetReleaseFlag(provider.ConsumeIntegral<uint32_t>() % NUM_2);
+}
+
+void OnStart()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    (void)audioServerPtr->OnStart();
+}
+
+void SetExtraParameters()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (g_testKeys.empty()) {
+        return;
+    }
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % g_testKeys.size();
+    std::string key = g_testKeys[id];
+    std::pair<std::string, std::string> kvpair = std::make_pair(g_testKeys[id], g_testKeys[id]);
+    std::vector<std::pair<std::string, std::string>> kvpairs;
+    kvpairs.push_back(kvpair);
+    std::vector<StringPair> stringPair;
+    for (auto it = kvpairs.begin(); it != kvpairs.end(); it++) {
+        stringPair.push_back({it->first, it->second});
+    }
+    (void)audioServerPtr->SetExtraParameters(key, stringPair);
+}
+
+void OnStop()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    (void)audioServerPtr->OnStop();
+}
+
+void UpdateAudioParameterInfo()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (gTestAudioParameterKeys.empty()) {
+        return;
+    }
+    uint32_t id = provider.ConsumeIntegral<uint32_t>() % gTestAudioParameterKeys.size();
+    std::string key = gTestAudioParameterKeys[id];
+    std::string value = provider.ConsumeRandomLengthString();
+    if (g_audioParamKeys.empty()) {
+        return;
+    }
+    AudioParamKey parmKey = g_audioParamKeys[provider.ConsumeIntegral<uint32_t>() % g_audioParamKeys.size()];
+    std::string valueNew = provider.ConsumeRandomLengthString();
+    std::string halName = provider.ConsumeRandomLengthString();
+    (void)audioServerPtr->UpdateAudioParameterInfo(key, value, parmKey, valueNew, halName);
+}
+
+void GetTaskIdParameter()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string value = provider.ConsumeRandomLengthString();
+    std::vector<std::string> subKeys = {value};
+    std::vector<std::pair<std::string, std::string>> result;
+    (void)audioServerPtr->GetTaskIdParameter(subKeys, result);
+}
+
+void GetExtraParametersInner()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    std::string mainKey = g_testKeys[provider.ConsumeIntegral<uint32_t>() % g_testKeys.size()];
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    audioServerPtr->isAudioParameterParsed_ = true;
+    AudioServer::audioParameterKeys.clear();
+    (void)audioServerPtr->GetExtraParametersInner(mainKey, subKeys, result);
+    AudioServer::audioParameterKeys.clear();
+    std::unordered_map<std::string, std::set<std::string>> value;
+    AudioServer::audioParameterKeys["abc"] = value;
+    (void)audioServerPtr->GetExtraParametersInner(mainKey, subKeys, result);
+    AudioServer::audioParameterKeys.clear();
+    AudioServer::audioParameterKeys[mainKey] = value;
+    (void)audioServerPtr->GetExtraParametersInner(mainKey, subKeys, result);
+    AudioServer::audioParameterKeys.clear();
+    AudioServer::audioParameterKeys[mainKey] = value;
+    subKeys.push_back(mainKey);
+    (void)audioServerPtr->GetExtraParametersInner(mainKey, subKeys, result);
+}
+
+void NotifyTaskIdProxy()
+{
+    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
+    if (testPairs.empty()) {
+        return;
+    }
+    string taskId = gTestTaskId[provider.ConsumeIntegral<uint32_t>() % gTestTaskId.size()];
+    bool connected = provider.ConsumeBool();
+    (void)audioServerPtr->NotifyTaskIdProxy(taskId, connected);
+}
+
 void DataTransferStateChangeCallbackInnerImplOnDataTransferStateChangeFuzzTest()
 {
     DataTransferStateChangeCallbackInnerImpl dataTransferStateChangeCallbackInnerImpl;
@@ -1978,10 +2177,11 @@ void GetPcmDumpParameter()
 
 void SetIORoutesForRemote()
 {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     DeviceType type = DEVICE_TYPE_INVALID;
-    DeviceFlag flag = NONE_DEVICES_FLAG;
+    DeviceFlag flag = g_testDeviceFlags[provider.ConsumeIntegral<uint32_t>() % g_testDeviceFlags.size()];
     std::vector<DeviceType> deviceTypes;
     std::string networkId = "LocalDevice";
     audioServerPtr->SetIORoutesForRemote(type, flag, deviceTypes, networkId);
@@ -1989,10 +2189,11 @@ void SetIORoutesForRemote()
 
 void ReleaseActiveDeviceRoute()
 {
+    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     CHECK_AND_RETURN(audioServerPtr != nullptr);
     DeviceType type = DEVICE_TYPE_INVALID;
-    DeviceFlag flag = NONE_DEVICES_FLAG;
+    DeviceFlag flag = g_testDeviceFlags[provider.ConsumeIntegral<uint32_t>() % g_testDeviceFlags.size()];
     std::vector<DeviceType> deviceTypes;
     std::string networkId = "LocalDevice";
     audioServerPtr->ReleaseActiveDeviceRoute(type, flag, networkId);
@@ -2184,6 +2385,17 @@ vector<TestFuncs> g_testFuncs = {
     AudioServerCheckMaxLoopbackInstancesFuzzTest,
     ReleaseActiveDeviceRoute,
     OnStartExpansion,
+    UpdateArmInstance,
+    UpdateDeviceForAllSource,
+    OnRemoteDied,
+    SetReleaseFlag,
+    OnStart,
+    SetExtraParameters,
+    OnStop,
+    UpdateAudioParameterInfo,
+    GetTaskIdParameter,
+    GetExtraParametersInner,
+    NotifyTaskIdProxy,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

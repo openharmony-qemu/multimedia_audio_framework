@@ -100,8 +100,8 @@ public:
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
-    bool IsBypassSpatializationForStereo() override;
     void SetCollDelayCount() override;
+    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
@@ -156,7 +156,11 @@ private:
     bool QueryOneStreamUnderrun();
     void DeleteNodesByTraversal(uint32_t sessionId);
     void StopOuputNode();
-    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId, RendererState state);
+    void NotifyStreamChangeToSink(StreamChangeType change, uint32_t sessionId,
+        RendererState state, uint32_t appUid = INVALID_UID);
+    void DisConnectCoBufferFromDeleteProcessCluster(HpaeProcessorType sceneType);
+    void ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType);
+    void DisConnectCoBufferFromOnDisConnectProcessCluster(HpaeProcessorType sceneType);
 
 private:
 
@@ -181,6 +185,7 @@ private:
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
+    bool coBufferNodeIsConnectedBt_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

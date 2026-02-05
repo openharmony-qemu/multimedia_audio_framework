@@ -65,7 +65,7 @@ public:
     }
 
     std::shared_ptr<AudioDeviceDescriptor> GetLatestNonExcludedConnectDevice(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN)
     {
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> filteredDescs;
         // remove abnormal device or excluded device
@@ -79,6 +79,7 @@ public:
                 continue;
             }
             CHECK_AND_CONTINUE(!ExistSameRemoteCarWithA2DP(desc));
+            CHECK_AND_CONTINUE(!CheckDpStreamUsage(desc, streamUsage));
             filteredDescs.push_back(desc);
         }
         if (filteredDescs.size() > 0) {
@@ -140,6 +141,19 @@ public:
             return false;
         }
         return AudioDeviceManager::GetAudioDeviceManager().ExistSameRemoteDeviceByMacAddress(desc);
+    }
+
+    bool CheckDpStreamUsage(std::shared_ptr<AudioDeviceDescriptor> desc, StreamUsage streamUsage)
+    {
+        // Wired cast scenarios, ALARM, NOTIFICATION and ENFORCED_TONE should be played on the local device according to
+        // the rules.
+        CHECK_AND_RETURN_RET(desc != nullptr && desc->getType() == DEVICE_TYPE_DP &&
+            audioPolicyManager_.IsDPCastingConnect(), false);
+        CHECK_AND_RETURN_RET(streamUsage == STREAM_USAGE_NOTIFICATION || streamUsage == STREAM_USAGE_ENFORCED_TONE ||
+            streamUsage == STREAM_USAGE_ALARM, false);
+
+        AUDIO_INFO_LOG("Wired cast scenarios, ALARM, NOTIFICATION and ENFORCED_TONE sound on the local device");
+        return true;
     }
 };
 } // namespace AudioStandard

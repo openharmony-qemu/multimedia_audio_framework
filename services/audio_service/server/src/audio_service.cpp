@@ -55,9 +55,6 @@ static const uint32_t RECHECK_SINK_STATE_IN_US = 300000; // 300ms
 static const int32_t MEDIA_SERVICE_UID = 1013;
 static const int32_t INVALID_APP_UID = -1;
 static const int32_t INVALID_APP_CREATED_AUDIO_STREAM_NUM = 0;
-#ifdef FEATURE_CALL_MANAGER
-static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
-#endif
 namespace {
 static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_PLAYBACK_CAPTURE,
@@ -89,12 +86,6 @@ AudioService::AudioService()
 
 AudioService::~AudioService()
 {
-#ifdef FEATURE_CALL_MANAGER
-    std::lock_guard lock(callManagerMutex_);
-    if (callManager_ != nullptr) {
-        callManager_->UnInit();
-    }
-#endif
     AUDIO_INFO_LOG("~AudioService()");
 }
 
@@ -1425,28 +1416,27 @@ void AudioService::SetDecMaxRendererStreamCnt()
 void AudioService::SetIncMaxLoopbackStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
-        currentLoopbackRendererStreamCnt_++;
+        currentLoopbackRendererStreamCnt_.fetch_add(1);
     } else {
-        currentLoopbackCapturerStreamCnt_++;
+        currentLoopbackCapturerStreamCnt_.fetch_add(1);
     }
 }
 
 int32_t AudioService::GetCurrentLoopbackStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
-        return currentLoopbackRendererStreamCnt_;
+        return currentLoopbackRendererStreamCnt_.load();
     } else {
-        return currentLoopbackCapturerStreamCnt_;
+        return currentLoopbackCapturerStreamCnt_.load();
     }
 }
 
 void AudioService::SetDecMaxLoopbackStreamCnt(AudioMode audioMode)
 {
-    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     if (audioMode == AUDIO_MODE_PLAYBACK) {
-        currentLoopbackRendererStreamCnt_--;
+        currentLoopbackRendererStreamCnt_.fetch_sub(1);
     } else {
-        currentLoopbackCapturerStreamCnt_--;
+        currentLoopbackCapturerStreamCnt_.fetch_sub(1);
     }
 }
 
@@ -1905,21 +1895,6 @@ int32_t AudioService::DisableDualStream(const uint32_t sessionId)
 
     AUDIO_ERR_LOG("%{public}u failed", sessionId);
     return ERR_OPERATION_FAILED;
-}
-
-void AudioService::NotifyVoIPStart(SourceType sourceType, int32_t uid)
-{
-#ifdef FEATURE_CALL_MANAGER
-    std::lock_guard lock(callManagerMutex_);
-    if (callManager_ == nullptr) {
-        callManager_ = DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
-        callManager_->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
-    }
-    if (sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        int32_t ret = callManager_->NotifyVoIPAudioStreamStart(uid);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
-    }
-#endif
 }
 
 int32_t AudioService::RequestUserPrivacyAuthority(uint32_t sessionId)

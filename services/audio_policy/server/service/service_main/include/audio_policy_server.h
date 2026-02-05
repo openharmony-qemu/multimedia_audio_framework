@@ -836,6 +836,7 @@ private:
     bool IsContinueAddVol();
     void TriggerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
+    void GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
     void AddAudioServiceOnStart();

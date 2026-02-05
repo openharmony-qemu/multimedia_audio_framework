@@ -49,6 +49,7 @@ public:
     void UpdateCollaborativeProductId(const std::string &productId);
     bool IsCollaborativePlaybackOpenedOrReservedForDevice(
         const AudioDeviceDescriptor &selectedAudioDevice);
+    void UpdateCollaborativeStateToHdi(bool collaborativeState);
 private:
     AudioCollaborativeService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())

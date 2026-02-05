@@ -40,12 +40,21 @@
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
+#ifdef FEATURE_CALL_MANAGER
+#include "call_manager_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 // poraudio only support F32 resample
 static constexpr AudioSampleFormat RESAMPLE_FORMAT = SAMPLE_F32LE;
+#ifdef FEATURE_CALL_MANAGER
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
+#endif
+enum CallbackHandlerEvent : uint32_t {
+    NOTIFY_VOIP_START = 0,
+};
 }
 
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
@@ -416,8 +425,7 @@ int32_t AudioProcessInServer::StartInner()
     MarkStaticFadeIn();
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        AudioService::GetInstance()->NotifyVoIPStart(
-            processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
+        NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
     }
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
@@ -584,6 +592,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
+    ReleaseCallbackHandler();
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
         std::lock_guard lockSch(scheduleGuardsMutex_);
@@ -1369,12 +1378,6 @@ int32_t AudioProcessInServer::SetLoopTimes(int64_t bufferLoopTimes)
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
-}
-
 int32_t AudioProcessInServer::SetStaticRenderRate(uint32_t renderRate)
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
@@ -1465,6 +1468,62 @@ void AudioProcessInServer::MarkStaticFadeIn()
     staticBufferProvider_->NeedProcessFadeIn();
 }
 
+AudioProcessInServerHandler::AudioProcessInServerHandler(IHandler* handler) : handler_(handler) {}
+
+void AudioProcessInServerHandler::OnHandle(uint32_t code, int64_t data)
+{
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
+    handler_->OnHandle(code, data);
+}
+
+void AudioProcessInServer::InitCallbackHandler()
+{
+    CHECK_AND_RETURN(streamStatusInServer_ != STREAM_RELEASED);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ == nullptr);
+    handler_ = std::make_shared<AudioProcessInServerHandler>(this);
+    callbackHandler_ = CallbackHandler::GetInstance(handler_,
+        "OS_AudioCallbackHandler", false);
+}
+
+void AudioProcessInServer::ReleaseCallbackHandler()
+{
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->ReleaseEventRunner();
+    callbackHandler_ = nullptr;
+    handler_ = nullptr;
+}
+
+void AudioProcessInServer::OnHandle(uint32_t code, int64_t data)
+{
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}" PRIu64 "", code, data);
+    switch (code) {
+        case NOTIFY_VOIP_START : {
+#ifdef FEATURE_CALL_MANAGER
+            std::shared_ptr<Telephony::CallManagerClient> callManager =
+                DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+            CHECK_AND_RETURN_LOG(callManager != nullptr, "get callmanager failed");
+            callManager->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+            int32_t ret = callManager->NotifyVoIPAudioStreamStart(data);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+#endif
+            break;
+        }
+        default :
+            break;
+    }
+}
+
+void AudioProcessInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+    CHECK_AND_RETURN(sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+    InitCallbackHandler();
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->SendCallbackEvent(NOTIFY_VOIP_START, uid);
+}
+
 int32_t AudioProcessInServer::ResetStaticPlayPosition()
 {
     CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, ERR_ILLEGAL_STATE);
@@ -1475,6 +1534,5 @@ int32_t AudioProcessInServer::ResetStaticPlayPosition()
     staticBufferProvider_->NeedProcessFadeIn();
     return SUCCESS;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

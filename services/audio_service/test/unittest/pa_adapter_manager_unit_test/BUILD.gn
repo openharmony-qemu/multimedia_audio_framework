@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/pa_adapter_manager"
+module_output_path = "audio_framework/audio_framework_engine/pa_adapter_manager"
 
 config("module_private_config") {
   visibility = [ ":*" ]

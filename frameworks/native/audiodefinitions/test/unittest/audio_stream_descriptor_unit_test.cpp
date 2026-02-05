@@ -359,19 +359,195 @@ HWTEST_F(AudioStreamDescriptorUnitTest, IsMediaScene_001, TestSize.Level2)
 }
 
 /**
- * @tc.name   : AudioStreamDescriptor_UltraFastFlag_001
- * @tc.number : UltraFastFlag_001
- * @tc.desc   : Test SetUltraFastFlag/GetUltraFastFlag on audio stream descriptor
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: GetUltraFastFlag_001
+ * @tc.desc  : Test AudioStreamDescriptor::GetUltraFastFlag with default value
  */
-HWTEST_F(AudioStreamDescriptorUnitTest, UltraFastFlag_001, TestSize.Level2)
+HWTEST_F(AudioStreamDescriptorUnitTest, GetUltraFastFlag_001, TestSize.Level1)
 {
-    // default value may be false, set to true and verify
-    testRendererStream_->SetUltraFastFlag(true);
-    EXPECT_EQ(true, testRendererStream_->GetUltraFastFlag());
+    AudioStreamDescriptor streamDesc;
 
-    // set back to false and verify
-    testRendererStream_->SetUltraFastFlag(false);
-    EXPECT_EQ(false, testRendererStream_->GetUltraFastFlag());
+    // Default value should be ULTRA_NONE
+    uint32_t flag = streamDesc.GetUltraFastFlag();
+    EXPECT_EQ(flag, ULTRA_NONE);
+}
+
+/**
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: ResetUltraFastFlag_001
+ * @tc.desc  : Test AudioStreamDescriptor::ResetUltraFastFlag
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, ResetUltraFastFlag_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    // First set some flags
+    streamDesc.SetUltraFastRequested(true);
+    streamDesc.SetUltraFastImplemented(true);
+
+    // Verify flags are set
+    EXPECT_TRUE(streamDesc.IsUltraFastRequested());
+    EXPECT_TRUE(streamDesc.IsUltraFastImplemented());
+
+    // Reset flags
+    streamDesc.ResetUltraFastFlag();
+
+    // Verify all flags are cleared
+    EXPECT_FALSE(streamDesc.IsUltraFastRequested());
+    EXPECT_FALSE(streamDesc.IsUltraFastImplemented());
+    EXPECT_EQ(streamDesc.GetUltraFastFlag(), ULTRA_NONE);
+}
+
+/**
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: SetUltraFastRequested_001
+ * @tc.desc  : Test AudioStreamDescriptor::SetUltraFastRequested true
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, SetUltraFastRequested_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    // Set requested flag to true
+    streamDesc.SetUltraFastRequested(true);
+
+    // Verify requested flag is set
+    EXPECT_TRUE(streamDesc.IsUltraFastRequested());
+    EXPECT_FALSE(streamDesc.IsUltraFastImplemented());
+
+    // Verify combined flag
+    uint32_t flag = streamDesc.GetUltraFastFlag();
+    EXPECT_EQ(flag, ULTRA_REQUESTED);
+}
+
+/**
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: SetUltraFastRequested_002
+ * @tc.desc  : Test AudioStreamDescriptor::SetUltraFastRequested false
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, SetUltraFastRequested_002, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    // First set requested flag to true
+    streamDesc.SetUltraFastRequested(true);
+    EXPECT_TRUE(streamDesc.IsUltraFastRequested());
+
+    // Now set requested flag to false
+    streamDesc.SetUltraFastRequested(false);
+
+    // Verify requested flag is cleared
+    EXPECT_FALSE(streamDesc.IsUltraFastRequested());
+    EXPECT_FALSE(streamDesc.IsUltraFastImplemented());
+
+    // Verify combined flag
+    uint32_t flag = streamDesc.GetUltraFastFlag();
+    EXPECT_EQ(flag, ULTRA_NONE);
+}
+
+/**
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: SetUltraFastRequested_003
+ * @tc.desc  : Test AudioStreamDescriptor::SetUltraFastRequested with existing implemented flag
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, SetUltraFastRequested_003, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    // First set implemented flag
+    streamDesc.SetUltraFastImplemented(true);
+    EXPECT_TRUE(streamDesc.IsUltraFastImplemented());
+    EXPECT_FALSE(streamDesc.IsUltraFastRequested());
+
+    // Now set requested flag to true
+    streamDesc.SetUltraFastRequested(true);
+
+    // Verify both flags are set
+    EXPECT_TRUE(streamDesc.IsUltraFastRequested());
+    EXPECT_TRUE(streamDesc.IsUltraFastImplemented());
+
+    // Verify combined flag
+    uint32_t flag = streamDesc.GetUltraFastFlag();
+    EXPECT_EQ(flag, ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+}
+
+/**
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: SetUltraFastImplemented_001
+ * @tc.desc  : Test AudioStreamDescriptor::SetUltraFastImplemented true
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, SetUltraFastImplemented_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    // Set implemented flag to true
+    streamDesc.SetUltraFastImplemented(true);
+
+    // Verify implemented flag is set
+    EXPECT_TRUE(streamDesc.IsUltraFastImplemented());
+    EXPECT_FALSE(streamDesc.IsUltraFastRequested());
+
+    // Verify combined flag
+    uint32_t flag = streamDesc.GetUltraFastFlag();
+    EXPECT_EQ(flag, ULTRA_IMPLEMENTED);
+}
+
+/**
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: SetUltraFastImplemented_002
+ * @tc.desc  : Test AudioStreamDescriptor::SetUltraFastImplemented with existing requested flag
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, SetUltraFastImplemented_002, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    // First set requested flag
+    streamDesc.SetUltraFastRequested(true);
+    EXPECT_TRUE(streamDesc.IsUltraFastRequested());
+    EXPECT_FALSE(streamDesc.IsUltraFastImplemented());
+
+    // Now set implemented flag to true
+    streamDesc.SetUltraFastImplemented(true);
+
+    // Verify both flags are set
+    EXPECT_TRUE(streamDesc.IsUltraFastRequested());
+    EXPECT_TRUE(streamDesc.IsUltraFastImplemented());
+
+    // Verify combined flag
+    uint32_t flag = streamDesc.GetUltraFastFlag();
+    EXPECT_EQ(flag, ULTRA_REQUESTED | ULTRA_IMPLEMENTED);
+}
+
+/**
+ * @tc.name  : Test AudioStreamDescriptor API
+ * @tc.type  : FUNC
+ * @tc.number: IsUltraFastRequested_001
+ * @tc.desc  : Test AudioStreamDescriptor::IsUltraFastRequested various states
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, IsUltraFastRequested_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    // Initially should be false
+    EXPECT_FALSE(streamDesc.IsUltraFastRequested());
+
+    // Set requested flag
+    streamDesc.SetUltraFastRequested(true);
+    EXPECT_TRUE(streamDesc.IsUltraFastRequested());
+
+    // Clear requested flag
+    streamDesc.SetUltraFastRequested(false);
+    EXPECT_FALSE(streamDesc.IsUltraFastRequested());
+
+    // Test with only implemented flag set
+    streamDesc.SetUltraFastImplemented(true);
+    EXPECT_FALSE(streamDesc.IsUltraFastRequested());
 }
 
 /**
@@ -383,7 +559,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_NoFast_001, Test
 {
     std::string dumpStr;
     testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-    testRendererStream_->SetUltraFastFlag(true);
+    testRendererStream_->SetUltraFastRequested(true);
     dumpStr.clear();
     testRendererStream_->Dump(dumpStr);
     EXPECT_EQ(std::string::npos, dumpStr.find("UltralFastStream"));
@@ -398,7 +574,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastTrue_001, Te
 {
     std::string dumpStr;
     testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    testRendererStream_->SetUltraFastFlag(true);
+    testRendererStream_->SetUltraFastRequested(true);
     dumpStr.clear();
     testRendererStream_->Dump(dumpStr);
     EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 1"));
@@ -413,7 +589,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastFalse_001, T
 {
     std::string dumpStr;
     testRendererStream_->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    testRendererStream_->SetUltraFastFlag(false);
+    testRendererStream_->SetUltraFastRequested(false);
     dumpStr.clear();
     testRendererStream_->Dump(dumpStr);
     EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 0"));

@@ -108,7 +108,7 @@ private:
 
     void ProcessIdUseCount(uint32_t id, bool isResident, bool tryCreate);
 
-    void SetRemoteHdiInvalidState(HdiDeviceManagerType type, bool force);
+    void SetRemoteHdiInvalidState(HdiDeviceManagerType type, const std::string &networkId, bool force);
 
 private:
     std::unordered_map<uint32_t, RenderSinkInfo> renderSinks_;

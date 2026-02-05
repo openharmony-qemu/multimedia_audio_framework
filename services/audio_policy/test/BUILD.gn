@@ -118,6 +118,7 @@ group("audio_policy_unittest_packages") {
 module_output_path = "audio_framework/audio_framework_policy/audio_policy"
 module_output_path1 =
     "audio_framework/audio_framework_policy/service/audio_policy"
+audio_route_module_output_path = "audio_framework/audio_framework_route/audio_pipe_manager"
 
 ohos_unittest("audio_zone_service_unit_test") {
   module_out_path = module_output_path
@@ -3962,7 +3963,7 @@ ohos_unittest("device_status_listener_unit_test") {
 }
 
 ohos_unittest("audio_ec_manager_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
 
   include_dirs = [
     "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
@@ -4592,7 +4593,7 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
 }
 
 ohos_unittest("audio_pipe_selector_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
   include_dirs = [
     "../server/include",
     "./unittest/audio_pipe_selector_unit_test/include",
@@ -4755,7 +4756,7 @@ ohos_unittest("audio_input_thread_unit_test") {
 }
 
 ohos_unittest("audio_concurrency_service_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
 
   include_dirs = [ "./unittest/audio_concurrency_service_unit_test/include" ]
 
@@ -5494,7 +5495,7 @@ ohos_unittest("audio_strategy_router_parser_unit_test") {
 }
 
 ohos_unittest("audio_tone_parser_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_tone_manager"
 
   include_dirs = [
     "./unittest/audio_tone_parser_unit_test/include",
@@ -5574,7 +5575,7 @@ ohos_unittest("audio_server_definitions_unit_test") {
 }
 
 ohos_unittest("audio_capturer_session_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
 
   include_dirs = [ "./unittest/audio_capturer_session_unit_test/include" ]
 
@@ -6216,7 +6217,7 @@ ohos_unittest("audio_core_service_utils_unit_test") {
 }
 
 ohos_unittest("audio_pipe_manager_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = audio_route_module_output_path
   include_dirs = [
     "../server/include",
     "./unittest/audio_pipe_manager_unit_test/include",
@@ -6364,7 +6365,7 @@ ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
 }
 
 ohos_unittest("audio_tone_manager_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_tone_manager"
 
   include_dirs = [
     "./unittest/audio_tone_manager_unit_test/include",
@@ -6778,7 +6779,7 @@ ohos_unittest("user_select_router_ext_unit_test") {
 }
 
 ohos_unittest("audio_injector_policy_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = audio_route_module_output_path
   include_dirs = ["./unittest/audio_injector_policy_unit_test/include",
                   "../../audio_policy/server/service/service_main/include",
                   "../../audio_policy/common/include",

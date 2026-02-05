@@ -20,7 +20,7 @@ audio_framework_root = "../../../../.."
 
 ohos_unittest("audio_endpoint_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_route_lowLatency/audio_endpoint"
 
   cflags = [ "-fno-access-control" ]
 
@@ -92,7 +92,7 @@ ohos_unittest("audio_endpoint_unit_test") {
 
 ohos_unittest("audio_endpoint_plus_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_route_lowLatency/audio_endpoint"
 
   cflags = [ "-fno-access-control" ]
 

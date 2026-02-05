@@ -457,5 +457,83 @@ HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
     EXPECT_EQ(basicFormat.audioChannelInfo.numChannels, static_cast<uint32_t>(STEREO));
     EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_48000);
 }
+
+/**
+ * @tc.name  : DisConnectMixerNode_001
+ * @tc.type  : FUNC
+ * @tc.number: DisConnectMixerNode_001
+ * @tc.desc  : Test DisConnectMixerNode with renderEffectNode initialized.
+ */
+HWTEST_F(HpaeProcessClusterTest, DisConnectMixerNode_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+
+    cluster->ConnectMixerNode();
+    cluster->DisConnectMixerNode(true);
+    cluster->DisConnectMixerNode(false);
+    SUCCEED();
+}
+
+/**
+ * @tc.name  : DisConnectMixerNode_002
+ * @tc.type  : FUNC
+ * @tc.number: DisConnectMixerNode_002
+ * @tc.desc  : Test DisConnectMixerNode when renderEffectNode is nullptr.
+ */
+HWTEST_F(HpaeProcessClusterTest, DisConnectMixerNode_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE_SCENE_UNCONNECTED;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+
+    cluster->DisConnectMixerNode(true);
+    SUCCEED();
+}
+
+/**
+ * @tc.name  : InitEffectBuffer_001
+ * @tc.type  : FUNC
+ * @tc.number: InitEffectBuffer_001
+ * @tc.desc  : Test InitEffectBuffer when renderEffectNode is valid.
+ */
+HWTEST_F(HpaeProcessClusterTest, InitEffectBuffer_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+
+    cluster->InitEffectBuffer(DEFAULT_SESSIONID_NUM_FIRST);
+    SUCCEED();
+}
+
+/**
+ * @tc.name  : InitEffectBuffer_002
+ * @tc.type  : FUNC
+ * @tc.number: InitEffectBuffer_002
+ * @tc.desc  : Test InitEffectBuffer when renderEffectNode is nullptr (Defensive path).
+ */
+HWTEST_F(HpaeProcessClusterTest, InitEffectBuffer_002, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.sceneType = HPAE::HPAE_SCENE_UNCONNECTED;
+
+    HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
+    auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
+
+    cluster->InitEffectBuffer(DEFAULT_SESSIONID_NUM_FIRST);
+    SUCCEED();
+}
 } // AudioStandard
 } // OHOS

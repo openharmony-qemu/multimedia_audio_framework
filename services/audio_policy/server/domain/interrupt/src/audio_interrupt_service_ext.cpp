@@ -26,6 +26,7 @@
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
 #include "audio_server_proxy.h"
+#include "audio_interrupt_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -534,12 +535,13 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
     AudioStreamType currentStreamType = currentInterrupt.audioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
     if (focusEntry.hintType != INTERRUPT_HINT_STOP ||
-        !IsMediaStream(currentStreamType) || !IsMediaStream(incomingStreamType)) {
+        !AudioInterruptUtils::IsMediaStream(currentStreamType) ||
+        !AudioInterruptUtils::IsMediaStream(incomingStreamType)) {
         return;
     }
 
     bool isInMuteCheckList = false;
-    auto bundleName = GetAudioInterruptBundleName(incomingInterrupt);
+    auto bundleName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
     string muteCheckAppName = bundleName + "_check";
     if (queryBundleNameListCallback_ != nullptr) {
         queryBundleNameListCallback_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_param",

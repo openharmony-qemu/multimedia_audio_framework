@@ -13,7 +13,7 @@
 
 import("//build/test.gni")
 
-module_output_path = "audio_framework/audio_framework_route/audio_interrupt_js"
+module_output_path = "audio_framework/audio_framework_focus/audio_interrupt_js"
 
 ohos_js_unittest("AudioRendererInterruptUnitTest") {
   module_out_path = module_output_path

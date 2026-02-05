@@ -475,6 +475,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
             return;
         case AUDIO_FLAG_ULTRA_FAST:
+            streamDesc->ResetUltraFastFlag();
             CHECK_AND_RETURN(!IsSupportUltraFast(streamDesc));
             break;
         default:
@@ -1124,13 +1125,17 @@ void AudioCoreService::SetAudioRouteCallback(uint32_t sessionId, const sptr<IRem
     sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
     CHECK_AND_RETURN_LOG(listener != nullptr, "listener is nullptr");
     std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
-    routeUpdateCallback_[sessionId] = listener;
+    routeUpdateCallback_[sessionId].listener = listener;
+    routeUpdateCallback_[sessionId].clientUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
 }
 
 void AudioCoreService::UnsetAudioRouteCallback(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
     CHECK_AND_RETURN_LOG(routeUpdateCallback_.count(sessionId) != 0, "sessionId not exists");
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    CHECK_AND_RETURN_LOG(routeUpdateCallback_[sessionId].clientUid == callingUid,
+        "The sessionId %{public}u does not belong to uid %{public}u", sessionId, callingUid);
     routeUpdateCallback_.erase(sessionId);
 }
 

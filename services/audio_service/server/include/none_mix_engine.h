@@ -52,11 +52,12 @@ private:
     void DoFadeinOut(bool isFadeOut, char* buffer, size_t bufferSize);
     void DoRenderFrame(std::vector<char> &audioBufferConverted, int32_t index, int32_t appUid);
 
+    int32_t GetDirectFormatByteSize(AudioSampleFormat format);
+
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
-    AudioSampleFormat GetDirectDeviceFormat(AudioSampleFormat format);
+    AudioSampleFormat GetDirectDeviceFormate(AudioSampleFormat format);
     AudioSampleFormat GetDirectVoipDeviceFormat(AudioSampleFormat format);
-    int32_t GetDirectFormatByteSize(AudioSampleFormat format);
 
     void GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamInfo, uint32_t &targetSampleRate,
         uint32_t &targetChannel, AudioSampleFormat &targetFormat, bool &isVoip);

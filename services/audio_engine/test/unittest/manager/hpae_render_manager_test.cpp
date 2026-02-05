@@ -2466,93 +2466,56 @@ HWTEST_F(HpaeRendererManagerTest, SetOffloadRenderCallbackType_001, TestSize.Lev
     EXPECT_NE(offloadManager->sinkInputNodeMap_.size(), 1);
 }
 
-
 /**
- * @tc.name  : Test IsBypassSpatializationForStereo
+ * @tc.name  : Test TriggerAppsUidUpdate
  * @tc.type  : FUNC
- * @tc.number: IsBypassSpatializationForStereo_001
- * @tc.desc  : Test bypass is true situation.
+ * @tc.number: TriggerAppsUidUpdate_001
+ * @tc.desc  : Test update apps uid.
  */
-HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_001, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    std::shared_ptr<HpaeOffloadRendererManager> offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
+    HpaeNodeInfo nodeInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    sinkInfo.deviceClass = "remote";
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
 
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
 
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), true);
+    EXPECT_EQ(hpaeRendererManager->CreateInputSession(streamInfo), SUCCESS);
+    auto sinkInputNode = hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId];
+    EXPECT_NE(sinkInputNode, nullptr);
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_RUNNING;
+    hpaeRendererManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
+    hpaeRendererManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
+    hpaeRendererManager->sinkInputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_STOPPED;
+    hpaeRendererManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 1);
+    hpaeRendererManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->appsUid_.size(), 0);
 }
 
 /**
- * @tc.name  : Test IsBypassSpatializationForStereo
+ * @tc.name  : Test TriggerAppsUidUpdate
  * @tc.type  : FUNC
- * @tc.number: IsBypassSpatializationForStereo_002
- * @tc.desc  : stream not running -> should continue -> bypass true.
+ * @tc.number: TriggerAppsUidUpdate_002
+ * @tc.desc  : Test offload update apps uid.
  */
-HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_002, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, TriggerAppsUidUpdate_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-
-    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-
-    HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), true);
-}
-
-/**
- * @tc.name  : Test IsBypassSpatializationForStereo
- * @tc.type  : FUNC
- * @tc.number: IsBypassSpatializationForStereo_003
- * @tc.desc  : running but scene is GAME -> continue -> bypass true.
- */
-HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_003, TestSize.Level1)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.deviceClass = "remote_offload";
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
     sinkInfo.frameLen = FRAME_LENGTH_960;
@@ -2565,107 +2528,201 @@ HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_003, TestSize.
     EXPECT_EQ(offloadManager->Init(), SUCCESS);
     WaitForMsgProcessing(offloadManager);
 
-    HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_GAME;   // sceneType = HPAE_SCENE_GAME (not MUSIC/MOVIE/SPEECH)
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = TEST_STREAM_SESSION_ID;
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNode->appUid_ = 123;
+    sinkInputNode->state_ = HPAE_SESSION_RUNNING;
+    offloadManager->curNode_ = sinkInputNode;
+    offloadManager->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    offloadManager->TriggerAppsUidUpdate(0);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), true);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    sinkInputNode->state_ = HPAE_SESSION_STOPPED;
+    offloadManager->curNode_ = sinkInputNode;
+    offloadManager->TriggerAppsUidUpdate(TEST_STREAM_SESSION_ID);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 1);
+    offloadManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->appsUid_.size(), 0);
 }
 
 /**
- * @tc.name  : Test IsBypassSpatializationForStereo
+ * @tc.name  : AddNodeToSink_001
  * @tc.type  : FUNC
- * @tc.number: IsBypassSpatializationForStereo_004
- * @tc.desc  : multichannel (>stereo) should continue -> bypass false.
+ * @tc.number: AddNodeToSink_001
+ * @tc.desc  : Test AddNodeToSink to cover asynchronous node addition logic.
  */
-HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_004, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, AddNodeToSink_001, TestSize.Level1)
 {
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = CHANNEL_6; // sink supports multichannel for this test
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
 
-    HpaeStreamInfo streamInfo;
-    streamInfo.channels = CHANNEL_6; // > STEREO
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 60001;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.channels = STEREO;
+    auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
 
-    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    int32_t ret = offloadManager->AddNodeToSink(node);
+    EXPECT_EQ(ret, SUCCESS);
+
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), false);
+
+    EXPECT_EQ(offloadManager->IsInit(), true);
+    offloadManager->DeInit();
 }
 
 /**
- * @tc.name  : Test IsBypassSpatializationForStereo
+ * @tc.name  : AddAllNodesToSink_001
  * @tc.type  : FUNC
- * @tc.number: IsBypassSpatializationForStereo_006
- * @tc.desc  : multi streams: first skipped, second meets condition -> bypass false.
+ * @tc.number: AddAllNodesToSink_001
+ * @tc.desc  : Test AddAllNodesToSink to cover vector traversal and async request logic.
  */
-HWTEST_F(HpaeRendererManagerTest, IsBypassSpatializationForStereo_006, TestSize.Level1)
+HWTEST_F(HpaeRendererManagerTest, AddAllNodesToSink_001, TestSize.Level1)
 {
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "HpaeOffloadRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
     auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
-    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
 
-    HpaeStreamInfo streamA;
-    streamA.channels = STEREO;
-    streamA.samplingRate = SAMPLE_RATE_48000;
-    streamA.format = SAMPLE_F32LE;
-    streamA.frameLen = FRAME_LENGTH_960;
-    streamA.sessionId = TEST_STREAM_SESSION_ID;
-    streamA.streamType = STREAM_GAME;
-    streamA.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
 
-    EXPECT_EQ(offloadManager->CreateStream(streamA), SUCCESS);
-    WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID), SUCCESS);
+    HpaeNodeInfo info1;
+    info1.sessionId = 80001;
+    info1.samplingRate = SAMPLE_RATE_48000;
+    info1.frameLen = FRAME_LENGTH_960;
+    sinkInputs.push_back(std::make_shared<HpaeSinkInputNode>(info1));
+
+    HpaeNodeInfo info2 = info1;
+    info2.sessionId = 80002;
+    sinkInputs.push_back(std::make_shared<HpaeSinkInputNode>(info2));
+
+    int32_t ret = offloadManager->AddAllNodesToSink(sinkInputs, true);
+    EXPECT_EQ(ret, SUCCESS);
+
     WaitForMsgProcessing(offloadManager);
 
-    HpaeStreamInfo streamB = streamA;
-    streamB.sessionId = TEST_STREAM_SESSION_ID + 1;
-    streamB.streamType = STREAM_MUSIC;
-    streamB.channels = CHANNEL_6;
+    EXPECT_NE(offloadManager->sinkInputNodeMap_.find(80001), offloadManager->sinkInputNodeMap_.end());
+    EXPECT_NE(offloadManager->sinkInputNodeMap_.find(80002), offloadManager->sinkInputNodeMap_.end());
 
-    EXPECT_EQ(offloadManager->CreateStream(streamB), SUCCESS);
+    offloadManager->DeInit();
+}
+
+/**
+ * @tc.name  : OffloadMoveAllStream_001
+ * @tc.type  : FUNC
+ * @tc.number: OffloadMoveAllStream_001
+ * @tc.desc  : Test MoveAllStream covering both sync (uninit) and async (init) paths.
+ */
+HWTEST_F(HpaeRendererManagerTest, OffloadMoveAllStream_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+
+    std::string sinkName = "TargetSink";
+    std::vector<uint32_t> sessionIds = {10001, 10002};
+    MoveSessionType moveType = MOVE_ALL;
+
+    EXPECT_EQ(offloadManager->MoveAllStream(sinkName, sessionIds, moveType), SUCCESS);
+
+    offloadManager->Init();
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->Start(TEST_STREAM_SESSION_ID + 1), SUCCESS);
+
+    EXPECT_EQ(offloadManager->MoveAllStream(sinkName, sessionIds, moveType), SUCCESS);
     WaitForMsgProcessing(offloadManager);
-    EXPECT_EQ(offloadManager->IsBypassSpatializationForStereo(), false);
+
+    offloadManager->DeInit();
+}
+
+/**
+ * @tc.name  : MoveStream_003
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_003
+ * @tc.desc  : Test MoveStream for error paths (not found, empty sinkName) and success path.
+ */
+HWTEST_F(HpaeRendererManagerTest, MoveStream_003, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    offloadManager->Init();
+    WaitForMsgProcessing(offloadManager);
+
+    uint32_t activeSid = 95001;
+    uint32_t normalSid = 95002;
+    uint32_t invalidSid = 99999;
+
+    HpaeNodeInfo info1;
+    info1.sessionId = activeSid;
+    auto activeNode = std::make_shared<HpaeSinkInputNode>(info1);
+
+    HpaeNodeInfo info2;
+    info2.sessionId = normalSid;
+    auto normalNode = std::make_shared<HpaeSinkInputNode>(info2);
+
+    offloadManager->sinkInputNodeMap_[activeSid] = activeNode;
+    offloadManager->sinkInputNodeMap_[normalSid] = normalNode;
+    offloadManager->curNode_ = activeNode;
+
+    offloadManager->MoveStream(invalidSid, "NewSink");
+    offloadManager->MoveStream(normalSid, "");
+    offloadManager->MoveStream(normalSid, "ValidSink");
+    offloadManager->MoveStream(activeSid, "ValidSink");
+
+    WaitForMsgProcessing(offloadManager);
+
+    EXPECT_EQ(offloadManager->IsInit(), true);
+}
+
+/**
+ * @tc.name  : OffloadStopManager_001
+ * @tc.type  : FUNC
+ * @tc.number: OffloadStopManager_001
+ * @tc.desc  : Test StopManager for both valid and nullptr sinkOutputNode scenarios.
+ */
+HWTEST_F(HpaeRendererManagerTest, OffloadStopManager_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    offloadManager->Init();
+    WaitForMsgProcessing(offloadManager);
+
+    offloadManager->sinkOutputNode_.reset();
+    EXPECT_EQ(offloadManager->StopManager(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    HpaeNodeInfo nodeInfo;
+    offloadManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+
+    EXPECT_EQ(offloadManager->StopManager(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    offloadManager->DeInit();
+}
+
+HWTEST_F(HpaeRendererManagerTest, OffloadDeactivateThread_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+
+    offloadManager->Init();
+    ASSERT_NE(offloadManager->hpaeSignalProcessThread_, nullptr);
+
+    EXPECT_TRUE(offloadManager->DeactivateThread());
+    EXPECT_EQ(offloadManager->hpaeSignalProcessThread_, nullptr);
+
+    bool requestHandled = false;
+    auto request = [&requestHandled]() { requestHandled = true; };
+
+    offloadManager->SendRequest(request, "UT_Cleanup_Task");
+    offloadManager->DeactivateThread();
+
+    EXPECT_TRUE(requestHandled);
 }
 }  // namespace

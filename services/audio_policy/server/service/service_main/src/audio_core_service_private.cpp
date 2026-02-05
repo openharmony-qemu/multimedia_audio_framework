@@ -243,7 +243,7 @@ void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<Audio
         uint32_t sessionId = streamDesc->sessionId_;
         CHECK_AND_CONTINUE_LOG(routeUpdateCallback_.count(sessionId) != 0, "sessionId %{public}u not registed",
             sessionId);
-        auto callback = routeUpdateCallback_[sessionId];
+        auto callback = routeUpdateCallback_[sessionId].listener;
         CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
         std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "device desc is nullptr");
@@ -1241,7 +1241,7 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
     deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
-    isUltraFast = pipeManager_->IsStreamUltraFast(sessionId);
+    isUltraFast = pipeManager_->IsStreamUseUltraFastRoute(sessionId);
     return SUCCESS;
 }
 
@@ -2592,7 +2592,9 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         if (rendererState == RENDERER_RELEASED) {
             audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
         }
-        FetchOutputDeviceAndRoute("UpdateTracker_1");
+        if (!audioSceneManager_.IsPhoneCallOrChatScene()) {
+            FetchOutputDeviceAndRoute("UpdateTracker_1");
+        }
     }
 
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
@@ -2770,8 +2772,12 @@ void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDe
  */
 void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_.front() != nullptr, "Invalid streamDesc");
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
+    if (!IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->deviceType_)) {
+        return;
+    }
     if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
         return;
     }
@@ -3670,7 +3676,7 @@ bool AudioCoreService::IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor>
         streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
         return false;
     }
-    streamDesc->SetUltraFastFlag(true);
+    streamDesc->SetUltraFastRequested(true);
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
     AUDIO_INFO_LOG("Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
     return true;

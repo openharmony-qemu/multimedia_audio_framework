@@ -23,6 +23,7 @@
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_capabilities.h"
 #include "audio_suite_perf.h"
+#include "audio_suite_algo_interface.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,10 +33,12 @@ public:
     AudioSuiteProcessNode(AudioNodeType nodeType);
     AudioSuiteProcessNode(AudioNodeType nodeType, AudioFormat audioFormat);
     virtual ~AudioSuiteProcessNode() = default;
-    int32_t DoProcess() override;
+    int32_t DoProcess(uint32_t needDataLength) override;
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t Flush() override;
+    int32_t SetOptions(std::string name, std::string value) override;
+    int32_t GetOptions(std::string name, std::string &value) override;
     std::string paraName_ = "";
     std::string paraValue_ = "";
     AudioSuiteProcessNode(const AudioSuiteProcessNode& others) = delete;
@@ -58,24 +61,52 @@ public:
     }
 
 protected:
-    OutputPort<AudioSuitePcmBuffer *> outputStream_;
-    InputPort<AudioSuitePcmBuffer *> inputStream_;
-    virtual AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) = 0;
-    std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
-    std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
-    NodeParameter nodeParameter;
+    virtual std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs);
+    virtual std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
+    virtual uint32_t CalculationNeedBytes(uint32_t frameLengthMs);
+    int32_t InitCacheLength(uint32_t needDataLength);
+    int32_t ProcessBypassMode(uint32_t needDataLength);
+    int32_t ProcessDirectly();
+    int32_t ProcessWithCache();
+    int32_t ObtainProcessedData();
+    int32_t InitOutputStream();
     // for dfx
     void CheckEffectNodeProcessTime(uint32_t dataDurationMS, uint64_t processDurationUS);
     void CheckEffectNodeOvertimeCount();
-    int32_t InitOutputStream();
+
+    std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
+    OutputPort<AudioSuitePcmBuffer *> outputStream_;
+    InputPort<AudioSuitePcmBuffer *> inputStream_;
+    AudioSuiteFormatConversion convert_;
+    
+    uint32_t nodeNeedDataDuration_ = 0;
+    uint32_t requestPreNodeDuration_ = 0;
+    uint32_t frameOutBytes_ = 0;
+    uint32_t resultNumber_ = 1;
+    uint32_t nextNeedDataLength_ = 0;
+
+    std::vector<AudioSuitePcmBuffer> algoOutPcmBuffer_;
+    std::vector<AudioSuiteRingBuffer> cachedBuffer_;
+    std::vector<AudioSuitePcmBuffer> downStreamData_;
+
+    std::vector<AudioSuitePcmBuffer *> algoProcessedResult_;
+    std::vector<AudioSuitePcmBuffer *> intermediateResult_;
+    
+    std::vector<uint8_t *> algoInput_{nullptr};
+    std::vector<uint8_t *> algoOutput_;
+    std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_{ nullptr };
+    NodeParameter nodeParameter_;
+ 
+    bool secondCall_ = false;
+    bool needCache_ = false;
     bool isOutputPortInit_ = false;
-    uint32_t pcmDurationMs_ = 0;
 
 private:
     // for dfx
     int32_t signalProcessTotalCount_ = 0;
     std::array<int32_t, RTF_OVERTIME_LEVELS> rtfOvertimeCounters_{};
     int32_t rtfOver100Count_ = 0;
+    uint32_t maxRequestLength = 100;
 };
 
 }

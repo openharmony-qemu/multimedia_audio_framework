@@ -43,7 +43,7 @@ typedef enum {
     NODE_TYPE_TEMPO_PITCH = 211,
 } AudioNodeType;
 
-static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
+inline static const std::map<AudioNodeType, std::string> NODETYPE_TOSTRING_MAP = {
     {NODE_TYPE_EMPTY, "NODE_TYPE_EMPTY"},
     {NODE_TYPE_INPUT, "NODE_TYPE_INPUT"},
     {NODE_TYPE_OUTPUT, "NODE_TYPE_OUTPUT"},

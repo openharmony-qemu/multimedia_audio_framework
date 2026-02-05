@@ -24,6 +24,9 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
+static const std::string AISS_LIBRARY_INFO_SYM_AS_STR = "AISSLIB";
+static const std::string PITCH_LIBRARY_INFO_SYM_AS_STR = "PITCHLIB";
+
 AudioSuiteCapabilities::AudioSuiteCapabilities()
 {
     CHECK_AND_RETURN_LOG(audioSuiteCapabilitiesParser_.LoadConfiguration(audioSuiteCapabilities_),

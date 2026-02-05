@@ -51,6 +51,7 @@ CabinPlayBackEngine::CabinPlayBackEngine()
       uChannel_(0),
       uformat_(sizeof(int32_t)),
       uSampleRate_(0),
+      latency_(0),
       firstSetVolume_(true),
       stream_(nullptr)
 {
@@ -351,7 +352,7 @@ int32_t CabinPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat format
         return ret;
     }
     RegisterSinkLatencyFetcher(renderId_);
-    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     float volume = mdmMute ? 0.0f : 1.0f;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;

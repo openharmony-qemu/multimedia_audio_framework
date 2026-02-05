@@ -292,9 +292,10 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor.volumeBehavior_;
     deviceSupportMmap_ = deviceDescriptor.GetDeviceSupportMmap();
+    glassesWearCount_ = deviceDescriptor.glassesWearCount_;
 }
 
-AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
+AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
 {
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "Error input parameter");
     deviceId_ = deviceDescriptor->deviceId_;
@@ -334,6 +335,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor->volumeBehavior_;
     deviceSupportMmap_ = deviceDescriptor->GetDeviceSupportMmap();
+    glassesWearCount_ = deviceDescriptor->glassesWearCount_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const

@@ -30,6 +30,7 @@ class InputNodeRequestDataCallBack;
 namespace {
 
 static constexpr uint32_t TEST_CACHE_SIZE1 = 882;
+static constexpr uint32_t NEED_DATA_LENGTH = 20;
 
 class AudioSuiteInputNodeTest : public testing::Test {
 public:
@@ -236,10 +237,12 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGeneratePushBuffer_001, Tes
     std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
+    inputNode->outPcmData_.dataByteSize_ = 10;
     inputNode->cachedBuffer_.ResizeBuffer(10);
     std::vector<uint8_t> data(10);
     inputNode->cachedBuffer_.PushData(data.data(), 10);
     auto ret = inputNode->GeneratePushBuffer();
+    ret = inputNode->GeneratePushBuffer();
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -250,13 +253,13 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeDoProcess_001, TestSize.Lev
     EXPECT_NE(inputNode, nullptr);
     inputNode->Init();
 
-    auto ret = inputNode->DoProcess();
+    auto ret = inputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, ERR_WRITE_FAILED);
 
     std::shared_ptr<SuiteInputNodeRequestDataCallBackTest> testCallback =
         std::make_shared<SuiteInputNodeRequestDataCallBackTest>();
     inputNode->SetRequestDataCallback(testCallback);
-    ret = inputNode->DoProcess();
+    ret = inputNode->DoProcess(NEED_DATA_LENGTH);
     EXPECT_EQ(ret, SUCCESS);
 }
 

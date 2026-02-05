@@ -7,7 +7,7 @@
 
 #include <string>
 #include <map>
-#include "ohaudio/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
 
 // Define error code enumeration
 enum class AudioSuiteResult {

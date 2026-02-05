@@ -95,6 +95,7 @@ bool AudioAdapterManager::Init()
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
     auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
+    lowerVolumeInfos_ = audiovolumeParser->GetLowerVolumeInfoCfg();
     AudioVolumeUtils::GetInstance().Init();
     defaultVolumeTypeList_ = (VolumeUtils::IsPCVolumeEnable()) ? PC_VOLUME_TYPE_LIST : BASE_VOLUME_TYPE_LIST;
     volumeDataMaintainer_.SetVolumeList(defaultVolumeTypeList_);
@@ -536,6 +537,8 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
 {
     Trace trace("KeyAction AudioAdapterManager::SetSystemVolumeLevel streamType:"
         + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     volDeviceDesc = desc;
     AUDIO_INFO_LOG("streamType: %{public}d, device: %{public}s, volumeLevel:%{public}d",
@@ -1298,7 +1301,39 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
         SetVolumeLimit(MAX_STREAM_VOLUME);
     }
 
-    volume = std::min(volume, volumeLimit_.load());
+    float volumeReduction = streamInCall ? GetVolumeReductionRatio(streamType) : 0;
+    float expect = volumeLimit_.load();
+    if (volumeType != voiceCallType &&
+        volumeReduction > std::numeric_limits<float>::epsilon() &&
+        volumeReduction < MAX_STREAM_VOLUME + std::numeric_limits<float>::epsilon()) {
+        expect *= volumeReduction;
+        AUDIO_INFO_LOG("expect:%{public}f volume:%{public}f, volumeReduction:%{public}f",
+            expect, volume, volumeReduction);
+        expect = expect > std::numeric_limits<float>::epsilon() ? expect : volumeLimit_.load();
+    }
+
+    volume = std::min(volume, expect);
+}
+
+float AudioAdapterManager::GetVolumeReductionRatio(AudioStreamType streamType)
+{
+    float volumeReduction = 0;
+    auto iter = lowerVolumeInfos_.find(streamType);
+    CHECK_AND_RETURN_RET_LOG(iter != lowerVolumeInfos_.end(), volumeReduction,
+        "streamType:%{public}d is not supported", streamType);
+    auto info = iter->second;
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, volumeReduction, "info is null");
+
+    float duckedDb = info->duckedDb;
+    CHECK_AND_RETURN_RET_LOG(duckedDb <= std::numeric_limits<float>::epsilon(), volumeReduction,
+        "duckedDb:%{public}f should be negative", duckedDb);
+
+    const int base = 10;
+    const int divider = 20;
+    volumeReduction = pow(base, duckedDb / divider);
+    AUDIO_INFO_LOG("volumeReduction:%{public}f", volumeReduction);
+
+    return volumeReduction;
 }
 
 void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
@@ -1941,13 +1976,14 @@ static AudioSampleFormat ParseSinkAudioSampleFormat(const std::string &format)
 {
     if (format == "u8") {
         return SAMPLE_U8;
-    } else if (format == "s16le") {
+    } else if (format == "s16le" || format == "s16") {
         return SAMPLE_S16LE;
-    } else if (format == "s24le") {
+    } else if (format == "s24le" || format == "s24") {
         return SAMPLE_S24LE;
-    } else if (format == "s32le") {
+    } else if (format == "s32le" || format == "s32") {
         return SAMPLE_S32LE;
     }
+    AUDIO_ERR_LOG("invalid param: %{public}s", format.c_str());
     return INVALID_WIDTH;
 }
 
@@ -3488,6 +3524,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
     CHECK_AND_RETURN_LOG(desc->deviceRole_ == OUTPUT_DEVICE, "%{public}s is not output", desc->GetName().c_str());
     CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false, not init");
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
         desc->volumeBehavior_.controlMode == HILINK_MODE) {
         UpdateVolumeWhenPassThroughDeviceConnect(desc);
@@ -3509,6 +3547,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
 
 int32_t AudioAdapterManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree)
 {
+    AUDIO_INFO_LOG("In");
+    std::lock_guard<std::mutex> lock(deviceConnectMutex_);
     auto desc = audioActiveDevice_.GetDeviceForVolume(streamType);
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_OPERATION_FAILED, "device is null");
     AUDIO_INFO_LOG("streamType: %{public}d, device:%{public}s, volumeDegree:%{public}d",

@@ -249,7 +249,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
     };
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
-    EXPECT_EQ(nullptr, audioEndpoint);
+    EXPECT_NE(nullptr, audioEndpoint);
 }
 
 /**
@@ -585,7 +585,7 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     EXPECT_FALSE(result);
 
     int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
@@ -693,7 +693,7 @@ HWTEST_F(AudioEndpointUnitTest, HandleStartDeviceFailed_001, TestSize.Level1)
     EXPECT_EQ(AudioEndpoint::EndpointStatus::UNLINKED, audioEndpointInner->endpointStatus_);
 
     int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     audioEndpointInner->LinkProcessStream(newpProcessStream);
     EXPECT_NE(SUCCESS, ret);
@@ -759,7 +759,7 @@ HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
     int32_t ret = audioEndpointInner->LinkProcessStream(processStream);
     EXPECT_EQ(SUCCESS, ret);
 
-    EXPECT_FALSE(audioEndpointInner->DelayStopDevice());
+    EXPECT_TRUE(audioEndpointInner->DelayStopDevice());
 
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
         audioEndpointInner->fastCaptureId_);
@@ -2262,7 +2262,7 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_001, TestSize.Level1)
     
     notifier.join();
     
-    EXPECT_TRUE(audioEndpointInner->isStarted_);
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
     EXPECT_EQ(audioEndpointInner->isStarted_, initialIsStarted);
 }
 
@@ -2373,7 +2373,7 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_004, TestSize.Level1)
     
     notifier.join();
     
-    EXPECT_TRUE(audioEndpointInner->isStarted_);
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -33,6 +33,7 @@ public:
     AudioVolumeParser();
     virtual ~AudioVolumeParser();
     int32_t LoadConfig(StreamVolumeInfoMap &streamVolumeInfoMap);
+    LowerVolumeInfoMap GetLowerVolumeInfoCfg();
 private:
     #ifdef USE_CONFIG_POLICY
     static constexpr char AUDIO_VOLUME_CONFIG_FILE[] = "etc/audio/audio_volume_config.xml";
@@ -41,6 +42,7 @@ private:
     #endif
     std::map<std::string, AudioVolumeType> audioStreamMap_;
     std::map<std::string, DeviceVolumeType> audioDeviceMap_;
+    LowerVolumeInfoMap lowerVolumeInfos_;
 
     void ParseStreamInfos(std::shared_ptr<AudioXmlNode> curNode, StreamVolumeInfoMap &streamVolumeInfoMap);
     int32_t ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNode> curNode,
@@ -52,6 +54,7 @@ private:
     int32_t ParseVolumeConfig(const char *path, StreamVolumeInfoMap &streamVolumeInfoMap);
     void WriteVolumeConfigErrorEvent();
     int32_t UseVoiceAssistantFixedVolumeConfig(StreamVolumeInfoMap &streamVolumeInfoMap);
+    void ParseLowerVolumeInfo(const std::shared_ptr<AudioXmlNode> &curNode);
 };
 } // namespace AudioStandard
 } // namespace OHOS

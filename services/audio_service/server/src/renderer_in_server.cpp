@@ -1123,6 +1123,9 @@ int32_t RendererInServer::Start()
     AudioXCollie audioXCollie(
         "RendererInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    if (stream_ != nullptr) {
+        stream_->TriggerAppsUidUpdate();
+    }
     int32_t ret = StartInner();
     RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
     if (playerDfx_) {
@@ -1776,6 +1779,8 @@ int32_t RendererInServer::DisableInnerCapHandle(int32_t innerCapId)
 
 int32_t RendererInServer::InitDupStream(int32_t innerCapId)
 {
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.rendererFlags != AUDIO_FLAG_3DA_DIRECT, ERR_NOT_SUPPORTED,
+        "InitDupStream failed: innerCap is not supported in 3DA mode, id:%{public}d", innerCapId);
     AUDIO_INFO_LOG("InitDupStream for innerCapId:%{public}d", innerCapId);
     Trace trace(traceTag_ + "InitDupStream innerCapId:" + std::to_string(innerCapId));
     std::lock_guard<std::mutex> lock(dupMutex_);
@@ -2874,12 +2879,6 @@ int32_t RendererInServer::SetLoopTimes(int64_t bufferLoopTimes)
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
     staticBufferProvider_->SetLoopTimes(bufferLoopTimes);
     return SUCCESS;
-}
-
-int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
 }
 
 int32_t RendererInServer::ProcessAndSetStaticBuffer()

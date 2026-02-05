@@ -810,7 +810,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_004, TestSize.Le
     streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.front()->networkId_ = "0";
     streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
-    streamDesc->SetUltraFastFlag(true);
+    streamDesc->SetUltraFastRequested(true);
 
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
@@ -851,7 +851,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_005, TestSize.Le
     streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     streamDesc->newDeviceDescs_.front()->networkId_ = "0";
     streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
-    streamDesc->SetUltraFastFlag(false);
+    streamDesc->SetUltraFastRequested(false);
 
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
@@ -927,25 +927,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_006, TestSize.Le
     pipeInfoPtr->name_ = "offload_distributed_output";
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
-}
-
-/**
- * @tc.name: AudioPipeSelector_ProcessUltraFastWhenCreate_HasRunningStream_001
- * @tc.desc: Test ProcessUltraFastWhenCreate
- * @tc.type: FUNC
- */
-HWTEST_F(AudioPipeSelectorUnitTest, ProcessUltraFastWhenCreate_HasRunningStream_001, TestSize.Level1)
-{
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->SetUltraFastFlag(true);
-    AudioPipeSelector selector;
-
-    selector.ProcessUltraFastWhenCreate(streamDesc);
-    EXPECT_EQ(streamDesc->GetUltraFastFlag(), true);
-
-    streamDesc->SetUltraFastFlag(false);
-    selector.ProcessUltraFastWhenCreate(streamDesc);
-    EXPECT_EQ(streamDesc->GetUltraFastFlag(), false);
 }
 
 /**

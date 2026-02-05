@@ -26,7 +26,7 @@ namespace AudioStandard {
 using namespace std;
 class CallbackHandlerInner : public CallbackHandler, public AppExecFwk::EventHandler {
 public:
-    explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName);
+    explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName, bool isNewThread);
     ~CallbackHandlerInner() = default;
 
     void SendCallbackEvent(uint32_t eventCode, int64_t data) override;
@@ -42,13 +42,15 @@ private:
 };
 
 std::shared_ptr<CallbackHandler> CallbackHandler::GetInstance(std::shared_ptr<IHandler> iHandler,
-    const std::string &handlerName)
+    const std::string &handlerName, bool isNewThread)
 {
-    return std::make_shared<CallbackHandlerInner>(iHandler, handlerName);
+    return std::make_shared<CallbackHandlerInner>(iHandler, handlerName, isNewThread);
 }
 
-CallbackHandlerInner::CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName)
-    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create(handlerName))
+CallbackHandlerInner::CallbackHandlerInner(std::shared_ptr<IHandler> iHandler,
+    const std::string &handlerName, bool isNewThread)
+    : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create(handlerName,
+        isNewThread ? AppExecFwk::ThreadMode::NEW_THREAD : AppExecFwk::ThreadMode::FFRT))
 {
     iHandler_ = iHandler;
 }

@@ -327,6 +327,12 @@ int32_t AudioZoneService::AddUidToAudioZone(int32_t zoneId, int32_t uid)
     return AddKeyToAudioZone(zoneId, uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
 }
 
+int32_t AudioZoneService::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+    return interruptService_->GetActiveAudioInterruptZone(zoneId, streamType);
+}
+
 void AudioZoneService::SetZoneDeviceVisible(bool visible)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
@@ -780,11 +786,11 @@ bool AudioZoneService::CheckDeviceInAudioZone(AudioDeviceDescriptor device)
     return false;
 }
 
-bool AudioZoneService::CheckExistUidInAudioZone()
+bool AudioZoneService::CheckExistDeviceInAudioZone()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (auto &it : zoneMaps_) {
-        if (it.second->CheckExistUidInZone()) {
+        if (it.second->CheckExistDeviceInZone()) {
             return true;
         }
     }

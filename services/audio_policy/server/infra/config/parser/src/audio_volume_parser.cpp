@@ -38,6 +38,13 @@ AudioVolumeParser::AudioVolumeParser()
         {"ULTRASONIC", STREAM_ULTRASONIC},
         {"SYSTEM", STREAM_SYSTEM},
         {"APP", STREAM_APP},
+        {"SPEECH", STREAM_SPEECH},
+        {"VOICE_MESSAGE", STREAM_VOICE_MESSAGE},
+        {"VOICE_RING", STREAM_VOICE_RING},
+        {"NOTIFICATION", STREAM_NOTIFICATION},
+        {"GAME", STREAM_GAME},
+        {"MOVIE", STREAM_MOVIE},
+        {"NAVIGATION", STREAM_NAVIGATION},
 #ifdef MULTI_ALARM_LEVEL
         {"ANNOUNCEMENT", STREAM_ANNOUNCEMENT},
         {"EMERGENCY", STREAM_EMERGENCY}
@@ -236,22 +243,52 @@ int32_t AudioVolumeParser::ParseStreamVolumeInfoAttr(std::shared_ptr<AudioXmlNod
 int32_t AudioVolumeParser::ParseVolumeFixInfo(std::shared_ptr<AudioXmlNode> curNode)
 {
     AUDIO_DEBUG_LOG("AudioVolumeParse::ParseVolumeFixInfo");
-    std::string typeValue;
-    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("type", typeValue) == SUCCESS,
+    std::string pValueStr;
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("type", pValueStr) == SUCCESS,
         ERR_INVALID_PARAM, "invalid type parameter");
-    std::string enableValue;
-    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("enable", enableValue) == SUCCESS,
+    std::string volumeFix;
+    CHECK_AND_RETURN_RET_LOG(curNode->GetProp("enable", volumeFix) == SUCCESS,
         ERR_INVALID_PARAM, "invalid enable parameter");
-    if (typeValue == "VOLUME_FIX_ENABLE" && enableValue == "1") {
+    if (pValueStr == "VOLUME_FIX_ENABLE" && volumeFix == "1") {
         VolumeUtils::SetVolumeFixEnable(true);
         AUDIO_INFO_LOG("VolumeFix is enable");
         // volumeFixEnable for volume 0 return 1, not mute
         return ERR_NOT_SUPPORTED;
     }
-    if (typeValue == "VOLUME_APP_NOTSET_ENABLE" && enableValue == "1") {
-        VolumeUtils::SetVolumeLegacyIgnored(true);
+    if (pValueStr == "LOWER_VOLUME_IN_CALL" && volumeFix == "1") {
+        ParseLowerVolumeInfo(curNode);
     }
     return AUDIO_OK;
+}
+
+void AudioVolumeParser::ParseLowerVolumeInfo(const std::shared_ptr<AudioXmlNode> &curNode)
+{
+    CHECK_AND_RETURN_LOG(curNode != nullptr, "curNode is nullptr");
+    auto child = curNode->GetChildrenNode();
+    while (child && child->IsNodeValid()) {
+        auto volumeInfo = std::make_shared<LowerVolumeInfo>();
+        if (child->CompareName("volume_type") && volumeInfo) {
+            std::string value;
+            child->GetProp("type", value);
+            if (audioStreamMap_.count(value) == 0) {
+                AUDIO_ERR_LOG("invalid type:%{public}s", value.c_str());
+                child->MoveToNext();
+                continue;
+            }
+            volumeInfo->streamType = audioStreamMap_[value];
+            child->GetProp("decibel", value);
+            StringConverterFloat(value, volumeInfo->duckedDb);
+            AUDIO_INFO_LOG("streamType: %{public}d, duckedDb: %{public}f",
+                volumeInfo->streamType, volumeInfo->duckedDb);
+            lowerVolumeInfos_[volumeInfo->streamType] = volumeInfo;
+        }
+        child->MoveToNext();
+    }
+}
+
+LowerVolumeInfoMap AudioVolumeParser::GetLowerVolumeInfoCfg()
+{
+    return lowerVolumeInfos_;
 }
 
 void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> curNode,

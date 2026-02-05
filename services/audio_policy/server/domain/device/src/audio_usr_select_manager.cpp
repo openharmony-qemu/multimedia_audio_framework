@@ -102,7 +102,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
         bool isA2dpinConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dpin);
-        CHECK_AND_RETURN_RET(!isA2dpinConnected, a2dpin);
+        CHECK_AND_RETURN_RET(!isA2dpinConnected, AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dpin));
     }
 
     return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
@@ -165,7 +165,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, Record
             }
             CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
             for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-                CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
                 recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
             }
             break;
@@ -290,7 +289,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStopInner(int32_t index)
         }
         CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
         for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-            CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
             recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
         }
     }

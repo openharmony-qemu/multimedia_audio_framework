@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -515,6 +515,232 @@ void GetTimeStampInfoFuzzTest()
     ohAudioBufferBase->GetTimeStampInfo(position, timeStamp);
 }
 
+void CreateFromRemoteFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    int dataFd = g_fuzzUtils.GetData<int>();
+    int infoFd = g_fuzzUtils.GetData<int>();
+    ohAudioBufferBase->CreateFromRemote(totalSizeInFrame, byteSizePerFrame, selectedAudioBufferHolder, dataFd, infoFd);
+}
+
+void GetRawBufferFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    uint32_t size = g_fuzzUtils.GetData<uint32_t>();
+    BufferDesc bufferDesc;
+    ohAudioBufferBase->GetRawBuffer(size, bufferDesc);
+}
+
+void GetFutexAndSharedMemFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+    ohAudioBufferBase->GetFutex();
+}
+
+void GetAndCheckRestoreStatusFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
+    ohAudioBufferBase->GetRestoreStatus();
+    ohAudioBufferBase->CheckRestoreStatus();
+}
+
+void WaitForFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    int64_t timeoutInNs = g_fuzzUtils.GetData<int64_t>();
+    ohAudioBufferBase->WaitFor(timeoutInNs, [&ohAudioBufferBase] () {
+        return ohAudioBufferBase->GetWritableDataFrames() > 0;
+    });
+}
+
+void SetAndGetStaticModeFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
+    bool state = g_fuzzUtils.GetData<bool>();
+    ohAudioBufferBase->SetStaticMode(state);
+    ohAudioBufferBase->GetStaticMode();
+}
+
+void InAndDecreaseBufEndCbSendTimesFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
+    ohAudioBufferBase->IncreaseBufferEndCallbackSendTimes();
+    ohAudioBufferBase->DecreaseBufferEndCallbackSendTimes();
+}
+
+void ResetBufEndCbSendTimesFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
+    ohAudioBufferBase->ResetBufferEndCallbackSendTimes();
+}
+
+void IsNeedSendBufEndCbFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
+    ohAudioBufferBase->IsNeedSendBufferEndCallback();
+}
+
+void SetAndIsNeedSendLoopEndCbFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
+    bool value = g_fuzzUtils.GetData<bool>();
+    ohAudioBufferBase->SetIsNeedSendLoopEndCallback(value);
+    ohAudioBufferBase->IsNeedSendLoopEndCallback();
+}
+
+void CheckFrozenAndSetLastProcessTimeFuzzTest()
+{
+    int32_t count = static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + NUM_1;
+    AudioBufferHolder selectedAudioBufferHolder =
+        static_cast<AudioBufferHolder>(g_fuzzUtils.GetData<uint8_t>() % count);
+    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    shared_ptr<OHAudioBufferBase> ohAudioBufferBase =
+        std::make_shared<OHAudioBufferBase>(selectedAudioBufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (ohAudioBufferBase == nullptr) {
+        return;
+    }
+
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ohAudioBufferBase->basicBufferInfo_ = basicInfo.get();
+    if (ohAudioBufferBase->basicBufferInfo_ == nullptr) {
+        return;
+    }
+
+    int32_t positionCount = static_cast<uint32_t>(BufferPosition::BUFFER_IN_SERVER) + NUM_1;
+    BufferPosition bufferPosition = static_cast<BufferPosition>(g_fuzzUtils.GetData<uint8_t>() % positionCount);
+    ohAudioBufferBase->CheckFrozenAndSetLastProcessTime(bufferPosition);
+}
+
 vector<TestFuncs> g_testFuncs = {
     MarshallingFuzzTest,
     UnmarshallingFuzzTest,
@@ -539,7 +765,18 @@ vector<TestFuncs> g_testFuncs = {
     GetSyncReadFrameFuzzTest,
     GetSyncWriteFrameFuzzTest,
     GetRestoreInfoFuzzTest,
-    GetTimeStampInfoFuzzTest
+    GetTimeStampInfoFuzzTest,
+    CreateFromRemoteFuzzTest,
+    GetRawBufferFuzzTest,
+    GetFutexAndSharedMemFuzzTest,
+    GetAndCheckRestoreStatusFuzzTest,
+    WaitForFuzzTest,
+    SetAndGetStaticModeFuzzTest,
+    InAndDecreaseBufEndCbSendTimesFuzzTest,
+    ResetBufEndCbSendTimesFuzzTest,
+    IsNeedSendBufEndCbFuzzTest,
+    SetAndIsNeedSendLoopEndCbFuzzTest,
+    CheckFrozenAndSetLastProcessTimeFuzzTest
 };
 } // namespace AudioStandard
 } // namesapce OHOS

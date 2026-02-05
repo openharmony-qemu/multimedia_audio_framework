@@ -129,7 +129,7 @@ static void Clear()
         delete pair.second; // Delete the object pointed to by the pointer
     }
     g_userDataMap.clear();
-    Timeline::getInstance().deleteAllAudioTrack();
+    Timeline::GetInstance().DeleteAllAudioTrack();
 }
 
 // release selected inputNode
@@ -139,7 +139,7 @@ static void ClearByInputId(const std::string& inputId, long startTime)
     if (it != g_writeDataBufferMap.end()) {
         g_writeDataBufferMap.erase(it);
     }
-    bool ret = Timeline::getInstance().deleteAudioTrack(inputId);
+    bool ret = Timeline::GetInstance().DeleteAudioTrack(inputId);
 }
 
 static napi_value AudioEditDestory(napi_env env, napi_callback_info info)
@@ -946,7 +946,7 @@ static napi_value setCurrentTime(napi_env env, napi_callback_info info)
     long currentTime = 0;
     napi_status status = napi_get_value_int64(env, argv[0], &currentTime);
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "setCurrentTime g_currentTime: %{public}ld", currentTime);
-    Timeline::getInstance().resetCurrent(currentTime);
+    Timeline::GetInstance().ResetCurrent(currentTime);
     return nullptr;
 }
 

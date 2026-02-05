@@ -109,7 +109,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
-    config.isUltraFast = info.isUltraFast;
+    config.ultraFastFlag = info.ultraFastFlag;
     AUDIO_DEBUG_LOG("%{public}s: originalSessionId:%{public}u",
         logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
@@ -1040,7 +1040,10 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.defaultOutputDevice = defaultOutputDevice_;
 
     if (rendererInfo_.isStatic) {
-        processClient_->GetStaticBufferInfo(info.staticBufferInfo);
+        CHECK_AND_RETURN_LOG(processClient_ != nullptr, "processClient is nullptr");
+        processClient_->GetStaticPlayPosition(info.staticBufferInfo);
+        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
         info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     }
 
@@ -1404,6 +1407,7 @@ int32_t FastAudioStream::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "processClient_ is null");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    staticBufferInfo_.totalLoopTimes_ = bufferLoopTimes;
     return processClient_->SetLoopTimes(bufferLoopTimes);
 }
 

@@ -88,10 +88,12 @@ private:
     bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
     bool FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,
-        const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo);
     void MatchRemoteOffloadPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
@@ -105,10 +107,8 @@ private:
         const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
     void CheckIfConcedeExisting(ConcurrencyAction &action, const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
-    void ProcessUltraFastWhenCreate(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
                                           std::shared_ptr<PipeStreamPropInfo> &info);
-
     AudioPolicyConfigManager& configManager_;
 };
 } // namespace AudioStandard

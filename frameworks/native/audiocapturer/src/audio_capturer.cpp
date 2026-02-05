@@ -1185,7 +1185,6 @@ int32_t AudioCapturerPrivate::SetAudioSourceConcurrency(const std::vector<Source
 int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
 {
     CapturerState state = GetStatusInner();
-    std::lock_guard<std::mutex> lock(audioInterruptMutex_);
     CHECK_AND_RETURN_RET_LOG(state == CAPTURER_PREPARED, ERR_ILLEGAL_STATE,
         "incorrect state:%{public}d", state);
     audioInterrupt_.strategy = strategy;
@@ -1774,11 +1773,6 @@ void AudioCapturerStateChangeCallbackImpl::SetAudioCapturerObj(
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    {
-        std::lock_guard<std::mutex> lock(capturerMutex_);
-        size_t size = capturerInfoChangeCallbacklist_.size();
-        CHECK_AND_RETURN(size != 0);
-    }
     uint32_t sessionId = static_cast<uint32_t>(-1);
     bool found = false;
     AudioCapturerChangeInfo capturerChangeInfo;
@@ -1816,11 +1810,6 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerInfoChange(
 void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    {
-        std::lock_guard<std::mutex> lock(deviceChangeCallbackMutex_);
-        size_t size = deviceChangeCallbacklist_.size();
-        CHECK_AND_RETURN(size != 0);
-    }
     std::vector<std::shared_ptr<AudioCapturerDeviceChangeCallback>> deviceChangeCallbacklist;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     {
@@ -1845,8 +1834,13 @@ void AudioCapturerStateChangeCallbackImpl::NotifyAudioCapturerDeviceChange(
 void AudioCapturerStateChangeCallbackImpl::OnCapturerStateChange(
     const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    NotifyAudioCapturerDeviceChange(audioCapturerChangeInfos);
-    NotifyAudioCapturerInfoChange(audioCapturerChangeInfos);
+    if (deviceChangeCallbacklist_.size() != 0) {
+        NotifyAudioCapturerDeviceChange(audioCapturerChangeInfos);
+    }
+
+    if (capturerInfoChangeCallbacklist_.size() != 0) {
+        NotifyAudioCapturerInfoChange(audioCapturerChangeInfos);
+    }
 }
 
 void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()

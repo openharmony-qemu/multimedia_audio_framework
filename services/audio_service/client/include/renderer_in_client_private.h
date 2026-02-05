@@ -325,8 +325,6 @@ private:
 
     void CheckOperations();
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
-
     void CheckFrozenStateInStaticMode();
 
     int32_t CallStartWhenInStandby();
@@ -446,7 +444,7 @@ private:
     int64_t rendererMarkPosition_ = 0;
     std::shared_ptr<RendererPositionCallback> rendererPositionCallback_ = nullptr;
 
-    std::shared_mutex periodReachMutex_;
+    std::mutex periodReachMutex_;
     int64_t rendererPeriodSize_ = 0;
     int64_t rendererPeriodWritten_ = 0;
     std::shared_ptr<RendererPeriodPositionCallback> rendererPeriodPositionCallback_ = nullptr;

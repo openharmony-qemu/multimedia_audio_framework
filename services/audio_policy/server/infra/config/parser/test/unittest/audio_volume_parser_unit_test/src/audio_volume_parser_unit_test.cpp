@@ -133,86 +133,55 @@ HWTEST_F(AudioVolumeParserUnitTest, AudioVolumeParserUnitTest_003, TestSize.Leve
 
 /**
  * @tc.name  : Test ParseVolumeFixInfo
- * @tc.number: ParseVolumeFixInfo_001
- * @tc.desc  : Test ParseVolumeFixInfo with VOLUME_FIX_ENABLE
+ * @tc.number: ParseVolumeFixInfo_006
+ * @tc.desc  : Test ParseVolumeFixInfo with LOWER_VOLUME_IN_CALL enabled
  */
-HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_001, TestSize.Level2)
+HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_006, TestSize.Level2)
 {
+    ASSERT_TRUE(audioVolumeParser_ != nullptr);
     std::shared_ptr<MockAudioXmlNode> mockXmlNode = std::make_shared<MockAudioXmlNode>();
-    std::string typeValue = "VOLUME_FIX_ENABLE";
+    ASSERT_TRUE(mockXmlNode != nullptr);
+    std::string typeValue = "LOWER_VOLUME_IN_CALL";
     std::string enableValue = "1";
+    std::string typeValue2 = "MUSIC";
+    std::string typeValue3 = "INVALID";
     EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("type"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)));
+        .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)))
+        .WillOnce(DoAll(SetArgReferee<1>(typeValue2), Return(0)))
+        .WillOnce(DoAll(SetArgReferee<1>(typeValue3), Return(0)));
     EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("enable"), _))
         .WillOnce(DoAll(SetArgReferee<1>(enableValue), Return(0)));
+
+    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("decibel"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(enableValue), Return(0)));
+
+    EXPECT_CALL(*(mockXmlNode), GetChildrenNode()).WillOnce(Return(mockXmlNode));
+    EXPECT_CALL(*(mockXmlNode), IsNodeValid())
+        .WillOnce(Return(true))
+        .WillOnce(Return(true))
+        .WillOnce(Return(false));
+
+    EXPECT_CALL(*(mockXmlNode), CompareName(StrEq("volume_type")))
+        .WillRepeatedly(Return(true));
+
+    EXPECT_CALL(*(mockXmlNode), MoveToNext()).Times(2);
+
     int32_t result = audioVolumeParser_->ParseVolumeFixInfo(mockXmlNode);
-    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_NE(audioVolumeParser_->GetLowerVolumeInfoCfg().size(), 0);
 }
 
 /**
  * @tc.name  : Test ParseVolumeFixInfo
- * @tc.number: ParseVolumeFixInfo_002
- * @tc.desc  : Test ParseVolumeFixInfo without VOLUME_FIX_ENABLE
+ * @tc.number: ParseVolumeFixInfo_007
+ * @tc.desc  : Test ParseVolumeFixInfo with LOWER_VOLUME_IN_CALL disabled
  */
-HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_002, TestSize.Level2)
+HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_007, TestSize.Level2)
 {
+    ASSERT_TRUE(audioVolumeParser_ != nullptr);
     std::shared_ptr<MockAudioXmlNode> mockXmlNode = std::make_shared<MockAudioXmlNode>();
-    std::string typeValue = "VOLUME_FIX_ENABLE";
+    std::string typeValue = "LOWER_VOLUME_IN_CALL";
     std::string enableValue = "0";
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("type"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)));
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("enable"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(enableValue), Return(0)));
-    int32_t result = audioVolumeParser_->ParseVolumeFixInfo(mockXmlNode);
-    EXPECT_EQ(result, AUDIO_OK);
-}
-
-/**
- * @tc.name  : Test ParseVolumeFixInfo
- * @tc.number: ParseVolumeFixInfo_003
- * @tc.desc  : Test ParseVolumeFixInfo with VOLUME_APP_NOTSET_ENABLE
- */
-HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_003, TestSize.Level2)
-{
-    std::shared_ptr<MockAudioXmlNode> mockXmlNode = std::make_shared<MockAudioXmlNode>();
-    std::string typeValue = "VOLUME_APP_NOTSET_ENABLE";
-    std::string enableValue = "1";
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("type"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)));
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("enable"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(enableValue), Return(0)));
-    int32_t result = audioVolumeParser_->ParseVolumeFixInfo(mockXmlNode);
-    EXPECT_EQ(result, AUDIO_OK);
-}
-
-/**
- * @tc.name  : Test ParseVolumeFixInfo
- * @tc.number: ParseVolumeFixInfo_004
- * @tc.desc  : Test ParseVolumeFixInfo without VOLUME_APP_NOTSET_ENABLE
- */
-HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_004, TestSize.Level2)
-{
-    std::shared_ptr<MockAudioXmlNode> mockXmlNode = std::make_shared<MockAudioXmlNode>();
-    std::string typeValue = "VOLUME_APP_NOTSET_ENABLE";
-    std::string enableValue = "0";
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("type"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)));
-    EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("enable"), _))
-        .WillOnce(DoAll(SetArgReferee<1>(enableValue), Return(0)));
-    int32_t result = audioVolumeParser_->ParseVolumeFixInfo(mockXmlNode);
-    EXPECT_EQ(result, AUDIO_OK);
-}
-
-/**
- * @tc.name  : Test ParseVolumeFixInfo
- * @tc.number: ParseVolumeFixInfo_005
- * @tc.desc  : Test ParseVolumeFixInfo with invalid config value
- */
-HWTEST_F(AudioVolumeParserUnitTest, ParseVolumeFixInfo_005, TestSize.Level2)
-{
-    std::shared_ptr<MockAudioXmlNode> mockXmlNode = std::make_shared<MockAudioXmlNode>();
-    std::string typeValue = "test";
-    std::string enableValue = "test";
     EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("type"), _))
         .WillOnce(DoAll(SetArgReferee<1>(typeValue), Return(0)));
     EXPECT_CALL(*(mockXmlNode), GetProp(StrEq("enable"), _))

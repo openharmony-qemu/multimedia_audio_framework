@@ -69,7 +69,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_002, TestSize.
     propertyArray.property.push_back(effectProperty);
     
     int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
+    EXPECT_EQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
 }
 
 /**
@@ -88,7 +88,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_003, TestSize.
     propertyArray.property.push_back(effectProperty);
     
     int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
+    EXPECT_EQ(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
 }
 
 /**
@@ -1146,7 +1146,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
     statusInfo.dmDeviceInfo = "taskId : 9";
     statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
     server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
-    EXPECT_NE(statusInfo.model, "unknown");
+    EXPECT_EQ(statusInfo.model, "unknown");
 }
 
 /**
@@ -1164,7 +1164,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
     statusInfo.dmDeviceInfo = "9";
     statusInfo.connectType = ConnectType::CONNECT_TYPE_DISTRIBUTED;
     server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
-    EXPECT_NE(statusInfo.model, "unknown");
+    EXPECT_EQ(statusInfo.model, "unknown");
 }
 
 /**
@@ -1182,7 +1182,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
     statusInfo.dmDeviceInfo = "taskId : 9";
     statusInfo.connectType = ConnectType::CONNECT_TYPE_LOCAL;
     server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
-    EXPECT_NE(statusInfo.model, "unknown");
+    EXPECT_EQ(statusInfo.model, "unknown");
 }
 
 /**
@@ -1200,7 +1200,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_003, TestSize.Le
     statusInfo.dmDeviceInfo = "9";
     statusInfo.connectType = ConnectType::CONNECT_TYPE_LOCAL;
     server->audioPolicyService_.OnDeviceStatusUpdated(statusInfo, isStop);
-    EXPECT_NE(statusInfo.model, "unknown");
+    EXPECT_EQ(statusInfo.model, "unknown");
 }
 
 

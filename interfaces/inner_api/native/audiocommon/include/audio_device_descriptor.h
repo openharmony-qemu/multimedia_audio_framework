@@ -76,7 +76,7 @@ public:
 
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
 
-    AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
 
     virtual ~AudioDeviceDescriptor();
 
@@ -235,6 +235,10 @@ public:
     bool modemCallSupported_ = true;
     bool highQualityRecordingSupported_ = false;
     std::string dmDeviceInfo_ = "";
+
+    uint32_t glassesWearCount_ = 0;
+    static constexpr int64_t TEN_YEARS_MS = 10LL*365*24*3600*1000;
+    static constexpr uint32_t WEAR_AGAIN = 2;
 
 private:
     uint32_t deviceSupportMmap_ = 1;

@@ -29,10 +29,28 @@ namespace AudioStandard {
 namespace AudioSuite {
 
 namespace {
-constexpr int32_t DEFAULT_FRAME_LEN = 960;  // single channel sample point number.
-constexpr int32_t DEFAULT_CHANNEL_COUNT = 2;
 const std::string voiceMorphingMode = "VoiceBeautifierType";
 const std::string generalVoiceChangeMode = "AudioGeneralVoiceChangeType";
+
+static const std::unordered_map<std::string, AudioVoiceMorphingType> voiceBeautifierTypeMap = {
+    {"1", AUDIO_VOICE_MORPH_CLEAR},
+    {"2", AUDIO_VOICE_MORPH_THEATRE},
+    {"3", AUDIO_VOICE_MORPH_CD},
+    {"4", AUDIO_VOICE_MORPH_RECORDING_STUDIO}
+};
+
+static const std::unordered_map<std::string, AudioVoiceMorphingType> generalVoiceChangeTypeMap = {
+    {"1", AUDIO_VOICE_MPH_CUTE},
+    {"2", AUDIO_VOICE_MPH_CYBERPUNK},
+    {"3", AUDIO_VOICE_MPH_FEMALE},
+    {"4", AUDIO_VOICE_MPH_MALE},
+    {"5", AUDIO_VOICE_MPH_MIX},
+    {"6", AUDIO_VOICE_MPH_MONSTER},
+    {"7", AUDIO_VOICE_MPH_SEASONED},
+    {"8", AUDIO_VOICE_MPH_SYNTH},
+    {"9", AUDIO_VOICE_MPH_TRILL},
+    {"10", AUDIO_VOICE_MPH_WAR}
+};
 }  // namespace
 
 AudioSuiteVoiceMorphingAlgoInterfaceImpl::AudioSuiteVoiceMorphingAlgoInterfaceImpl(NodeParameter &nc)
@@ -106,8 +124,12 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Init()
     handle_.resize(memSize.stateSize);
     scratchBuf_.resize(memSize.scratchSize);
 
-    inBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
-    outBuf_.resize(DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT * sizeof(uint32_t));
+    CHECK_AND_RETURN_RET_LOG(
+        nodeParameter_.frameLen < MAX_SAMPLE_POINT && nodeParameter_.inChannels <= MAX_CHANNEL_COUNT,
+        ERROR,
+        "The algorithm returned more than the maximum number of sample points.");
+    inBuf_.resize(nodeParameter_.frameLen * nodeParameter_.inChannels * sizeof(uint32_t));
+    outBuf_.resize(nodeParameter_.frameLen * nodeParameter_.outChannels * sizeof(uint32_t));
 
     ret = vmAlgoApi_.init(handle_.data(), scratchBuf_.data());
     if (ret != AUDIO_VMP_EOK) {
@@ -171,7 +193,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     AudioVoiceMorphingData data = {
         .dataIn = reinterpret_cast<int *>(inBuf_.data()),
         .dataOut = reinterpret_cast<int *>(outBuf_.data()),
-        .dataSize = DEFAULT_FRAME_LEN,
+        .dataSize = nodeParameter_.frameLen,
         .enableFlag = 1,
         .dataFormat = 1,
         .inCh = 2,
@@ -181,8 +203,8 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     int16_t *inPcm = reinterpret_cast<int16_t *>(audioInputs[0]);
     int16_t *outPcm = reinterpret_cast<int16_t *>(audioOutputs[0]);
     int32_t offset = 16;
-    int32_t requiredSize = DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT;
-    for (int32_t i = 0; i < requiredSize; i++) {
+    uint32_t  requiredSize = nodeParameter_.frameLen * nodeParameter_.outChannels;
+    for (uint32_t  i = 0; i < requiredSize; i++) {
         inBuf_[i] = inPcm[i];
         inBuf_[i] <<= offset;
     }
@@ -192,7 +214,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
         return ERROR;
     }
 
-    for (int32_t i = 0; i < DEFAULT_FRAME_LEN * DEFAULT_CHANNEL_COUNT; i++) {
+    for (uint32_t i = 0; i < nodeParameter_.frameLen * nodeParameter_.outChannels; i++) {
         outPcm[i] = outBuf_[i] >> offset;
     }
 

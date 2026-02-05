@@ -1724,5 +1724,74 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_051, TestSize.Level1)
     ret = noneMixEngineRet.GetDirectVoipDeviceFormat(formatRet);
     EXPECT_EQ(SAMPLE_S16LE, ret);
 }
+
+/**
+ * @tc.name  : NoneMixEngine_AddRenderer_002
+ * @tc.desc  : repeat session
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_AddRenderer_002, TestSize.Level1)
+{
+    auto engine = std::make_shared<NoneMixEngine>();
+
+    AudioProcessConfig config;
+    auto streamA = std::make_shared<ProRendererStreamImpl>(config, true);
+    auto streamB = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    engine->stream_ = streamA;
+    engine->isInit_ = true;
+
+    int32_t ret = engine->AddRenderer(streamB);
+
+    if (streamA->GetStreamIndex() == streamB->GetStreamIndex()) {
+        EXPECT_EQ(ret, SUCCESS);
+    } else {
+        EXPECT_EQ(ret, ERROR_UNSUPPORTED);
+    }
+}
+
+/**
+ * @tc.name  : NoneMixEngine_MixStreams_001
+ * @tc.desc  : Peek fail
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_MixStreams_001, TestSize.Level1)
+{
+    auto engine = std::make_shared<NoneMixEngine>();
+    AudioProcessConfig config;
+    auto stream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    engine->stream_ = stream;
+    engine->writeCount_ = 0;
+    engine->startFadeout_ = true;
+    engine->MixStreams();
+
+    EXPECT_EQ(engine->writeCount_, 1);
+    EXPECT_FALSE(engine->startFadeout_.load());
+}
+
+/**
+ * @tc.name  : NoneMixEngine_MixStreams_002
+ * @tc.desc  : Peek success
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_MixStreams_002, TestSize.Level1)
+{
+    auto engine = std::make_shared<NoneMixEngine>();
+    AudioProcessConfig config;
+    auto stream = std::make_shared<ProRendererStreamImpl>(config, true);
+    engine->stream_ = stream;
+
+    BufferDesc desc;
+    desc.bufLength = 1024;
+    desc.buffer = new uint8_t[desc.bufLength]{0};
+    stream->EnqueueBuffer(desc);
+
+    engine->startFadein_ = true;
+    engine->uChannel_ = 2;
+    engine->uFormat_ = 2; // SAMPLE_S16LE 对应 sizeof(int16_t)
+
+    engine->MixStreams();
+    EXPECT_EQ(engine->writeCount_, 1);
+
+    delete[] desc.buffer;
+}
 } // namespace AudioStandard
 } // namespace OHOS

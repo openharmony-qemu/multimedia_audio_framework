@@ -450,34 +450,15 @@ HWTEST(AudioProcessInClientUnitTest, CheckStaticAndOperate_001, TestSize.Level4)
     ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
     ptrAudioProcessInClientInner->audioBuffer_ = OHAudioBufferBase::CreateFromLocal(10, 10);
     ptrAudioProcessInClientInner->audioBuffer_->SetStaticMode(true);
+    ptrAudioProcessInClientInner->audioBuffer_->SetIsFirstFrame(false);
     EXPECT_FALSE(ptrAudioProcessInClientInner->CheckStaticAndOperate());
 }
 
 /**
  * @tc.name  : Test CheckOperations API with static renderer
  * @tc.type  : FUNC
- * @tc.number: GetStaticBufferInfo_001
- * @tc.desc  : Test GetStaticBufferInfo with static renderer info
- */
-HWTEST(AudioProcessInClientUnitTest, GetStaticBufferInfo_001, TestSize.Level4)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
-    ptrAudioProcessInClientInner->processConfig_.rendererInfo.isStatic = true;
-    StaticBufferInfo staticBufferInfo{};
-    EXPECT_NE(ptrAudioProcessInClientInner->GetStaticBufferInfo(staticBufferInfo), SUCCESS);
-}
-
-/**
- * @tc.name  : Test CheckOperations API with static renderer
- * @tc.type  : FUNC
  * @tc.number: SetStaticRenderRate_001
- * @tc.desc  : Test GetStaticBufferInfo with static renderer info
+ * @tc.desc  : Test SetStaticRenderRate with static renderer info
  */
 HWTEST(AudioProcessInClientUnitTest, SetStaticRenderRate_001, TestSize.Level4)
 {
@@ -492,5 +473,61 @@ HWTEST(AudioProcessInClientUnitTest, SetStaticRenderRate_001, TestSize.Level4)
     EXPECT_NE(ptrAudioProcessInClientInner->SetStaticRenderRate(RENDER_RATE_NORMAL), SUCCESS);
 }
 
+/**
+ * @tc.name  : Test GetLatencyWithFlag API
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_001
+ * @tc.desc  : Test GetLatencyWithFlag interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, GetLatencyWithFlag_001, TestSize.Level4)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+ 
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetLatencyWithFlag_001 start");
+    uint64_t latency = 0;
+    LatencyFlag flag = LATENCY_FLAG_SHARED_BUFFER;
+    int result = fastAudioStream->GetLatencyWithFlag(latency, flag);
+    EXPECT_EQ(result, SUCCESS);
+}
+ 
+/**
+ * @tc.name  : Test GetLatencyWithFlag API
+ * @tc.type  : FUNC
+ * @tc.number: GetLatencyWithFlag_002
+ * @tc.desc  : Test GetLatencyWithFlag interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, GetLatencyWithFlag_002, TestSize.Level4)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+ 
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetLatencyWithFlag_002 start");
+    uint64_t latency = 0;
+    LatencyFlag flag = LATENCY_FLAG_HARDWARE;
+    int result= fastAudioStream->GetLatencyWithFlag(latency, flag);
+    EXPECT_EQ(result, SUCCESS);
+}
+ 
+/**
+ * @tc.name  : Test PauseAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: PauseAudioStream_001
+ * @tc.desc  : Test PauseAudioStream interface.
+ */
+HWTEST_F(FastSystemStreamUnitTest, PauseAudioStream_001, TestSize.Level4)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+ 
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest PauseAudioStream start");
+    fastAudioStream->state_ = RUNNING;
+    StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
+    int result= fastAudioStream->PauseAudioStream(cmdType);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOSs

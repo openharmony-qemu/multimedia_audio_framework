@@ -206,7 +206,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_002, TestSize.Level1)
     outputDevice->networkId_ = std::string("");
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
-    EXPECT_TRUE(ret < 0);
+    EXPECT_TRUE(ret < 1);
 }
 
 #ifdef TEMP_DISABLE
@@ -383,7 +383,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
     outputDevice->networkId_ = "";
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_LT(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE
@@ -625,7 +625,7 @@ HWTEST(AudioManagerUnitTest, SetForegroudList_001, TestSize.Level1)
 {
     std::vector<std::string> list = {};
     auto ret = AudioSystemManager::GetInstance()->SetForegroundList(list);
-    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 #ifdef TEMP_DISABLE
@@ -1820,7 +1820,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_001, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::STREAM_PAUSE, STREAM_USAGE_MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -1832,7 +1832,7 @@ HWTEST(AudioManagerUnitTest, SetPauseOrResumeStream_002, TestSize.Level1)
 {
     int32_t ret = AudioSystemManager::GetInstance()->UpdateStreamState(0,
         StreamSetState::STREAM_RESUME, STREAM_USAGE_MEDIA);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**

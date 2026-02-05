@@ -351,6 +351,125 @@ void AudioActiveDeviceIsDeviceInVectorFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
+void AudioActiveDeviceReleaseActiveDeviceRouteFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    InternalDeviceType deviceType = GetData<InternalDeviceType>();
+    DeviceFlag deviceFlag = GetData<DeviceFlag>();
+    std::string networkI = "testnetworkI";
+    audioActiveDevice->ReleaseActiveDeviceRoute(deviceType, deviceFlag, networkI);
+    OnStop();
+}
+
+void AudioActiveDeviceUpdateVolumeTypeDeviceMapFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
+    desc->newDeviceDescs_.clear();
+    desc->newDeviceDescs_.push_back(descriptor);
+    desc->rendererInfo_.streamUsage = GetData<StreamUsage>();
+    audioActiveDevice->UpdateVolumeTypeDeviceMap(desc);
+    OnStop();
+}
+
+void AudioActiveDeviceUpdateStreamUsageDeviceMapFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
+    desc->newDeviceDescs_.clear();
+    desc->newDeviceDescs_.push_back(descriptor);
+    desc->rendererInfo_.streamUsage = GetData<StreamUsage>();
+    audioActiveDevice->UpdateStreamUsageDeviceMap(desc);
+    OnStop();
+}
+
+void AudioActiveDeviceIsDeviceInActiveOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    DeviceType type = GetData<DeviceType>();
+    bool isRemote = GetData<bool>();
+    audioActiveDevice->IsDeviceInActiveOutputDevices(type, isRemote);
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    audioActiveDevice->IsDeviceInActiveOutputDevices(desc);
+    OnStop();
+}
+
+void AudioActiveDeviceIsAvailableFrontDeviceInVectorFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    descs.push_back(desc);
+    audioActiveDevice->IsAvailableFrontDeviceInVector(descs);
+    OnStop();
+}
+
+void AudioActiveDeviceGetDeviceForVolumeFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    audioActiveDevice->audioConnectedDevice_.connectedDevices_.push_back(desc);
+    audioActiveDevice->GetDeviceForVolume(volumeType);
+
+    StreamUsage usage = GetData<StreamUsage>();
+    audioActiveDevice->streamUsageDeviceMap_.insert({usage,
+        audioActiveDevice->audioConnectedDevice_.connectedDevices_});
+    audioActiveDevice->GetDeviceForVolume(usage);
+    audioActiveDevice->GetDeviceForVolume();
+
+    int32_t appUid = GetData<int32_t>();
+    audioActiveDevice->GetDeviceForVolume(appUid);
+    OnStop();
+}
+
+void AudioActiveDeviceGetActiveDeviceForVolumeFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    int32_t appUid = GetData<int32_t>();
+    audioActiveDevice->GetActiveDeviceForVolume(appUid);
+    OnStop();
+}
+
+void AudioActiveDeviceGetRealUidFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->callerUid_ = GetData<int32_t>();
+    audioActiveDevice->GetRealUid(streamDesc);
+    OnStop();
+}
+
+void AudioActiveDeviceGetActiveOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    audioActiveDevice->activeOutputDevices_.push_back(desc);
+    audioActiveDevice->GetActiveOutputDevices();
+    OnStop();
+}
+
 void AudioDeviceDescriptorSetClientInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioDeviceDescriptor deviceDescriptor;
@@ -401,6 +520,15 @@ void Test(FuzzedDataProvider& fdp)
     AudioActiveDeviceSetDeviceActiveFuzzTest,
     AudioActiveDeviceSetCallDeviceActiveFuzzTest,
     AudioActiveDeviceIsDeviceInVectorFuzzTest,
+    AudioActiveDeviceReleaseActiveDeviceRouteFuzzTest,
+    AudioActiveDeviceUpdateVolumeTypeDeviceMapFuzzTest,
+    AudioActiveDeviceUpdateStreamUsageDeviceMapFuzzTest,
+    AudioActiveDeviceIsDeviceInActiveOutputDevicesFuzzTest,
+    AudioActiveDeviceIsAvailableFrontDeviceInVectorFuzzTest,
+    AudioActiveDeviceGetDeviceForVolumeFuzzTest,
+    AudioActiveDeviceGetActiveDeviceForVolumeFuzzTest,
+    AudioActiveDeviceGetRealUidFuzzTest,
+    AudioActiveDeviceGetActiveOutputDevicesFuzzTest,
     AudioDeviceDescriptorSetClientInfoFuzzTest,
     AudioDeviceDescriptorFixApiCompatibilityFuzzTest,
     AudioDeviceDescriptorGetKeyFuzzTest,

@@ -22,6 +22,7 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 #ifdef SUPPORT_LOW_LATENCY
 #include "audio_process_in_server.h"
@@ -33,9 +34,6 @@
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
-#ifdef FEATURE_CALL_MANAGER
-#include "call_manager_client.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -147,7 +145,6 @@ public:
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
-    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
 private:
     AudioService();
@@ -238,8 +235,8 @@ private:
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
     int32_t currentRendererStreamCnt_ = 0;
-    int32_t currentLoopbackRendererStreamCnt_ = 0;
-    int32_t currentLoopbackCapturerStreamCnt_ = 0;
+    std::atomic<int32_t> currentLoopbackRendererStreamCnt_{0};
+    std::atomic<int32_t> currentLoopbackCapturerStreamCnt_{0};
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap_;
     std::mutex allRunningSinksMutex_;
@@ -254,11 +251,6 @@ private:
     float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
-
-#ifdef FEATURE_CALL_MANAGER
-    std::shared_ptr<Telephony::CallManagerClient> callManager_ = nullptr;
-    std::mutex callManagerMutex_;
-#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS
