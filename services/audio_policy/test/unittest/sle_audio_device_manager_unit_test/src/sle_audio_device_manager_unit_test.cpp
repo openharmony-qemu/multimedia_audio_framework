@@ -876,9 +876,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, IsMoveToNearlinkDevice_003, TestSize.Level
         std::make_shared<AudioStreamDescriptor>();
 
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_1 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_2 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK_IN, INPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK_IN, INPUT_DEVICE);
     
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_1);
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_2);
@@ -930,11 +930,11 @@ HWTEST(SleAudioDeviceManagerUnitTest, IsNearlinkMoveToOtherDevice_003, TestSize.
         std::make_shared<AudioStreamDescriptor>();
 
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_1 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_2 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc_1 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, INPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, INPUT_DEVICE);
 
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_1);
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_2);
@@ -998,9 +998,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, UpdateSleStreamTypeCount_001, TestSize.Lev
     EXPECT_EQ(ret_1, SLE_AUDIO_STREAM_MUSIC);
 
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_1 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_2 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_1);
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_2);
@@ -1047,9 +1047,9 @@ HWTEST(SleAudioDeviceManagerUnitTest, UpdateSleStreamTypeCount_002, TestSize.Lev
     EXPECT_EQ(ret_1, SLE_AUDIO_STREAM_VOICE_CALL);
 
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_1 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc_2 =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 1, 1, "");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
     
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_1);
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc_2);
@@ -1791,9 +1791,11 @@ HWTEST(SleAudioDeviceManagerUnitTest, UpdateSleStreamTypeCount_EdgeCase_001, Tes
     streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
 
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 1, 1, "OldDevice");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    oldDeviceDesc->macAddress_ = "OldDevice";
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, 1, 1, "NewDevice");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    newDeviceDesc->macAddress_ = "NewDevice";
 
     streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
@@ -1826,9 +1828,11 @@ HWTEST(SleAudioDeviceManagerUnitTest, UpdateSleStreamTypeCount_EdgeCase_002, Tes
     streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
 
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, 1, 1, "OldNearlinkDevice");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    oldDeviceDesc->macAddress_ = "OldNearlinkDevice";
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 1, 1, "NewSpeakerDevice");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    newDeviceDesc->macAddress_ = "NewSpeakerDevice";
 
     streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
@@ -2003,9 +2007,11 @@ HWTEST(SleAudioDeviceManagerUnitTest, NearlinkMove_001, TestSize.Level1)
     streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
 
     std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE, 1, 1, nearlinkDevice);
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    oldDeviceDesc->macAddress_ = nearlinkDevice;
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc =
-        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 1, 1, "SpeakerDevice");
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    newDeviceDesc->macAddress_ = "SpeakerDevice";
 
     streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
