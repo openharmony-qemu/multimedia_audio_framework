@@ -3127,7 +3127,7 @@ int32_t AudioAdapterManager::SetNearlinkDeviceVolume(AudioVolumeType volumeType,
 {
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_NEARLINK);
     CHECK_AND_RETURN_RET_LOG(desc, ERROR, "DEVICE_TYPE_NEARLINK device is null");
-    SaveVolumeData(desc, volumeType, volume, true, true);
+    SaveVolumeData(desc, volumeType, volume, false, true);
     SetVolumeDbForDeviceInPipe(desc, volumeType);
     return SUCCESS;
 }
