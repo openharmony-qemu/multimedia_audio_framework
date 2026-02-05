@@ -1541,12 +1541,12 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap = UserSelectDeviceMapInit();
-    auto audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
             reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
             UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>());
-            audioUsrSelectManager_.RestoreMediaControllerPreferredInputDevice(audioDescriptor);
+            audioUsrSelectManager_.RestoreMediaControllerPreferredInputDevice(
+                std::make_shared<AudioDeviceDescriptor>(desc));
 #ifdef BLUETOOTH_ENABLE
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
@@ -1557,7 +1557,8 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
-            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {audioDescriptor};
+            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
+                make_shared<AudioDeviceDescriptor>(desc)};
             AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             ClearPreferredWhenCategoryUpdated(desc);
