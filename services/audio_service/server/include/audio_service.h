@@ -218,8 +218,8 @@ private:
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
     int32_t currentRendererStreamCnt_ = 0;
-    int32_t currentLoopbackRendererStreamCnt_ = 0;
-    int32_t currentLoopbackCapturerStreamCnt_ = 0;
+    std::atomic<int32_t> currentLoopbackRendererStreamCnt_{0};
+    std::atomic<int32_t> currentLoopbackCapturerStreamCnt_{0};
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap_;
     std::mutex allRunningSinksMutex_;
