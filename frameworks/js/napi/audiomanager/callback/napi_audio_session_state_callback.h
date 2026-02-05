@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string AUDIO_SESSION_STATE_CALLBACK_NAME = "audioSessionStateChanged";
+inline const std::string AUDIO_SESSION_STATE_CALLBACK_NAME = "audioSessionStateChanged";
 
 class NapiAudioSessionStateCallback : public AudioSessionStateChangedCallback {
 public:

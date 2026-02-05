@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
+inline const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
 
 class NapiAudioRingerModeCallback : public AudioRingerModeCallback {
 public:

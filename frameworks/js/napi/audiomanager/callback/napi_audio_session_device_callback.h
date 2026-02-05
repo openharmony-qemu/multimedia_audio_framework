@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string AUDIO_SESSION_DEVICE_CALLBACK_NAME = "currentOutputDeviceChanged";
+inline const std::string AUDIO_SESSION_DEVICE_CALLBACK_NAME = "currentOutputDeviceChanged";
 
 class NapiAudioSessionDeviceCallback : public AudioSessionCurrentDeviceChangedCallback {
 public:
