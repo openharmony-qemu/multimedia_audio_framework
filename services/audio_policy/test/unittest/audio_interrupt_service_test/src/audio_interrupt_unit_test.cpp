@@ -334,6 +334,15 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptService_007
+* @tc.desc  : Test SetAudioInterruptCallback and UnsetAudioInterruptCallback.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_006, TestSize.Level1)
+{
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_008
 * @tc.desc  : Test ResumeAudioFocusList and SimulateFocusEntry.
 */

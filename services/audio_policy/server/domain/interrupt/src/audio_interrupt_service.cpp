@@ -273,7 +273,7 @@ void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const A
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
-    uint32_t callerPid = audioInterrupt.pid;
+    int32_t callerPid = audioInterrupt.pid;
     auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
         return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
     };
@@ -928,6 +928,7 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (interruptClients_.erase(streamId) == 0) {
         AUDIO_ERR_LOG("streamId %{public}u not present", streamId);
         return ERR_INVALID_PARAM;
