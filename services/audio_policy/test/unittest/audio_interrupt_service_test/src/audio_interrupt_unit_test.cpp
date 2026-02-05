@@ -334,6 +334,26 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptService_007
+* @tc.desc  : Test UnsetAudioInterruptCallback.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptService_007, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    std::shared_ptr<AudioInterruptService::AudioInterruptClient> client =
+        std::make_shared<AudioInterruptService::AudioInterruptClient>(nullptr, nullptr, nullptr);
+    client->SetCallingUid(1001);
+    interruptServiceTest->interruptClients_[1000] = client;
+    auto retStatus = interruptServiceTest->UnsetAudioInterruptCallback(0, 1000);
+    EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
+    client->SetCallingUid(0);
+    interruptServiceTest->interruptClients_[1000] = client;
+    retStatus = interruptServiceTest->UnsetAudioInterruptCallback(0, 1000);
+    EXPECT_EQ(retStatus, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptService_008
 * @tc.desc  : Test ResumeAudioFocusList and SimulateFocusEntry.
 */

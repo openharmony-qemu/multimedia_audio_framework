@@ -273,7 +273,7 @@ void AudioInterruptService::AddInterruptErrorEvent(const int32_t zoneId, const A
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
-    uint32_t callerPid = audioInterrupt.pid;
+    int32_t callerPid = audioInterrupt.pid;
     auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
         return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
     };
@@ -902,6 +902,7 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
 
         std::shared_ptr<AudioInterruptClient> client =
             std::make_shared<AudioInterruptClient>(callback, object, deathRecipient);
+        CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM, "create client failed");
         uint32_t callingUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == MEDIA_SA_UID) {
             callingUid = uid;
@@ -927,6 +928,19 @@ int32_t AudioInterruptService::SetAudioInterruptCallback(const int32_t zoneId, c
 int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId, const uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (!PermissionUtil::VerifySystemPermission()) {
+        auto it = interruptClients_.find(streamId);
+        if (it == interruptClients_.end()) {
+            AUDIO_ERR_LOG("session %{public}u not present", streamId);
+            return ERR_INVALID_PARAM;
+        }
+        if (callingUid != it->second->GetCallingUid()) {
+            AUDIO_ERR_LOG("The callingUid is not equal to clientUid");
+            return ERR_INVALID_PARAM;
+        }
+    }
 
     if (interruptClients_.erase(streamId) == 0) {
         AUDIO_ERR_LOG("streamId %{public}u not present", streamId);
