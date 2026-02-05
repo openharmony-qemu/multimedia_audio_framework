@@ -929,6 +929,18 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
     std::lock_guard<std::mutex> lock(mutex_);
 
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (!PermissionUtil::VerifySystemPermission()) {
+        auto it = interruptClients_.find(sessionId);
+        if (it == interruptClients_.end()) {
+            AUDIO_ERR_LOG("session %{public}u not present", sessionId);
+            return ERR_INVALID_PARAM;
+        }
+        if (callingUid != it->second->GetCallingUid()) {
+            AUDIO_ERR_LOG("The callingUid is not equal to clientUid");
+            return ERR_INVALID_PARAM;
+        }
+    }
+
     if (interruptClients_.erase(streamId) == 0) {
         AUDIO_ERR_LOG("streamId %{public}u not present", streamId);
         return ERR_INVALID_PARAM;
