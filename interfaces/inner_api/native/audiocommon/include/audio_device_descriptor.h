@@ -76,7 +76,7 @@ public:
 
     AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor);
 
-    AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
 
     virtual ~AudioDeviceDescriptor();
 
