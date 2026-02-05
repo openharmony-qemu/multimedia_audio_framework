@@ -25,7 +25,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME = "systemVolumeChange";
+inline const std::string AUDIO_SYSTEM_VOLUME_CHANGE_CALLBACK_NAME = "systemVolumeChange";
 
 class NapiAudioSystemVolumeChangeCallback : public SystemVolumeChangeCallback {
 public:

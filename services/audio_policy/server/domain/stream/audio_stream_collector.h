@@ -25,7 +25,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
+inline const std::vector<StreamUsage> BACKGROUND_MUTE_STREAM_USAGE {
     STREAM_USAGE_MUSIC,
     STREAM_USAGE_MOVIE,
     STREAM_USAGE_GAME,
