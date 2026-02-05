@@ -930,9 +930,9 @@ int32_t AudioInterruptService::UnsetAudioInterruptCallback(const int32_t zoneId,
 
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     if (!PermissionUtil::VerifySystemPermission()) {
-        auto it = interruptClients_.find(sessionId);
+        auto it = interruptClients_.find(streamId);
         if (it == interruptClients_.end()) {
-            AUDIO_ERR_LOG("session %{public}u not present", sessionId);
+            AUDIO_ERR_LOG("session %{public}u not present", streamId);
             return ERR_INVALID_PARAM;
         }
         if (callingUid != it->second->GetCallingUid()) {
