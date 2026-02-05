@@ -1170,6 +1170,82 @@ void AudioStreamCollectorCheckAudioStateIdleFuzzTest(const uint8_t *rawData, siz
     audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
     audioStreamCollector_.CheckAudioStateIdle();
 }
+
+void AudioStreamCollectorGetBackMuteBySessionIdFuzzTest(const uint8_t *rawData, size_t size)
+{
+    int32_t sessionId = static_cast<int32_t>(size);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->sessionId = sessionId;
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    audioStreamCollector_.GetBackMuteBySessionId(sessionId);
+}
+
+void AudioStreamCollectorHandleKaraokeAppToBackFuzzTest(const uint8_t *rawData, size_t size)
+{
+    int32_t uid = static_cast<int32_t>(size) % NUM_2;
+    int32_t pid = static_cast<int32_t>(size) % NUM_2;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = static_cast<int32_t>(size) % NUM_2;
+    rendererChangeInfo->clientPid = static_cast<int32_t>(size) % NUM_2;
+    rendererChangeInfo->rendererInfo.isLoopback = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    audioStreamCollector_.HandleKaraokeAppToBack(uid, pid);
+}
+
+void AudioStreamCollectorIsVoiceCallActiveFuzzTest(const uint8_t *rawData, size_t size)
+{
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = static_cast<int32_t>(size) % NUM_2;
+    rendererChangeInfo->clientPid = static_cast<int32_t>(size) % NUM_2;
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    audioStreamCollector_.IsVoiceCallActive();
+}
+
+void AudioStreamCollectorWriteCaptureStreamReleaseSysEventFuzzTest(const uint8_t *rawData, size_t size)
+{
+    std::shared_ptr<AudioCapturerChangeInfo> audioCapturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+    if (audioCapturerChangeInfo == nullptr) {
+        return;
+    }
+    audioStreamCollector_.WriteCaptureStreamReleaseSysEvent(audioCapturerChangeInfo);
+}
+
+void AudioStreamCollectorHasRunningRendererStreamFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioStreamCollector_.HasRunningRendererStream();
+}
+
+void AudioStreamCollectorGetPlayingMediaRendererChangeInfosFuzzTest(const uint8_t *rawData, size_t size)
+{
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = g_testContentTypes[index % g_testContentTypes.size()];
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererState = g_testRendererState[index % g_testRendererState.size()];
+    rendererChangeInfo->rendererInfo = rendererInfo;
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    audioStreamCollector_.GetPlayingMediaRendererChangeInfos(rendererChangeInfos);
+}
+
+void AudioStreamCollectorIsStreamRunningFuzzTest(const uint8_t *rawData, size_t size)
+{
+    uint32_t index = static_cast<uint32_t>(size);
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->clientUID = static_cast<int32_t>(size) % NUM_2;
+    rendererChangeInfo->clientPid = static_cast<int32_t>(size) % NUM_2;
+    audioStreamCollector_.audioRendererChangeInfos_.clear();
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    audioStreamCollector_.IsStreamRunning(streamUsage);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1233,6 +1309,13 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorCheckVoiceCallActiveFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorPostReclaimMemoryTaskFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorCheckAudioStateIdleFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorGetBackMuteBySessionIdFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorHandleKaraokeAppToBackFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorIsVoiceCallActiveFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorWriteCaptureStreamReleaseSysEventFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorHasRunningRendererStreamFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorGetPlayingMediaRendererChangeInfosFuzzTest,
+    OHOS::AudioStandard::AudioStreamCollectorIsStreamRunningFuzzTest,
 };
 
 /* Fuzzer entry point */

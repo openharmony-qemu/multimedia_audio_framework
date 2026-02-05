@@ -168,6 +168,28 @@ void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     audioZoneClientManager.GetSystemVolumeLevel(clientPid, zoneId, volumeType);
 }
 
+void AudioZoneClientManagerSetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
+    AudioZoneClientManager audioZoneClientManager(handler);
+    pid_t clientPid = GetData<pid_t>();
+    int32_t zoneId = GetData<int32_t>();
+    AudioVolumeType volumeType  = GetData<AudioVolumeType>();
+    int32_t volumeDegree = GetData<int32_t>();
+    int32_t volumeFlag  = GetData<int32_t>();
+    audioZoneClientManager.SetSystemVolumeDegree(clientPid, zoneId, volumeType, volumeDegree, volumeFlag);
+}
+
+void AudioZoneClientManagerGetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioPolicyServerHandler> handler;
+    AudioZoneClientManager audioZoneClientManager(handler);
+    pid_t clientPid = GetData<pid_t>();
+    int32_t zoneId = GetData<int32_t>();
+    AudioVolumeType volumeType  = GetData<AudioVolumeType>();
+    audioZoneClientManager.GetSystemVolumeDegree(clientPid, zoneId, volumeType);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -181,6 +203,8 @@ void Test(FuzzedDataProvider& fdp)
     AudioZoneClientManagerSendZoneInterruptEventFuzzTest,
     AudioZoneClientManagerSetSystemVolumeLevelFuzzTest,
     AudioZoneClientManagerGetSystemVolumeLevelFuzzTest,
+    AudioZoneClientManagerSetSystemVolumeDegreeFuzzTest,
+    AudioZoneClientManagerGetSystemVolumeDegreeFuzzTest,
     });
     func(fdp);
 }
