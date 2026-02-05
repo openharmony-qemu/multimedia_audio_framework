@@ -77,6 +77,11 @@ struct ConcurrentCaptureDfxResult {
     uint8_t deviceType{};
 };
 
+struct RouteUpdateCallbackInfo {
+    sptr<IStandardAudioPolicyManagerListener> listener;
+    uid_t clientUid = 0;
+};
+
 class AudioA2dpOffloadManager;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
 public:
@@ -693,7 +698,7 @@ private:
     std::mutex offloadCloseMutex_;
 
     // route update callback
-    std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> routeUpdateCallback_;
+    std::unordered_map<uint32_t, RouteUpdateCallbackInfo> routeUpdateCallback_;
     std::mutex routeUpdateCallbackMutex_;
 
     std::mutex updateModemRouteMutex_;
