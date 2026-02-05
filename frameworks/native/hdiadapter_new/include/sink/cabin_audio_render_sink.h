@@ -98,7 +98,6 @@ private:
     float rightBalanceCoef_ = 1.0f;
     // for dfx log
     std::string logUtilsTag_ = "AudioVivid3DASink";
-
     int32_t direct3DATestFlag = 0;
 
 #ifdef FEATURE_POWER_MANAGER
