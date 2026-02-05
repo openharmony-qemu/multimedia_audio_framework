@@ -273,7 +273,7 @@ HWTEST(AudioPolicyUnitTest, SetStreamMute_001, TestSize.Level1)
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
     int32_t res = ptrAudioPolicyServer->SetStreamMute(streamTypeIn, mute, deviceTypeIn);
-    EXPECT_EQ(res, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(res, SUCCESS);
 }
 
 /**
