@@ -175,7 +175,7 @@ private:
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams);
     void SetInSwitchingFlag(bool inSwitchingFlag);
     bool IsRestoreOrStopNeeded();
-    bool ResetStaticPlayPosition(std::shared_ptr<IAudioStream> newAudioStream,
+    bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
         CapturerState previousState);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;

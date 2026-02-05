@@ -2094,7 +2094,7 @@ void RendererInClientInner::UpdateStopState()
 
 bool RendererInClientInner::ResetStaticPlayPosition()
 {
-    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "Not in Static Mode"); 
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "Not in Static Mode");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
 

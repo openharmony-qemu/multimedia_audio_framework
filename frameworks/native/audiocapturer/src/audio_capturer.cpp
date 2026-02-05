@@ -1609,12 +1609,12 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         interruptCbImpl->UpdateAudioStream(audioStream_);
     }
 
-    bool restartResult = ResetStaticPlayPosition(newAudioStream, previousState);
+    bool restartResult = RestartAudioStream(newAudioStream, previousState);
     CHECK_AND_RETURN_RET_LOG(restartResult, false, "start new stream failed.");
     return true;
 }
 
-bool AudioCapturerPrivate::ResetStaticPlayPosition(std::shared_ptr<IAudioStream> newAudioStream,
+bool AudioCapturerPrivate::RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
     CapturerState previousState)
 {
     bool switchResult = true;

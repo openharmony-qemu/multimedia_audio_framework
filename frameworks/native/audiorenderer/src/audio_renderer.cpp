@@ -2459,13 +2459,13 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     UpdateRendererAudioStream(newAudioStream);
     newAudioStream->NotifyRouteUpdate(flag, networkId);
     newAudioStream->SetRenderTarget(switchInfo.target);
-    switchResult = ResetStaticPlayPosition(newAudioStream, restoreInfo, previousState, switchInfo);
+    switchResult = RestartAudioStream(newAudioStream, restoreInfo, previousState, switchInfo);
     CHECK_AND_RETURN_RET_LOG(switchResult, false, "start new stream failed.");
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
     return switchResult;
 }
 
-bool AudioRendererPrivate::ResetStaticPlayPosition(std::shared_ptr<IAudioStream> newAudioStream,
+bool AudioRendererPrivate::RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
     RestoreInfo restoreInfo, RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     // Start new stream if old stream was in running state.
@@ -3266,6 +3266,7 @@ bool AudioRendererPrivate::ResetStaticPlayPosition()
     Trace trace("KeyAction AudioRenderer::ResetStaticPlayPosition" + std::to_string(sessionID_));
     AUDIO_INFO_LOG("StreamClientState for Renderer::ResetStaticPlayPosition");
 
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "not in static mode");
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
