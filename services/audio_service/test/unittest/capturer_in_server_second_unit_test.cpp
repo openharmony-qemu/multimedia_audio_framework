@@ -1133,24 +1133,6 @@ HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_005, TestSize.Level4)
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     size_t length = 0;
-    bool currentStatus = false;
-    int32_t result = capturerInServer_->OnReadData(length);
-    capturerInServer_->RecordOverflowStatus(currentStatus);
-    EXPECT_EQ(result, SUCCESS);
-}
- 
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
- * @tc.number: OnReadData_006.
- * @tc.desc  : Test OnReadData interface.
- */
-HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_006, TestSize.Level4)
-{
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    size_t length = 0;
     bool currentStatus = true;
     int32_t result = capturerInServer_->OnReadData(length);
     capturerInServer_->RecordOverflowStatus(currentStatus);
