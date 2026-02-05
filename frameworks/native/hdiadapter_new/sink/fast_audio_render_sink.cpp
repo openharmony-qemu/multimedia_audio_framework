@@ -55,6 +55,7 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     return SUCCESS;
 }
 
+// Only set device route for loopback stream to ensure low latency creation succeeds
 void FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices, bool isLoopback)
 {
     CHECK_AND_RETURN(isLoopback);
