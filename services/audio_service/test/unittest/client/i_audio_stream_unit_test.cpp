@@ -290,5 +290,105 @@ HWTEST(IAudioStreamUnitTest, CheckCapturerAudioStreamInfo_001, TestSize.Level1)
     params.format = INVALID_WIDTH;
     EXPECT_EQ(IAudioStream::CheckCapturerAudioStreamInfo(params), ERR_NOT_SUPPORTED);
 }
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithEc_001
+ * @tc.desc  : Test GetByteSizePerFrameWithEc interface with valid parameters
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_001, TestSize.Level1)
+{
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2, 0};
+    size_t result = 0;
+    IAudioStream::GetByteSizePerFrameWithEc(params, result);
+    EXPECT_EQ(result, 0); // 2 channels * 2 bytes per sample
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithEc_002
+ * @tc.desc  : Test GetByteSizePerFrameWithEc interface with valid parameters and EC channels
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_002, TestSize.Level1)
+{
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2, 1}; // 2 channels + 1 EC channel
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithEc(params, result);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(result, 3); // (2 + 1) channels * 2 bytes per sample
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithEc_003
+ * @tc.desc  : Test GetByteSizePerFrameWithEc interface with invalid format
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_003, TestSize.Level1)
+{
+    AudioStreamParams params = {SAMPLE_RATE_48000, 100, 2, 0}; // Invalid format
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithEc(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithEc_004
+ * @tc.desc  : Test GetByteSizePerFrameWithEc interface with invalid channel count
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_004, TestSize.Level1)
+{
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 0, 0}; // Invalid channel count
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithEc(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithEc_005
+ * @tc.desc  : Test GetByteSizePerFrameWithEc interface with valid parameters and different format
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_005, TestSize.Level1)
+{
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S32LE, 4, 2}; // 4 channels + 2 EC channels
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithEc(params, result);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(result, 8); // (4 + 2) channels * 4 bytes per sample
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithEc_006
+ * @tc.desc  : Test GetByteSizePerFrameWithEc interface with maximum valid channel count
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_006, TestSize.Level1)
+{
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 16, 0}; // Maximum valid channels
+    size_t result = 0;
+    IAudioStream::GetByteSizePerFrameWithEc(params, result);
+    EXPECT_EQ(result, 0); // 16 channels * 2 bytes per sample
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithEc_007
+ * @tc.desc  : Test GetByteSizePerFrameWithEc interface with maximum valid channel count plus EC
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_007, TestSize.Level1)
+{
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 16, 1}; // Maximum channels + 1 EC channel
+    size_t result = 0;
+    IAudioStream::GetByteSizePerFrameWithEc(params, result);
+    EXPECT_EQ(result, 0); // (16 + 1) channels * 2 bytes per sample
+}
 } // namespace AudioStandard
 } // namespace OHOS

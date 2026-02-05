@@ -577,5 +577,91 @@ HWTEST(AudioServerUnitTest, NeedDelayCreateSink_001, TestSize.Level1)
     EXPECT_EQ(audioServer->NeedDelayCreateSink(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_MMAP), false);
 }
 
+/**
+ * @tc.name  : Test AudioSystemloadListener OnSystemloadLevel with high load level
+ * @tc.type  : FUNC
+ * @tc.number: AudioSystemloadListener_OnSystemloadLevel_High_001
+ * @tc.desc  : Test AudioSystemloadListener::OnSystemloadLevel with high system load level
+ */
+HWTEST(AudioServerUnitTest, AudioSystemloadListener_OnSystemloadLevel_High_001, TestSize.Level1)
+{
+    // Create a mock system load listener
+    auto systemLoadListener = std::make_shared<AudioSystemloadListener>();
+    EXPECT_NE(systemLoadListener, nullptr);
+
+    // Test with high system load level (should trigger disable spatial audio with delay)
+    // We can't easily test the actual functionality without mocking dependencies,
+    // but we can verify the function doesn't crash
+    systemLoadListener->OnSystemloadLevel(7); // SYSTEM_LOAD_LEVEL_ESCAPE
+
+    // Test with medium-high system load level
+    systemLoadListener->OnSystemloadLevel(6); // SYSTEM_LOAD_LEVEL_EMERGENCY
+}
+
+/**
+ * @tc.name  : Test AudioSystemloadListener OnSystemloadLevel with low load level
+ * @tc.type  : FUNC
+ * @tc.number: AudioSystemloadListener_OnSystemloadLevel_Low_001
+ * @tc.desc  : Test AudioSystemloadListener::OnSystemloadLevel with low system load level
+ */
+HWTEST(AudioServerUnitTest, AudioSystemloadListener_OnSystemloadLevel_Low_001, TestSize.Level1)
+{
+    // Create a mock system load listener
+    auto systemLoadListener = std::make_shared<AudioSystemloadListener>();
+    EXPECT_NE(systemLoadListener, nullptr);
+
+    // Test with low system load level (should immediately enable spatial audio)
+    systemLoadListener->OnSystemloadLevel(4); // Below control level
+}
+
+/**
+ * @tc.name  : Test AudioSystemloadListener OnSystemloadLevel with medium load level
+ * @tc.type  : FUNC
+ * @tc.number: AudioSystemloadListener_OnSystemloadLevel_Medium_001
+ * @tc.desc  : Test AudioSystemloadListener::OnSystemloadLevel with medium system load level
+ */
+HWTEST(AudioServerUnitTest, AudioSystemloadListener_OnSystemloadLevel_Medium_001, TestSize.Level1)
+{
+    // Create a mock system load listener
+    auto systemLoadListener = std::make_shared<AudioSystemloadListener>();
+    EXPECT_NE(systemLoadListener, nullptr);
+
+    // Test with medium system load level (should schedule delayed enable)
+    systemLoadListener->OnSystemloadLevel(5); // Between levels
+}
+
+/**
+ * @tc.name  : Test AudioSystemloadListener OnSystemloadLevel with empty audio streams
+ * @tc.type  : FUNC
+ * @tc.number: AudioSystemloadListener_OnSystemloadLevel_Empty_001
+ * @tc.desc  : Test AudioSystemloadListener::OnSystemloadLevel with empty audio streams
+ */
+HWTEST(AudioServerUnitTest, AudioSystemloadListener_OnSystemloadLevel_Empty_001, TestSize.Level1)
+{
+    // Create a mock system load listener
+    auto systemLoadListener = std::make_shared<AudioSystemloadListener>();
+    EXPECT_NE(systemLoadListener, nullptr);
+
+    // Test with empty audio streams (should return early)
+    systemLoadListener->OnSystemloadLevel(3); // Any level when streams are empty
+}
+
+/**
+ * @tc.name  : Test AudioSystemloadListener OnSystemloadLevel edge cases
+ * @tc.type  : FUNC
+ * @tc.number: AudioSystemloadListener_OnSystemloadLevel_Edge_001
+ * @tc.desc  : Test AudioSystemloadListener::OnSystemloadLevel with edge system load levels
+ */
+HWTEST(AudioServerUnitTest, AudioSystemloadListener_OnSystemloadLevel_Edge_001, TestSize.Level1)
+{
+    // Create a mock system load listener
+    auto systemLoadListener = std::make_shared<AudioSystemloadListener>();
+    EXPECT_NE(systemLoadListener, nullptr);
+
+    // Test with edge system load levels
+    systemLoadListener->OnSystemloadLevel(0); // Minimum level
+    systemLoadListener->OnSystemloadLevel(10); // Beyond maximum level
+}
+
 } // namespace AudioStandard
 } //

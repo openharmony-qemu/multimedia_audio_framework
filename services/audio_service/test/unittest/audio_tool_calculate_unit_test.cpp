@@ -309,5 +309,86 @@ HWTEST_F(AudioToolCalculateUnitTest, SafeAbsTest_004, TestSize.Level1)
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0], static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1 + 1); // sum_abs=(INT_MAX+1) + 1
 }
+
+/**
+ * @tc.name  : SumF32AbsNenoTest001
+ * @tc.number: SumF32AbsNenoTest001
+ * @tc.desc  : Test SumF32AbsNeno with single channel (channels == 1)
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SumF32AbsNenoTest001, TestSize.Level1)
+{
+    std::vector<float, AlignedAllocator<float, 16>> pcm = {0.1f, -0.2f, 0.3f, -0.4f, 0.5f, -0.6f};
+    int32_t channels = 1;
+    uint32_t num_samples = pcm.size();
+    size_t split = 1;
+
+    std::vector<float> result = AudioToolCalculate::SumAudioF32AbsPcm(pcm.data(), num_samples, channels, split);
+
+    // With channels=1, should return single element with sum of absolute values
+    EXPECT_EQ(result.size(), 1);
+    // Expected sum: 0.1 + 0.2 + 0.3 + 0.4 + 0.5 + 0.6 = 2.1
+    EXPECT_FLOAT_EQ(result[0], 2.1f);
+}
+
+/**
+ * @tc.name  : SumF32AbsNenoTest002
+ * @tc.number: SumF32AbsNenoTest002
+ * @tc.desc  : Test SumF32AbsNeno with stereo channel (channels != 1)
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SumF32AbsNenoTest002, TestSize.Level1)
+{
+    std::vector<float, AlignedAllocator<float, 16>> pcm = {0.1f, -0.2f, 0.3f, -0.4f, 0.5f, -0.6f};
+    int32_t channels = 2;
+    uint32_t num_samples = pcm.size() / channels;
+    size_t split = 1;
+
+    std::vector<float> result = AudioToolCalculate::SumAudioF32AbsPcm(pcm.data(), num_samples, channels, split);
+
+    // With channels=2, should return two elements (left and right channels)
+    EXPECT_EQ(result.size(), 2);
+    // Left channel: 0.1 + 0.3 + 0.5 = 0.9
+    // Right channel: 0.2 + 0.4 + 0.6 = 1.2
+    EXPECT_FLOAT_EQ(result[0], 0.9f);  // Left channel sum
+    EXPECT_FLOAT_EQ(result[1], 1.2f);  // Right channel sum
+}
+
+/**
+ * @tc.name  : SumF32AbsNenoTest003
+ * @tc.number: SumF32AbsNenoTest003
+ * @tc.desc  : Test SumF32AbsNeno with empty input
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SumF32AbsNenoTest003, TestSize.Level1)
+{
+    std::vector<float, AlignedAllocator<float, 16>> pcm = {};
+    int32_t channels = 1;
+    uint32_t num_samples = 0;
+    size_t split = 1;
+
+    std::vector<float> result = AudioToolCalculate::SumAudioF32AbsPcm(pcm.data(), num_samples, channels, split);
+
+    // Should return empty vector or vector with zeros
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_FLOAT_EQ(result[0], 0.0f);
+}
+
+/**
+ * @tc.name  : SumF32AbsNenoTest004
+ * @tc.number: SumF32AbsNenoTest004
+ * @tc.desc  : Test SumF32AbsNeno with zero values
+ */
+HWTEST_F(AudioToolCalculateUnitTest, SumF32AbsNenoTest004, TestSize.Level1)
+{
+    std::vector<float, AlignedAllocator<float, 16>> pcm = {0.0f, 0.0f, 0.0f, 0.0f};
+    int32_t channels = 2;
+    uint32_t num_samples = pcm.size() / channels;
+    size_t split = 1;
+
+    std::vector<float> result = AudioToolCalculate::SumAudioF32AbsPcm(pcm.data(), num_samples, channels, split);
+
+    // All zeros should result in zero sums
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_FLOAT_EQ(result[0], 0.0f);
+    EXPECT_FLOAT_EQ(result[1], 0.0f);
+}
 }
 }
