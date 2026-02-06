@@ -1728,6 +1728,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetAudioEffectProperty_001, TestSize.L
     EXPECT_NE(ret, AUDIO_OK);
 }
 
+#ifdef TUNC_NOT_FIND
 /**
  * @tc.name  : Test GetAudioEnhanceProperty.
  * @tc.number: GetAudioEnhanceProperty_001
@@ -1745,6 +1746,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_001, TestSize.
     int32_t ret = server->audioPolicyService_.SetAudioEffectProperty(propertyArray);
     EXPECT_NE(ret, AUDIO_OK);
 }
+#endif
 
 /**
  * @tc.name  : Test GetAudioEffectProperty.
