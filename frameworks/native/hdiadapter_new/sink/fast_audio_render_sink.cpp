@@ -47,11 +47,25 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
-
+    std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
+    // Only set device route for loopback stream to ensure low latency creation succeeds
+    if (attr.isLoopback) {
+        DoSetOutputRoute(devices);
+    }
     sinkInited_ = true;
     InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_FAST);
 
     return SUCCESS;
+}
+
+void FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN(deviceManager != nullptr);
+    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "update route fail, ret: %{public}d", ret);
 }
 
 void FastAudioRenderSink::DeInit(void)
