@@ -1053,5 +1053,150 @@ HWTEST_F(AudioDeviceCommonUnitTest, NeedClearPreferredMediaRenderer_004, TestSiz
 
     EXPECT_FALSE(audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, VOICE));
 }
+
+/**
+* @tc.name  : Test GetPreferredOutputDeviceDescInner.
+* @tc.number: GetPreferredOutputDeviceDescInner_UnavailableDevice
+* @tc.desc  : Test GetPreferredOutputDeviceDescInner with unavailable device.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_UnavailableDevice, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 1;
+    desc->exceptionFlag_ = true; // Device has exception
+    desc->isEnable_ = true;
+    desc->connectState_ = CONNECTED;
+    
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t uid = 456;
+
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    // Device should not be returned due to exception flag
+    EXPECT_EQ(deviceList.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetPreferredOutputDeviceDescInner.
+* @tc.number: GetPreferredOutputDeviceDescInner_ScoSuspendConnected
+* @tc.desc  : Test GetPreferredOutputDeviceDescInner with Bluetooth SCO in suspend connected state.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_ScoSuspendConnected, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 1;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = SUSPEND_CONNECTED; // SCO device in suspend state
+    
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t uid = 456;
+
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    // SCO device should not be returned when in suspend state
+    EXPECT_EQ(deviceList.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetPreferredOutputDeviceDescInner.
+* @tc.number: GetPreferredOutputDeviceDescInner_VirtualConnected
+* @tc.desc  : Test GetPreferredOutputDeviceDescInner with virtual connected device.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_VirtualConnected, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 1;
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = VIRTUAL_CONNECTED; // Virtual connected device
+    
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t uid = 456;
+
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    // Virtual connected device should not be returned
+    EXPECT_EQ(deviceList.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetPreferredOutputDeviceDescInner.
+* @tc.number: GetPreferredOutputDeviceDescInner_AvailableDevice
+* @tc.desc  : Test GetPreferredOutputDeviceDescInner with available device.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_AvailableDevice, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 1;
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = CONNECTED; // Normal connected device
+    
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t uid = 456;
+
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    // Available device should be returned
+    EXPECT_EQ(deviceList.size(), 1);
+    EXPECT_EQ(deviceList[0]->deviceId_, 1);
+}
+
+/**
+* @tc.name  : Test GetPreferredOutputDeviceDescInner.
+* @tc.number: GetPreferredOutputDeviceDescInner_A2dpSuspendConnected
+* @tc.desc  : Test GetPreferredOutputDeviceDescInner with Bluetooth A2DP in suspend connected state.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_A2dpSuspendConnected, TestSize.Level1)
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+
+    std::shared_ptr<AudioDeviceDescriptor>desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceId_ = 1;
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = SUSPEND_CONNECTED; // A2DP device in suspend state (should be allowed)
+    
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t uid = 456;
+
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
+        audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
+    // A2DP device in suspend state should be returned
+    EXPECT_EQ(deviceList.size(), 1);
+    EXPECT_EQ(deviceList[0]->deviceId_, 1);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
