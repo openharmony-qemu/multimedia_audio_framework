@@ -831,7 +831,7 @@ uint32_t AudioPipeManager::GetPaIndexByName(std::string portName)
 
 bool AudioPipeManager::HasPrimarySink()
 {
-    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &pipeInfo : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         if (pipeInfo->adapterName_ == PRIMARY_CLASS) {
