@@ -1188,6 +1188,18 @@ void AudioAdapterManager::UpdateVolumeForStream(std::shared_ptr<AudioStreamDescr
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }
 
+void AudioAdapterManager::RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
+    AudioVolumeType &volumeType)
+{
+    CHECK_AND_RETURN_LOG(streamDescriptor != nullptr, "streamDescriptor is null");
+    if (volumeType == STREAM_VOICE_ASSISTANT &&
+        !CheckoutSystemAppUtil::CheckoutSystemApp(audioActiveDevice_.GetRealUid(streamDescriptor))) {
+        AUDIO_INFO_LOG("RedirectVolumeType to STREAM_MUSIC when not system app for uid %{public}d",
+            audioActiveDevice_.GetRealUid(streamDescriptor));
+        volumeType = STREAM_MUSIC;
+    }
+}
+
 void AudioAdapterManager::UpdateVolumeForStreams()
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
@@ -1201,6 +1213,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         CHECK_AND_CONTINUE(desc != nullptr);
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != HILINK_MODE);
+        RedirectVolumeType(streamDesc, volumeType);
         int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
         SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
         SetVolumeDb(desc, volumeType);
@@ -3659,6 +3672,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
         CHECK_AND_CONTINUE(device != nullptr && device->GetName() == desc->GetName());
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != HILINK_MODE);
+        RedirectVolumeType(streamDesc, streamType);
         SetVolumeDb(device, streamType);
     }
     return SUCCESS;

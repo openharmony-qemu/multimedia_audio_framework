@@ -1089,5 +1089,27 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetSourceIdInfoAndIdType_013, TestSize.Lev
     audioAdapterManager->GetSourceIdInfoAndIdType(pipeInfo, idInfo, idType);
     EXPECT_EQ(idInfo, "err");
 }
+
+/**
+ * @tc.name: Test GetSourceIdInfoAndIdType
+ * @tc.number: RedirectVolumeType
+ * @tc.type: FUNC
+ * @tc.desc: when successful execution, return success
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, RedirectVolumeType, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
+    streamDescriptor->callerUid_ = 1003;
+    audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
+    streamDescriptor->callerUid_ = 0;
+    volumeType = STREAM_VOICE_ASSISTANT;
+    audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
+    streamDescriptor->callerUid_ = 1003;
+    audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
+    EXPECT_EQ(volumeType, STREAM_MUSIC);
+}
 } // namespace AudioStandard
 } // namespace OHOS

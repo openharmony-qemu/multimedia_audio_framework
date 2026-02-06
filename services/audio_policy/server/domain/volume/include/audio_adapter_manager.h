@@ -490,6 +490,8 @@ private:
     void RegistAdapterManagerCallback(std::string networkId);
     void SetRemoteVolumeForPassThroughDevice(std::shared_ptr<AudioDeviceDescriptor> device, int32_t volumeLevel);
     void UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
+    void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
+ 	    AudioVolumeType &volumeType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
