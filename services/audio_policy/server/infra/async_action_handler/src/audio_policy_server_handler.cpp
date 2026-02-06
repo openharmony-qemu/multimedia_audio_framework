@@ -1547,8 +1547,11 @@ void AudioPolicyServerHandler::HandleCapturerCreateEvent(const AppExecFwk::Inner
     SessionInfo sessionInfo{eventContextObj->capturerInfo_.sourceType, eventContextObj->streamInfo_.samplingRate,
         eventContextObj->streamInfo_.channels};
 
-    eventContextObj->error_ = AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionAdded(sessionId,
-        sessionInfo, eventContextObj->streamInfo_);
+    if (AudioCoreService::GetCoreService() != nullptr &&
+        AudioCoreService::GetCoreService()->GetEventEntry() != nullptr) {
+        eventContextObj->error_ = AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionAdded(sessionId,
+            sessionInfo, eventContextObj->streamInfo_);
+    }
 }
 
 void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::InnerEvent::Pointer &event)
@@ -1558,12 +1561,18 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
 
     uint64_t sessionId = *eventContextObj;
 
-    AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionRemoved(sessionId);
+    if (AudioCoreService::GetCoreService() != nullptr &&
+        AudioCoreService::GetCoreService()->GetEventEntry() != nullptr) {
+        AudioCoreService::GetCoreService()->GetEventEntry()->OnCapturerSessionRemoved(sessionId);
+    }
 }
 
 void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
-    AudioCoreService::GetCoreService()->GetEventEntry()->CloseWakeUpAudioCapturer();
+    if (AudioCoreService::GetCoreService() != nullptr &&
+        AudioCoreService::GetCoreService()->GetEventEntry() != nullptr) {
+        AudioCoreService::GetCoreService()->GetEventEntry()->CloseWakeUpAudioCapturer();
+    }
 }
 
 void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)

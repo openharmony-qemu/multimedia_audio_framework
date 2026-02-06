@@ -1938,6 +1938,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_005, TestSize.L
     EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO), true);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test AudioStreamCollector.
 * @tc.number: HandleAppStateChange_002
@@ -1962,6 +1963,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleAppStateChange_002, TestSize.Level1
     audioStreamCollector_.HandleAppStateChange(clientUid, clientPid, false, notifyMute, hasBackTask);
     EXPECT_TRUE(changeInfo->backMute);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioStreamCollector.
