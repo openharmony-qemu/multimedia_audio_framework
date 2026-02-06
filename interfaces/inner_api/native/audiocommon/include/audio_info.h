@@ -544,6 +544,7 @@ struct A2dpDeviceConfigInfo {
     DeviceStreamInfo streamInfo;
     bool absVolumeSupport = false;
     int32_t volumeLevel = -1;
+    int32_t volumeDegree = -1;
     bool mute = false;
 };
 
@@ -1583,7 +1584,6 @@ struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
-    uint32_t volumeDegree = 0;
 };
 
 enum AppIsBackState {

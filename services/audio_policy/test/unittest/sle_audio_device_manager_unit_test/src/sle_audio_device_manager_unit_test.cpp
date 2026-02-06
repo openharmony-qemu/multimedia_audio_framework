@@ -1338,6 +1338,11 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetNearlinkDeviceVolumeLevel_004, TestSize
     deviceDesc.callVolume_ = 4;
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
 
+    EXPECT_EQ(sleAudioDeviceManager_->SetNearlinkDeviceVolumeDegree(device, STREAM_VOICE_CALL, 0),
+        ERR_INVALID_PARAM);
+    EXPECT_EQ(sleAudioDeviceManager_->GetVolumeDegreeByVolumeType(STREAM_MUSIC, deviceDesc),
+        ERR_INVALID_PARAM);
+
     sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
 
     int32_t ret =  sleAudioDeviceManager_->SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
@@ -1352,6 +1357,13 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetNearlinkDeviceVolumeLevel_004, TestSize
     volumeLevel = 4;
     ret =  sleAudioDeviceManager_->SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
+
+    int32_t volumeDegree = 14;
+    sleAudioDeviceManager_->SetNearlinkDeviceVolumeDegree(device, STREAM_MUSIC, volumeDegree);
+    sleAudioDeviceManager_->SetNearlinkDeviceVolumeDegree(device, STREAM_VOICE_CALL, -1);
+    sleAudioDeviceManager_->SetNearlinkDeviceVolumeDegree(device, STREAM_VOICE_CALL, volumeDegree);
+    EXPECT_EQ(sleAudioDeviceManager_->GetVolumeDegreeByVolumeType(STREAM_MUSIC, deviceDesc), volumeDegree);
+    EXPECT_EQ(sleAudioDeviceManager_->GetVolumeDegreeByVolumeType(STREAM_VOICE_CALL, deviceDesc), volumeDegree);
 }
 
 /**

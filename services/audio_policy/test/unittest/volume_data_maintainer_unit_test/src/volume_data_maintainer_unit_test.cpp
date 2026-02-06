@@ -762,6 +762,10 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceVolumeMapFromDb, TestSize.Level4)
     desc->volumeBehavior_.isReady = false;
     vd->LoadDeviceVolumeMapFromDb(desc);
     EXPECT_EQ(vd->volumeList_.size(), 0);
+
+    vd->SetVolumeList({STREAM_MUSIC});
+    vd->LoadDeviceVolumeMapFromDb(desc);
+    EXPECT_NE(vd->volumeDegreeMap_.size(), 0);
 }
 
 /**
