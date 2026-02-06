@@ -38,6 +38,7 @@ const std::vector<OHOS::AudioStandard::DeviceType> DEVICE_TYPE_SET = {
     OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES,
     OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_SCO,
     OHOS::AudioStandard::DEVICE_TYPE_BLUETOOTH_A2DP,
+    OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BT_SPP,
     OHOS::AudioStandard::DEVICE_TYPE_MIC,
     OHOS::AudioStandard::DEVICE_TYPE_WAKEUP,
     OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET,
@@ -174,6 +175,22 @@ int32_t TaiheParamUtils::GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo 
     return AUDIO_OK;
 }
 
+int32_t TaiheParamUtils::GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
+    AudioCapturerOptions const &options)
+{
+    CHECK_AND_RETURN_RET(options.preferredInputDevice.has_value(), AUDIO_OK);
+    auto device = std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, AUDIO_ERR, "No memory");
+
+    bool argTransFlag = false;
+    int32_t status = GetAudioDeviceDescriptor(device, argTransFlag, options.preferredInputDevice.value());
+    CHECK_AND_RETURN_RET(status == AUDIO_OK, status);
+    CHECK_AND_RETURN_RET_LOG(argTransFlag, AUDIO_INVALID_PARAM, "PreferInputDevice argTransFlag is false");
+
+    opts->preferredInputDevice = *device;
+    return AUDIO_OK;
+}
+
 int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
     AudioCapturerOptions const &options)
 {
@@ -184,6 +201,9 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
 
     status = GetCapturerInfo(opts->capturerInfo, options.capturerInfo);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseCapturerInfo failed");
+
+    status = GetPreferredInputDevice(opts, options);
+    CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "Parse PreferredInputDevice failed");
 
     AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
     return AUDIO_OK;
