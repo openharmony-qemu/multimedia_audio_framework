@@ -74,7 +74,9 @@ struct AutoRef {
     AutoRef(napi_env env, napi_ref cb, std::string taskName)
         : env_(env), cb_(cb), taskName_(taskName)
     {
+    #ifndef IOS_PLATFORM
         jsTid_ = pthread_self();
+    #endif
     }
     ~AutoRef()
     {
@@ -134,7 +136,9 @@ struct AutoRef {
     }
     napi_env env_;
     napi_ref cb_;
+#ifndef IOS_PLATFORM
     uint64_t jsTid_;
+#endif
     std::string taskName_;
 };
 
