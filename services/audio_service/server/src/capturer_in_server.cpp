@@ -746,18 +746,18 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     AUDIO_INFO_LOG("Start release capturer");
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 
-    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        int32_t result =
-            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-        CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
-            HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
-    }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;
         return ret;
+    }
+    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        int32_t result =
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
+            HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
     }
 
     ReleaseCaptureInjector();

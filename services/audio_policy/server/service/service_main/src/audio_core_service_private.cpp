@@ -2039,6 +2039,9 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
 
     HILOG_COMM_INFO("[TriggerRecreateRendererStreamCallback]Trigger recreate renderer stream %{public}u, pid: "
         "%{public}d, routeflag: 0x%{public}x", sessionId, callerPid, routeFlag);
+    
+    pipeManager_->AddSingleSwitchStream(sessionId, streamDesc);
+
     audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
 }
 
@@ -2585,55 +2588,12 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
     RendererState rendererState)
 {
     const StreamUsage streamUsage = streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage;
-
-    if (mode == AUDIO_MODE_PLAYBACK && (rendererState == RENDERER_STOPPED || rendererState == RENDERER_PAUSED ||
-        rendererState == RENDERER_RELEASED)) {
-        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamChangeInfo.audioRendererChangeInfo.sessionId);
-        if (rendererState == RENDERER_RELEASED) {
-            audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamChangeInfo.audioRendererChangeInfo.sessionId);
-        }
-        if (!audioSceneManager_.IsPhoneCallOrChatScene()) {
-            FetchOutputDeviceAndRoute("UpdateTracker_1");
-        }
-    }
-
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
         AUDIO_INFO_LOG("[ADeviceEvent] fetch device for capturer stream %{public}d released",
             streamChangeInfo.audioCapturerChangeInfo.sessionId);
         audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
         FetchInputDeviceAndRoute("UpdateTracker");
-    }
-
-    const int32_t sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
-    if (enableDualHalToneState_ && mode == AUDIO_MODE_PLAYBACK && sessionId == enableDualHalToneSessionId_) {
-        FetchOutputDeviceAndRoute("UpdateTracker_ForDualHalTone");
-        if ((rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED) &&
-            Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-            AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
-            UpdateDualToneState(false, enableDualHalToneSessionId_);
-        }
-    }
-
-    if (isRingDualToneOnPrimarySpeaker_ && AudioCoreServiceUtils::IsOverRunPlayback(mode, rendererState, streamUsage) &&
-        Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-        CHECK_AND_RETURN_LOG(!AudioCoreServiceUtils::IsDualOnActive(), "Dual still on active");
-        AUDIO_INFO_LOG("[ADeviceEvent] disable primary speaker dual tone when ringer renderer run over");
-        isRingDualToneOnPrimarySpeaker_ = false;
-        // Add delay between end of double ringtone and device switch.
-        // After the ringtone ends, there may still be residual audio data in the pipeline.
-        // Switching the device immediately can cause pop noise due the undrained buffers.
-        usleep(RING_DUAL_END_DELAY_US);
-        FetchOutputDeviceAndRoute("UpdateTracker_2");
-        CHECK_AND_RETURN_LOG(!isRingDualToneOnPrimarySpeaker_, "no need to execute SetInnerStreamMute false");
-        for (std::pair<uint32_t, AudioStreamType> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
-            audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
-        }
-        streamsWhenRingDualOnPrimarySpeaker_.clear();
-        AudioStreamType streamType = streamCollector_.GetStreamType(streamChangeInfo.audioRendererChangeInfo.sessionId);
-        if (streamType == STREAM_MUSIC) {
-            audioPolicyManager_.SetDualStreamVolumeMute(streamChangeInfo.audioRendererChangeInfo.sessionId, false);
-        }
     }
 }
 

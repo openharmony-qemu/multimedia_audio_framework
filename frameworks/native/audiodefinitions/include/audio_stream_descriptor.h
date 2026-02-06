@@ -40,6 +40,7 @@ public:
     AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
     uint32_t routeFlag_ = AUDIO_FLAG_NONE;
     uint32_t oldRouteFlag_ = AUDIO_FLAG_NONE;
+    uint32_t futureRouteFlag_ = AUDIO_FLAG_NONE;
     int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
     AudioRendererInfo rendererInfo_ = {};
@@ -190,6 +191,25 @@ public:
         } else {
             return (routeFlag_ == AUDIO_INPUT_FLAG_NORMAL);
         }
+    }
+
+    bool IsFutureRouteNormal() const
+    {
+        if (IsPlayback()) {
+            return (futureRouteFlag_ == AUDIO_OUTPUT_FLAG_NORMAL);
+        } else {
+            return (futureRouteFlag_ == AUDIO_INPUT_FLAG_NORMAL);
+        }
+    }
+
+    void SetFutureRoute(uint32_t route)
+    {
+        futureRouteFlag_ = route;
+    }
+
+    uint32_t GetFutureRoute() const
+    {
+        return futureRouteFlag_;
     }
 
     bool IsRouteOffload() const
