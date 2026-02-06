@@ -30,6 +30,13 @@ namespace AudioStandard {
 namespace AudioSuite {
 namespace {
 static constexpr uint32_t SAMPLE_SHIFT_AMOUNT = 16;
+
+static const std::unordered_map<SoundFieldType, iMedia_Surround_PARA> soundFieldParaMap = {
+    {AUDIO_SUITE_SOUND_FIELD_FRONT_FACING, IMEDIA_SWS_SOUROUND_FRONT},
+    {AUDIO_SUITE_SOUND_FIELD_GRAND, IMEDIA_SWS_SOUROUND_GRAND},
+    {AUDIO_SUITE_SOUND_FIELD_NEAR, IMEDIA_SWS_SOUROUND_DEFAULT},
+    {AUDIO_SUITE_SOUND_FIELD_WIDE, IMEDIA_SWS_SOUROUND_BROAD}
+};
 }  // namespace
 
 AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(NodeParameter &nc)
