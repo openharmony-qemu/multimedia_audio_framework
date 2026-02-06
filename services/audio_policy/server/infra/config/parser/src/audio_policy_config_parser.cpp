@@ -28,6 +28,20 @@ static const char *ENCODING_EAC3_NAME = "eac3";
 static const char *FAST_DISTRIBUTE_TAG = "fast_distributed";
 constexpr int32_t LENGTH_OF_PAIR = 2;
 
+bool StrToInt(const std::string &str, int32_t &value)
+{
+    CHECK_AND_RETURN_RET_LOG(!str.empty(), false, "input str is empty");
+    char* end = nullptr;
+    errno = 0;
+    int64_t result = std::strtoll(str.c_str(), &end, 10);
+    CHECK_AND_RETURN_RET_LOG(result >= INT32_MIN && result <= INT32_MAX, false,
+        "false, input str is %{public}s", str.c_str());
+    CHECK_AND_RETURN_RET_LOG(end != str.c_str() && end[0] == '\0' && errno != ERANGE, false,
+        "false, input str is %{public}s", str.c_str());
+    value = static_cast<int32_t>(result);
+    return true;
+}
+
 // LCOV_EXCL_START
 bool AudioPolicyConfigParser::LoadConfiguration()
 {
@@ -311,20 +325,20 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
     } else if (attributeInfo.name_ == "notuse_vendorid_productid") {
         if (attributeInfo.value_ == "All") {
             pipeInfo->allUsbDeviceDisable_ = true;
-            AUDIO_INFO_LOG("All usb devices diasble");
+            AUDIO_INFO_LOG("All usb devices disable");
             return;
         }
         std::list<std::string> productList = {};
-        std::string tmpValue = attributeInfo.value_;
-        SplitStringToList(tmpValue, productList, ";");
+        SplitStringToList(attributeInfo.value_, productList, ";");
         for (auto product : productList) {
-            std::list<std::string> productIdAndVendorId = {};
-            SplitStringToList(product, productIdAndVendorId, "-");
-            if (productIdAndVendorId.size() == LENGTH_OF_PAIR) {
-                int32_t vendorId = std::stoi(*productIdAndVendorId.begin());
-                int32_t productId = std::stoi(*productIdAndVendorId.end());
-                pipeInfo->DisableUsbDeviceSet_.insert({productId, vendorId});
-                AUDIO_INFO_LOG("diasable usb device vendorId: %{public}d, productId: %{public}d", vendorId, productId);
+            std::list<std::string> vendorIdAndProductId = {};
+            SplitStringToList(product, vendorIdAndProductId, "-");
+            int32_t vendorId;
+            int32_t productId;
+            if (vendorIdAndProductId.size() == LENGTH_OF_PAIR && StrToInt(*vendorIdAndProductId.begin(), vendorId) &&
+                StrToInt(*vendorIdAndProductId.rbegin(), productId)) {
+                pipeInfo->disableUsbDeviceSet_.insert({vendorId, productId});
+                AUDIO_INFO_LOG("disable usb device vendorId: %{public}d, productId: %{public}d", vendorId, productId);
             }
         }
     }
@@ -742,7 +756,7 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
     audioModuleInfo.renderInIdleState = pipeInfo->paProp_.renderInIdleState_;
     audioModuleInfo.suspendIdleTimeout = pipeInfo->suspendIdleTimeout_;
     audioModuleInfo.allUsbDeviceDisable_ = pipeInfo->allUsbDeviceDisable_;
-    audioModuleInfo.DisableUsbDeviceSet_ = pipeInfo->DisableUsbDeviceSet_;
+    audioModuleInfo.disableUsbDeviceSet_ = pipeInfo->disableUsbDeviceSet_;
 }
 
 std::string AudioPolicyConfigParser::GetAudioModuleInfoName(std::string &pipeInfoName,

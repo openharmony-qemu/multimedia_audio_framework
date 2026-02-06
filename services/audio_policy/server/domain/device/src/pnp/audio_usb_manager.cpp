@@ -285,14 +285,11 @@ void AudioUsbManager::SetObserver(std::shared_ptr<IDeviceStatusObserver> observe
 
 void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isConnected)
 {
-    CHECK_AND_RETURN_LOG(IsAvailableUsbDevice(device), "The device is unavailable, name is %{public}s",
-        device.name_.c_str());
-
     DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
     string macAddress = GetDeviceAddr(device.cardNum_);
     AudioStreamInfo streamInfo{};
     string deviceName = device.name_ + "-" + to_string(device.cardNum_);
-    if (device.isPlayer_) {
+    if (device.isPlayer_ && IsAvailableUsbDevice(device)) {
         AUDIO_INFO_LOG("Usb out, devType=%{public}d, isConnected=%{public}d, "
             "addr=%{public}s, name=%{public}s, role=%{public}d", devType, isConnected,
             EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
@@ -314,7 +311,11 @@ bool AudioUsbManager::IsAvailableUsbDevice(const UsbAudioDevice &device)
 {
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;
     AudioPolicyConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
-    AudioModuleInfo audioModuleInfo = *deviceClassInfo[TYPE_USB].begin();
+    auto it = deviceClassInfo.find(ClassType::TYPE_USB);
+    if (it == deviceClassInfo.end() || it->second.empty()) {
+        return true;
+    }
+    AudioModuleInfo &audioModuleInfo = *it->second.begin();
     if (audioModuleInfo.allUsbDeviceDisable_ == true) {
         return false;
     }
@@ -335,11 +336,12 @@ bool AudioUsbManager::IsAvailableUsbDevice(const UsbAudioDevice &device)
         }
     }
 
-    auto disableUsbDeviceSet = audioModuleInfo.DisableUsbDeviceSet_;
-    auto it = find_if (disableUsbDeviceSet.begin(), disableUsbDeviceSet.end(), [productId, vendorId](auto &item) {
+    auto disableUsbDeviceSet = audioModuleInfo.disableUsbDeviceSet_;
+    auto itDisable = find_if (disableUsbDeviceSet.begin(), disableUsbDeviceSet.end(),
+        [productId, vendorId](auto &item) {
             return item.first == vendorId && item.second == productId;
         });
-    return it == disableUsbDeviceSet.end() ? true : false;
+    return itDisable == disableUsbDeviceSet.end();
 }
 
 map<UsbAddr, SoundCard> AudioUsbManager::GetUsbSoundCardMap()
