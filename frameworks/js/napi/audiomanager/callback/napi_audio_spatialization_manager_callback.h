@@ -25,13 +25,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
-const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
+inline const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
+inline const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "spatializationEnabledChangeForAnyDevice";
-const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME =
+inline const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME =
     "spatializationEnabledChangeForCurrentDevice";
-const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
-const std::string HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
+inline const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
+inline const std::string HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "headTrackingEnabledChangeForAnyDevice";
 const std::string ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "adaptiveSpatialRenderingEnabledChangeForAnyDevice";

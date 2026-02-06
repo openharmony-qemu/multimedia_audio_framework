@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string ACTIVE_VOLUME_TYPE_CHANGE_CALLBACK_NAME = "activeVolumeTypeChange";
+inline const std::string ACTIVE_VOLUME_TYPE_CHANGE_CALLBACK_NAME = "activeVolumeTypeChange";
 class NapiAudioManagerActiveVolumeTypeChangeCallback : public AudioManagerActiveVolumeTypeChangeCallback {
 public:
     explicit NapiAudioManagerActiveVolumeTypeChangeCallback(napi_env env);

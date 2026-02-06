@@ -26,8 +26,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string NAPI_AUDIO_MNGR_CLASS_NAME = "AudioManager";
-const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
+inline const std::string NAPI_AUDIO_MNGR_CLASS_NAME = "AudioManager";
+inline const std::string VOLUME_CHANGE_CALLBACK_NAME = "volumeChange";
 
 class NapiAudioManager {
 public:
