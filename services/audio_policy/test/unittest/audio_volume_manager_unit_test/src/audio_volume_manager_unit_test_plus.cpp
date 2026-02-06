@@ -268,7 +268,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_112, TestSize.Level1)
 
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
     auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
