@@ -27,13 +27,6 @@ namespace AudioSuite {
 namespace {
 static constexpr size_t SOUNDFIELD_ALGO_FRAME_LEN = 960;      // 10ms data, 480 samples * 2 channel
 static constexpr size_t SOUNDFIELD_ALGO_FRAME_SIZE = SOUNDFIELD_ALGO_FRAME_LEN * sizeof(int16_t);
-
-static const std::unordered_map<SoundFieldType, iMedia_Surround_PARA> soundFieldParaMap = {
-    {AUDIO_SUITE_SOUND_FIELD_FRONT_FACING, IMEDIA_SWS_SOUROUND_FRONT},
-    {AUDIO_SUITE_SOUND_FIELD_GRAND, IMEDIA_SWS_SOUROUND_GRAND},
-    {AUDIO_SUITE_SOUND_FIELD_NEAR, IMEDIA_SWS_SOUROUND_DEFAULT},
-    {AUDIO_SUITE_SOUND_FIELD_WIDE, IMEDIA_SWS_SOUROUND_BROAD}
-};
 }  // namespace
 
 using Fun_iMedia_Surround_GetSize = IMEDIA_INT32 (*)(iMedia_SWS_MEM_SIZE *pMemSize);
