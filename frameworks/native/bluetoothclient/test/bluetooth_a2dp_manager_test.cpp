@@ -31,6 +31,7 @@ using namespace testing;
 #define A2DP_DEVICE_MAC1 "28:FA:19:1E:41:0E"
 #define A2DP_DEVICE_MAC2 "24:E9:CA:60:2F:CB"
 #define MOCK_RETURN_VALUE 1
+#define MOCK_RETURN_VALUE0 0
 #define MOCK_INPUT_VALUE 1
 
 class DeviceStatusObserverMock : public IDeviceStatusObserver {
@@ -59,7 +60,7 @@ public:
     void SetUp(void) override
     {
         BluetoothA2dpMockInterface::mockInterface_ = std::make_shared<BluetoothA2dpMockInterface>();
-
+        AudioA2dpManager::a2dpListener_ = std::make_shared<AudioA2dpListener>();
         MediaBluetoothDeviceManager::a2dpBluetoothDeviceMap_[A2DP_DEVICE_MAC1] =
             BluetoothRemoteDevice(A2DP_DEVICE_MAC1);
         MediaBluetoothDeviceManager::a2dpBluetoothDeviceMap_[A2DP_DEVICE_MAC2] =
@@ -266,7 +267,7 @@ HWTEST_F(BluetoothA2dpManagerTest, BluetoothA2dpManagerTest_012, TestSize.Level1
             devices.push_back(A2DP_DEVICE_MAC1);
         }));
     EXPECT_CALL(*(BluetoothA2dpMockInterface::mockInterface_.get()), Connect(_))
-        .WillOnce(Return(MOCK_RETURN_VALUE));
+        .WillOnce(Return(MOCK_RETURN_VALUE0));
 
     EXPECT_EQ(AudioA2dpManager::Connect(A2DP_DEVICE_MAC1), SUCCESS);
 }
