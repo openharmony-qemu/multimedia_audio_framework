@@ -1113,6 +1113,8 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->isStatic.store(false);
     basicBufferInfo_->clientLastProcessTime.store(ClockTime::GetCurNano());
     basicBufferInfo_->isFirstFrame.store(true);
+    basicBufferInfo_->currentLoopTimes.store(0);
+    basicBufferInfo_->curStaticDataPos.store(0);
 }
 
 void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
@@ -1139,11 +1141,6 @@ bool OHAudioBufferBase::GetStaticMode()
     CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, false,
         HILOG_COMM_ERROR("[GetStaticMode]basicBufferInfo_ is null"));
     return basicBufferInfo_->isStatic.load();
-}
-
-std::shared_ptr<AudioSharedMemory> OHAudioBufferBase::GetSharedMem()
-{
-    return dataMem_;
 }
 
 void OHAudioBufferBase::IncreaseBufferEndCallbackSendTimes()
@@ -1200,6 +1197,20 @@ bool OHAudioBufferBase::IsFirstFrame()
 {
     CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
     return basicBufferInfo_->isFirstFrame;
+}
+
+void OHAudioBufferBase::SetStaticPlayPosition(int64_t curLoopTimes, size_t curStaticDataPos)
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    basicBufferInfo_->currentLoopTimes.store(curLoopTimes);
+    basicBufferInfo_->curStaticDataPos.store(curStaticDataPos);
+}
+
+void OHAudioBufferBase::GetStaticPlayPosition(int64_t &curLoopTimes, size_t &curStaticDataPos)
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    curLoopTimes = basicBufferInfo_->currentLoopTimes.load();
+    curStaticDataPos = basicBufferInfo_->curStaticDataPos.load();
 }
 
 // In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen,

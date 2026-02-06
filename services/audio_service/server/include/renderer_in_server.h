@@ -169,7 +169,6 @@ public:
 
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
     int32_t SetLoopTimes(int64_t bufferLoopTimes);
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
     bool IsWriteFirst() const noexcept;
 public:

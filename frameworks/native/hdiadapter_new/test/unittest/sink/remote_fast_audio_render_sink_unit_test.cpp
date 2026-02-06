@@ -161,5 +161,27 @@ HWTEST_F(RemoteFastAudioRenderSinkUnitTest, RemoteFastSinkUnitTest_005, TestSize
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
+/**
+ * @tc.name   : Test RemoteFastSink API
+ * @tc.number : RemoteFastSinkUnitTest_006
+ * @tc.desc   : Test remote fast sink update app uid
+ */
+HWTEST_F(RemoteFastAudioRenderSinkUnitTest, RemoteFastSinkUnitTest_006, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    std::vector<int32_t> appsUid = {};
+    sink_->UpdateAppsUid(appsUid);
+    appsUid.push_back(20000001);
+    appsUid.push_back(20000002);
+    sink_->UpdateAppsUid(appsUid);
+    int32_t ret = sink_->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    sink_->UpdateAppsUid(appsUid);
+    appsUid.clear();
+    sink_->UpdateAppsUid(appsUid);
+    ret = sink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

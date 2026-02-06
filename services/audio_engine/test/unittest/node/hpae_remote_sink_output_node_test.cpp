@@ -78,6 +78,65 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, constructNode_01, TestSize.Level0)
     
     hpaeRemoteSinkOutputNode->DisConnect(hpaeMixerNode);
 }
+
+/**
+ * @tc.name  : HandlePcmDumping_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test PCM dumping logic with correct Dumper construction.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, HandlePcmDumping_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    size_t dataSize = 1024;
+    std::vector<char> mockData(dataSize, 0x5A);
+    char* dataPtr = mockData.data();
+
+    remoteNode->outputMediaPcmDumper_ = nullptr;
+    remoteNode->HandlePcmDumping(SplitStreamType::STREAM_TYPE_MEDIA, dataPtr, dataSize);
+
+    remoteNode->outputMediaPcmDumper_ = std::make_unique<HpaePcmDumper>("ut_media_dump.pcm");
+    remoteNode->HandlePcmDumping(SplitStreamType::STREAM_TYPE_MEDIA, dataPtr, dataSize);
+
+    remoteNode->outputNavigationPcmDumper_ = std::make_unique<HpaePcmDumper>("ut_nav_dump.pcm");
+    remoteNode->HandlePcmDumping(SplitStreamType::STREAM_TYPE_NAVIGATION, dataPtr, dataSize);
+
+    remoteNode->outputCommunicationPcmDumper_ = std::make_unique<HpaePcmDumper>("ut_comm_dump.pcm");
+    remoteNode->HandlePcmDumping(SplitStreamType::STREAM_TYPE_COMMUNICATION, dataPtr, dataSize);
+}
+
+/**
+ * @tc.name  : ResetAll_001
+ * @tc.type  : FUNC
+ * @tc.number: ResetAll_001
+ * @tc.desc  : Test ResetAll to cover node traversal and conditional disconnection.
+ */
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, ResetAll_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    auto remoteNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
+
+    HpaeNodeInfo infoA;
+    infoA.nodeId = 3001;
+    auto nodeA = std::make_shared<HpaeMixerNode>(infoA);
+    remoteNode->Connect(nodeA);
+
+    HpaeNodeInfo infoB;
+    infoB.nodeId = 3002;
+    auto nodeB = std::make_shared<HpaeMixerNode>(infoB);
+    remoteNode->Connect(nodeB);
+
+    EXPECT_EQ(remoteNode->GetPreOutNum(), 2);
+
+    bool result = remoteNode->ResetAll();
+
+    EXPECT_TRUE(result);
+
+    EXPECT_EQ(remoteNode->GetPreOutNum(), 0);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

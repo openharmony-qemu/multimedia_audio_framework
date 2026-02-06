@@ -16,6 +16,7 @@
 #define AUDIO_POLICY_CONFIG_PARSER_H
 
 #include <list>
+#include <set>
 #include <unordered_map>
 #include <string>
 #include <regex>
@@ -88,7 +89,7 @@ private:
 
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioPolicyConfigManager *configManager_ = nullptr;
-    
+
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;

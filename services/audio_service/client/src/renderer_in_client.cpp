@@ -1163,6 +1163,7 @@ int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
+    staticBufferInfo_.totalLoopTimes_ = bufferLoopTimes;
     ipcStream_->SetLoopTimes(bufferLoopTimes);
     return SUCCESS;
 }
@@ -1209,14 +1210,6 @@ void RendererInClientInner::SetStaticBufferInfo(StaticBufferInfo staticBufferInf
 {
     CHECK_AND_RETURN_LOG(rendererInfo_.isStatic, "SetStaticBufferInfo not support!");
     staticBufferInfo_ = staticBufferInfo;
-}
-
-int32_t RendererInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
-    CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR, "ipcStream_ is nullptr");
-    return ipcStream_->GetStaticBufferInfo(staticBufferInfo);
 }
 
 void RendererInClientInner::CheckFrozenStateInStaticMode()

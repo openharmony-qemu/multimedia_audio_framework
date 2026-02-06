@@ -494,6 +494,62 @@ HWTEST_F(AudioMixingUtilsTest, BitCounts_CalculatesCorrectChannelCount_7_1, Test
     EXPECT_EQ(BitCounts(CH_LAYOUT_7POINT1), 8);
 }
 
+/**
+ * @tc.name  : SetUpGeneralMixingTable_MixBottom_Fallback_002
+ * @tc.desc  : Test mapping from Bottom Front Left (BFL) to Front Left (FL)
+ * when the output has no bottom layer (Fallback).
+ */
+HWTEST_F(AudioMixingUtilsTest, SetUpGeneralMixingTable_MixBottom_Fallback_002, TestSize.Level0)
+{
+    // 修复 1: 增加嵌套括号解决 -Wmissing-braces 错误
+    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
+
+    // 修复 2: 使用 static_cast 解决 rvalue 类型不匹配问题
+    // Input: FL | FR | BFL (3ch)
+    AudioChannelInfo inInfo = {
+        static_cast<AudioChannelLayout>(CH_LAYOUT_STEREO | BOTTOM_FRONT_LEFT), 3
+    };
+
+    // Output: FL | FR (2ch), no MASK_BOTTOM
+    AudioChannelInfo outInfo = { CH_LAYOUT_STEREO, 2 };
+
+    int32_t ret = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    // BFL is input index 2
+    // FL is output index 0
+    // Expected: BFL signal projects to FL with 0dB (1.0f)
+    EXPECT_NEAR(table[0][2], COEF_0DB_F, 0.0001f);
+}
+
+/**
+ * @tc.name  : MixTopFront_Fallback_To_Mid_002
+ * @tc.desc  : Test mapping from Top Front Left (TFL) to Front Left (FL)
+ * when the output has no top layer (Fallback).
+ */
+HWTEST_F(AudioMixingUtilsTest, MixTopFront_Fallback_To_Mid_002, TestSize.Level0)
+{
+    // 修复 1: 嵌套大括号以满足 -Wmissing-braces 编译要求
+    float table[MAX_CHANNELS][MAX_CHANNELS] = {{0.0f}};
+
+    // 修复 2: 使用 static_cast 显式转换位运算结果为 AudioChannelLayout 类型
+    // Input: FL + FR + TOP_FRONT_LEFT (3ch)
+    AudioChannelInfo inInfo = {
+        static_cast<AudioChannelLayout>(CH_LAYOUT_STEREO | TOP_FRONT_LEFT), 3
+    };
+
+    // Output: Standard Stereo FL + FR (2ch)
+    AudioChannelInfo outInfo = { CH_LAYOUT_STEREO, 2 };
+
+    int32_t ret = SetUpGeneralMixingTable(table, inInfo, outInfo, false);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    // TFL is input index 2.
+    // FL is output index 0.
+    // Expected: Direct projection (0dB)
+    EXPECT_NEAR(table[0][2], COEF_0DB_F, 0.0001f);
+}
+
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

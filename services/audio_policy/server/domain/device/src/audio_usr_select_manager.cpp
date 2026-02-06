@@ -165,7 +165,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, Record
             }
             CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
             for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-                CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
                 recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
             }
             break;
@@ -290,7 +289,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStopInner(int32_t index)
         }
         CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
         for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-            CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
             recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
         }
     }

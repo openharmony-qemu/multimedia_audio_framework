@@ -1806,5 +1806,61 @@ HWTEST_F(AudioDeviceStatusUnitTest, CheckIsIndexValidAndHandleErr_001, TestSize.
     ioHandle = 1280;
     EXPECT_TRUE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
 }
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: ClearPreferredWhenCategoryUpdated_001
+* @tc.desc  : Test ClearPreferredWhenCategoryUpdated
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, ClearPreferredWhenCategoryUpdated_001, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    auto &deviceManager = audioDeviceStatus.audioDeviceManager_;
+
+    auto backup = deviceManager.connectedDevices_;
+    deviceManager.connectedDevices_ = {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE),
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE)
+    };
+
+    AudioDeviceDescriptor desc{DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE};
+    audioDeviceStatus.ClearPreferredWhenCategoryUpdated(desc);
+    EXPECT_NE(deviceManager.GetExistedDevice(std::make_shared<AudioDeviceDescriptor>(desc))->deviceType_,
+        DEVICE_TYPE_NONE);
+
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceStatus.ClearPreferredWhenCategoryUpdated(desc);
+    EXPECT_NE(deviceManager.GetExistedDevice(std::make_shared<AudioDeviceDescriptor>(desc))->deviceType_,
+        DEVICE_TYPE_NONE);
+
+    deviceManager.connectedDevices_ = backup;
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: NeedClearPreferredWhenCategoryUpdated_001
+* @tc.desc  : Test NeedClearPreferredWhenCategoryUpdated
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, NeedClearPreferredWhenCategoryUpdated_001, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    AudioDeviceDescriptor updated{DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE};
+    AudioDeviceDescriptor fetched{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
+    AudioDeviceDescriptor preferred{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
+
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+
+    fetched.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updated.glassesWearCount_ = 2;
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+
+    updated.glassesWearCount_ = 0;
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+
+    updated.glassesWearCount_ = 2;
+    preferred.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+}
 } // namespace AudioStandard
 } // namespace OHOS

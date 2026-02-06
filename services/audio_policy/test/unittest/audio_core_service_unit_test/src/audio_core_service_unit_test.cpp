@@ -722,6 +722,36 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_007, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: UpdateTracker_008
+ * @tc.desc  : Test UpdateTracker - PAUSE/STOP/RELEASE, AUDIO_SCENE_PHONE_CALL.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_008, TestSize.Level1)
+{
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_STOPPED;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, 1000, 1000);
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: UpdateTracker_009
+ * @tc.desc  : Test UpdateTracker - PAUSE/STOP/RELEASE, AUDIO_SCENE_PHONE_CHAT.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_009, TestSize.Level1)
+{
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo = {};
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_STOPPED;
+    GetServerPtr()->eventEntry_->SetAudioScene(AUDIO_SCENE_PHONE_CHAT, 1000, 1000);
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
 * @tc.name  : Test AudioCoreService.
 * @tc.number: ConnectServiceAdapter_001
 * @tc.desc  : Test ConnectServiceAdapter - will return success.

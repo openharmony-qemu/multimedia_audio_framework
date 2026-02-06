@@ -51,6 +51,7 @@ CabinPlayBackEngine::CabinPlayBackEngine()
       uChannel_(0),
       uformat_(sizeof(int32_t)),
       uSampleRate_(0),
+      latency_(0),
       firstSetVolume_(true),
       stream_(nullptr)
 {

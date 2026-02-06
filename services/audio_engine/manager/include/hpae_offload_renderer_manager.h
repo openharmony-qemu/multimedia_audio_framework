@@ -99,6 +99,7 @@ public:
 
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
     OffloadCallbackData GetOffloadCallbackData() noexcept override;
+    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t StartRenderSink();

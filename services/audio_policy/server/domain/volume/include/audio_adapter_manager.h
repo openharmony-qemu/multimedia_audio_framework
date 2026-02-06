@@ -452,6 +452,7 @@ private:
     bool IsPaRoute(uint32_t routeFlag);
     void DepressVolume(float &volume, int32_t volumeLevel,
         AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
+    float GetVolumeReductionRatio(AudioStreamType streamUsage);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
@@ -489,6 +490,8 @@ private:
     void RegistAdapterManagerCallback(std::string networkId);
     void SetRemoteVolumeForPassThroughDevice(std::shared_ptr<AudioDeviceDescriptor> device, int32_t volumeLevel);
     void UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
+    void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
+ 	    AudioVolumeType &volumeType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -515,6 +518,7 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
+    LowerVolumeInfoMap lowerVolumeInfos_;
     AudioRingerMode ringerMode_ = RINGER_MODE_NORMAL;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
@@ -578,6 +582,7 @@ private:
     std::mutex ringerNoMuteDeviceMutex_;
     std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
     std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
+    std::mutex deviceConnectMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

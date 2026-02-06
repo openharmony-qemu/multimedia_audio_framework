@@ -61,7 +61,7 @@ IAudioSuiteManager& IAudioSuiteManager::GetAudioSuiteManager()
 
 int32_t AudioSuiteManager::Init()
 {
-    AUDIO_INFO_LOG("Init enter.");
+    AUDIO_DEBUG_LOG("Init enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ == nullptr, ERR_ILLEGAL_STATE, "suite engine already inited");
@@ -77,13 +77,13 @@ int32_t AudioSuiteManager::Init()
         return ret;
     }
 
-    AUDIO_INFO_LOG("Init leave");
+    AUDIO_DEBUG_LOG("Init leave");
     return ret;
 }
 
 int32_t AudioSuiteManager::DeInit()
 {
-    AUDIO_INFO_LOG("DeInit enter.");
+    AUDIO_DEBUG_LOG("DeInit enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_ILLEGAL_STATE, "suite engine not inited");
@@ -95,13 +95,13 @@ int32_t AudioSuiteManager::DeInit()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "suite engine deinit failed, ret = %{public}d.", ret);
 
     suiteEngine_ = nullptr;
-    AUDIO_INFO_LOG("DeInit leave");
+    AUDIO_DEBUG_LOG("DeInit leave");
     return ret;
 }
 
 int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId, PipelineWorkMode workMode)
 {
-    AUDIO_INFO_LOG("CreatePipeline enter.");
+    AUDIO_DEBUG_LOG("CreatePipeline enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
@@ -121,7 +121,7 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId, PipelineWorkMode
         return ERR_AUDIO_SUITE_TIMEOUT;
     }
 
-    AUDIO_INFO_LOG("CreatePipeline leave");
+    AUDIO_DEBUG_LOG("CreatePipeline leave");
     pipelineId = engineCreatePipelineId_;
     engineCreatePipelineId_ = INVALID_PIPELINE_ID;
 
@@ -133,7 +133,7 @@ int32_t AudioSuiteManager::CreatePipeline(uint32_t &pipelineId, PipelineWorkMode
 
 int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
 {
-    AUDIO_INFO_LOG("DestroyPipeline enter.");
+    AUDIO_DEBUG_LOG("DestroyPipeline enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
@@ -167,13 +167,13 @@ int32_t AudioSuiteManager::DestroyPipeline(uint32_t pipelineId)
     pipelineCallbackMutexMap_.erase(pipelineId);
     pipelineCallbackCVMap_.erase(pipelineId);
 
-    AUDIO_INFO_LOG("DestroyPipeline leave");
+    AUDIO_DEBUG_LOG("DestroyPipeline leave");
     return destroyPipelineResult_;
 }
 
 int32_t AudioSuiteManager::StartPipeline(uint32_t pipelineId)
 {
-    AUDIO_INFO_LOG("StartPipeline enter.");
+    AUDIO_DEBUG_LOG("StartPipeline enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
 
@@ -187,13 +187,13 @@ int32_t AudioSuiteManager::StartPipeline(uint32_t pipelineId)
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "StartPipeline timeout");
 
-    AUDIO_INFO_LOG("StartPipeline leave");
+    AUDIO_DEBUG_LOG("StartPipeline leave");
     return startPipelineResult_;
 }
 
 int32_t AudioSuiteManager::StopPipeline(uint32_t pipelineId)
 {
-    AUDIO_INFO_LOG("StopPipeline enter.");
+    AUDIO_DEBUG_LOG("StopPipeline enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
@@ -208,13 +208,13 @@ int32_t AudioSuiteManager::StopPipeline(uint32_t pipelineId)
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "StopPipeline timeout");
 
-    AUDIO_INFO_LOG("StopPipeline leave");
+    AUDIO_DEBUG_LOG("StopPipeline leave");
     return stopPipelineResult_;
 }
 
 int32_t AudioSuiteManager::GetPipelineState(uint32_t pipelineId, AudioSuitePipelineState &state)
 {
-    AUDIO_INFO_LOG("GetPipelineState enter.");
+    AUDIO_DEBUG_LOG("GetPipelineState enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST, "suite engine not inited");
@@ -230,7 +230,7 @@ int32_t AudioSuiteManager::GetPipelineState(uint32_t pipelineId, AudioSuitePipel
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetPipelineState timeout");
 
-    AUDIO_INFO_LOG("GetPipelineState leave");
+    AUDIO_DEBUG_LOG("GetPipelineState leave");
     state = getPipelineState_;
     return SUCCESS;
 }
@@ -256,7 +256,7 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
         return ERR_AUDIO_SUITE_TIMEOUT;
     }
 
-    AUDIO_INFO_LOG("CreateNode leave");
+    AUDIO_DEBUG_LOG("CreateNode leave");
     WriteSuiteEngineUtilizationStatsEvent(builder.nodeType);
     nodeId = engineCreateNodeId_;
     engineCreateNodeId_ = INVALID_NODE_ID;
@@ -265,7 +265,7 @@ int32_t AudioSuiteManager::CreateNode(uint32_t pipelineId, AudioNodeBuilder &bui
 
 int32_t AudioSuiteManager::DestroyNode(uint32_t nodeId)
 {
-    AUDIO_INFO_LOG("DestroyNode enter.");
+    AUDIO_DEBUG_LOG("DestroyNode enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -283,13 +283,13 @@ int32_t AudioSuiteManager::DestroyNode(uint32_t nodeId)
         return ERR_AUDIO_SUITE_TIMEOUT;
     }
 
-    AUDIO_INFO_LOG("DestroyNode leave");
+    AUDIO_DEBUG_LOG("DestroyNode leave");
     return destroyNodeResult_;
 }
 
 int32_t AudioSuiteManager::BypassEffectNode(uint32_t nodeId, bool bypass)
 {
-    AUDIO_INFO_LOG("BypassEffectNode enter.");
+    AUDIO_DEBUG_LOG("BypassEffectNode enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -303,13 +303,13 @@ int32_t AudioSuiteManager::BypassEffectNode(uint32_t nodeId, bool bypass)
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "BypassEffectNode timeout");
 
-    AUDIO_INFO_LOG("BypassEffectNode leave");
+    AUDIO_DEBUG_LOG("BypassEffectNode leave");
     return bypassEffectNodeResult_;
 }
 
 int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
 {
-    AUDIO_INFO_LOG("GetNodeBypassStatus enter.");
+    AUDIO_DEBUG_LOG("GetNodeBypassStatus enter.");
 
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
@@ -325,14 +325,14 @@ int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetNodeBypassStatus timeout");
 
-    AUDIO_INFO_LOG("GetNodeBypassStatus leave");
+    AUDIO_DEBUG_LOG("GetNodeBypassStatus leave");
     bypass = getNodeBypassResult_;
     return SUCCESS;
 }
 
 int32_t AudioSuiteManager::SetAudioFormat(uint32_t nodeId, AudioFormat audioFormat)
 {
-    AUDIO_INFO_LOG("SetAudioFormat enter.");
+    AUDIO_DEBUG_LOG("SetAudioFormat enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -346,7 +346,7 @@ int32_t AudioSuiteManager::SetAudioFormat(uint32_t nodeId, AudioFormat audioForm
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetAudioFormat timeout");
 
-    AUDIO_INFO_LOG("SetAudioFormat leave");
+    AUDIO_DEBUG_LOG("SetAudioFormat leave");
     return setFormatResult_;
 }
 
@@ -366,13 +366,13 @@ int32_t AudioSuiteManager::SetRequestDataCallback(uint32_t nodeId,
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "SetRequestDataCallback timeout");
 
-    AUDIO_INFO_LOG("SetRequestDataCallback leave");
+    AUDIO_DEBUG_LOG("SetRequestDataCallback leave");
     return setWriteDataResult_;
 }
 
 int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
-    AUDIO_INFO_LOG("ConnectNodes enter.");
+    AUDIO_DEBUG_LOG("ConnectNodes enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -390,13 +390,13 @@ int32_t AudioSuiteManager::ConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
         return ERR_AUDIO_SUITE_TIMEOUT;
     }
 
-    AUDIO_INFO_LOG("ConnectNodes leave");
+    AUDIO_DEBUG_LOG("ConnectNodes leave");
     return connectNodesResult_;
 }
 
 int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNodeId)
 {
-    AUDIO_INFO_LOG("DisConnectNodes enter.");
+    AUDIO_DEBUG_LOG("DisConnectNodes enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -414,13 +414,13 @@ int32_t AudioSuiteManager::DisConnectNodes(uint32_t srcNodeId, uint32_t destNode
         return ERR_AUDIO_SUITE_TIMEOUT;
     }
 
-    AUDIO_INFO_LOG("DisConnectNodes leave");
+    AUDIO_DEBUG_LOG("DisConnectNodes leave");
     return disConnectNodesResult_;
 }
 
 int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, AudioEqualizerFrequencyBandGains gains)
 {
-    AUDIO_INFO_LOG("SetEqualizerFrequencyBandGains enter.");
+    AUDIO_DEBUG_LOG("SetEqualizerFrequencyBandGains enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -447,7 +447,7 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
 
 int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams position)
 {
-    AUDIO_INFO_LOG("SetSpaceRenderPositionParams enter.");
+    AUDIO_DEBUG_LOG("SetSpaceRenderPositionParams enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -470,7 +470,7 @@ int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
 
 int32_t AudioSuiteManager::GetSpaceRenderPositionParams(uint32_t nodeId, AudioSpaceRenderPositionParams &position)
 {
-    AUDIO_INFO_LOG("GetSpaceRenderPositionParams enter.");
+    AUDIO_DEBUG_LOG("GetSpaceRenderPositionParams enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -494,7 +494,7 @@ int32_t AudioSuiteManager::GetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
 
 int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams rotation)
 {
-    AUDIO_INFO_LOG("SetSpaceRenderRotationParams enter.");
+    AUDIO_DEBUG_LOG("SetSpaceRenderRotationParams enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -519,7 +519,7 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
 
 int32_t AudioSuiteManager::GetSpaceRenderRotationParams(uint32_t nodeId, AudioSpaceRenderRotationParams &rotation)
 {
-    AUDIO_INFO_LOG("GetSpaceRenderRotationParams enter.");
+    AUDIO_DEBUG_LOG("GetSpaceRenderRotationParams enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -543,7 +543,7 @@ int32_t AudioSuiteManager::GetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
 
 int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams extension)
 {
-    AUDIO_INFO_LOG("SetSpaceRenderExtensionParams enter.");
+    AUDIO_DEBUG_LOG("SetSpaceRenderExtensionParams enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -566,7 +566,7 @@ int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
 
 int32_t AudioSuiteManager::GetSpaceRenderExtensionParams(uint32_t nodeId, AudioSpaceRenderExtensionParams &extension)
 {
-    AUDIO_INFO_LOG("GetSpaceRenderExtensionParams enter.");
+    AUDIO_DEBUG_LOG("GetSpaceRenderExtensionParams enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -590,7 +590,7 @@ int32_t AudioSuiteManager::GetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
 
 int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float pitch)
 {
-    AUDIO_INFO_LOG("SetTempoAndPitch enter.");
+    AUDIO_DEBUG_LOG("SetTempoAndPitch enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -612,7 +612,7 @@ int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float 
 
 int32_t AudioSuiteManager::GetTempoAndPitch(uint32_t nodeId, float &speed, float &pitch)
 {
-    AUDIO_INFO_LOG("GetTempoAndPitch enter.");
+    AUDIO_DEBUG_LOG("GetTempoAndPitch enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -636,7 +636,7 @@ int32_t AudioSuiteManager::GetTempoAndPitch(uint32_t nodeId, float &speed, float
 
 int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption option)
 {
-    AUDIO_INFO_LOG("SetPureVoiceChangeOption enter.");
+    AUDIO_DEBUG_LOG("SetPureVoiceChangeOption enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -660,7 +660,7 @@ int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
 
 int32_t AudioSuiteManager::GetPureVoiceChangeOption(uint32_t nodeId, AudioPureVoiceChangeOption &option)
 {
-    AUDIO_INFO_LOG("GetPureVoiceChangeOption enter.");
+    AUDIO_DEBUG_LOG("GetPureVoiceChangeOption enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -684,7 +684,7 @@ int32_t AudioSuiteManager::GetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
 
 int32_t AudioSuiteManager::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType type)
 {
-    AUDIO_INFO_LOG("SetGeneralVoiceChangeType enter.");
+    AUDIO_DEBUG_LOG("SetGeneralVoiceChangeType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -706,7 +706,7 @@ int32_t AudioSuiteManager::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGener
 
 int32_t AudioSuiteManager::GetGeneralVoiceChangeType(uint32_t nodeId, AudioGeneralVoiceChangeType &type)
 {
-    AUDIO_INFO_LOG("GetGeneralVoiceChangeType enter.");
+    AUDIO_DEBUG_LOG("GetGeneralVoiceChangeType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -731,7 +731,7 @@ int32_t AudioSuiteManager::GetGeneralVoiceChangeType(uint32_t nodeId, AudioGener
 
 int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType soundFieldType)
 {
-    AUDIO_INFO_LOG("SetSoundFieldType enter.");
+    AUDIO_DEBUG_LOG("SetSoundFieldType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -752,7 +752,7 @@ int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType sou
 
 int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType environmentType)
 {
-    AUDIO_INFO_LOG("EnvironmentType enter.");
+    AUDIO_DEBUG_LOG("EnvironmentType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -773,7 +773,7 @@ int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType e
 
 int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifierType voiceBeautifierType)
 {
-    AUDIO_INFO_LOG("SetVoiceBeautifierType enter.");
+    AUDIO_DEBUG_LOG("SetVoiceBeautifierType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_NODE_NOT_EXIST, "suite engine not inited");
 
@@ -794,7 +794,7 @@ int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifi
 
 int32_t AudioSuiteManager::GetEnvironmentType(uint32_t nodeId, EnvironmentType &environmentType)
 {
-    AUDIO_INFO_LOG("GetEnvironmentType enter.");
+    AUDIO_DEBUG_LOG("GetEnvironmentType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -822,7 +822,7 @@ int32_t AudioSuiteManager::GetEnvironmentType(uint32_t nodeId, EnvironmentType &
 
 int32_t AudioSuiteManager::GetSoundFieldType(uint32_t nodeId, SoundFieldType &soundFieldType)
 {
-    AUDIO_INFO_LOG("GetSoundFieldType enter.");
+    AUDIO_DEBUG_LOG("GetSoundFieldType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -851,7 +851,7 @@ int32_t AudioSuiteManager::GetSoundFieldType(uint32_t nodeId, SoundFieldType &so
 int32_t AudioSuiteManager::GetEqualizerFrequencyBandGains(uint32_t nodeId,
     AudioEqualizerFrequencyBandGains &frequencyBandGains)
 {
-    AUDIO_INFO_LOG("GetEqualizerFrequencyBandGains enter.");
+    AUDIO_DEBUG_LOG("GetEqualizerFrequencyBandGains enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -880,7 +880,7 @@ int32_t AudioSuiteManager::GetEqualizerFrequencyBandGains(uint32_t nodeId,
 int32_t AudioSuiteManager::GetVoiceBeautifierType(uint32_t nodeId,
     VoiceBeautifierType &voiceBeautifierType)
 {
-    AUDIO_INFO_LOG("GetVoiceBeautifierType enter.");
+    AUDIO_DEBUG_LOG("GetVoiceBeautifierType enter.");
     std::lock_guard<std::mutex> lock(lock_);
     CHECK_AND_RETURN_RET_LOG(suiteEngine_ != nullptr, ERR_AUDIO_SUITE_ENGINE_NOT_EXIST, "suite engine not inited");
 
@@ -941,7 +941,6 @@ int32_t AudioSuiteManager::RenderFrame(uint32_t pipelineId,
         return ERR_AUDIO_SUITE_TIMEOUT;
     }
 
-    AUDIO_INFO_LOG("RenderFrame leave");
     return renderFrameResultMap_[pipelineId];
 }
 
@@ -978,13 +977,13 @@ int32_t AudioSuiteManager::MultiRenderFrame(uint32_t pipelineId,
         AUDIO_ERR_LOG("MultiRenderFrame timeout");
         return ERR_AUDIO_SUITE_TIMEOUT;
     }
-    AUDIO_INFO_LOG("MultiRenderFrame leave");
+
     return multiRenderFrameResultMap_[pipelineId];
 }
 
 int32_t AudioSuiteManager::IsNodeTypeSupported(AudioNodeType  nodeType, bool *isSupported)
 {
-    AUDIO_INFO_LOG("isNodeTypeSupported enter.");
+    AUDIO_DEBUG_LOG("isNodeTypeSupported enter.");
     if (nodeType == NODE_TYPE_AUDIO_MIXER) {
         AUDIO_INFO_LOG("MixerNode is supported on all device.");
         *isSupported = true;
@@ -1011,7 +1010,7 @@ void AudioSuiteManager::OnCreatePipeline(int32_t result, uint32_t pipelineId)
         WriteSuiteEngineExceptionEvent(PIPELINE_SCENE, CREATE_PIPELINE_ERROR, errorDescription.str());
     }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnCreatePipeline enter");
+    AUDIO_DEBUG_LOG("OnCreatePipeline enter");
     isFinishCreatePipeline_ = true;
     engineCreateResult_ = result;
     engineCreatePipelineId_ = pipelineId;
@@ -1036,7 +1035,7 @@ void AudioSuiteManager::OnDestroyPipeline(int32_t result)
 void AudioSuiteManager::OnStartPipeline(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnStartPipeline enter");
+    AUDIO_DEBUG_LOG("OnStartPipeline enter");
     isFinishStartPipeline_ = true;
     startPipelineResult_ = result;
     callbackCV_.notify_all();
@@ -1045,7 +1044,7 @@ void AudioSuiteManager::OnStartPipeline(int32_t result)
 void AudioSuiteManager::OnStopPipeline(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnStopPipeline enter");
+    AUDIO_DEBUG_LOG("OnStopPipeline enter");
     isFinishStopPipeline_ = true;
     stopPipelineResult_ = result;
     callbackCV_.notify_all();
@@ -1054,7 +1053,7 @@ void AudioSuiteManager::OnStopPipeline(int32_t result)
 void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnGetPipelineState enter");
+    AUDIO_DEBUG_LOG("OnGetPipelineState enter");
     isFinishGetPipelineState_ = true;
     getPipelineState_ = state;
     callbackCV_.notify_all();
@@ -1068,7 +1067,7 @@ void AudioSuiteManager::OnCreateNode(int32_t result, uint32_t nodeId)
         WriteSuiteEngineExceptionEvent(NODE_SCENE, CREATE_NODE_ERROR, errorDescription.str());
     }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnCreateNode enter");
+    AUDIO_DEBUG_LOG("OnCreateNode enter");
     isFinishCreateNode_ = true;
     engineCreateNodeResult_ = result;
     engineCreateNodeId_ = nodeId;
@@ -1083,7 +1082,7 @@ void AudioSuiteManager::OnDestroyNode(int32_t result)
         WriteSuiteEngineExceptionEvent(NODE_SCENE, DESTROY_NODE_ERROR, errorDescription.str());
     }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnDestroyNode enter");
+    AUDIO_DEBUG_LOG("OnDestroyNode enter");
     isFinishDestroyNode_ = true;
     destroyNodeResult_ = result;
     callbackCV_.notify_all();
@@ -1092,7 +1091,7 @@ void AudioSuiteManager::OnDestroyNode(int32_t result)
 void AudioSuiteManager::OnBypassEffectNode(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnEnableNode enter");
+    AUDIO_DEBUG_LOG("OnEnableNode enter");
     isFinishBypassEffectNode_ = true;
     bypassEffectNodeResult_ = result;
     callbackCV_.notify_all();
@@ -1101,7 +1100,7 @@ void AudioSuiteManager::OnBypassEffectNode(int32_t result)
 void AudioSuiteManager::OnGetNodeBypass(int32_t result, bool bypassStatus)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnGetNodeBypass enter");
+    AUDIO_DEBUG_LOG("OnGetNodeBypass enter");
     isFinishGetNodeBypassStatus_ = true;
     getNodeBypassResult_ = bypassStatus;
     callbackCV_.notify_all();
@@ -1110,7 +1109,7 @@ void AudioSuiteManager::OnGetNodeBypass(int32_t result, bool bypassStatus)
 void AudioSuiteManager::OnSetAudioFormat(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnSetAudioFormat enter");
+    AUDIO_DEBUG_LOG("OnSetAudioFormat enter");
     isFinishSetFormat_ = true;
     setFormatResult_ = result;
     callbackCV_.notify_all();
@@ -1119,7 +1118,7 @@ void AudioSuiteManager::OnSetAudioFormat(int32_t result)
 void AudioSuiteManager::OnWriteDataCallback(int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnWriteDataCallback enter");
+    AUDIO_DEBUG_LOG("OnWriteDataCallback enter");
     isFinishSetWriteData_ = true;
     setWriteDataResult_ = result;
     callbackCV_.notify_all();
@@ -1134,7 +1133,7 @@ void AudioSuiteManager::OnConnectNodes(int32_t result)
         WriteSuiteEngineExceptionEvent(NODE_SCENE, CONNECT_NODE_ERROR, errorDescription.str());
     }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnConnectNodes enter");
+    AUDIO_DEBUG_LOG("OnConnectNodes enter");
     isFinishConnectNodes_ = true;
     connectNodesResult_ = result;
     callbackCV_.notify_all();
@@ -1149,7 +1148,7 @@ void AudioSuiteManager::OnDisConnectNodes(int32_t result)
         WriteSuiteEngineExceptionEvent(NODE_SCENE, DISCONNECT_NODE_ERROR, errorDescription.str());
     }
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    AUDIO_INFO_LOG("OnDisConnectNodes enter");
+    AUDIO_DEBUG_LOG("OnDisConnectNodes enter");
     isFinishDisConnectNodes_ = true;
     disConnectNodesResult_ = result;
     callbackCV_.notify_all();
@@ -1167,7 +1166,6 @@ void AudioSuiteManager::OnRenderFrame(int32_t result, uint32_t pipelineId)
     auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
     auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
-    AUDIO_INFO_LOG("OnRenderFrame callback");
     isFinishRenderFrameMap_[pipelineId] = true;
     renderFrameResultMap_[pipelineId] = result;
     callbackCV->notify_all();
@@ -1185,7 +1183,6 @@ void AudioSuiteManager::OnMultiRenderFrame(int32_t result, uint32_t pipelineId)
     auto &callbackMutex = pipelineCallbackMutexMap_[pipelineId];
     auto &callbackCV = pipelineCallbackCVMap_[pipelineId];
     std::unique_lock<std::mutex> waitLock(*callbackMutex);
-    AUDIO_INFO_LOG("OnMultiRenderFrame callback");
     isFinishMultiRenderFrameMap_[pipelineId] = true;
     multiRenderFrameResultMap_[pipelineId] = result;
     callbackCV->notify_all();

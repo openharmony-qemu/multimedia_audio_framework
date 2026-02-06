@@ -880,6 +880,7 @@ void AudioEffectChainCheckAndReleaseCommonEffectChainFuzzTest()
 
     std::string sceneType = "test";
     std::string  scene = "SCENE_DEFAULT";
+    std::string defaultSceneTypeAndDeviceKey = "SCENE_DEFAULT_&_DEVICE_TYPE_SPEAKER";
     audioEffectChainManager->isDefaultEffectChainExisted_ = GetData<bool>();
 
     std::string deviceTypeName = audioEffectChainManager->GetDeviceTypeName();
@@ -890,7 +891,7 @@ void AudioEffectChainCheckAndReleaseCommonEffectChainFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({effectChain0, audioEffectChain});
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
 
-    audioEffectChainManager->defaultEffectChainCount_ = GetData<int32_t>();
+    audioEffectChainManager->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = GetData<int32_t>();
     audioEffectChainManager->CheckAndReleaseCommonEffectChain(sceneType);
     audioEffectChainManager->ResetInfo();
 }

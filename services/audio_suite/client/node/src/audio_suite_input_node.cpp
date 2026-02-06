@@ -186,8 +186,7 @@ int32_t AudioInputNode::GetDataFromUser()
         }
 
         if ((singleGetSize == inPcmData_.GetDataSize()) || isFinished) {
-            AudioSuitePcmBuffer *ConverPcmData =
-                convert_.Process(&inPcmData_, outPcmData_.GetPcmBufferFormat());
+            AudioSuitePcmBuffer *ConverPcmData = convert_.Process(&inPcmData_, outPcmData_.GetPcmBufferFormat());
             CHECK_AND_RETURN_RET_LOG(ConverPcmData != nullptr, ERR_INVALID_PARAM, "convert pcm format fail");
 
             int32_t ret = cachedBuffer_.PushData(ConverPcmData->GetPcmData(), ConverPcmData->GetDataSize());

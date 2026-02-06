@@ -52,7 +52,7 @@ private:
     uint8_t *GetCacheBufferData(size_t idx);
     InputPort<AudioSuitePcmBuffer *> inputStream_;
     int32_t preNodeOutputNum_ = 0;
-    uint32_t needDataLength = 0;
+    uint32_t needDataLength_ = 0;
 
     // for cache buffer
     std::vector<AudioSuitePcmBuffer *> outputs_;

@@ -126,18 +126,22 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_DegreeTest_001, TestSize.Lev
 
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.
- * @tc.number: CheckExistUidInAudioZone_001
- * @tc.desc  : Test CheckExistUidInAudioZone interface.
+ * @tc.number: CheckExistDeviceInAudioZone_001
+ * @tc.desc  : Test CheckExistDeviceInAudioZone interface.
  */
-HWTEST_F(AudioZoneServiceUnitTest, CheckExistUidInAudioZone_001, TestSize.Level1)
+HWTEST_F(AudioZoneServiceUnitTest, CheckExistDeviceInAudioZone_001, TestSize.Level1)
 {
     AudioZoneContext context;
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
     std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
-    audioZone->BindByKey(AudioZoneBindKey(0, "", "", STREAM_USAGE_UNKNOWN));
-    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistUidInAudioZone(), false);
-    audioZone->BindByKey(AudioZoneBindKey(1, "", "", STREAM_USAGE_UNKNOWN));
-    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistUidInAudioZone(), true);
+    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistDeviceInAudioZone(), false);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE
+    );
+    devices.push_back(desc);
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(0, devices);
+    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistDeviceInAudioZone(), true);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 

@@ -1731,6 +1731,43 @@ HWTEST_F(HpaeCapturerManagerTest, NotifyStreamChangeToSource_001, TestSize.Level
     capturerManager->NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_ADD, streamInfo.sessionId, CAPTURER_PREPARED);
     EXPECT_EQ(capturerManager->sourceOutputNodeMap_.size(), 1);
 }
+
+/**
+* @tc.name  : Test HpaeCapturerManager TriggerAppsUidUpdate API
+* @tc.type  : FUNC
+* @tc.number: TriggerAppsUidUpdate_001
+* @tc.desc  : Test HpaeCapturerManager TriggerAppsUidUpdate() cases
+*/
+HWTEST_F(HpaeCapturerManagerTest, TriggerAppsUidUpdate_001, TestSize.Level2)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.deviceClass = "remote";
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(SUCCESS, capturerManager->Init());
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    auto sourceOutputNode = capturerManager->sourceOutputNodeMap_[streamInfo.sessionId];
+    EXPECT_NE(sourceOutputNode, nullptr);
+    capturerManager->sourceOutputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_RUNNING;
+    capturerManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->appsUid_.size(), 1);
+    capturerManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->appsUid_.size(), 1);
+    capturerManager->sourceOutputNodeMap_[streamInfo.sessionId]->state_ = HPAE_SESSION_STOPPED;
+    capturerManager->TriggerAppsUidUpdate(streamInfo.sessionId);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->appsUid_.size(), 1);
+    capturerManager->TriggerAppsUidUpdate(0);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->appsUid_.size(), 0);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

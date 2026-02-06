@@ -90,6 +90,7 @@ public:
     bool IsDeviceInActiveOutputDevices(std::shared_ptr<AudioDeviceDescriptor> desc);
     void SetAdjustVolumeForZone(int32_t zoneId);
     int32_t GetAdjustVolumeZoneId();
+    int32_t GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(StreamUsage streamUsage);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceForVolume(AudioStreamType streamType);
@@ -113,7 +114,6 @@ private:
     void UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
     void UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
     void SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
-    int32_t GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsAvailableFrontDeviceInVector(
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
 

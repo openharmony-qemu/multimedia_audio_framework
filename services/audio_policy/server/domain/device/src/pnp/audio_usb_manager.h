@@ -89,6 +89,7 @@ private:
     void UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<UsbAudioDevice *> &it);
     void AddDeviceBySoundCard(uint32_t cardNum);
     void UpdateDeviceName(UsbAddr usbAddr, std::string &name);
+    bool IsAvailableUsbDevice(const UsbAudioDevice &device);
 
     std::shared_ptr<IDeviceStatusObserver> observer_{nullptr};
     std::shared_ptr<EventSubscriber> eventSubscriber_{nullptr};

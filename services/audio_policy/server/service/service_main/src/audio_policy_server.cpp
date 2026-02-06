@@ -668,6 +668,9 @@ void AudioPolicyServer::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStream
         return;
     }
     AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
+    if (!AudioZoneService::GetInstance().CheckExistDeviceInAudioZone()) { // zone has not device
+        zoneId = 0;
+    }
 }
 
 int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
@@ -2693,7 +2696,7 @@ bool AudioPolicyServer::VerifySessionId(uint32_t sessionId, uint32_t clientUid)
         "The callingUid is not equal to clientUid and is not MEDIA_SERVICE_UID!");
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, false, "coreService_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(callingUid, sessionId), false,
-        "The sessionId %{public}u does not belong to uid %{public}u!", false, callingUid);
+        "The sessionId %{public}u does not belong to uid %{public}u!", sessionId, callingUid);
     return true;
 }
 
@@ -4410,11 +4413,17 @@ int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(uint32_t ses
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "obj is null");
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(callingUid, sessionID), ERR_UNKNOWN,
+        "The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
     return audioSpatializationService_.RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 
 int32_t AudioPolicyServer::UnregisterSpatializationStateEventListener(uint32_t sessionID)
 {
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    CHECK_AND_RETURN_RET_LOG(coreService_->IsStreamBelongToUid(callingUid, sessionID), ERR_UNKNOWN,
+        "The sessionId %{public}u does not belong to uid %{public}u!", sessionID, callingUid);
     return audioSpatializationService_.UnregisterSpatializationStateEventListener(sessionID);
 }
 

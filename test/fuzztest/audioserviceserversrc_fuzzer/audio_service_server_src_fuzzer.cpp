@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +34,8 @@
 #include "pro_renderer_stream_impl.h"
 #include "oh_audio_buffer.h"
 #include "../fuzz_utils.h"
+#include "core_service_handler.h"
+#include "iservice_registry.h"
 using namespace std;
 
 namespace OHOS {
@@ -43,6 +45,138 @@ static std::unique_ptr<NoneMixEngine> playbackEngine_ = nullptr;
 static std::unique_ptr<AudioPlaybackEngine> audioPlaybackEngine_ = nullptr;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 constexpr int32_t REQUEST_DATA_LEN = 3;
+const uint32_t NUM = 1;
+const int32_t AUDIO_DISTRIBUTED_SERVICE_ID = 3001;
+
+const std::vector<AudioSamplingRate> g_audioSamplingRate = {
+    SAMPLE_RATE_8000,
+    SAMPLE_RATE_11025,
+    SAMPLE_RATE_12000,
+    SAMPLE_RATE_16000,
+    SAMPLE_RATE_22050,
+    SAMPLE_RATE_24000,
+    SAMPLE_RATE_32000,
+    SAMPLE_RATE_44100,
+    SAMPLE_RATE_48000,
+    SAMPLE_RATE_64000,
+    SAMPLE_RATE_88200,
+    SAMPLE_RATE_96000,
+    SAMPLE_RATE_176400,
+    SAMPLE_RATE_192000,
+    SAMPLE_RATE_384000
+};
+
+const std::vector<AudioStreamType> g_audioStreamType = {
+    STREAM_DEFAULT,
+    STREAM_VOICE_CALL,
+    STREAM_MUSIC,
+    STREAM_RING,
+    STREAM_MEDIA,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_SYSTEM,
+    STREAM_ALARM,
+    STREAM_NOTIFICATION,
+    STREAM_BLUETOOTH_SCO,
+    STREAM_ENFORCED_AUDIBLE,
+    STREAM_DTMF,
+    STREAM_TTS,
+    STREAM_ACCESSIBILITY,
+    STREAM_RECORDING,
+    STREAM_MOVIE,
+    STREAM_GAME,
+    STREAM_SPEECH,
+    STREAM_SYSTEM_ENFORCED,
+    STREAM_ULTRASONIC,
+    STREAM_WAKEUP,
+    STREAM_VOICE_MESSAGE,
+    STREAM_NAVIGATION,
+    STREAM_INTERNAL_FORCE_STOP,
+    STREAM_SOURCE_VOICE_CALL,
+    STREAM_VOICE_COMMUNICATION,
+    STREAM_VOICE_RING,
+    STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_CAMCORDER,
+    STREAM_APP,
+    STREAM_TYPE_MAX,
+    STREAM_ALL,
+};
+
+const std::vector<AudioSampleFormat> g_audioSampleFormat = {
+    SAMPLE_U8,
+    SAMPLE_S16LE,
+    SAMPLE_S24LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE,
+    INVALID_WIDTH,
+};
+
+const std::vector<LatencyFlag> g_latencyFlag = {
+    LATENCY_FLAG_SHARED_BUFFER,
+    LATENCY_FLAG_ENGINE,
+    LATENCY_FLAG_SOFTWARE,
+    LATENCY_FLAG_HARDWARE,
+    LATENCY_FLAG_ALL
+};
+
+const std::vector<DeviceType> g_deviceType = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WAKEUP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_USB_DEVICE,
+    DEVICE_TYPE_ACCESSORY,
+    DEVICE_TYPE_REMOTE_DAUDIO,
+    DEVICE_TYPE_HEARING_AID,
+    DEVICE_TYPE_HDMI,
+    DEVICE_TYPE_LINE_DIGITAL,
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_NEARLINK_IN,
+    DEVICE_TYPE_BT_SPP,
+    DEVICE_TYPE_NEARLINK_PORT,
+    DEVICE_TYPE_FILE_SINK,
+    DEVICE_TYPE_FILE_SOURCE,
+    DEVICE_TYPE_EXTERN_CABLE,
+    DEVICE_TYPE_SYSTEM_PRIVATE,
+    DEVICE_TYPE_DEFAULT,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_MAX
+};
+
+const std::vector<StreamUsage> g_streamUsages = {
+    STREAM_USAGE_INVALID,
+    STREAM_USAGE_UNKNOWN,
+    STREAM_USAGE_MEDIA,
+    STREAM_USAGE_VOICE_COMMUNICATION,
+    STREAM_USAGE_VOICE_ASSISTANT,
+    STREAM_USAGE_ALARM,
+    STREAM_USAGE_VOICE_MESSAGE,
+    STREAM_USAGE_NOTIFICATION_RINGTONE,
+    STREAM_USAGE_NOTIFICATION,
+    STREAM_USAGE_ACCESSIBILITY,
+    STREAM_USAGE_SYSTEM,
+    STREAM_USAGE_MOVIE,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK,
+    STREAM_USAGE_NAVIGATION,
+    STREAM_USAGE_DTMF,
+    STREAM_USAGE_ENFORCED_TONE,
+    STREAM_USAGE_ULTRASONIC,
+    STREAM_USAGE_VIDEO_COMMUNICATION,
+    STREAM_USAGE_RANGING,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+    STREAM_USAGE_VOICE_RINGTONE,
+    STREAM_USAGE_VOICE_CALL_ASSISTANT
+};
 
 typedef void (*TestFuncs)();
 /*
@@ -547,6 +681,7 @@ void ProRendererGetLatencyFuzzTest()
 {
     AudioProcessConfig config = InitProcessConfig();
     std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->byteSizePerFrame_ = g_fuzzUtils.GetData<size_t>();
     uint64_t latency = g_fuzzUtils.GetData<uint64_t>();
     rendererStream->GetLatency(latency);
 }
@@ -988,6 +1123,357 @@ void InitDupBufferFuzzTest()
     renderer->InitDupBuffer(innerCapId);
 }
 
+void GetDirectSampleRateFuzzTest()
+{
+    AudioProcessConfig config;
+    config.streamType = g_audioStreamType[g_fuzzUtils.GetData<uint32_t>() % g_audioStreamType.size()];
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    AudioSamplingRate sampleRate = g_audioSamplingRate[g_fuzzUtils.GetData<uint32_t>() % g_audioSamplingRate.size()];
+    rendererStream->GetDirectSampleRate(sampleRate);
+}
+
+void GetDirectFormatFuzzTest()
+{
+    AudioProcessConfig config;
+    bool isDirect = g_fuzzUtils.GetData<bool>();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, isDirect);
+
+    AudioSampleFormat format = g_audioSampleFormat[g_fuzzUtils.GetData<uint32_t>() % g_audioSampleFormat.size()];
+    rendererStream->GetDirectFormat(format);
+}
+
+void DrainFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    bool stopFlag = g_fuzzUtils.GetData<bool>();
+    rendererStream->Drain(stopFlag);
+}
+
+void SetRateFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    int32_t rate = g_fuzzUtils.GetData<int32_t>();
+    rendererStream->SetRate(rate);
+}
+
+void RegisterStatusCallbackFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(config, streamListenerHolder);
+    rendererStream->RegisterStatusCallback(rendererInServer);
+}
+
+void RegisterWriteCallbackFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = nullptr;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(config, streamListenerHolder);
+    rendererStream->RegisterWriteCallback(rendererInServer);
+}
+
+void AbortCallbackFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    int32_t abortTimes = g_fuzzUtils.GetData<int8_t>();
+    rendererStream->AbortCallback(abortTimes);
+}
+
+void SetAndUnsetOffloadModeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    int32_t state = g_fuzzUtils.GetData<int32_t>();
+    bool isAppBack = g_fuzzUtils.GetData<bool>();
+    rendererStream->SetOffloadMode(state, isAppBack);
+    rendererStream->UnsetOffloadMode();
+}
+
+void GetOffloadApproximatelyCacheTimeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+
+    uint64_t timestamp = g_fuzzUtils.GetData<uint64_t>();
+    uint64_t paWriteIndex = g_fuzzUtils.GetData<uint64_t>();
+    uint64_t cacheTimeDsp = g_fuzzUtils.GetData<uint64_t>();
+    uint64_t cacheTimePa = g_fuzzUtils.GetData<uint64_t>();
+    rendererStream->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+}
+
+void GetWritableSizeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->GetWritableSize();
+}
+
+void ConvertSrcToFloatFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->bufferInfo_.samplePerFrame = NUM;
+    rendererStream->bufferInfo_.channelCount = NUM;
+    BufferDesc desc;
+    desc.buffer = nullptr;
+    desc.bufLength = 0;
+    desc.dataLength = 0;
+    rendererStream->ConvertSrcToFloat(desc);
+}
+
+void BlockStreamFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->BlockStream();
+}
+
+void SetSendDataEnabledFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    bool enabled = g_fuzzUtils.GetData<bool>();
+    rendererStream->SetSendDataEnabled(enabled);
+}
+
+void GetLatencyWithFlagFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    uint64_t latency = g_fuzzUtils.GetData<uint64_t>();
+    LatencyFlag flag = g_latencyFlag[g_fuzzUtils.GetData<uint32_t>() % g_latencyFlag.size()];
+    rendererStream->GetLatencyWithFlag(latency, flag);
+}
+
+void ConfigCoreServiceProviderFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    sptr<ICoreServiceProviderIpc> provider = nullptr;
+    handler.ConfigCoreServiceProvider(provider);
+}
+
+void UpdateSessionOperationFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    int32_t count = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_RELEASE) + NUM;
+    SessionOperation operation = static_cast<SessionOperation>(g_fuzzUtils.GetData<uint8_t>() % count);
+    int32_t opMsgCount = static_cast<uint32_t>(SessionOperationMsg::SESSION_OP_MSG_REMOVE_PIPE) + NUM;
+    SessionOperationMsg opMsg = static_cast<SessionOperationMsg>(g_fuzzUtils.GetData<uint8_t>() % opMsgCount);
+    handler.UpdateSessionOperation(sessionId, operation, opMsg);
+}
+
+void ReloadCaptureSessionFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    int32_t count = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_RELEASE) + NUM;
+    SessionOperation operation = static_cast<SessionOperation>(g_fuzzUtils.GetData<uint8_t>() % count);
+    handler.ReloadCaptureSession(sessionId, operation);
+}
+
+void CoreSerHandleretDefaultOutputDeviceFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    DeviceType defaultOutputDevice = g_deviceType[g_fuzzUtils.GetData<uint32_t>() % g_deviceType.size()];
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    StreamUsage streamUsage = g_streamUsages[g_fuzzUtils.GetData<uint32_t>() % g_streamUsages.size()];
+    bool isRunning = g_fuzzUtils.GetData<bool>();
+    bool skipForce = g_fuzzUtils.GetData<bool>();
+    handler.SetDefaultOutputDevice(defaultOutputDevice, sessionId, streamUsage, isRunning, skipForce);
+}
+
+void GetAdapterAndModuleNameBySessionIdFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    handler.GetAdapterNameBySessionId(sessionId);
+    handler.GetModuleNameBySessionId(sessionId);
+}
+
+void GetProcessDeviceInfoBySessionIdFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    AudioDeviceDescriptor deviceInfo;
+    AudioStreamInfo info;
+    bool isUltraFast = g_fuzzUtils.GetData<bool>();
+    bool isReloadProcess = g_fuzzUtils.GetData<bool>();
+    handler.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, isUltraFast, isReloadProcess);
+}
+
+void GenerateSessionIdFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+    handler.GenerateSessionId();
+}
+
+void SetWakeUpAudioCapturerFromAudioServerFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    AudioProcessConfig config = InitProcessConfig();
+    handler.SetWakeUpAudioCapturerFromAudioServer(config);
+}
+
+void GetPaIndexByPortNameFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    std::string portName = "";
+    handler.GetPaIndexByPortName(portName);
+}
+
+void A2dpOffloadGetRenderPositionFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t delayValue = g_fuzzUtils.GetData<uint32_t>();
+    uint64_t sendDataSize = g_fuzzUtils.GetData<uint64_t>();
+    uint32_t timeStamp = g_fuzzUtils.GetData<uint32_t>();
+    handler.A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+}
+
+void SetRendererTargetFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t target = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t lastTarget = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    handler.SetRendererTarget(target, lastTarget, sessionId);
+}
+
+void StartInjectionFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    handler.StartInjection(sessionId);
+}
+
+void RemoveIdForInjectorFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    handler.RemoveIdForInjector(sessionId);
+}
+
+void ReleaseCaptureInjectorFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    handler.ReleaseCaptureInjector();
+}
+
+void RebuildCaptureInjectorFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    handler.RebuildCaptureInjector(sessionId);
+}
+
+void OnCheckActiveMusicTimeFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    std::string reason = "";
+    handler.OnCheckActiveMusicTime(reason);
+}
+
+void CaptureConcurrentCheckFuzzTest()
+{
+    CoreServiceHandler handler = CoreServiceHandler::GetInstance();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<ICoreServiceProviderIpc> coreServiceProvider = iface_cast<ICoreServiceProviderIpc>(object);
+    handler.ConfigCoreServiceProvider(coreServiceProvider);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    handler.CaptureConcurrentCheck(sessionId);
+}
+
 vector<TestFuncs> g_testFuncs = {
     DeviceFuzzTestSetUp,
     DirectAudioPlayBackEngineStateFuzzTest,
@@ -1072,6 +1558,37 @@ vector<TestFuncs> g_testFuncs = {
     SetSpeedFuzzTest,
     StopSessionFuzzTest,
     InitDupBufferFuzzTest,
+    GetDirectSampleRateFuzzTest,
+    GetDirectFormatFuzzTest,
+    DrainFuzzTest,
+    SetRateFuzzTest,
+    RegisterStatusCallbackFuzzTest,
+    RegisterWriteCallbackFuzzTest,
+    AbortCallbackFuzzTest,
+    SetAndUnsetOffloadModeFuzzTest,
+    GetOffloadApproximatelyCacheTimeFuzzTest,
+    GetWritableSizeFuzzTest,
+    ConvertSrcToFloatFuzzTest,
+    BlockStreamFuzzTest,
+    SetSendDataEnabledFuzzTest,
+    GetLatencyWithFlagFuzzTest,
+    ConfigCoreServiceProviderFuzzTest,
+    UpdateSessionOperationFuzzTest,
+    ReloadCaptureSessionFuzzTest,
+    CoreSerHandleretDefaultOutputDeviceFuzzTest,
+    GetAdapterAndModuleNameBySessionIdFuzzTest,
+    GetProcessDeviceInfoBySessionIdFuzzTest,
+    GenerateSessionIdFuzzTest,
+    SetWakeUpAudioCapturerFromAudioServerFuzzTest,
+    GetPaIndexByPortNameFuzzTest,
+    A2dpOffloadGetRenderPositionFuzzTest,
+    SetRendererTargetFuzzTest,
+    StartInjectionFuzzTest,
+    RemoveIdForInjectorFuzzTest,
+    ReleaseCaptureInjectorFuzzTest,
+    RebuildCaptureInjectorFuzzTest,
+    OnCheckActiveMusicTimeFuzzTest,
+    CaptureConcurrentCheckFuzzTest,
 };
 } // namespace AudioStandard
 } // namespace OHOS

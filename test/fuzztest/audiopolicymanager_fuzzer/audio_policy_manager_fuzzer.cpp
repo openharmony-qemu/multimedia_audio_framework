@@ -117,6 +117,11 @@ public:
     }
 };
 
+class AudioManagerDeviceInfoUpdateCallbackFuzzTest : public AudioManagerDeviceInfoUpdateCallback {
+public:
+    void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction){};
+};
+
 void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
 {
     bool block = GetData<bool>();
@@ -717,6 +722,76 @@ void AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest(FuzzedDataProvider& 
     audioPolicyManager.RemoveUidUsagesFromAudioZone(zoneId, GetData<int32_t>(), usages);
 }
 
+void AudioPolicyManagerRestoreOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    DeviceType devType = GetData<DeviceType>();
+    std::string macAddress = "test";
+    sptr<AudioRendererFilter> filter;
+    audioPolicyManager.SelectPrivateDevice(devType, macAddress);
+    audioPolicyManager.ForceSelectDevice(devType, macAddress, filter);
+    audioPolicyManager.SetActiveHfpDevice(macAddress);
+    audioPolicyManager.RestoreOutputDevice(filter);
+}
+
+void AudioPolicyManagerSelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioPolicyManager.SelectInputDevice(audioDeviceDescriptor);
+}
+
+void AudioPolicyManagerSetDeviceInfoUpdateCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    int32_t clientId = GetData<int32_t>();
+    const std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> callback =
+        std::make_shared<AudioManagerDeviceInfoUpdateCallbackFuzzTest>();
+    audioPolicyManager.SetDeviceInfoUpdateCallback(clientId, callback);
+}
+
+void AudioPolicyManagerUnsetDeviceInfoUpdateCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    int32_t clientId = GetData<int32_t>();
+    std::shared_ptr<AudioManagerDeviceInfoUpdateCallback> cb =
+        std::make_shared<AudioManagerDeviceInfoUpdateCallbackFuzzTest>();
+    audioPolicyManager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
+    audioPolicyManager.UnsetDeviceInfoUpdateCallback(clientId, cb);
+}
+
+void AudioPolicyManagerGetSelectedInputDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    audioPolicyManager.ClearSelectedInputDevice();
+    audioPolicyManager.GetSelectedInputDevice();
+}
+
+void AudioPolicyManagerPreferBluetoothAndNearlinkRecordFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    BluetoothAndNearlinkPreferredRecordCategory category = GetData<BluetoothAndNearlinkPreferredRecordCategory>();
+    audioPolicyManager.PreferBluetoothAndNearlinkRecord(category);
+    audioPolicyManager.GetPreferBluetoothAndNearlinkRecord();
+}
+
+void AudioPolicyManagerSetDeviceVolumeBehaviorFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    std::string networkId = "networkId";
+    DeviceType deviceType = GetData<DeviceType>();
+    VolumeBehavior volumeBehavior;
+    audioPolicyManager.SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
+}
+
+void AudioPolicyManagerSetQueryDeviceVolumeBehaviorCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioPolicyManager audioPolicyManager;
+    std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> callback =
+        std::make_shared<AudioQueryDeviceVolumeBehaviorCallbackFuzzTest>();
+    audioPolicyManager.SetQueryDeviceVolumeBehaviorCallback(callback);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -742,7 +817,15 @@ void Test(FuzzedDataProvider& fdp)
     AudioPolicyManagerSetAudioDeviceAnahsCallbackFuzzTest,
     AudioPolicyManagerSetSleAudioOperationCallbackFuzzTest,
     AudioPolicyManagerAddUidUsagesToAudioZoneFuzzTest,
-    AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest
+    AudioPolicyManagerRemoveUidUsagesFromAudioZoneFuzzTest,
+    AudioPolicyManagerRestoreOutputDeviceFuzzTest,
+    AudioPolicyManagerSelectInputDeviceFuzzTest,
+    AudioPolicyManagerSetDeviceInfoUpdateCallbackFuzzTest,
+    AudioPolicyManagerUnsetDeviceInfoUpdateCallbackFuzzTest,
+    AudioPolicyManagerGetSelectedInputDeviceFuzzTest,
+    AudioPolicyManagerPreferBluetoothAndNearlinkRecordFuzzTest,
+    AudioPolicyManagerSetDeviceVolumeBehaviorFuzzTest,
+    AudioPolicyManagerSetQueryDeviceVolumeBehaviorCallbackFuzzTest,
     });
     func(fdp);
 }

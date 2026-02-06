@@ -18,6 +18,7 @@
 
 #include "audio_suite_process_node.h"
 #include "audio_limiter.h"
+#include "thread_pool.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -25,7 +26,7 @@ namespace AudioSuite {
 
 class AudioSuiteMixerNode : public AudioSuiteProcessNode {
 public:
-    AudioSuiteMixerNode();
+    AudioSuiteMixerNode(uint32_t threadCount);
     virtual ~AudioSuiteMixerNode();
 
     void SetAudioNodeFormat(AudioFormat audioFormat) override;
@@ -34,11 +35,25 @@ public:
 
 protected:
     std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
+    std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData() override;
 
 private:
+    struct PullResult {
+        std::vector<AudioSuitePcmBuffer *> data;
+        std::shared_ptr<AudioNode> preNode;
+        bool isFinished {true};
+        bool ok {false};
+    };
+
+    std::unique_ptr<ThreadPool> pullThreadPool_;
     int32_t InitAudioLimiter();
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
     AudioSuitePcmBuffer tmpOutput_;
+    void StopPullPool();
+    std::vector<std::future<PullResult>> SubmitPullTasks(
+        const std::unordered_map<OutputPort<AudioSuitePcmBuffer*>*, std::shared_ptr<AudioNode>>& preOutputMap);
+    bool CollectPullResults(std::vector<AudioSuitePcmBuffer*>& preOutputs,
+        std::vector<std::future<PullResult>>& futures);
 };
 
 }  // namespace AudioSuite

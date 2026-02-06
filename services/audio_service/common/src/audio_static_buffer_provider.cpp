@@ -79,7 +79,7 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
             sharedBuffer_->WakeFutex();
         }
     }
-
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     if (sharedBuffer_->IsFirstFrame()) {
         sharedBuffer_->WakeFutex();
     }
@@ -126,39 +126,36 @@ void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &stat
     totalLoopTimes_ = staticBufferInfo.totalLoopTimes_;
     currentLoopTimes_ = staticBufferInfo.currentLoopTimes_;
     curStaticDataPos_ = staticBufferInfo.curStaticDataPos_;
-}
-
-int32_t AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr, ERR_NULL_POINTER, "Not in static mode");
-    staticBufferInfo.totalLoopTimes_ = totalLoopTimes_;
-    staticBufferInfo.currentLoopTimes_ = currentLoopTimes_;
-    staticBufferInfo.curStaticDataPos_ = curStaticDataPos_;
-    staticBufferInfo.sharedMemory_ = sharedBuffer_->GetSharedMem();
-    return SUCCESS;
+    CHECK_AND_RETURN_LOG(sharedBuffer_ != nullptr, "sharedBuffer is nullptr");
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
 }
 
 void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize)
 {
     std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(bufferBase != nullptr, "bufferBase in SetProcessedBuffer is nullptr!");
+    CHECK_AND_RETURN_LOG(sharedBuffer_ != nullptr, "sharedBuffer is nullptr");
 
     // calculate the buffer beginning position when set renderRate
     curStaticDataPos_ = (processedBufferSize_ == 0 ? 0 : curStaticDataPos_ * 1.0 / processedBufferSize_ * bufferSize);
     uint32_t byteSizePerFrame = streamInfo_.channels * PcmFormatToBits(streamInfo_.format);
     curStaticDataPos_ = (byteSizePerFrame == 0 ? 0 : curStaticDataPos_ / byteSizePerFrame * byteSizePerFrame);
+
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     processedBuffer_ = *bufferBase;
     processedBufferSize_ = bufferSize;
 }
 
 void AudioStaticBufferProvider::SetLoopTimes(int64_t times)
 {
+    CHECK_AND_RETURN_LOG(sharedBuffer_ != nullptr, "sharedBuffer is nullptr");
     std::unique_lock<std::mutex> lock(eventMutex_);
     totalLoopTimes_ = times;
     currentLoopTimes_ = 0;
     curStaticDataPos_ = 0;
     sharedBuffer_->ResetBufferEndCallbackSendTimes();
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     AUDIO_INFO_LOG("SetLoopTimes %{public}" PRId64, times);
 }
 
@@ -173,6 +170,7 @@ void AudioStaticBufferProvider::RefreshBufferStatus()
     Trace trace("RefreshBufferStatus");
     currentLoopTimes_ = 0;
     curStaticDataPos_ = 0;
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     sharedBuffer_->ResetBufferEndCallbackSendTimes();
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
     AUDIO_INFO_LOG("RefreshBufferStatus, curTotalLoopTimes %{public}" PRId64, totalLoopTimes_);

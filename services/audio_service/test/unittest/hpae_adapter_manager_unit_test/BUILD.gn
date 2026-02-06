@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../../config.gni")
 
-module_output_path = "audio_framework/audio_framework_route/part1/hpae_adapter_manager"
+audio_engine_module_output_path = "audio_framework/audio_framework_engine/hpae_adapter_manager"
 
 config("module_private_config") {
   visibility = [ ":*" ]
@@ -32,7 +32,7 @@ config("module_private_config") {
 
 ohos_unittest("hpae_adapter_manager_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_engine_module_output_path
   include_dirs = [
     "../../../../../frameworks/native/audiocapturer/include",
     "../../../server/include",

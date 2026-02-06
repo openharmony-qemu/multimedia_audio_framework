@@ -81,6 +81,7 @@ public:
         const SourceType &sourceType) override;
     int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         const SourceType &sourceType) override;
+    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);

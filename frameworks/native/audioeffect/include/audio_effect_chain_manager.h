@@ -70,16 +70,6 @@ struct SessionEffectInfo {
     int32_t systemVolumeType;
 };
 
-const std::vector<AudioChannelLayout> AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS {
-    CH_LAYOUT_STEREO,
-    CH_LAYOUT_5POINT1,
-    CH_LAYOUT_5POINT1POINT2,
-    CH_LAYOUT_7POINT1,
-    CH_LAYOUT_5POINT1POINT4,
-    CH_LAYOUT_7POINT1POINT2,
-    CH_LAYOUT_7POINT1POINT4
-};
-
 struct EffectBufferAttr {
     float *bufIn;
     float *bufOut;
@@ -255,7 +245,6 @@ private:
     bool btOffloadSupported_ = false;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool isDefaultEffectChainExisted_ = false;
-    int32_t defaultEffectChainCount_ = 0;
     int32_t maxEffectChainCount_ = 1;
     uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };

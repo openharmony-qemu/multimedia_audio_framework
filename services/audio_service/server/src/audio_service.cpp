@@ -1416,28 +1416,27 @@ void AudioService::SetDecMaxRendererStreamCnt()
 void AudioService::SetIncMaxLoopbackStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
-        currentLoopbackRendererStreamCnt_++;
+        currentLoopbackRendererStreamCnt_.fetch_add(1);
     } else {
-        currentLoopbackCapturerStreamCnt_++;
+        currentLoopbackCapturerStreamCnt_.fetch_add(1);
     }
 }
 
 int32_t AudioService::GetCurrentLoopbackStreamCnt(AudioMode audioMode)
 {
     if (audioMode == AUDIO_MODE_PLAYBACK) {
-        return currentLoopbackRendererStreamCnt_;
+        return currentLoopbackRendererStreamCnt_.load();
     } else {
-        return currentLoopbackCapturerStreamCnt_;
+        return currentLoopbackCapturerStreamCnt_.load();
     }
 }
 
 void AudioService::SetDecMaxLoopbackStreamCnt(AudioMode audioMode)
 {
-    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     if (audioMode == AUDIO_MODE_PLAYBACK) {
-        currentLoopbackRendererStreamCnt_--;
+        currentLoopbackRendererStreamCnt_.fetch_sub(1);
     } else {
-        currentLoopbackCapturerStreamCnt_--;
+        currentLoopbackCapturerStreamCnt_.fetch_sub(1);
     }
 }
 

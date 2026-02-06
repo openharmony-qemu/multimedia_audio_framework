@@ -103,7 +103,7 @@ public:
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
-    bool CheckExistUidInAudioZone();
+    bool CheckExistDeviceInAudioZone();
     void NotifyStreamSilentChange(uint32_t streamId);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     AudioScene GetAudioSceneFromAllZones();

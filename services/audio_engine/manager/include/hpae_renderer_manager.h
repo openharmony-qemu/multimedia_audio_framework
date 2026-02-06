@@ -101,6 +101,7 @@ public:
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     void SetCollDelayCount() override;
+    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
