@@ -1457,7 +1457,7 @@ void AudioProcessInServer::MarkStaticFadeOut(bool isRefresh)
     }
     // Refresh needs to be called after fadeout
     if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->RefreshBufferStatus();
+        staticBufferProvider_->ResetStaticPlayPosition();
     }
 }
 
@@ -1522,6 +1522,17 @@ void AudioProcessInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
     std::lock_guard<std::mutex> lock(runnerMutex_);
     CHECK_AND_RETURN(callbackHandler_ != nullptr);
     callbackHandler_->SendCallbackEvent(NOTIFY_VOIP_START, uid);
+}
+
+int32_t AudioProcessInServer::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, ERR_ILLEGAL_STATE);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr");
+
+    staticBufferProvider_->NeedProcessFadeOut();
+    staticBufferProvider_->ResetStaticPlayPosition();
+    staticBufferProvider_->NeedProcessFadeIn();
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

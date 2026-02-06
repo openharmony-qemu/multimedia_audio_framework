@@ -170,6 +170,8 @@ public:
         const std::shared_ptr<AudioFirstFrameCallback> &callback) = 0;
 
     virtual void SetIsFirstFrame(bool value) = 0;
+
+    virtual int32_t ResetStaticPlayPosition() = 0; // Only can be used in static mode.
 };
 } // namespace AudioStandard
 } // namespace OHOS

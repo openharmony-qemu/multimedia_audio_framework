@@ -243,6 +243,8 @@ public:
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
 
+    bool ResetStaticPlayPosition() override;
+
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

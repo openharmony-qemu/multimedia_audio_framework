@@ -34,13 +34,14 @@ public:
     void SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize);
 
     void SetLoopTimes(int64_t times);
-    void RefreshBufferStatus();
-    int32_t IncreaseCurrentLoopTimes();
     void NeedProcessFadeIn();
     void NeedProcessFadeOut();
     bool IsLoopEnd();
+    void ResetStaticPlayPosition();
 
 private:
+    int32_t IncreaseCurrentLoopTimes();
+    void RefreshBufferStatus();
     int32_t CheckIsValid(int8_t *inputData, size_t offset, size_t requestDataLen, size_t remainSize);
     bool NeedProvideData();
     int32_t ProcessFadeInOutIfNeed(int8_t *inputData, size_t requestDataLen);
@@ -55,12 +56,10 @@ private:
     size_t curStaticDataPos_ = 0;
     bool delayRefreshBufferStatus_ = false;
     bool playFinished_ = false;
-
-    std::mutex eventMutex_;
-
-    std::mutex fadeMutex_;
     bool needFadeIn_ = false;
     bool needFadeOut_ = false;
+
+    std::mutex eventMutex_;
 };
 
 } // namespace AudioStandard

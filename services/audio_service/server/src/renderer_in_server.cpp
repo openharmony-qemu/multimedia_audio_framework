@@ -2970,7 +2970,7 @@ void RendererInServer::MarkStaticFadeOut(bool isRefresh)
     }
     // Refresh needs to be called after fadeout
     if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->RefreshBufferStatus();
+        staticBufferProvider_->ResetStaticPlayPosition();
     }
 }
 
@@ -2989,6 +2989,17 @@ void RendererInServer::HandleIsWriteFirst(bool isWriteFirst)
 bool RendererInServer::IsWriteFirst() const noexcept
 {
     return isWriteFirst_;
+}
+
+int32_t RendererInServer::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_OPERATION_FAILED, "not in static mode");
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
+
+    staticBufferProvider_->NeedProcessFadeOut();
+    staticBufferProvider_->ResetStaticPlayPosition();
+    staticBufferProvider_->NeedProcessFadeIn();
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

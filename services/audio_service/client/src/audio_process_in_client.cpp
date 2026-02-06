@@ -176,6 +176,8 @@ public:
 
     void SetIsFirstFrame(bool value) override;
 
+    int32_t ResetStaticPlayPosition() override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 private:
@@ -1927,6 +1929,15 @@ void AudioProcessInClientInner::CalcDefaultClientSpanSize()
     clientSpanSizeInFrame_ =
         DEFAULT_FAST_SPAN_SIZE_INT_IN_MS * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
     clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
+}
+
+int32_t AudioProcessInClientInner::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "processProxy_ is nullptr");
+
+    ExitStandByIfNeed();
+    return processProxy_->ResetStaticPlayPosition();
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1421,5 +1421,15 @@ void FastAudioStream::SetBundleName(std::string &name)
     bundleName = name;
 }
 
+bool FastAudioStream::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "Not in Static Mode");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null!");
+
+    int32_t ret = processClient_->ResetStaticPlayPosition();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "ResetStaticPlayPosition fail!");
+    return true;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

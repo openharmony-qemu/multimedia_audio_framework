@@ -72,4 +72,5 @@ interface IIpcStream {
     void SetRebuildFlag();
     void SetLoopTimes([in] long bufferLoopTimes);
     void GetLatencyWithFlag([out] unsigned long latency, [in] unsigned int flag);
+    void ResetStaticPlayPosition();
 }

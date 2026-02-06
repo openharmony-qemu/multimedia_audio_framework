@@ -3259,5 +3259,27 @@ int32_t AudioRendererPrivate::GetCurrentBackMuteStatus(bool &backMute)
     }
     return SUCCESS;
 }
+
+// Only can be used in static mode
+bool AudioRendererPrivate::ResetStaticPlayPosition()
+{
+    Trace trace("KeyAction AudioRenderer::ResetStaticPlayPosition" + std::to_string(sessionID_));
+    AUDIO_INFO_LOG("StreamClientState for Renderer::ResetStaticPlayPosition");
+
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "not in static mode");
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, false,
+        "ResetStaticPlayPosition failed. Illegal state:%{public}u", state);
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
+        "ResetStaticPlayPosition failed. Switching state: %{public}d", isSwitching_);
+    return audioStream_->ResetStaticPlayPosition();
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS
