@@ -161,7 +161,7 @@ int32_t AudioSuiteAissAlgoInterfaceImpl::Apply(std::vector<uint8_t*>& v1, std::v
     }
     int32_t ret = (*algoHandle_)->process(algoHandle_, &inAudioBuffer_, &outAudioBuffer_);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Apply failed, return value is %d", ret);
+        HILOG_COMM_ERROR("[Apply]AudioSeparation algo apply failed, return error is %{public}d", ret);
         return ERROR;
     }
     float* outAudioBuf = reinterpret_cast<float *>(outAudioBuffer_.raw);

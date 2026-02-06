@@ -206,7 +206,8 @@ int32_t AudioSuiteEnvAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pcmInBuf, 
     }
 
     ret = algoApi_.applyAlgo(runBuf_.data(), scratchBuf_.data(), scratchBuf_.size(), &stData_);
-    CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "iMedia_SWS_Apply ERROR:%{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == IMEDIA_SWS_EOK, ret,
+        HILOG_COMM_ERROR("[Apply]Environment algo apply failed, return error is %{public}d", ret));
 
     for (size_t i = 0; i < frameLen_; i++) {
         pcmOut[i] = ((unsigned int)dataOut_[i] >> TWO_BYTES_WIDTH);

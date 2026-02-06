@@ -210,7 +210,7 @@ int32_t AudioSuiteVoiceMorphingAlgoInterfaceImpl::Apply(
     }
     int32_t ret = vmAlgoApi_.apply(&data, handle_.data(), scratchBuf_.data());
     if (ret != AUDIO_VMP_EOK) {
-        AUDIO_ERR_LOG("apply vmalgo fail, error code: %{public}d.", ret);
+        HILOG_COMM_ERROR("[Apply]VoiceMorphing algo apply failed, return error is %{public}d", ret);
         return ERROR;
     }
 
