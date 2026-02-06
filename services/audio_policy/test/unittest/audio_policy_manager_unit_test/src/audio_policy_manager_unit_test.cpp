@@ -41,6 +41,14 @@ public:
     void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {}
 };
 
+class AudioManagerAvailableDeviceChangeCallbackImpl : public AudioManagerAvailableDeviceChangeCallback {
+public:
+    AudioManagerAvailableDeviceChangeCallbackImpl() {}
+    ~AudioManagerAvailableDeviceChangeCallbackImpl() {}
+    void OnAvailableDeviceChange(const AudioDeviceUsage usage,
+        const DeviceChangeAction &deviceChangeAction) override {}
+};
+
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_001.
@@ -880,6 +888,35 @@ HWTEST(AudioPolicyManager, UnregisterCollaborationEnabledForCurrentDeviceEventLi
     audioPolicyManager_->audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
     int32_t ret = audioPolicyManager_->UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: UnsetAvailableDeviceChangeCallback_001.
+* @tc.desc  : Test UnsetAvailableDeviceChangeCallback.
+*/
+HWTEST(AudioPolicyManager, UnsetAvailableDeviceChangeCallback_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    audioPolicyManager_->availableDeviceChangeCbsMap_.clear();
+    const int32_t clientId = 0;
+    AudioDeviceUsage usage = AudioDeviceUsage::MEDIA_OUTPUT_DEVICES;
+    std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> callback =
+        std::make_shared<AudioManagerAvailableDeviceChangeCallbackImpl>();
+
+    audioPolicyManager_->SetAvailableDeviceChangeCallback(clientId, usage, callback);
+    audioPolicyManager_->UnsetAvailableDeviceChangeCallback(clientId, usage);
+    EXPECT_TRUE(audioPolicyManager_->availableDeviceChangeCbsMap_.empty());
+
+    audioPolicyManager_->SetAvailableDeviceChangeCallback(clientId, usage, callback);
+    audioPolicyManager_->UnsetAvailableDeviceChangeCallback(clientId, AudioDeviceUsage::D_ALL_DEVICES);
+    EXPECT_TRUE(audioPolicyManager_->availableDeviceChangeCbsMap_.empty());
+
+    audioPolicyManager_->SetAvailableDeviceChangeCallback(clientId+1, usage, callback);
+    audioPolicyManager_->UnsetAvailableDeviceChangeCallback(clientId, AudioDeviceUsage::D_ALL_DEVICES);
+    EXPECT_FALSE(audioPolicyManager_->availableDeviceChangeCbsMap_.empty());
 }
 } // namespace AudioStandard
 } // namespace OHOS
