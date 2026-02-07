@@ -44,7 +44,8 @@ public:
     bool CheckIndex(const long &startIndex, const long &endIndex, const std::string &oldKey) const;
     bool AddAudioAsset(const std::string &trackId, const AudioAsset &asset, const long oldStartTime,
                        std::vector<long> &indexs, const bool isCopyMultiple);
-    bool UpdateAudioAsset(const std::string& trackId, AudioAsset& asset, const long startIndex, const long endIndex);
+    bool UpdateAudioAsset(const std::string &trackId, const AudioAsset &asset, const long startIndex,
+                          const long endIndex);
     bool DeleteAudioAsset(const std::string& trackId, const long startTime);
     AudioAsset* GetAudioAsset(const std::string& trackId, const long startTime);
     bool SetAudioAsset(const std::string& trackId, const long startTime, AudioAsset& asset);

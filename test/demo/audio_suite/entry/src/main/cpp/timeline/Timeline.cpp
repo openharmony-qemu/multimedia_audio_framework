@@ -231,7 +231,7 @@ bool Timeline::AddAudioAsset(const std::string &trackId, const AudioAsset &asset
     return true;
 }
 
-bool Timeline::UpdateAudioAsset(const std::string &trackId, AudioAsset &asset, const long startIndex,
+bool Timeline::UpdateAudioAsset(const std::string &trackId, const AudioAsset &asset, const long startIndex,
                                 const long endIndex)
 {
     auto it = audioTrackMap.find(trackId);
