@@ -481,7 +481,7 @@ export struct AudioTrackEdit {
       onAgree: (balanceBandGains: number[]) => {
         // 调用napi的底层效果节点
         let result =
-          audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, this.selectedEffectNodeId,
+          audioNapi.setEqualizerFrequencyBandGains(balanceBandGains, this.selectedEffectNodeId,
             this.selectedAudioTrackId);
         if (result !== 0) {
           Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
