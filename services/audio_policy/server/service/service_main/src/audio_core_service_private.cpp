@@ -3571,6 +3571,7 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
             GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
             streamDesc->rendererInfo_.privacyType);
     }
+    audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDevicesForDescs");
 }
 
 void AudioCoreService::HandleNearlinkErrResultAsync(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc)
