@@ -40,7 +40,6 @@ private:
 
 private:
     bool isInit_ = false;
-    float speedRate_ = 0.0f;
 };
 
 }  // namespace AudioSuite
