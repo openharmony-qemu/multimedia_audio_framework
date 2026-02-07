@@ -17,13 +17,6 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_stream_enum.h"
-#include "audio_pipe_manager.h"
-#include "audio_concurrency_parser.h"
-#include "audio_info.h"
-#include <vector>
-#include <memory>
-#include <map>
-#include <set>
 
 using namespace testing::ext;
 
@@ -2233,7 +2226,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_006, TestSize.Level1)
 
     audioPipeSelector->SortStreamByStatus(streamList);
 
-EXPECT_EQ(streamList.size(), 1);
+    EXPECT_EQ(streamList.size(), 1);
     EXPECT_EQ(streamList[0].first->sessionId_, 100001);
     EXPECT_EQ(streamList[0].first->streamStatus_, STREAM_STATUS_PAUSED);
 }
