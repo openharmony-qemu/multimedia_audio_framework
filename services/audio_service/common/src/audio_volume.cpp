@@ -279,6 +279,16 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
         HILOG_COMM_ERROR("[AddStreamVolume] stream volume already exist, sessionId:%{public}u",
             streamVolumeParams.sessionId);
     }
+    it = streamVolume_.find(streamVolumeParams.sessionId);
+    if (it != streamVolume_.end()) {
+        it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
+        it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
+            it->second.isDualMuted_) ? 0.0f :
+            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+    } else {
+        HILOG_COMM_ERROR("[AddStreamVolume] stream volume not exist, sessionId:%{public}u",
+            streamVolumeParams.sessionId);
+    }
 }
 
 void AudioVolume::RemoveStreamVolume(uint32_t sessionId)
