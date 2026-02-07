@@ -14,23 +14,25 @@
 */
 #ifndef AUDIO_PIPE_SELECTOR_UNIT_TEST_H
 #define AUDIO_PIPE_SELECTOR_UNIT_TEST_H
-#include "gtest/gtest.h"
-#include "audio_pipe_selector.h"
+
+// Simple test framework for AdjustConcedeActionByStatus function
+// This demonstrates the test logic and expected behavior
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPipeSelectorUnitTest : public testing::Test {
-public:
-    // SetUpTestCase: Called before all test cases
-    static void SetUpTestCase(void);
-    // TearDownTestCase: Called after all test case
-    static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
-    void SetUp(void);
-    // TearDown: Called after each test cases
-    void TearDown(void);
+// Mock and test data for AdjustConcedeActionByStatus function
+struct TestCase {
+    const char* name;
+    void (*testFunc)();
+    bool passed;
 };
+
+extern TestCase adjustConcedeTestCases[];
+
+void RunAdjustConcedeActionByStatusTests();
+
 } // namespace AudioStandard
 } // namespace OHOS
+
 #endif //AUDIO_PIPE_SELECTOR_UNIT_TEST_H

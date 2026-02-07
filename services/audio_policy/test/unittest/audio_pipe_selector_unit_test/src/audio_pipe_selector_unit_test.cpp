@@ -17,6 +17,13 @@
 #include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_stream_enum.h"
+#include "audio_pipe_manager.h"
+#include "audio_concurrency_parser.h"
+#include "audio_info.h"
+#include <vector>
+#include <memory>
+#include <map>
+#include <set>
 
 using namespace testing::ext;
 
@@ -2030,6 +2037,490 @@ HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_005, TestSize.Level1)
         selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
     
     EXPECT_EQ(streamDesc->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_001
+ * @tc.desc: Test SortStreamByStatus when all streams are STARTED - should sort by sessionId ascending.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe1 = std::make_shared<AudioPipeInfo>();
+    auto stream1 = std::make_shared<AudioStreamDescriptor>();
+    stream1->sessionId_ = 100003;
+    stream1->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream1, pipe1);
+
+    auto pipe2 = std::make_shared<AudioPipeInfo>();
+    auto stream2 = std::make_shared<AudioStreamDescriptor>();
+    stream2->sessionId_ = 100001;
+    stream2->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream2, pipe2);
+
+    auto pipe3 = std::make_shared<AudioPipeInfo>();
+    auto stream3 = std::make_shared<AudioStreamDescriptor>();
+    stream3->sessionId_ = 100002;
+    stream3->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream3, pipe3);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[1].first->sessionId_, 100002);
+    EXPECT_EQ(streamList[2].first->sessionId_, 100003);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_002
+ * @tc.desc: Test SortStreamByStatus when all streams are not STARTED - should sort by sessionId ascending.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe1 = std::make_shared<AudioPipeInfo>();
+    auto stream1 = std::make_shared<AudioStreamDescriptor>();
+    stream1->sessionId_ = 100003;
+    stream1->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamList.emplace_back(stream1, pipe1);
+
+    auto pipe2 = std::make_shared<AudioPipeInfo>();
+    auto stream2 = std::make_shared<AudioStreamDescriptor>();
+    stream2->sessionId_ = 100001;
+    stream2->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamList.emplace_back(stream2, pipe2);
+
+    auto pipe3 = std::make_shared<AudioPipeInfo>();
+    auto stream3 = std::make_shared<AudioStreamDescriptor>();
+    stream3->sessionId_ = 100002;
+    stream3->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamList.emplace_back(stream3, pipe3);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[1].first->sessionId_, 100002);
+    EXPECT_EQ(streamList[2].first->sessionId_, 100003);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_003
+ * @tc.desc: Test SortStreamByStatus with mixed statuses - STARTED streams first, then others, all by sessionId.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe1 = std::make_shared<AudioPipeInfo>();
+    auto stream1 = std::make_shared<AudioStreamDescriptor>();
+    stream1->sessionId_ = 100003;
+    stream1->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream1, pipe1);
+
+    auto pipe2 = std::make_shared<AudioPipeInfo>();
+    auto stream2 = std::make_shared<AudioStreamDescriptor>();
+    stream2->sessionId_ = 100001;
+    stream2->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamList.emplace_back(stream2, pipe2);
+
+    auto pipe3 = std::make_shared<AudioPipeInfo>();
+    auto stream3 = std::make_shared<AudioStreamDescriptor>();
+    stream3->sessionId_ = 100005;
+    stream3->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream3, pipe3);
+
+    auto pipe4 = std::make_shared<AudioPipeInfo>();
+    auto stream4 = std::make_shared<AudioStreamDescriptor>();
+    stream4->sessionId_ = 100002;
+    stream4->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamList.emplace_back(stream4, pipe4);
+
+    auto pipe5 = std::make_shared<AudioPipeInfo>();
+    auto stream5 = std::make_shared<AudioStreamDescriptor>();
+    stream5->sessionId_ = 100004;
+    stream5->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamList.emplace_back(stream5, pipe5);
+
+    auto pipe6 = std::make_shared<AudioPipeInfo>();
+    auto stream6 = std::make_shared<AudioStreamDescriptor>();
+    stream6->sessionId_ = 100006;
+    stream6->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream6, pipe6);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList[0].first->sessionId_, 100003);
+    EXPECT_EQ(streamList[1].first->sessionId_, 100005);
+    EXPECT_EQ(streamList[2].first->sessionId_, 100006);
+    EXPECT_EQ(streamList[3].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[4].first->sessionId_, 100002);
+    EXPECT_EQ(streamList[5].first->sessionId_, 100004);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_004
+ * @tc.desc: Test SortStreamByStatus with empty list - should not crash and return empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_TRUE(streamList.empty());
+}
+
+/**
+ * @tc.name: SortStreamByStatus_005
+ * @tc.desc: Test SortStreamByStatus with single STARTED stream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = 100001;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream, pipe);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList.size(), 1);
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[0].first->streamStatus_, STREAM_STATUS_STARTED);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_006
+ * @tc.desc: Test SortStreamByStatus with single non-STARTED stream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_006, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = 100001;
+    stream->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamList.emplace_back(stream, pipe);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+EXPECT_EQ(streamList.size(), 1);
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[0].first->streamStatus_, STREAM_STATUS_PAUSED);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_001
+ * @tc.desc: Test AdjustConcedeActionByStatus when target stream is not STARTED and not in switch state, action should be flipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_002
+ * @tc.desc: Test AdjustConcedeActionByStatus when target stream is not STARTED and not in switch state, action should be flipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STOPPED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_003
+ * @tc.desc: Test AdjustConcedeActionByStatus when target stream is STARTED and not in switch state, action should remain unchanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_004
+ * @tc.desc: Test AdjustConcedeActionByStatus when target stream is in switch state and requires normal route, action should be flipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    existingStream->SetFutureRouteNormal(true); // Mock IsFutureRouteNormal to return true
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return true
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100001);
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_005
+ * @tc.desc: Test AdjustConcedeActionByStatus when target stream is in switch state but doesn't require normal route, action should remain unchanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    existingStream->SetFutureRouteNormal(false); // Mock IsFutureRouteNormal to return false
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return true
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100001);
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_006
+ * @tc.desc: Test AdjustConcedeActionByStatus with CONCEDE_INCOMING action and target stream in switch state requiring normal route
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_006, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    incomingStream->SetFutureRouteNormal(true); // Mock IsFutureRouteNormal to return true
+
+    // Mock IsSwitchStreamExist to return true
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100002);
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_007
+ * @tc.desc: Test AdjustConcedeActionByStatus when both streams are in STARTED state and not in switch state, action should remain unchanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_007, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_008
+ * @tc.desc: Test AdjustConcedeActionByStatus with invalid initial action (should not happen in practice but testing robustness)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_008, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = PLAY_BOTH; // Invalid initial action for this function
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain PLAY_BOTH (though this should not be passed to the function in practice)
+    EXPECT_EQ(action, PLAY_BOTH);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_009
+ * @tc.desc: Test AdjustConcedeActionByStatus when existing stream is in switch state requiring normal route but incoming stream is not STARTED
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_009, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    incomingStream->SetFutureRouteNormal(true);
+
+    // Mock IsSwitchStreamExist to return true for incoming stream
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100002);
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_INCONING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_010
+ * @tc.desc: Test AdjustConcedeActionByStatus when existing stream is in switch state requiring normal route and is the target
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_010, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    existingStream->SetFutureRouteNormal(true);
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return true for existing stream
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100001);
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 } // namespace AudioStandard
 } // namespace OHOS
