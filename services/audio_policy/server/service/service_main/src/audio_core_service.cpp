@@ -615,7 +615,8 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
     CHECK_AND_RETURN_LOG(res == SUCCESS, "remote device state is invalid!");
 }
 
-void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller)
+void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::string caller)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     CHECK_AND_RETURN(streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK);
@@ -626,14 +627,14 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamDesc->sessionId_);
     }
     if (!audioSceneManager_.IsPhoneCallOrChatScene()) {
-        FetchOutputDeviceAndRoute("UpdateTracker_1");
+        FetchOutputDeviceAndRoute(caller);
     }
 
     if (enableDualHalToneState_ &&
         static_cast<int64_t>(streamDesc->sessionId_) == static_cast<int64_t>(enableDualHalToneSessionId_)) {
         FetchOutputDeviceAndRoute("UpdateTracker_ForDualHalTone");
-        if ((streamDesc->streamStatus_ == STREAM_STATUS_STOPPED || streamDesc->streamStatus_ == STREAM_STATUS_RELEASED) &&
-            Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+        if ((streamDesc->streamStatus_ == STREAM_STATUS_STOPPED ||
+            streamDesc->streamStatus_ == STREAM_STATUS_RELEASED) && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
             AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
             UpdateDualToneState(false, enableDualHalToneSessionId_);
         }
@@ -641,7 +642,8 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
 
     if (isRingDualToneOnPrimarySpeaker_ && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         bool isNotPaused = streamDesc->streamStatus_ != STREAM_STATUS_PAUSED;
-        bool isPausedNotAlarm = streamDesc->streamStatus_ == STREAM_STATUS_PAUSED && streamUsage != STREAM_USAGE_ALARM &&
+        bool isPausedNotAlarm = streamDesc->streamStatus_ == STREAM_STATUS_PAUSED &&
+            streamUsage != STREAM_USAGE_ALARM &&
             !AudioCoreServiceUtils::IsRingScene(AudioSceneManager::GetInstance().GetAudioScene(true));
         
         if (isNotPaused || isPausedNotAlarm) {
@@ -658,9 +660,9 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
                 audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
             }
             streamsWhenRingDualOnPrimarySpeaker_.clear();
-            AudioStreamType streamType = streamCollector_.GetStreamType(streamChangeInfo.audioRendererChangeInfo.sessionId);
+            AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
             if (streamType == STREAM_MUSIC) {
-                audioPolicyManager_.SetDualStreamVolumeMute(streamChangeInfo.audioRendererChangeInfo.sessionId, false);
+                audioPolicyManager_.SetDualStreamVolumeMute(streamDesc->sessionId_, false);
             }
         }
     }

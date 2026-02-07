@@ -187,19 +187,19 @@ void AudioPipeSelector::CheckFastStreamOverLimitToNormal(
     }
 }
 
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AUdioPipeSelector::UpdateStreamDescs(
-    std::vector<std::shared_ptr<AudioStreamDescriptor> &streamDescs,
-    std::vector<uint32_t> &originalStreamSessionIds)
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeSelector::UpdateStreamDescs(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+    const std::unordered_set<uint32_t> &originalStreamSessionIds)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> result;
 
-    for (size_t cmpStreamIdx = 0; cmpStreamIdx < originalStreamSessionIds.size(); ++cmpStreamIdx) {
-        for (auto &streamDesc : streamDescs) {
-            CHECK_AND__CONTINUE(originalStreamIds[cmpStreamIdx] == streamDesc->sessionId_);
-            result.push_back(streamDesc);
-            break;
-        }
+    for (auto &streamDesc : streamDescs) {
+        CHECK_AND_CONTINUE(originalStreamSessionIds.find(streamDesc->sessionId_) !=
+            originalStreamSessionIds.end());
+        result.push_back(streamDesc);
     }
+
+    return result;
 }
 
 // get each streamDesc's final routeFlag after concurrency
@@ -209,9 +209,9 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     SortStreamDescsByStartTime(streamDescs);
     streamDescs[0]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[0]);
 
-    std::vector<uint32_t> originalStreamSessionIds;
+    std::unordered_set<uint32_t> originalStreamSessionIds;
     for (auto &streamDesc : streamDescs) {
-        originalStreamSessionIds.push_back(streamDesc->sessionId_);
+        originalStreamSessionIds.insert(streamDesc->sessionId_);
     }
 
     AudioPipeManager::GetPipeManager()->AddSwitchStreams(streamDescs);
@@ -443,7 +443,7 @@ void AudioPipeSelector::HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipe
         streamDesc->routeFlag_);
 }
 
-void AudioPipeSelector::SortStreamByStatus(std::vector<std::pair<AudioStreamDescriptor>,
+void AudioPipeSelector::SortStreamByStatus(std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>,
     std::shared_ptr<AudioPipeInfo>>> &streamList)
 {
     sort(streamList.begin(), streamList.end(), [](const auto &a, const auto &b) {
@@ -478,7 +478,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
         bool isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc, streamsMoveToNormal);
         JUDGE_AND_INFO_LOG(isUpdate == true, "isUpdate: %{public}d, action: %{public}d", isUpdate,
             streamDescInPipe->streamAction_);
-        }
         if (isUpdate && pipeInfo->GetAction() != PIPE_ACTION_NEW) {
             pipeInfo->SetAction(PIPE_ACTION_UPDATE);
         }
@@ -607,17 +606,22 @@ void AudioPipeSelector::CheckIfConcedeExisting(ConcurrencyAction &action,
     action = CONCEDE_EXISTING;
 }
 
-void AudioPipeSelector::FlipConcedeAction(std::shared_ptr<AudioStreamDescriptor> streamDesc,
-    ConcurrencyAction &action)
+void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action)
 {
-    bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(streamDesc->sessionId_);
-    // Stream is in persistenly pasued state, unrelated to triggerrecreation.
-    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED && !isStreamInSwitch) {
-        action = action == CONCEDE_EXISTING ? CONCEDE_INCOMING : CONCEDE_EXISTING;
+    CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
+    
+    std::shared_ptr<AudioStreamDescriptor> targetStream =
+        (action == CONCEDE_INCOMING) ? existingStream : incomingStream; 
+
+    bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(targetStream->sessionId_);
+    // Stream is in persistenly pasued state, unrelated to trigger recreation.
+    if (targetStream->streamStatus_ != STREAM_STATUS_STARTED && !isStreamInSwitch) {
+        action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
     }
     // Stream requires triggerrecreate to normal pipe, pending execution.
-    if (isStreamInSwitch && streamDesc->IsFutureRouteNormal()) {
-        action = action == CONCEDE_EXISTING ? CONCEDE_INCOMING : CONCEDE_EXISTING;
+    if (isStreamInSwitch && targetStream->IsFutureRouteNormal()) {
+        action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
     }
 }
 
@@ -637,18 +641,14 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     // incoming is loopback, concede offload
     CheckIfConcedeExisting(action, existingStream, incomingStream);
 
-    if (action == CONCEDE_INCOMING) {
-        FlipConcedeAction(existingStream, action);
-    } else if (action == CONCEDE_EXISTING) {
-        FlipConcedeAction(incomingStream, action);
-    }
-
     JUDGE_AND_INFO_LOG(action != PLAY_BOTH, "Action: %{public}u "
         "existingStream id: %{public}u, routeFlag: %{public}u; "
         "incomingStream id: %{public}u, routeFlag: %{public}u",
         action,
         existingStream->GetSessionId(), existingStream->GetRoute(),
         incomingStream->GetSessionId(), incomingStream->GetRoute());
+
+    AdjustConcedeActionByStatus(existingStream, incomingStream, action);
 
     bool isUpdate = false;
     switch (action) {

@@ -2652,5 +2652,577 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
     deviceDesc->SetDeviceSupportMmap(1);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
 }
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_001
+ * @tc.desc: Test condition1: Set device then RELEASED removes it.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_001, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    audioCoreService->audioDeviceManager_.SetSelectedDefaultOutputDevice(TEST_SESSION_ID, deviceDesc);
+    EXPECT_TRUE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    EXPECT_FALSE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_002
+ * @tc.desc: Test condition1 NOT released: device should NOT be removed.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_002, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    audioCoreService->audioDeviceManager_.SetSelectedDefaultOutputDevice(TEST_SESSION_ID, deviceDesc);
+    EXPECT_TRUE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    EXPECT_TRUE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_003
+ * @tc.desc: Test condition2: Phone call scene should NOT fetch device (device unchanged).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_003, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+
+    audioCoreService->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_004
+ * @tc.desc: Test condition2: NOT phone/chat scene should fetch device (device changed).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_004, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+
+    audioCoreService->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_NE(deviceAfter, deviceBefore);
+    EXPECT_NE(deviceAfter, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_005
+ * @tc.desc: Test condition3: EnableDualHalTone true and sessionId matches should fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_005, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->enableDualHalToneState_ = true;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_NE(deviceAfter, deviceBefore);
+    EXPECT_NE(deviceAfter, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_006
+ * @tc.desc: Test condition3: EnableDualHalTone true but sessionId NOT matches should NOT fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_006, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->enableDualHalToneState_ = true;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID + 1;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_007
+ * @tc.desc: Test condition3: EnableDualHalTone false even if sessionId matches should NOT fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_007, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->enableDualHalToneState_ = false;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_008
+ * @tc.desc: Test condition3: EnableDualHalTone false and sessionId NOT matches should NOT fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_008, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->enableDualHalToneState_ = false;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID + 1;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_009
+ * @tc.desc: Test condition4: STOPPED + Ringer stream should call UpdateDualToneState (under condition3).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_009, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->enableDualHalToneState_ = true;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    EXPECT_FALSE(audioCoreService->enableDualHalToneState_);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_010
+ * @tc.desc: Test condition4: STOPPED + Media stream should NOT call UpdateDualToneState (under condition3).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_010, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    audioCoreService->enableDualHalToneState_ = true;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    EXPECT_TRUE(audioCoreService->enableDualHalToneState_);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_011
+ * @tc.desc: Test condition4: RELEASED + Alarm stream should call UpdateDualToneState (under condition3).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_011, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+
+    audioCoreService->enableDualHalToneState_ = true;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    EXPECT_FALSE(audioCoreService->enableDualHalToneState_);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_012
+ * @tc.desc: Test condition4: RELEASED + Media stream should NOT call UpdateDualToneState (under condition3).
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_012, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    audioCoreService->enableDualHalToneState_ = true;
+    audioCoreService->enableDualHalToneSessionId_ = TEST_SESSION_ID;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    EXPECT_TRUE(audioCoreService->enableDualHalToneState_);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_013
+ * @tc.desc: Test condition5&6: Cond5 true, cond6 true (not paused) - should fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_013, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_NE(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_014
+ * @tc.desc: Test condition5&6: Cond5 true, cond6 true (paused not alarm) - should fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_014, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_NE(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_015
+ * @tc.desc: Test condition5&6: Cond5 true, cond6 false (paused alarm) - should NOT fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_015, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+
+    audioCoreService->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_016
+ * @tc.desc: Test condition5&6: Cond5 true, cond6 false (paused in ring scene) - should NOT fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_016, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    audioCoreService->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_VOICE_RINGING);
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: HandlePlaybackStoppingOperations_017
+ * @tc.desc: Test condition5&6: Cond5 false (not ringer) - should NOT fetch device.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_017, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    audioCoreService->isRingDualToneOnPrimarySpeaker_ = true;
+
+    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: StartClient_001
+ * @tc.desc: Test condition: IsSessionSetDefaultDevice true should trigger special logic.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, StartClient_001, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->deviceRole_ = OUTPUT_DEVICE;
+
+    audioCoreService->audioDeviceManager_.SetSelectedDefaultOutputDevice(TEST_SESSION_ID, deviceDesc);
+    EXPECT_TRUE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    audioCoreService->pipeManager_->AddStreamDesc(streamDesc);
+    audioCoreService->pipeManager_->StartClient(TEST_SESSION_ID);
+
+    int32_t ret = audioCoreService->StartClient(TEST_SESSION_ID);
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_NE(deviceAfter, deviceBefore);
+}
+
+/**
+ * @tc.name: StartClient_002
+ * @tc.desc: Test condition: IsSessionSetDefaultDevice false should NOT trigger special logic.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioCoreServiceUnitTest, StartClient_002, TestSize.Level1)
+{
+    auto audioCoreService = GetServerPtr()->coreService_;
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    EXPECT_FALSE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
+
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NONE, DeviceRole::OUTPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
+    DeviceType deviceBefore = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_EQ(deviceBefore, DEVICE_TYPE_NONE);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    deviceDesc->deviceRole_ = OUTPUT_DEVICE;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = TEST_SESSION_ID;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    audioCoreService->pipeManager_->AddStreamDesc(streamDesc);
+    audioCoreService->pipeManager_->StartClient(TEST_SESSION_ID);
+
+    int32_t ret = audioCoreService->StartClient(TEST_SESSION_ID);
+
+    DeviceType deviceAfter = audioCoreService->audioActiveDevice_.GetCurrentOutputDeviceType();
+    EXPECT_NE(deviceAfter, deviceBefore);
+}
 } // namespace AudioStandard
 } // namespace OHOS

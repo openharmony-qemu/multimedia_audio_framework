@@ -113,8 +113,8 @@ private:
         std::shared_ptr<AudioPipeInfo>>> &streamList);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> UpdateStreamDescs(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
-        std::vector<uint32_t> &originalStreamSessionIds);
-    void FlipConcedeAction(std::shared_ptr<AudioStreamDescriptor> streamDesc, ConcurrencyAction &action);
+        const std::unordered_set<uint32_t> &originalStreamSessionIds);
+    void AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> streamDesc, ConcurrencyAction &action);
 
     AudioPolicyConfigManager& configManager_;
 };

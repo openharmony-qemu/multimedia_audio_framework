@@ -108,7 +108,7 @@ public:
     bool IsOnPrimaryAdapter(uint32_t sessionId);
     void AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void RemoveSwitchStream(uint32_t sessionId);
-    void IsSwitchStreamExist(uint32_t sessionId);
+    bool IsSwitchStreamExist(uint32_t sessionId);
     void AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:

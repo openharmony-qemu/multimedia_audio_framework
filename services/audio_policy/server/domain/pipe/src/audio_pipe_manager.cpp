@@ -932,20 +932,20 @@ bool AudioPipeManager::IsSwitchStreamExist(uint32_t sessionId)
     return switchStreamMap_.count(sessionId) > 0;
 }
 
-void AudioPiepManager::AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+void AudioPipeManager::AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     CHECK_AND_RETURN(!switchStreamMap_.empty());
 
-    std::shared_lock<std::shared_mutex> lock(switchStreamMapLcok_);
+    std::shared_lock<std::shared_mutex> lock(switchStreamMapLock_);
     std::unordered_set<uint32_t> existingSessionIds;
-    existingSessionIds.reverse(streamDescs.size());
-    for (audo &streamDesc : streamDescs) {
+    existingSessionIds.reserve(streamDescs.size());
+    for (auto &streamDesc : streamDescs) {
         existingSessionIds.insert(streamDesc->sessionId_);
     }
 
     for (auto &[sessionId, streamDesc] : switchStreamMap_) {
         CHECK_AND_CONTINUE(existingSessionIds.find(streamDesc->sessionId_) == existingSessionIds.end());
-        streamDescs.push_bakc(streamDesc);
+        streamDescs.push_back(streamDesc);
         existingSessionIds.insert(sessionId);
     }
 }
