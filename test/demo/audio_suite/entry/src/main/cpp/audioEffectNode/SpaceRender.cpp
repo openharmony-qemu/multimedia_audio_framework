@@ -26,13 +26,15 @@
 const int GLOBAL_RESMGR = 0xFF00;
 const char *SP_TAG = "[AudioEditTestApp_SPATIALRENDER_cpp]";
 
-static napi_status GetMultipleDoublesOrThrow(napi_env env, napi_value* argv, size_t startIdx, size_t count,
-                                             double* outValues, const char** paramNames) {
-    for (size_t i = 0; i < count; ++i) {
-        napi_status status = napi_get_value_double(env, argv[startIdx + i], &outValues[i]);
+static napi_status GetMultipleDoublesOrThrow(napi_env env, napi_value *argv, double *outValues,
+                                             const char **paramNames)
+{
+    for (size_t i = NAPI_ARGV_INDEX_0; i < NAPI_ARGV_INDEX_3; ++i) {
+        napi_status status = napi_get_value_double(env, argv[i], &outValues[i]);
         if (status != napi_ok) {
             char errMsg[256];
-            snprintf(errMsg, sizeof(errMsg), "Failed to parse '%s' as a number", paramNames[i]);
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, SP_TAG, "Failed to parse '%{public}s' as a number",
+                         paramNames[i]);
             napi_throw_error(env, nullptr, errMsg);
             return status;
         }
@@ -56,14 +58,14 @@ napi_value StartFixedPositionEffect(napi_env env, napi_callback_info info)
 
     const char* coordNames[] = {"x", "y", "z"};
     double coords[NAPI_ARGV_INDEX_3] = {0};
-    status = GetMultipleDoublesOrThrow(env, argv, NAPI_ARGV_INDEX_0, NAPI_ARGV_INDEX_3, coords, coordNames);
+    status = GetMultipleDoublesOrThrow(env, argv, coords, coordNames);
     if (status != napi_ok) {
         delete[] argv;
         return nullptr;
     }
-    x = coords[0];
-    y = coords[1];
-    z = coords[2];
+    x = coords[NAPI_ARGV_INDEX_0];
+    y = coords[NAPI_ARGV_INDEX_1];
+    z = coords[NAPI_ARGV_INDEX_2];
     status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], effectNodeId);
     status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_4], inputId);
     status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_5], selectedNodeId);
@@ -103,9 +105,16 @@ napi_value ResetFixedPositionEffect(napi_env env, napi_callback_info info)
     double z = 0;
     std::string effectNodeId;
 
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_0], &x);
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_1], &y);
-    napi_get_value_double(env, argv[NAPI_ARGV_INDEX_2], &z);
+    const char* coordNames[] = {"x", "y", "z"};
+    double coords[NAPI_ARGV_INDEX_3] = {0};
+    status = GetMultipleDoublesOrThrow(env, argv, coords, coordNames);
+    if (status != napi_ok) {
+        delete[] argv;
+        return nullptr;
+    }
+    x = coords[NAPI_ARGV_INDEX_0];
+    y = coords[NAPI_ARGV_INDEX_1];
+    z = coords[NAPI_ARGV_INDEX_2];
     status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], effectNodeId);
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, SP_TAG, "x:%{public}lf, y:%{public}lf, z:%{public}lf, ", x, y, z);
