@@ -65,11 +65,11 @@ AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDe
     CHECK_AND_RETURN_LOG(streamDescriptor != nullptr, "Error input parameter");
     for (auto &deviceDesc : streamDescriptor->newDeviceDescs_) {
         CHECK_AND_CONTINUE(deviceDesc != nullptr);
-        newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
+        newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(*deviceDesc));
     }
     for (auto &deviceDesc : streamDescriptor->oldDeviceDescs_) {
         CHECK_AND_CONTINUE(deviceDesc != nullptr);
-        oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
+        oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(*deviceDesc));
     }
 
     streamInfo_ = streamDescriptor->streamInfo_;
