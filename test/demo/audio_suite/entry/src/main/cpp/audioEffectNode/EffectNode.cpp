@@ -26,7 +26,7 @@ int32_t AddEffectNodeToNodeManager(const std::string &inputNodeId, const std::st
     const std::vector<Node> mixerNodes = g_nodeManager->getNodesByType(OH_AudioNode_Type::EFFECT_NODE_TYPE_AUDIO_MIXER);
     OH_AudioSuite_Result result;
     Node currentNode  = g_nodeManager->GetNodeById(effectNodeId);
-    if (currentNode .id.empty()) {
+    if (currentNode.id.empty()) {
         return static_cast<int32_t>(AudioSuiteResult::DEMO_ERROR_FAILD);
     }
 
