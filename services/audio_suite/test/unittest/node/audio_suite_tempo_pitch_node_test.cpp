@@ -37,8 +37,8 @@ static std::string g_targetfile002 = "/data/audiosuite/tempo_pitch/target_48000_
 static std::string g_targetfile003 = "/data/audiosuite/tempo_pitch/target_48000_1_s16le_0.8_1.0.pcm";
 static int32_t g_expectedGetOutputPortCalls = 2;      // Times of GetOutputPort called in DoProcess
 static constexpr uint32_t needDataLength = 20;
-static constexpr int32_t frameBytes = 4352;
 const int MAX_FRAMES = 2000;
+static constexpr uint32_t MAX_OUTPUT_BYTE = 8192;
 
 class MockInputNode : public AudioNode {
 public:
@@ -193,10 +193,9 @@ HWTEST_F(AudioSuiteTempoPitchNodeTest, CalculationNeedBytesTest001, TestSize.Lev
 {
     std::shared_ptr<AudioSuiteTempoPitchNode> node = std::make_shared<AudioSuiteTempoPitchNode>();
     node->Init();
-    node->speedRate_ = 1.0;
 
     int32_t ret = node->CalculationNeedBytes(needDataLength);
-    EXPECT_EQ(ret, frameBytes);
+    EXPECT_EQ(ret, MAX_OUTPUT_BYTE);
 }
 
 }  // namespace

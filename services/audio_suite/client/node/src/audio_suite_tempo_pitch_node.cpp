@@ -28,6 +28,7 @@ namespace {
 static constexpr size_t TEMPO_PITCH_PCM_FRAME_BYTES = 1920;      // 0.02s * 480 samples * 1 channel * 2 bytes
 static constexpr size_t RESIZE_EXPAND_BYTES = 512; // 256 frames
 static constexpr int32_t RESIZE_EXPAND_RATE = 2;
+static constexpr float MIN_SPEED = 0.5f;
 }
 
 static constexpr AudioChannelLayout TEMPO_PITCH_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_MONO;
@@ -106,8 +107,8 @@ float ParseStringToSpeedRate(const std::string &str, char delimiter)
 uint32_t AudioSuiteTempoPitchNode::CalculationNeedBytes(uint32_t frameLengthMs)
 {
     uint32_t dataBytes = 0;
-    CHECK_AND_RETURN_RET_LOG(speedRate_ != 0, ERROR, "speedRate is zero.");
-    dataBytes = static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / speedRate_)) * RESIZE_EXPAND_RATE +
+    CHECK_AND_RETURN_RET_LOG(MIN_SPEED != 0, ERROR, "speedRate is zero.");
+    dataBytes = static_cast<size_t>(std::ceil(TEMPO_PITCH_PCM_FRAME_BYTES / MIN_SPEED)) * RESIZE_EXPAND_RATE +
                         RESIZE_EXPAND_BYTES;
     return dataBytes;
 }
@@ -121,8 +122,8 @@ int32_t AudioSuiteTempoPitchNode::SetOptions(std::string name, std::string value
     paraValue_ = value;
     int32_t ret = algoInterface_->SetParameter(name, value);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "TempoPitchNode SetOptions ERROR");
-    speedRate_ = ParseStringToSpeedRate(value, ',');
-    if (FLOAT_COMPARE_EQ(speedRate_, 0.0f)) {
+    float speedRate = ParseStringToSpeedRate(value, ',');
+    if (FLOAT_COMPARE_EQ(speedRate, 0.0f)) {
         AUDIO_ERR_LOG("TempoPitchNode ParseStringToSpeedRate ERROR");
         return ERROR;
     }
