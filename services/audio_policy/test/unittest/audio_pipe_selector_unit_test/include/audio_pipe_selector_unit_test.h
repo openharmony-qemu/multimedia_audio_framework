@@ -25,10 +25,10 @@ public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
     // TearDownTestCase: Called after all test case
-    static void TearDownTestCase(void); 
-    // SetUp: Called before each test cases 
-    void SetUp(void); 
-    // TearDown: Called after each test cases 
+    static void TearDownTestCase(void);
+    // SetUp: Called before each test cases
+    void SetUp(void);
+    // TearDown: Called after each test cases
     void TearDown(void);
 };
 } // namespace AudioStandard
