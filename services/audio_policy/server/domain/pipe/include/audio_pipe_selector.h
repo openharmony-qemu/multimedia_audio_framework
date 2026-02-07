@@ -114,8 +114,9 @@ private:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> UpdateStreamDescs(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const std::unordered_set<uint32_t> &originalStreamSessionIds);
-    void AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> streamDesc, ConcurrencyAction &action);
-
+    void AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
+    
     AudioPolicyConfigManager& configManager_;
 };
 } // namespace AudioStandard
