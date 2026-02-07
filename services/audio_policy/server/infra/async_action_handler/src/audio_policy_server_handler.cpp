@@ -1309,6 +1309,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
         for (auto rendererFilter : rendererFilterList) {
             auto deviceDescs = AudioPolicyService::GetAudioPolicyService().
                 GetPreferredOutputDeviceDescInner(rendererFilter.rendererInfo, LOCAL_NETWORK_ID, rendererFilter.uid);
+            ValidatePreferredOutputDeviceCallback(clientPid, deviceDescs);
             for (auto &desc : deviceDescs) {
                 CHECK_AND_CONTINUE(desc != nullptr);
                 desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
@@ -1319,8 +1320,7 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
             if (clientCallbacksMap_.count(clientPid) > 0 &&
                 clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
-                ValidatePreferredOutputDeviceCallback(clientPid, deviceDescs);
-                CHECK_AND_RETURN_LOG(deviceDescs.size() > 0 && deviceDescs[0] != nullptr, "device is null.");
+                CHECK_AND_CONTINUE_LOG(!deviceDescs.empty() && deviceDescs[0] != nullptr, "device is null.");
                 deviceInfoStream << deviceDescs[0]->deviceType_ << ":" << deviceDescs[0]->deviceId_ << ",";
                 clientInfoStream << clientPid << ":" << rendererFilter.rendererInfo.streamUsage << ",";
                 it->second->OnPreferredOutputDeviceUpdated(rendererFilter.rendererInfo, deviceDescs);
