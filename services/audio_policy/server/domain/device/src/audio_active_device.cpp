@@ -586,8 +586,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
             usage, -1, "GetDeviceForVolumeByStreamType").front());
     }
     SortDevicesByPriority(devices);
-    AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from router",
+    AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from router and add to map",
         devices.front()->GetName().c_str(), type);
+    {
+        std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
+        volumeTypeDeviceMap_[type] = devices;
+    }
     return devices.front();
 }
 
