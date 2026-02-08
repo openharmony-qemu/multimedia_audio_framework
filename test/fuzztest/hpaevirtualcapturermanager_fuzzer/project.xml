@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <name>HpaeRenderEffectNodeFuzzTest</name>
+    <description>Fuzzer for HpaeRenderEffectNode class</description>
+    <package>audio_framework/audio_framework_engine</package>
+    <disable_battery_saving>true</disable_battery_saving>
+    <disable_cron_tasks>true</disable_cron_tasks>
+    <disable_serialization>true</disable_serialization>
+</configuration>
