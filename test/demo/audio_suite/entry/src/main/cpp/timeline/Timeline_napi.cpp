@@ -60,7 +60,7 @@ napi_value DeleteAudioTrack(napi_env env, napi_callback_info info)
     return result;
 }
 
-bool IsTypeOrArray(const napi_env &env, napi_value *argv, napi_valuetype &type, bool &isArray)
+bool IsTypeOrArray(const napi_env &env, const napi_value *argv, napi_valuetype &type, bool &isArray)
 {
     napi_typeof(env, argv[NAPI_ARGV_INDEX_1], &type);
     if (type != napi_object) {
@@ -77,7 +77,7 @@ bool IsTypeOrArray(const napi_env &env, napi_value *argv, napi_valuetype &type, 
     return false;
 }
 
-bool ProcessIsArray(const napi_env &env, napi_value *argv, const napi_valuetype &type, bool &isArray)
+bool ProcessIsArray(const napi_env &env, const napi_value *argv, const napi_valuetype &type, bool &isArray)
 {
     if (type != napi_object) {
         napi_throw_type_error(env, "EINVAL", "trackIds must be an array");
