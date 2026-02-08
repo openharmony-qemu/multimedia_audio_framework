@@ -456,5 +456,113 @@ HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceCategory_001, TestSize.Level4)
 
     deviceManager.connectedDevices_ = backup;
 }
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_001
+* @tc.desc  : Test IsDeviceAvailable interface.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_001, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with normal device
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(true, result);
+    
+    // Test with exception flag set
+    desc->exceptionFlag_ = true;
+    result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+    
+    // Test with disabled device
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = false;
+    result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_002
+* @tc.desc  : Test IsDeviceAvailable interface for Bluetooth SCO.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_002, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with Bluetooth SCO device in normal connected state
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(true, result);
+    
+    // Test with Bluetooth SCO device in suspend connected state
+    desc->connectState_ = SUSPEND_CONNECTED;
+    result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_003
+* @tc.desc  : Test IsDeviceAvailable interface for virtual connected devices.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_003, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with virtual connected device
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_004
+* @tc.desc  : Test IsDeviceAvailable interface for Bluetooth A2DP.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_004, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with Bluetooth A2DP device in suspend connected state (should be available)
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = SUSPEND_CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(true, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_005
+* @tc.desc  : Test IsDeviceAvailable interface with nullptr.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_005, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with nullptr
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

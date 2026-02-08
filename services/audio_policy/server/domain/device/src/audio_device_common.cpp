@@ -202,7 +202,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
             std::shared_ptr<AudioDeviceDescriptor> preferredDevice =
                 AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
             CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
-            if (preferredDevice->deviceId_ != 0) {
+            auto device = audioDeviceManager_.FindConnectedDeviceById(preferredDevice->deviceId_);
+            if (preferredDevice->deviceId_ != 0 && audioDeviceManager_.IsDeviceAvailable(device)) {
                 deviceList.push_back(preferredDevice);
                 return deviceList;
             }
