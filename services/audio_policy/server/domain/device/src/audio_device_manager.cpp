@@ -1863,7 +1863,7 @@ int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceD
 
 bool AudioDeviceManager::IsDeviceAvailable(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
-    if (!desc->exceptionFlag_ && desc->isEnable_ &&
+    if (desc != nullptr && !desc->exceptionFlag_ && desc->isEnable_ &&
         (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
         desc->connectState_ != SUSPEND_CONNECTED) &&
         desc->connectState_ != VIRTUAL_CONNECTED) {
