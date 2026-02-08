@@ -235,16 +235,12 @@ HWTEST_F(AudioZoneServiceUnitTest, GetDeviceDescriptor, TestSize.Level1)
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone5", context, 0);
     std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
     ASSERT_NE(audioZone, nullptr);
-
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     desc->networkId_ = "Test";
-    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     devices.push_back(desc);
     AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
-
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, ""), nullptr);
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_SPEAKER, ""), nullptr);
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, "Test"), nullptr);
