@@ -577,7 +577,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastTrue_001, Te
     testRendererStream_->SetUltraFastRequested(true);
     dumpStr.clear();
     testRendererStream_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 1"));
+    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastFlag: 1"));
 }
 
 /**
@@ -592,7 +592,7 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastFalse_001, T
     testRendererStream_->SetUltraFastRequested(false);
     dumpStr.clear();
     testRendererStream_->Dump(dumpStr);
-    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 0"));
+    EXPECT_NE(std::string::npos, dumpStr.find("UltralFastFlag: 0"));
 }
 } // namespace AudioStandard
 } // namespace OHOS
