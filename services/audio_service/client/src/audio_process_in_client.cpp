@@ -1365,8 +1365,7 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
     uint64_t serverHandlePos = 0;
     int64_t serverHandleTime = 0;
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "processProxy_ is nullptr");
-    int32_t ret = isAysnc ? processProxy_->RequestHandleInfoAsync() : processProxy_->RequestHandleInfo();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestHandleInfo failed ret:%{public}d", ret);
+
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
     CheckPosTimeRes res = handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
