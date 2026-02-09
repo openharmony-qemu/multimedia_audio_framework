@@ -299,6 +299,10 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
             DeleteProcessCluster(nodeInfo.sessionId);
             CreateProcessClusterAndConnect(nodeInfo);
         }
+    } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId)) {
+        AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);
+        DisConnectInputSession(nodeInfo.sessionId);
+        ConnectInputSession(nodeInfo.sessionId);
     }
 }
 
@@ -1709,8 +1713,8 @@ void HpaeRendererManager::DeleteNodesByTraversal(uint32_t sessionId)
     auto it = sceneClusterMap_.begin();
     for (; it != sceneClusterMap_.end(); ++it) {
         if (SafeGetMap(sceneClusterMap_, it->first) && it->second->DestroyNodes(sessionId) == SUCCESS) {
-            AUDIO_INFO_LOG("SessionId %{public}d, Nodes found in processorType %{public}d and destroyed",
-                it->first, sessionId);
+            AUDIO_INFO_LOG("SessionId %{public}u, Nodes found in processorType %{public}d and destroyed",
+                sessionId, it->first);
             break;
         }
     }

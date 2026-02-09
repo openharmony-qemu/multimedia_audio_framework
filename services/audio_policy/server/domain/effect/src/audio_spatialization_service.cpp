@@ -673,7 +673,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
     AudioSpatializationState spatializationNotSupported = {false, false};
     std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap;
 
-    for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end(); ++it) {
+    for (auto it = spatializationStateCBMap_.begin(); it != spatializationStateCBMap_.end();) {
         std::shared_ptr<AudioSpatializationStateChangeCallback> spatializationStateChangeCb = (it->second).first;
         if (spatializationStateChangeCb == nullptr) {
             AUDIO_ERR_LOG("spatializationStateChangeCb : nullptr for sessionID : %{public}d",
@@ -702,6 +702,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
         });
         notifyOffloadThread.detach();
     }
+    ++it;
 }
 
 int32_t AudioSpatializationService::InitOldSpatialInfo()
