@@ -82,6 +82,9 @@ void ExecutePartOne(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider
     float volume = provider.ConsumeFloatingPoint<float>();
     ptrIpcStreamStub->SetLowPowerVolume(volume);
     ptrIpcStreamStub->GetLowPowerVolume(volume);
+    int32_t effectMode = provider.ConsumeIntegral<int32_t>();
+    ptrIpcStreamStub->SetAudioEffectMode(effectMode);
+    ptrIpcStreamStub->GetAudioEffectMode(effectMode);
     int32_t privacyType = provider.ConsumeIntegral<int32_t>();
     ptrIpcStreamStub->SetPrivacyType(privacyType);
     ptrIpcStreamStub->GetPrivacyType(privacyType);
@@ -93,6 +96,9 @@ void ExecutePartOne(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider
     uint64_t cacheTimeDsp = provider.ConsumeIntegral<uint64_t>();
     uint64_t cacheTimePa = provider.ConsumeIntegral<uint64_t>();
     ptrIpcStreamStub->GetOffloadApproximatelyCacheTime(timestamp, paWriteIndex, cacheTimeDsp, cacheTimePa);
+    bool spatializationEnabled = provider.ConsumeBool();
+    bool headTrackingEnabled = provider.ConsumeBool();
+    ptrIpcStreamStub->UpdateSpatializationState(spatializationEnabled, headTrackingEnabled);
     ptrIpcStreamStub->GetStreamManagerType();
     bool on = provider.ConsumeBool();
     ptrIpcStreamStub->SetSilentModeAndMixWithOthers(on);
@@ -101,6 +107,8 @@ void ExecutePartOne(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider
 
 void ExecutePartTwo(sptr<IpcStreamInServer> ptrIpcStreamStub, FuzzedDataProvider &provider)
 {
+    float loudnessGain = provider.ConsumeFloatingPoint<float>();
+    ptrIpcStreamStub->SetLoudnessGain(loudnessGain);
     bool isMute = provider.ConsumeBool();
     ptrIpcStreamStub->SetMute(isMute);
     float duckFactor = provider.ConsumeFloatingPoint<float>();
