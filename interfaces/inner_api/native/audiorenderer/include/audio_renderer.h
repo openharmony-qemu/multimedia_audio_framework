@@ -1183,6 +1183,16 @@ public:
      */
     virtual int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const { return -1; }
 
+    /**
+     * @brief Reset position when in static mode to make quick stop and start.
+     * Only can be used in static mode.
+     *
+     * @return Returns {@link SUCCESS} if the getting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    virtual bool ResetStaticPlayPosition() { return false; }
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

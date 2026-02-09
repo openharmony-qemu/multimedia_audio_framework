@@ -230,6 +230,7 @@ public:
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
 
+    bool ResetStaticPlayPosition() override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);

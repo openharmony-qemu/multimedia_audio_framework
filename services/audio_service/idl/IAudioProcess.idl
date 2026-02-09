@@ -44,4 +44,5 @@ interface IAudioProcess {
     void SetLoopTimes([in] long bufferLoopTimes);
     void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
     void SetStaticRenderRate([in] unsigned int renderRate);
+    void ResetStaticPlayPosition();
 }
