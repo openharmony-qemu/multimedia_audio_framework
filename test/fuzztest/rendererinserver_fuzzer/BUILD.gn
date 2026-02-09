@@ -25,6 +25,10 @@ ohos_fuzztest("RendererInServerFuzzTest") {
     "../../../services/audio_service/client/include",
     "../../../services/audio_policy/client/include",
     "../../../frameworks/native/audioutils/include",
+    "../../../interfaces/kits/c/audio_suite",
+    "../../../interfaces/kits/c/common",
+    "../../../services/audio_engine/manager/include",
+    "../../../services/audio_engine/buffer",
   ]
 
   cflags = [
