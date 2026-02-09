@@ -1313,30 +1313,31 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_052, TestSize.Leve
     ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
 
 
-    int32_t pid = 3355;
-    int32_t uid = 0;
+    int32_t pid_1 = 0;
     AppState appState;
     appState.hasSession = true;
     appState.hasBackTask = true;
 
     audioBackgroundManagerTest_->appStatesMap_.clear();
-    audioBackgroundManagerTest_->InsertIntoAppStatesMap(pid, uid, appState);
+    audioBackgroundManagerTest_->InsertIntoAppStatesMapWithoutUid(pid_1, appState);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
 
     int32_t selfUid = getuid();
     setuid(1041);
 
-    audioBackgroundManagerTest_->WriteAvSessionChangeSysEvent(pid, appState.hasSession, true);
-    audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid, appState.hasBackTask, true);
+    audioBackgroundManagerTest_->WriteAvSessionChangeSysEvent(pid_1, appState.hasSession, true);
+    audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid_1, appState.hasBackTask, true);
 
-    pid = 3356;
-    audioBackgroundManagerTest_->WriteAvSessionChangeSysEvent(pid, appState.hasSession, true);
-    audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid, appState.hasBackTask, true);
-    
-    sleep(1000);
+    int32_t pid_2 = 1;
+    audioBackgroundManagerTest_->WriteAvSessionChangeSysEvent(pid_2, appState.hasSession, true);
+    audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid_2, appState.hasBackTask, true);
+
+    int32_t pid_3 = 2;
+    audioBackgroundManagerTest_->WriteBackTaskChangeSysEvent(pid_3, appState.hasBackTask, true);
+    usleep(1000);
 
     audioBackgroundManagerTest_->RecoveryAppState();
-    AppState state = audioBackgroundManagerTest_->appStatesMap_[pid];
+    AppState state = audioBackgroundManagerTest_->appStatesMap_[pid_2];
     EXPECT_EQ(state.hasSession, true);
     EXPECT_EQ(state.hasBackTask, true);
 
