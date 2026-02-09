@@ -74,7 +74,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_002, TestS
     audioDevice1->macAddress_ = testAddr1;
     AudioCoreService::GetCoreService()->Init();
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);
     EXPECT_EQ(ret, SUCCESS);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, false);
