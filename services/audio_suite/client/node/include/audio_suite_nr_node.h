@@ -30,15 +30,6 @@ public:
     
     int32_t Init() override;
     int32_t DeInit() override;
-
-protected:
-    AudioSuitePcmBuffer *SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs) override;
-
-private:
-    AudioSuitePcmBuffer outPcmBuffer_;
-    std::shared_ptr<AudioSuiteAlgoInterface> algoInterface_;
-    std::vector<uint8_t *> algoInputs_{nullptr};
-    std::vector<uint8_t *> algoOutputs_{nullptr};
 };
 
 }  // namespace AudioSuite

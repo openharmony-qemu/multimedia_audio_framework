@@ -22,6 +22,7 @@ using namespace testing::ext;
 using namespace testing;
 
 namespace {
+static constexpr uint32_t needDataLength = 20;
 class AudioSuiteOutputPortTest : public testing::Test {
 public:
     void SetUp() {};
@@ -40,7 +41,7 @@ HWTEST_F(AudioSuiteOutputPortTest, OutputPort_001, TestSize.Level0)
     OutputPort<AudioSuitePcmBuffer *> outputPort;
 
     std::vector<AudioSuitePcmBuffer *> data = outputPort.PullOutputData(
-        PcmBufferFormat(SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S32LE), true);
+        PcmBufferFormat(SAMPLE_RATE_48000, STEREO, CH_LAYOUT_STEREO, SAMPLE_S32LE), true, needDataLength);
     EXPECT_EQ(data.size(), 0);
 
     AudioSuitePcmBuffer *pcm = nullptr;

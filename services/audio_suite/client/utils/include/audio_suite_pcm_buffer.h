@@ -72,11 +72,12 @@ class AudioSuitePcmBuffer {
 public:
     AudioSuitePcmBuffer() = default;
     explicit AudioSuitePcmBuffer(PcmBufferFormat format);
-    explicit AudioSuitePcmBuffer(PcmBufferFormat format, PcmDataDuration duration);
+    explicit AudioSuitePcmBuffer(PcmBufferFormat format, uint32_t duration);
 
     PcmBufferFormat &GetPcmBufferFormat();
     bool IsSameFormat(AudioSuitePcmBuffer &other);
     bool IsSameFormat(const PcmBufferFormat &otherFormat);
+    bool IsSameLength(const uint32_t nextNodeBytelength);
     AudioSamplingRate GetSampleRate();
     uint32_t GetChannelCount();
     AudioChannelLayout GetChannelLayout();
@@ -89,18 +90,19 @@ public:
     bool GetIsFinished();
     void SetIsFinished(bool value);
     void Reset();
-    int32_t ResizePcmBuffer(PcmBufferFormat format);
-    int32_t ResizePcmBuffer(PcmBufferFormat format, PcmDataDuration duration);
+    int32_t ResizePcmBuffer(PcmBufferFormat  format);
+    int32_t ResizePcmBuffer(uint32_t bytelength);
+    int32_t ResizePcmBuffer(PcmBufferFormat format, uint32_t duration);
     void InitPcmProcess();
 private:
     std::vector<uint8_t, AlignedAllocator<uint8_t, MEMORY_ALIGN_BYTE_NUM>> pcmDataBuffer_;
 
     PcmBufferFormat pcmBufferFormat_;
-    uint32_t frameLen_;             // Frame length, single-channel sample count: sample rate * (20/40) / 1000
-    uint32_t sampleCount_;          // Total sample count: number of channels * sample rate * (20/40) / 1000
-    uint32_t dataByteSize_;         // Data size. Unit: Bytes.
-    uint32_t frames_;               // Number of frames, unit: 20ms
-    uint32_t duration_;             // Single frame duration, 20ms/40ms
+    uint32_t frameLen_ = 0;             // Frame length, single-channel sample count: sample rate * (duration_) / 1000
+    uint32_t sampleCount_ = 0;          // Total sample count: number of channels * sample rate * (duration_) / 1000
+    uint32_t dataByteSize_ = 0;         // Data size. Unit: Bytes.
+    uint32_t frames_ = 0;               // Number of frames
+    uint32_t duration_ = 0;             // Single frame duration
     bool isFinished_ = false;
 };
 }

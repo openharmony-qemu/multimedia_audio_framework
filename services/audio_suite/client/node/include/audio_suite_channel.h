@@ -36,8 +36,7 @@ public:
     OutputPort() = default;
     void WriteDataToOutput(T data);
     OutputPort(const OutputPort &that) = delete;
-    std::vector<T> PullOutputData(PcmBufferFormat outFormat, bool needConvert);
-    int32_t PullOutputDataForDoubleFrame();
+    std::vector<T> PullOutputData(PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength);
     void AddInput(InputPort<T>* input);
     void RemoveInput(InputPort<T>* input);
     size_t GetInputNum() const;
@@ -61,7 +60,7 @@ public:
     InputPort()
     {}
     ~InputPort();
-    std::vector<T>& ReadPreOutputData(PcmBufferFormat outFormat, bool needConvert);
+    std::vector<T>& ReadPreOutputData(PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength);
 
     void Connect(const std::shared_ptr<AudioNode>& node, OutputPort<T>* output);
 

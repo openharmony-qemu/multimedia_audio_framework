@@ -41,7 +41,16 @@ public:
     {
     }
 
-    AudioSuiteRingBuffer(const AudioSuiteRingBuffer&) = delete;
+    AudioSuiteRingBuffer(const AudioSuiteRingBuffer &other)
+        : capacity_(other.capacity_),
+          head_(other.head_),
+          tail_(other.tail_),
+          size_(other.size_)
+    {
+        buffer_.clear();
+        buffer_.resize(other.buffer_.size());
+        std::copy(other.buffer_.begin(), other.buffer_.end(), buffer_.begin());
+    }
     AudioSuiteRingBuffer& operator=(const AudioSuiteRingBuffer&) = delete;
 
     int32_t PushData(uint8_t* byteData, uint32_t size);
