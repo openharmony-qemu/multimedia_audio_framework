@@ -111,6 +111,7 @@ public:
     int32_t SetNearlinkDeviceVolumeDegree(const std::string &device, AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetVolumeDegreeByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
     int32_t GetVolumeLevelByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
+    bool GetMuteStatusByVolumeType(AudioVolumeType volumeType, const std::string &nearLinkDevice);
 
     uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid = INVALID_UID);
     uint32_t GetSleStreamTypeBySourceType(SourceType sourceType) const;
