@@ -627,7 +627,7 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
         action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
         AUDIO_INFO_LOG("[AdjustConcedeActionByStatus] sessionId_: %{public}u, isStreamInSwitch: %{public}d,"
             " futureRouteFlag: %{public}u, action: %{public}d", targetStream->sessionId_,
-            isStreamInSwitch, targetStream->futureRouteFlag, action);
+            isStreamInSwitch, targetStream->futureRouteFlag_, action);
     }
 }
 
