@@ -481,7 +481,7 @@ export struct AudioTrackEdit {
       onAgree: (balanceBandGains: number[]) => {
         // 调用napi的底层效果节点
         let result =
-          audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, this.selectedEffectNodeId,
+          audioNapi.setEqualizerFrequencyBandGains(balanceBandGains, this.selectedEffectNodeId,
             this.selectedAudioTrackId);
         if (result !== 0) {
           Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
@@ -1235,28 +1235,29 @@ export struct AudioTrackEdit {
       return;
     }
     // aiss
-    // const aissEffectId: string = util.generateRandomUUID(true);
-    // result = audioNapi.addAudioSeparation(0, aissEffectId, inputId);
-    // if (result !== 0) {
-    //   this.getUIContext().showAlertDialog({
-    //     title: '提示',
-    //     message: `error addAudioSeparation: ${result}`
-    //   });
-    // } else {
-    //   audioAsset.nodes.push({
-    //     id: aissEffectId,
-    //     type: NodeType['SEPARATION'],
-    //     audioSeparationType: AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE
-    //   });
-    // }
-    // ret = audioNapi.setEffectNodeBypass(inputId, aissEffectId, true);
-    // if (!ret) {
-    //   this.getUIContext().showAlertDialog({
-    //     title: '提示',
-    //     message: `error set aissEffect bypass`
-    //   })
-    //   return;
-    // }
+    const aissEffectId: string = util.generateRandomUUID(true);
+    result = audioNapi.addAudioSeparation(0, aissEffectId, inputId);
+    if (result !== 0) {
+      this.getUIContext().showAlertDialog({
+        title: '提示',
+        message: `error addAudioSeparation: ${result}`
+      });
+    } else {
+      audioAsset.nodes.push({
+        id: aissEffectId,
+        type: NodeType['SEPARATION'],
+        audioSeparationType: AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE
+      });
+    }
+    audioNapi.setSeparationMode(0);
+    ret = audioNapi.setEffectNodeBypass(inputId, aissEffectId, true);
+    if (!ret) {
+      this.getUIContext().showAlertDialog({
+        title: '提示',
+        message: `error set aissEffect bypass`
+      })
+      return;
+    }
   }
 
   build() {
