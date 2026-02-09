@@ -39,6 +39,7 @@ constexpr uint32_t TEST_FRAME_LEN = 960; // 20ms at 48kHz
 constexpr uint32_t TEST_LATENCY_MS = 280; // 280ms latency for testing
 constexpr int32_t TEST_COLLABORATION_ALIGN_COUNT = 5;
 constexpr int32_t TEST_MAX_LATENCY_MS = 100000000;
+constexpr float TEST_COLL_SMALL_SIGNAL_NUM = 1e-6;
 HpaeNodeInfo GetTestNodeInfo()
 {
     HpaeNodeInfo nodeInfo;
@@ -53,7 +54,7 @@ HpaeNodeInfo GetTestNodeInfo()
 int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     for (int32_t i = 0; i < len / SAMPLE_F32LE; i++) {
-        EXPECT_EQ(*((float*)data + i), 0);
+        EXPECT_EQ(*((float*)data + i), TEST_COLL_SMALL_SIGNAL_NUM);
     }
     return 0;
 }
