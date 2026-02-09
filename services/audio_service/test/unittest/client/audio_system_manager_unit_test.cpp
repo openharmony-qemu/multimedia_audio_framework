@@ -428,5 +428,17 @@ HWTEST(AudioSystemManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSiz
     result = AudioSystemManager::GetInstance()->ConfigDistributedRoutingRole(audioDevDesc, castType);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
+
+/**
+ * @tc.name  : Test UpdateSafeVolumeByStrMode API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSafeVolumeByStrMode_001
+ * @tc.desc  : Test UpdateSafeVolumeByStrMode interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, UpdateSafeVolumeByStrMode_001, TestSize.Level4)
+{
+    int32_t result = AudioSystemManager::GetInstance()->UpdateSafeVolumeByStrMode();
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -5792,6 +5792,11 @@ int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t device
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::UpdateSafeVolumeByStrMode()
+{
+    return volumeDegree = audioVolumeManager_.UpdateSafeVolumeByStrMode();
+}
+
 bool AudioPolicyServer::IsPublishCalled() const
 {
     return isPublishCalled_;
