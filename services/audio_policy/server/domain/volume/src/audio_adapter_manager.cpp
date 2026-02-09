@@ -1214,13 +1214,15 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != HILINK_MODE);
         RedirectVolumeType(streamDesc, volumeType);
-        int32_t volumeLevel = GetStreamVolumeInternal(desc, volumeType);
-        SaveSystemVolumeForSwitchDevice(desc, volumeType, volumeLevel);
-        SetVolumeDb(desc, volumeType);
-        UpdateVolumeForLowLatency(desc, volumeType);
-        HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
-            "device: %{public}s, sessionId: %{public}d", volumeLevel, GetStreamMuteInternal(desc, volumeType),
-            volumeType, desc->GetName().c_str(), streamDesc->sessionId_);
+        for (auto &tempDesc : streamDesc->newDeviceDescs_) {
+            int32_t volumeLevel = GetStreamVolumeInternal(tempDesc, volumeType);
+            SaveSystemVolumeForSwitchDevice(tempDesc, volumeType, volumeLevel);
+            SetVolumeDb(tempDesc, volumeType);
+            UpdateVolumeForLowLatency(tempDesc, volumeType);
+            HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
+                "device: %{public}s, sessionId: %{public}d", volumeLevel, GetStreamMuteInternal(tempDesc, volumeType),
+                volumeType, tempDesc->GetName().c_str(), streamDesc->sessionId_);
+        }
     }
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }
@@ -3673,7 +3675,9 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != HILINK_MODE);
         RedirectVolumeType(streamDesc, streamType);
-        SetVolumeDb(device, streamType);
+        for (auto &tempDesc : streamDesc->newDeviceDescs_) {
+            SetVolumeDb(tempDesc, streamType);
+        }
     }
     return SUCCESS;
 }
