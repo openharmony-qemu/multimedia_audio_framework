@@ -692,6 +692,7 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
             }
             spatializationStateChangeCb->OnSpatializationStateChange(spatializationState);
         }
+        ++it;
     }
 
     if (!outputDeviceChange) {
@@ -702,7 +703,6 @@ void AudioSpatializationService::HandleSpatializationStateChange(bool outputDevi
         });
         notifyOffloadThread.detach();
     }
-    ++it;
 }
 
 int32_t AudioSpatializationService::InitOldSpatialInfo()
