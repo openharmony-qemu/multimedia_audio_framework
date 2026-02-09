@@ -1914,7 +1914,7 @@ int32_t AudioVolumeManager::UpdateSafeVolumeByStrMode()
     userSelect_ = false;
     isDialogSelectDestroy_.store(false);
 
-    if (GetSystemVolumeLevel(STREAM_MUSIC) <= safeVolume) {
+    if (GetSystemVolumeLevel(STREAM_MUSIC) <= safeVolumeLevel) {
         AUDIO_INFO_LOG("current volume <= safe volume, don't update volume.");
         return SUCCESS;
     }
@@ -1922,9 +1922,9 @@ int32_t AudioVolumeManager::UpdateSafeVolumeByStrMode()
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
 
     AUDIO_INFO_LOG("restore safe volume.");
-    SetSystemVolumeExternal(STREAM_MUSIC, safeVolumeLevel, VolumeKeyType::VOLUME_KEY_TYPE_LEVEL)
+    SetSystemVolumeExternal(STREAM_MUSIC, safeVolumeLevel, VolumeKeyType::VOLUME_KEY_TYPE_LEVEL);
     CheckLowerDeviceVolume(curOutputDeviceType);
-    SetSafeVolumeCallback(streamType, false);
+    SetSafeVolumeCallback(STREAM_MUSIC, false);
     return SUCCESS;
 }
 

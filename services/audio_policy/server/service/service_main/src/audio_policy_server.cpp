@@ -5794,7 +5794,9 @@ int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t device
 
 int32_t AudioPolicyServer::UpdateSafeVolumeByStrMode()
 {
-    return volumeDegree = audioVolumeManager_.UpdateSafeVolumeByStrMode();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+        "UpdateSafeVolumeByStrMode: No system permission");
+    return audioVolumeManager_.UpdateSafeVolumeByStrMode();
 }
 
 bool AudioPolicyServer::IsPublishCalled() const
