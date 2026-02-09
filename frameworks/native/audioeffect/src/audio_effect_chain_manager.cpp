@@ -35,6 +35,7 @@ constexpr int32_t RELEASE_WAIT_TIME_MS = 3000; // 3000ms
 constexpr float INITIAL_DSP_VOLUME = -1.0f;
 constexpr int32_t INITIAL_DSP_STREAMUSAGE = -2;
 constexpr float EPSILON = 1e-6f;
+const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
 
 const std::unordered_map<std::string, std::string> AUDIO_PERSISTENCE_EFFECT_KEY {
     {"voip_down", "settings.sound_ai_voip_down_selection"},
