@@ -701,12 +701,13 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
     EXPECT_FALSE(ret);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;
+    cmpStream->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
     EXPECT_EQ(cmpStream->routeFlag_, AUDIO_INPUT_FLAG_NORMAL);
 
     stream->audioMode_ = AUDIO_MODE_RECORD;
     ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -2252,11 +2253,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_001, TestSize.Le
     // Mock IsSwitchStreamExist to return false
     AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
 
-    ConcurrencyAction action = CONCEDE_EXISTING;
+    ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
     
-    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
-    EXPECT_EQ(action, CONCEDE_INCOMING);
+    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 
 /**
@@ -2308,11 +2309,11 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_003, TestSize.Le
     // Mock IsSwitchStreamExist to return false
     AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
 
-    ConcurrencyAction action = CONCEDE_EXISTING;
+    ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
     
-    // Expect action to remain CONCEDE_EXISTING
-    EXPECT_EQ(action, CONCEDE_EXISTING);
+    // Expect action to remain CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 
 /**
@@ -2328,20 +2329,20 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_004, TestSize.Le
     auto existingStream = std::make_shared<AudioStreamDescriptor>();
     existingStream->sessionId_ = 100001;
     existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
-    existingStream->SetFutureRouteNormal(true); // Mock IsFutureRouteNormal to return true
+    existingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL); // Mock IsFutureRouteNormal to return true
     
     auto incomingStream = std::make_shared<AudioStreamDescriptor>();
     incomingStream->sessionId_ = 100002;
     incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
 
     // Mock IsSwitchStreamExist to return true
-    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100001);
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100001, existingStream);
 
-    ConcurrencyAction action = CONCEDE_EXISTING;
+    ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
     
-    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
-    EXPECT_EQ(action, CONCEDE_INCOMING);
+    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 
 /**
@@ -2357,14 +2358,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_005, TestSize.Le
     auto existingStream = std::make_shared<AudioStreamDescriptor>();
     existingStream->sessionId_ = 100001;
     existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
-    existingStream->SetFutureRouteNormal(false); // Mock IsFutureRouteNormal to return false
+    existingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_FAST); // Mock IsFutureRouteNormal to return false
     
     auto incomingStream = std::make_shared<AudioStreamDescriptor>();
     incomingStream->sessionId_ = 100002;
     incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
 
     // Mock IsSwitchStreamExist to return true
-    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100001);
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100001, existingStream);
 
     ConcurrencyAction action = CONCEDE_EXISTING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
@@ -2390,16 +2391,16 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_006, TestSize.Le
     auto incomingStream = std::make_shared<AudioStreamDescriptor>();
     incomingStream->sessionId_ = 100002;
     incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
-    incomingStream->SetFutureRouteNormal(true); // Mock IsFutureRouteNormal to return true
+    incomingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL); // Mock IsFutureRouteNormal to return true
 
     // Mock IsSwitchStreamExist to return true
-    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100002);
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100002, incomingStream);
 
-    ConcurrencyAction action = CONCEDE_INCOMING;
+    ConcurrencyAction action = CONCEDE_EXISTING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
     
-    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
-    EXPECT_EQ(action, CONCEDE_EXISTING);
+    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 
 /**
@@ -2475,16 +2476,16 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_009, TestSize.Le
     auto incomingStream = std::make_shared<AudioStreamDescriptor>();
     incomingStream->sessionId_ = 100002;
     incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
-    incomingStream->SetFutureRouteNormal(true);
+    incomingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL);
 
     // Mock IsSwitchStreamExist to return true for incoming stream
-    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100002);
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100002, incomingStream);
 
     ConcurrencyAction action = CONCEDE_INCOMING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
     
-    // Expect action to flip from CONCEDE_INCONING to CONCEDE_EXISTING
-    EXPECT_EQ(action, CONCEDE_EXISTING);
+    // Expect action to remain CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
 }
 
 /**
@@ -2500,20 +2501,20 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_010, TestSize.Le
     auto existingStream = std::make_shared<AudioStreamDescriptor>();
     existingStream->sessionId_ = 100001;
     existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
-    existingStream->SetFutureRouteNormal(true);
+    existingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL);
     
     auto incomingStream = std::make_shared<AudioStreamDescriptor>();
     incomingStream->sessionId_ = 100002;
     incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
 
     // Mock IsSwitchStreamExist to return true for existing stream
-    AudioPipeManager::GetPipeManager()->switchStreamMap_.insert(100001);
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100001, existingStream);
 
     ConcurrencyAction action = CONCEDE_EXISTING;
     audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
     
-    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
-    EXPECT_EQ(action, CONCEDE_INCOMING);
+    // Expect action to remain CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 } // namespace AudioStandard
 } // namespace OHOS

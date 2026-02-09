@@ -618,10 +618,16 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     // Stream is in persistenly pasued state, unrelated to trigger recreation.
     if (targetStream->streamStatus_ != STREAM_STATUS_STARTED && !isStreamInSwitch) {
         action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
+        AUDIO_INFO_LOG("[AdjustConcedeActionByStatus] sessionId_: %{public}u, streamStatus_: %{public}u,"
+            " isStreamInSwitch: %{public}d, action: %{public}d", targetStream->sessionId_,
+            targetStream->streamStatus_, isStreamInSwitch, action);
     }
     // Stream requires triggerrecreate to normal pipe, pending execution.
     if (isStreamInSwitch && targetStream->IsFutureRouteNormal()) {
         action = (action == CONCEDE_EXISTING) ? CONCEDE_INCOMING : CONCEDE_EXISTING;
+        AUDIO_INFO_LOG("[AdjustConcedeActionByStatus] sessionId_: %{public}u, isStreamInSwitch: %{public}d,"
+            " futureRouteFlag: %{public}u, action: %{public}d", targetStream->sessionId_,
+            isStreamInSwitch, targetStream->futureRouteFlag, action);
     }
 }
 
