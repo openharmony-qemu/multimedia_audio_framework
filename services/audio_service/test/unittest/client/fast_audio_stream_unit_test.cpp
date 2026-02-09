@@ -1548,7 +1548,7 @@ HWTEST_F(FastSystemStreamUnitTest, GetFrameCount_001, TestSize.Level1)
         = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     EXPECT_NE(fastAudioStream, nullptr);
 
-    size_t frameCount = 0;
+    uint32_t frameCount = 0;
     auto ret = fastAudioStream->GetFrameCount(frameCount);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
