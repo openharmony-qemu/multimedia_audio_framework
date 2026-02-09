@@ -25,6 +25,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+static int32_t NUM_5 = 5;
 typedef void (*TestPtr)();
 
 const vector<AudioStreamType> g_testAudioStreamTypes = {
@@ -193,6 +194,169 @@ void AudioSessionServiceGetAudioSessionStreamUsageForDeviceFuzzTest()
     audioSessionService.GetAudioSessionStreamUsageForDevice(callerPid);
 }
 
+void AudioSessionServiceShouldExcludeStreamTypeFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = GetData<int32_t>();
+    audioSessionService.ShouldExcludeStreamType(audioInterrupt);
+}
+
+void AudioSessionServiceShouldExcludeStreamTypeInnerFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();
+    audioInterrupt.audioFocusType.sourceType = GetData<SourceType>();
+    audioSessionService.ShouldExcludeStreamTypeInner(audioInterrupt);
+}
+
+void AudioSessionServiceShouldBypassFocusForStreamFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = GetData<int32_t>();
+    audioInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();
+    audioSessionService.ShouldBypassFocusForStream(audioInterrupt);
+}
+
+void AudioSessionServiceShouldAudioSessionProcessHintTypeFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    InterruptHint hintType = GetData<InterruptHint>();
+    audioSessionService.ShouldAudioSessionProcessHintType(hintType);
+}
+
+void AudioSessionServiceShouldAudioStreamProcessHintTypeHintTypeFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    InterruptHint hintType = GetData<InterruptHint>();
+    audioSessionService.ShouldAudioStreamProcessHintType(hintType);
+}
+
+void AudioSessionServiceGenerateFakeAudioInterruptFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.GenerateFakeAudioInterrupt(callerPid);
+}
+
+void AudioSessionServiceGenerateFakeStreamIdFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.GenerateFakeStreamId(callerPid);
+}
+
+void AudioSessionServiceHasStreamForDeviceTypeFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    DeviceType deviceType = GetData<DeviceType>();
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+
+    AudioInterrupt audioInterrupt;
+    audioSession->streamsInSession_.push_back(audioInterrupt);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.HasStreamForDeviceType(callerPid, deviceType);
+}
+
+void AudioSessionServiceAddStreamInfoFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = GetData<int32_t>();
+    audioInterrupt.isAudioSessionInterrupt = GetData<bool>();
+    audioInterrupt.audioFocusType.streamType = GetData<AudioStreamType>();
+    audioInterrupt.audioFocusType.sourceType = GetData<SourceType>();
+
+    int32_t callerPid = GetData<int32_t>();
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(audioInterrupt.pid, strategy, audioSessionService);
+    audioSession->audioSessionScene_ = GetData<AudioSessionScene>();
+    audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.AddStreamInfo(audioInterrupt);
+}
+
+void AudioSessionServiceClearStreamInfoFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.ClearStreamInfo(callerPid);
+}
+
+void AudioSessionServiceIsAudioRendererEmptyFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.IsAudioRendererEmpty(callerPid);
+}
+
+void AudioSessionServiceFillCurrentOutputDeviceChangedEventFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    AudioStreamDeviceChangeReason changeReason = GetData<AudioStreamDeviceChangeReason>();
+    CurrentOutputDeviceChangedEvent deviceChangedEvent;
+    deviceChangedEvent.devices.clear();
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceRole_ = GetData<DeviceRole>();
+    deviceChangedEvent.devices.push_back(desc);
+
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.FillCurrentOutputDeviceChangedEvent(callerPid, changeReason, deviceChangedEvent);
+}
+
+void AudioSessionServiceIsSessionInputDeviceChangedFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioDeviceDescriptor> desc;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.IsSessionInputDeviceChanged(callerPid, desc);
+}
+
+void AudioSessionServiceEnableMuteSuggestionWhenMixWithOthersFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>();
+    bool enable = GetData<bool>();
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSession->audioSessionScene_ = GetData<AudioSessionScene>();
+    audioSession->state_ == GetData<AudioSessionState>();
+    audioSessionService.sessionMap_.insert(make_pair(callerPid, audioSession));
+    audioSessionService.EnableMuteSuggestionWhenMixWithOthers(callerPid, enable);
+}
+
+void AudioSessionServiceIsMuteSuggestionWhenMixEnabledFuzzTest()
+{
+    auto &audioSessionService = AudioSessionServiceBuilder().GetAudioSessionService();
+    int32_t callerPid = GetData<int32_t>() % NUM_5;
+    AudioSessionStrategy strategy;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
+    audioSessionService.sessionMap_.insert(make_pair(GetData<int32_t>() % NUM_5, audioSession));
+    audioSessionService.IsMuteSuggestionWhenMixEnabled(callerPid);
+}
+
 TestPtr g_testPtrs[] = {
     AudioSessionServiceIsSameTypeForAudioSessionFuzzTest,
     AudioSessionServiceActivateAudioSessionFuzzTest,
@@ -202,6 +366,22 @@ TestPtr g_testPtrs[] = {
     AudioSessionServiceOnAudioSessionTimeOutFuzzTest,
     AudioSessionServiceAudioSessionInfoDumpFuzzTest,
     AudioSessionServiceGetAudioSessionStreamUsageForDeviceFuzzTest,
+    AudioSessionServiceShouldExcludeStreamTypeFuzzTest,
+    AudioSessionServiceShouldExcludeStreamTypeInnerFuzzTest,
+    AudioSessionServiceShouldBypassFocusForStreamFuzzTest,
+    AudioSessionServiceShouldAudioSessionProcessHintTypeFuzzTest,
+    AudioSessionServiceShouldAudioStreamProcessHintTypeHintTypeFuzzTest,
+    AudioSessionServiceGenerateFakeAudioInterruptFuzzTest,
+    AudioSessionServiceGenerateFakeStreamIdFuzzTest,
+    AudioSessionServiceHasStreamForDeviceTypeFuzzTest,
+    AudioSessionServiceAddStreamInfoFuzzTest,
+    AudioSessionServiceClearStreamInfoFuzzTest,
+    AudioSessionServiceIsAudioRendererEmptyFuzzTest,
+    AudioSessionServiceFillCurrentOutputDeviceChangedEventFuzzTest,
+    AudioSessionServiceIsSessionInputDeviceChangedFuzzTest,
+    AudioSessionServiceEnableMuteSuggestionWhenMixWithOthersFuzzTest,
+    AudioSessionServiceIsMuteSuggestionWhenMixEnabledFuzzTest,
+    
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

@@ -299,6 +299,10 @@ void AudioDeviceConnectTest(const uint8_t *rawData, size_t size)
         "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
     GetServerPtr()->audioPolicyService_.OnDeviceStatusUpdated(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, false,
         "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
+    GetServerPtr()->audioPolicyService_.OnDeviceConfigurationChanged(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO,
+        "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
+    GetServerPtr()->audioPolicyService_.OnDeviceConfigurationChanged(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP,
+        "08:00:20:0A:8C:6D", "fuzzBtDevice", streamInfo);
 
     bool fuzzBool = *reinterpret_cast<const bool *>(rawData);
     std::string fuzzString(reinterpret_cast<const char*>(rawData), size - 1);
@@ -909,6 +913,87 @@ void AudioPolicyServiceIsDevicePlaybackSupportedFuzztest(const uint8_t *rawData,
     AudioDeviceDescriptor deviceInfo;
     GetServerPtr()->audioPolicyService_.IsDevicePlaybackSupported(config, deviceInfo);
 }
+
+void GetPreferredInputDeviceDescInnerFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioCapturerInfo captureInfo;
+    std::string networkId = "";
+    GetServerPtr()->audioPolicyService_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+}
+
+void AudioPolicyServiceOnPrivacyDeviceSelectedFuzztest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    DeviceType devType = DeviceType::DEVICE_TYPE_SPEAKER;
+    const std::string macAddress = "11-22-33-44-55-66";
+    GetServerPtr()->audioPolicyService_.OnPrivacyDeviceSelected(devType, macAddress);
+}
+
+void IsSupportInnerCaptureOffloadFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    GetServerPtr()->audioPolicyService_.IsSupportInnerCaptureOffload();
+}
+
+void LoadModernInnerCapSinkFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t innerCapId = GetData<int32_t>();
+    GetServerPtr()->audioPolicyService_.LoadModernInnerCapSink(innerCapId);
+}
+
+void LoadModernOffloadCapSourceFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    GetServerPtr()->audioPolicyService_.LoadModernOffloadCapSource();
+}
+
+void UnloadModernInnerCapSinkFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t innerCapId = GetData<int32_t>();
+    GetServerPtr()->audioPolicyService_.UnloadModernInnerCapSink(innerCapId);
+}
+
+void UnloadModernOffloadCapSourceFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    GetServerPtr()->audioPolicyService_.UnloadModernOffloadCapSource();
+}
+
+void ClearAudioFocusBySessionIDFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t sessionID = GetData<int32_t>();
+    GetServerPtr()->audioPolicyService_.ClearAudioFocusBySessionID(sessionID);
+}
+
+void IsIntelligentNoiseReductionEnabledForCurrentDeviceFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    SourceType sourceType = GetData<SourceType>();
+    GetServerPtr()->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -981,6 +1066,15 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceNotifyCapturerRemovedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceUpdateSpatializationSupportedFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceIsDevicePlaybackSupportedFuzztest,
+    OHOS::AudioStandard::GetPreferredInputDeviceDescInnerFuzzTest,
+    OHOS::AudioStandard::AudioPolicyServiceOnPrivacyDeviceSelectedFuzztest,
+    OHOS::AudioStandard::IsSupportInnerCaptureOffloadFuzzTest,
+    OHOS::AudioStandard::LoadModernInnerCapSinkFuzzTest,
+    OHOS::AudioStandard::LoadModernOffloadCapSourceFuzzTest,
+    OHOS::AudioStandard::UnloadModernInnerCapSinkFuzzTest,
+    OHOS::AudioStandard::UnloadModernOffloadCapSourceFuzzTest,
+    OHOS::AudioStandard::ClearAudioFocusBySessionIDFuzzTest,
+    OHOS::AudioStandard::IsIntelligentNoiseReductionEnabledForCurrentDeviceFuzzTest,
 };
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)

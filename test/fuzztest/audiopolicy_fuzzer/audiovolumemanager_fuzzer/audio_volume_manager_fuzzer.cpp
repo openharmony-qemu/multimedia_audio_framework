@@ -382,6 +382,70 @@ void AudioVolumeManagerOnTimerExpiredFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeManager.GetForceControlVolumeType();
 }
 
+void AudioVolumeManagerPublishLoudVolumeNotificationFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    std::string reason = "testReason";
+    int32_t notificationId = g_fuzzUtils.GetData<int32_t>();
+    audioVolumeManager.OnCheckActiveMusicTime(reason);
+    audioVolumeManager.PublishLoudVolumeNotification(notificationId);
+}
+
+void AudioVolumeManagerSendLoudVolumeModeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    LoudVolumeHoldType funcHoldType = g_fuzzUtils.GetData<LoudVolumeHoldType>();
+    bool state = g_fuzzUtils.GetData<bool>();
+    bool repeatTrigNotif = g_fuzzUtils.GetData<bool>();
+    audioVolumeManager.SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
+}
+
+void AudioVolumeManagerSetAppRingMutedFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t appUid = g_fuzzUtils.GetData<int32_t>();
+    bool muted = g_fuzzUtils.GetData<bool>();
+    audioVolumeManager.SetAppRingMuted(appUid, muted);
+    audioVolumeManager.IsAppRingMuted(appUid);
+}
+
+void AudioVolumeManagerHandleA2dpAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
+    DeviceType curOutputDeviceType = g_fuzzUtils.GetData<DeviceType>();
+    audioVolumeManager.HandleA2dpAbsVolume(streamType, volumeLevel, curOutputDeviceType);
+}
+
+void AudioVolumeManagerCheckNearlinkActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t safeVolume = g_fuzzUtils.GetData<int32_t>();
+    audioVolumeManager.startSafeTimeSle_ = g_fuzzUtils.GetData<std::time_t>();
+    audioVolumeManager.activeSafeTimeSle_ = g_fuzzUtils.GetData<int64_t>();
+    audioVolumeManager.CheckNearlinkActiveMusicTime(safeVolume);
+}
+
+void AudioVolumeManagerCheckRestoreDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    DeviceType deviceType = g_fuzzUtils.GetData<DeviceType>();
+    audioVolumeManager.CheckRestoreDeviceVolume(deviceType);
+    audioVolumeManager.RefreshActiveDeviceVolume();
+}
+
+void AudioVolumeManagerCheckRestoreDeviceVolumeNearlinkFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t btRestoreVolume = g_fuzzUtils.GetData<int32_t>();
+    int32_t wiredRestoreVolume = g_fuzzUtils.GetData<int32_t>();
+    int32_t sleRestoreVolume = g_fuzzUtils.GetData<int32_t>();
+    int32_t safeVolume = 0;
+    audioVolumeManager.CheckRestoreDeviceVolumeNearlink(btRestoreVolume, wiredRestoreVolume,
+        sleRestoreVolume, safeVolume);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -423,6 +487,13 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerResetRingerModeMuteFuzzTest,
     AudioVolumeManagerGetLoadFlagFuzzTest,
     AudioVolumeManagerOnTimerExpiredFuzzTest,
+    AudioVolumeManagerPublishLoudVolumeNotificationFuzzTest,
+    AudioVolumeManagerSendLoudVolumeModeFuzzTest,
+    AudioVolumeManagerSetAppRingMutedFuzzTest,
+    AudioVolumeManagerHandleA2dpAbsVolumeFuzzTest,
+    AudioVolumeManagerCheckNearlinkActiveMusicTimeFuzzTest,
+    AudioVolumeManagerCheckRestoreDeviceVolumeFuzzTest,
+    AudioVolumeManagerCheckRestoreDeviceVolumeNearlinkFuzzTest,
     });
     func(fdp);
 }
