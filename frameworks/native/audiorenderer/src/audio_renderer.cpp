@@ -129,7 +129,7 @@ std::mutex AudioRenderer::createRendererMutex_;
 AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
-    AUDIO_INFO_LOG("Destruct in.");
+    AUDIO_INFO_LOG("Destruct in");
 
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback = outputDeviceChangeCallback_;
     if (outputDeviceChangeCallback != nullptr) {
