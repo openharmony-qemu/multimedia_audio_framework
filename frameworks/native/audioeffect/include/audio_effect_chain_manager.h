@@ -59,7 +59,6 @@ const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t MAX_UINT_VOLUME_NUM = 10000;
 const uint32_t MAX_UINT_DSP_VOLUME = 65535;
 const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
-const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
 
 struct SessionEffectInfo {
     std::string sceneMode;
