@@ -288,7 +288,7 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
     DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
     string macAddress = GetDeviceAddr(device.cardNum_);
     AudioStreamInfo streamInfo{};
-    string deviceName = device.name_ + "-" + to_string(device.cardNum_);
+    string deviceName = device.name_.empty() ? "" : device.name_ + "-" + to_string(device.cardNum_);
     if (device.isPlayer_ && IsAvailableUsbDevice(device)) {
         AUDIO_INFO_LOG("Usb out, devType=%{public}d, isConnected=%{public}d, "
             "addr=%{public}s, name=%{public}s, role=%{public}d", devType, isConnected,
