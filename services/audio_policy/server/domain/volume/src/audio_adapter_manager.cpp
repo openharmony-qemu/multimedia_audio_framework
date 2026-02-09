@@ -3200,7 +3200,8 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
     SetVolumeDbForDeviceInPipe(desc, STREAM_MUSIC);
 
     if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
-        SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
+        SaveVolumeData(desc, STREAM_VOICE_ASSISTANT,
+            GetMaxVolumeLevel(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP), false, true);
         SetStreamMuteInternal(desc, STREAM_VOICE_ASSISTANT, false);
         AUDIO_INFO_LOG("a2dp ok");
     }
@@ -3548,7 +3549,8 @@ void AudioAdapterManager::UpdateVolumeWhenDeviceConnect(std::shared_ptr<AudioDev
     volumeDataMaintainer_.InitDeviceMuteMap(desc);
     UpdateRingerMuteByRingerMode(desc);
     if (IsAbsVolumeScene() && !VolumeUtils::IsPCVolumeEnable()) {
-        SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL, false, true);
+        SaveVolumeData(desc, STREAM_VOICE_ASSISTANT,
+            GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, DEVICE_TYPE_BLUETOOTH_A2DP), false, true);
         SetStreamMuteInternal(desc, STREAM_VOICE_ASSISTANT, false);
         AUDIO_INFO_LOG("a2dp ok");
     }
