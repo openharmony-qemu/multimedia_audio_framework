@@ -50,6 +50,9 @@ ohos_fuzztest("AudioPolicyServiceFuzzTest") {
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
   }
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
 
   sources = [ "audio_policy_service_fuzzer.cpp" ]
 
