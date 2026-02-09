@@ -181,6 +181,14 @@ void AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorFuzzTest()
     audioMicrophoneDescriptor.RemoveAudioCapturerMicrophoneDescriptor(uid);
 }
 
+void AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorBySessionIDFuzzTest()
+{
+    AudioMicrophoneDescriptor &audioMicrophoneDescriptor = AudioMicrophoneDescriptor::GetInstance();
+    int32_t sessionID = GetData<int32_t>() % NUM_3;
+    audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionID, nullptr});
+    audioMicrophoneDescriptor.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionID);
+}
+
 void AudioRouteMapGetDeviceInfoByUidAndPidFuzzTest()
 {
     AudioRouteMap &audioRouteMap = AudioRouteMap::GetInstance();
@@ -284,6 +292,7 @@ TestPtr g_testPtrs[] = {
     AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest,
     AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest,
     AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorFuzzTest,
+    AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorBySessionIDFuzzTest,
     AudioRouteMapGetDeviceInfoByUidAndPidFuzzTest,
     AudioRouteMapDelRouteMapInfoByKeyFuzzTest,
     AudioRouteMapAddRouteMapInfoFuzzTest,

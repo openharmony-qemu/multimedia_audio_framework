@@ -461,6 +461,189 @@ void AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest(FuzzedDataP
     audioAdapterManager->SetOffloadVolumeForStreamVolumeChange(sessionId);
 }
 
+void AudioVolumeManagerSetDataShareReadyFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    std::atomic<bool> isDataShareReady = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager->SetDataShareReady(isDataShareReady.load());
+}
+
+void AudioVolumeManagerSendLoudVolumeModeToDspFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    LoudVolumeHoldType funcHoldType = g_fuzzUtils.GetData<LoudVolumeHoldType>();
+    bool state = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager->SendLoudVolumeModeToDsp(funcHoldType, state);
+}
+
+void AudioVolumeManagerSetAppRingMutedFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    int32_t appUid = g_fuzzUtils.GetData<int32_t>();
+    bool muted = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager->SetAppRingMuted(appUid, muted);
+}
+
+void AudioVolumeManagerGetZoneVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    audioAdapterManager->GetZoneVolumeDegree(zoneId, streamType);
+}
+
+void AudioVolumeManagerSetZoneVolumeDegreeToMapFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    int32_t volumeDegree = g_fuzzUtils.GetData<int32_t>();
+    audioAdapterManager->SetZoneVolumeDegreeToMap(zoneId, streamType, volumeDegree);
+}
+
+void AudioVolumeManagerSetDeviceNoMuteForRingerFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+    audioAdapterManager->SetDeviceNoMuteForRinger(device);
+}
+
+void AudioVolumeManagerUpdateOtherStreamVolumeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->Init();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    audioAdapterManager->UpdateOtherStreamVolume(streamType);
+}
+
+void AudioVolumeManagerIsChannelLayoutSupportedForDspEffectFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    AudioChannelLayout channelLayout = g_fuzzUtils.GetData<AudioChannelLayout>();
+    audioAdapterManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+void AudioVolumeManagerGetMinVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioVolumeType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    audioAdapterManager->GetMinVolumeDegree(volumeType, deviceType);
+}
+
+void AudioVolumeManagerHandleCastingConnectionFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->HandleCastingConnection();
+}
+
+void AudioVolumeManagerHandleCastingDisconnectionFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->HandleCastingDisconnection();
+}
+
+void AudioVolumeManagerIsDPCastingConnectFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->IsDPCastingConnect();
+}
+
+void AudioVolumeManagerSetMaxVolumeForDpBoardcastFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    audioAdapterManager->isCastingConnect_ = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager->SetMaxVolumeForDpBoardcast();
+}
+
+void AudioVolumeManagerUpdateRingerMuteByRingerModeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    device->deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    device->networkId_ = LOCAL_NETWORK_ID;
+    audioAdapterManager->ringerMode_ = g_fuzzUtils.GetData<AudioRingerMode>();
+    audioAdapterManager->UpdateRingerMuteByRingerMode(device);
+}
+
+void AudioVolumeManagerSetDualStreamVolumeMuteFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    int32_t sessionId = g_fuzzUtils.GetData<int32_t>();
+    bool isDualMute = g_fuzzUtils.GetData<bool>();
+    audioAdapterManager->SetDualStreamVolumeMute(sessionId, isDualMute);
+}
+
+void AudioVolumeManagerSetVolumeFromRemoteFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    std::string networkId = LOCAL_NETWORK_ID;
+    int32_t volumeDegree = g_fuzzUtils.GetData<int32_t>();
+    audioAdapterManager->SetVolumeFromRemote(networkId, volumeDegree);
+}
+
+void AudioVolumeManagerSendVolumeKeyEventCbWithUpdateUiFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    AudioVolumeType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+    device->networkId_ = LOCAL_NETWORK_ID;
+    device->deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    audioAdapterManager->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    audioAdapterManager->SendVolumeKeyEventCbWithUpdateUi(volumeType, device);
+}
+
+void AudioVolumeManagerRegistAdapterManagerCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    std::string networkId = LOCAL_NETWORK_ID;
+    audioAdapterManager->RegistAdapterManagerCallback(networkId);
+}
+
+void AudioVolumeManagerOnAudioParameterChangeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto callback = std::make_shared<AudioAdapterManager::RemoteVolumeCallback>();
+    CHECK_AND_RETURN(callback != nullptr);
+    std::string networkId = LOCAL_NETWORK_ID;
+    AudioParamKey key = g_fuzzUtils.GetData<AudioParamKey>();
+    std::string condition = "testCondition";
+    std::string value = "testValue";
+    callback->OnAudioParameterChange(networkId, key, condition, value);
+}
+
+void AudioVolumeManagerUpdateVolumeWhenPassThroughDeviceConnectFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    CHECK_AND_RETURN(audioAdapterManager != nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+    device->volumeBehavior_.controlMode = g_fuzzUtils.GetData<VolumeControlMode>();
+    audioAdapterManager->UpdateVolumeWhenPassThroughDeviceConnect(device);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -489,6 +672,26 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerSafeVolumeDumpFuzzTest,
     AudioVolumeManagerHandleRingerModeFuzzTest,
     AudioVolumeManagerSetOffloadVolumeForStreamVolumeChangeFuzzTest,
+    AudioVolumeManagerSetDataShareReadyFuzzTest,
+    AudioVolumeManagerSendLoudVolumeModeToDspFuzzTest,
+    AudioVolumeManagerSetAppRingMutedFuzzTest,
+    AudioVolumeManagerGetZoneVolumeDegreeFuzzTest,
+    AudioVolumeManagerSetZoneVolumeDegreeToMapFuzzTest,
+    AudioVolumeManagerSetDeviceNoMuteForRingerFuzzTest,
+    AudioVolumeManagerUpdateOtherStreamVolumeFuzzTest,
+    AudioVolumeManagerIsChannelLayoutSupportedForDspEffectFuzzTest,
+    AudioVolumeManagerGetMinVolumeDegreeFuzzTest,
+    AudioVolumeManagerHandleCastingConnectionFuzzTest,
+    AudioVolumeManagerHandleCastingDisconnectionFuzzTest,
+    AudioVolumeManagerIsDPCastingConnectFuzzTest,
+    AudioVolumeManagerSetMaxVolumeForDpBoardcastFuzzTest,
+    AudioVolumeManagerUpdateRingerMuteByRingerModeFuzzTest,
+    AudioVolumeManagerSetDualStreamVolumeMuteFuzzTest,
+    AudioVolumeManagerSetVolumeFromRemoteFuzzTest,
+    AudioVolumeManagerSendVolumeKeyEventCbWithUpdateUiFuzzTest,
+    AudioVolumeManagerRegistAdapterManagerCallbackFuzzTest,
+    AudioVolumeManagerOnAudioParameterChangeFuzzTest,
+    AudioVolumeManagerUpdateVolumeWhenPassThroughDeviceConnectFuzzTest,
     });
     func(fdp);
 }
