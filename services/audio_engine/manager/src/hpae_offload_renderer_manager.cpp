@@ -985,22 +985,6 @@ void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
     };
     SendRequest(request, __func__);
 }
-
-void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
-{
-    auto request = [this, sessionId]() {
-        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
-        CHECK_AND_RETURN(sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS);
-        appsUid_.clear();
-        if (curNode_ != nullptr &&
-            (curNode_->GetState() == HPAE_SESSION_RUNNING ||
-            curNode_->GetSessionId() == sessionId)) {
-            appsUid_.emplace_back(curNode_->GetAppUid());
-        }
-        sinkOutputNode_->UpdateAppsUid(appsUid_);
-    };
-    SendRequest(request, __func__);
-}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
