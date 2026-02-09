@@ -102,6 +102,7 @@ public:
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     bool IsBypassSpatializationForStereo() override;
     void SetCollDelayCount() override;
+    void TriggerAppsUidUpdate(uint32_t sessionId) override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);

@@ -158,6 +158,7 @@ public:
     virtual void UpdateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
+    virtual void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -135,6 +135,7 @@ private:
     sptr<Ashmem> ashmemSource_ = nullptr;
     size_t bufferSize_ = 0;
 #endif
+    std::unordered_set<int32_t> appsUid_;
 };
 
 } // namespace AudioStandard

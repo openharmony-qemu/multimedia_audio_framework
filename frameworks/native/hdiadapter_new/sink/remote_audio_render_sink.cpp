@@ -419,18 +419,16 @@ int32_t RemoteAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
     std::unordered_set<int32_t> lastAppsUid = appsUid_;
     std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
     appsUid_ = std::move(appsUidSet);
-    if (appsUid_ != lastAppsUid || appInfoNeedReset_) {
+    if (appsUid_ != lastAppsUid) {
         CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
         std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
-        appInfoNeedReset_ = false;
         for (const auto &wrapper : audioRenderWrapperMap_) {
             CHECK_AND_CONTINUE(wrapper.second.audioRender_ != nullptr);
             std::string appInfoStr = GenerateAppsUidStr(appsUid_);
             int32_t ret = wrapper.second.audioRender_->SetExtraParams(appInfoStr.c_str());
-            AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
-            CHECK_AND_RETURN_RET(ret != SUCCESS, SUCCESS);
+            AUDIO_INFO_LOG("audioCategory: %{public}d, set parameter: %{public}s, ret: %{public}d",
+                wrapper.first, appInfoStr.c_str(), ret);
         }
-        appInfoNeedReset_ = true;
     }
     return SUCCESS;
 }
@@ -671,6 +669,8 @@ int32_t RemoteAudioRenderSink::CreateRender(AudioCategory type)
     wrapper.audioRender_.ForceSetRefPtr(static_cast<IAudioRender *>(render));
     CHECK_AND_RETURN_RET(wrapper.audioRender_ != nullptr, ERR_NOT_STARTED);
     deviceManager->RegistRenderSinkCallback(deviceNetworkId_, wrapper.hdiRenderId_, shared_from_this());
+    int32_t ret = wrapper.audioRender_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    AUDIO_INFO_LOG("set app info params, ret: %{public}d", ret);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AUDIO_INFO_LOG("create render success, cost: [%{public}" PRId64 "]ms", stamp);
