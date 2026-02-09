@@ -1047,6 +1047,15 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
   ]
 
   defines = []
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
@@ -1170,6 +1179,15 @@ ohos_unittest("capturer_in_server_unit_test") {
   ]
 
   defines = []
+  if (audio_framework_feature_source_period_size > 1 && audio_framework_feature_source_period_size < 20) {
+    defines += [
+      "SOURCE_PERIOD_SIZE=$audio_framework_feature_source_period_size",
+    ]
+  } else {
+    defines += [
+      "SOURCE_PERIOD_SIZE=1",
+    ]
+  }
   if (!audio_framework_feature_new_engine_flag) {
     sources += [
       "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",

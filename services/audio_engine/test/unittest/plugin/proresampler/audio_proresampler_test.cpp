@@ -39,9 +39,9 @@ const static std::map<uint32_t, uint32_t> TEST_SAMPLE_RATE_COMBINATION = { // {i
 
 constexpr uint32_t INVALID_QUALITY = -1;
 constexpr uint32_t QUALITY_ONE = 1;
-constexpr uint32_t FRAME_LEN_20MS = 20;
-constexpr uint32_t FRAME_LEN_40MS = 40;
-constexpr uint32_t FRAME_LEN_100MS = 100;
+constexpr uint32_t FRAME_LEN_20MS = 20 * SOURCE_PERIOD_SIZE;
+constexpr uint32_t FRAME_LEN_40MS = 40 * SOURCE_PERIOD_SIZE;
+constexpr uint32_t FRAME_LEN_100MS = 100 * SOURCE_PERIOD_SIZE;
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t SAMPLE_RATE_48010 = 48010;
 constexpr uint32_t INVALID_SAMPLE_RATE = 2;
