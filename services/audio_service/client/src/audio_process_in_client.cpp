@@ -1375,7 +1375,7 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
 
     if (resetReadWritePos) {
         uint64_t nextWritePos = serverHandlePos + spanSizeInFrame_;
-        ret = audioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
+        int32_t ret = audioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "ResetCurReadWritePos failed ret:%{public}d", ret);
     }
 }
