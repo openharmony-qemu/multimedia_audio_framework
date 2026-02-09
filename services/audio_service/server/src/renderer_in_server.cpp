@@ -1123,6 +1123,9 @@ int32_t RendererInServer::Start()
     AudioXCollie audioXCollie(
         "RendererInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    if (stream_ != nullptr) {
+        stream_->TriggerAppsUidUpdate();
+    }
     int32_t ret = StartInner();
     RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
     if (playerDfx_) {
