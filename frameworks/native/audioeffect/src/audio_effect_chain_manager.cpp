@@ -886,6 +886,7 @@ void AudioEffectChainManager::DeleteAllChains()
     std::map<std::string, int32_t> sceneTypeToEffectChainCountBackupMap;
     for (auto it = sceneTypeToEffectChainCountMap_.begin(); it != sceneTypeToEffectChainCountMap_.end(); ++it) {
         AUDIO_INFO_LOG("sceneTypeAndDeviceKey %{public}s count:%{public}d", it->first.c_str(), it->second);
+        CHECK_AND_CONTINUE(it->first.substr(0, static_cast<size_t>(it->first.find("_&_"))) != "SCENE_DEFAULT");
         sceneTypeToEffectChainCountBackupMap.insert(std::make_pair(it->first, it->second));
     }
 
