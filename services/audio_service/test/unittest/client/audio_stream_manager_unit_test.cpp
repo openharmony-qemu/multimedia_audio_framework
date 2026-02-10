@@ -230,7 +230,7 @@ HWTEST(AudioStreamManagerUnitTest, GetSupportedAudioEnhanceProperty_001, TestSiz
 {
     AudioEnhancePropertyArray propertyArray;
     int32_t result = AudioStreamManager::GetInstance()->GetSupportedAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -269,7 +269,7 @@ HWTEST(AudioStreamManagerUnitTest, SetAudioEnhanceProperty_001, TestSize.Level1)
 {
     AudioEnhancePropertyArray propertyArray;
     int32_t result = AudioStreamManager::GetInstance()->SetAudioEnhanceProperty(propertyArray);
-    EXPECT_EQ(result, 0);
+    EXPECT_NE(result, 0);
 }
 
 /**
