@@ -27,7 +27,7 @@ import {
   AudioSeparationType
 } from "../utils/InterfaceInfo";
 import { Logger } from '../utils/Logger';
-import { MainTitleTextModifier } from '../utils/ExportFile';
+import { MainTitleTextModifier, RealTimeSaveFileBuffer } from '../utils/ExportFile';
 import { common } from "@kit.AbilityKit";
 import { AlertDialog, display, LoadingDialog, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { TimeLine } from "./audioWave/TimeLine";
@@ -354,11 +354,18 @@ export struct AudioTrackEdit {
     audioNapi.registerFinishedCallback((result: boolean) => {
       Logger.info(TAG, `registerFinishedCallback finished: ${result}`);
       if (result) {
+        if (this.g_isRecord) {
+          taskpool.execute(RealTimeSaveFileBuffer).then(async (value: object) => {
+            Logger.info(TAG, 'taskpool onClick then');
+            this.SaveBuffer(value as ArrayBuffer);
+          });
+        } else {
+          audioNapi.resetTotalWriteAudioDataSize();
+        }
         this.isPlay = false;
+        this.g_isRecord = false;
         // 暂停
         audioNapi.audioRendererStop();
-        // 将buffer的map中的 totalWriteAudioDataSize 置为 0
-        audioNapi.resetTotalWriteAudioDataSize();
       }
     })
   }
@@ -394,8 +401,23 @@ export struct AudioTrackEdit {
   spaceRenderDialogController: CustomDialogController | null = new CustomDialogController({
     builder: SpaceRenderDialog({
       spaceRenderPara: this.spaceRenderPara,
+      selectedEffectNodeId: this.selectedEffectNodeId,
+      // Callback for real-time coordinate changes.
+      onPositionChange: (x: number, y: number, z: number, effectNodeId: string) => {
+        if (!effectNodeId) {
+          Logger.warn(TAG, 'selectedEffectNodeId is empty, skip real-time update');
+          return;
+        }
+        let result = audioNapi.ResetFixedPositionEffect(x, y, z, effectNodeId);
+        if (result !== 0) {
+          Logger.error(TAG, `Real-time update fixed position failed: ${result}`);
+        } else {
+          Logger.info(TAG, `Real-time update fixed position success: x=${x}, y=${y}, z=${z}`);
+          // Updating the local status in real time.
+          this.spaceRenderPara.fixedPosition = { x, y, z };
+        }
+      },
       onAgree: (spaceRenderState: SpaceRender) => {
-        // 调用napi的底层效果节点
         if (spaceRenderState.mode === -1) {
           this.getUIContext().showAlertDialog({
             message: `请选择一种模式`,
@@ -752,7 +774,7 @@ export struct AudioTrackEdit {
   //init record
   @Builder
   InitRecord() {
-    Image($r('app.media.ic_record_circle'))
+    Image($r('app.media.mic'))
       .width('30')
       .height('30')
       .margin({ right: $r('app.float.margin_5') })
@@ -1508,6 +1530,16 @@ export struct AudioTrackEdit {
         }
       }
 
+      Image(this.g_isRecord ? $r('app.media.ic_record_circle_2') : $r('app.media.ic_record_circle'))
+        .width('30')
+        .height('30')
+        .margin({right: $r('app.float.margin_5')})
+        .onClick(() => {
+          audioNapi.record();
+          this.g_isRecord = !this.g_isRecord;
+          audioNapi.setIsRecord(this.g_isRecord);
+        })
+
       // clear record
       Column() {
         Image($r('app.media.clean'))
@@ -1832,12 +1864,12 @@ export struct AudioTrackEdit {
     return true;
   }
 
-  /**
-   * 根据 AudioTrack 的 isSilent 状态，更新 renderTrackList 和 notRenderTrackList
+   /**
+   * Updates the renderTrackList and notRenderTrackList based on the isSilent status of AudioTrack.
    *
-   * @param notRenderTrackList - 初始为空的字符串数组，用于存放不渲染的 trackId
-   * @param renderTrackList - 初始为空的字符串数组，用于存放渲染的 trackId
-   * @param audioTrackList - 所有音轨的列表
+   * @param notRenderTrackList - A string array that is initially empty and used to store the track IDs that are not rendered.
+   * @param renderTrackList - A string array that is initially empty and used to store the track IDs that are rendered.
+   * @param audioTrackList - A list of all audio tracks.
    */
   updateTrackRenderLists(
     notRenderTrackList: string[],
