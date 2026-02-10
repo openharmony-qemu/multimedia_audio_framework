@@ -293,7 +293,7 @@ private:
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
-    int64_t startedTime_ = 0;
+    std::atomic<int64_t> startedTime_ = 0;
     int64_t pausedTime_ = 0;
     int64_t flushedTime_ = 0;
     int64_t drainedTime_ = 0;
