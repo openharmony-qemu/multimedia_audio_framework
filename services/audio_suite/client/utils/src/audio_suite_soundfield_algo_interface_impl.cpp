@@ -30,6 +30,13 @@ namespace AudioStandard {
 namespace AudioSuite {
 namespace {
 static constexpr uint32_t SAMPLE_SHIFT_AMOUNT = 16;
+
+static const std::unordered_map<SoundFieldType, iMedia_Surround_PARA> soundFieldParaMap = {
+    {AUDIO_SUITE_SOUND_FIELD_FRONT_FACING, IMEDIA_SWS_SOUROUND_FRONT},
+    {AUDIO_SUITE_SOUND_FIELD_GRAND, IMEDIA_SWS_SOUROUND_GRAND},
+    {AUDIO_SUITE_SOUND_FIELD_NEAR, IMEDIA_SWS_SOUROUND_DEFAULT},
+    {AUDIO_SUITE_SOUND_FIELD_WIDE, IMEDIA_SWS_SOUROUND_BROAD}
+};
 }  // namespace
 
 AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(NodeParameter &nc)
@@ -198,7 +205,8 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Apply(
 
     // apply SoundField algorithm
     int32_t ret = algoApi_.applyAlgo(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, &stData_);
-    CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "Apply SoundField algorithm fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == IMEDIA_SWS_EOK, ret,
+        HILOG_COMM_ERROR("[Apply]SoundField algo apply failed, return error is %{public}d", ret));
 
     // sample data convert from IMEDIA_INT32 to int16_t
     for (size_t i = 0; i < SOUNDFIELD_ALGO_FRAME_LEN; i++) {
