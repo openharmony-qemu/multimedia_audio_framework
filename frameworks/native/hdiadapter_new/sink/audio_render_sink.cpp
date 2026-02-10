@@ -852,6 +852,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
 
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
+    param.channelLayout = attr_.channelLayout;
     if (param.channelCount == MONO) {
         param.channelLayout = CH_LAYOUT_MONO;
     } else if (param.channelCount == STEREO) {
