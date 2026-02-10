@@ -475,9 +475,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     AudioAdapterManager::GetInstance().QueryDeviceVolumeBehavior(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+#ifndef WIRELESS_DEFAULT_EXCLUDE
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
         make_shared<AudioDeviceDescriptor>(updatedDesc)};
     AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
+#endif
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
     if (updatedDesc.connectState_ == VIRTUAL_CONNECTED) {
