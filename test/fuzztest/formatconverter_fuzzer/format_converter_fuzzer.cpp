@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -234,6 +234,168 @@ void FormatConverterF32StereoToS32StereoFuzzTest()
     FormatConverter::F32StereoToS32Stereo(srcDesc, dstDesc);
 }
 
+void DataAccumulationWithoutVolumeFuzzTest()
+{
+    uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
+    BufferDesc srcDesc = {srcBuffer, BUFFER_SIZE_LARGE, BUFFER_SIZE_LARGE};
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    srcData.bufferDesc = srcDesc;
+    std::vector<AudioStreamData> srcDataList = {srcData};
+    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
+    BufferDesc dstDesc = {dstBuffer, BUFFER_SIZE_LARGE, BUFFER_SIZE_LARGE};
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    dstData.bufferDesc = dstDesc;
+    dstData.streamInfo.format = g_fuzzUtils.GetData<AudioSampleFormat>();
+    FormatConverter::DataAccumulationWithoutVolume(srcDataList, dstData);
+}
+
+void F32StereoToF32MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::F32StereoToF32Mono(srcDesc, dstDesc);
+}
+
+void F32StereoToS16MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::F32StereoToS16Mono(srcDesc, dstDesc);
+}
+
+void S16MonoToF32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16MonoToF32Stereo(srcDesc, dstDesc);
+}
+
+void S32MonoToF32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32MonoToF32Stereo(srcDesc, dstDesc);
+}
+
+void S32StereoToF32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32StereoToF32Stereo(srcDesc, dstDesc);
+}
+
+void F32MonoToF32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::F32MonoToF32Stereo(srcDesc, dstDesc);
+}
+
+void S16MonoToF32MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16MonoToF32Mono(srcDesc, dstDesc);
+}
+
+void S32MonoToF32MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32MonoToF32Mono(srcDesc, dstDesc);
+}
+
+void S32StereoToF32MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32StereoToF32Mono(srcDesc, dstDesc);
+}
+
+void GetFormatHandlersFuzzTest()
+{
+    FormatConverter::GetFormatHandlers();
+}
+
+void AutoConvertFuzzTest()
+{
+    FormatKey key;
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
+    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::AutoConvert(key, srcDesc, dstDesc);
+}
+
 vector<TestFuncs> g_testFuncs = {
     S16StereoToF32StereoFuzzTest,
     S16StereoToF32MonoFuzzTest,
@@ -247,6 +409,17 @@ vector<TestFuncs> g_testFuncs = {
     FormatConverterS16MonoToS32StereoFuzzTest,
     FormatConverterS32MonoToS32StereoFuzzTest,
     FormatConverterF32StereoToS32StereoFuzzTest,
+    DataAccumulationWithoutVolumeFuzzTest,
+    F32StereoToF32MonoFuzzTest,
+    F32StereoToS16MonoFuzzTest,
+    S16MonoToF32StereoFuzzTest,
+    S32MonoToF32StereoFuzzTest,
+    S32StereoToF32StereoFuzzTest,
+    F32MonoToF32StereoFuzzTest,
+    S16MonoToF32MonoFuzzTest,
+    S32MonoToF32MonoFuzzTest,
+    S32StereoToF32MonoFuzzTest,
+    GetFormatHandlersFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS
