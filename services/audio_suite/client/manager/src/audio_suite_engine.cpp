@@ -259,14 +259,14 @@ int32_t AudioSuiteEngine::GetPipelineState(uint32_t pipelineId)
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine GetPipelineState failed, pipeline id is invailed.");
-            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED);
+            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED, ERR_ILLEGAL_STATE);
             return;
         }
 
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("engine GetPipelineState pipeline failed, pipeline is nullptr.");
-            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED);
+            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED, ERR_ILLEGAL_STATE);
             return;
         }
 
@@ -748,9 +748,9 @@ void AudioSuiteEngine::HandleStopPipeline(int32_t result)
     managerCallback_.OnStopPipeline(result);
 }
 
-void AudioSuiteEngine::HandleGetPipelineState(AudioSuitePipelineState state)
+void AudioSuiteEngine::HandleGetPipelineState(AudioSuitePipelineState state, int32_t result)
 {
-    managerCallback_.OnGetPipelineState(state);
+    managerCallback_.OnGetPipelineState(state, result);
 }
 
 void AudioSuiteEngine::HandleCreateNode(int32_t result, uint32_t nodeId, uint32_t pipelineId)

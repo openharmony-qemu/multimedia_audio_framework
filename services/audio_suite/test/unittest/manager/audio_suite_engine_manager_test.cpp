@@ -72,10 +72,11 @@ public:
         isFinishStopPipeline_ = true;
         stopPipelineResult_ = result;
     }
-    void OnGetPipelineState(AudioSuitePipelineState state) override
+    void OnGetPipelineState(AudioSuitePipelineState state, int32_t result) override
     {
         isFinishGetPipelineState_ = true;
         getPipelineState_ = state;
+        getPipelineResult_ = result;
     }
     void OnCreateNode(int32_t result, uint32_t nodeId) override
     {
@@ -96,7 +97,8 @@ public:
     void OnGetNodeBypass(int32_t result, bool bypassStatus) override
     {
         isFinishGetNodeBypassStatus_ = true;
-        getNodeBypassResult_ = bypassStatus;
+        getNodeBypassResult_ = result;
+        getNodeBypassState_ = bypassStatus;
     }
     void OnSetAudioFormat(int32_t result) override
     {
@@ -151,6 +153,7 @@ private:
     int32_t stopPipelineResult_ = 0;
     bool isFinishGetPipelineState_ = false;
     AudioSuitePipelineState getPipelineState_ = PIPELINE_STOPPED;
+    int32_t getPipelineResult_ = 0;
     bool isFinishCreateNode_ = false;
     int32_t engineCreateNodeResult_ = 0;
     uint32_t engineCreateNodeId_ = INVALID_NODE_ID;
@@ -159,7 +162,8 @@ private:
     bool isFinishBypassEffectNode_ = false;
     int32_t bypassEffectNodeResult_ = 0;
     bool isFinishGetNodeBypassStatus_ = false;
-    bool getNodeBypassResult_ = false;
+    bool getNodeBypassState_ = false;
+    int32_t getNodeBypassResult_ = 0;
     bool isFinishSetFormat_ = false;
     int32_t setFormatResult_ = 0;
     bool isFinishSetWriteData_ = false;

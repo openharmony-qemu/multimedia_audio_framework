@@ -239,7 +239,10 @@ int32_t AudioSuiteManager::GetPipelineState(uint32_t pipelineId, AudioSuitePipel
         return isFinishGetPipelineState_;  // will be true when got notified.
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetPipelineState timeout");
-
+    CHECK_AND_CALL_FUNC_RETURN_RET(getPipelineResult_ == SUCCESS, ERROR,
+        HILOG_COMM_ERROR("[getPipelineState]engine GetPipelineState failed, getPipelineResult_ = %{public}d",
+        getPipelineResult_));
+    
     AUDIO_DEBUG_LOG("GetPipelineState leave");
     state = getPipelineState_;
     return SUCCESS;
@@ -334,7 +337,7 @@ int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetNodeBypassStatus_ = false;
-    getNodeBypassResult_ = false;
+    getNodeBypassState_ = false;
     int32_t ret = suiteEngine_->GetNodeBypassStatus(nodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetNodeBypassStatus failed, ret = %{public}d", ret);
 
@@ -342,9 +345,12 @@ int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
         return isFinishGetNodeBypassStatus_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetNodeBypassStatus timeout");
+    CHECK_AND_CALL_FUNC_RETURN_RET(getNodeBypassResult_ == SUCCESS,ERROR,
+        HILOG_COMM_ERROR(
+            "[GetNodeBypassStatus]engine failed, getNodeBypassResult_ = %{public}d", getNodeBypassResult_));
 
     AUDIO_DEBUG_LOG("GetNodeBypassStatus leave");
-    bypass = getNodeBypassResult_;
+    bypass = getNodeBypassState_;
     return SUCCESS;
 }
 
@@ -1122,12 +1128,13 @@ void AudioSuiteManager::OnStopPipeline(int32_t result)
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state)
+void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state, int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_DEBUG_LOG("OnGetPipelineState enter");
     isFinishGetPipelineState_ = true;
     getPipelineState_ = state;
+    getPipelineResult_ = result;
     callbackCV_.notify_all();
 }
 
@@ -1174,7 +1181,8 @@ void AudioSuiteManager::OnGetNodeBypass(int32_t result, bool bypassStatus)
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_DEBUG_LOG("OnGetNodeBypass enter");
     isFinishGetNodeBypassStatus_ = true;
-    getNodeBypassResult_ = bypassStatus;
+    getNodeBypassState_ = bypassStatus;
+    getNodeBypassResult_ = result;
     callbackCV_.notify_all();
 }
 
