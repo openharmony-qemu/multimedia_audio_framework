@@ -1104,7 +1104,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, RedirectVolumeType, TestSize.Level1)
     audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
     streamDescriptor->callerUid_ = 1003;
     audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
-    streamDescriptor->callerUid_ = 0;
+    streamDescriptor->callerUid_ = -1;
     volumeType = STREAM_VOICE_ASSISTANT;
     audioAdapterManager->RedirectVolumeType(streamDescriptor, volumeType);
     streamDescriptor->callerUid_ = 1003;
