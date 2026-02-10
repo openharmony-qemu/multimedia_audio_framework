@@ -220,6 +220,11 @@ void HpaeSourceOutputNode::SetMute(bool isMute)
         AUDIO_INFO_LOG("SetMute:%{public}d", isMute);
     }
 }
+
+bool HpaeSourceOutputNode::GetMute()
+{
+    return isMute_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

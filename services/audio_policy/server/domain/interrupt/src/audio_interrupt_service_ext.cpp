@@ -146,6 +146,7 @@ void AudioInterruptService::SetLatestMuteState(const InterruptEventInternal &int
     bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
     streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
+    policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
 }
 
 void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,

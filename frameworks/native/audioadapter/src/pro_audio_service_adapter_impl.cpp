@@ -315,6 +315,25 @@ int32_t ProAudioServiceAdapterImpl::SetSourceOutputMute(int32_t uid, bool setMut
     return SourceOutputMuteStreamSet_;
 }
 
+int32_t ProAudioServiceAdapterImpl::SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute)
+{
+    AUDIO_INFO_LOG("sessionId %{public}d, setMute %{public}d", sessionId, setMute);
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishSetSourceOutputMute_ = false;
+    SourceOutputMuteStreamSet_ = 0;
+    IHpaeManager::GetHpaeManager().SetSourceOutputMuteByStreamId(sessionId, setMute);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishSetSourceOutputMute_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("Timeout");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("Leave");
+    return SourceOutputMuteStreamSet_;
+}
+
 std::vector<SinkInput> ProAudioServiceAdapterImpl::GetAllSinkInputs()
 {
     AUDIO_INFO_LOG("Enter");

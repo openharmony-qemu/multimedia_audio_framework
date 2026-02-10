@@ -109,11 +109,20 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId_, [this](bool flag) {
             AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
             muteFlag_ = flag;
+            NotifyMuteStateChange(flag);
         });
     }
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     streamStatusInServer_ = STREAM_IDEL;
+}
+
+void AudioProcessInServer::NotifyMuteStateChange(bool muteFlag)
+{
+    std::lock_guard<std::mutex> lock(listenerListLock_);
+    for (auto &listener : listenerList_) {
+        listener->OnStreamMute(this, muteFlag);
+    }
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -241,6 +250,7 @@ void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
 {
     muteFlag_ = muteFlag;
     HILOG_COMM_INFO("[SetNonInterruptMute]muteFlag_: %{public}d", muteFlag);
+    NotifyMuteStateChange(muteFlag);
     AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
 }
 

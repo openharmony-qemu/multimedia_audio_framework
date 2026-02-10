@@ -937,6 +937,13 @@ int32_t AudioAdapterManager::SetSourceOutputStreamMute(int32_t uid, bool setMute
     return audioServiceAdapter_->SetSourceOutputMute(uid, setMute);
 }
 
+int32_t AudioAdapterManager::SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERR_OPERATION_FAILED,
+        "SetSourceOutputStreamMute audio adapter null");
+    return audioServiceAdapter_->SetSourceOutputStreamMuteByStreamId(sessionId, setMute);
+}
+
 bool AudioAdapterManager::GetAppMute(int32_t appUid)
 {
     bool isMute = false;

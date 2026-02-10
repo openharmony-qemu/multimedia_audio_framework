@@ -27,6 +27,7 @@
 #include "util/ring_buffer_handler.h"
 #include "util/callback_wrapper.h"
 #include "audio_primary_source_clock.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,6 +82,7 @@ private:
     static uint64_t GetChannelLayoutByChannelCount(uint32_t channelCount);
     static uint64_t GetChannelCountByChannelLayout(uint64_t channelLayout);
     static enum AudioInputType ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType);
+    static enum AudioFlag ConvertToAudioInputRouteFlag(int32_t sourceType);
     static AudioSampleFormat ParseAudioFormat(const std::string &format);
     static AudioCategory GetAudioCategory(AudioScene audioScene);
     static int32_t GetByteSizeByFormat(AudioSampleFormat format);

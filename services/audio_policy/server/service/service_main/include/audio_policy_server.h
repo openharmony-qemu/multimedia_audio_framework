@@ -229,6 +229,12 @@ public:
 
     int32_t SetRingerMode(int32_t ringMode) override;
 
+    void SetLatestMuteStateForUid(int32_t uid, bool setMute);
+
+    int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool mute);
+
+    int32_t SetSourceOutputStreamMute(int32_t uid, bool mute);
+
 #ifdef FEATURE_DTMF_TONE
     int32_t GetSupportedTones(const std::string &countryCode, std::vector<int32_t> &throw_with_nested) override;
 

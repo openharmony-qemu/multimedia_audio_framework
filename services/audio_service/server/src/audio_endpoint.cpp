@@ -1103,6 +1103,14 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
     return SUCCESS;
 }
 
+int32_t AudioEndpointInner::OnStreamMute(IAudioProcessStream *processStream, bool mute)
+{
+    if (processStream != nullptr) {
+        NotifyStreamChange(STREAM_CHANGE_TYPE_STATE_CHANGE, processStream, RENDERER_RUNNING, mute);
+    }
+    return SUCCESS;
+}
+
 void AudioEndpointInner::AddProcessStreamToList(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBufferBase> &processBuffer)
 {
@@ -2526,7 +2534,7 @@ void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)
 }
 
 void AudioEndpointInner::NotifyStreamChange(StreamChangeType change,
-    IAudioProcessStream *processStream, RendererState state)
+    IAudioProcessStream *processStream, RendererState state, bool mute)
 {
     CHECK_AND_RETURN(processStream != nullptr);
 
@@ -2539,7 +2547,7 @@ void AudioEndpointInner::NotifyStreamChange(StreamChangeType change,
         auto source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
         CHECK_AND_RETURN_LOG(source, "source is invalid");
         source->NotifyStreamChangeToSource(change, processStream->GetAudioSessionId(), processStream->GetSource(),
-            static_cast<CapturerState>(state), processStream->GetAppInfo().appUid);
+            static_cast<CapturerState>(state), processStream->GetAppInfo().appUid, mute);
     }
 }
 } // namespace AudioStandard
