@@ -62,6 +62,7 @@ private:
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()) {}
     ~AudioSceneManager() {}
 private:
+    std::mutex sceneMutex_;  // Protect audioScene_ and lastAudioScene_
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
 
