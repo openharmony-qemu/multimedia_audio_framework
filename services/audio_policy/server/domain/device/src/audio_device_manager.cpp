@@ -1219,6 +1219,21 @@ void AudioDeviceManager::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &des
     }
 }
 
+bool AudioDeviceManager::TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+{
+    if (desc.glassesWearCount_ == AudioDeviceDescriptor::WEAR_FIRST && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+        return false;
+    }
+
+    if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+        AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
+        return true;
+    }
+
+    return false;
+}
+
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
@@ -1239,9 +1254,7 @@ bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceD
                 AddBtToOtherList(desc);
             }
 
-            if (desc->glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
-                AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
-            }
+            TriggerDeviceInfoUpdatedCallback(*desc, descForCb);
         }
         updateFlag = true;
     }

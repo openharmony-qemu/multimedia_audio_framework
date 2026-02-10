@@ -564,5 +564,45 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_005, TestSize.Level1)
     EXPECT_EQ(false, result);
 }
 
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: TriggerDeviceInfoUpdatedCallback_001
+* @tc.desc  : Test TriggerDeviceInfoUpdatedCallback with different conditions.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, TriggerDeviceInfoUpdatedCallback_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc{DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+
+    // Test case 1: not glasses
+    desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
+    desc.glassesWearCount_ = 0;
+    bool result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_TRUE(result);
+
+    // Test case 2: glasses first unwear
+    desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
+    desc.glassesWearCount_ = 1;
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_FALSE(result);
+
+    // Test case 3: glasses unwear again
+    desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
+    desc.glassesWearCount_ = 2;
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_FALSE(result);
+
+    // Test case 4: not glasses
+    desc.deviceCategory_ = DeviceCategory::CATEGORY_DEFAULT;
+    desc.glassesWearCount_ = 0;  // WEAR_FIRST is 1, so 0 < 1
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_TRUE(result);
+
+    // Test case 5: glasses first wear
+    desc.deviceCategory_ = DeviceCategory::BT_GLASSES;
+    desc.glassesWearCount_ = 1;
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_TRUE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS
