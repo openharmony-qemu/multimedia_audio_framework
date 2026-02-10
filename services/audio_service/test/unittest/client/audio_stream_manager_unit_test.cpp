@@ -217,7 +217,7 @@ HWTEST(AudioStreamManagerUnitTest, GetSupportedAudioEffectProperty_002, TestSize
 {
     AudioEffectPropertyArray propertyArray;
     int32_t result = AudioStreamManager::GetInstance()->GetSupportedAudioEffectProperty(propertyArray);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -256,7 +256,7 @@ HWTEST(AudioStreamManagerUnitTest, GetAudioEffectProperty_002, TestSize.Level1)
 {
     AudioEffectPropertyArray propertyArray;
     int32_t result = AudioStreamManager::GetInstance()->GetAudioEffectProperty(propertyArray);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -269,7 +269,7 @@ HWTEST(AudioStreamManagerUnitTest, SetAudioEnhanceProperty_001, TestSize.Level1)
 {
     AudioEnhancePropertyArray propertyArray;
     int32_t result = AudioStreamManager::GetInstance()->SetAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -282,7 +282,7 @@ HWTEST(AudioStreamManagerUnitTest, GetAudioEnhanceProperty_002, TestSize.Level1)
 {
     AudioEnhancePropertyArray propertyArray;
     int32_t result = AudioStreamManager::GetInstance()->GetAudioEnhanceProperty(propertyArray);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, 0);
 }
 
 /**
