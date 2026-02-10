@@ -249,6 +249,26 @@ void AudioVolumeManagerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeManager.GetSystemVolumeLevel(streamType, zoneId);
 }
 
+void AudioVolumeManagerSetSystemVolumeDegreeByLevelFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
+
+    audioVolumeManager.SetSystemVolumeDegreeByLevel(streamType, volumeLevel, zoneId);
+}
+
+void AudioVolumeManagerGetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
+    bool flag = g_fuzzUtils.GetData<bool>();
+    audioVolumeManager.SetRingerModeMute(flag);
+    audioVolumeManager.GetSystemVolumeDegree(streamType, zoneId);
+}
+
 void AudioVolumeManagerCheckToCloseNotificationFuzzTest(FuzzedDataProvider& fdp)
 {
     bool isPCVolumeEnable = g_fuzzUtils.GetData<bool>();
@@ -291,6 +311,20 @@ void AudioVolumeManagerHandleNearlinkDeviceAbsVolumeFuzzTest(FuzzedDataProvider&
         audioVolumeManager.audioActiveDevice_.currentActiveDevice_.macAddress_.clear();
     }
     audioVolumeManager.HandleNearlinkDeviceAbsVolume(streamType, volumeLevel, curOutputDeviceType);
+}
+
+void AudioVolumeManagerHandleNearlinkDeviceAbsVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t volumeDegree = g_fuzzUtils.GetData<int32_t>();
+    DeviceType curOutputDeviceType = g_fuzzUtils.GetData<DeviceType>();
+    audioVolumeManager.audioActiveDevice_.currentActiveDevice_.macAddress_ = "11:22:33:44:55:66";
+    bool isClear = g_fuzzUtils.GetData<bool>();
+    if (isClear) {
+        audioVolumeManager.audioActiveDevice_.currentActiveDevice_.macAddress_.clear();
+    }
+    audioVolumeManager.HandleNearlinkDeviceAbsVolumeDegree(streamType, volumeDegree);
 }
 
 void AudioVolumeManagerSetA2dpDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
@@ -418,6 +452,14 @@ void AudioVolumeManagerHandleA2dpAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeManager.HandleA2dpAbsVolume(streamType, volumeLevel, curOutputDeviceType);
 }
 
+void AudioVolumeManagerHandleA2dpAbsVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = g_fuzzUtils.GetData<AudioStreamType>();
+    int32_t volumeDegree = g_fuzzUtils.GetData<int32_t>();
+    audioVolumeManager.HandleA2dpAbsVolumeDegree(streamType, volumeDegree);
+}
+
 void AudioVolumeManagerCheckNearlinkActiveMusicTimeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -473,10 +515,12 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest,
     AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest,
     AudioVolumeManagerGetSystemVolumeLevelFuzzTest,
+    AudioVolumeManagerGetSystemVolumeDegreeFuzzTest,
     AudioVolumeManagerCheckToCloseNotificationFuzzTest,
     AudioVolumeManagerSetAppVolumeMutedFuzzTest,
     AudioVolumeManagerIsAppVolumeMuteFuzzTest,
     AudioVolumeManagerHandleNearlinkDeviceAbsVolumeFuzzTest,
+    AudioVolumeManagerHandleNearlinkDeviceAbsVolumeDegreeFuzzTest,
     AudioVolumeManagerSetA2dpDeviceVolumeFuzzTest,
     AudioVolumeManagerCancelSafeVolumeNotificationFuzzTest,
     AudioVolumeManagerSetRestoreVolumeLevelFuzzTest,
@@ -491,6 +535,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerSendLoudVolumeModeFuzzTest,
     AudioVolumeManagerSetAppRingMutedFuzzTest,
     AudioVolumeManagerHandleA2dpAbsVolumeFuzzTest,
+    AudioVolumeManagerHandleA2dpAbsVolumeDegreeFuzzTest,
     AudioVolumeManagerCheckNearlinkActiveMusicTimeFuzzTest,
     AudioVolumeManagerCheckRestoreDeviceVolumeFuzzTest,
     AudioVolumeManagerCheckRestoreDeviceVolumeNearlinkFuzzTest,

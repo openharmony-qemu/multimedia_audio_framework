@@ -1102,6 +1102,9 @@ void VolumeDataMaintainer::SaveVolumeDegreeToMap(std::shared_ptr<AudioDeviceDesc
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (Util::IsDualToneStreamType(streamType)) {
+        device = ringerDevice_;
+    }
     volumeDegreeMap_[device->GetName()][volumeType] = volumeDegree;
     AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d]"\
         "Save volume success, volumeDegree %{public}d",
@@ -1115,6 +1118,9 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDevic
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t defaultVolumeDegree = DEFAULT_VOLUME_DEGREE;
     CHECK_AND_RETURN_RET_LOG(device != nullptr, defaultVolumeDegree, "device is null");
+    if (Util::IsDualToneStreamType(streamType)) {
+        device = ringerDevice_;
+    }
     if (volumeType == STREAM_ALL) {
         AUDIO_INFO_LOG("replace stream all to music");
         volumeType = STREAM_MUSIC;

@@ -367,6 +367,9 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_115, TestSize.Level1)
     A2dpDeviceConfigInfo info;
     audioVolumeManager->audioA2dpDevice_.GetA2dpDeviceInfo(macAddress, info);
     EXPECT_EQ(info.volumeDegree, volumeDegree);
+
+    audioVolumeManager->audioA2dpDevice_.DelA2dpDevice(macAddress);
+    audioVolumeManager->audioA2dpDevice_.DelA2dpDevice(macAddress2);
 }
 
 /**
