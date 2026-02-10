@@ -1523,26 +1523,25 @@ export struct AudioTrackEdit {
           .height($r('app.float.height_30'))
           .margin({ right: $r('app.float.margin_10') })
           .onClick(() => {
-            this.getUIContext().showAlertDialog({
-              title: '清空录音',
-              message: '是否清空录音',
-              primaryButton: {
-                value: '删除',
-                action: () => {
-                  // 用户确认后执行的逻辑
-                  for (let id of this.recordInputIdSet) {
-                    audioNapi.clearByInputId(id, 0); // 销毁录制的音频
-                    Logger.warn(TAG, `recordInputID is ${id}`)
-                  }
-                  this.recordInputIdSet.clear();
-                }
-              },
-              secondaryButton: {
-                value: '取消',
-                action: () => {
-                }
+            if (!this.audioTrackList.some(track => track.audioAssetArray?.length !== 0)) {
+              this.getUIContext().showAlertDialog({
+                title: '提示',
+                message: '至少添加一个音频才可以播放'
+              });
+              return;
+            } else {
+              const aissEffectId: string = util.generateRandomUUID(true);
+              const inputId: string = util.generateRandomUUID(true);
+              const selectedNodeId: string = util.generateRandomUUID(true);
+              let result: number = audioNapi.addAudioSeparation(0, aissEffectId, inputId, selectedNodeId, true);
+              if (result !== 0) {
+                this.getUIContext().showAlertDialog({
+                  title: '提示',
+                  message: `error addAudioSeparation: ${result}`
+                });
               }
-            });
+              audioNapi.setSeparationMode(0);
+            }
           })
       }
 
