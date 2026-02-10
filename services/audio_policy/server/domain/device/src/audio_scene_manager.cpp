@@ -42,7 +42,8 @@ namespace AudioStandard {
 
 void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    AudioScene oldScene, newScene;
+    AudioScene oldScene;
+    AudioScene newScene;
     {
         std::lock_guard<std::mutex> lock(sceneMutex_);
         HILOG_COMM_INFO("[SetAudioScenePre]Set audio scene start %{public}d, lastScene %{public}d",
