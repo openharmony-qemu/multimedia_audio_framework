@@ -182,42 +182,6 @@ export struct EffectNodeDialog {
             this.controllerTwo?.close();
           }
         })
-      } else if (this.selectedEffectNode === NodeType.SEPARATION) {
-        AudioSeparationComponent({
-          selectedAudioSeparation: this.selectedAudioSeparation,
-          onCancel: () => {
-            this.controllerTwo?.close();
-          },
-          onAgree: (audioSeparationType: AudioSeparationType) => {
-            // Call the NAPI interface to add the audio source separation node to the corresponding audioAsset.
-            let result = audioSeparationType === AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE ?
-              audioNapi.setSeparationMode(0) : audioNapi.setSeparationMode(1);
-            if (result !== 0) {
-              this.getUIContext().showAlertDialog({
-                message: '设置音源分离模式失败',
-                autoCancel: true
-              });
-              return;
-            }
-
-            // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.SEPARATION)) {
-              return;
-            }
-
-            let node: Node = {
-              id: this.selectedEffectNodeId,
-              type: NodeType.SEPARATION,
-              isByPass: true,
-              audioSeparationType: audioSeparationType
-            }
-            if (this.onAgree) {
-              this.onAgree(node);
-            }
-            this.controllerTwo?.close();
-            this.isSeparation = true;
-          }
-        })
       } else if (this.selectedEffectNode === NodeType.SOUND_SPEED_TONE) {
         SoundSpeedToneComponent({
           soundSpeed: this.soundSpeed,

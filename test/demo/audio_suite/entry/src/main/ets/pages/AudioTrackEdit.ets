@@ -1256,30 +1256,6 @@ export struct AudioTrackEdit {
       })
       return;
     }
-    // aiss
-    const aissEffectId: string = util.generateRandomUUID(true);
-    result = audioNapi.addAudioSeparation(0, aissEffectId, inputId);
-    if (result !== 0) {
-      this.getUIContext().showAlertDialog({
-        title: '提示',
-        message: `error addAudioSeparation: ${result}`
-      });
-    } else {
-      audioAsset.nodes.push({
-        id: aissEffectId,
-        type: NodeType['SEPARATION'],
-        audioSeparationType: AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE
-      });
-    }
-    audioNapi.setSeparationMode(0);
-    ret = audioNapi.setEffectNodeBypass(inputId, aissEffectId, true);
-    if (!ret) {
-      this.getUIContext().showAlertDialog({
-        title: '提示',
-        message: `error set aissEffect bypass`
-      })
-      return;
-    }
   }
 
   build() {
@@ -1867,8 +1843,8 @@ export struct AudioTrackEdit {
    /**
    * Updates the renderTrackList and notRenderTrackList based on the isSilent status of AudioTrack.
    *
-   * @param notRenderTrackList - A string array that is initially empty and used to store the track IDs that are not rendered.
-   * @param renderTrackList - A string array that is initially empty and used to store the track IDs that are rendered.
+   * @param notRenderTrackList - initially empty and used to store the track IDs that are not rendered.
+   * @param renderTrackList - initially empty and used to store the track IDs that are rendered.
    * @param audioTrackList - A list of all audio tracks.
    */
   updateTrackRenderLists(
