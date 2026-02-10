@@ -965,5 +965,42 @@ HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.
     result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_OFFLOAD_CAPTURE);
     EXPECT_EQ(result, AUDIO_INPUT_FLAG_OFFLOAD);
 }
+
+/**
+ * @tc.name   : Test SetAudioScene API
+ * @tc.number : SetAudioScene_001
+ * @tc.desc   : Test SetAudioScene
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySource_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test UpdateActiveDeviceWithoutLock API
+ * @tc.number : UpdateActiveDeviceWithoutLock_001
+ * @tc.desc   : Test UpdateActiveDeviceWithoutLock
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, UpdateActiveDeviceWithoutLock_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    std::vector<DeviceType> inputDevices;
+    inputDevices.push_back(DEVICE_TYPE_MIC);
+    primarySource_->UpdateActiveDeviceWithoutLock(inputDevices);
+    primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, true);
+    int32_t ret = primarySource_->UpdateActiveDeviceWithoutLock(inputDevices);
+    inputDevices.clear();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
 } // namespace AudioStandard
 } // namespace OHOS

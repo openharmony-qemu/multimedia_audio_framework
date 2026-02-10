@@ -182,6 +182,7 @@ private:
     std::string ecDumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    bool currentScoExcludeFlag_ = false;
     std::atomic<bool> muteState_ = false;
     std::string address_ = "";
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
