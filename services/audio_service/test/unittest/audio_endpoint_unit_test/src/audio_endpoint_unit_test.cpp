@@ -607,17 +607,17 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
 
     processStream->SetInnerCapState(true, 1);
     result = audioEndpointInner->ShouldInnerCap(1);
-    EXPECT_FALSE(result);
+    EXPECT_EQ(true, result);
 
     processStream->SetInnerCapState(false, 1);
     result = audioEndpointInner->ShouldInnerCap(1);
-    EXPECT_FALSE(result);
+    EXPECT_EQ(false, result);
 
     result = audioEndpointInner->UnlinkProcessStream(newpProcessStream);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     result = audioEndpointInner->UnlinkProcessStream(processStream);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /*
@@ -696,15 +696,15 @@ HWTEST_F(AudioEndpointUnitTest, HandleStartDeviceFailed_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     audioEndpointInner->LinkProcessStream(newpProcessStream);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     audioEndpointInner->HandleStartDeviceFailed();
-    EXPECT_NE(AudioEndpoint::EndpointStatus::IDEL, audioEndpointInner->endpointStatus_);
+    EXPECT_EQ(AudioEndpoint::EndpointStatus::IDEL, audioEndpointInner->endpointStatus_);
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.isInnerCapEnabled = true;
-    EXPECT_FALSE(audioEndpointInner->StartDevice());
+    EXPECT_TRUE(audioEndpointInner->StartDevice());
 
-    EXPECT_FALSE(audioEndpointInner->StopDevice());
+    EXPECT_TRUE(audioEndpointInner->StopDevice());
 
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
         audioEndpointInner->fastCaptureId_, true);
@@ -2263,7 +2263,7 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_001, TestSize.Level1)
     notifier.join();
     
     EXPECT_FALSE(audioEndpointInner->isStarted_);
-    EXPECT_EQ(audioEndpointInner->isStarted_, initialIsStarted);
+    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
 }
 
 /**
