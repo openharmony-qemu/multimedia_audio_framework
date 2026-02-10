@@ -269,7 +269,10 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_008, TestSize.
 
     pid_t pid = 123;
     uint32_t streamId = 123;
-    audioInterruptService->interruptClients_[streamId] = nullptr;
+    std::shared_ptr<AudioInterruptService::AudioInterruptClient> client =
+        std::make_shared<AudioInterruptService::AudioInterruptClient>(nullptr, nullptr, nullptr);
+    client->SetCallingUid(1001);
+    audioInterruptService->interruptClients_[streamId] = client;
     auto audioInterruptZone = make_shared<AudioInterruptZone>();
     AudioInterrupt audioInterrupt;
     audioInterrupt.pid = pid;
@@ -279,7 +282,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_008, TestSize.
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
 
     auto ret = audioInterruptService->UnsetAudioInterruptCallback(0, streamId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**

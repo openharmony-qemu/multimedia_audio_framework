@@ -5039,7 +5039,7 @@ HWTEST_F(AudioInterruptUnitTest, GetHighestPriorityAudioSceneFromAllZones_001, T
 HWTEST_F(AudioInterruptUnitTest, UpdateMapFocusStrategy, TestSize.Level1)
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptSeervice, nullptr);
+    ASSERT_NE(audioInterruptService, nullptr);
 
     SourceType incomingSourceType;
     std::string bundleName = "";
