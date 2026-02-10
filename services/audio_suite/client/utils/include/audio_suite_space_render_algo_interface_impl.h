@@ -31,6 +31,7 @@ using FunSpaceRenderGetLateSamples = int (*)(const char* params);
 using FunSpaceRenderInit = int (*)(char *phandle, const SpaceRenderParam *params);
 using FunSpaceRenderApply = int (*)(char* phandle, const short *pcmIn, const int inSampleCnt, short* pcmOut);
 using FunSpaceRenderRelease = int (*)(char *phandle);
+using FunSpaceRenderSetParams = int (*)(char *phandle, const SpaceRenderParam *params);
 
 struct SpaceRenderAlgoApi {
     FunSpaceRenderGetSpeces getSpeces{nullptr};
@@ -39,6 +40,7 @@ struct SpaceRenderAlgoApi {
     FunSpaceRenderInit initAlgo{nullptr};
     FunSpaceRenderApply applyAlgo{nullptr};
     FunSpaceRenderRelease releaseAlgo{nullptr};
+    FunSpaceRenderSetParams setParamsAlgo{nullptr};
 };
 
 class AudioSuiteSpaceRenderAlgoInterfaceImpl : public AudioSuiteAlgoInterface {
