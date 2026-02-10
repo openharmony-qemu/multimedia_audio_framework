@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -452,6 +452,17 @@ void GetDurationMsFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeTest->GetDurationMs(sessionId);
 }
 
+void GetDoNotDisturbStaVolInternalFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioVolume* audioVolumeTest = AudioVolume::GetInstance();
+    int32_t volumeType = GetData<int32_t>();
+    int32_t appUid = GetData<int32_t>();
+    uint32_t sessionId = GetData<uint32_t>();
+    bool isDoNotDisturb = GetData<uint8_t>() % NUM_2;
+    audioVolumeTest->SetDoNotDisturbStatus(isDoNotDisturb);
+    audioVolumeTest->GetDoNotDisturbStatusVolumeInternal(volumeType, appUid, sessionId);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -490,6 +501,7 @@ void Test(FuzzedDataProvider& fdp)
     SetDualStreamVolumeMuteFuzzTest,
     SetAppRingMutedFuzzTest,
     GetDurationMsFuzzTest,
+    GetDoNotDisturbStaVolInternalFuzzTest,
     });
     func(fdp);
 }
