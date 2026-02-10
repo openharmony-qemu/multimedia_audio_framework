@@ -453,7 +453,7 @@ void AudioPipeSelector::SortStreamByStatus(std::vector<std::pair<std::shared_ptr
             return aStatus > bStatus;
         }
         return a.first->sessionId_ < b.first->sessionId_;
-    }); 
+    });
 }
 
 void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
@@ -473,7 +473,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     }
     SortStreamByStatus(streams);
     
-
     for (auto &[streamDescInPipe, pipeInfo] : streams) {
         bool isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc, streamsMoveToNormal);
         JUDGE_AND_INFO_LOG(isUpdate == true, "isUpdate: %{public}d, action: %{public}d", isUpdate,

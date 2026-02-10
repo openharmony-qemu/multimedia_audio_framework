@@ -645,7 +645,6 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
         bool isPausedNotAlarm = streamDesc->streamStatus_ == STREAM_STATUS_PAUSED &&
             streamUsage != STREAM_USAGE_ALARM &&
             !AudioCoreServiceUtils::IsRingScene(AudioSceneManager::GetInstance().GetAudioScene(true));
-        
         if (isNotPaused || isPausedNotAlarm) {
             CHECK_AND_RETURN_LOG(!AudioCoreServiceUtils::IsDualOnActive(), "Dual still on active");
             AUDIO_INFO_LOG("[ADeviceEvent] disable primary speaker dual tone when ringer renderer run over");

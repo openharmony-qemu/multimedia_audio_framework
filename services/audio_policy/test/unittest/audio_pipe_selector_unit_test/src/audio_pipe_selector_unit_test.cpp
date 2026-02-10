@@ -2262,7 +2262,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_001, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_002
- * @tc.desc: Test AdjustConcedeActionByStatus when target stream is not STARTED and not in switch state, action should be flipped
+ * @tc.desc: Test when target stream is not STARTED and not in switch state, action should be flipped
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_002, TestSize.Level1)
@@ -2290,7 +2290,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_002, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_003
- * @tc.desc: Test AdjustConcedeActionByStatus when target stream is STARTED and not in switch state, action should remain unchanged
+ * @tc.desc: Test when target stream is STARTED and not in switch state, action should remain unchanged
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_003, TestSize.Level1)
@@ -2318,7 +2318,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_003, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_004
- * @tc.desc: Test AdjustConcedeActionByStatus when target stream is in switch state and requires normal route, action should be flipped
+ * @tc.desc: Test when target stream is in switch state and requires normal route, action should be flipped
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_004, TestSize.Level1)
@@ -2347,7 +2347,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_004, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_005
- * @tc.desc: Test AdjustConcedeActionByStatus when target stream is in switch state but doesn't require normal route, action should remain unchanged
+ * @tc.desc: Test when target stream is in switch state but doesn't require normal route, action should remain unchanged
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_005, TestSize.Level1)
@@ -2376,7 +2376,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_005, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_006
- * @tc.desc: Test AdjustConcedeActionByStatus with CONCEDE_INCOMING action and target stream in switch state requiring normal route
+ * @tc.desc: Test with CONCEDE_INCOMING action and target stream in switch state requiring normal route
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_006, TestSize.Level1)
@@ -2405,7 +2405,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_006, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_007
- * @tc.desc: Test AdjustConcedeActionByStatus when both streams are in STARTED state and not in switch state, action should remain unchanged
+ * @tc.desc: Test when both streams are in STARTED state and not in switch state, action should remain unchanged
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_007, TestSize.Level1)
@@ -2433,7 +2433,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_007, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_008
- * @tc.desc: Test AdjustConcedeActionByStatus with invalid initial action (should not happen in practice but testing robustness)
+ * @tc.desc: Test with invalid initial action (should not happen in practice but testing robustness)
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_008, TestSize.Level1)
@@ -2461,7 +2461,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_008, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_009
- * @tc.desc: Test AdjustConcedeActionByStatus when existing stream is in switch state requiring normal route but incoming stream is not STARTED
+ * @tc.desc: Test when existing stream is in switch state requiring normal route but incoming stream is not STARTED
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_009, TestSize.Level1)
@@ -2490,7 +2490,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_009, TestSize.Le
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_010
- * @tc.desc: Test AdjustConcedeActionByStatus when existing stream is in switch state requiring normal route and is the target
+ * @tc.desc: Test when existing stream is in switch state requiring normal route and is the target
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_010, TestSize.Level1)
