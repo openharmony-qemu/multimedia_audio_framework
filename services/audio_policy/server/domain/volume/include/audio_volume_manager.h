@@ -144,6 +144,7 @@ public:
     int32_t SetSystemVolumeDegreeToDb(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
+    int32_t UpdateSafeVolumeByStrMode();
     void OnCheckActiveMusicTime(const std::string &reason);
     void DealWithPauseAndStop(const std::string &reason);
     std::string DoLoopCheck(const std::string &reason);
@@ -168,7 +169,7 @@ private:
     void CheckNearlinkActiveMusicTime(int32_t safeVolume);
     void CheckWiredActiveMusicTime(int32_t safeVolume);
     void RestoreSafeVolume(AudioStreamType streamType, int32_t safeVolume);
-    void SetSafeVolumeCallback(AudioStreamType streamType);
+    void SetSafeVolumeCallback(AudioStreamType streamType, bool updateUi = true);
     void SetDeviceSafeVolumeStatus();
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support, int32_t volume);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,

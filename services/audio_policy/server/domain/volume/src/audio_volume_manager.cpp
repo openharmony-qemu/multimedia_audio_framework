@@ -1216,7 +1216,7 @@ void AudioVolumeManager::RestoreSafeVolume(AudioStreamType streamType, int32_t s
     SetSafeVolumeCallback(streamType);
 }
 
-void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType)
+void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType, bool updateUi)
 {
     CHECK_AND_RETURN_LOG(VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC,
         "streamtype:%{public}d no need to set safe volume callback.", streamType);
@@ -1224,7 +1224,7 @@ void AudioVolumeManager::SetSafeVolumeCallback(AudioStreamType streamType)
     volumeEvent.volumeType = streamType;
     volumeEvent.volume = GetSystemVolumeLevel(streamType);
     volumeEvent.volumeDegree = GetSystemVolumeDegree(streamType);
-    volumeEvent.updateUi = true;
+    volumeEvent.updateUi = updateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     if (audioPolicyServerHandler_ != nullptr && IsRingerModeMute()) {
@@ -1906,6 +1906,26 @@ int32_t AudioVolumeManager::GetMinVolumeDegree(AudioVolumeType volumeType, Devic
         volumeType = STREAM_MUSIC;
     }
     return audioPolicyManager_.GetMinVolumeDegree(volumeType, deviceType);
+}
+
+int32_t AudioVolumeManager::UpdateSafeVolumeByStrMode()
+{
+    int32_t safeVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
+    userSelect_ = false;
+    isDialogSelectDestroy_.store(false);
+
+    if (GetSystemVolumeLevel(STREAM_MUSIC) <= safeVolumeLevel) {
+        AUDIO_INFO_LOG("current volume <= safe volume, don't update volume.");
+        return SUCCESS;
+    }
+
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+
+    AUDIO_INFO_LOG("restore safe volume.");
+    SetSystemVolumeExternal(STREAM_MUSIC, safeVolumeLevel, VolumeKeyType::VOLUME_KEY_TYPE_LEVEL);
+    CheckLowerDeviceVolume(curOutputDeviceType);
+    SetSafeVolumeCallback(STREAM_MUSIC, false);
+    return SUCCESS;
 }
 
 void AudioVolumeManager::RefreshActiveDeviceVolume()

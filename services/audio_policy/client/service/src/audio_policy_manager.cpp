@@ -3450,6 +3450,14 @@ int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, Devic
     return volumeDegree;
 }
 
+int32_t AudioPolicyManager::UpdateSafeVolumeByStrMode()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->UpdateSafeVolumeByStrMode();
+}
+
 int32_t AudioPolicyManager::RegisterCollaborationEnabledForCurrentDeviceEventListener(
     const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback)
 {

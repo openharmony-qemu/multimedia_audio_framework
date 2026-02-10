@@ -519,6 +519,12 @@ int32_t AudioVolumeClientManager::GetMinVolumeDegree(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetMinVolumeDegree(volumeType);
 }
 
+int32_t AudioVolumeClientManager::UpdateSafeVolumeByStrMode()
+{
+    AUDIO_INFO_LOG("AudioVolumeClientManager::UpdateSafeVolumeByStrMode");
+    return AudioPolicyManager::GetInstance().UpdateSafeVolumeByStrMode();
+}
+
 int32_t AudioVolumeClientManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
 {
     AUDIO_INFO_LOG("GetMaxVolumeByUsage for streamUsage [%{public}d]", streamUsage);
