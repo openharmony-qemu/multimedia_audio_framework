@@ -620,6 +620,7 @@ private:
 
     bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
     bool IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;

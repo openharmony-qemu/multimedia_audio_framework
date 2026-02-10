@@ -912,5 +912,42 @@ bool AudioPipeManager::IsOnPrimaryAdapter(uint32_t sessionId)
     }
     return false;
 }
+
+void AudioPipeManager::AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    std::unique_lock<std::shared_mutex> lock(switchStreamMapLock_);
+    switchStreamMap_[sessionId] = streamDesc;
+}
+
+void AudioPipeManager::RemoveSwitchStream(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(switchStreamMapLock_);
+    switchStreamMap_.erase(sessionId);
+}
+
+bool AudioPipeManager::IsSwitchStreamExist(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> lock(switchStreamMapLock_);
+    return switchStreamMap_.count(sessionId) > 0;
+}
+
+void AudioPipeManager::AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    CHECK_AND_RETURN(!switchStreamMap_.empty());
+
+    std::shared_lock<std::shared_mutex> lock(switchStreamMapLock_);
+    std::unordered_set<uint32_t> existingSessionIds;
+    existingSessionIds.reserve(streamDescs.size());
+    for (auto &streamDesc : streamDescs) {
+        existingSessionIds.insert(streamDesc->sessionId_);
+    }
+
+    for (auto &[sessionId, streamDesc] : switchStreamMap_) {
+        CHECK_AND_CONTINUE(existingSessionIds.find(streamDesc->sessionId_) == existingSessionIds.end());
+        streamDescs.push_back(streamDesc);
+        existingSessionIds.insert(sessionId);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

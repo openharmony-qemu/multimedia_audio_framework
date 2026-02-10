@@ -41,6 +41,7 @@ static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int32_t REFETCH_DEVICE = 4;
+static const int64_t RING_DUAL_END_DELAY_US = 100000;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 }
@@ -201,6 +202,9 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
         sessionId = streamDesc->sessionId_;
         AUDIO_INFO_LOG("Generate session id %{public}u for stream", sessionId);
     }
+
+    pipeManager_->RemoveSwitchStream(sessionId);
+    streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
 
     ClientTypeManager::GetInstance()->GetAndSaveClientType(GetRealUid(streamDesc),
         AudioBundleManager::GetBundleNameFromUid(GetRealUid(streamDesc)));
@@ -611,6 +615,58 @@ void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDesc
     CHECK_AND_RETURN_LOG(res == SUCCESS, "remote device state is invalid!");
 }
 
+void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::string caller)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN(streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK);
+
+    const StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
+    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(streamDesc->sessionId_);
+    if (streamDesc->streamStatus_ == STREAM_STATUS_RELEASED) {
+        audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamDesc->sessionId_);
+    }
+    if (!audioSceneManager_.IsPhoneCallOrChatScene()) {
+        FetchOutputDeviceAndRoute(caller);
+    }
+
+    if (enableDualHalToneState_ &&
+        static_cast<int64_t>(streamDesc->sessionId_) == static_cast<int64_t>(enableDualHalToneSessionId_)) {
+        FetchOutputDeviceAndRoute("UpdateTracker_ForDualHalTone");
+        if ((streamDesc->streamStatus_ == STREAM_STATUS_STOPPED ||
+            streamDesc->streamStatus_ == STREAM_STATUS_RELEASED) && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+            AUDIO_INFO_LOG("disable dual hal tone when ringer/alarm renderer stop/release.");
+            UpdateDualToneState(false, enableDualHalToneSessionId_);
+        }
+    }
+
+    if (isRingDualToneOnPrimarySpeaker_ && Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
+        bool isNotPaused = streamDesc->streamStatus_ != STREAM_STATUS_PAUSED;
+        bool isPausedNotAlarm = streamDesc->streamStatus_ == STREAM_STATUS_PAUSED &&
+            streamUsage != STREAM_USAGE_ALARM &&
+            !AudioCoreServiceUtils::IsRingScene(AudioSceneManager::GetInstance().GetAudioScene(true));
+        if (isNotPaused || isPausedNotAlarm) {
+            CHECK_AND_RETURN_LOG(!AudioCoreServiceUtils::IsDualOnActive(), "Dual still on active");
+            AUDIO_INFO_LOG("[ADeviceEvent] disable primary speaker dual tone when ringer renderer run over");
+            isRingDualToneOnPrimarySpeaker_ = false;
+            // Add delay between end of double ringtone and device switch.
+            // After the ringtone ends, there may still be residual audio data in the pipeline.
+            // Switching the device immediately can cause pop noise due the undrained buffers.
+            usleep(RING_DUAL_END_DELAY_US);
+            FetchOutputDeviceAndRoute("UpdateTracker_2");
+            CHECK_AND_RETURN_LOG(!isRingDualToneOnPrimarySpeaker_, "no need to execute SetInnerStreamMute false");
+            for (std::pair<uint32_t, AudioStreamType> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
+                audioPolicyManager_.SetDualStreamVolumeMute(stream.first, false);
+            }
+            streamsWhenRingDualOnPrimarySpeaker_.clear();
+            AudioStreamType streamType = streamCollector_.GetStreamType(streamDesc->sessionId_);
+            if (streamType == STREAM_MUSIC) {
+                audioPolicyManager_.SetDualStreamVolumeMute(streamDesc->sessionId_, false);
+            }
+        }
+    }
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
@@ -622,23 +678,25 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
 
-    // A stream set default device special case
-    if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
-        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
-        std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
-        FetchOutputDevicesForDescs(streamDesc, outputDescs);
-    }
     CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
 
-    // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
-    // will reset a2dp device to none.
-    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
     // [Capturer NOTE 1.0] be careful device may be changed.
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->GetMainNewDeviceDesc();
     CHECK_AND_CALL_FUNC_RETURN_RET(deviceDesc, ERR_NULL_POINTER,
         HILOG_COMM_ERROR("[StartClient]deviceDesc is nullptr"));
+    
+    // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
+    // will reset a2dp device to none.
+    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
+
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        // A stream set default device special case
+        if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
+            audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
+            std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
+            FetchOutputDevicesForDescs(streamDesc, outputDescs);
+        }
         int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
@@ -685,6 +743,9 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
     ForceRemoveSleStreamType(streamDesc);
+
+    HandlePlaybackStoppingOperations(streamDesc, "PauseClient");
+
     return SUCCESS;
 }
 
@@ -697,6 +758,9 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
     ForceRemoveSleStreamType(streamDesc);
+
+    HandlePlaybackStoppingOperations(streamDesc, "StopClient");
+
     return SUCCESS;
 }
 
@@ -717,6 +781,9 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
+
+    HandlePlaybackStoppingOperations(streamDesc, "ReleaseClient");
+    
     RemoveUnusedPipe();
     if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
         RemoveUnusedRecordPipe();
@@ -1179,6 +1246,7 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
     auto sessionIds = pipeManager_->GetStreamIdsByUidAndPid(curUid, curPid);
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
+        pipeManager_->RemoveSwitchStream(sessionId);
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
@@ -1860,7 +1928,7 @@ void AudioCoreService::NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDevic
 int32_t AudioCoreService::FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    int32_t ret = deviceDesc->networkId_ != LOCAL_NETWORK_ID ? FetchOutputDeviceAndRoute("StartClient") : 0;
+    int32_t ret = FetchOutputDeviceAndRoute("StartClient");
     JUDGE_AND_WARNING_LOG(ret != SUCCESS, "FetchOutputDeviceAndRoute failed");
     int32_t outputRet = ActivateOutputDevice(streamDesc);
     CHECK_AND_CALL_FUNC_RETURN_RET(outputRet != REFETCH_DEVICE, SUCCESS,

@@ -106,6 +106,10 @@ public:
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
     bool HasRunningRecognitionCapturerStream();
     bool IsOnPrimaryAdapter(uint32_t sessionId);
+    void AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void RemoveSwitchStream(uint32_t sessionId);
+    bool IsSwitchStreamExist(uint32_t sessionId);
+    void AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
@@ -118,6 +122,8 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};
     std::shared_mutex pipeListLock_;
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> switchStreamMap_{};
+    mutable std::shared_mutex switchStreamMapLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

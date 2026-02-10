@@ -109,6 +109,14 @@ private:
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     void GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
                                           std::shared_ptr<PipeStreamPropInfo> &info);
+    void SortStreamByStatus(std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>,
+        std::shared_ptr<AudioPipeInfo>>> &streamList);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> UpdateStreamDescs(
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        const std::unordered_set<uint32_t> &originalStreamSessionIds);
+    void AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
+    
     AudioPolicyConfigManager& configManager_;
 };
 } // namespace AudioStandard
