@@ -1851,11 +1851,10 @@ export struct AudioTrackEdit {
     renderTrackList: string[],
     audioTrackList: AudioTrack[]
   ): void {
-    //清空输入数组（每次进来前已初始化，但确保干净）
     notRenderTrackList.length = 0;
     renderTrackList.length = 0;
 
-    //遍历所有音轨，根据 isSilent 分类
+    //Traverse all audio tracks and classify them based on isSilent.
     audioTrackList.forEach(track => {
       if (track.isSilent) {
         notRenderTrackList.push(track.audioTrackId);
