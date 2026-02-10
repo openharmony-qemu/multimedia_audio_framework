@@ -611,7 +611,7 @@ void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamD
     CHECK_AND_RETURN(action == CONCEDE_INCOMING || action == CONCEDE_EXISTING);
     
     std::shared_ptr<AudioStreamDescriptor> targetStream =
-        (action == CONCEDE_INCOMING) ? existingStream : incomingStream; 
+        (action == CONCEDE_INCOMING) ? existingStream : incomingStream;
 
     bool isStreamInSwitch = AudioPipeManager::GetPipeManager()->IsSwitchStreamExist(targetStream->sessionId_);
     // Stream is in persistenly pasued state, unrelated to trigger recreation.

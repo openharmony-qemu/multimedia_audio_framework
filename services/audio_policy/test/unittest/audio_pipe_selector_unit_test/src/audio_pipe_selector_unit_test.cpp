@@ -2234,7 +2234,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_006, TestSize.Level1)
 
 /**
  * @tc.name: AdjustConcedeActionByStatus_001
- * @tc.desc: Test AdjustConcedeActionByStatus when target stream is not STARTED and not in switch state, action should be flipped
+ * @tc.desc: Test when target stream is not STARTED and not in switch state, action should be flipped
  * @tc.type: FUNC
  */
 HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_001, TestSize.Level1)
