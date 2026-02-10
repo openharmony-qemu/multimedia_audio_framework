@@ -43,6 +43,8 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const int32_t STREAM_USAGE_COUNT = 24;
+const int32_t MAX_COUNT = 10;
 shared_ptr<AudioA2dpOffloadManager> manager;
 typedef void (*TestFuncs)();
 
@@ -210,6 +212,96 @@ void IsA2dpOffloadConnectingFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
+void ConnectA2dpOffloadFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    const std::string deviceAddress = manager->a2dpOffloadDeviceAddress_;
+    std::vector<int32_t> sessionIds = {1, 2, 3};
+    constexpr int32_t currentOffloadConnectionStateCount =
+        static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
+    A2dpOffloadConnectionState currentOffloadConnectionState =
+        static_cast<A2dpOffloadConnectionState>(GetData<uint8_t>() % currentOffloadConnectionStateCount);
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(currentOffloadConnectionState);
+    manager->ConnectA2dpOffload(deviceAddress, sessionIds);
+    OnStop();
+}
+
+void WaitForConnectionCompletedFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    manager->connectionTriggerSessionIds_ = {1, 2, 3};
+    constexpr int32_t currentOffloadConnectionStateCount =
+        static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
+    A2dpOffloadConnectionState currentOffloadConnectionState =
+        static_cast<A2dpOffloadConnectionState>(GetData<uint8_t>() % currentOffloadConnectionStateCount);
+    manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(currentOffloadConnectionState);
+    manager->IsA2dpOffloadConnected();
+    manager->WaitForConnectionCompleted();
+    OnStop();
+}
+
+void UpdateA2dpOffloadFlagForSpatializationChangedFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap = {{1, true}, {2, false}};
+    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    manager->UpdateA2dpOffloadFlagForSpatializationChanged(sessionIDToSpatializationEnabledMap, deviceType);
+    OnStop();
+}
+
+void UpdateA2dpOffloadFlagForStartStreamFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    int32_t startSessionId = GetData<int32_t>();
+    manager->UpdateA2dpOffloadFlagForStartStream(startSessionId);
+    OnStop();
+}
+
+void GetSpatialAudioFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    bool getSpatialFromService = GetData<bool>();
+    int32_t sessionId = GetData<int32_t>();
+    StreamUsage usage = static_cast<StreamUsage>(GetData<int32_t>() % STREAM_USAGE_COUNT);
+    std::unordered_map<uint32_t, bool> sessionIDToSpatializationEnabledMap;
+    uint32_t mapSize = GetData<uint32_t>();
+    for (uint32_t i = 0; i < mapSize; ++i) {
+        uint32_t key = GetData<uint32_t>();
+        bool value = GetData<bool>();
+        sessionIDToSpatializationEnabledMap[key] = value;
+    }
+    manager->GetSpatialAudio(getSpatialFromService, sessionId, usage, sessionIDToSpatializationEnabledMap);
+    OnStop();
+}
+
+void UpdateA2dpOffloadFlagInternalFuzzTest(FuzzedDataProvider& fdp)
+{
+    shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
+    manager->Init();
+    std::vector<Bluetooth::A2dpStreamInfo> allRunningA2dpInfos;
+    uint32_t infosSize = GetData<uint32_t>() % 10;
+    for (uint32_t i = 0; i < infosSize; ++i) {
+        Bluetooth::A2dpStreamInfo info;
+        info.sessionId = GetData<int32_t>();
+        info.streamType = GetData<int32_t>();
+        info.isSpatialAudio = GetData<bool>();
+        allRunningA2dpInfos.push_back(info);
+    }
+    std::vector<int32_t> allRunningSessions;
+    uint32_t sessionsSize = GetData<uint32_t>() % 10;
+    for (uint32_t i = 0; i < sessionsSize; ++i) {
+        allRunningSessions.push_back(GetData<int32_t>());
+    }
+    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    manager->UpdateA2dpOffloadFlagInternal(allRunningA2dpInfos, allRunningSessions, deviceType);
+    OnStop();
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({OffloadStartPlayingFuzzTest,
@@ -219,6 +311,12 @@ void Test(FuzzedDataProvider& fdp)
     GetA2dpOffloadCodecAndSendToDspFuzzTest,
     OnA2dpPlayingStateChangedFuzzTest,
     IsA2dpOffloadConnectingFuzzTest,
+    ConnectA2dpOffloadFuzzTest,
+    WaitForConnectionCompletedFuzzTest,
+    UpdateA2dpOffloadFlagForSpatializationChangedFuzzTest,
+    UpdateA2dpOffloadFlagForStartStreamFuzzTest,
+    GetSpatialAudioFuzzTest,
+    UpdateA2dpOffloadFlagInternalFuzzTest,
     });
     func(fdp);
 }

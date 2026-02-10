@@ -369,8 +369,8 @@ group("audio_fuzz_test") {
     "fuzztest/haudioworkgroupcallbackimpl_fuzzer:fuzztest",
     "fuzztest/hipcstreamlistenerimpl_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioroutermap_fuzzer:fuzztest",
-    "fuzztest/audiopolicy_fuzzer/audiousrselectmanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiosafevolumenotificationimpl_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioiohandlemap_fuzzer:fuzztest",
   ]
 
   if (audio_framework_feature_audiosuite_support) {
