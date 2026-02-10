@@ -307,6 +307,62 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateBackgr
     EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_INACTIVE_BACKGROUND);
     EXPECT_TRUE(offloadNode_->setPolicyStateTask_.flag);
 }
+
+// Test SetBufferSize with small buffer and running state should lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_SmallBufferRunning_ShouldLock, TestSize.Level0)
+{
+    // Set running state and foreground (small buffer 200ms)
+    offloadNode_->state_ = STREAM_MANAGER_RUNNING;
+    offloadNode_->hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
+
+    // Expect lock method called once, SetBufferSize called once
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(1);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
+}
+
+// Test SetBufferSize with small buffer but not running state should not lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_SmallBufferNotRunning_ShouldNotLock, TestSize.Level0)
+{
+    // Set IDLE state (not running)
+    offloadNode_->state_ = STREAM_MANAGER_IDLE;
+    offloadNode_->hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
+
+    // Expect lock method NOT called, only SetBufferSize
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(0);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
+}
+
+// Test SetBufferSize with large buffer (background) and running state should not lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_LargeBufferRunning_ShouldNotLock, TestSize.Level0)
+{
+    // Set running state but BACKGROUND (large buffer 7000ms)
+    offloadNode_->state_ = STREAM_MANAGER_RUNNING;
+    offloadNode_->hdiPolicyState_ = OFFLOAD_INACTIVE_BACKGROUND;
+
+    // Expect lock method NOT called (buffer is large)
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(0);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
+}
+
+// Test SetBufferSize with MOVIE stream type (500ms buffer) should not lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_MovieStream_ShouldNotLock, TestSize.Level0)
+{
+    // Set running state with MOVIE stream (500ms buffer, not small)
+    offloadNode_->state_ = STREAM_MANAGER_RUNNING;
+    offloadNode_->nodeInfo_.streamType = STREAM_MOVIE;
+
+    // Expect lock method NOT called (buffer is 500ms > 200ms)
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(0);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
