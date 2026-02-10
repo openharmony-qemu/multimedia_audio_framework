@@ -50,6 +50,7 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
             audioScene, audioScene_);
         oldScene = lastAudioScene_;
         lastAudioScene_ = audioScene_;
+        audioScene_ = audioScene;
         newScene = audioScene_;
     }
     if (oldScene != AUDIO_SCENE_DEFAULT && newScene == AUDIO_SCENE_DEFAULT) {
