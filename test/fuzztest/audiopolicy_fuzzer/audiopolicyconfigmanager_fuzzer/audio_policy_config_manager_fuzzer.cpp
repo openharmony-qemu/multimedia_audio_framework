@@ -217,6 +217,103 @@ void IsStreamPropMatchFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyConfigManager::GetInstance().IsStreamPropMatch(streamInfo, infos);
 }
 
+void GetFormatOnUpdateAnahsSupportFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::string anahsShowType = g_fuzzUtils.GetData<std::string>();
+    AudioPolicyConfigManager::GetInstance().GetFastFormat();
+    AudioPolicyConfigManager::GetInstance().OnUpdateAnahsSupport(anahsShowType);
+}
+
+void IsSupportInnerCaptureOffloadFuzzTest(FuzzedDataProvider& fdp)
+{
+    PolicyGlobalConfigs globalConfigs;
+    PolicyConfigInfo policyConfigInfo;
+    if (g_fuzzUtils.GetData<bool>()) {
+        policyConfigInfo.name_ = "offloadInnerCaptureSupport";
+        policyConfigInfo.value_ = "-0";
+    }
+    globalConfigs.commonConfigs_.push_back(policyConfigInfo);
+    AudioPolicyConfigManager::GetInstance().OnGlobalConfigsParsed(globalConfigs);
+    AudioPolicyConfigManager::GetInstance().IsSupportInnerCaptureOffload();
+}
+
+void PreferMultiChannelPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    desc->newDeviceDescs_.push_back(deviceDesc);
+    desc->audioFlag_ = static_cast<AudioFlag>(g_fuzzUtils.GetData<uint32_t>() % AUDIO_FLAG_MAX);
+    AudioPolicyConfigManager::GetInstance().PreferMultiChannelPipe(desc);
+}
+
+void UpdateStreamSampleInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
+    desc->routeFlag_ = g_fuzzUtils.GetData<uint32_t>();
+    desc->streamInfo_.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
+    AudioStreamInfo streamInfo = desc->streamInfo_;
+    AudioPolicyConfigManager::GetInstance().UpdateStreamSampleInfo(desc, streamInfo);
+}
+
+void MatchStreamPropInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<PipeStreamPropInfo> info = nullptr;
+    std::shared_ptr<AdapterPipeInfo> adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    CHECK_AND_RETURN(adapterPipeInfo != nullptr);
+    if (g_fuzzUtils.GetData<bool>()) {
+        std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        adapterPipeInfo->streamPropInfos_.push_back(streamPropInfo);
+    }
+    if (g_fuzzUtils.GetData<bool>()) {
+        std::shared_ptr<PipeStreamPropInfo> dynamicStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        std::list<std::shared_ptr<PipeStreamPropInfo>> dynamicProps = {dynamicStreamPropInfo};
+        adapterPipeInfo->UpdateDynamicStreamProps(dynamicProps);
+    }
+    AudioStreamInfo streamInfo(g_fuzzUtils.GetData<AudioSamplingRate>(), g_fuzzUtils.GetData<AudioEncodingType>(),
+        g_fuzzUtils.GetData<AudioSampleFormat>(), g_fuzzUtils.GetData<AudioChannel>(),
+        g_fuzzUtils.GetData<AudioChannelLayout>());
+    AudioPolicyConfigManager::GetInstance().MatchStreamPropInfo(info, adapterPipeInfo, streamInfo);
+}
+
+void GetStreamPropInfoForMultiChannelFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
+    desc->streamInfo_.encoding = g_fuzzUtils.GetData<AudioEncodingType>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    desc->newDeviceDescs_.push_back(deviceDesc);
+    desc->audioFlag_ = AUDIO_OUTPUT_FLAG_MULTICHANNEL;
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    CHECK_AND_RETURN(info != nullptr);
+    if (g_fuzzUtils.GetData<bool>()) {
+        std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+        streamPropInfo->channelLayout_ = g_fuzzUtils.GetData<AudioChannelLayout>();
+        info->streamPropInfos_.push_back(streamPropInfo);
+    }
+    AudioChannelLayout channelLayout = g_fuzzUtils.GetData<AudioChannelLayout>();
+    AudioPolicyConfigManager::GetInstance().GetStreamPropInfoForMultiChannel(desc, info, channelLayout);
+}
+
+void GetDynamicStreamPropInfoFromPipeForViVidFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    CHECK_AND_RETURN(info != nullptr);
+    std::shared_ptr<PipeStreamPropInfo> pipeStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    CHECK_AND_RETURN(pipeStreamPropInfo != nullptr);
+    pipeStreamPropInfo->channelLayout_ = g_fuzzUtils.GetData<AudioChannelLayout>();
+    std::list<std::shared_ptr<PipeStreamPropInfo>> streamProps = {pipeStreamPropInfo};
+    info->UpdateDynamicStreamProps(streamProps);
+    AudioSampleFormat format = g_fuzzUtils.GetData<AudioSampleFormat>();
+    uint32_t sampleRate = g_fuzzUtils.GetData<uint32_t>();
+    AudioChannel channels = g_fuzzUtils.GetData<AudioChannel>();
+    AudioChannelLayout channelLayout = g_fuzzUtils.GetData<AudioChannelLayout>();
+    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(sampleRate), AudioEncodingType::ENCODING_AUDIOVIVID,
+        format, channels, channelLayout);
+    AudioPolicyConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -228,11 +325,21 @@ void Test(FuzzedDataProvider& fdp)
     SetAndGetAudioLatencyFromXmlFuzzTest,
     GetAdapterInfoByTypeFuzzTest,
     GetStreamPropInfoSizeFuzzTest,
+    GetTargetSourceTypeAndMatchingFlagFuzzTest,
+    ParseFormatFuzzTest,
     CheckDynamicCapturerConfigFuzzTest,
     GetStreamPropInfoForRecordFuzzTest,
     GetNormalRecordAdapterInfoFuzzTest,
+    UpdateBasicStreamInfoFuzzTest,
     GetDynamicStreamPropInfoFromPipeFuzzTest,
     IsStreamPropMatchFuzzTest,
+    GetFormatOnUpdateAnahsSupportFuzzTest,
+    IsSupportInnerCaptureOffloadFuzzTest,
+    PreferMultiChannelPipeFuzzTest,
+    UpdateStreamSampleInfoFuzzTest,
+    MatchStreamPropInfoFuzzTest,
+    GetStreamPropInfoForMultiChannelFuzzTest,
+    GetDynamicStreamPropInfoFromPipeForViVidFuzzTest,
     });
     func(fdp);
 }

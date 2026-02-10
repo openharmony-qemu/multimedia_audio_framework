@@ -215,6 +215,90 @@ void ReloadCapturerSessionForInputPipeFuzzTest(FuzzedDataProvider& fdp)
     SessionOperation operation = g_fuzzUtils.GetData<SessionOperation>();
     session.ReloadCapturerSessionForInputPipe(sessionId, operation);
 }
+
+void GetTargetSessionIdForInputPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.sourceType = g_fuzzUtils.GetData<SourceType>();
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->streamDescriptors_.push_back(stream);
+
+    uint32_t originSessionId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t targetSessionId = g_fuzzUtils.GetData<uint32_t>();
+    SessionOperation operation = g_fuzzUtils.GetData<SessionOperation>();
+    session.GetTargetSessionIdForInputPipe(pipeInfo, originSessionId, targetSessionId, operation);
+}
+
+void GetMaxPriorityForInputPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    stream->streamStatus_ = g_fuzzUtils.GetData<AudioStreamStatus>();
+    stream->capturerInfo_.sourceType = SOURCE_TYPE_MIC;
+    pipeInfo->streamDescriptors_.push_back(stream);
+
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    AudioStreamDescriptor maxRunningDesc;
+    AudioStreamDescriptor maxRemainingDesc;
+
+    AudioSourceStrategyType strategyType;
+    strategyType.audioFlag = stream->audioFlag_;
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->insert({stream->capturerInfo_.sourceType, strategyType});
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+    session.GetMaxPriorityForInputPipe(pipeInfo, sessionId, maxRunningDesc, maxRemainingDesc);
+}
+
+void IsVirtualAudioRecognitionSessionFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    SessionInfo sessionInfo;
+    session.sessionWithNormalSourceType_.insert({sessionId, sessionInfo});
+    session.IsVirtualAudioRecognitionSession(sessionId);
+}
+
+void IsPipeInSourceStrategyMapFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    uint64_t sessionId = g_fuzzUtils.GetData<uint64_t>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = sessionId;
+    pipeInfo->streamDescriptors_.push_back(stream);
+    session.IsPipeInSourceStrategyMap(pipeInfo, sessionId);
+}
+
+void IsRemainingSourceIndependentFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    session.sessionWithNormalSourceType_.insert({sessionId, sessionInfo});
+
+    AudioSourceStrategyType strategyType;
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->insert({sessionInfo.sourceType, strategyType});
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+    session.IsRemainingSourceIndependent();
+}
+
+void IsSourceTypeValidForEcFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    session.IsSourceTypeValidForEc(sourceType);
+}
+
+void IsSessionIdValidForEcFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioCapturerSession& session = AudioCapturerSession::GetInstance();
+    uint32_t sessionId = g_fuzzUtils.GetData<uint32_t>();
+    session.IsSessionIdValidForEc(sessionId);
+}
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -241,6 +325,12 @@ void Test(FuzzedDataProvider& fdp)
     SetHearingAidReloadFlagFuzzTest,
     ReloadCaptureSoftLinkFuzzTest,
     ReloadCapturerSessionForInputPipeFuzzTest,
+    GetTargetSessionIdForInputPipeFuzzTest,
+    GetMaxPriorityForInputPipeFuzzTest,
+    IsVirtualAudioRecognitionSessionFuzzTest,
+    IsPipeInSourceStrategyMapFuzzTest,
+    IsRemainingSourceIndependentFuzzTest,
+    IsSourceTypeValidForEcFuzzTest,
     });
     func(fdp);
 }

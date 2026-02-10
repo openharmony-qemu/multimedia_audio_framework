@@ -42,7 +42,13 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 const int32_t NUM_1 = 1;
+const int32_t NUM_2 = 2;
+const int32_t NUM_5 = 5;
 const uint32_t IDNUM = 100;
+const uint32_t AUDIO_CHANNEL_COUNT = 16;
+const uint32_t AUDIO_PIPE_ACTION_COUNT = 4;
+const uint32_t AUDIO_SAMPLE_FORMAT_COUNT = 5;
+const std::string PIPE_CHANNELS = "2";
 constexpr int32_t AUDIO_MODE_COUNT = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + NUM_1;
 constexpr int32_t AUDIO_FLAG_COUNT = static_cast<int32_t>(AudioFlag::AUDIO_FLAG_MAX) + NUM_1;
 
@@ -205,6 +211,215 @@ void ProcessConcurrencyFuzzTest(FuzzedDataProvider& fdp)
     audioPipeSelector->ProcessConcurrency(existingStream, incomingStream, streamsToMove);
 }
 
+void ProcessRendererAndCapturerConcurrencyFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = GetData<uint32_t>();
+    streamDesc->sessionId_ = GetData<uint32_t>();
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = GetData<uint32_t>();
+    pipeInfoList.push_back(pipeInfo);
+    AudioPipeManager::GetPipeManager()->curPipeList_ = pipeInfoList;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ProcessRendererAndCapturerConcurrency(streamDesc);
+}
+
+void CheckFastStreamOverLimitToNormalFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    size_t numStreams = GetData<size_t>() % NUM_5;
+    for (size_t i = 0; i < numStreams; ++i) {
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+        streamDesc->routeFlag_ = GetData<uint32_t>();
+        streamDesc->sessionId_ = GetData<uint32_t>();
+        streamDescs.push_back(streamDesc);
+    }
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->CheckFastStreamOverLimitToNormal(streamDescs);
+}
+
+void IsSameAdapterFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDescA = std::make_shared<AudioStreamDescriptor>();
+    streamDescA->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDescA->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDescA->newDeviceDescs_.front()->networkId_ =
+        GetData<uint32_t>() % NUM_2 == 0 ? LOCAL_NETWORK_ID : REMOTE_NETWORK_ID;
+    streamDescA->routeFlag_ = GetData<uint32_t>();
+    streamDescA->audioMode_ = GetData<AudioMode>();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDescB = std::make_shared<AudioStreamDescriptor>();
+    streamDescB->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDescB->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDescB->newDeviceDescs_.front()->networkId_ =
+        GetData<uint32_t>() % NUM_2 == 0 ? LOCAL_NETWORK_ID : REMOTE_NETWORK_ID;
+    streamDescB->routeFlag_ = GetData<uint32_t>();
+    streamDescB->audioMode_ = GetData<AudioMode>();
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->IsSameAdapter(streamDescA, streamDescB);
+}
+
+void AddStreamToPipeAndUpdateActionFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamToAdd = std::make_shared<AudioStreamDescriptor>();
+    streamToAdd->sessionId_ = GetData<uint32_t>();
+    streamToAdd->routeFlag_ = GetData<uint32_t>();
+
+    std::shared_ptr<AudioPipeInfo> pipe = std::make_shared<AudioPipeInfo>();
+    pipe->name_ = "test_pipe";
+    pipe->adapterName_ = "test_adapter";
+    pipe->routeFlag_ = GetData<uint32_t>();
+    pipe->pipeAction_ = static_cast<AudioPipeAction>(GetData<uint8_t>() % AUDIO_PIPE_ACTION_COUNT);
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->AddStreamToPipeAndUpdateAction(streamToAdd, pipe);
+}
+
+void SetOriginalFlagForcedNormalIfNeedFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = GetData<uint32_t>();
+    streamDesc->audioFlag_ = static_cast<AudioFlag>(GetData<uint32_t>() % AUDIO_FLAG_COUNT);
+    streamDesc->routeFlag_ = GetData<uint32_t>();
+    streamDesc->audioMode_ = GetData<AudioMode>();
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->SetOriginalFlagForcedNormalIfNeed(streamDesc);
+}
+
+void FindExistingPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    size_t numPipes = GetData<size_t>() % NUM_5;
+    for (size_t i = 0; i < numPipes; ++i) {
+        std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+        pipeInfo->name_ = "test_pipe";
+        pipeInfo->adapterName_ = "test_adapter";
+        pipeInfo->routeFlag_ = GetData<uint32_t>();
+        pipeInfo->pipeAction_ = static_cast<AudioPipeAction>(GetData<uint8_t>() % AUDIO_PIPE_ACTION_COUNT);
+        pipeInfo->audioStreamInfo_.channels =
+            static_cast<AudioChannel>(GetData<uint8_t>() % AUDIO_CHANNEL_COUNT + NUM_1);
+        pipeInfo->audioStreamInfo_.format =
+            static_cast<AudioSampleFormat>(GetData<uint8_t>() % AUDIO_SAMPLE_FORMAT_COUNT);
+        pipeInfo->audioStreamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+        selectedPipeInfoList.push_back(pipeInfo);
+    }
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->name_ = "test_pipe";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = GetData<uint32_t>();
+    streamDesc->routeFlag_ = GetData<uint32_t>();
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ =
+        static_cast<AudioSampleFormat>(GetData<uint8_t>() % AUDIO_SAMPLE_FORMAT_COUNT);
+    streamPropInfo->sampleRate_ = GetData<uint32_t>();
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->channels_ = static_cast<AudioChannel>(GetData<uint8_t>() % AUDIO_CHANNEL_COUNT + NUM_1);
+    streamPropInfo->bufferSize_ = GetData<uint32_t>();
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->FindExistingPipe(selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+}
+
+void MatchRemoteOffloadPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = static_cast<AudioSampleFormat>(GetData<uint8_t>() % AUDIO_SAMPLE_FORMAT_COUNT);
+    streamPropInfo->sampleRate_ = GetData<uint32_t>();
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->channels_ = static_cast<AudioChannel>(GetData<uint8_t>() % AUDIO_CHANNEL_COUNT + NUM_1);
+    
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = GetData<uint32_t>();
+    pipeInfo->adapterName_ = (GetData<uint8_t>() % NUM_2 == 0) ? "test_adapter" : REMOTE_NETWORK_ID;
+    pipeInfo->moduleInfo_.channels = PIPE_CHANNELS;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->name_ = "test_pipe";
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->MatchRemoteOffloadPipe(streamPropInfo, pipeInfo, streamDesc);
+}
+
+void IsPipeFormatMatchFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = static_cast<AudioSampleFormat>(GetData<uint8_t>() % AUDIO_SAMPLE_FORMAT_COUNT);
+    streamPropInfo->sampleRate_ = GetData<uint32_t>();
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->channels_ = static_cast<AudioChannel>(GetData<uint8_t>() % AUDIO_CHANNEL_COUNT + NUM_1);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->moduleInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->IsPipeFormatMatch(streamPropInfo, pipeInfo);
+}
+
+void UpdatePipeInfoFromStreamPropFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = static_cast<AudioSampleFormat>(GetData<uint8_t>() % AUDIO_SAMPLE_FORMAT_COUNT);
+    streamPropInfo->sampleRate_ = GetData<uint32_t>();
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->channels_ = static_cast<AudioChannel>(GetData<uint8_t>() % AUDIO_CHANNEL_COUNT + NUM_1);
+    streamPropInfo->bufferSize_ = GetData<uint32_t>();
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->name_ = "test_pipe";
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    info.moduleInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->UpdatePipeInfoFromStreamProp(streamDesc, streamPropInfo, info);
+}
+
+void IsPipeMatchFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = GetData<uint32_t>();
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->networkId_ =
+        (GetData<uint8_t>() % NUM_2 == 0) ? LOCAL_NETWORK_ID : REMOTE_NETWORK_ID;
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = GetData<uint32_t>();
+    pipeInfo->adapterName_ = "test_adapter";
+
+    std::string adapterName = "test_adapter";
+
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->IsPipeMatch(streamDesc, pipeInfo, adapterName);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -215,6 +430,16 @@ void Test(FuzzedDataProvider& fdp)
     FetchPipeAndExecuteFuzzTest,
     FetchPipesAndExecuteFuzzTest,
     ProcessConcurrencyFuzzTest,
+    ProcessRendererAndCapturerConcurrencyFuzzTest,
+    CheckFastStreamOverLimitToNormalFuzzTest,
+    IsSameAdapterFuzzTest,
+    AddStreamToPipeAndUpdateActionFuzzTest,
+    SetOriginalFlagForcedNormalIfNeedFuzzTest,
+    FindExistingPipeFuzzTest,
+    MatchRemoteOffloadPipeFuzzTest,
+    IsPipeFormatMatchFuzzTest,
+    UpdatePipeInfoFromStreamPropFuzzTest,
+    IsPipeMatchFuzzTest,
     });
     func(fdp);
 }

@@ -89,6 +89,12 @@ public:
     void OnRouteUpdate(uint32_t routeFlag, const std::string &networkId) override {};
 };
 
+class AudioVKBInfoMgrCallbackFuzzTest : public AudioVKBInfoMgrCallback {
+public:
+    AudioVKBInfoMgrCallbackFuzzTest() {}
+    bool OnCheckVKBInfo(const std::string &bundleName) override { return false; }
+};
+
 void OnInterruptFuzzTest(FuzzedDataProvider& fdp)
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
@@ -309,6 +315,73 @@ void SetBackgroundMuteCallbackFuzzTest(FuzzedDataProvider& fdp)
     policyListenerStub->SetBackgroundMuteCallback(callback);
 }
 
+void OnQueryIsForceGetZoneDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
+    CHECK_AND_RETURN(policyListenerStub != nullptr);
+    std::string bundleName = "bundleName";
+    bool ret = g_fuzzUtils.GetData<bool>();
+
+    policyListenerStub->audioClientInfoMgrCallback_.reset();
+    policyListenerStub->OnQueryIsForceGetZoneDevice(bundleName, ret);
+
+    policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
+    if (policyListenerStub->audioClientInfoMgrCallback_.lock() == nullptr) {
+        return;
+    }
+    policyListenerStub->OnQueryIsForceGetZoneDevice(bundleName, ret);
+}
+
+void OnCheckVKBInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
+    CHECK_AND_RETURN(policyListenerStub != nullptr);
+    std::string bundleName = "bundleName";
+    bool isValid = g_fuzzUtils.GetData<bool>();
+
+    policyListenerStub->audioVKBInfoMgrCallback_.reset();
+    policyListenerStub->OnCheckVKBInfo(bundleName, isValid);
+
+    policyListenerStub->audioVKBInfoMgrCallback_ = std::make_shared<AudioVKBInfoMgrCallbackFuzzTest>();
+    if (policyListenerStub->audioVKBInfoMgrCallback_.lock() == nullptr) {
+        return;
+    }
+    policyListenerStub->OnCheckVKBInfo(bundleName, isValid);
+}
+
+void OnQueryIsForceGetDevByVolumeTypeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
+    CHECK_AND_RETURN(policyListenerStub != nullptr);
+    std::string bundleName = "bundleName";
+    bool ret = g_fuzzUtils.GetData<bool>();
+
+    policyListenerStub->audioClientInfoMgrCallback_.reset();
+    policyListenerStub->OnQueryIsForceGetDevByVolumeType(bundleName, ret);
+
+    policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
+    if (policyListenerStub->audioClientInfoMgrCallback_.lock() == nullptr) {
+        return;
+    }
+    policyListenerStub->OnQueryIsForceGetDevByVolumeType(bundleName, ret);
+}
+
+void SetAudioVKBInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
+    CHECK_AND_RETURN(policyListenerStub != nullptr);
+    std::shared_ptr<AudioVKBInfoMgrCallback> nullCallback;
+    std::weak_ptr nullWeakPtr(nullCallback);
+    policyListenerStub->SetAudioVKBInfoMgrCallback(nullWeakPtr);
+
+    std::weak_ptr<AudioVKBInfoMgrCallbackFuzzTest> callback =
+        std::make_shared<AudioVKBInfoMgrCallbackFuzzTest>();
+    if (callback.lock() == nullptr) {
+        return;
+    }
+    policyListenerStub->SetAudioVKBInfoMgrCallback(callback);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -330,6 +403,10 @@ void Test(FuzzedDataProvider& fdp)
     SetAudioClientInfoMgrCallbackFuzzTest,
     SetQueryAllowedPlaybackCallbackFuzzTest,
     SetBackgroundMuteCallbackFuzzTest,
+    OnQueryIsForceGetZoneDeviceFuzzTest,
+    OnCheckVKBInfoFuzzTest,
+    OnQueryIsForceGetDevByVolumeTypeFuzzTest,
+    SetAudioVKBInfoMgrCallbackFuzzTest,
     });
     func(fdp);
 }
