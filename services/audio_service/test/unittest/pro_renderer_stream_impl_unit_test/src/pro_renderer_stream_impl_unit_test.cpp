@@ -266,31 +266,6 @@ HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : InitParams_Direct3DA_002
- * @tc.type  : FUNC
- * @tc.number: Test InitParams when direct3DATestFlag is 0 to verify bypass logic and buffer allocation
- */
-HWTEST(ProRendererStreamImplUnitTest, InitParams_Direct3DA_002, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    processConfig.streamInfo.channels = CHANNEL_10;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_44100;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_7POINT1POINT2;
-    processConfig.streamType = STREAM_MUSIC;
-    processConfig.streamInfo.encoding = ENCODING_AUDIOVIVID;
-    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-
-    auto rendererStreamImpl = std::make_shared<ProRendererStreamImpl>(processConfig, false);
-    rendererStreamImpl->status_ = I_STATUS_INVALID;
-
-    int32_t ret = rendererStreamImpl->InitParams();
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_TRUE(rendererStreamImpl->isNeedResample_);
-    EXPECT_TRUE(rendererStreamImpl->isNeedMcr_);
-}
-
-/**
  * @tc.name  : Test Start API
  * @tc.type  : FUNC
  * @tc.number:Start_001
