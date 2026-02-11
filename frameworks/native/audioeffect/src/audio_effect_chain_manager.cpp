@@ -36,7 +36,6 @@ constexpr float INITIAL_DSP_VOLUME = -1.0f;
 constexpr int32_t INITIAL_DSP_STREAMUSAGE = -2;
 constexpr float EPSILON = 1e-6f;
 const std::string DEFAULT_DEVICE_SINK = "Speaker";
-const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
 const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
 const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
 
