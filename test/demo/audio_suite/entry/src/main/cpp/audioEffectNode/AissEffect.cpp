@@ -39,11 +39,11 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     std::string uuidStr;
     std::string inputIdStr;
     std::string selectedNodeId;
-    bool is_AllSep = false;
+    bool isAllSep = false;
     if (ParseNapiString(env, argv[ARG_1], uuidStr) != napi_ok ||
         ParseNapiString(env, argv[ARG_2], inputIdStr) != napi_ok ||
         ParseNapiString(env, argv[ARG_3], selectedNodeId) != napi_ok ||
-        napi_get_value_bool(env, argv[ARG_4], &is_AllSep) != napi_ok) {
+        napi_get_value_bool(env, argv[ARG_4], &isAllSep) != napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Parse params failed");
         return ret;
     }
@@ -52,7 +52,7 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     if (!node.physicalNode) return ret;
 
     OH_AudioSuite_Result result = AUDIOSUITE_ERROR_SYSTEM;
-    if (is_AllSep) {
+    if (isAllSep) {
         auto outputNodes = g_nodeManager->getNodesByType(OUTPUT_NODE_TYPE_DEFAULT);
         if (outputNodes.empty()) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "No output node found");
