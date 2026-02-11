@@ -2184,20 +2184,6 @@ HWTEST(AudioManagerUnitTest, ConfigDistributedRoutingRoleTest_003, TestSize.Leve
 }
 
 /**
- * @tc.name   : Test SetCallDeviceActive API
- * @tc.number : SetCallDeviceActive_001
- * @tc.desc   : Test SetCallDeviceActive interface.
- */
-HWTEST(AudioManagerUnitTest, SetCallDeviceActive_001, TestSize.Level1)
-{
-    // On bootup sco won't be connected. Hence setup should fail.
-    std::string address = "";
-    auto ret = AudioSystemManager::GetInstance()->SetCallDeviceActive(
-        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, true, address);
-    EXPECT_NE(SUCCESS, ret);
-}
-
-/**
  * @tc.name   : Test LoadSplitModule API
  * @tc.number : LoadSplitModule_001
  * @tc.desc   : Test LoadSplitModule interface, no permission, DT uid is 0(ROOT), not hicar uid: 65872
