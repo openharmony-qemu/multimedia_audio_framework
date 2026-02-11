@@ -329,7 +329,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
     }
     size_t byteSizePerData = VolumeTools::GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * channel;
-    if (buffer.buffer == nullptr || byteSizePerFrame == 0 || buffer.bufLength % byteSizePerFrame != 0) {
+    if (buffer.buffer == nullptr || byteSizePerFrame == 0) {
         AUDIO_ERR_LOG("invalid buffer, size is %{public}zu", buffer.bufLength);
         return;
     }

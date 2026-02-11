@@ -706,6 +706,14 @@ void RendererInClientInner::FirstFrameProcess()
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
+void RendererInClientInner::NotifyStreamSlientChange()
+{
+    CHECK_AND_RETURN(needNotifyStreamSlientChange_.load() && volumeDataCount_ > 0);
+    AUDIO_INFO_LOG("exist sound data, need notify stream slient change");
+    AudioPolicyManager::GetInstance().NotifyStreamSlientChange(sessionId_);
+    needNotifyStreamSlientChange_.store(false);
+}
+
 int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
     size_t oriBufferSize)
 {
@@ -754,9 +762,10 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
 
     CHECK_AND_RETURN_RET(ProcessVolume(), ERR_OPERATION_FAILED);
-    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
     VolumeTools::DfxOperation({.buffer = buffer, .bufLength = writtenSize, .dataLength = writtenSize},
         clientConfig_.streamInfo, traceTag_, volumeDataCount_);
+    NotifyStreamSlientChange();
+    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
 
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[WriteCacheData]WriteCacheData failed, null ipcStream_."));
