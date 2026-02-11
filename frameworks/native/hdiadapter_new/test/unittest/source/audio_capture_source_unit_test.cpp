@@ -985,20 +985,18 @@ HWTEST_F(AudioCaptureSourceUnitTest, SetAudioScene_001, TestSize.Level1)
 }
 
 /**
- * @tc.name   : Test UpdateActiveDeviceWithoutLock API
- * @tc.number : UpdateActiveDeviceWithoutLock_001
- * @tc.desc   : Test UpdateActiveDeviceWithoutLock
+ * @tc.name   : Test UpdateActiveDevice API
+ * @tc.number : UpdateActiveDevice_001
+ * @tc.desc   : Test UpdateActiveDevice
  */
-HWTEST_F(AudioCaptureSourceUnitTest, UpdateActiveDeviceWithoutLock_001, TestSize.Level1)
+HWTEST_F(AudioCaptureSourceUnitTest, UpdateActiveDevice_001, TestSize.Level1)
 {
     InitPrimarySource();
     EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    std::vector<DeviceType> inputDevices;
-    inputDevices.push_back(DEVICE_TYPE_MIC);
-    primarySource_->UpdateActiveDeviceWithoutLock(inputDevices);
+    DeviceType inputDevice = DEVICE_TYPE_MIC;
+    primarySource_->UpdateActiveDevice(inputDevice);
     primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, true);
-    int32_t ret = primarySource_->UpdateActiveDeviceWithoutLock(inputDevices);
-    inputDevices.clear();
+    int32_t ret = primarySource_->UpdateActiveDevice(DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(ret, SUCCESS);
     DeInitPrimarySource();
 }
