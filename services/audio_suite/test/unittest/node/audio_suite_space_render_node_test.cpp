@@ -201,9 +201,17 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderExtensionParams001, TestSize.Leve
  
 HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderSetParameterParams001, TestSize.Level0)
 {
+    int32_t ret = 0;
     auto node = std::make_shared<AudioSuiteSpaceRenderNode>();
     node->Init();
-    int32_t ret = node->SetOptions("test", "1,1,1");
+
+    ret = node->SetOptions("AudioSpaceRenderExtensionParams", "2,90");
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = node->SetOptions("AudioSpaceRenderRotationParams", "1,1,1,2,0");
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = node->SetOptions("test", "1,1,1");
     EXPECT_EQ(ret, ERROR);
 }
  
