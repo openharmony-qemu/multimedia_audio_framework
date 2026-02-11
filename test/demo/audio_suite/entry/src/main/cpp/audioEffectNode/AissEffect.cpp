@@ -40,10 +40,10 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
     std::string inputIdStr;
     std::string selectedNodeId;
     bool is_AllSep = false;
-    if (ParseNapiString(env, argv[1], uuidStr) != napi_ok ||
-        ParseNapiString(env, argv[2], inputIdStr) != napi_ok ||
-        ParseNapiString(env, argv[3], selectedNodeId) != napi_ok ||
-        napi_get_value_bool(env, argv[4], &is_AllSep) != napi_ok) {
+    if (ParseNapiString(env, argv[ARG_1], uuidStr) != napi_ok ||
+        ParseNapiString(env, argv[ARG_2], inputIdStr) != napi_ok ||
+        ParseNapiString(env, argv[ARG_3], selectedNodeId) != napi_ok ||
+        napi_get_value_bool(env, argv[ARG_4], &is_AllSep) != napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Parse params failed");
         return ret;
     }
@@ -60,7 +60,7 @@ napi_value addAudioSeparation(napi_env env, napi_callback_info info)
         }
         result = g_nodeManager->insertNode(uuidStr, outputNodes[0].id, BEFORE);
     } else {
-        result = selectedNodeId.empty() ? 
+        result = selectedNodeId.empty() ?
             (OH_AudioSuite_Result)AddEffectNodeToNodeManager(inputIdStr, uuidStr) :
             g_nodeManager->insertNode(uuidStr, selectedNodeId, LATER);
     }
