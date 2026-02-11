@@ -45,7 +45,7 @@ void PlayerDfxWriter::WriteDfxStartMsg(uint32_t index, RendererStage stage,
     }
 
     RenderDfxBuilder dfxBuilder;
-    ++dfxCollector_->dfxIndex_;
+    dfxCollector_->dfxIndex_.fetch_add(1);
     dfxBuilder.WriteInfoMsg(sourceDuration, processConfig.rendererInfo);
 
     dfxBuilder.WriteActionMsg(dfxCollector_->dfxIndex_, stage);

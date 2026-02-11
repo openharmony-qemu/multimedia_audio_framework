@@ -19,6 +19,7 @@
 #include <map>
 #include <list>
 #include <mutex>
+#include <atomic>
 
 #include "dfx_stat.h"
 #include "dfx_utils.h"
@@ -51,7 +52,7 @@ public:
         return dfxInfos_.count(index) != 0;
     }
 
-    uint32_t dfxIndex_{0};
+    std::atomic<uint32_t> dfxIndex_ = 0;
     std::map<uint32_t, std::list<T>> dfxInfos_{};
     std::mutex mutex_;
 };

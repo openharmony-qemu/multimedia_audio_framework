@@ -45,7 +45,8 @@ void RecorderDfxWriter::WriteDfxStartMsg(uint32_t index, CapturerStage stage, co
     }
 
     CapturerDfxBuilder dfxBuilder;
-    auto dfxInfo = dfxBuilder.WriteActionMsg(++dfxCollector_->dfxIndex_, stage).WriteInfoMsg(
+    dfxCollector_->dfxIndex_.fetch_add(1);
+    auto dfxInfo = dfxBuilder.WriteActionMsg(dfxCollector_->dfxIndex_, stage).WriteInfoMsg(
         processConfig.capturerInfo).GetResult();
     dfxCollector_->AddDfxMsg(index, dfxInfo);
 }
