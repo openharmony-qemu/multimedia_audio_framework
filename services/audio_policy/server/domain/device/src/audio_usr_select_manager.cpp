@@ -58,7 +58,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetSelectedInputDe
     std::lock_guard<std::mutex> lock(mutex_);
     auto invalidDesc = std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t index = GetIdFromRecordDeviceInfoList(uid);
-    return index > -1 ? recordDeviceInfoList_[index].selectedDevice_ : invalidDesc;
+    CHECK_AND_RETURN_RET(index > -1, invalidDesc);
+    return recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE ?
+        recordDeviceInfoList_[index].selectedDevice_ : invalidDesc;
 }
 
 BluetoothAndNearlinkPreferredRecordCategory AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(
