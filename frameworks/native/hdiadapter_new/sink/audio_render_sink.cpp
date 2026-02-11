@@ -299,7 +299,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
 
 void AudioRenderSink::CheckJank()
 {
-    int64_t stamp = paStatus_ == 1 ? ClockTime::GetCurNano() : INIT_LASTWRITTEN_TIME;
+    int64_t stamp = paStatus_ == 1 && volumeDataCount_ > 0 ? ClockTime::GetCurNano() : INIT_LASTWRITTEN_TIME;
     Trace trace("AudioRenderSink::CheckJank:" + std::to_string(stamp));
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, stamp);
 }
