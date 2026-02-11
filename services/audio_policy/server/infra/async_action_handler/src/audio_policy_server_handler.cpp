@@ -1740,7 +1740,6 @@ void AudioPolicyServerHandler::HandleDeviceConfigChangedEvent(const AppExecFwk::
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    std::lock_guard<std::mutex> lock(handleMapMutex_);
     CHECK_AND_RETURN_LOG(eventContextObj->descriptor != nullptr, "EventContextObj->descriptor get nullptr");
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_LOG(audioCoreService != nullptr, "AudioCoreService is nullptr");
