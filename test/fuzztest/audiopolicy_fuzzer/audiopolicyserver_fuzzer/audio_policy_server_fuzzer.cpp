@@ -577,7 +577,8 @@ void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
     bool isUpdateUi = GetData<bool>();
     int32_t volumeLevel = 0;
     int32_t zoneId = GetData<int32_t>();
-    audioPolicyServer->SetSystemVolumeLevelInternal(streamType, volumeLevel, isUpdateUi, zoneId);
+    VolumeUpdateOption info = { isUpdateUi };
+    audioPolicyServer->SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
 }
 
 void AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest()
