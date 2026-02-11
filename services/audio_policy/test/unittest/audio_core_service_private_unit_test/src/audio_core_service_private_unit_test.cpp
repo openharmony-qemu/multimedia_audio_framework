@@ -3512,7 +3512,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     streamDesc->oldDeviceDescs_.push_back(oldDesc);
-    streamDesc->oldDeviceDescs_.push_back(newDesc);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
 
     AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
     AudioStreamDeviceChangeReasonExt reason(extReason);
@@ -3543,7 +3543,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     streamDesc->oldDeviceDescs_.push_back(oldDesc);
-    streamDesc->oldDeviceDescs_.push_back(newDesc);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
 
     AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
     AudioStreamDeviceChangeReasonExt reason(extReason);
@@ -3576,7 +3576,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     streamDesc->oldDeviceDescs_.push_back(oldDesc);
-    streamDesc->oldDeviceDescs_.push_back(newDesc);
+    streamDesc->newDeviceDescs_.push_back(newDesc);
 
     AudioStreamDeviceChangeReasonExt::ExtEnum extReason =
         AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE;
