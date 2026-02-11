@@ -507,7 +507,8 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         return SUCCESS;
     }
 
-    if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
+    if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
+        forceSetRouteFlag_ = currentScoExcludeFlag_;
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
 
@@ -515,6 +516,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     }
+    currentScoExcludeFlag_ = scoExcludeFlag;
     bool isRingingToDefaultScene = false;
     bool isChangeScene = false;
     if (audioScene != currentAudioScene_) {
@@ -568,6 +570,10 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
+        return SUCCESS;
+    }
+    if (currentScoExcludeFlag_) {
+        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
         return SUCCESS;
     }
     forceSetRouteFlag_ = false;

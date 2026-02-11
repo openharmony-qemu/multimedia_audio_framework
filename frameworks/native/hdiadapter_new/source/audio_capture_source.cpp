@@ -609,7 +609,7 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExclude
     AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, scoExcludeFlag: %{public}d",
         audioScene, currentAudioScene_, scoExcludeFlag);
 
-    if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
+    if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
 
@@ -617,6 +617,7 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExclude
         int32_t ret = audioCapture_->SelectScene(audioCapture_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     }
+    currentScoExcludeFlag_ = scoExcludeFlag;
     if (audioScene != currentAudioScene_) {
         currentAudioScene_ = audioScene;
     }
@@ -1328,6 +1329,10 @@ int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice
     if (currentActiveDevice_ == inputDevice) {
         AUDIO_INFO_LOG("input device not change, device: %{public}d, sourceType: %{public}d", inputDevice,
             attr_.sourceType);
+        return SUCCESS;
+    }
+    if (currentScoExcludeFlag_) {
+        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
         return SUCCESS;
     }
 

@@ -236,7 +236,7 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
-static void SetAudioSceneForAllSource(AudioScene audioScene)
+static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag)
 {
     std::vector<std::pair<HdiIdType, std::string>> sourceConfigs = {
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB},
@@ -252,17 +252,17 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     for (const auto& config : sourceConfigs) {
         std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(config.first, config.second);
         if (source != nullptr && source->IsInited()) {
-            source->SetAudioScene(audioScene);
+            source->SetAudioScene(audioScene, scoExcludeFlag);
         }
     }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
-        fastSource->SetAudioScene(audioScene);
+        fastSource->SetAudioScene(audioScene, scoExcludeFlag);
     }
     std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
     if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
-        fastVoipSource->SetAudioScene(audioScene);
+        fastVoipSource->SetAudioScene(audioScene, scoExcludeFlag);
     }
 #endif
 }
@@ -1497,7 +1497,7 @@ int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadS
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
-    SetAudioSceneForAllSource(audioScene);
+    SetAudioSceneForAllSource(audioScene, scoExcludeFlag);
     SetAudioSceneForAllSink(audioScene, scoExcludeFlag);
     audioScene_ = audioScene;
     SetAudioBalanceStatus();
