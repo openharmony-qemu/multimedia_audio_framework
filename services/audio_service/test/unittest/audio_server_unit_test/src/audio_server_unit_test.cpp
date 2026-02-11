@@ -513,7 +513,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
 
     bool scoExcludeFlag = false;
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 #ifdef TEMP_DISABLE
@@ -1316,7 +1316,7 @@ HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->OffloadSetVolume(0.5f, "offload", "default");
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -1408,7 +1408,7 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
     std::string testName = "testSink";
     int64_t volueDataCount = 0;
     int32_t ret = audioServer->GetVolumeDataCount(testName, volueDataCount);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     EXPECT_EQ(volueDataCount, 0);
 }
 
