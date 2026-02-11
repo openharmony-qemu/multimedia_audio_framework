@@ -535,6 +535,21 @@ int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo)
     return SUCCESS;
 }
 
+void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
+{
+    nodeInfo.channels = streamInfo.channels;
+    nodeInfo.format = streamInfo.format;
+    nodeInfo.frameLen = streamInfo.frameLen;
+    nodeInfo.streamType = streamInfo.streamType;
+    nodeInfo.sessionId = streamInfo.sessionId;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(streamInfo.channelLayout);
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    nodeInfo.effectInfo = streamInfo.effectInfo;
+    nodeInfo.fadeType = streamInfo.fadeType;
+    nodeInfo.sourceType = streamInfo.sourceType;
+}
+
 void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
     HpaeNodeInfo &nodeInfo)
 {
@@ -565,21 +580,6 @@ size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
 {
     return CalculateFrameLenBySampleRate(static_cast<uint32_t>(sampleRate));
-}
-
-void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
-{
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.customSampleRate = streamInfo.customSampleRate;
-    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(streamInfo.channelLayout);
-    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.effectInfo = streamInfo.effectInfo;
-    nodeInfo.fadeType = streamInfo.fadeType;
-    nodeInfo.sourceType = streamInfo.sourceType;
 }
 
 RendererState ConvertHpaeToRendererState(HpaeSessionState state)
