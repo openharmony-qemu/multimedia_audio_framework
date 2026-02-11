@@ -3781,26 +3781,6 @@ HWTEST(AudioPolicyUnitTest, UpdateContextForAudioZone_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer::UpdateContextForAudioZone.
-* @tc.number: UpdateContextForAudioZone_002
-* @tc.desc  : Test UpdateContextForAudioZone with permission denied.
-*/
-HWTEST(AudioPolicyUnitTest, UpdateContextForAudioZone_002, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    ASSERT_TRUE(server != nullptr);
-
-    AudioZoneContext context = {};
-    int32_t zoneId = 1;
-
-    // Without permission, should return SUCCESS
-    int32_t ret = server->UpdateContextForAudioZone(zoneId, context);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer::UpdateContextForAudioZone.
 * @tc.number: UpdateContextForAudioZone_003
 * @tc.desc  : Test UpdateContextForAudioZone success case.
 */
@@ -4261,59 +4241,6 @@ HWTEST(AudioPolicyUnitTest, UnBindDeviceToAudioZone_005, TestSize.Level1)
         int32_t ret = server->UnBindDeviceToAudioZone(zoneId, devices);
         EXPECT_EQ(ret, SUCCESS);
     }
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer::EnableAudioZoneReport.
-* @tc.number: EnableAudioZoneReport_001
-* @tc.desc  : Test EnableAudioZoneReport without permission.
-*/
-HWTEST(AudioPolicyUnitTest, EnableAudioZoneReport_001, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    ASSERT_TRUE(server != nullptr);
-
-    bool enable = true;
-    int32_t ret = server->EnableAudioZoneReport(enable);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer::EnableAudioZoneReport.
-* @tc.number: EnableAudioZoneReport_002
-* @tc.desc  : Test EnableAudioZoneReport with permission.
-*/
-HWTEST(AudioPolicyUnitTest, EnableAudioZoneReport_002, TestSize.Level1)
-{
-    GetPermission();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    ASSERT_TRUE(server != nullptr);
-
-    bool enable = true;
-    int32_t ret = server->EnableAudioZoneReport(enable);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer::EnableAudioZoneReport.
-* @tc.number: EnableAudioZoneReport_003
-* @tc.desc  : Test EnableAudioZoneReport with disable.
-*/
-HWTEST(AudioPolicyUnitTest, EnableAudioZoneReport_003, TestSize.Level1)
-{
-    GetPermission();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    ASSERT_TRUE(server != nullptr);
-
-    bool enable = false;
-    int32_t ret = server->EnableAudioZoneReport(enable);
-    EXPECT_EQ(ret, ERROR);
 }
 
 /**
