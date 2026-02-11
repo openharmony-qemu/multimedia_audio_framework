@@ -48,7 +48,7 @@ constexpr int32_t DEFAULT_STREAM_OR_VOLUME_TYPE = 1;
 constexpr float INITIAL_DSP_VOLUME = -1.0f;
 constexpr float DEFAULT_SYSTEM_VOLUME = 1.0f;
 constexpr float DEFAULT_STREAM_VOLUME = 1.0f;
-const std::string TEST_DEFAULT_SCENE_TYPE = "SCENE_DEFAULT"
+const std::string TEST_DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
     {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
