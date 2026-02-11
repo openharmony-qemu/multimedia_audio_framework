@@ -69,6 +69,7 @@ export struct AudioTrackEdit {
   @State mainTitleModifier: MainTitleTextModifier = new MainTitleTextModifier();
   private symbolModifier: SymbolGlyphModifier =
     new SymbolGlyphModifier($r('sys.symbol.chevron_backward')).fontColor([$r('app.color.index_title_text_color')]);
+  @State aissEffectId: string = '0';
   @State audioTrackList: AudioTrack[] = [];
   @State notRenderTrackList: string[] = [];
   @State renderTrackList: string[] = [];
@@ -1529,19 +1530,44 @@ export struct AudioTrackEdit {
                 message: '至少添加一个音频才可以播放'
               });
               return;
-            } else {
-              const aissEffectId: string = util.generateRandomUUID(true);
-              const inputId: string = util.generateRandomUUID(true);
-              const selectedNodeId: string = util.generateRandomUUID(true);
-              let result: number = audioNapi.addAudioSeparation(0, aissEffectId, inputId, selectedNodeId, true);
-              if (result !== 0) {
-                this.getUIContext().showAlertDialog({
-                  title: '提示',
-                  message: `error addAudioSeparation: ${result}`
-                });
-              }
-              audioNapi.setSeparationMode(0);
             }
+            const executeSeparation = (mode: number) => {
+              if (this.aissEffectId == '0') {
+                this.aissEffectId = util.generateRandomUUID(true); // 唯一效果节点ID
+                const inputId: string = util.generateRandomUUID(true);
+                const selectedNodeId: string = util.generateRandomUUID(true);
+                const result = audioNapi.addAudioSeparation(mode, this.aissEffectId, inputId, selectedNodeId, true);
+                if (result !== 0) {
+                  this.getUIContext().showAlertDialog({
+                    title: '错误',
+                    message: `添加分离节点失败: ${result}`,
+                    autoCancel: true
+                  });
+                  return;
+                }
+              }
+              audioNapi.setSeparationMode(mode); // 设置分离模式：0=人声，1=伴奏
+
+              this.getUIContext().showAlertDialog({
+                title: '成功',
+                message: mode === 0 ? '已提取人声' : '已提取伴奏',
+                autoCancel: true
+              });
+            };
+
+            // 4. 弹出单选对话框
+            this.getUIContext().showAlertDialog({
+              title: '选择分离模式',
+              message: '请选择要分离的音频类型',
+              primaryButton: {
+                value: '人声',
+                action: () => executeSeparation(0)
+              },
+              secondaryButton: {
+                value: '伴奏',
+                action: () => executeSeparation(1)
+              }
+            });
           })
       }
 
@@ -1839,7 +1865,7 @@ export struct AudioTrackEdit {
     return true;
   }
 
-   /**
+  /**
    * Updates the renderTrackList and notRenderTrackList based on the isSilent status of AudioTrack.
    *
    * @param notRenderTrackList - initially empty and used to store the track IDs that are not rendered.
