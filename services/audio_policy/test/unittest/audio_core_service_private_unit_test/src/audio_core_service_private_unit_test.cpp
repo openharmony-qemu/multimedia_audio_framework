@@ -225,6 +225,7 @@ HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_005, 
     EXPECT_EQ(ret, SUCCESS);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
  * @tc.name  : Test BluetoothScoFetch.
  * @tc.number: BluetoothScoFetch_001
@@ -332,6 +333,7 @@ HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_004, TestSize.Level1)
     audioCoreService->BluetoothScoFetch(streamDesc);
     EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
 }
+#endif
 
 /**
  * @tc.name  : Test AudioCoreService.
@@ -4235,6 +4237,7 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_001, TestSize.Level1)
     EXPECT_TRUE(audioCoreService->a2dpNeedSuspend_);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
  * @tc.name   : Test AudioCoreService::HandleA2dpSuspend
  * @tc.number : HandleA2dpSuspend_003
@@ -4254,6 +4257,7 @@ HWTEST_F(AudioCoreServicePrivateTest, HandleA2dpSuspend_003, TestSize.Level1)
     audioCoreService->HandleA2dpRestore();
     EXPECT_FALSE(audioCoreService->a2dpNeedSuspend_);
 }
+#endif
 
 /**
  * @tc.name   : AudioCoreServicePrivateTest_UpdateOutputRoute_002

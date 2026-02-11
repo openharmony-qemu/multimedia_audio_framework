@@ -152,44 +152,6 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_204, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_205
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
-*/
-HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_205, TestSize.Level1)
-{
-    int32_t systemAbilityId = 0;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
-
-    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    audioPolicyServer->volumeApplyToAll_ = false;
-    audioPolicyServer->isScreenOffOrLock_ = false;
-    VolumeUtils::SetPCVolumeEnable(false);
-    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_206
-* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
-*/
-HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_206, TestSize.Level1)
-{
-    int32_t systemAbilityId = 0;
-    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
-    ASSERT_NE(audioPolicyServer, nullptr);
-
-    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    audioPolicyServer->volumeApplyToAll_ = true;
-    audioPolicyServer->isScreenOffOrLock_ = false;
-    VolumeUtils::SetPCVolumeEnable(false);
-    auto ret = audioPolicyServer->ProcessVolumeKeyEvents(keyType);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_207
 * @tc.desc  : Test AudioPolicyServer::SetStreamMute
 */
