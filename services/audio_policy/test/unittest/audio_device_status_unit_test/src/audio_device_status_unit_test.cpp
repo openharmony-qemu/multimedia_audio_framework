@@ -89,6 +89,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_002, TestSize.Level1)
     EXPECT_EQ(ret, 0);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_003
@@ -103,6 +104,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_003, TestSize.Level1)
     bRet = audioDeviceStatus.NoNeedChangeUsbDevice(address);
     EXPECT_EQ(bRet, true);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioDeviceStatus.

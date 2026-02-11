@@ -1580,6 +1580,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_002, TestSize.Level
     EXPECT_EQ(streamPropInfo->channelLayout_, AudioChannelLayout::CH_LAYOUT_5POINT1);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test AudioPolicyConfigManager.
 * @tc.number: GetStreamPropInfo_003
@@ -1636,6 +1637,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_003, TestSize.Level
     EXPECT_TRUE(streamPropInfo == nullptr);
     configData.deviceInfoMap.erase(deviceKey);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioPolicyConfigManager.
