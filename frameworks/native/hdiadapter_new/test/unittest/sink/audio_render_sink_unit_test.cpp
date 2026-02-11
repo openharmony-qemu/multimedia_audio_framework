@@ -824,7 +824,7 @@ HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     DeInitPrimarySink();
 }
- 
+
 /**
  * @tc.name   : Test UpdateActiveDevice API
  * @tc.number : UpdateActiveDevice_001
