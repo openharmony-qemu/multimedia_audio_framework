@@ -72,7 +72,7 @@ void AudioCoreServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::SetUpTestCase start-end");
     AudioPolicyServer* server = GetServerPtr();
-    server->isUT_ = true;
+    server->isNeedPublished_ = true;
     GetPermission();
     GetServerPtr()->eventEntry_->NotifyServiceReady();
 }
@@ -80,7 +80,7 @@ void AudioCoreServiceUnitTest::TearDownTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::TearDownTestCase start-end");
     AudioPolicyServer* server = GetServerPtr();
-    server->isUT_ = false;
+    server->isNeedPublished_ = false;
     server->coreService_ = nullptr;
 }
 void AudioCoreServiceUnitTest::SetUp(void)
