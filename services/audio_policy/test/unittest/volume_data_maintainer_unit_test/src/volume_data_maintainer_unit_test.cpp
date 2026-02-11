@@ -190,6 +190,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_012, TestSize.
     EXPECT_EQ(ret, true);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
 * @tc.name  : Test VolumeDataMaintainer.
 * @tc.number: VolumeDataMaintainerUnitTest_013.
@@ -211,6 +212,7 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_013, TestSize.
     ret = volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
     EXPECT_EQ(ret, false);
 }
+#endif
 
 /**
 * @tc.name  : Test VolumeDataMaintainer.

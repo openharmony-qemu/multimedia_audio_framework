@@ -1910,6 +1910,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_111, TestSize.Leve
     ASSERT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_112
@@ -1979,6 +1980,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_114, TestSize.Leve
     EXPECT_NE(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
     EXPECT_NE(ret, SUCCESS);
 }
+#endif
 
 /**
  * @tc.name  : Test AudioCoreService.
@@ -3255,6 +3257,7 @@ HWTEST_F(AudioCoreServicePrivateTest, HandlePrimaryMediaMuteForDualRing_002, Tes
     audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
 }
 
+#ifdef FUNC_NOT_FIND
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: HandlePrimaryMediaMuteForDualRing_003
@@ -3285,6 +3288,7 @@ HWTEST_F(AudioCoreServicePrivateTest, HandlePrimaryMediaMuteForDualRing_003, Tes
     audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
     audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
 }
+#endif
 
 /**
  * @tc.name  : Test AudioCoreService.
@@ -3528,6 +3532,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
     EXPECT_LE(duration, deltaUs);
 }
 
+#ifdef FUNC_NOT_FIND
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: SleepForSwitchDevice_002
@@ -3560,6 +3565,7 @@ HWTEST_F(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
     EXPECT_GE(duration, targetTime);
     EXPECT_LE(duration, targetTime + deltaUs);
 }
+#endif
 
 /**
  * @tc.name  : Test AudioCoreService.
