@@ -14,7 +14,7 @@
  */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioEndpointInner"
-#endif delayStopTim
+#endif
 
 #include "audio_endpoint.h"
 #include "audio_endpoint_private.h"
