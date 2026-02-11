@@ -72,6 +72,7 @@ export struct EffectNodeDialog {
               });
               return;
             }
+            this.selectedSoundFiled = soundFieldType;
             let node: Node = {
               id: this.selectedEffectNodeId,
               type: NodeType.FIELD,
