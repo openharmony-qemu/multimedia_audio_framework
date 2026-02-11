@@ -3688,6 +3688,9 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
             SetVolumeDb(tempDesc, streamType);
         }
     }
+    if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        SetVolumeDb(desc, streamType);
+    }
     return SUCCESS;
 }
 
