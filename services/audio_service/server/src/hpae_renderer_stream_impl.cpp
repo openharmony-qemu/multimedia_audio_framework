@@ -532,7 +532,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
         // latencyMutex_ begin
         std::shared_lock<std::shared_mutex> lock(latencyMutex_);
         framePosition = framePosition_;
-        // latencyMutex_ begin
+        // latencyMutex_ end
     }
 
     if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
