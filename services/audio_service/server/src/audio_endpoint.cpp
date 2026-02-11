@@ -948,7 +948,7 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t dela
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
-    delayStopTime_ = delayStopTime == INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS ? delayStopTime_ : delayStopTime;
+    delayStopTime_.store(delayStopTime == INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS ? delayStopTime_.load() : delayStopTime);
     listLock.unlock();
     return true;
 }
@@ -1077,7 +1077,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
     UpdateEndpointStatus(RUNNING);
-    delayStopTime_ = INT64_MAX;
+    delayStopTime_.store(INT64_MAX);
     return SUCCESS;
 }
 
@@ -1097,8 +1097,8 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
         AUDIO_PRERELEASE_LOGI("OnPause status is IDEL, need delay call stop");
         CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_NULL_POINTER, "processStream is nullptr.");
         AudioMode audioMode = processStream->GetAudioProcessConfig().audioMode;
-        delayStopTime_ = ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
-            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
+        delayStopTime_.store(ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
+            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS));
     }
     return SUCCESS;
 }
@@ -1149,12 +1149,12 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     if (endpointStatus_ == UNLINKED) {
         UpdateEndpointStatus(IDEL); // handle push_back in IDEL
         if (isDeviceRunningInIdel_) {
-            delayStopTime_ = INT64_MAX;
+            delayStopTime_.store(INT64_MAX);
             CHECK_AND_CALL_FUNC_RETURN_RET(StartDevice(), ERR_OPERATION_FAILED,
                 HILOG_COMM_ERROR("[LinkProcessStream]StartDevice failed"));
             AudioMode audioMode = processStream->GetAudioProcessConfig().audioMode;
-            delayStopTime_ = ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
-                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : LINK_RECORDER_DELAY_STOP_HDI_TIME_NS);
+            delayStopTime_.store(ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
+                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : LINK_RECORDER_DELAY_STOP_HDI_TIME_NS));
         }
     }
 
@@ -1232,7 +1232,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         UpdateEndpointStatus(UNLINKED);
     } else if (!IsAnyProcessRunningInner()) {
         UpdateEndpointStatus(IDEL);
-        delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS;
+        delayStopTime_.store(DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS);
     }
 
     AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
@@ -1841,7 +1841,7 @@ void AudioEndpointInner::AsyncGetPosTime()
         }
         {
             std::unique_lock<std::mutex> lock(startStatusLock_);
-            if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
+            if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_.load()) {
                 HILOG_COMM_INFO("[AsyncGetPosTime]IDEL for too long, let's call hdi stop");
                 DelayStopDevice();
                 continue;
@@ -1898,7 +1898,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
         case RUNNING:
             return true;
         case IDEL:
-            if (ClockTime::GetCurNano() > delayStopTime_) {
+            if (ClockTime::GetCurNano() > delayStopTime_.load()) {
                 targetStatus = RUNNING;
                 updateThreadCV_.notify_all();
                 break;
