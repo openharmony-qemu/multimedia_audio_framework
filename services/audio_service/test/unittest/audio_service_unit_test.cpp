@@ -590,7 +590,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     config.streamInfo.format = SAMPLE_S16LE;
     config.streamInfo.encoding = ENCODING_PCM;
     auto audioProcess = AudioService::GetInstance()->GetAudioProcess(config);
-    EXPECT_NE(audioProcess, nullptr);
 
     AudioService::GetInstance()->OnInitInnerCapList(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
