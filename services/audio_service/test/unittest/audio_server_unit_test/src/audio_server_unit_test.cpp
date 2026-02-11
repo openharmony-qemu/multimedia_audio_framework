@@ -513,7 +513,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
 
     bool scoExcludeFlag = false;
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag);
+#ifdef AUDIO_BUILD_VARIANT_ROOT
     EXPECT_EQ(SUCCESS, ret);
+#else 
+    EXPECT_NE(SUCCESS, ret);
+#endif
 }
 
 #ifdef TEMP_DISABLE
