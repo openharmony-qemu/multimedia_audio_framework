@@ -519,6 +519,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     uint32_t sinkLatency = GetSinkLatency();
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     uint32_t nearlinkLatency = GetNearlinkLatency();
+    uint64_t framePosition = 0;
 
     latencyUs = sinkLatency * AUDIO_US_PER_MS;
     latencyUs += a2dpOffloadLatency * AUDIO_US_PER_MS;
@@ -526,18 +527,25 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     std::vector<uint64_t> timestampCurrent = {0};
     ClockTime::GetAllTimeStamp(timestampCurrent);
     timestamp = timestampCurrent[baseUsed];
-    
+
+    {
+        // latencyMutex_ begin
+        std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+        framePosition = framePosition_;
+        // latencyMutex_ begin
+    }
+
     if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
         AUDIO_INFO_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
             ", base %{public}d, timestamp %{public}" PRIi64
             ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
-            framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
+            framePosition, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
         lastPrintTimestamp_.store(timestampCurrent[0]);
     } else {
         AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
             ", base %{public}d, timestamp %{public}" PRIu64
             ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
-            framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
+            framePosition, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
     }
 }
 
