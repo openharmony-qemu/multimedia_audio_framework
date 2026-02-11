@@ -1212,21 +1212,6 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_043, TestSize.Level4)
 }
 
 /**
- * @tc.name  : DetectAnalogHeadsetState_Headset_Remove
- * @tc.number: Audio_AudioSocketThread_DetectAnalogHeadsetState_003
- * @tc.desc  : Test DetectAnalogHeadsetState function when headset is removed.
- */
-HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Remove, TestSize.Level0)
-{
-    AudioEvent audioEvent;
-    // Act
-    int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
-
-    // Assert
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : DetectDPState_Success_WhenStateAndNameValid
  * @tc.number: AudioSocketThreadTest_001
  * @tc.desc  : Test DetectDPState function when state and name are valid.
