@@ -1517,7 +1517,7 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             idInfo = HDI_ID_INFO_RAW_AI;
         }
     } else if (pipeInfo->adapterName_ == "usb") {
-        if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
             idType = HDI_ID_TYPE_FAST;
             idInfo = HDI_ID_INFO_USB;
         }
