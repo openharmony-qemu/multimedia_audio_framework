@@ -345,7 +345,7 @@ export struct AudioTrackEdit {
       .map(num => NumberToNodeTypeMap.get(num)) // Convert numbers to NodeType
       .filter(type => {
         if (type === undefined || type === NodeType.EQ || type === NodeType.SPACE_RENDER ||
-          type === NodeType.GENERAL_VOICE_CHANGE || type === NodeType.PURE_VOICE_CHANGE) {
+          type === NodeType.GENERAL_VOICE_CHANGE || type === NodeType.PURE_VOICE_CHANGE || type === NodeType.SEPARATION) {
           return false;
         } else {
           return true;
