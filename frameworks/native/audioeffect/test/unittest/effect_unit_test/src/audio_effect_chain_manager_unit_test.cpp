@@ -48,6 +48,7 @@ constexpr int32_t DEFAULT_STREAM_OR_VOLUME_TYPE = 1;
 constexpr float INITIAL_DSP_VOLUME = -1.0f;
 constexpr float DEFAULT_SYSTEM_VOLUME = 1.0f;
 constexpr float DEFAULT_STREAM_VOLUME = 1.0f;
+const std::string TEST_DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
     {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
@@ -3868,7 +3869,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_003,
     AudioEffectChainManager::GetInstance()->ResetInfo();
     std::string sceneType = "test";
     std::string deviceKey = sceneType + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
-    std::string defaultDeviceKey = DEFAULT_SCENE_TYPE + "_&_" +
+    std::string defaultDeviceKey = TEST_DEFAULT_SCENE_TYPE + "_&_" +
         AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
     std::shared_ptr<AudioEffectChain> audioEffectChain =
         AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);
@@ -3892,7 +3893,7 @@ HWTEST(AudioEffectChainManagerUnitTest, ReleaseAudioEffectChainDynamicInner_004,
     AudioEffectChainManager::GetInstance()->ResetInfo();
     std::string sceneType = "test";
     std::string deviceKey = sceneType + "_&_" + AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
-    std::string defaultDeviceKey = DEFAULT_SCENE_TYPE + "_&_" +
+    std::string defaultDeviceKey = TEST_DEFAULT_SCENE_TYPE + "_&_" +
         AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
     std::shared_ptr<AudioEffectChain> audioEffectChain =
         AudioEffectChainManager::GetInstance()->CreateAudioEffectChain(sceneType, true);

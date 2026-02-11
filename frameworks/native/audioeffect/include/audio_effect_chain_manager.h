@@ -53,12 +53,9 @@ const uint32_t DSP_MAX_NUM_CHANNEL = CHANNEL_16;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 const uint64_t DEFAULT_MCH_NUM_CHANNELLAYOUT = CH_LAYOUT_5POINT1;
 const uint32_t BASE_TEN = 10;
-const std::string DEFAULT_DEVICE_SINK = "Speaker";
-const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t MAX_UINT_VOLUME_NUM = 10000;
 const uint32_t MAX_UINT_DSP_VOLUME = 65535;
-const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
 
 struct SessionEffectInfo {
     std::string sceneMode;
@@ -224,7 +221,7 @@ private:
     std::unordered_map<std::string, std::string> defaultPropertyMap_;
     std::vector<std::pair<std::string, int32_t>> sceneTypeCountList_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
-    std::string deviceSink_ = DEFAULT_DEVICE_SINK;
+    std::string deviceSink_ = "Speaker";
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";
     std::string foldState_ = "0";
