@@ -341,7 +341,7 @@ inline const std::vector<AudioChannelLayout> RENDERER_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_HOA_ORDER3_ACN_N3D, CH_LAYOUT_HOA_ORDER3_ACN_SN3D, CH_LAYOUT_HOA_ORDER3_FUMA
 };
 
-const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
+inline const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_U8,
     SAMPLE_S16LE,
     SAMPLE_S24LE,
@@ -349,7 +349,7 @@ const std::vector<AudioSampleFormat> AUDIO_SUPPORTED_FORMATS {
     SAMPLE_F32LE
 };
 
-const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
+inline const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
     MONO,
     STEREO,
     CHANNEL_3,
@@ -365,7 +365,7 @@ const std::vector<AudioChannel> RENDERER_SUPPORTED_CHANNELS {
     CHANNEL_16,
 };
 
-const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
+inline const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
     MONO,
     STEREO,
     CHANNEL_3,
@@ -375,7 +375,7 @@ const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
 };
 
 
-const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
+inline const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_PCM,
     ENCODING_AUDIOVIVID,
     ENCODING_EAC3,
@@ -386,7 +386,7 @@ const std::vector<AudioEncodingType> AUDIO_SUPPORTED_ENCODING_TYPES {
     ENCODING_AUDIOVIVID_DIRECT
 };
 
-const std::set<AudioEncodingType> HWDECODING_TYPES {
+inline const std::set<AudioEncodingType> HWDECODING_TYPES {
     ENCODING_EAC3,
     ENCODING_AC3,
     ENCODING_TRUE_HD,
@@ -395,7 +395,7 @@ const std::set<AudioEncodingType> HWDECODING_TYPES {
     ENCODING_AUDIOVIVID_DIRECT
 };
 
-const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
+inline const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_8000,
     SAMPLE_RATE_11025,
     SAMPLE_RATE_12000,
@@ -412,7 +412,7 @@ const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_192000
 };
 
-const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
+inline const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_UNKNOWN,
     STREAM_USAGE_MEDIA,
     STREAM_USAGE_MUSIC,
