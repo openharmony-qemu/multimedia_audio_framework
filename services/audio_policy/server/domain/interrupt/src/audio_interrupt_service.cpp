@@ -158,7 +158,7 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     sessionService_.SetSessionTimeOutCallback(shared_from_this());
     dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
     interruptCustom_ = std::make_unique<AudioInterruptCustom>();
-    interruptDfx_ = std::make_unique<AudioInterruptDfx>();
+    interruptDfx_ = std::make_shared<AudioInterruptDfx>();
 }
 
 void AudioInterruptService::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
@@ -1183,7 +1183,9 @@ AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
         currAudioInterrupt.streamUsage, incomingSourceType);
-
+    if (interruptDfx_ != nullptr) {
+        interruptDfx_->CheckInterruptEvent(currAudioInterrupt.streamId);
+    }
     RemoveStreamIdSuggestionRecord(currAudioInterrupt.streamId);
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 
@@ -1898,6 +1900,9 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeStream
     const AudioInterrupt &activeInterrupt)
 {
     if (interruptEvent.hintType != INTERRUPT_HINT_NONE) {
+        if (interruptDfx_ != nullptr) {
+            interruptDfx_->RecordInterruptEvent(interruptEvent, activeInterrupt, incomingInterrupt);
+        }
         HILOG_COMM_INFO("[SendActiveInterruptEvent]OnInterrupt for active streamId:%{public}d, hintType:%{public}d. "
             "By streamId:%{public}d", activeStreamId, interruptEvent.hintType, incomingInterrupt.streamId);
         SendInterruptEventCallback(interruptEvent, activeStreamId, activeInterrupt);
@@ -2431,6 +2436,9 @@ void AudioInterruptService::HandleIncomingState(const int32_t &zoneId, const Aud
         }
         // Handle existing focus state
         ProcessActiveInterrupt(zoneId, incomingInterrupt);
+        if (interruptDfx_ != nullptr) {
+            interruptDfx_->DelayCheckMuteStreamInterrupt(incomingInterrupt.streamId);
+        }
     }
 }
 
