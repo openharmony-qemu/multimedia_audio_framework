@@ -117,7 +117,7 @@ void AudioEndpointPlusUnitTest::TearDown(void)
 static const size_t BIGNUMBER = 2808348670;
 static const size_t NUMFIVE = 5;
 #ifdef SUPPORT_OLD_ENGINE
-static constexpr uint32_t MORE_SESSIONID = MAX_STREAMID + 1;
+static constexpr uint32_t MORE_SESSIONID = MAX_SESSIONID + 1;
 static const int32_t CAPTURER_FLAG = 10;
 static const uint32_t SESSIONID = 123456;
 #endif

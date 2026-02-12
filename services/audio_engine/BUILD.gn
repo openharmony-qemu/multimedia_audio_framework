@@ -84,9 +84,9 @@ ohos_shared_library("audio_engine_plugins") {
   install_enable = true
 
   sources = [
+    "plugin/channel_converter/src/mixer_utils.cpp",
     "plugin/channel_converter/src/channel_converter.cpp",
     "plugin/channel_converter/src/down_mixer.cpp",
-    "plugin/channel_converter/src/mixer_utils.cpp",
     "plugin/resample/proresampler/audio_proresampler.cpp",
     "plugin/resample/proresampler/audio_proresampler_process.c",
   ]

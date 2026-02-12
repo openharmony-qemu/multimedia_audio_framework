@@ -90,6 +90,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
         InitRingBuffer();
     }
 }
+
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
     AUDIO_INFO_LOG("destructor %{public}u", streamIndex_);
@@ -97,7 +98,7 @@ HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
         offloadVolumeRmap_.wait();
     }
     if (dumpEnqueueIn_ != nullptr) {
-    DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
+        DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
 }
 
@@ -137,9 +138,9 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     AUDIO_INFO_LOG("channels %{public}u channelLayout %{public}" PRIu64 " samplingRate %{public}u format %{public}u "
         "frameLen %{public}zu streamType %{public}u sessionId %{public}u streamClassType %{public}u "
         "sourceType %{public}d fadeType %{public}d", streamInfo.channels, streamInfo.channelLayout,
-        streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate, streamInfo.format,
-        streamInfo.frameLen, streamInfo.streamType, streamInfo.sessionId, streamInfo.streamClassType,
-        streamInfo.sourceType, streamInfo.fadeType);
+        streamInfo.customSampleRate == 0 ? streamInfo.samplingRate : streamInfo.customSampleRate,
+        streamInfo.format, streamInfo.frameLen, streamInfo.streamType, streamInfo.sessionId,
+        streamInfo.streamClassType, streamInfo.sourceType, streamInfo.fadeType);
     auto &hpaeManager = IHpaeManager::GetHpaeManager();
     int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "CreateStream is error");
@@ -172,7 +173,7 @@ int32_t HpaeRendererStreamImpl::Start()
 
 int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
 {
-    AUDIO_INFO_LOG("[%{public}u] Enter syncId: %{public}d", streamIndex_, syncId);
+    AUDIO_INFO_LOG("StartWithSyncId");
     preBufDone_.store(false);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
@@ -281,6 +282,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     uint32_t a2dpOffloadLatency = 0;
     uint64_t a2dpOffloadSendDataSize = 0;
     uint32_t a2dpOffloadTimestamp = 0;
+
     auto& handle = CoreServiceHandler::GetInstance();
     int32_t ret = handle.A2dpOffloadGetRenderPosition(
         a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
@@ -526,17 +528,17 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     std::vector<uint64_t> timestampCurrent = {0};
     ClockTime::GetAllTimeStamp(timestampCurrent);
     timestamp = timestampCurrent[baseUsed];
-    
+
     if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
         AUDIO_INFO_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
             ", base %{public}d, timestamp %{public}" PRIi64
-            ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
+            ", sink Latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
             framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
         lastPrintTimestamp_.store(timestampCurrent[0]);
     } else {
         AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
             ", base %{public}d, timestamp %{public}" PRIu64
-            ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
+            ", sink Latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
             framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
     }
 }
@@ -620,6 +622,7 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
 
     // If hdiFramePosition has a value, it indicates that the remote offload device has performed a flush.
     // The value of hdiFramePosition needs to be accumulated into lastHdiFramePosition_
+    // hdiFramePosition > 0 only when callBackStreamInfo.deviceClass = DEVICE_CALSSS_REMOTE_OFFLOAD
     if (callBackStreamInfo.hdiFramePosition > 0) {
         lastHdiFramePosition_ +=
             // from time (us) to sample
@@ -783,9 +786,6 @@ void HpaeRendererStreamImpl::OffloadVolumeRmap(uint32_t sessionId, AudioStreamTy
     float volume = 0.0f;
 
     uint32_t step = static_cast<uint32_t>((volumes.durationMs + DUCK_UNDUCK_STEP_TIME - 1) / DUCK_UNDUCK_STEP_TIME);
-    if (step == 0) {
-        AUDIO_ERR_LOG("step error.");
-    }
     float volumeStep = (volumeHistory - lastVolume) / step;
     for (uint32_t i = 0; i < step; i++) {
         usleep(DUCK_UNDUCK_STEP_TIME_US);

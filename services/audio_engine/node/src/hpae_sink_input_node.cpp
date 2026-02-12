@@ -168,7 +168,7 @@ void HpaeSinkInputNode::DoProcess()
     if (!ReadToAudioBuffer(ret)) {
         return;
     }
-    
+
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());

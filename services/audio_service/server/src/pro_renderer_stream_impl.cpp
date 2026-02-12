@@ -52,6 +52,7 @@ ProRendererStreamImpl::ProRendererStreamImpl(AudioProcessConfig processConfig, b
       privacyType_(0),
       renderRate_(0),
       streamIndex_(static_cast<uint32_t>(-1)),
+      abortFlag_(0),
       currentRate_(1),
       desSamplingRate_(0),
       desFormat_(AudioSampleFormat::SAMPLE_S32LE),
@@ -442,7 +443,7 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
             bufferDesc.bufLength);
         if (error != EOK) {
-            AUDIO_ERR_LOG("copy failed.");
+            AUDIO_ERR_LOG("copy failed");
         }
     } else {
         if (isNeedMcr_ && !isNeedResample_) {
@@ -606,7 +607,7 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
             }
         }
     } else {
-        AUDIO_ERR_LOG("Write callback is nullptr.");
+        AUDIO_ERR_LOG("Write callback is nullptr");
         result = ERR_WRITE_BUFFER;
     }
     return result;

@@ -85,7 +85,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_003, TestSize.Level4)
     float volumeDb = 0.0f;
     std::string deviceClass = "";
     std::string networkId = "";
-    uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t sessionId = MIN_SESSIONID + 1;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
     EXPECT_NO_THROW(
@@ -132,7 +132,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_005, TestSize.Level4)
     auto interruptServiceTest = GetInterruptServiceTest();
     audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
     EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t sessionId = MIN_SESSIONID + 1;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
     EXPECT_NO_THROW(
@@ -157,7 +157,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_006, TestSize.Level4)
     auto interruptServiceTest = GetInterruptServiceTest();
     audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
     EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t sessionId = MIN_SESSIONID + 1;
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
     EXPECT_NO_THROW(
@@ -182,7 +182,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_007, TestSize.Level4)
     auto interruptServiceTest = GetInterruptServiceTest();
     audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
     EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t sessionId = MIN_SESSIONID + 1;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     EXPECT_NO_THROW(
         audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
@@ -206,7 +206,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, SetOffloadVolume_008, TestSize.Level4)
     auto interruptServiceTest = GetInterruptServiceTest();
     audioAdapterManager->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
     EXPECT_NE(audioAdapterManager->audioServerProxy_, nullptr);
-    uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t sessionId = MIN_SESSIONID + 1;
     OffloadAdapter adapter = OFFLOAD_IN_REMOTE;
     EXPECT_NO_THROW(
         audioAdapterManager->SetOffloadVolume(streamType, volumeDb, deviceClass, networkId);
@@ -224,7 +224,7 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, ResetOffloadSessionId_001, TestSize.Lev
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     EXPECT_NE(audioAdapterManager, nullptr);
 
-    uint32_t sessionId = MIN_STREAMID + 1;
+    uint32_t sessionId = MIN_SESSIONID + 1;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     audioAdapterManager->SetOffloadSessionId(sessionId, adapter);
     audioAdapterManager->ResetOffloadSessionId(adapter);

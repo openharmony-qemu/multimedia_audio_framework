@@ -92,8 +92,8 @@ void HpaeManagerThread::Notify()
 
 void HpaeManagerThread::DeactivateThread()
 {
-    running_.store(false);
     Notify();
+    running_.store(false);
     if (thread_.joinable()) {
         thread_.join();
     }

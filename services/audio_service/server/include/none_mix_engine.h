@@ -54,7 +54,7 @@ private:
 
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate);
     AudioSamplingRate GetDirectVoipSampleRate(AudioSamplingRate sampleRate);
-    AudioSampleFormat GetDirectDeviceFormat(AudioSampleFormat format);
+    AudioSampleFormat GetDirectDeviceFormate(AudioSampleFormat format);
     AudioSampleFormat GetDirectVoipDeviceFormat(AudioSampleFormat format);
     int32_t GetDirectFormatByteSize(AudioSampleFormat format);
 

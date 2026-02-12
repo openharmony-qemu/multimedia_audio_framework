@@ -84,7 +84,7 @@ void AudioProcessInServer::RemoveStreamInfo()
 AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConfig,
     ProcessReleaseCallback *releaseCallback) : processConfig_(processConfig), releaseCallback_(releaseCallback)
 {
-    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
         sessionId_ = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
         sessionId_ = processConfig.originalSessionId;

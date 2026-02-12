@@ -59,7 +59,7 @@ int32_t ProAudioStreamManager::CreateRender(AudioProcessConfig processConfig, st
     Trace trace("ProAudioStreamManager::CreateRender");
     AUDIO_DEBUG_LOG("Create renderer start,manager type:%{public}d", managerType_);
     uint32_t sessionId = 0;
-    if (processConfig.originalSessionId < MIN_STREAMID || processConfig.originalSessionId > MAX_STREAMID) {
+    if (processConfig.originalSessionId < MIN_SESSIONID || processConfig.originalSessionId > MAX_SESSIONID) {
         sessionId = CoreServiceHandler::GetInstance().GenerateSessionId();
     } else {
         sessionId = processConfig.originalSessionId;
@@ -187,7 +187,7 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
     AudioProcessConfig config = stream->GetAudioProcessConfig();
     bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, true, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
-    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, ERR_NOT_SUPPORTED, "engine not init!");
+    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, ERR_NOT_SUPPORTED, "engine not init");
     playbackEngine_->Init(deviceInfo, managerType_ == VOIP_PLAYBACK);
     ret = playbackEngine_->AddRenderer(stream);
     return ret;
@@ -201,7 +201,7 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
     std::shared_ptr<ProRendererStreamImpl> rendererStream =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirectStream);
     if (rendererStream->InitParams() != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed!");
+        AUDIO_ERR_LOG("Create rendererStream Failed");
         return nullptr;
     }
     return rendererStream;
@@ -234,7 +234,7 @@ int32_t ProAudioStreamManager::GetSessionIdAndRemove(uint32_t paIndex, uint32_t 
 
 uint64_t ProAudioStreamManager::GetLatency() noexcept
 {
-    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, 0, "engine not init!");
+    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, 0, "engine not init");
     return playbackEngine_->GetLatency();
 }
 

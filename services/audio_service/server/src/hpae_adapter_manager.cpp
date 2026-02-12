@@ -33,6 +33,8 @@ namespace AudioStandard {
 
 const char* PRO_INNER_CAPTURER_SOURCE = "Speaker";
 const char* PRO_DUAL_PLAYBACK_SINK = "Speaker";
+constexpr uint32_t MIN_STREAMID = 100000;
+constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
 static constexpr uint64_t DUAL_STREAM_PREBUF_TIME_MS = 60;
 
 HpaeAdapterManager::HpaeAdapterManager(ManagerType type)
@@ -53,6 +55,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     }
     processConfig.originalSessionId = sessionId;
     AUDIO_INFO_LOG("Create [%{public}d] type renderer:[%{public}u]", managerType_, sessionId);
+
     std::string deviceName = "";
     int32_t ret = GetDeviceNameForConnect(processConfig, processConfig.originalSessionId, deviceName);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERROR_INVALID_PARAM,
