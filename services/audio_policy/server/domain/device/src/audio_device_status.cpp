@@ -1284,7 +1284,7 @@ void AudioDeviceStatus::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& ac
 }
 
 void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-    sptr<AudioRendererFilter> filter)
+    sptr<AudioRendererFilter> filter, const std::string &caller)
 {
     if (!filter) {
         filter = new AudioRendererFilter();
@@ -1294,14 +1294,16 @@ void AudioDeviceStatus::OnForcedDeviceSelected(DeviceType devType, const std::st
     AUDIO_INFO_LOG("Entry. devType=%{public}d, addr=%{public}s, streamUsage=%{public}d",
         devType, GetEncryptStr(macAddress).c_str(), filter->rendererInfo.streamUsage);
     auto devDescs = audioDeviceManager_.GetAvailableBluetoothDevice(devType, macAddress);
+    bool isNeedNotifyBt = (caller == "Bluetooth") ? false : true;
     for (auto &devDesc : devDescs) {
         if (devDesc->deviceRole_ == OUTPUT_DEVICE) {
-            AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc}, 0, false);
+            AudioCoreService::GetCoreService()->SelectOutputDevice(filter, {devDesc}, 0, isNeedNotifyBt);
         }
     }
 }
 
-void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+    const std::string &caller)
 {
     AUDIO_INFO_LOG("Entry");
     AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
@@ -1323,7 +1325,7 @@ void AudioDeviceStatus::OnPrivacyDeviceSelected(DeviceType devType, const std::s
         sptr<AudioRendererFilter> filter = new AudioRendererFilter();
         CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
         filter->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-        OnForcedDeviceSelected(devType, macAddress, filter);
+        OnForcedDeviceSelected(devType, macAddress, filter, caller);
         return;
     }
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnPrivacyDeviceSelected",

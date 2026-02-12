@@ -133,13 +133,14 @@ void AudioDeviceLock::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 }
 
 void AudioDeviceLock::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-    sptr<AudioRendererFilter> filter)
+    sptr<AudioRendererFilter> filter, const std::string &caller)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress, filter);
 }
 
-void AudioDeviceLock::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioDeviceLock::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+    const std::string &caller)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);

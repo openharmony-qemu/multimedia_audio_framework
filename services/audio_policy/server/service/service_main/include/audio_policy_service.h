@@ -135,9 +135,10 @@ public:
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-        sptr<AudioRendererFilter> filter = nullptr);
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "");
 
-    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "");
 
     void OnConnectFailed(AudioDeviceDescriptor &desc);
 
