@@ -256,8 +256,7 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForSystemSelectInner(int32_t i
         }
     } else {
         for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-            recordDeviceInfo.activeSelectedDevice_ = std::make_shared<AudioDeviceDescriptor>();
-            recordDeviceInfo.selectedDevice_ = std::make_shared<AudioDeviceDescriptor>();
+            recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
         }
     }
 }
