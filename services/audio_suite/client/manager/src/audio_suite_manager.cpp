@@ -239,9 +239,8 @@ int32_t AudioSuiteManager::GetPipelineState(uint32_t pipelineId, AudioSuitePipel
         return isFinishGetPipelineState_;  // will be true when got notified.
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetPipelineState timeout");
-    CHECK_AND_CALL_FUNC_RETURN_RET(getPipelineResult_ == SUCCESS, getPipelineResult_,
-        HILOG_COMM_ERROR("[getPipelineState]engine GetPipelineState failed, getPipelineResult_ = %{public}d",
-        getPipelineResult_));
+    CHECK_AND_RETURN_RET_LOG(
+        getPipelineResult_ == SUCCESS, getPipelineResult_, "GetPipelineState manager GetPipelineState failed.");
     
     AUDIO_DEBUG_LOG("GetPipelineState leave");
     state = getPipelineState_;
@@ -345,9 +344,8 @@ int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
         return isFinishGetNodeBypassStatus_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetNodeBypassStatus timeout");
-    CHECK_AND_CALL_FUNC_RETURN_RET(getNodeBypassResult_ == SUCCESS, getNodeBypassResult_,
-        HILOG_COMM_ERROR(
-            "[GetNodeBypassStatus]engine failed, getNodeBypassResult_ = %{public}d", getNodeBypassResult_));
+    CHECK_AND_RETURN_RET_LOG(
+        getNodeBypassResult_ == SUCCESS, getNodeBypassResult_, "GetNodeBypassStatus manager failed.");
 
     AUDIO_DEBUG_LOG("GetNodeBypassStatus leave");
     bypass = getNodeBypassState_;
