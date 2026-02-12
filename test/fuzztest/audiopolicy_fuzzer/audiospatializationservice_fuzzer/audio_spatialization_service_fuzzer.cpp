@@ -91,6 +91,15 @@ vector<StreamUsage> StreamUsageVec = {
     STREAM_USAGE_MAX,
 };
 
+vector<AudioSpatialDeviceType> AudioSpatialDeviceTypeVec = {
+    EARPHONE_TYPE_NONE,
+    EARPHONE_TYPE_INEAR,
+    EARPHONE_TYPE_HALF_INEAR,
+    EARPHONE_TYPE_HEADPHONE,
+    EARPHONE_TYPE_GLASSES,
+    EARPHONE_TYPE_OTHERS,
+};
+
 template<class T>
 T GetData()
 {
