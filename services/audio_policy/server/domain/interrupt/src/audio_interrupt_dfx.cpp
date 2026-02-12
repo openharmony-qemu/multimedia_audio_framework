@@ -262,6 +262,7 @@ void AudioInterruptDfx::DelayCheckMuteStreamInterrupt(uint32_t streamId)
         }
         std::this_thread::sleep_for(std::chrono::seconds(10));
         audioInterruptDfx->CheckMuteInterruptEvent(streamId);
+        audioInterruptDfx->audioInterruptCheckInfo_.erase(streamId);
     };
 
     std::thread(checkTask).detach();
