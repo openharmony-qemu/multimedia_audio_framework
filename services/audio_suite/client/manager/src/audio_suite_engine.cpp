@@ -259,14 +259,14 @@ int32_t AudioSuiteEngine::GetPipelineState(uint32_t pipelineId)
 
         if (pipelineMap_.find(pipelineId) == pipelineMap_.end()) {
             AUDIO_ERR_LOG("engine GetPipelineState failed, pipeline id is invailed.");
-            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED, ERR_ILLEGAL_STATE);
+            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
 
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
         if (pipeline == nullptr) {
             AUDIO_ERR_LOG("engine GetPipelineState pipeline failed, pipeline is nullptr.");
-            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED, ERR_ILLEGAL_STATE);
+            managerCallback_.OnGetPipelineState(PIPELINE_STOPPED, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
             return;
         }
 

@@ -170,113 +170,21 @@ private:
 
 // tool
 template<typename T>
-void ParseValue(const std::string valueStr, T &result)
-{
-    std::istringstream iss(valueStr);
-    float value;
-    iss >> value;
-    result = static_cast<T>(value);
-}
+void ParseValue(const std::string valueStr, T &result);
 
-void ParseValue(const std::string valueStr, AudioSpaceRenderPositionParams &result)
-{
-    std::istringstream iss(valueStr);
-    char comma;
-    iss >> result.x >> comma >> result.y >> comma >> result.z;
-}
+void ParseValue(const std::string valueStr, AudioSpaceRenderPositionParams &result);
 
-void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &result)
-{
-    std::istringstream iss(valueStr);
-    char comma;
-    int directionInt;
-    iss >> result.x >> comma >> result.y >> comma >> result.z >> comma >> result.surroundTime >> comma >>
-        directionInt;
-    result.surroundDirection = static_cast<AudioSurroundDirection>(directionInt);
-}
+void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &result);
 
-void ParseValue(const std::string valueStr, AudioSpaceRenderExtensionParams &result)
-{
-    std::istringstream iss(valueStr);
-    char comma;
-    iss >> result.extRadius >> comma >> result.extAngle;
-}
+void ParseValue(const std::string valueStr, AudioSpaceRenderExtensionParams &result);
 
-void ParseValue(const std::string valueStr, float &speed, float &pitch)
-{
-    std::istringstream iss(valueStr);
-    char comma;
-    iss >> speed >> comma >> pitch;
-}
+void ParseValue(const std::string valueStr, float &speed, float &pitch);
 
-void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option)
-{
-    std::istringstream iss(valueStr);
-    char comma;
-    int32_t genderInt;
-    int32_t typeInt;
-    iss >> genderInt >> comma >> typeInt;
-    option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(genderInt);
-    option.optionType = static_cast<AudioPureVoiceChangeType>(typeInt);
-}
+void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option);
 
-void ParseValue(const std::string &valueStr, int32_t *result)
-{
-    if (result == nullptr) {
-        return;
-    }
-    std::istringstream iss(valueStr);
-    std::string token;
-    std::vector<int32_t> temp;
+void ParseValue(const std::string &valueStr, int32_t *result);
 
-    while (std::getline(iss, token, ':')) {
-        token.erase(0, token.find_first_not_of(' ')); // Remove leading spaces
-        token.erase(token.find_last_not_of(' ') + 1); // Remove trailing spaces
-        if (!token.empty()) {
-            char* end;
-            errno = 0; // Reset error flag
-            long val = std::strtol(token.c_str(), &end, 10);
-            // Check if conversion was fully successful and without overflow
-            if (end != token.c_str() + token.size() || // Not entire string consumed
-                errno == ERANGE || // Numeric overflow
-                val < INT32_MIN || val > INT32_MAX) { // Out of int32_t range
-                return; // Conversion failed, return immediately
-            }
-            temp.push_back(static_cast<int32_t>(val));
-        }
-    }
-
-    for (size_t i = 0; i < temp.size(); ++i) {
-        result[i] = temp[i];
-    }
-}
-
-int32_t StringToInt32(std::string &str)
-{
-    char* end;
-    errno = 0; // Reset error flag
-    long value = std::strtol(str.c_str(), &end, 10); // Decimal conversion
-
-    // Check if entire string was parsed
-    if (end == str.c_str()) {
-        return INT32_MAX;
-    }
-
-    // Check if remaining characters are only whitespace (optional)
-    while (*end != '\0') {
-        if (!std::isspace(static_cast<unsigned char>(*end))) {
-            return INT32_MAX;
-        }
-        ++end;
-    }
-
-    // Check overflow/underflow
-    if (errno == ERANGE || value < INT32_MIN || value > INT32_MAX) {
-        return INT32_MAX;
-    }
-
-    return static_cast<int32_t>(value);
-}
+int32_t StringToInt32(std::string &str);
 
 }  // namespace AudioSuite
 }  // namespace AudioStandard
