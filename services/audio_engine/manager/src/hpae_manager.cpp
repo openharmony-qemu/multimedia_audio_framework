@@ -114,7 +114,6 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(CONNECT_CO_BUFFER_NODE, &HpaeManager::HandleConnectCoBufferNode);
     RegisterHandler(DISCONNECT_CO_BUFFER_NODE, &HpaeManager::HandleDisConnectCoBufferNode);
     RegisterHandler(INIT_SOURCE_RESULT, &HpaeManager::HandleInitSourceResult);
-    RegisterHandler(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO, &HpaeManager::HandleBypassSpatializationForStereo);
 }
 
 HpaeManager::~HpaeManager()
@@ -2792,30 +2791,6 @@ void HpaeManager::LoadCollaborationConfig()
         HpaePolicyManager::GetInstance().LoadCollaborationConfig();
     };
 
-    SendRequest(request, __func__);
-}
-
-void HpaeManager::UpdateBypassSpatializationForStereo()
-{
-    bool bypass = adaptiveSpatialRenderingEnabled_;
-    for (auto it = rendererManagerMap_.begin(); it != rendererManagerMap_.end(); ++it) {
-        CHECK_AND_CONTINUE(it->first == BT_SINK_NAME || it->first == SPEAKER_SINK_NAME);
-        bypass = bypass && it->second->IsBypassSpatializationForStereo();
-        CHECK_AND_CONTINUE(!bypass);
-        break;
-    }
-
-    CHECK_AND_RETURN(bypassSpatializationForStereo_ != bypass);
-    bypassSpatializationForStereo_ = bypass;
-    AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
-    HpaePolicyManager::GetInstance().SetBypassSpatializationForStereo(bypass);
-}
-
-void HpaeManager::HandleBypassSpatializationForStereo()
-{
-    auto request = [this]() {
-        UpdateBypassSpatializationForStereo();
-    };
     SendRequest(request, __func__);
 }
 
