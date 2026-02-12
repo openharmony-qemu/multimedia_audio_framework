@@ -81,7 +81,17 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
     CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderApply");
     algoApi_.releaseAlgo = reinterpret_cast<FunSpaceRenderRelease>(dlsym(libHandle_, "SpaceRenderRelease"));
     CHECK_AND_RETURN_RET_LOG(algoApi_.releaseAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderRelease");
+    algoApi_.setParamsAlgo = reinterpret_cast<FunSpaceRenderSetParams>(dlsym(libHandle_, "SpaceRenderSetParams"));
+    CHECK_AND_RETURN_RET_LOG(algoApi_.setParamsAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderSetParams");
  
+    int32_t handleSize = algoApi_.getSize(&spaceRenderParam_);
+    CHECK_AND_RETURN_RET_LOG(handleSize >= 0, handleSize, "getSize error.");
+ 
+    spaceRenderHandle_.resize(handleSize);
+ 
+    int32_t ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render init failed.");
+
     isSpaceRenderAlgoInit_ = true;
     return SUCCESS;
 }
@@ -200,9 +210,6 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
     const std::string &paramValue)
 {
     int32_t ret;
-    if (spaceRenderHandle_.data()) {
-        algoApi_.releaseAlgo(spaceRenderHandle_.data());
-    }
 
     if (paramType == SPACE_RENDER_POSITIONS_MOD) {
         ret = SetPositionParameter(paramValue);
@@ -217,13 +224,16 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
  
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set parameter.");
  
-    int32_t handleSize = algoApi_.getSize(&spaceRenderParam_);
-    CHECK_AND_RETURN_RET_LOG(handleSize >= 0, handleSize, "getSize error.");
- 
-    spaceRenderHandle_.resize(handleSize);
- 
-    ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render init failed.");
+    if (paramType == SPACE_RENDER_EXTENSION_MOD) {
+        ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render extension init failed.");
+    } else {
+        ret = algoApi_.setParamsAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+        if (ret == SPACE_RENDER_ERR_SET_MODE) {
+            ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+        }
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render SetParameter failed.");
+    }
 
     return SUCCESS;
 }
