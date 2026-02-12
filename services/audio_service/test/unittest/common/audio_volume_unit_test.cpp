@@ -1949,7 +1949,7 @@ HWTEST_F(AudioVolumeUnitTest, SetNonInterruptMute_001, TestSize.Level1)
     audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
 
     AudioVolume::GetInstance()->SetNonInterruptMute(sessionId, isMuted);
-    float retVolume = AudioVolume::GetInstance()->GetStreamVolume(sessionId);
+    AudioVolume::GetInstance()->GetStreamVolume(sessionId);
 
     audioVolumeTest->appVolume_.clear();
     audioVolumeTest->streamVolume_.clear();
