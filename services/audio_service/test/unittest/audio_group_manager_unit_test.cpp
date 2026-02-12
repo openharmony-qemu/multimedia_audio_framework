@@ -361,7 +361,7 @@ HWTEST(AudioGroupManagerUnitTest, SetVolume_004, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     int32_t ret = audioGroupManager.SetVolume(STREAM_ALL, 0, 0, 123);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**

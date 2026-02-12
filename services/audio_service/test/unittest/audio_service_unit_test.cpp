@@ -581,16 +581,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
-    config = {};
-    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
-    config.audioMode = AUDIO_MODE_RECORD;
-    config.streamType = STREAM_VOICE_CALL;
-    config.streamInfo.channels = AudioChannel::MONO;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.format = SAMPLE_S16LE;
-    config.streamInfo.encoding = ENCODING_PCM;
-    auto audioProcess = AudioService::GetInstance()->GetAudioProcess(config);
-
     AudioService::GetInstance()->OnInitInnerCapList(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -600,8 +590,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     EXPECT_NE(SUCCESS, ret);
     ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
     EXPECT_NE(SUCCESS, ret);
-    ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
-    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

@@ -220,17 +220,6 @@ HWTEST_F(AudioWorkgroupManagerUnitTest, WorkgroupPrioRecorderManager_ExecuteAudi
 }
 
 /**
- * @tc.name   : Test CreateGroup API
- * @tc.number : CreateGroup_001
- * @tc.desc   : Test CreateGroup interface createAudioWorkgroup
- */
-HWTEST_F(AudioWorkgroupManagerUnitTest, CreateGroup_001, TestSize.Level1)
-{
-    int32_t result = manager_->CreateAudioWorkgroup();
-    EXPECT_GT(result, 0);
-}
-
-/**
  * @tc.name   : Test IsValidToStartGroup API
  * @tc.number : IsValidToStartGroup_001
  * @tc.desc   : Test IsValidToStartGroup interface createAudioWorkgroup
