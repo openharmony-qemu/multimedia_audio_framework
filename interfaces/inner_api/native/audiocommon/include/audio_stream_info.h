@@ -371,7 +371,9 @@ const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
     CHANNEL_3,
     CHANNEL_4,
     CHANNEL_5,
-    CHANNEL_6
+    CHANNEL_6,
+    CHANNEL_7,
+    CHANNEL_8
 };
 
 
