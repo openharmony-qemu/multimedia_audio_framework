@@ -854,7 +854,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, RemoveInterruptFocusInfoList_001, TestSi
     AudioInterrupt audioInterruptSecond;
     audioInterruptSecond.pid = fakePid;
     audioInterruptSecond.sessionId = fakeStreamId + 1;
-     std::pair<AudioInterrupt, AudioFocuState> audioFocusInfoSecond =
+    std::pair<AudioInterrupt, AudioFocuState> audioFocusInfoSecond =
         std::make_pair(audioInterruptSecond, audioFocuState);
     audioInterruptService->RemoveInterruptFocusInfoList(audioFocusInfoSecond, removeFocusInfoPidList);
     auto ret = audioInterruptZone->audioFocusInfoList.size();
