@@ -298,7 +298,7 @@ void AudioPolicyServer::OnStart()
     DlopenUtils::Init();
     Init();
     bool res = false;
-    if (!isUT_) {
+    if (!isNeedPublished_) {
         res = Publish(this);
         isPublishCalled_ = true;
     }
