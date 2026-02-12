@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "audio_interrput_dfx_unit_test.h"
+#include "audio_interrupt_dfx_unit_test.h"
 
 using namespace testing::ext;
 
