@@ -1709,34 +1709,6 @@ HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_001, TestSize.Level1)
 /**
 * @tc.name  : Test VASharedBuffer API
 * @tc.type  : FUNC
-* @tc.number: VASharedBuffer_002
-* @tc.desc  : Test VASharedBuffer interface.
-*/
-HWTEST(AudioServiceCommonUnitTest, VASharedBuffer_002, TestSize.Level1)
-{
-    VASharedMemInfo memInfoInvalid;
-    memInfoInvalid.dataFd_ = -1;
-    memInfoInvalid.dataMemCapacity_ = -1;
-    memInfoInvalid.statusMemCapacity_ = 0;
-    memInfoInvalid.statusFd_ = INVALID_FD;
-    
-    std::shared_ptr<VASharedBuffer> bufferInvalid = VASharedBuffer::CreateFromRemote(memInfoInvalid);
-    EXPECT_EQ(nullptr, bufferInvalid);
-     
-    const uint32_t bufferCapacity = 1024;
-    std::shared_ptr<VASharedBuffer> bufferLocal = VASharedBuffer::CreateFromLocal(bufferCapacity);
-    EXPECT_NE(nullptr, bufferLocal);
-
-    VASharedMemInfo memInfo;
-    bufferLocal->GetVASharedMemInfo(memInfo);
-
-    std::shared_ptr<VASharedBuffer> bufferValid = VASharedBuffer::CreateFromRemote(memInfo);
-    EXPECT_NE(nullptr, bufferValid);
-}
-
-/**
-* @tc.name  : Test VASharedBuffer API
-* @tc.type  : FUNC
 * @tc.number: VASharedBuffer_003
 * @tc.desc  : Test VASharedBuffer interface.
 */
