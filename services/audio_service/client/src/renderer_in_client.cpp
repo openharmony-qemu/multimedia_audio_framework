@@ -706,12 +706,12 @@ void RendererInClientInner::FirstFrameProcess()
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
-void RendererInClientInner::NotifyStreamSlientChange()
+void RendererInClientInner::NotifyStreamSilentChange()
 {
-    CHECK_AND_RETURN(needNotifyStreamSlientChange_.load() && volumeDataCount_ > 0);
+    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
     AUDIO_INFO_LOG("exist sound data, need notify stream slient change");
-    AudioPolicyManager::GetInstance().NotifyStreamSlientChange(sessionId_);
-    needNotifyStreamSlientChange_.store(false);
+    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
+    needNotifyStreamSilentChange_.store(false);
 }
 
 int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
@@ -764,7 +764,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     CHECK_AND_RETURN_RET(ProcessVolume(), ERR_OPERATION_FAILED);
     VolumeTools::DfxOperation({.buffer = buffer, .bufLength = writtenSize, .dataLength = writtenSize},
         clientConfig_.streamInfo, traceTag_, volumeDataCount_);
-    NotifyStreamSlientChange();
+    NotifyStreamSilentChange();
     DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
 
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERR_OPERATION_FAILED,

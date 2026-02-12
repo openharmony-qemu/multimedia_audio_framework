@@ -233,7 +233,7 @@ private:
 
     void CalcDefaultClientSpanSize();
 
-    void NotifyStreamSlientChange();
+    void NotifyStreamSilentChange();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -320,7 +320,7 @@ private:
     std::function<void()> sendStaticRecreateFunc_ = nullptr;
     std::mutex staticBufferMutex_;
     std::weak_ptr<AudioFirstFrameCallback> staticFirstFrameCallback_;
-    std::atomic<bool> needNotifyStreamSlientChange_ = true;
+    std::atomic<bool> needNotifyStreamSilentChange_ = true;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -855,12 +855,12 @@ void AudioProcessInClientInner::WaitForReadableSpace() const
     CHECK_AND_RETURN_LOG(futexRes == SUCCESS, "futex err: %{public}d", futexRes);
 }
 
-void AudioProcessInClientInner::NotifyStreamSlientChange()
+void AudioProcessInClientInner::NotifyStreamSilentChange()
 {
-    CHECK_AND_RETURN(needNotifyStreamSlientChange_.load() && volumeDataCount_ > 0);
+    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
     AUDIO_INFO_LOG("exist sound data, need notify stream slient change");
-    AudioPolicyManager::GetInstance().NotifyStreamSlientChange(sessionId_);
-    needNotifyStreamSlientChange_.store(false);
+    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
+    needNotifyStreamSilentChange_.store(false);
 }
 
 int32_t AudioProcessInClientInner::ReadFromProcessClient()
@@ -886,7 +886,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient()
     VolumeTools::DfxOperation(BufferDesc{.buffer = callbackBuffer_.get(),
         .bufLength = spanSizeInByte_, .dataLength = spanSizeInByte_},
         processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
-    NotifyStreamSlientChange();
+    NotifyStreamSilentChange();
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_);
     ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     return SUCCESS;
@@ -1133,7 +1133,7 @@ int32_t AudioProcessInClientInner::Start()
     Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     volumeDataCount_ = 0;
-    needNotifyStreamSlientChange_.store(true);
+    needNotifyStreamSilentChange_.store(true);
 
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
     AudioSampleFormat format = processConfig_.streamInfo.format;
