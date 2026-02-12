@@ -370,11 +370,13 @@ bool AudioStateManager::IsExcludedDevice(AudioDeviceUsage audioDevUsage,
 
 int32_t AudioStateManager::GetAudioSceneOwnerUid()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return ownerUid_;
 }
 
 void AudioStateManager::SetAudioSceneOwnerUid(const int32_t uid)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("ownerUid_: %{public}d, uid: %{public}d", ownerUid_, uid);
     ownerUid_ = uid;
     if (uid == AUDIO_UID) {
