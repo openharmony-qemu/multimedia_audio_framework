@@ -1264,7 +1264,7 @@ int32_t AudioAdapterManager::SetRingerMode(AudioRingerMode ringerMode)
 int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 {
     AUDIO_INFO_LOG("SetRingerMode: %{public}d", ringerMode);
-    ringerMode_ = ringerMode;
+    ringerMode_.store(ringerMode);
 
     if (handler_ != nullptr) {
         handler_->SendRingerModeUpdate(ringerMode);
@@ -1274,7 +1274,7 @@ int32_t AudioAdapterManager::SetRingerModeInternal(AudioRingerMode ringerMode)
 
 AudioRingerMode AudioAdapterManager::GetRingerMode() const
 {
-    return ringerMode_;
+    return ringerMode_.load();
 }
 
 bool AudioAdapterManager::IsPaRoute(uint32_t routeFlag)
@@ -2405,12 +2405,13 @@ void AudioAdapterManager::InitVolumeMap(bool isFirstBoot)
 
 void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
 {
+    AudioRingerMode ringerMode = ringerMode_.load();
     if (isFirstBoot) {
         isLoaded_ = true;
-        if (!volumeDataMaintainer_.GetRingerMode(ringerMode_)) {
+        if (!volumeDataMaintainer_.GetRingerMode(ringerMode)) {
             isLoaded_ = volumeDataMaintainer_.SaveRingerMode(ringerMode_);
         }
-        AUDIO_INFO_LOG("InitRingerMode first boot ringermode:%{public}d", ringerMode_);
+        AUDIO_INFO_LOG("InitRingerMode first boot ringermode:%{public}d", ringerMode);
     } else {
         // read ringerMode from private kvStore
         if (isNeedCopyRingerModeData_ && audioPolicyKvStore_ != nullptr) {
@@ -2425,9 +2426,10 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
             isNeedCopyRingerModeData_ = false;
         }
         // if read ringer mode success, data is loaded.
-        isLoaded_ = volumeDataMaintainer_.GetRingerMode(ringerMode_);
+        isLoaded_ = volumeDataMaintainer_.GetRingerMode(ringerMode);
     }
 
+    ringerMode_.store(ringerMode);
     auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_RING);
     int32_t volumeLevel =
         GetStreamVolumeInternal(desc, STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
@@ -2509,7 +2511,7 @@ void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, 
     bool muteSate = false;
     if (streamType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) {
         muteSate = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
-        AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_,
+        AUDIO_INFO_LOG("fist boot ringer mode:%{public}d, stream ring mute state:%{public}d", ringerMode_.load(),
             muteSate);
     }
     CHECK_AND_RETURN(volumeDataMaintainer_.CheckMuteState(desc, streamType) != SUCCESS);
@@ -3248,7 +3250,9 @@ void AudioAdapterManager::SetAbsVolumeMuteNearlink(bool mute)
 void AudioAdapterManager::NotifyAccountsChanged(const int &id)
 {
     AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
-    volumeDataMaintainer_.GetRingerMode(ringerMode_);
+    AudioRingerMode ringerMode = ringerMode_.load();
+    volumeDataMaintainer_.GetRingerMode(ringerMode);
+    ringerMode_.store(ringerMode);
     auto descs = audioConnectedDevice_.GetCopy();
     for (auto &desc : descs) {
         UpdateVolumeWhenDeviceConnect(desc);
@@ -3332,7 +3336,7 @@ void AudioAdapterManager::SafeVolumeDump(std::string &dumpString)
     std::string statusBt = (safeStatusBt_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     std::string status = (safeStatus_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
     std::string statusSle = (safeStatusSle_ == SAFE_ACTIVE) ? "SAFE_ACTIVE" : "SAFE_INACTIVE";
-    AppendFormat(dumpString, "  - ringerMode: %d\n", ringerMode_);
+    AppendFormat(dumpString, "  - ringerMode: %d\n", ringerMode_.load());
     AppendFormat(dumpString, "  - SafeVolume: %d\n", safeVolume_);
     AppendFormat(dumpString, "  - BtSafeStatus: %s\n", statusBt.c_str());
     AppendFormat(dumpString, "  - SafeStatus: %s\n", status.c_str());
@@ -3757,7 +3761,7 @@ void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDevi
     CHECK_AND_RETURN(device->deviceType_ == DEVICE_TYPE_SPEAKER && device->networkId_ == LOCAL_NETWORK_ID);
     bool mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
     volumeDataMaintainer_.SaveMuteToMap(device, STREAM_RING, mute);
-    AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_);
+    AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_.load());
 }
 
 void AudioAdapterManager::SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute)

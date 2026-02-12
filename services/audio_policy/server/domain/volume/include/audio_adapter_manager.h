@@ -521,7 +521,7 @@ private:
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
     LowerVolumeInfoMap lowerVolumeInfos_;
-    AudioRingerMode ringerMode_ = RINGER_MODE_NORMAL;
+    std::atomic<AudioRingerMode> ringerMode_ = RINGER_MODE_NORMAL;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
     SafeStatus safeStatusBt_ = SAFE_ACTIVE;
