@@ -5674,14 +5674,14 @@ int32_t AudioPolicyServer::GetVADeviceController(const std::string& macAddress, 
 
 int32_t AudioPolicyServer::SelectPrivateDevice(int32_t devType, const std::string &macAddress)
 {
-    eventEntry_->OnPrivacyDeviceSelected(static_cast<DeviceType>(devType), macAddress);
+    eventEntry_->OnPrivacyDeviceSelected(static_cast<DeviceType>(devType), macAddress, "Nearlink");
     return SUCCESS;
 }
 
 int32_t AudioPolicyServer::ForceSelectDevice(int32_t devType, const std::string &macAddress,
     const sptr<AudioRendererFilter> &filter)
 {
-    eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter);
+    eventEntry_->OnForcedDeviceSelected(static_cast<DeviceType>(devType), macAddress, filter, "Nearlink");
     return SUCCESS;
 }
 

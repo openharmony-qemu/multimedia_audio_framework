@@ -276,17 +276,18 @@ void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex servi
 }
 
 void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-    sptr<AudioRendererFilter> filter)
+    sptr<AudioRendererFilter> filter, const std::string &caller)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock");
-    coreService_->OnForcedDeviceSelected(devType, macAddress, filter);
+    coreService_->OnForcedDeviceSelected(devType, macAddress, filter, caller);
 }
 
-void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+    const std::string &caller)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->OnPrivacyDeviceSelected(devType, macAddress);
+    coreService_->OnPrivacyDeviceSelected(devType, macAddress, caller);
 }
 
 void AudioCoreService::EventEntry::OnConnectFailed(AudioDeviceDescriptor &desc)

@@ -1454,15 +1454,16 @@ int32_t AudioCoreService::OnServiceConnected(AudioServiceIndex serviceIndex)
 }
 
 void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-    sptr<AudioRendererFilter> filter)
+    sptr<AudioRendererFilter> filter, const std::string &caller)
 {
-    audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress, filter);
+    audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress, filter, caller);
 }
 
 
-void AudioCoreService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioCoreService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+    const std::string &caller)
 {
-    audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress);
+    audioDeviceStatus_.OnPrivacyDeviceSelected(devType, macAddress, caller);
 }
 
 void AudioCoreService::OnConnectFailed(AudioDeviceDescriptor &desc)

@@ -424,12 +424,13 @@ void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
 }
 
 void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-    sptr<AudioRendererFilter> filter)
+    sptr<AudioRendererFilter> filter, const std::string &caller)
 {
     audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress, filter);
 }
 
-void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+    const std::string &caller)
 {
     audioDeviceLock_.OnPrivacyDeviceSelected(devType, macAddress);
 }

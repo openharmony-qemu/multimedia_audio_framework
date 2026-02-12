@@ -54,9 +54,10 @@ public:
     void OnServiceDisconnected(AudioServiceIndex serviceIndex) override {}
 
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-        sptr<AudioRendererFilter> filter = nullptr) override {}
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "") override {}
 
-    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress) override {};
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "") override {};
 
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) override {}
 
