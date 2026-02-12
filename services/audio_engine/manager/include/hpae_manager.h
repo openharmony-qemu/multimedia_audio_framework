@@ -277,8 +277,6 @@ private:
     std::vector<HpaeCaptureMoveInfo> GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos);
     std::vector<uint32_t> GetAllRenderSession(const std::string &name);
     std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
-    void UpdateBypassSpatializationForStereo();
-    void HandleBypassSpatializationForStereo();
     std::shared_ptr<IHpaeRendererManager> GetAuxiliaryRendererManager();
 
 private:

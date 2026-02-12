@@ -2207,10 +2207,8 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
 
 int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    auto request = [this, spatializationState]() {
+    auto request = [spatializationState]() {
         HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
-        adaptiveSpatialRenderingEnabled_ = spatializationState.adaptiveSpatialRenderingEnabled;
-        UpdateBypassSpatializationForStereo();
     };
     SendRequest(request, __func__);
     return SUCCESS;
