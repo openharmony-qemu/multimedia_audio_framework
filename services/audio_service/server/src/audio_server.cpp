@@ -1489,8 +1489,7 @@ int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, 
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    return SetAudioSceneInner(static_cast<AudioScene>(audioSceneIn), static_cast<BluetoothOffloadState>(a2dpOffloadFlag),
-        scoExcludeFlag);
+    return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), scoExcludeFlag);
 }
 
 int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
