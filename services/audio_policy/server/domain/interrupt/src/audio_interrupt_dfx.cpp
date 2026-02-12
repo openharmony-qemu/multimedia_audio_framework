@@ -139,7 +139,7 @@ std::string AudioInterruptDfx::GetInterruptRendererInfo(const AudioInterrupt &au
 {
     std::string rendererInfoStr = "";
     AppendFormat(rendererInfoStr, "streamType : %d, streamid : %d", audioInterrupt.audioFocusType.streamType,
-        audioInterrupt.sessionId);
+        audioInterrupt.streamId);
     return rendererInfoStr;
 }
 
@@ -190,10 +190,10 @@ void AudioInterruptDfx::RecordMediaInterruptEvent(const InterruptEventInternal &
     interruptErrorEvent.interruptedAudiosessionInfo = GetInterruptSessionInfo(activeInterrupt);
 
     std::lock_guard<std::mutex> lock(cachedFocusMutex_);
-    if (audioInterruptCheckInfo_.count(activeInterrupt.sessionId) > 0) {
-        audioInterruptCheckInfo_.erase(activeInterrupt.sessionId);
+    if (audioInterruptCheckInfo_.count(activeInterrupt.streamId) > 0) {
+        audioInterruptCheckInfo_.erase(activeInterrupt.streamId);
     }
-    auto streamId = incomingInterrupt.sessionId;
+    auto streamId = incomingInterrupt.streamId;
     if (audioInterruptCheckInfo_.count(streamId) > 0) {
         audioInterruptCheckInfo_[streamId].errorEvents.push_back(interruptErrorEvent);
     } else {
