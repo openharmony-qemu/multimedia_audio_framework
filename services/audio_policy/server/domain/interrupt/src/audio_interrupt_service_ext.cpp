@@ -505,6 +505,9 @@ void AudioInterruptService::RemoveInterruptFocusInfoList(
 
 void AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
 {
+    if (interruptDfx_ != nullptr) {
+        interruptDfx_->NotifyStreamSilentChange(streamId);
+    }
     std::unique_lock<std::mutex> lock(mutex_);
     if (muteAudioFocus_.count(streamId) > 0) {
         std::list<std::pair<AudioInterrupt, AudioFocuState>> tempMuteList(muteAudioFocus_[streamId]);

@@ -433,7 +433,7 @@ private:
     std::unordered_set<uint32_t> mutedGameSessionId_;
 
     std::unique_ptr<AudioInterruptCustom> interruptCustom_;
-    std::unique_ptr<AudioInterruptDfx> interruptDfx_;
+    std::shared_ptr<AudioInterruptDfx> interruptDfx_;
 
     AudioStreamCollector& streamCollector_;
 };

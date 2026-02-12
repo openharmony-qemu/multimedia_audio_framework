@@ -19,6 +19,7 @@
 #include <list>
 #include <memory>
 #include <thread>
+#include <chrono>
 #include "audio_interrupt_info.h"
 #include "audio_policy_log.h"
 #include "audio_session_service.h"
@@ -40,6 +41,12 @@ struct AudioFocusErrorEvent {
     std::string interruptedAudiosessionInfo;
 };
 
+struct AudioInterruptCheckInfo {
+    bool isMuteStream;
+    std::chrono::steady_clock::time_point startTime;
+    std::list<AudioFocusErrorEvent> errorEvents;
+};
+
 class AudioInterruptDfx : public std::enable_shared_from_this<AudioInterruptDfx> {
 public:
     AudioInterruptDfx();
@@ -48,12 +55,26 @@ public:
     void DeactivateAudioSessionErrorEvent(
         const std::vector<AudioInterrupt> &streamsInSession, const int32_t callerPid);
     void AddInterruptErrorEvent(const AudioInterrupt &audioInterrupt, const int32_t callerPid);
+    void RecordInterruptEvent(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
+    void NotifyStreamSilentChange(uint32_t streamId);
+    void CheckInterruptEvent(uint32_t streamId);
+    void DelayCheckMuteStreamInterrupt(uint32_t streamId);
 
 private:
     void WriteAudioInterruptErrorEvent(const AudioFocusErrorEvent &interruptError);
     bool IsInterruptErrorEvent(AudioStreamType sceneStreamType, AudioStreamType incomingStreamType);
+    std::string GetInterruptRendererInfo(const AudioInterrupt &audioInterrupt);
+    std::string GetInterruptSessionInfo(const AudioInterrupt &audioInterrupt);
+    void RecordMediaInterruptEvent(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
+    void CheckMuteInterruptEvent(uint32_t streamId);
+    void CheckShortInterruptEvent(uint32_t streamId);
 
     AudioSessionService &sessionService_;
+
+    std::mutex cachedFocusMutex_;
+    std::unordered_map<uint32_t, AudioInterruptCheckInfo> audioInterruptCheckInfo_;
 };
 
 } // namespace AudioStandard
