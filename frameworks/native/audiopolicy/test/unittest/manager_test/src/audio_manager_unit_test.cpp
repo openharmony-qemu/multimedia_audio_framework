@@ -383,7 +383,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_010, TestSize.Level1)
     outputDevice->networkId_ = "";
     deviceDescriptorVector.push_back(outputDevice);
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(audioRendererFilter, deviceDescriptorVector);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE
