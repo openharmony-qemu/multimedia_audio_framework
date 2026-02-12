@@ -177,8 +177,8 @@ void AudioInterruptDfx::RecordMediaInterruptEvent(const InterruptEventInternal &
         return;
     }
     if (sessionService_.IsAudioSessionFocusMode(incomingInterrupt.pid)) {
- 	    return;
- 	}
+        return;
+    }
     AudioFocusErrorEvent interruptErrorEvent;
     interruptErrorEvent.appName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
     interruptErrorEvent.hintType = interruptEvent.hintType;
