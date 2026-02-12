@@ -743,7 +743,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
     volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? ++volumeLevelInInt :
          --volumeLevelInInt;
 
-    VolumeUpdateOption info = { true, false, zoneId, true, true };
+    VolumeUpdateOption info = { true, false, zoneId, -1, true };
     int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, zoneId, info);
     if (ret == ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED) {
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
@@ -1235,8 +1235,12 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
     if (uid != 0) {
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
         if (zoneId != 0 && AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId)) {
+            int32_t volumeLevelMax = -1;
+            GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
+            int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
             return AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId,
-                VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, flag);
+                VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+                {volumeLevel, volumeDegree, volumeLevelMax}, flag);
         }
         VolumeUpdateOption info = { flag };
         return SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
@@ -1589,7 +1593,7 @@ void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType stre
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
     volumeEvent.volume = GetSystemVolumeLevelInternal(streamType, zoneId);
-    volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(streamType);
+    volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(streamType, zoneId);
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -1727,7 +1731,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
         CheckLoudVolumeMode(mute, volumeLevel, streamType);
     }
 #endif
-    VolumeUpdateOption option{info.isUpdateUi, mute, zoneId, info.syncDegree};
+    VolumeUpdateOption option{info.isUpdateUi, mute, zoneId, info.volumeDegree};
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             bool isMutedForType = GetStreamMuteInternal(audioStreamType, zoneId);
@@ -1765,7 +1769,7 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
     volumeEvent.volume = GetSystemVolumeLevelInternal(streamType, zoneId);
-    volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(streamType);
+    volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(streamType, zoneId);
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = deviceDesc == nullptr ? LOCAL_NETWORK_ID : deviceDesc->networkId_;
@@ -1871,8 +1875,8 @@ int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int
 
     int32_t previousVolume = GetSystemVolumeLevelInternal(streamType, zoneId);
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-    int32_t ret = audioVolumeManager_.SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId,
-        option.syncDegree);
+    int32_t ret = audioVolumeManager_.SetSystemVolumeLevel(streamType, {volumeLevel, option.volumeDegree},
+        deviceDesc, zoneId);
     if (ret == SUCCESS) {
         std::string currentTime = GetTime();
         int32_t appUid = IPCSkeleton::GetCallingUid();
@@ -3915,7 +3919,8 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, in
         return ERR_NOT_SUPPORTED;
     }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    int32_t ret = audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volume);
+    VolumeScale buffedVolume = volume;
+    int32_t ret = audioVolumeManager_.SetA2dpDeviceVolume(macAddress, buffedVolume);
 
     volumeEvent.volumeType = streamInFocus;
     volumeEvent.volume = volume;
@@ -3948,7 +3953,8 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (streamType == STREAM_MUSIC) {
-        int32_t result = audioVolumeManager_.SetNearlinkDeviceVolume(macAddress, streamType, volume);
+        VolumeScale buffedVolume = volume;
+        int32_t result = audioVolumeManager_.SetNearlinkDeviceVolume(macAddress, streamType, buffedVolume);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Set volume failed");
 
         VolumeEvent volumeEvent = VolumeEvent(streamType, volume, updateUi);
@@ -5771,6 +5777,8 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
         "MANAGE_AUDIO_CONFIG_PERMISSION permission check failed");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    CHECK_AND_RETURN_RET_LOG(volumeDegree >= 0 && volumeDegree <= MAX_VOLUME_DEGREE, ERR_INVALID_PARAM,
+        "volumeDegree:%{public}d not in range:[0, %{public}d]", volumeDegree, MAX_VOLUME_DEGREE);
 
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
@@ -5780,31 +5788,16 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
     bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
-    if (zoneId != 0 && AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId)) {
-        return AudioZoneService::GetInstance().SetSystemVolumeDegree(zoneId,
-            VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeDegree, flag);
-    }
-
-    int32_t ret = SUCCESS;
-    if (streamType == STREAM_ALL) {
-        for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
-            AUDIO_INFO_LOG("Set volume degree of STREAM_ALL, steamType:%{public}d, degree:%{public}d",
-                audioStreamType, volumeDegree);
-            ret = audioVolumeManager_.SetSystemVolumeDegreeToDb(audioStreamType, volumeDegree, zoneId);
-            if (ret != SUCCESS) {
-                return ret;
-            }
-        }
-    } else {
-        ret = audioVolumeManager_.SetSystemVolumeDegreeToDb(streamType, volumeDegree, zoneId);
-    }
-    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
-
     int32_t volumeLevelMax = -1;
     GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
     int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree, volumeLevelMax);
-    VolumeUpdateOption info = { volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, false, uid, false };
-    ret = SetSystemVolumeLevelInternal(streamType, volumeLevel, uid, info);
+    if (zoneId != 0 && AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId)) {
+        return AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId,
+            VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+            {volumeLevel, volumeDegree, volumeLevelMax}, flag);
+    }
+    VolumeUpdateOption info = { flag, false, uid, volumeDegree };
+    int32_t ret = SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
     return ret;
 }
 

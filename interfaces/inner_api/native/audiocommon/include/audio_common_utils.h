@@ -22,6 +22,38 @@
 namespace OHOS {
 namespace AudioStandard {
 
+enum class VolumeKeyType : int32_t {
+    VOLUME_KEY_TYPE_LEVEL,
+    VOLUME_KEY_TYPE_DEGREE,
+};
+
+struct VolumeScale {
+    VolumeScale(int32_t volumeLevel) : volumeLevel_(volumeLevel) {}
+    VolumeScale(int32_t volumeLevel, int32_t volumeDegree, int32_t maxVolumeLevel = -1)
+        : volumeLevel_(volumeLevel), volumeDegree_(volumeDegree), maxVolumeLevel_(maxVolumeLevel)
+    {
+        valueType_ = volumeDegree_ != -1 ?
+            VolumeKeyType::VOLUME_KEY_TYPE_DEGREE : VolumeKeyType::VOLUME_KEY_TYPE_LEVEL;
+        if (maxVolumeLevel != -1) {
+            Refresh();
+        }
+    }
+
+    VolumeScale Refresh();
+    VolumeScale Update(int32_t volumeLevel);
+    VolumeScale Adjust(const VolumeScale &VolumeScale);
+    bool IsVolumeDegreeValid(int32_t min, int32_t max);
+    void SetMaxVolumeLevel(int32_t maxVolumeLevel) { maxVolumeLevel_ = maxVolumeLevel; }
+    int32_t VolumeLevel() const { return volumeLevel_; }
+    int32_t VolumeDegree() const { return volumeDegree_; }
+
+private:
+    int32_t volumeLevel_ = -1;
+    int32_t volumeDegree_ = -1;
+    int32_t maxVolumeLevel_ = -1;
+    VolumeKeyType valueType_ = VolumeKeyType::VOLUME_KEY_TYPE_LEVEL;
+};
+
 class VolumeUtils {
 public:
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);

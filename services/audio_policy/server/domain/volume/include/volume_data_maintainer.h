@@ -35,12 +35,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
-enum class VolumeKeyType : int32_t {
-    VOLUME_KEY_TYPE_LEVEL,
-    VOLUME_KEY_TYPE_DEGREE,
-};
-
 class VolumeDataMaintainer {
 public:
     enum VolumeDataMaintainerStreamType {  // define with Dual framework
@@ -141,9 +135,9 @@ public:
     void InitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device);
     void DeInitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t SaveVolumeToDb(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, int32_t volumeLevel);
+        AudioStreamType streamType, const VolumeScale &volume);
     void SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, int32_t volumeLevel);
+        AudioStreamType streamType, VolumeScale &volume);
     int32_t LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
 
     void InitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device);
@@ -163,8 +157,6 @@ public:
         AudioStreamType streamType, int32_t volumeDegree);
     int32_t LoadVolumeDegreeFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType);
-    void SaveVolumeDegreeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, int32_t volumeDegree);
     
     int32_t CheckVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
     int32_t CheckMuteState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);

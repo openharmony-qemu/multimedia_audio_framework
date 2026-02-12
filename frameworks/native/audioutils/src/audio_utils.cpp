@@ -2188,14 +2188,64 @@ int32_t VolumeUtils::GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel)
     CHECK_AND_RETURN_RET_LOG(level >= VOLUME_LEVEL_ZERO && divider > 0,
         -1, "invalid input, level:%{public}d, maxLevel:%{public}d", level, maxLevel);
 
+    if (level == VOLUME_LEVEL_ZERO) {
+        return MIN_VOLUME_DEGREE;
+    }
+
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }
 
-    int32_t quotient = (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / divider;
-    int32_t ceiling = level * quotient;
+    int32_t nextLevel = level + 1;
+    int32_t ceiling = VolumeLevelToDegree(nextLevel, maxLevel) - 1;
 
     return ceiling;
+}
+
+VolumeScale VolumeScale::Refresh()
+{
+    if (volumeDegree_ == -1) {
+        volumeDegree_ = VolumeUtils::VolumeLevelToDegree(volumeLevel_, maxVolumeLevel_);
+    }
+
+    if (volumeDegree_ == -1) {
+        AUDIO_WARNING_LOG("refresh failed, maxVolumeLevel: %{public}d", maxVolumeLevel_);
+    }
+    return *this;
+}
+
+VolumeScale VolumeScale::Adjust(const VolumeScale &volume)
+{
+    if (volume.volumeLevel_ == volumeLevel_) {
+        int32_t oldVal = volumeDegree_;
+        if (valueType_ == VolumeKeyType::VOLUME_KEY_TYPE_LEVEL) {
+            volumeDegree_ = volume.volumeDegree_;
+        }
+
+        if (volumeDegree_ != oldVal) {
+            AUDIO_WARNING_LOG("volumeDegree, old: %{public}d, new: %{public}d", oldVal, volumeDegree_);
+        }
+    }
+    Refresh();
+    return *this;
+}
+
+VolumeScale VolumeScale::Update(int32_t volumeLevel)
+{
+    if (volumeLevel != volumeLevel_) {
+        volumeLevel_ = volumeLevel;
+        volumeDegree_ = VolumeUtils::VolumeLevelToDegree(volumeLevel_, maxVolumeLevel_);
+    }
+    Refresh();
+    return *this;
+}
+
+bool VolumeScale::IsVolumeDegreeValid(int32_t min, int32_t max)
+{
+    CHECK_AND_RETURN_RET_LOG((volumeDegree_ == -1) || (volumeDegree_ >= min && volumeDegree_ <= max), false,
+        "volumeDegree:%{public}d not in range:[%{public}d, %{public}d]",
+        volumeDegree_, min, max);
+    return true;
 }
 
 StreamUsage AudioTypeUtils::GetStreamUsageByStreamType(AudioStreamType streamType)

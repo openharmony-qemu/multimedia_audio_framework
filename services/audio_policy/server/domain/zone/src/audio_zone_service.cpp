@@ -504,14 +504,14 @@ bool AudioZoneService::IsSystemVolumeProxyEnable(int32_t zoneId)
 }
 
 int32_t AudioZoneService::SetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType,
-    int32_t volumeLevel, int32_t volumeFlag)
+    const VolumeScale &volume, int32_t volumeFlag)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     auto zone = FindZone(zoneId);
     CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
     CHECK_AND_RETURN_RET_LOG(zone->IsVolumeProxyEnable(), ERROR,
         "zone id %{public}d IsVolumeProxyEnable is false", zoneId);
-    return zone->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+    return zone->SetSystemVolumeLevel(volumeType, volume, volumeFlag);
 }
 
 int32_t AudioZoneService::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType)
@@ -522,17 +522,6 @@ int32_t AudioZoneService::GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType v
     CHECK_AND_RETURN_RET_LOG(zone->IsVolumeProxyEnable(), ERROR,
         "zone id %{public}d IsVolumeProxyEnable is false", zoneId);
     return zone->GetSystemVolumeLevel(volumeType);
-}
-
-int32_t AudioZoneService::SetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType,
-    int32_t volumeDegree, int32_t volumeFlag)
-{
-    std::lock_guard<std::mutex> lock(zoneMutex_);
-    auto zone = FindZone(zoneId);
-    CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
-    CHECK_AND_RETURN_RET_LOG(zone->IsVolumeProxyEnable(), ERROR,
-        "zone id %{public}d IsVolumeProxyEnable is false", zoneId);
-    return zone->SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag);
 }
 
 int32_t AudioZoneService::GetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType)

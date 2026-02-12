@@ -68,6 +68,7 @@ bool AudioA2dpDevice::GetA2dpInDeviceInfo(const std::string& device, A2dpDeviceC
         info.streamInfo = configInfoPos->second.streamInfo;
         info.absVolumeSupport = configInfoPos->second.absVolumeSupport;
         info.volumeLevel = configInfoPos->second.volumeLevel;
+        info.volumeDegree = configInfoPos->second.volumeDegree;
         info.mute = configInfoPos->second.mute;
         return true;
     }
@@ -166,7 +167,8 @@ bool AudioA2dpDevice::SetA2dpDeviceAbsVolumeSupport(const std::string& device, c
     return false;
 }
 
-bool AudioA2dpDevice::SetA2dpDeviceVolumeLevel(const std::string& device, const int32_t volumeLevel)
+bool AudioA2dpDevice::SetA2dpDeviceVolume(const std::string& device,
+    VolumeScale &volume)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
@@ -174,19 +176,12 @@ bool AudioA2dpDevice::SetA2dpDeviceVolumeLevel(const std::string& device, const 
         AUDIO_WARNING_LOG("Set VolumeLevel failed for macAddress:[%{public}s]", GetEncryptAddr(device).c_str());
         return false;
     }
-    configInfoPos->second.volumeLevel = volumeLevel;
-    return true;
-}
 
-bool AudioA2dpDevice::SetA2dpDeviceVolumeDegree(const std::string& device, int32_t volumeDegree)
-{
-    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
-    auto configInfoPos = connectedA2dpDeviceMap_.find(device);
-    if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
-        AUDIO_WARNING_LOG("Set VolumeDegree failed for macAddress:[%{public}s]", GetEncryptAddr(device).c_str());
-        return false;
-    }
-    configInfoPos->second.volumeDegree = volumeDegree;
+    volume.Adjust({configInfoPos->second.volumeLevel, configInfoPos->second.volumeDegree});
+    configInfoPos->second.volumeLevel = volume.VolumeLevel();
+    configInfoPos->second.volumeDegree = volume.VolumeDegree();
+    AUDIO_INFO_LOG("Set volumeLevel:%{public}d, volumeDegree:%{public}d",
+        volume.VolumeLevel(), volume.VolumeDegree());
     return true;
 }
 
