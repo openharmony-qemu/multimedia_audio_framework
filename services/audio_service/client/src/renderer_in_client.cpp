@@ -735,9 +735,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         FutexCode futexRes = FUTEX_OPERATION_FAILED;
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
         futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
-            [this] () {
-                return (state_ != RUNNING) || CheckBufferNeedWrite();
-            });
+            [this] () { return (state_ != RUNNING) || CheckBufferNeedWrite(); });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
         CHECK_AND_CALL_FUNC_RETURN_RET(futexRes != FUTEX_TIMEOUT, ERROR, HILOG_COMM_ERROR("[WriteCacheData]write data "
             "time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal")));
