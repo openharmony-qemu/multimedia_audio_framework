@@ -862,7 +862,7 @@ void AudioProcessInClientInner::NotifyStreamSilentChange()
     Trace trace("AudioProcessInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
     AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
     needNotifyStreamSilentChange_.store(false);
-    AUDIO_INFO_LOG("NotifyStreamSilentChange cost: %{public}lld ns", ClockTime::GetCurNano() - stamp);
+    AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }
 
 int32_t AudioProcessInClientInner::ReadFromProcessClient()

@@ -713,7 +713,7 @@ void RendererInClientInner::NotifyStreamSilentChange()
     Trace trace("RendererInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
     AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
     needNotifyStreamSilentChange_.store(false);
-    AUDIO_INFO_LOG("NotifyStreamSilentChange cost: %{public}lld ns", ClockTime::GetCurNano() - stamp);
+    AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
 }
 
 int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
