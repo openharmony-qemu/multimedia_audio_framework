@@ -213,7 +213,7 @@ private:
             stream.source_ = static_cast<SourceType>(parcel.ReadInt32());
             stream.bundleName_ = parcel.ReadString();
             stream.mute_ = parcel.ReadBool();
-            stream.uid_ = parcel.ReadUint32();
+            stream.uid_ = parcel.ReadInt32();
             streams_[stream.streamId_] = stream;
         }
     }
