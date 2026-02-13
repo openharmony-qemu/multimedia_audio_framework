@@ -25,7 +25,7 @@
 #include "audio_suite_log.h"
 #include "media_monitor_manager.h"
 #include "media_monitor_info.h"
-#include "audio_system_manager.h"
+#include "audio_workgroup_client_manager.h"
 #include "audio_suite_eq_node.h"
 #include "audio_suite_env_node.h"
 #include "audio_suite_pipeline.h"
@@ -1155,8 +1155,7 @@ void AudioSuitePipeline::CheckRenderFrameOverTimeCount()
 void AudioSuitePipeline::CreateDdlGroup()
 {
     if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
-        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
-        workGroupId_ = AudioSystemManager::GetInstance()->CreateAudioWorkgroup();
+        workGroupId_ = WorkgroupPrioRecorderManager::GetInstance().CreateAudioWorkgroup();
         CHECK_AND_RETURN_LOG(workGroupId_ > 0, "CreateAudioWorkgroup failed.");
         AUDIO_INFO_LOG("CreateAudioWorkgroup success, group id:%{public}d", workGroupId_);
     }
@@ -1165,8 +1164,7 @@ void AudioSuitePipeline::CreateDdlGroup()
 void AudioSuitePipeline::ReleaseDdlGroup()
 {
     if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
-        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
-        AudioSystemManager::GetInstance()->ReleaseAudioWorkgroup(workGroupId_);
+        WorkgroupPrioRecorderManager::GetInstance().ReleaseAudioWorkgroup(workGroupId_);
         workGroupId_ = -1;
         AUDIO_INFO_LOG("ReleaseAudioWorkgroup, group id:%{public}d", workGroupId_);
     }
@@ -1175,9 +1173,8 @@ void AudioSuitePipeline::ReleaseDdlGroup()
 void AudioSuitePipeline::AddDdlThread()
 {
     if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
-        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
         CHECK_AND_RETURN_LOG(workGroupId_ > 0, "workgroup id is invalid.");
-        int32_t ret = AudioSystemManager::GetInstance()->AddThreadToGroup(workGroupId_, gettid());
+        int32_t ret = WorkgroupPrioRecorderManager::GetInstance().AddThreadToGroup(workGroupId_, gettid());
         AUDIO_INFO_LOG("Add current pipeline thread %{public}d to group %{public}d", gettid(), workGroupId_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "AddThreadToGroup failed.");
     }
@@ -1186,27 +1183,27 @@ void AudioSuitePipeline::AddDdlThread()
 void AudioSuitePipeline::RemoveDdlThread()
 {
     if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
-        CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
-        AudioSystemManager::GetInstance()->RemoveThreadFromGroup(workGroupId_, gettid());
+        WorkgroupPrioRecorderManager::GetInstance().RemoveThreadFromGroup(workGroupId_, gettid());
         AUDIO_INFO_LOG("Remove thread %{public}d from group %{public}d", gettid(), workGroupId_);
     }
 }
 
 void AudioSuitePipeline::StartDdl(int32_t frameDurationMS)
 {
-    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE && AudioSystemManager::GetInstance() != nullptr) {
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
         uint64_t startTime = 0;
         uint64_t deadlineTime = static_cast<uint64_t>(std::clamp(frameDurationMS, DDL_MIN_MS, DDL_MAX_MS));
         std::unordered_map<int32_t, bool> threads{{gettid(), true}};
         bool needUpdatePrio = true;
-        AudioSystemManager::GetInstance()->StartGroup(workGroupId_, startTime, deadlineTime, threads, needUpdatePrio);
+        WorkgroupPrioRecorderManager::GetInstance().StartGroup(workGroupId_, startTime, deadlineTime,
+            threads, needUpdatePrio);
     }
 }
 
 void AudioSuitePipeline::StopDdl()
 {
-    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE && AudioSystemManager::GetInstance() != nullptr) {
-        AudioSystemManager::GetInstance()->StopGroup(workGroupId_);
+    if (pipelineWorkMode_ == PIPELINE_REALTIME_MODE) {
+        WorkgroupPrioRecorderManager::GetInstance().StopGroup(workGroupId_);
     }
 }
 
