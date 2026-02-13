@@ -78,6 +78,7 @@ private:
     void UpdateRecordDeviceInfoForStopInner(int32_t index);
     bool IsSourceTypeSupportedByMC(SourceType type);
     bool HasMCSourceTypeStreamRunning();
+    bool IsSourcePreferHighQuality(SourceType type);
 
     std::mutex mutex_;
     std::vector<RecordDeviceInfo> recordDeviceInfoList_;

@@ -85,6 +85,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
     std::shared_ptr<AudioDeviceDescriptor> appPreferredDevice = GetPreferDevice(index);
     capturerDevice = recordDeviceInfoList_[index].activeSelectedDevice_->deviceType_ == DEVICE_TYPE_NONE ?
         appPreferredDevice : recordDeviceInfoList_[index].activeSelectedDevice_;
+    sourceType = recordDeviceInfoList_[0].sourceType_;
     return JudgeFinalSelectDevice(capturerDevice, sourceType, recordDeviceInfoList_[index].appPreferredCategory_);
 }
 
@@ -99,8 +100,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
         return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
     }
 
-    // 如果是直播或录像且设备为sco，需要判断是否存在可用的高清设备
-    if (sourceType == SOURCE_TYPE_CAMCORDER || sourceType == SOURCE_TYPE_LIVE || category == PREFERRED_HIGH_QUALITY) {
+    if (IsSourcePreferHighQuality(sourceType) || category == PREFERRED_HIGH_QUALITY) {
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
         bool isA2dpinConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dpin);
@@ -108,6 +108,18 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
     }
 
     return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
+}
+
+bool AudioUsrSelectManager::IsSourcePreferHighQuality(SourceType type)
+{
+    switch (type) {
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_CAMCORDER:
+        case SOURCE_TYPE_LIVE:
+            return true;
+        default:
+            return false;
+    }
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice(int32_t index)
