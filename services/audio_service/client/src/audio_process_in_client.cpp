@@ -858,9 +858,11 @@ void AudioProcessInClientInner::WaitForReadableSpace() const
 void AudioProcessInClientInner::NotifyStreamSilentChange()
 {
     CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
-    AUDIO_INFO_LOG("exist sound data, need notify stream slient change");
+    int64_t stamp = ClockTime::GetCurNano();
+    Trace trace("AudioProcessInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
     AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
     needNotifyStreamSilentChange_.store(false);
+    AUDIO_INFO_LOG("NotifyStreamSilentChange cost: %{public}ld ns", ClockTime::GetCurNano() - stamp);
 }
 
 int32_t AudioProcessInClientInner::ReadFromProcessClient()

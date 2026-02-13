@@ -709,9 +709,11 @@ void RendererInClientInner::FirstFrameProcess()
 void RendererInClientInner::NotifyStreamSilentChange()
 {
     CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
-    AUDIO_INFO_LOG("exist sound data, need notify stream slient change");
+    int64_t stamp = ClockTime::GetCurNano();
+    Trace trace("RendererInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
     AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
     needNotifyStreamSilentChange_.store(false);
+    AUDIO_INFO_LOG("NotifyStreamSilentChange cost: %{public}ld ns", ClockTime::GetCurNano() - stamp);
 }
 
 int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
