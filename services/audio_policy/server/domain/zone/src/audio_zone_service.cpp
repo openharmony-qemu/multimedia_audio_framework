@@ -786,11 +786,11 @@ bool AudioZoneService::CheckDeviceInAudioZone(AudioDeviceDescriptor device)
     return false;
 }
 
-bool AudioZoneService::CheckExistDeviceInAudioZone()
+bool AudioZoneService::HasVolumeControllableDeviceInAudioZone()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     for (auto &it : zoneMaps_) {
-        if (it.second->CheckExistDeviceInZone()) {
+        if (it.second->HasVolumeControllableDeviceInZone()) {
             return true;
         }
     }

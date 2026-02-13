@@ -511,7 +511,8 @@ int32_t AudioAdapterManager::SetZoneVolumeLevel(int32_t zoneId, AudioStreamType 
     int32_t maxRet = GetMaxVolumeLevel(streamType, devices[0]);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
-
+    AUDIO_INFO_LOG("zoneId: %{public}d, streamType: %{public}d, volumeLevel: %{public}d",
+        zoneId, streamType, volumeLevel);
     SaveVolumeData(devices[0], streamType, volumeLevel, false, true);
     SetRemoteVolumeForPassThroughDevice(devices[0], volumeLevel);
     return SetVolumeDbForDeviceInPipe(devices[0], streamType);
