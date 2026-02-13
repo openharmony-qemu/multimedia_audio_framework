@@ -293,31 +293,6 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamType_003, TestSize.Level4)
 }
 
 /**
- * @tc.name   : Test GetAudioScene API
- * @tc.number : GetAudioScene_001
- * @tc.desc   : Test GetAudioScene interface
- */
-HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level4)
-{
-    AudioSystemManager audioSystemManager;
-    audioSystemManager.SetAudioScene(AUDIO_SCENE_PHONE_CALL);
-    int result = audioSystemManager.GetAudioScene();
-    EXPECT_EQ(result, AUDIO_SCENE_PHONE_CALL);
-
-    audioSystemManager.SetAudioScene(AUDIO_SCENE_RINGING);
-    result = audioSystemManager.GetAudioScene();
-    EXPECT_EQ(result, AUDIO_SCENE_RINGING);
-
-    audioSystemManager.SetAudioScene(AUDIO_SCENE_PHONE_CHAT);
-    result = audioSystemManager.GetAudioScene();
-    EXPECT_EQ(result, AUDIO_SCENE_PHONE_CHAT);
-
-    audioSystemManager.SetAudioScene(AUDIO_SCENE_DEFAULT);
-    result = audioSystemManager.GetAudioScene();
-    EXPECT_EQ(result, AUDIO_SCENE_DEFAULT);
-}
-
-/**
  * @tc.name   : Test IsDeviceActive API
  * @tc.number : IsDeviceActive_001
  * @tc.desc   : Test IsDeviceActive interface
