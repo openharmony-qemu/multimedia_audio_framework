@@ -94,7 +94,7 @@ private:
     void RegisterHandler(PipelineMsgCode cmdID, void (AudioSuiteEngine::*func)(Args...));
     void HandleStartPipeline(int32_t result);
     void HandleStopPipeline(int32_t result);
-    void HandleGetPipelineState(AudioSuitePipelineState state);
+    void HandleGetPipelineState(AudioSuitePipelineState state, int32_t result);
     void HandleCreateNode(int32_t result, uint32_t nodeId, uint32_t pipelineId);
     void HandleDestroyNode(int32_t result, uint32_t nodeId);
     void HandleBypassEffectNode(int32_t result);

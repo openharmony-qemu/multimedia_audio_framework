@@ -239,7 +239,9 @@ int32_t AudioSuiteManager::GetPipelineState(uint32_t pipelineId, AudioSuitePipel
         return isFinishGetPipelineState_;  // will be true when got notified.
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetPipelineState timeout");
-
+    CHECK_AND_RETURN_RET_LOG(
+        getPipelineResult_ == SUCCESS, getPipelineResult_, "GetPipelineState manager GetPipelineState failed.");
+    
     AUDIO_DEBUG_LOG("GetPipelineState leave");
     state = getPipelineState_;
     return SUCCESS;
@@ -334,7 +336,7 @@ int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishGetNodeBypassStatus_ = false;
-    getNodeBypassResult_ = false;
+    getNodeBypassState_ = false;
     int32_t ret = suiteEngine_->GetNodeBypassStatus(nodeId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "engine GetNodeBypassStatus failed, ret = %{public}d", ret);
 
@@ -342,9 +344,11 @@ int32_t AudioSuiteManager::GetNodeBypassStatus(uint32_t nodeId, bool &bypass)
         return isFinishGetNodeBypassStatus_;
     });
     CHECK_AND_RETURN_RET_LOG(stopWaiting, ERR_AUDIO_SUITE_TIMEOUT, "GetNodeBypassStatus timeout");
+    CHECK_AND_RETURN_RET_LOG(
+        getNodeBypassResult_ == SUCCESS, getNodeBypassResult_, "GetNodeBypassStatus manager failed.");
 
     AUDIO_DEBUG_LOG("GetNodeBypassStatus leave");
-    bypass = getNodeBypassResult_;
+    bypass = getNodeBypassState_;
     return SUCCESS;
 }
 
@@ -1122,12 +1126,13 @@ void AudioSuiteManager::OnStopPipeline(int32_t result)
     callbackCV_.notify_all();
 }
 
-void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state)
+void AudioSuiteManager::OnGetPipelineState(AudioSuitePipelineState state, int32_t result)
 {
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_DEBUG_LOG("OnGetPipelineState enter");
     isFinishGetPipelineState_ = true;
     getPipelineState_ = state;
+    getPipelineResult_ = result;
     callbackCV_.notify_all();
 }
 
@@ -1174,7 +1179,8 @@ void AudioSuiteManager::OnGetNodeBypass(int32_t result, bool bypassStatus)
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_DEBUG_LOG("OnGetNodeBypass enter");
     isFinishGetNodeBypassStatus_ = true;
-    getNodeBypassResult_ = bypassStatus;
+    getNodeBypassState_ = bypassStatus;
+    getNodeBypassResult_ = result;
     callbackCV_.notify_all();
 }
 
@@ -1302,6 +1308,115 @@ void AudioSuiteManager::WriteSuiteEngineExceptionEvent(uint32_t scene, uint32_t 
     bean->Add("ERROR_CASE", static_cast<int32_t>(result));
     bean->Add("ERROR_DESCRIPTION", description);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+template<typename T>
+void ParseValue(const std::string valueStr, T &result)
+{
+    std::istringstream iss(valueStr);
+    float value;
+    iss >> value;
+    result = static_cast<T>(value);
+}
+
+void ParseValue(const std::string valueStr, AudioSpaceRenderPositionParams &result)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    iss >> result.x >> comma >> result.y >> comma >> result.z;
+}
+
+void ParseValue(const std::string valueStr, AudioSpaceRenderRotationParams &result)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    int directionInt;
+    iss >> result.x >> comma >> result.y >> comma >> result.z >> comma >> result.surroundTime >> comma >>
+        directionInt;
+    result.surroundDirection = static_cast<AudioSurroundDirection>(directionInt);
+}
+
+void ParseValue(const std::string valueStr, AudioSpaceRenderExtensionParams &result)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    iss >> result.extRadius >> comma >> result.extAngle;
+}
+
+void ParseValue(const std::string valueStr, float &speed, float &pitch)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    iss >> speed >> comma >> pitch;
+}
+
+void ParseValue(const std::string valueStr, AudioPureVoiceChangeOption &option)
+{
+    std::istringstream iss(valueStr);
+    char comma;
+    int32_t genderInt;
+    int32_t typeInt;
+    iss >> genderInt >> comma >> typeInt;
+    option.optionGender = static_cast<AudioPureVoiceChangeGenderOption>(genderInt);
+    option.optionType = static_cast<AudioPureVoiceChangeType>(typeInt);
+}
+
+void ParseValue(const std::string &valueStr, int32_t *result)
+{
+    if (result == nullptr) {
+        return;
+    }
+    std::istringstream iss(valueStr);
+    std::string token;
+    std::vector<int32_t> temp;
+
+    while (std::getline(iss, token, ':')) {
+        token.erase(0, token.find_first_not_of(' ')); // Remove leading spaces
+        token.erase(token.find_last_not_of(' ') + 1); // Remove trailing spaces
+        if (!token.empty()) {
+            char* end;
+            errno = 0; // Reset error flag
+            long val = std::strtol(token.c_str(), &end, 10);
+            // Check if conversion was fully successful and without overflow
+            if (end != token.c_str() + token.size() || // Not entire string consumed
+                errno == ERANGE || // Numeric overflow
+                val < INT32_MIN || val > INT32_MAX) { // Out of int32_t range
+                return; // Conversion failed, return immediately
+            }
+            temp.push_back(static_cast<int32_t>(val));
+        }
+    }
+
+    for (size_t i = 0; i < temp.size(); ++i) {
+        result[i] = temp[i];
+    }
+}
+
+int32_t StringToInt32(std::string &str)
+{
+    char* end;
+    errno = 0; // Reset error flag
+    long value = std::strtol(str.c_str(), &end, 10); // Decimal conversion
+
+    // Check if entire string was parsed
+    if (end == str.c_str()) {
+        return INT32_MAX;
+    }
+
+    // Check if remaining characters are only whitespace (optional)
+    while (*end != '\0') {
+        if (!std::isspace(static_cast<unsigned char>(*end))) {
+            return INT32_MAX;
+        }
+        ++end;
+    }
+
+    // Check overflow/underflow
+    if (errno == ERANGE || value < INT32_MIN || value > INT32_MAX) {
+        return INT32_MAX;
+    }
+
+    return static_cast<int32_t>(value);
 }
 
 }  // namespace AudioSuite

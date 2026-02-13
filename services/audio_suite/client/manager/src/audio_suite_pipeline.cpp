@@ -224,7 +224,7 @@ int32_t AudioSuitePipeline::GetPipelineState()
 
     auto request = [this]() {
         AUDIO_INFO_LOG("GetPipelineState is %{public}d", static_cast<int32_t>(pipelineState_));
-        TriggerCallback(GET_PIPELINE_STATE, pipelineState_);
+        TriggerCallback(GET_PIPELINE_STATE, pipelineState_, SUCCESS);
     };
     SendRequest(request, __func__);
 
