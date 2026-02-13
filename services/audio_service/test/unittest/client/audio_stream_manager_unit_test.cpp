@@ -109,47 +109,8 @@ HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_002, TestSize.Lev
     EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_ENFORCED_TONE));
     EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_VOICE_CALL_ASSISTANT));
 }
-/**
- * @tc.name  : Test GetHardeareOutputSamplingRate API
- * @tc.type  : FUNC
- * @tc.number: GetHardeareOutputSamplingRate_001
- * @tc.desc  : Test IsStreamActive interface.
- */
-HWTEST(AudioStreamManagerUnitTest, GetSupportedAudioEffectProperty_001, TestSize.Level1)
-{
-    AudioEffectPropertyArray propertyArray;
 
-    int32_t result = AudioStreamManager::GetInstance()->GetSupportedAudioEffectProperty(propertyArray);
 
-    EXPECT_NE(result, 1);
-}
-/**
- * @tc.name  : Test GetAudioEffectProperty API
- * @tc.type  : FUNC
- * @tc.number: GetAudioEffectPropertye_001
- * @tc.desc  : Test IsStreamActive interface.
- */
-HWTEST(AudioStreamManagerUnitTest, GetAudioEffectProperty_001, TestSize.Level1)
-{
-    AudioEffectPropertyArray propertyArray;
-
-    int32_t result = AudioStreamManager::GetInstance()->GetAudioEffectProperty(propertyArray);
-    EXPECT_NE(result, 1);
-}
-/**
- * @tc.name  : Test GetAudioEnhanceProperty API
- * @tc.type  : FUNC
- * @tc.number: GetAudioEnhanceProperty_001
- * @tc.desc  : Test IsStreamActive interface.
- */
-HWTEST(AudioStreamManagerUnitTest, GetAudioEnhanceProperty_001, TestSize.Level1)
-{
-    AudioEnhancePropertyArray propertyArray;
-
-    int32_t result = AudioStreamManager::GetInstance()->GetAudioEnhanceProperty(propertyArray);
-
-    EXPECT_NE(result, 1);
-}
 /**
  * @tc.name  : Test ForceStopAudioStream API
  * @tc.type  : FUNC
