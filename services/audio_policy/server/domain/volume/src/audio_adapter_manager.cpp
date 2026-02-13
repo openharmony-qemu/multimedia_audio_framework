@@ -3758,9 +3758,9 @@ void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDevi
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     CHECK_AND_RETURN(!VolumeUtils::IsPCVolumeEnable());
-    CHECK_AND_RETURN(device->deviceType_ == DEVICE_TYPE_SPEAKER && device->networkId_ == LOCAL_NETWORK_ID);
     bool mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
     volumeDataMaintainer_.SaveMuteToMap(device, STREAM_RING, mute);
+    volumeDataMaintainer_.SaveMuteToDb(device, STREAM_RING, mute);
     AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_.load());
 }
 
