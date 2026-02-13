@@ -26,8 +26,6 @@
 #include "none_mix_engine.h"
 #include "audio_performance_monitor.h"
 #include "audio_volume.h"
-#include "format_converter.h"
-#include "audio_service.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_sink_latency_fetcher.h"
 
@@ -113,8 +111,8 @@ int32_t NoneMixEngine::Start()
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink.");
-    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first.");
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
     fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
     writeCount_ = 0;
     if (!playbackThread_) {
@@ -187,7 +185,7 @@ int32_t NoneMixEngine::StopAudioSink()
     if (sink && sink->IsInited()) {
         ret = sink->Stop();
     } else {
-        AUDIO_ERR_LOG("sink is null or not init.");
+        AUDIO_ERR_LOG("sink is null or not init");
     }
     return ret;
 }
@@ -413,7 +411,7 @@ AudioSamplingRate NoneMixEngine::GetDirectVoipSampleRate(AudioSamplingRate sampl
     return result;
 }
 
-AudioSampleFormat NoneMixEngine::GetDirectDeviceFormat(AudioSampleFormat format)
+AudioSampleFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
 {
     switch (format) {
         case AudioSampleFormat::SAMPLE_U8:
@@ -468,7 +466,7 @@ void NoneMixEngine::GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamI
         targetFormat = GetDirectVoipDeviceFormat(clientStreamInfo.format);
     } else {
         targetSampleRate = GetDirectSampleRate(clientStreamInfo.samplingRate);
-        targetFormat = GetDirectDeviceFormat(clientStreamInfo.format);
+        targetFormat = GetDirectDeviceFormate(clientStreamInfo.format);
     }
 }
 
@@ -523,7 +521,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ret;
     }
     RegisterSinkLatencyFetcher(renderId_);
-    float mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     float volume = mdmMute ? 0.0f : 1.0f;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;

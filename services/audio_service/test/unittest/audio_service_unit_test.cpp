@@ -450,12 +450,12 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
 HWTEST(AudioServiceUnitTest, AudioServiceUpdateMuteControlSet_001, TestSize.Level1)
 {
     AudioService::GetInstance()->UpdateMuteControlSet(1, true);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID + 1, true);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, false);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, true);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, false);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, true);
-    AudioService::GetInstance()->RemoveIdFromMuteControlSet(MAX_STREAMID - 1);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID + 1, true);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, false);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, true);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, false);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, true);
+    AudioService::GetInstance()->RemoveIdFromMuteControlSet(MAX_SESSIONID - 1);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -586,9 +586,9 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     EXPECT_EQ(0, floatRet);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(false);
     EXPECT_EQ(0, floatRet);
-    int32_t ret = AudioService::GetInstance()->EnableDualStream(MAX_STREAMID - 1, "Speaker");
+    int32_t ret = AudioService::GetInstance()->EnableDualStream(MAX_SESSIONID - 1, "Speaker");
     EXPECT_NE(SUCCESS, ret);
-    ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
+    ret = AudioService::GetInstance()->DisableDualStream(MAX_SESSIONID - 1);
     EXPECT_NE(SUCCESS, ret);
 }
 
@@ -753,7 +753,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
-    AudioService::GetInstance()->SetNonInterruptMute(MAX_STREAMID - 1, muteFlag);
+    AudioService::GetInstance()->SetNonInterruptMute(MAX_SESSIONID - 1, muteFlag);
     EXPECT_EQ(0, floatRet);
 }
 

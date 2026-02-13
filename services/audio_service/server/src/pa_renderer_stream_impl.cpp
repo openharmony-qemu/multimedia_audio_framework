@@ -35,6 +35,7 @@
 #include "policy_handler.h"
 #include "audio_volume.h"
 #include "audio_limiter_manager.h"
+#include "audio_utils.h"
 #include "core_service_handler.h"
 #include "volume_tools.h"
 
@@ -200,7 +201,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Stop failed!");
+        AUDIO_ERR_LOG("Stream Stop Failed");
         return ERR_OPERATION_FAILED;
     }
 
@@ -254,14 +255,14 @@ int32_t PaRendererStreamImpl::Flush()
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Flush failed!");
+        AUDIO_ERR_LOG("Stream Flush Failed");
         return ERR_OPERATION_FAILED;
     }
 
     streamFlushStatus_ = 0;
     operation = pa_stream_flush(paStream_, PAStreamFlushSuccessCb, reinterpret_cast<void *>(this));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("Stream Flush Operation failed!");
+        AUDIO_ERR_LOG("Stream Flush Operation Failed");
         return ERR_OPERATION_FAILED;
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
@@ -301,6 +302,8 @@ int32_t PaRendererStreamImpl::Drain(bool stopFlag)
         AudioVolume::GetInstance()->SetStopFadeoutState(sinkInputIndex_, DO_FADE);
         isDoFadeOut = true;
     }
+    size_t writeableSize = GetWritableSize();
+    AUDIO_INFO_LOG("drain before writeable size:%{public}lu", writeableSize);
     operation = pa_stream_drain(paStream_, PAStreamDrainSuccessCb, reinterpret_cast<void *>(this));
     pa_operation_unref(operation);
     return SUCCESS;
@@ -317,16 +320,19 @@ int32_t PaRendererStreamImpl::Stop()
     if (CheckReturnIfStreamInvalid(paStream_, ERR_ILLEGAL_STATE) < 0) {
         return ERR_ILLEGAL_STATE;
     }
-
+    size_t writeableSize = GetWritableSize();
+    AUDIO_INFO_LOG("stop writeable size:%{public}lu", writeableSize);
     if (!isDoFadeOut && !offloadEnable_) {
         AudioVolume::GetInstance()->SetFadeoutState(sinkInputIndex_, DO_FADE);
-        palock.Unlock();
-        {
-            std::unique_lock<std::mutex> lock(fadingMutex_);
-            const int32_t WAIT_TIME_MS = 20;
-            fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+        if (!offloadEnable_) {
+            palock.Unlock();
+            {
+                std::unique_lock<std::mutex> lock(fadingMutex_);
+                const int32_t WAIT_TIME_MS = 20;
+                fadingCondition_.wait_for(lock, std::chrono::milliseconds(WAIT_TIME_MS));
+            }
+            palock.Relock();
         }
-        palock.Relock();
     }
     isDoFadeOut = false;
     CHECK_AND_RETURN_RET_LOG(isReleased_ == false, ERR_ILLEGAL_STATE,
@@ -640,7 +646,7 @@ int32_t PaRendererStreamImpl::SetRate(int32_t rate)
     if (operation != nullptr) {
         pa_operation_unref(operation);
     } else {
-        AUDIO_ERR_LOG("SetRate: operation is nullptr!");
+        AUDIO_ERR_LOG("SetRate: operation is nullptr");
     }
     return SUCCESS;
 }
@@ -666,7 +672,7 @@ int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
-    CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOperation is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOperation is nullptr");
     pa_operation_unref(updatePropOperation);
 
     return SUCCESS;
@@ -767,7 +773,7 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
 
     std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
     if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
-        AUDIO_ERR_LOG("streamImpl is nullptr!");
+        AUDIO_ERR_LOG("streamImpl is nullptr");
         return;
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
@@ -781,7 +787,7 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
     if (writeCallback != nullptr) {
         writeCallback->OnWriteData(length);
     } else {
-        AUDIO_ERR_LOG("Write callback is nullptr!");
+        AUDIO_ERR_LOG("Write callback is nullptr");
     }
 }
 
@@ -796,7 +802,7 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 
     std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
     if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
-        AUDIO_ERR_LOG("streamImpl is nullptr!");
+        AUDIO_ERR_LOG("streamImpl is nullptr");
         return;
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
@@ -824,7 +830,7 @@ void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
 
     std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
     if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
-        AUDIO_ERR_LOG("streamImpl is nullptr!");
+        AUDIO_ERR_LOG("streamImpl is nullptr");
         return;
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
@@ -944,6 +950,8 @@ void PaRendererStreamImpl::PAStreamDrainSuccessCb(pa_stream *stream, int32_t suc
     if (statusCallback != nullptr) {
         statusCallback->OnStatusUpdate(OPERATION_DRAINED);
     }
+    size_t writeableSize = streamImpl->GetWritableSize();
+    AUDIO_INFO_LOG("drain after writeable size:%{public}lu", writeableSize);
     streamImpl->streamDrainStatus_ = success;
     streamImpl->isDrain_ = false;
 }
@@ -1191,7 +1199,7 @@ int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, 
         }
         pa_proplist *propList = pa_proplist_new();
         CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
-        AudioVolume::GetInstance()->SetOffloadType(sinkInputIndex_, offloadEnable_);
+        AudioVolume::GetInstance()->SetOffloadEnable(sinkInputIndex_, offloadEnable_);
         AudioVolume::GetInstance()->SetOffloadType(sinkInputIndex_, statePolicy);
 
         pa_operation *updatePropOperation =
@@ -1357,8 +1365,8 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 
 int32_t PaRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
-    AUDIO_INFO_LOG("PA set loudnessGain: %{public}f", loudnessGain);
-    return SUCCESS;
+    AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
+    return ERROR;
 }
 
 void PaRendererStreamImpl::UpdatePaTimingInfo()

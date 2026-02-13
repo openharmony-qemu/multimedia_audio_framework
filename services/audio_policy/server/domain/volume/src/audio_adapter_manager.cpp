@@ -818,7 +818,7 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
 
 void AudioAdapterManager::SetOffloadSessionId(uint32_t sessionId, OffloadAdapter offloadAdapter)
 {
-    if (sessionId < MIN_STREAMID || sessionId > MAX_STREAMID) {
+    if (sessionId < MIN_SESSIONID || sessionId > MAX_SESSIONID) {
         AUDIO_PRERELEASE_LOGE("set sessionId[%{public}d] error", sessionId);
     } else {
         AUDIO_PRERELEASE_LOGI("set sessionId[%{public}d]", sessionId);

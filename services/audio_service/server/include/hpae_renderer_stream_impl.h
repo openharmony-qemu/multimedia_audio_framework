@@ -188,11 +188,11 @@ private:
     std::vector<PositionData> speedPositionData_ = {Timestamp::Timestampbase::BASESIZE, PositionData{}};
 
     uint32_t usedSampleRate_ = 0;
+    std::atomic<bool> sendDataEnabled_ = true;
 
     std::mutex firstStreamDataMutex_;
     std::condition_variable firstStreamDataCv_;
     std::atomic<bool> firstStreamDataReceived_ = false;
-    std::atomic<bool> sendDataEnabled_ = true;
 
     std::pair<uint64_t, TimePoint> hdiPos_ = std::make_pair(0, std::chrono::high_resolution_clock::now());
     uint64_t writePos_ = 0;

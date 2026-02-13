@@ -71,8 +71,8 @@ constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
-constexpr uint32_t MIN_STREAMID = 100000;
-constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
+constexpr uint32_t MIN_SESSIONID = 100000;
+constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
 
 constexpr uint64_t AUDIO_US_PER_MS = 1000;
 constexpr uint64_t AUDIO_NS_PER_US = 1000;

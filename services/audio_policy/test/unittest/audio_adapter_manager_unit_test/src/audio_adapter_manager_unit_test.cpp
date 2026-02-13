@@ -131,15 +131,15 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
  */
 HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
 {
-    uint32_t sessionId = MIN_STREAMID - 1;
+    uint32_t sessionId = MIN_SESSIONID - 1;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 
-    sessionId = MAX_STREAMID + 1;
+    sessionId = MAX_SESSIONID + 1;
     adapter = OFFLOAD_IN_REMOTE;
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 
-    sessionId = MIN_STREAMID + 1;
+    sessionId = MIN_SESSIONID + 1;
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 }
 

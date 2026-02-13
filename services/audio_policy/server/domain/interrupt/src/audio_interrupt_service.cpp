@@ -2972,7 +2972,7 @@ void AudioInterruptService::ResumeFocusByStreamId(
 void AudioInterruptService::DispatchInterruptEventWithStreamId(uint32_t streamId,
     InterruptEventInternal &interruptEvent)
 {
-    CHECK_AND_RETURN_LOG(streamId >= MIN_STREAMID && streamId <= MAX_STREAMID,
+    CHECK_AND_RETURN_LOG(streamId >= MIN_SESSIONID && streamId <= MAX_SESSIONID,
         "EntryPoint Taint Mark:arg streamId: %{public}u is tained", streamId);
     std::lock_guard<std::mutex> lock(mutex_);
 
