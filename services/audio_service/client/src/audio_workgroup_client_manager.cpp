@@ -32,9 +32,9 @@ using namespace OHOS::RME;
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr unsigned int MS_PER_SECOND = 1000;
-constexpr unsigned int AUDIO_DEADLINE_PARAM_MIN = 10;
-constexpr unsigned int AUDIO_DEADLINE_PARAM_MAX = 50;
+constexpr int32_t MS_PER_SECOND = 1000;
+constexpr int32_t AUDIO_DEADLINE_PARAM_MIN = 10;
+constexpr int32_t AUDIO_DEADLINE_PARAM_MAX = 50;
 
 WorkgroupPrioRecorderManager &WorkgroupPrioRecorderManager::GetInstance()
 {
@@ -109,10 +109,9 @@ int32_t WorkgroupPrioRecorder::RestoreThreadPrio(int32_t tokenId)
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
     std::lock_guard<std::mutex> lock(workgroupThreadsMutex_);
     auto it = threads_.find(tokenId);
-    int ipcRet;
     if (it != threads_.end()) {
         std::unordered_map<int32_t, int32_t> thread = {{it->first, it->second}};
-        ipcRet = gasp->RestoreAudioWorkgroupPrio(thread);
+        int32_t ipcRet = gasp->RestoreAudioWorkgroupPrio(thread);
         if (ipcRet != SUCCESS) {
             AUDIO_ERR_LOG("[WorkgroupInClient] change prio for tokenId:%{public}d failed, ret:%{public}d",
                 tokenId, ipcRet);
