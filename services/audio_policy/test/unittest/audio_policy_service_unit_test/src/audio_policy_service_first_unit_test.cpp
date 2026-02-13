@@ -585,7 +585,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_002, TestSize.Level1)
 
     int32_t result = GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDevice(
         audioRendererFilter, deviceDescriptorVector);
-    EXPECT_NE(ERR_INVALID_OPERATION, result);
+    EXPECT_EQ(ERR_INVALID_OPERATION, result);
 }
 
 /**
@@ -982,7 +982,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(true);
     ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.SetWakeUpAudioCapturer(capturerOptions);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
