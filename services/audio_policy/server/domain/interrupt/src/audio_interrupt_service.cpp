@@ -1183,6 +1183,11 @@ AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32
         "usage: %{public}d source: %{public}d",
         incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
         currAudioInterrupt.streamUsage, incomingSourceType);
+
+    if (currAudioInterrupt.strategy == InterruptStrategy::MUTE) {
+        AudioServerProxy::GetInstance().SetLatestMuteState(incomingStreamId, 0);
+        streamCollector_.CapturerMutedFlagChange(incomingStreamId, 0);
+    }
     if (interruptDfx_ != nullptr) {
         interruptDfx_->CheckInterruptEvent(currAudioInterrupt.streamId);
     }
