@@ -406,7 +406,8 @@ void MediaBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevic
 {
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     if (g_deviceObserver != nullptr) {
-        g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetDeviceAddr());
+        g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetDeviceAddr(),
+            nullptr, "Bluetooth");
     }
 }
 
@@ -985,13 +986,13 @@ void HfpBluetoothDeviceManager::HandleUserSelection(const BluetoothRemoteDevice 
     std::lock_guard<std::mutex> lg(g_observerLock);
     CHECK_AND_RETURN_LOG(g_deviceObserver, "g_deviceObserver is nullptr");
     if (deviceCategory == BT_WATCH) {
-        g_deviceObserver->OnPrivacyDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, macAddress);
+        g_deviceObserver->OnPrivacyDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, macAddress, "Bluetooth");
         return;
     }
     sptr<AudioRendererFilter> filter = new AudioRendererFilter();
     CHECK_AND_RETURN_LOG(filter, "filter is nullptr");
     filter->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, macAddress, filter);
+    g_deviceObserver->OnForcedDeviceSelected(DEVICE_TYPE_BLUETOOTH_SCO, macAddress, filter, "Bluetooth");
 }
 
 void HfpBluetoothDeviceManager::HandleStopVirtualCall(const BluetoothRemoteDevice &device)
