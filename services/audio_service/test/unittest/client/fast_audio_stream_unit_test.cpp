@@ -33,7 +33,7 @@ public:
     MOCK_METHOD(int32_t, SaveUnderrunCallback,
         (const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback), (override));
 
-    MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (const, override));
+    MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (override));
     MOCK_METHOD(int32_t, Enqueue, (const BufferDesc &bufDesc), (override));
 
     MOCK_METHOD(int32_t, SetVolume, (int32_t vol), (override));
