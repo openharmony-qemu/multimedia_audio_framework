@@ -126,22 +126,23 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_DegreeTest_001, TestSize.Lev
 
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.
- * @tc.number: CheckExistDeviceInAudioZone_001
- * @tc.desc  : Test CheckExistDeviceInAudioZone interface.
+ * @tc.number: HasVolumeControllableDeviceInAudioZone_001
+ * @tc.desc  : Test HasVolumeControllableDeviceInAudioZone interface.
  */
-HWTEST_F(AudioZoneServiceUnitTest, CheckExistDeviceInAudioZone_001, TestSize.Level1)
+HWTEST_F(AudioZoneServiceUnitTest, HasVolumeControllableDeviceInZone_001, TestSize.Level1)
 {
     AudioZoneContext context;
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
     std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
-    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistDeviceInAudioZone(), false);
+    EXPECT_EQ(AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone(), false);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE
     );
+    desc->volumeBehavior_.isVolumeControlDisabled = false;
     devices.push_back(desc);
-    AudioZoneService::GetInstance().BindDeviceToAudioZone(0, devices);
-    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistDeviceInAudioZone(), true);
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
+    EXPECT_EQ(AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone(), true);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 

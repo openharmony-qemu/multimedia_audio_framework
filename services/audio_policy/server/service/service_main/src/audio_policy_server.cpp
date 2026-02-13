@@ -668,9 +668,12 @@ void AudioPolicyServer::GetActiveAudioInterruptZone(int32_t &zoneId, AudioStream
         return;
     }
     AudioZoneService::GetInstance().GetActiveAudioInterruptZone(zoneId, streamType);
-    if (!AudioZoneService::GetInstance().CheckExistDeviceInAudioZone()) { // zone has not device
+    if (!AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone()) { // zone has not device
         zoneId = 0;
     }
+    CHECK_AND_RETURN(audioVolumeManager_.IsNeedForceControlVolumeType());
+    AUDIO_INFO_LOG("force volume type, type:%{public}d", audioVolumeManager_.GetForceControlVolumeType());
+    streamType = audioVolumeManager_.GetForceControlVolumeType();
 }
 
 int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
@@ -687,6 +690,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
         GetActiveAudioInterruptZone(zoneId, streamInFocus);
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);
     }
+    AUDIO_INFO_LOG("streamInFocus is %{public}d, zoneId is %{public}d", streamInFocus, zoneId);
     bool active = false;
     IsStreamActive(streamInFocus, active);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
