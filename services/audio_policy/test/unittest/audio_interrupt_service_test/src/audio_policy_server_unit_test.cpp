@@ -43,6 +43,7 @@ namespace AudioStandard {
 
 bool g_hasPermission = false;
 bool g_hasServerInit = false;
+constexpr int32_t DEFAULT_ZONE_ID = 0;
 sptr<AudioPolicyServer> GetPolicyServerUnitTest()
 {
     static int32_t systemAbilityId = 3009;
@@ -1002,7 +1003,9 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_001, TestSize.Level1)
 
     int32_t volumeLevel = 5;
     bool isUpdateUi = true;
-    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi);
+    VolumeUpdateOption info = { isUpdateUi };
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL,
+        volumeLevel, DEFAULT_ZONE_ID, info);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -1022,7 +1025,9 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_002, TestSize.Level1)
     int32_t volumeLevel = 5;
     bool isUpdateUi = true;
     VolumeUtils::SetPCVolumeEnable(true);
-    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL, volumeLevel, isUpdateUi);
+    VolumeUpdateOption info = { isUpdateUi };
+    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL,
+        volumeLevel, DEFAULT_ZONE_ID, info);
     VolumeUtils::SetPCVolumeEnable(false);
     EXPECT_EQ(ret, SUCCESS);
 }

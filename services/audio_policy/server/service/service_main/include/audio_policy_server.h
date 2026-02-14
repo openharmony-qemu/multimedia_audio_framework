@@ -72,6 +72,7 @@ struct VolumeUpdateOption {
     bool mute = false;
     int32_t zoneId = 0;
     bool syncDegree = true;
+    bool hasCheckLoudVolume = false;
 };
 
 struct VolInfoForUpdateMute {
@@ -798,7 +799,7 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
-        bool isUpdateUi, int32_t zoneId = 0, bool syncDegree = true);
+        int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     int32_t SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);

@@ -107,7 +107,7 @@ static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
 constexpr int32_t MAX_STREAM_USAGE_COUNT = StreamUsage::STREAM_USAGE_MAX + 1;
 constexpr int32_t MAX_SIZE = 1024;
 constexpr int32_t DEFAULT_UID = 0;
-constexpr int32_t DEFAULT_ZONEID = 0;
+constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 1000; // 1000ms
 
 // system sound path
@@ -740,7 +740,8 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
     volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? ++volumeLevelInInt :
          --volumeLevelInInt;
 
-    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true, zoneId);
+    VolumeUpdateOption info = { true, false, zoneId, true, true };
+    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, zoneId, info);
     if (ret == ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED) {
         SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
     }
@@ -1160,7 +1161,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int3
     }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
-    return SetSystemVolumeLevelInternal(streamType, volumeLevel, false, zoneId);
+    VolumeUpdateOption info = { false };
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
 }
 
 int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
@@ -1233,10 +1235,12 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
             return AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId,
                 VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel, flag);
         }
-        return SetSystemVolumeLevelInternal(streamType, volumeLevel, flag, zoneId);
+        VolumeUpdateOption info = { flag };
+        return SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
     }
     zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
-    return SetSystemVolumeLevelInternal(streamType, volumeLevel, flag, zoneId);
+    VolumeUpdateOption info = { flag };
+    return SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelWithDevice(int32_t streamTypeIn, int32_t volumeLevel,
@@ -1437,7 +1441,8 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(int32_t adjustTypeIn)
         volumeLevelInInt;
     volumeLevelInInt = volumeLevelInInt < minRet ? minRet :
         volumeLevelInInt;
-    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, false, zoneId);
+    VolumeUpdateOption info = { false };
+    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, zoneId, info);
     return ret;
 }
 
@@ -1482,7 +1487,8 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(int32_t volumeTypeIn, int32_
         volumeLevelInInt;
     volumeLevelInInt = volumeLevelInInt < minRet ? minRet :
         volumeLevelInInt;
-    int32_t ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt, false);
+    VolumeUpdateOption info = { false };
+    int32_t ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt, DEFAULT_ZONE_ID, info);
     return ret;
 }
 // LCOV_EXCL_STOP
@@ -1702,10 +1708,10 @@ int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isM
 // LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
-    bool isUpdateUi, int32_t zoneId, bool syncDegree)
+    int32_t zoneId, const VolumeUpdateOption &info)
 {
-    AUDIO_INFO_LOG("streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
-        streamType, volumeLevel, isUpdateUi);
+    AUDIO_INFO_LOG("streamType: %{public}d, volumeLevel: %{public}d, hasCheckLoudVolume: %{public}d,"
+        " updateUi: %{public}d", streamType, volumeLevel, info.hasCheckLoudVolume, info.isUpdateUi);
     bool adjustable = false;
     IsVolumeUnadjustable(adjustable);
     if (adjustable) {
@@ -1714,11 +1720,11 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
     }
     bool mute = GetStreamMuteInternal(streamType, zoneId);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT && !isUpdateUi) {
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT && !info.hasCheckLoudVolume) {
         CheckLoudVolumeMode(mute, volumeLevel, streamType);
     }
 #endif
-    VolumeUpdateOption option{isUpdateUi, mute, zoneId, syncDegree};
+    VolumeUpdateOption option{info.isUpdateUi, mute, zoneId, info.syncDegree};
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             bool isMutedForType = GetStreamMuteInternal(audioStreamType, zoneId);
@@ -2452,7 +2458,8 @@ int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode inputRingerMode
         audioVolumeManager_.SetStreamMute(STREAM_RING, muteState, audioInterrupt.streamUsage);
         if (!muteState && GetSystemVolumeLevelInternal(STREAM_RING) == 0) {
             // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
-            SetSystemVolumeLevelInternal(STREAM_RING, 1, false);
+            VolumeUpdateOption info = { false };
+            SetSystemVolumeLevelInternal(STREAM_RING, 1, DEFAULT_ZONE_ID, info);
         }
     }
 
@@ -5773,8 +5780,8 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     int32_t volumeLevelMax = -1;
     GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
     int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree, volumeLevelMax);
-    ret = SetSystemVolumeLevelInternal(streamType, volumeLevel,
-        volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, uid, false);
+    VolumeUpdateOption info = { volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI, false, uid, false };
+    ret = SetSystemVolumeLevelInternal(streamType, volumeLevel, uid, info);
     return ret;
 }
 
