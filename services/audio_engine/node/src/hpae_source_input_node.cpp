@@ -206,7 +206,8 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
     auto &historyData = historyDataMap_.at(bufferType);
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
-    if (historyRemainSizeMap_.at(bufferType) == 0) {
+    if ((bufferType == HPAE_SOURCE_BUFFER_TYPE_MIC || bufferType == HPAE_SOURCE_BUFFER_TYPE_DEFAULT) &&
+        historyRemainSizeMap_.at(bufferType) == 0) {
         return;
     } else if (historyRemainSizeMap_.at(bufferType) < byteSize) {
         historyData.insert(historyData.end(), byteSize - historyRemainSizeMap_.at(bufferType), 0);
@@ -340,15 +341,17 @@ void HpaeSourceInputNode::DoProcess()
             uint64_t replyBytesUnused = 0;
             audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_DEFAULT), replyBytesUnused,
                                                      &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytes);
+            CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
+                "ec request != reply");
+            DoProcessInner(sourceBufferType, replyBytes);
+        } else if (sourceInputNodeType_ == HPAE_SOURCE_MICREF) {
+            audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(sourceBufferType).data(),
+                (uint64_t)frameByteSizeMap_.at(sourceBufferType), replyBytes);
+            CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
+                "micref request != reply");
+            DoProcessInner(sourceBufferType, replyBytes);
         } else {
             ReadDataFromSource(sourceBufferType, replyBytes);
-        }
-        
-        if (sourceInputNodeType_ == HPAE_SOURCE_MIC) {
-            DoProcessMicInner(sourceBufferType, replyBytes);
-        } else {
-            CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
-                "request != reply");
             DoProcessMicInner(sourceBufferType, replyBytes);
         }
     }

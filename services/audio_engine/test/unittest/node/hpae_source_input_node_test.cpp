@@ -1033,6 +1033,234 @@ HWTEST_F(HpaeSourceInputNodeTest, CaptureFrameFailTest_002, TestSize.Level0)
         EXPECT_EQ(hpaeSourceInputNode->backoffController_.delay_, 0); // micref not sleep
     }
 }
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcessMicInner_MIC_Type_HistoryRemainZero_EarlyReturn, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto historyRemain = hpaeSourceInputNode->historyRemainSizeMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC);
+    EXPECT_EQ(historyRemain != hpaeSourceInputNode->historyRemainSizeMap_.end(), true);
+    EXPECT_EQ(historyRemain->second, 0);
+
+    auto historyData = hpaeSourceInputNode->historyDataMap_.find(HPAE_SOURCE_BUFFER_TYPE_MIC);
+    size_t dataSizeBefore = historyData->second.size();
+
+    hpaeSourceInputNode->DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MIC, 0);
+
+    size_t dataSizeAfter = historyData->second.size();
+    EXPECT_EQ(dataSizeAfter, dataSizeBefore);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcessMicInner_DEFAULT_Type_HistoryRemainZero_EarlyReturn, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto historyRemain = hpaeSourceInputNode->historyRemainSizeMap_.find(HPAE_SOURCE_BUFFER_TYPE_DEFAULT);
+    EXPECT_EQ(historyRemain != hpaeSourceInputNode->historyRemainSizeMap_.end(), true);
+    EXPECT_EQ(historyRemain->second, 0);
+
+    auto historyData = hpaeSourceInputNode->historyDataMap_.find(HPAE_SOURCE_BUFFER_TYPE_DEFAULT);
+    size_t dataSizeBefore = historyData->second.size();
+
+    hpaeSourceInputNode->DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_DEFAULT, 0);
+
+    size_t dataSizeAfter = historyData->second.size();
+    EXPECT_EQ(dataSizeAfter, dataSizeBefore);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcessMicInner_EC_Type_HistoryRemainZero_Continue, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto historyRemain = hpaeSourceInputNode->historyRemainSizeMap_.find(HPAE_SOURCE_BUFFER_TYPE_EC);
+    EXPECT_EQ(historyRemain != hpaeSourceInputNode->historyRemainSizeMap_.end(), true);
+    EXPECT_EQ(historyRemain->second, 0);
+
+    auto historyData = hpaeSourceInputNode->historyDataMap_.find(HPAE_SOURCE_BUFFER_TYPE_EC);
+    EXPECT_EQ(historyData->second.size(), 0);
+
+    uint64_t fillSize = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+    historyRemain->second = fillSize;
+    historyData->second.resize(fillSize, 0x01);
+
+    hpaeSourceInputNode->DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_EC, fillSize);
+
+    EXPECT_EQ(historyRemain->second, 0);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcessMicInner_MICREF_Type_HistoryRemainZero_Continue, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto historyRemain = hpaeSourceInputNode->historyRemainSizeMap_.find(HPAE_SOURCE_BUFFER_TYPE_MICREF);
+    EXPECT_EQ(historyRemain != hpaeSourceInputNode->historyRemainSizeMap_.end(), true);
+    EXPECT_EQ(historyRemain->second, 0);
+
+    auto historyData = hpaeSourceInputNode->historyDataMap_.find(HPAE_SOURCE_BUFFER_TYPE_MICREF);
+    EXPECT_EQ(historyData->second.size(), 0);
+
+    uint64_t fillSize = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+    historyRemain->second = fillSize;
+    historyData->second.resize(fillSize, 0x02);
+
+    hpaeSourceInputNode->DoProcessMicInner(HPAE_SOURCE_BUFFER_TYPE_MICREF, fillSize);
+
+    EXPECT_EQ(historyRemain->second, 0);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcess_EC_Type_CallCaptureFrameWithEcAndDoProcessInner, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_EC;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+
+    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+    bool captureFrameWithEcCalled = false;
+
+    EXPECT_CALL(*mockCaptureSource, CaptureFrameWithEc(_, _, _, _))
+        .WillOnce([&captureFrameWithEcCalled, requestBytes](FrameDesc *fdesc, uint64_t &replyBytes,
+            FrameDesc *fdescEc, uint64_t &replyBytesEc) {
+            captureFrameWithEcCalled = true;
+            replyBytes = 0;
+            replyBytesEc = requestBytes;
+            return SUCCESS;
+        });
+
+    hpaeSourceInputNode->DoProcess();
+    EXPECT_EQ(captureFrameWithEcCalled, true);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcess_EC_Type_ReplyCheckFail, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_EC;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+
+    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+
+    EXPECT_CALL(*mockCaptureSource, CaptureFrameWithEc(_, _, _, _))
+        .WillOnce([requestBytes](FrameDesc *fdesc, uint64_t &replyBytes,
+            FrameDesc *fdescEc, uint64_t &replyBytesEc) {
+            replyBytes = 0;
+            replyBytesEc = requestBytes - 1;
+            return SUCCESS;
+        });
+
+    auto historyRemain = hpaeSourceInputNode->historyRemainSizeMap_.find(HPAE_SOURCE_BUFFER_TYPE_EC);
+    size_t remainSizeBefore = historyRemain->second;
+
+    hpaeSourceInputNode->DoProcess();
+
+    size_t remainSizeAfter = historyRemain->second;
+    EXPECT_EQ(remainSizeAfter, remainSizeBefore);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcess_MICREF_Type_CallCaptureFrameAndDoProcessInner, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MICREF;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+
+    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+    bool captureFrameCalled = false;
+
+    EXPECT_CALL(*mockCaptureSource, CaptureFrame(_, _, _))
+        .WillOnce([&captureFrameCalled, requestBytes](char *frame, uint64_t request, uint64_t &replyBytes) {
+            captureFrameCalled = true;
+            replyBytes = requestBytes;
+            return SUCCESS;
+        });
+
+    hpaeSourceInputNode->DoProcess();
+    EXPECT_EQ(captureFrameCalled, true);
+}
+
+HWTEST_F(HpaeSourceInputNodeTest, DoProcess_MICREF_Type_ReplyCheckFail, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MICREF;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
+    std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+
+    auto mockCaptureSource = std::make_shared<NiceMock<MockAudioCaptureSource>>();
+    hpaeSourceInputNode->audioCapturerSource_ = mockCaptureSource;
+
+    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
+
+    EXPECT_CALL(*mockCaptureSource, CaptureFrame(_, _, _))
+        .WillOnce([requestBytes](char *frame, uint64_t request, uint64_t &replyBytes) {
+            replyBytes = requestBytes - 1;
+            return SUCCESS;
+        });
+
+    auto historyRemain = hpaeSourceInputNode->historyRemainSizeMap_.find(HPAE_SOURCE_BUFFER_TYPE_MICREF);
+    size_t remainSizeBefore = historyRemain->second;
+
+    hpaeSourceInputNode->DoProcess();
+
+    size_t remainSizeAfter = historyRemain->second;
+    EXPECT_EQ(remainSizeAfter, remainSizeBefore);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
