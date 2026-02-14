@@ -408,7 +408,8 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_MicChannelsLessThanDefau
 {
     const uint64_t chainId = 0x5678;
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_TYPE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_TYPE_MIC", "SPEAKER",
+        "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 };
 
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
@@ -420,7 +421,8 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_MicChannelsEqualDefault,
 {
     const uint64_t chainId = 0x5679;
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_TYPE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_TYPE_MIC", "SPEAKER",
+        "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 4, 4, false, 48000, 2, 2, false, 48000, 4, 4 };
 
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
@@ -432,7 +434,8 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_MicChannelsGreaterThanDe
 {
     const uint64_t chainId = 0x5680;
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_TYPE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_TYPE_MIC", "SPEAKER",
+        "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 6, 6, false, 48000, 2, 2, false, 48000, 6, 6 };
 
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
@@ -444,7 +447,8 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_PreDeviceNotDefault, Tes
 {
     const uint64_t chainId = 0x5681;
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_OTHER", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_OTHER", "SPEAKER",
+        "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 };
 
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
