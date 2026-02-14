@@ -2601,7 +2601,7 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     if (specialSourceTypeSet_.count(sourceType) == 0) {
         CHECK_AND_RETURN_LOG(!IsDescInSourceStrategyMap(streamDesc), "Special Pipe need not PrepareNormalSource");
-        audioEcManager_.PrepareNormalSource(pipeInfo, streamDesc);
+        PrepareNormalSource(pipeInfo, streamDesc);
     }
 }
 
