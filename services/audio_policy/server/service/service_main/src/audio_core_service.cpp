@@ -49,6 +49,7 @@ static const int32_t REFETCH_DEVICE = 4;
 static const int64_t RING_DUAL_END_DELAY_US = 100000;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
+static constexpr int32_t MS_PER_S = 1000;
 }
 
 static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage)
