@@ -954,7 +954,6 @@ private:
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     // key:sessionId value:adapterName, use for getting pipe when release
     std::unordered_map<uint32_t, std::string> sessionWithInputPipeAdapterName_;
-    int32_t isSupportUltraFast_ = 0;
 
     AudioModuleInfo usbSinkModuleInfo_ = {};
     AudioModuleInfo usbSourceModuleInfo_ = {};
