@@ -24,13 +24,13 @@
 #include "audio_stream_descriptor.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
+#include "audio_ec_info.h"
 #include "microphone_descriptor.h"
 #include "audio_stream_change_info.h"
 #include "audio_active_device.h"
 #include "audio_scene_manager.h"
 #include "audio_usr_select_manager.h"
 #include "audio_volume_manager.h"
-#include "audio_capturer_session.h"
 #include "audio_device_manager.h"
 #include "audio_connected_device.h"
 #include "audio_device_status.h"
@@ -53,12 +53,141 @@
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
 #include "async_action_handler.h"
+
+namespace {
+    #include "v6_0/iaudio_manager.h"
+}
+
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
     LOCAL_OFFLOAD,
     REMOTE_OFFLOAD,
     OFFLOAD_TYPE_NUM,
+};
+
+const uint32_t PCM_8_BIT = 8;
+const uint32_t SESSION_ID_INVALID = 0;
+const std::string PIPE_PRIMARY_INPUT = std::string("primary_input");
+const std::string PIPE_WAKEUP_INPUT = std::string("wakeup_input");
+const std::string PIPE_PRIMARY_INPUT_AI = std::string("primary_input_AI");
+static const char* PIPE_PRIMARY_OUTPUT = "primary_output";
+static const char* PIPE_USB_ARM_OUTPUT = "usb_arm_output";
+static const char* PIPE_USB_ARM_INPUT = "usb_arm_input";
+static const char* PIPE_DP_OUTPUT = "dp_output";
+static const char* PIPE_ACCESSORY_INPUT = "accessory_input";
+
+static const std::vector<DeviceType> MIC_REF_DEVICES = {
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN
+};
+
+static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
+    {"s8", SAMPLE_U8},
+    {"s16", SAMPLE_S16LE},
+    {"s24", SAMPLE_S24LE},
+    {"s32", SAMPLE_S32LE},
+    {"s16le", SAMPLE_S16LE},
+    {"s24le", SAMPLE_S24LE},
+    {"s32le", SAMPLE_S32LE},
+};
+
+static std::map<AudioSampleFormat, std::string> formatEnumToStr = {
+    {SAMPLE_U8, "s16le"},
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+    {SAMPLE_F32LE, "s16le"},
+};
+
+static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
+    {SAMPLE_U8, "s8"},
+    {SAMPLE_S16LE, "s16"},
+    {SAMPLE_S24LE, "s24"},
+    {SAMPLE_S32LE, "s32"},
+    {SAMPLE_F32LE, "f32"},
+};
+
+static const std::map<std::pair<DeviceType, DeviceType>, EcType> DEVICE_TO_EC_TYPE = {
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_ACCESSORY, DEVICE_TYPE_SPEAKER}, EC_TYPE_DIFF_ADAPTER},
+};
+
+const std::map<SourceType, int> NORMAL_SOURCETYPE_PRIORITY = {
+    // from high to low
+    {SOURCE_TYPE_VOICE_CALL, 8},
+    {SOURCE_TYPE_VOICE_COMMUNICATION, 7},
+    {SOURCE_TYPE_VOICE_MESSAGE, 6},
+    {SOURCE_TYPE_LIVE, 5},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 4},
+    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 4},
+    {SOURCE_TYPE_MIC, 3},
+    {SOURCE_TYPE_CAMCORDER, 3},
+    {SOURCE_TYPE_UNPROCESSED, 2},
+    {SOURCE_TYPE_ULTRASONIC, 1},
+    {SOURCE_TYPE_INVALID, 0},
+};
+
+const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
+    { SOURCE_TYPE_INVALID, AUDIO_INPUT_DEFAULT_TYPE },
+    { SOURCE_TYPE_MIC, AUDIO_INPUT_MIC_TYPE },
+    { SOURCE_TYPE_PLAYBACK_CAPTURE, AUDIO_INPUT_MIC_TYPE },
+    { SOURCE_TYPE_ULTRASONIC, AUDIO_INPUT_ULTRASONIC_TYPE },
+    { SOURCE_TYPE_WAKEUP, AUDIO_INPUT_SPEECH_WAKEUP_TYPE },
+    { SOURCE_TYPE_VOICE_TRANSCRIPTION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE },
+    { SOURCE_TYPE_VOICE_COMMUNICATION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE },
+    { SOURCE_TYPE_VOICE_RECOGNITION, AUDIO_INPUT_VOICE_RECOGNITION_TYPE },
+    { SOURCE_TYPE_VOICE_CALL, AUDIO_INPUT_VOICE_CALL_TYPE },
+    { SOURCE_TYPE_CAMCORDER, AUDIO_INPUT_CAMCORDER_TYPE },
+    { SOURCE_TYPE_EC, AUDIO_INPUT_EC_TYPE },
+    { SOURCE_TYPE_MIC_REF, AUDIO_INPUT_NOISE_REDUCTION_TYPE },
+    { SOURCE_TYPE_UNPROCESSED, AUDIO_INPUT_RAW_TYPE },
+    { SOURCE_TYPE_LIVE, AUDIO_INPUT_LIVE_TYPE },
+    { SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, AUDIO_INPUT_RAW_AI_TYPE},
+};
+
+static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_REMOTE_CAST
 };
 
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_THRESHOLD = 2;
@@ -199,6 +328,9 @@ public:
         int32_t CaptureConcurrentCheck(uint32_t sessionId) override;
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
+
+        void ReloadSourceForEffect(AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray);
+        void ReloadSourceForEffectV3(AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
 private:
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
@@ -222,6 +354,39 @@ private:
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
     std::shared_ptr<EventEntry> GetEventEntry();
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
+    void SetConfigParserFlag();
+
+    void SetEcAndMicRefEnableState(int32_t ecEnableState, int32_t micRefEnableState);
+    void CloseNormalSource();
+    AudioEcInfo GetAudioEcInfo();
+    void ResetAudioEcInfo();
+
+    void PresetArmIdleInput(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    void ActivateArmDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    void CloseUsbArmDevice(const AudioDeviceDescriptor &device);
+    void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
+
+    int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
+        SourceType &targetSourceType);
+
+    void ReloadSourceForSession(SessionInfo sessionInfo);
+    int32_t ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
+    int32_t ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t targetSessionId);
+
+    void SetDpSinkModuleInfo(const AudioModuleInfo &moduleInfo);
+    void SetPrimaryMicModuleInfo(const AudioModuleInfo &moduleInfo);
+    SourceType GetSourceOpened();
+    bool GetEcFeatureEnable();
+    bool GetMicRefFeatureEnable();
+    void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void SetOpenedNormalSource(SourceType sourceType);
+    int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
+    void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void PrepareNormalSource(std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SetOpenedNormalSourceSessionId(uint64_t sessionId);
+    uint64_t GetOpenedNormalSourceSessionId();
 
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
@@ -378,8 +543,33 @@ private:
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
     void NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDeviceDescriptor> desc);
+    int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
+    int32_t ReloadCaptureSessionSoftLink();
+    void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
+        const AudioEnhancePropertyArray &newPropertyArray);
+    void ReloadSourceForEffect(const AudioEffectPropertyArrayV3 &oldPropertyArray,
+        const AudioEffectPropertyArrayV3 &newPropertyArray);
+    void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
+        const AudioDeviceDescriptor &outputDevice, const std::string &caller);
 
 private:
+    void UpdateEnhanceEffectState(SourceType source);
+    void UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &pipeInfo, SourceType sourceType);
+    void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo, SourceType sourceType);
+    void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
+    void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
+    void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
+    void ClearModuleInfoForEc(AudioModuleInfo &moduleInfo);
+    void ClearModuleInfoForMicRef(AudioModuleInfo &moduleInfo);
+    std::string ShouldOpenMicRef(SourceType source);
+
+    EcType GetEcType(const DeviceType inputDevice, const DeviceType outputDevice);
+    std::string GetEcSamplingRate(const std::string &halName, std::shared_ptr<PipeStreamPropInfo> &outModuleInfo);
+    std::string GetEcFormat(const std::string &halName, std::shared_ptr<PipeStreamPropInfo> &outModuleInfo);
+    std::string GetEcChannels(const std::string &halName, std::shared_ptr<PipeStreamPropInfo> &outModuleInfo);
+
+    int32_t GetPipeInfoByDeviceTypeForEc(const std::string &role, const DeviceType deviceType,
+        std::shared_ptr<AdapterPipeInfo> &pipeInfo);
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -630,7 +820,7 @@ private:
     AudioActiveDevice& audioActiveDevice_;
     AudioSceneManager& audioSceneManager_;
     AudioVolumeManager& audioVolumeManager_;
-    AudioCapturerSession& audioCapturerSession_;
+
     AudioDeviceManager &audioDeviceManager_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioDeviceStatus& audioDeviceStatus_;

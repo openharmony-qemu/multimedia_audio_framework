@@ -38,10 +38,8 @@
 #include "audio_microphone_descriptor.h"
 #include "audio_offload_stream.h"
 #include "audio_device_common.h"
-#include "audio_capturer_session.h"
 #include "audio_iohandle_map.h"
 #include "audio_a2dp_device.h"
-#include "audio_ec_manager.h"
 #include "audio_a2dp_offload_flag.h"
 #include "audio_policy_config_manager.h"
 #include "audio_router_map.h"
@@ -107,10 +105,8 @@ private:
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
-        audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-        audioEcManager_(AudioEcManager::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
@@ -204,10 +200,8 @@ private:
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
     AudioOffloadStream& audioOffloadStream_;
     AudioDeviceCommon& audioDeviceCommon_;
-    AudioCapturerSession& audioCapturerSession_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioEcManager& audioEcManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioPolicyConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;

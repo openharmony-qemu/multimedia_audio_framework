@@ -591,10 +591,6 @@ int32_t CapturerInServer::StartInner()
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     }
 
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_START) == SUCCESS) {
-        AUDIO_ERR_LOG("ReloadCaptureSession success!");
-    }
-
     status_ = I_STATUS_STARTING;
     if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         PlaybackCapturerManager::GetInstance()->InitAllDupBuffer(innerCapId_);
@@ -635,9 +631,6 @@ int32_t CapturerInServer::Pause()
     }
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
-    }
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_PAUSE) == SUCCESS) {
-        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
 
     status_ = I_STATUS_PAUSING;
@@ -717,9 +710,6 @@ int32_t CapturerInServer::Stop()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_STOP) == SUCCESS) {
-        AUDIO_INFO_LOG("ReloadCaptureSession success!");
-    }
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -760,13 +750,9 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
             HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
     }
 
-    ReleaseCaptureInjector();
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
-    }
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_RELEASE) == SUCCESS) {
-        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
     status_ = I_STATUS_RELEASED;
 
@@ -793,13 +779,6 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     return SUCCESS;
-}
-
-void CapturerInServer::ReleaseCaptureInjector()
-{
-    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        CoreServiceHandler::GetInstance().ReleaseCaptureInjector();
-    }
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER

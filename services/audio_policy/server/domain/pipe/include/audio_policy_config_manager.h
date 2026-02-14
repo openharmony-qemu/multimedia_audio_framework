@@ -54,6 +54,8 @@ public:
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
     void OnSupportUltraFast(bool supportUltraFast);
+
+    void SetEcEnableState(bool ecEnableState);
     
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
@@ -144,6 +146,7 @@ private:
         std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo);
 
     bool xmlHasLoaded_ = false;
+    bool ecEnableState_ = false;
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<ClassType, AudioModuleInfo> dynamicCapturerConfig_ = {};

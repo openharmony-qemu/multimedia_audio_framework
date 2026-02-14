@@ -30,7 +30,6 @@ group("audio_policy_unittest_packages") {
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
     ":audio_background_manager_unit_test",
-    ":audio_capturer_session_unit_test",
     ":audio_client_tracker_callback_listener_unit_test",
     ":audio_client_tracker_callback_service_unit_test",
     ":audio_collaborative_service_unit_test",
@@ -43,7 +42,6 @@ group("audio_policy_unittest_packages") {
     ":audio_device_common_unit_test",
     ":audio_device_lock_unit_test",
     ":audio_device_status_unit_test",
-    ":audio_ec_manager_unit_test",
     ":audio_effect_config_parser_test",
     ":audio_effect_config_parser_unit_test",
     ":audio_effect_service_test",
@@ -3962,58 +3960,6 @@ ohos_unittest("device_status_listener_unit_test") {
   }
 }
 
-ohos_unittest("audio_ec_manager_unit_test") {
-  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
-
-  include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
-    "../../audio_policy/server/include/service/service",
-    "../../audio_policy/server/domain/device/include",
-    "./unittest/audio_ec_manager_unit_test/include",
-    "../../audio_policy/server/src/service/service",
-    "../../audio_policy/server/domain/pipe/src",
-    "../../../frameworks/native/include",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  external_deps = [
-    "bluetooth:btframework",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "googletest:gmock",
-    "hilog:libhilog",
-    "init:libbegetutil",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "eventhandler:libeventhandler",
-  ]
-
-  sources = [
-    "./unittest/audio_ec_manager_unit_test/src/audio_ec_manager_unit_test.cpp",
-  ]
-
-  deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../audio_policy:audio_policy_service_static",
-    "../../../frameworks/native/audioutils:audio_utils",
-  ]
-
-    sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
-}
-
 ohos_unittest("audio_general_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -5571,53 +5517,6 @@ ohos_unittest("audio_server_definitions_unit_test") {
     "../../../frameworks/native/audiodefinitions:audio_definitions",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_common",
-  ]
-}
-
-ohos_unittest("audio_capturer_session_unit_test") {
-  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
-
-  include_dirs = [ "./unittest/audio_capturer_session_unit_test/include" ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    boundary_sanitize = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-  }
-
-  external_deps = [
-    "bluetooth:btframework",
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_6.0",
-    "googletest:gmock",
-    "hilog:libhilog",
-    "init:libbegetutil",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "power_manager:powermgr_client",
-    "eventhandler:libeventhandler",
-  ]
-
-  sources = [ "./unittest/audio_capturer_session_unit_test/src/audio_capturer_session_unit_test.cpp" ]
-
-  deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../audio_policy:audio_policy_service_static",
   ]
 }
 

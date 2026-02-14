@@ -189,7 +189,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
 
     // update a2dp offload
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 5 param");
 }
 
@@ -528,7 +528,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(GetModuleNameByType(TYPE_DP));
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.CloseUsbArmDevice(updatedDesc);
+        AudioCoreService::GetCoreService()->CloseUsbArmDevice(updatedDesc);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(ACCESSORY_SOURCE);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_HEARING_AID) {
@@ -590,7 +590,7 @@ int32_t AudioDeviceStatus::LoadDpModule(std::string deviceInfo)
             GetDPModuleInfo(moduleInfo, deviceInfo);
             if (moduleInfo.role == ROLE_SINK) {
                 AUDIO_INFO_LOG("save dp sink module info for cust param");
-                audioEcManager_.SetDpSinkModuleInfo(moduleInfo);
+                AudioCoreService::GetCoreService()->SetDpSinkModuleInfo(moduleInfo);
             }
             return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
@@ -937,7 +937,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
         AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
 
         HandleOfflineDistributedDevice();
-        audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
             audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2.1 param");
         return;
     }
@@ -969,7 +969,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isSto
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2.2 param");
 }
 
@@ -1124,7 +1124,7 @@ bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &
     }
 
     if (devType == DEVICE_TYPE_MIC) {
-        audioEcManager_.SetPrimaryMicModuleInfo(moduleInfo);
+        AudioCoreService::GetCoreService()->SetPrimaryMicModuleInfo(moduleInfo);
     }
 
 #ifndef MULTI_BUS_ENABLE
@@ -1373,7 +1373,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2 param");
 }
 
@@ -1480,7 +1480,7 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     if (audioA2dpOffloadManager_) {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
     }
-    audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceInfoUpdated");
 }
 

@@ -149,7 +149,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
 int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return AudioCapturerSession::GetInstance().ReloadCaptureSession(sessionId, operation);
+    return coreService_->ReloadCaptureSession(sessionId, operation);
 }
 
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
@@ -703,5 +703,20 @@ void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::strin
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     coreService_->NotifyRemoteRouteStateChange(networkId, deviceType, enable);
 }
+
+void AudioCoreService::EventEntry::ReloadSourceForEffect(AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->ReloadSourceForEffect(oldPropertyArray, propertyArray);
+}
+
+void AudioCoreService::EventEntry::ReloadSourceForEffectV3(AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->ReloadSourceForEffect(oldPropertyArray, propertyArray);
+}
+
 }
 }

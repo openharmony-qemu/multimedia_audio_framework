@@ -82,10 +82,10 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
     bool ret = audioConfigManager_.Init();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
-        audioCapturerSession_.SetConfigParserFlag();
+        AudioCoreService::GetCoreService()->SetConfigParserFlag();
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Policy Config Load Configuration failed");
-    audioCapturerSession_.SetConfigParserFlag();
+    AudioCoreService::GetCoreService()->SetConfigParserFlag();
     isFastControlled_ = getFastControlParam();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
@@ -120,14 +120,18 @@ bool AudioPolicyService::Init(void)
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
     AudioDump::GetInstance().SetVersionType(versionType);
 
-    int32_t ecEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
-    int32_t micRefEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
+    ecEnableState_ = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
+    audioConfigManager_.SetEcEnableState(ecEnableState_);
 
-    audioEcManager_.Init(ecEnableState, micRefEnableState);
 #ifdef HAS_FEATURE_INNERCAPTURER
     AudioServerProxy::GetInstance().SetInnerCapLimitProxy(audioGlobalConfigManager_.GetCapLimit());
 #endif
     return true;
+}
+
+int32_t AudioPolicyService::GetEcEnableState()
+{
+    return ecEnableState_;
 }
 
 void AudioPolicyService::CreateRecoveryThread()
@@ -172,7 +176,6 @@ void AudioPolicyService::Deinit(void)
     audioRecoveryDevice_.DeInit();
     audioDeviceStatus_.DeInit();
     audioDeviceLock_.DeInit();
-    audioCapturerSession_.DeInit();
     return;
 }
 
@@ -974,7 +977,7 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
             audioActiveDevice_.GetCurrentInputDeviceType());
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
-        audioCapturerSession_.ReloadSourceForEffect(oldPropertyArray, enhancePropertyArray);
+        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffectV3(oldPropertyArray, enhancePropertyArray);
     }
     if (effectPropertyArray.property.size() > 0) {
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
@@ -1089,7 +1092,7 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
         audioActiveDevice_.GetCurrentInputDeviceType());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
 
-    audioCapturerSession_.ReloadSourceForEffect(oldPropertyArray, propertyArray);
+    AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
 }
 
@@ -1246,9 +1249,8 @@ bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
             sourceType, ret);
         return ret;
     }
- 
-    bool isEcFeatureEnable = audioEcManager_.GetEcFeatureEnable();
-    if (isEcFeatureEnable) { // is configed according to the product
+
+    if (ecEnableState_) { // is configed according to the product
         AudioEffectPropertyArrayV3 propertyArray = {};
         int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
         CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");
