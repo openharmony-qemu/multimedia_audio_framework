@@ -576,7 +576,6 @@ private:
     std::string GetPipeNameByDeviceForEc(const std::string &role, const DeviceType deviceType);
 
     bool IsHigherPrioritySourceType(SourceType newSource, SourceType currentSource);
-    void HandlePlaybackStreamByOriginalFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     static std::string GetEncryptAddr(const std::string &addr);
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -820,6 +819,7 @@ private:
 
     bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
     bool IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
     void UnloadInnerCapturerSink(std::string moduleName);
     void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
