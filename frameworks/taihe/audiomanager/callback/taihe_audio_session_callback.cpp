@@ -74,6 +74,7 @@ void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(AudioSessionJsCal
         [](AudioSessionJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
 
