@@ -50,7 +50,6 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
     }
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::CreateEffectChainManager(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
 {
@@ -132,7 +131,6 @@ int32_t AudioServer::UpdateSpatialDeviceType(int32_t spatialDeviceType)
 }
 // LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 int32_t AudioServer::SetSpatializationSceneType(int32_t spatializationSceneType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -159,7 +157,6 @@ int32_t AudioServer::GetEffectLatency(const std::string &sessionId, uint32_t &la
     return SUCCESS;
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::GetEffectOffloadEnabled(bool &isEffectOffloadEnabled)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -349,7 +346,6 @@ int32_t AudioServer::GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &pr
     return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::UpdateEffectBtOffloadSupported(bool isSupported)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -425,7 +421,6 @@ int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
     }
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::LoadAudioEffectLibraries(const std::vector<Library> &libraries,
     const std::vector<Effect> &effects, std::vector<Effect> &successEffectList, bool &hasEffectsLoaded)
 {
@@ -492,6 +487,7 @@ int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool &
     AUDIO_INFO_LOG("IsAcousticEchoCancelerSupported not support");
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
 {
@@ -538,6 +534,5 @@ int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, 
     AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

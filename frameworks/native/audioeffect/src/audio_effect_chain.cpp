@@ -206,6 +206,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
         data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX]);
+
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
@@ -738,7 +739,7 @@ void AudioEffectChain::SetOutdoorMode(const std::string &outdoorMode)
     CHECK_AND_RETURN_LOG(StringConverter(outdoorMode, outdoorMode_),
         "convert invalid outdoorMode: %{public}s", outdoorMode.c_str());
 }
-
+ 
 void AudioEffectChain::SetSuperLoudnessMode(const std::string &superLoudnessMode)
 {
     if (superLoudnessMode == "music_on") {
