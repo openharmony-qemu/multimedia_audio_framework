@@ -319,12 +319,11 @@ export struct Export {
               fs.closeSync(file);
             }
           } catch (e) {
-            fs.closeSync(file);
             Logger.error(TAG, `SavePcmBuffer writeLen error: ${e}`);
           }
         } catch (e) {
           Logger.error(TAG, `SaveBuffer filePath error: ${e}`);
-        } 
+        }
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)
