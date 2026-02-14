@@ -706,6 +706,16 @@ void RendererInClientInner::FirstFrameProcess()
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
+void RendererInClientInner::NotifyStreamSilentChange()
+{
+    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
+    int64_t stamp = ClockTime::GetCurNano();
+    Trace trace("RendererInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
+    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
+    needNotifyStreamSilentChange_.store(false);
+    AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
+}
+
 int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
     size_t oriBufferSize)
 {
@@ -725,9 +735,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         FutexCode futexRes = FUTEX_OPERATION_FAILED;
         int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
         futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
-            [this] () {
-                return (state_ != RUNNING) || CheckBufferNeedWrite();
-            });
+            [this] () { return (state_ != RUNNING) || CheckBufferNeedWrite(); });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
         CHECK_AND_CALL_FUNC_RETURN_RET(futexRes != FUTEX_TIMEOUT, ERROR, HILOG_COMM_ERROR("[WriteCacheData]write data "
             "time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal")));
@@ -754,9 +762,10 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
     preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
 
     CHECK_AND_RETURN_RET(ProcessVolume(), ERR_OPERATION_FAILED);
-    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
     VolumeTools::DfxOperation({.buffer = buffer, .bufLength = writtenSize, .dataLength = writtenSize},
         clientConfig_.streamInfo, traceTag_, volumeDataCount_);
+    NotifyStreamSilentChange();
+    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
 
     CHECK_AND_CALL_FUNC_RETURN_RET(ipcStream_ != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[WriteCacheData]WriteCacheData failed, null ipcStream_."));

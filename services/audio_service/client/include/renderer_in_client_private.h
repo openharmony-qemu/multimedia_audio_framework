@@ -332,6 +332,8 @@ private:
     void NotifyStopWaiting();
 
     void UpdateStopState();
+
+    void NotifyStreamSilentChange();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -564,6 +566,8 @@ private:
     std::function<uid_t()> uidGetter_ = [] { return getuid(); };
 
     std::string bundleName = "";
+
+    std::atomic<bool> needNotifyStreamSilentChange_ = true;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

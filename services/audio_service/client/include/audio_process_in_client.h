@@ -69,7 +69,7 @@ public:
 
     virtual int32_t SaveUnderrunCallback(const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback) = 0;
 
-    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
 
     virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;
 
