@@ -734,21 +734,17 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
         HILOG_COMM_ERROR("[StartClient]Modem communication ring, directly return"));
-
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     CHECK_AND_CALL_FUNC_RETURN_RET(streamDesc != nullptr, ERR_NULL_POINTER,
         HILOG_COMM_ERROR("[StartClient]Cannot find session %{public}u", sessionId));
     CheckAndSleepBeforeRingDualDeviceSet(streamDesc);
     pipeManager_->StartClient(sessionId);
-
     CHECK_AND_CALL_FUNC_RETURN_RET(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM,
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
-
     // [Capturer NOTE 1.0] be careful device may be changed.
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->GetMainNewDeviceDesc();
     CHECK_AND_CALL_FUNC_RETURN_RET(deviceDesc, ERR_NULL_POINTER,
         HILOG_COMM_ERROR("[StartClient]deviceDesc is nullptr"));
-    
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
     // will reset a2dp device to none.
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
@@ -2651,7 +2647,6 @@ bool AudioCoreService::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDev
         !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
         return true;
     }
-
     return false; 
 }
 
@@ -2722,7 +2717,6 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
     AUDIO_INFO_LOG("start reload session: %{public}u", targetSessionId);
     ReloadSourceForSession(targetSession);
     SetOpenedNormalSourceSessionId(targetSessionId);
-
     return SUCCESS;
 }
 
