@@ -5934,10 +5934,12 @@ HWTEST_F(AudioCoreServiceUnitTest, EcGetTargetSourceTypeAndMatchingFlag_001, Tes
     SourceType targetSource;
     bool useMatchingPropInfo;
 
-    audioCoreService->GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_VOICE_RECOGNITION, targetSource, useMatchingPropInfo);
+    audioCoreService->GetTargetSourceTypeAndMatchingFlag(
+        SOURCE_TYPE_VOICE_RECOGNITION, targetSource, useMatchingPropInfo);
     EXPECT_EQ(targetSource, SOURCE_TYPE_VOICE_RECOGNITION);
 
-    audioCoreService->GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_VOICE_COMMUNICATION, targetSource, useMatchingPropInfo);
+    audioCoreService->GetTargetSourceTypeAndMatchingFlag(
+        SOURCE_TYPE_VOICE_COMMUNICATION, targetSource, useMatchingPropInfo);
     EXPECT_EQ(targetSource, SOURCE_TYPE_VOICE_COMMUNICATION);
 
     audioCoreService->GetTargetSourceTypeAndMatchingFlag(SOURCE_TYPE_VOICE_CALL, targetSource, useMatchingPropInfo);
