@@ -977,7 +977,8 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
             audioActiveDevice_.GetCurrentInputDeviceType());
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
-        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffectV3(oldPropertyArray, enhancePropertyArray);
+        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffectV3(
+            oldPropertyArray, enhancePropertyArray);
     }
     if (effectPropertyArray.property.size() > 0) {
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
