@@ -820,7 +820,6 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
 
 int32_t AudioCoreService::StopClient(uint32_t sessionId)
 {
-    
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         ReloadCaptureSession(sessionId, SESSION_OPERATION_STOP);
