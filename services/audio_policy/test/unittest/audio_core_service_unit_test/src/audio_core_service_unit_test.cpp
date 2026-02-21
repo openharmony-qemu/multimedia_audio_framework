@@ -4245,7 +4245,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_039, TestSize.Level1)
     pipe->streamDescriptors_.push_back(stream);
     pipeList.push_back(pipe);
     
-    // sessionId相同
+    // sessionId is same
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
     bool result = audioCoreService->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
@@ -4274,7 +4274,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_040, TestSize.Level1)
     pipe->streamDescriptors_.push_back(stream);
     pipeList.push_back(pipe);
     
-    // stream为空
+    // stream is null
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
     bool result = audioCoreService->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
@@ -4480,7 +4480,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_054, TestSize.Level1) {
 /**
  * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_055
- * @tc.desc  : Test CompareIndependentxmlPriority source strategy map can’t find sourcetype
+ * @tc.desc  : Test CompareIndependentxmlPriority source strategy map can't find sourcetype
  */
 HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_055, TestSize.Level1) {
     auto pipe = std::make_shared<AudioPipeInfo>();
@@ -4528,7 +4528,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioCapturerSession_056, TestSize.Level1) {
     bool hasSession = false;
     AudioStreamDescriptor runningSessionInfo;
  
-    // 创建sourceStrategyMap，SOURCE_TYPE_VOICE_CALL的优先级高于SOURCE_TYPE_MIC
+    // create sourceStrategyMap, SOURCE_TYPE_VOICE_CALL has higher priority than SOURCE_TYPE_MIC
     auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
     sourceStrategyMap->emplace(SOURCE_TYPE_MIC,
         AudioSourceStrategyType {
