@@ -2254,8 +2254,7 @@ bool AudioCoreService::FindRemainingNormalSession(uint32_t sessionId, bool findR
     targetSessionId = runningSessionId;
     CHECK_AND_RETURN_RET(!findRunningSessionRet, true);
     SourceType targetSourceType = SOURCE_TYPE_INVALID;
-    
-    // todo need review the check logic
+
     const std::vector<std::shared_ptr<AudioPipeInfo>> pipes = pipeManager_->GetPipeList();
     for (const auto &pipe : pipes) {
         if (pipe == nullptr || pipe->pipeRole_ != PIPE_ROLE_INPUT || pipe->adapterName_ == ADAPTER_TYPE_VA) {
@@ -2263,14 +2262,16 @@ bool AudioCoreService::FindRemainingNormalSession(uint32_t sessionId, bool findR
         }
 
         for (const auto &stream : pipe->streamDescriptors_) {
-            if (stream != nullptr && stream->sessionId_ != sessionId) {
-                if (!specialSourceTypeSet_.count(stream->capturerInfo_.sourceType)) {
-                    continue;
-                }
-                hasRemainSession = true;
-                CHECK_AND_CONTINUE(IsHigherPrioritySourceType(stream->capturerInfo_.sourceType, targetSourceType));
-                targetSessionId = stream->sessionId_;
+            if (stream == nullptr || stream->sessionId_ == sessionId) {
+                continue;
             }
+                
+            if (!specialSourceTypeSet_.count(stream->capturerInfo_.sourceType)) {
+                continue;
+            }
+            hasRemainSession = true;
+            CHECK_AND_CONTINUE(IsHigherPrioritySourceType(stream->capturerInfo_.sourceType, targetSourceType));
+            targetSessionId = stream->sessionId_;
         }
     }
     AUDIO_INFO_LOG("hasRemainSession:%{public}d, targetSessionId:%{public}u", hasRemainSession, targetSessionId);
