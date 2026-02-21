@@ -25,7 +25,7 @@
 #include "audio_spatialization_service.h"
 #include "common/hdi_adapter_info.h"
 
-#include "audio_core_service"
+#include "audio_core_service.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_event_utils.h"
