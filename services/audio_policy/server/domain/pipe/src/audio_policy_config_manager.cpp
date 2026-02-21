@@ -94,7 +94,7 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
     return ret;
 }
 
-void SetEcEnableState(bool ecEnableState)
+void AudioPolicyConfigManager::SetEcEnableState(bool ecEnableState)
 {
     ecEnableState_ = ecEnableState;
 }
