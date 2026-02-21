@@ -329,8 +329,10 @@ public:
         void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
         void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
 
-        void ReloadSourceForEffect(AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray);
-        void ReloadSourceForEffectV3(AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
+        void ReloadSourceForEffect(
+            AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray);
+        void ReloadSourceForEffectV3(
+            AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
 private:
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
