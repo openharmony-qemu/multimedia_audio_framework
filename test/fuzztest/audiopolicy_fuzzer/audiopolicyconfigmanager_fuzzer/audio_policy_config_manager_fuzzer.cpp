@@ -14,7 +14,6 @@
 */
 
 #include "audio_policy_config_manager.h"
-#include "audio_ec_manager.h"
 #include "iaudio_policy_client.h"
 #include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
@@ -142,7 +141,6 @@ void GetStreamPropInfoForRecordFuzzTest(FuzzedDataProvider& fdp)
     AudioStreamInfo tempStreamInfo = {};
     tempStreamInfo.samplingRate = g_fuzzUtils.GetData<AudioSamplingRate>();
     tempStreamInfo.channels = g_fuzzUtils.GetData<AudioChannel>();
-    AudioEcManager::GetInstance().Init(g_fuzzUtils.GetData<int32_t>(), g_fuzzUtils.GetData<int32_t>());
     AudioPolicyConfigManager::GetInstance().OnUpdateRouteSupport(g_fuzzUtils.GetData<bool>());
     AudioPolicyConfigManager::GetInstance().GetStreamPropInfoForRecord(desc, adapterPipeInfo, info, tempStreamInfo);
 }

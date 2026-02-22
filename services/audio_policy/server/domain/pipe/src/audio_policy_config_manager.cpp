@@ -21,7 +21,6 @@
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
-#include "audio_ec_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -93,6 +92,11 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
 
     xmlHasLoaded_ = true;
     return ret;
+}
+
+void AudioPolicyConfigManager::SetEcEnableState(bool ecEnableState)
+{
+    ecEnableState_ = ecEnableState;
 }
 
 void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
@@ -560,14 +564,14 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
             break;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
         case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-            useMatchingPropInfo = AudioEcManager::GetInstance().GetEcFeatureEnable() ? false : true;
+            useMatchingPropInfo = ecEnableState_ ? false : true;
             break;
         case SOURCE_TYPE_VOICE_CALL:
             break;
         case SOURCE_TYPE_CAMCORDER:
             break;
         case SOURCE_TYPE_UNPROCESSED:
-            useMatchingPropInfo = AudioEcManager::GetInstance().GetEcFeatureEnable() ? false : true;
+            useMatchingPropInfo = ecEnableState_ ? false : true;
             break;
         default:
             break;
@@ -640,7 +644,7 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
 
     CheckDynamicCapturerConfig(desc, info);
 
-    if (AudioEcManager::GetInstance().GetEcFeatureEnable()) {
+    if (ecEnableState_) {
         if (desc->newDeviceDescs_.front() != nullptr &&
             desc->newDeviceDescs_.front()->deviceType_ != DEVICE_TYPE_MIC &&
             info->channels_ == PC_MIC_CHANNEL_NUM) {

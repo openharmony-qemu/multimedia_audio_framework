@@ -152,7 +152,6 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioEffectService_(AudioEffectService::GetAudioEffectService()),
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
-      audioCapturerSession_(AudioCapturerSession::GetInstance()),
       audioStateManager_(AudioStateManager::GetAudioStateManager()),
       audioToneManager_(AudioToneManager::GetInstance()),
       audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
@@ -190,6 +189,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     supportVibrator_ = system::GetBoolParameter("const.vibrator.support_vibrator", true);
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
     screenOffAdjustVolumeEnable_ = system::GetBoolParameter("const.audio.screenoff_adjust_volume_enable", false);
+    micRefEnableState_ = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
 #endif
@@ -279,6 +279,7 @@ void AudioPolicyServer::Init()
 
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
+    coreService_->SetEcAndMicRefEnableState(audioPolicyService_.GetEcEnableState(), micRefEnableState_);
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
 #ifdef USB_ENABLE

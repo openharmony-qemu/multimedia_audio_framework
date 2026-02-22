@@ -286,7 +286,7 @@ void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeR
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("HandleFetchDeviceChange");
     auto currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
     auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
-    audioCapturerSession_.ReloadSourceForDeviceChange(
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
         currentInputDevice,
         currentOutputDevice, caller);
     CHECK_AND_RETURN_LOG(audioA2dpOffloadManager_ != nullptr, "audioA2dpOffloadManager_ is nullptr");
@@ -453,7 +453,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",
             audioCapturerFilter->uid, GetEncryptStr(selectedDesc[0]->networkId_).c_str());
         AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("SelectInputDevice_1");
-        audioCapturerSession_.ReloadSourceForDeviceChange(
+        AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
             audioActiveDevice_.GetCurrentInputDevice(),
             audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice fast");
         return SUCCESS;
@@ -466,7 +466,7 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("SelectInputDevice_2");
 
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
-    audioCapturerSession_.ReloadSourceForDeviceChange(
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "SelectInputDevice");
     return SUCCESS;
@@ -523,7 +523,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("ExcludeOutputDevices");
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
-    audioCapturerSession_.ReloadSourceForDeviceChange(
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
         currentInputDevice, currentOutputDevice, "ExcludeOutputDevices");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
@@ -598,7 +598,7 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("UnexcludeOutputDevices");
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     AudioDeviceDescriptor currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
-    audioCapturerSession_.ReloadSourceForDeviceChange(
+    AudioCoreService::GetCoreService()->ReloadSourceForDeviceChange(
         currentInputDevice, currentOutputDevice, "UnexcludeOutputDevices");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {

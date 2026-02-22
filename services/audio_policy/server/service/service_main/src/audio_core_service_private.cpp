@@ -525,9 +525,9 @@ void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, c
 
             if (pipeInfo->streamDescriptors_.empty()) {
                 RemoveUnusedRecordPipe();
-                audioCapturerSession_.SetHearingAidReloadFlag(false);
+                hearingAidReloadFlag_ = false;
             } else {
-                audioCapturerSession_.ReloadCaptureSessionSoftLink();
+                ReloadCaptureSessionSoftLink();
             }
         }
     }
@@ -591,9 +591,9 @@ int32_t AudioCoreService::CheckModuleForHearingAid(uint32_t &paIndex)
             pipeInfo->paIndex_ = paIndex;
             pipeManager_->AddAudioPipeInfo(pipeInfo);
             AUDIO_INFO_LOG("Add PipeInfo %{public}u in load hearingAidCall.", pipeInfo->id_);
-            audioCapturerSession_.SetHearingAidReloadFlag(true);
+            hearingAidReloadFlag_ = true;
         } else {
-            int32_t ret = audioCapturerSession_.ReloadCaptureSoftLink(pipeInfoInput, moduleInfo);
+            int32_t ret = ReloadCaptureSoftLink(pipeInfoInput, moduleInfo);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "ReloadCaptureSoftLink failed");
             CHECK_AND_RETURN_RET_LOG(pipeInfoInput != nullptr, ERROR, "can not find primary pipeInfo");
             paIndex = pipeInfoInput->paIndex_;
@@ -2430,7 +2430,7 @@ int32_t AudioCoreService::HandleFetchInputWhenNoRunningStream()
     }
     audioActiveDevice_.SetCurrentInputDevice(*desc);
     if (desc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.PresetArmIdleInput(desc);
+        PresetArmIdleInput(desc);
     }
     DeviceType deviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     AUDIO_DEBUG_LOG("currentActiveInputDevice update %{public}d", deviceType);
@@ -2607,7 +2607,7 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     SourceType sourceType = streamDesc->capturerInfo_.sourceType;
     if (specialSourceTypeSet_.count(sourceType) == 0) {
         CHECK_AND_RETURN_LOG(!IsDescInSourceStrategyMap(streamDesc), "Special Pipe need not PrepareNormalSource");
-        audioEcManager_.PrepareNormalSource(pipeInfo, streamDesc);
+        PrepareNormalSource(pipeInfo, streamDesc);
     }
 }
 
@@ -2943,7 +2943,7 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, REFETCH_DEVICE, "nearlink fetch output device failed");
 
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.ActivateArmDevice(deviceDesc);
+        ActivateArmDevice(deviceDesc);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
@@ -2967,7 +2967,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
         streamDesc->newDeviceDescs_[0] != nullptr, ERR_INVALID_PARAM, "Invalid stream desc");
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-        audioEcManager_.ActivateArmDevice(deviceDesc);
+        ActivateArmDevice(deviceDesc);
     }
 
     return SUCCESS;
@@ -3451,11 +3451,6 @@ void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<Concur
     if (ret) {
         AUDIO_ERR_LOG("Write event fail: CONCURRENT_CAPTURE, ret = %{public}d", ret);
     }
-}
-
-int32_t AudioCoreService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
-{
-    return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
 }
 
 void AudioCoreService::UpdateRouteForCollaboration(InternalDeviceType deviceType)

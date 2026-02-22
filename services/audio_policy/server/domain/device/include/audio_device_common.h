@@ -46,7 +46,6 @@
 #include "audio_scene_manager.h"
 #include "audio_offload_stream.h"
 #include "audio_volume_manager.h"
-#include "audio_ec_manager.h"
 #include "audio_adapter_manager.h"
 #include "audio_pipe_manager.h"
 #include "audio_usr_select_manager.h"
@@ -115,7 +114,6 @@ private:
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
-        audioEcManager_(AudioEcManager::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -191,7 +189,6 @@ private:
     AudioRouteMap& audioRouteMap_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
-    AudioEcManager& audioEcManager_;
     AudioOffloadStream& audioOffloadStream_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioA2dpDevice& audioA2dpDevice_;

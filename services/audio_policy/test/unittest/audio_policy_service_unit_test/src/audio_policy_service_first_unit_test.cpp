@@ -976,12 +976,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
 
     GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(false);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(false);
-    int32_t ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.SetWakeUpAudioCapturer(capturerOptions);
+    int32_t ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
     EXPECT_EQ(ERROR, ret);
 
     GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(true);
-    ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.SetWakeUpAudioCapturer(capturerOptions);
+    ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1582,7 +1582,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
 
-    GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
+    AudioCoreService::GetCoreService()->normalSourceOpened_ = SOURCE_TYPE_INVALID;
 
     // dummy data
     AudioAdapterInfo adapterInfo = {};
@@ -1597,24 +1597,24 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     adapterInfo.pipeInfos_ = pipeInfos_;
 
     int32_t ret = SUCCESS;
-    GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
-    ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
+    ret = AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionIdisRemovedSet_.insert(TEST_SESSIONID);
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->capturerSessionIdisRemovedSet_.insert(TEST_SESSIONID);
+    AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1628,49 +1628,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionRemoved_001, TestSize.Leve
 {
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest OnCapturerSessionRemoved_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
-
-    // clear sessionWithSpecialSourceType_ and sessionWithNormalSourceType_
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_.clear();
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_.clear();
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    // dummy sessionWithSpecialSourceType_
-    SessionInfo sessionInfo;
-    sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    sessionInfo.rate = RATE;
-    sessionInfo.channels = CHANNELS;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    // dummy sessionWithNormalSourceType_
-    sessionInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    sessionInfo.sourceType = SOURCE_TYPE_MIC;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID + 1] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
+    AudioCoreService::GetCoreService()->OnCapturerSessionRemoved(TEST_SESSIONID);
 }
 
 /**
@@ -1690,8 +1648,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, LoadInnerCapturerSink_001, TestSize.Level1)
     std::string moduleName = INNER_CAPTURER_SINK_LEGACY;
     for (const auto& audioSampleFormat : audioSampleFormats) {
         streamInfo.format = audioSampleFormat;
-        GetServerPtr()->audioPolicyService_.audioCapturerSession_.LoadInnerCapturerSink(moduleName, streamInfo);
-        GetServerPtr()->audioPolicyService_.audioCapturerSession_.UnloadInnerCapturerSink(moduleName);
+        AudioCoreService::GetCoreService()->LoadInnerCapturerSink(moduleName, streamInfo);
+        AudioCoreService::GetCoreService()->UnloadInnerCapturerSink(moduleName);
     }
 }
 

@@ -25,6 +25,7 @@
 #include "audio_spatialization_service.h"
 #include "common/hdi_adapter_info.h"
 
+#include "audio_core_service.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_event_utils.h"
@@ -901,7 +902,7 @@ void AudioDeviceCommon::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const Aud
         moduleInfo.renderInIdleState = "1";
         moduleInfo.sinkLatency = "0";
     }
-    audioEcManager_.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+    AudioCoreService::GetCoreService()->UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
 }
 
 int32_t AudioDeviceCommon::LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
