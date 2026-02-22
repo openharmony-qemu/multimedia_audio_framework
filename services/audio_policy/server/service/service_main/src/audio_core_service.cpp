@@ -30,6 +30,10 @@
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
 
+namespace {
+    #include "v6_0/iaudio_manager.h"
+}
+
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -50,6 +54,120 @@ static const int64_t RING_DUAL_END_DELAY_US = 100000;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
+
+static const std::vector<DeviceType> MIC_REF_DEVICES = {
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN
+};
+
+static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
+    {"s8", SAMPLE_U8},
+    {"s16", SAMPLE_S16LE},
+    {"s24", SAMPLE_S24LE},
+    {"s32", SAMPLE_S32LE},
+    {"s16le", SAMPLE_S16LE},
+    {"s24le", SAMPLE_S24LE},
+    {"s32le", SAMPLE_S32LE},
+};
+
+static std::map<AudioSampleFormat, std::string> formatEnumToStr = {
+    {SAMPLE_U8, "s16le"},
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+    {SAMPLE_F32LE, "s16le"},
+};
+
+static std::map<AudioSampleFormat, std::string> formatToHpaeStr = {
+    {SAMPLE_U8, "s8"},
+    {SAMPLE_S16LE, "s16"},
+    {SAMPLE_S24LE, "s24"},
+    {SAMPLE_S32LE, "s32"},
+    {SAMPLE_F32LE, "f32"},
+};
+
+static const std::map<std::pair<DeviceType, DeviceType>, EcType> DEVICE_TO_EC_TYPE = {
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_MIC, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_WIRED_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_SPEAKER}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_SPEAKER}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_WIRED_HEADSET}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_USB_ARM_HEADSET}, EC_TYPE_DIFF_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_BLUETOOTH_SCO}, EC_TYPE_SAME_ADAPTER},
+    {{DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_TYPE_DP}, EC_TYPE_DIFF_ADAPTER},
+
+    {{DEVICE_TYPE_ACCESSORY, DEVICE_TYPE_SPEAKER}, EC_TYPE_DIFF_ADAPTER},
+};
+
+const std::map<SourceType, int> NORMAL_SOURCETYPE_PRIORITY = {
+    // from high to low
+    {SOURCE_TYPE_VOICE_CALL, 8},
+    {SOURCE_TYPE_VOICE_COMMUNICATION, 7},
+    {SOURCE_TYPE_VOICE_MESSAGE, 6},
+    {SOURCE_TYPE_LIVE, 5},
+    {SOURCE_TYPE_VOICE_RECOGNITION, 4},
+    {SOURCE_TYPE_VOICE_TRANSCRIPTION, 4},
+    {SOURCE_TYPE_MIC, 3},
+    {SOURCE_TYPE_CAMCORDER, 3},
+    {SOURCE_TYPE_UNPROCESSED, 2},
+    {SOURCE_TYPE_ULTRASONIC, 1},
+    {SOURCE_TYPE_INVALID, 0},
+};
+
+const std::map<SourceType, AudioInputType> FWKTYPE_TO_HDITYPE_MAP = {
+    { SOURCE_TYPE_INVALID, AUDIO_INPUT_DEFAULT_TYPE },
+    { SOURCE_TYPE_MIC, AUDIO_INPUT_MIC_TYPE },
+    { SOURCE_TYPE_PLAYBACK_CAPTURE, AUDIO_INPUT_MIC_TYPE },
+    { SOURCE_TYPE_ULTRASONIC, AUDIO_INPUT_ULTRASONIC_TYPE },
+    { SOURCE_TYPE_WAKEUP, AUDIO_INPUT_SPEECH_WAKEUP_TYPE },
+    { SOURCE_TYPE_VOICE_TRANSCRIPTION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE },
+    { SOURCE_TYPE_VOICE_COMMUNICATION, AUDIO_INPUT_VOICE_COMMUNICATION_TYPE },
+    { SOURCE_TYPE_VOICE_RECOGNITION, AUDIO_INPUT_VOICE_RECOGNITION_TYPE },
+    { SOURCE_TYPE_VOICE_CALL, AUDIO_INPUT_VOICE_CALL_TYPE },
+    { SOURCE_TYPE_CAMCORDER, AUDIO_INPUT_CAMCORDER_TYPE },
+    { SOURCE_TYPE_EC, AUDIO_INPUT_EC_TYPE },
+    { SOURCE_TYPE_MIC_REF, AUDIO_INPUT_NOISE_REDUCTION_TYPE },
+    { SOURCE_TYPE_UNPROCESSED, AUDIO_INPUT_RAW_TYPE },
+    { SOURCE_TYPE_LIVE, AUDIO_INPUT_LIVE_TYPE },
+    { SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT, AUDIO_INPUT_RAW_AI_TYPE},
+};
+
+static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_REMOTE_CAST
+};
+
 }
 
 static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage)
@@ -750,12 +868,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
-        // A stream set default device special case
-        if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
-            audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
-            std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
-            FetchOutputDevicesForDescs(streamDesc, outputDescs);
-        }
+        FetchDeviceForSessionUseDefault(sessionId, streamDesc);
         int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
         CheckAndSetCurrentOutputDevice(deviceDesc, streamDesc->sessionId_);
@@ -794,6 +907,17 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         return ReloadCaptureSession(sessionId, SESSION_OPERATION_START);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::FetchDeviceForSessionUseDefault(
+    uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    // A stream set default device special case
+    if (audioDeviceManager_.IsSessionSetDefaultDevice(sessionId)) {
+        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionId);
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs = pipeManager_->GetAllOutputStreamDescs();
+        FetchOutputDevicesForDescs(streamDesc, outputDescs);
+    }
 }
 
 int32_t AudioCoreService::PauseClient(uint32_t sessionId)
@@ -2664,37 +2788,27 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
 {
     AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
     CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
-    
     if (sessionWithInputPipeRouteFlag_.count(sessionId) != 0) {
         return ReloadCapturerSessionForInputPipe(sessionId, operation);
     }
-
     uint32_t targetSessionId = sessionId;
     std::shared_ptr<AudioStreamDescriptor> newStreamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (newStreamDesc == nullptr) {
+    if (newStreamDesc == nullptr || specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0) {
+        AUDIO_ERR_LOG("The session of %{public}u is special or no stream, no need reload.", sessionId);
         return ERROR;
     }
+
     SessionInfo targetSession = ConstructSessionByStream(newStreamDesc);
-
-    if (specialSourceTypeSet_.count(newStreamDesc->capturerInfo_.sourceType) != 0) {
-        AUDIO_ERR_LOG("The session of %{public}u is special, no need reload.", sessionId);
-        return ERROR;
-    }
-
     AudioStreamDescriptor runningStreamDesc = {};
-    bool needReload = false;
     bool findRunningSessionRet = FindRunningNormalSession(targetSessionId, runningStreamDesc);
     CHECK_AND_RETURN_RET_LOG(!(runningStreamDesc.capturerInfo_.sourceType == SOURCE_TYPE_MIC &&
                                IsVirtualAudioRecognitionSession(sessionId)),
                              ERROR, "skipping reload: va recognition stream detected");
+
+    bool needReload = false;
     switch (operation) {
         case SESSION_OPERATION_START:
-            if (findRunningSessionRet && IsHigherPrioritySourceType(
-                newStreamDesc->capturerInfo_.sourceType, runningStreamDesc.capturerInfo_.sourceType)) {
-                needReload = true;
-            } else if (!findRunningSessionRet && (GetSourceOpened() != newStreamDesc->capturerInfo_.sourceType)) {
-                needReload = true;
-            }
+            needReload = ReloadCheckForStart(findRunningSessionRet, newStreamDesc, runningStreamDesc);
             break;
         case SESSION_OPERATION_PAUSE:
         case SESSION_OPERATION_STOP:
@@ -2719,6 +2833,18 @@ int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperat
     ReloadSourceForSession(targetSession);
     SetOpenedNormalSourceSessionId(targetSessionId);
     return SUCCESS;
+}
+
+bool AudioCoreService::ReloadCheckForStart(
+    bool findRunningSessionRet, std::shared_ptr<AudioStreamDescriptor> newStream, AudioStreamDescriptor &runningStream)
+{
+    if (findRunningSessionRet && IsHigherPrioritySourceType(
+        newStream->capturerInfo_.sourceType, runningStream.capturerInfo_.sourceType)) {
+        return true;
+    } else if (!findRunningSessionRet && (GetSourceOpened() != newStream->capturerInfo_.sourceType)) {
+        return true;
+    }
+    return false;
 }
 
 void AudioCoreService::ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
@@ -3343,7 +3469,7 @@ int32_t AudioCoreService::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo
         moduleInfo.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
         moduleInfo.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
         moduleInfo.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
-        moduleInfo.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
+        moduleInfo.ecFormat = formatToHpaeStr[streamDesc->ecStreamInfo_.format];
     }
     AUDIO_INFO_LOG("sessionId:%{public}u rate:%{public}s channels:%{public}s bufferSize:%{public}s"
         "format:%{public}s channelLayout:%{public}s sourceType: %{public}s", targetSessionId,
