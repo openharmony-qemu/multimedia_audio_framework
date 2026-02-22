@@ -1613,7 +1613,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 
-    AudioCoreService::GetCoreService()->sessionIdisRemovedSet_.insert(TEST_SESSIONID);
+    AudioCoreService::GetCoreService()->capturerSessionIdisRemovedSet_.insert(TEST_SESSIONID);
     AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
