@@ -2772,7 +2772,7 @@ bool AudioCoreService::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDev
         !lastEcInfo.outputDevice.IsSameDeviceDesc(realOutputDevice)) {
         return true;
     }
-    return false; 
+    return false;
 }
 
 int32_t AudioCoreService::ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo,
