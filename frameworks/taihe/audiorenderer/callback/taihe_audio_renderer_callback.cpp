@@ -153,6 +153,7 @@ void TaiheAudioRendererCallback::SafeJsCallbackInterruptWork(AudioRendererJsCall
         [](AudioRendererJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;
@@ -196,6 +197,7 @@ void TaiheAudioRendererCallback::SafeJsCallbackStateChangeWork(AudioRendererJsCa
         [](AudioRendererJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;

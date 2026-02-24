@@ -105,6 +105,7 @@ void TaiheAudioRendererStateCallback::SafeJsCallbackRendererStateWork(AudioRende
         [](AudioRendererStateJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
 

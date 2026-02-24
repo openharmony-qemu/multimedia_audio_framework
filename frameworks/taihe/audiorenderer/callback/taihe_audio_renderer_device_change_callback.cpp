@@ -122,6 +122,7 @@ void TaiheAudioRendererDeviceChangeCallback::OnOutputDeviceChange(
 
 int32_t TaiheAudioRendererDeviceChangeCallback::GetCallbackListSize() const
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return callbacks_.size();
 }
 
@@ -154,6 +155,7 @@ void TaiheAudioRendererDeviceChangeCallback::SafeJsCallbackRendererDeviceInfoWor
         [](AudioRendererDeviceChangeJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;
@@ -225,6 +227,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReferen
 
 int32_t TaiheAudioRendererOutputDeviceChangeWithInfoCallback::GetCallbackListSize() const
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return callbacks_.size();
 }
 
@@ -280,6 +283,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputD
         [](AudioRendererOutputDeviceChangeWithInfoJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;

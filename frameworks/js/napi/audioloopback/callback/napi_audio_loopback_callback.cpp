@@ -129,6 +129,7 @@ void NapiAudioLoopbackCallback::SafeJsCallbackStatusChangeWork(napi_env env, nap
         static_cast<AudioLoopbackJsCallback*>(data),
         [](AudioLoopbackJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
