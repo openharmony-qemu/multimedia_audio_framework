@@ -2915,10 +2915,6 @@ int32_t AudioServer::UpdateSessionConnectionState(int32_t sessionId, int32_t sta
         return ERROR;
     }
     renderer->OnDataLinkConnectionUpdate(static_cast<IOperation>(state));
-    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_RET_LOG(sink, ERROR, "sink is nullptr");
-    int32_t ret = sink->UpdatePrimaryConnectionState(state);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "sink do not support UpdatePrimaryConnectionState");
     return SUCCESS;
 }
 
