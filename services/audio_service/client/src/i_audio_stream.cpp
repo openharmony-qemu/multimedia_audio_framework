@@ -205,7 +205,7 @@ int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_
             return ERR_INVALID_PARAM;
             break;
     }
-
+ 
     if (params.channels < 1 || params.channels > 16) { // 1 is min channel size, 16 is max channel size
         return ERR_INVALID_PARAM;
     }
@@ -334,8 +334,10 @@ bool IAudioStream::IsFormatValid(uint8_t format)
     return isValidFormat;
 }
 
-bool IAudioStream::IsRendererChannelValid(uint8_t channel)
+bool IAudioStream::IsRendererChannelValid(uint8_t channel, uint8_t encodingType)
 {
+    // for audio vivid, no need to check channel
+    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
     bool isValidChannel = (find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(), channel)
                            != RENDERER_SUPPORTED_CHANNELS.end());
     AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
@@ -410,7 +412,7 @@ bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t c
 
 bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout)
 {
-    if (!IsRendererChannelValid(channels)) {
+    if (!IsRendererChannelValid(channels, encodingType)) {
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
         return false;
     }

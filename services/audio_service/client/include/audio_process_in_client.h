@@ -126,9 +126,9 @@ public:
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
-
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
     

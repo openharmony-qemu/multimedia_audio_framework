@@ -13,21 +13,21 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioWorkgroupCallbackStub"
+#define LOG_TAG "AudioWorkgroupCallbackImpl"
 #endif
- 
+
 #include "audio_workgroup_callback_impl.h"
 #include "audio_common_log.h"
 #include "audio_errors.h"
- 
+
 namespace OHOS {
 namespace AudioStandard {
- 
+
 AudioWorkgroupCallbackImpl::AudioWorkgroupCallbackImpl()
 {
     AUDIO_DEBUG_LOG("AudioWorkgroupCallbackImpl ctor");
 }
- 
+
 AudioWorkgroupCallbackImpl::~AudioWorkgroupCallbackImpl()
 {
     AUDIO_DEBUG_LOG("~AudioWorkgroupCallbackImpl dtor");

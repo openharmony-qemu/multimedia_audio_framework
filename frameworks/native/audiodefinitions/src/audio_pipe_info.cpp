@@ -114,7 +114,7 @@ void AudioPipeInfo::DumpOutputAttrs(std::string &dumpString)
 {
     AppendFormat(dumpString, "  - RenderInIdleState: %s\n", moduleInfo_.renderInIdleState.c_str());
     if (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
-        AppendFormat(dumpString, " - UltralFastPipe: %d\n", ultraFastPipe_);
+        AppendFormat(dumpString, " - UltraFastPipe: %d\n", ultraFastPipe_);
     }
 }
 
@@ -135,19 +135,19 @@ bool AudioPipeInfo::ContainStream(uint32_t sessionId) const
 {
     return (streamDescMap_.find(sessionId) != streamDescMap_.end());
 }
- 
+
 void AudioPipeInfo::AddStream(std::shared_ptr<AudioStreamDescriptor> stream)
 {
     streamDescriptors_.push_back(stream);
     streamDescMap_[stream->GetSessionId()] = stream;
 }
- 
+
 void AudioPipeInfo::RemoveStream(uint32_t sessionId)
 {
     if (!ContainStream(sessionId)) {
         return;
     }
- 
+
     // Both streamdesc data need remove
     streamDescMap_.erase(sessionId);
     streamDescriptors_.erase(std::remove_if(streamDescriptors_.begin(), streamDescriptors_.end(),

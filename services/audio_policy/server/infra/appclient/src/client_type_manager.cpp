@@ -38,7 +38,7 @@ void ClientTypeManager::GetAndSaveClientType(uint32_t uid, const std::string &bu
     if (clientTypeManagerHandler_ == nullptr) {
         AUDIO_INFO_LOG("Init client type manager");
         clientTypeManagerHandler_ = std::make_shared<ClientTypeManagerHandler>();
-        if (clientTypeManagerHandler_ != nulltpr) {
+        if (clientTypeManagerHandler_ != nullptr) {
             clientTypeManagerHandler_->RegisterClientTypeListener(this);
         }
     }
@@ -55,7 +55,7 @@ void ClientTypeManager::GetAndSaveClientType(uint32_t uid, const std::string &bu
         AUDIO_WARNING_LOG("Get bundle name %{public}s for %{public}u failed", bundleName.c_str(), uid);
         return;
     }
-    clientTypeManagerHandler_->SendGetClientType(bundleName, uid);
+    clientTypeManagerHandler_->SendGetClientType(bundleName.c_str(), uid);
 #else
     AUDIO_WARNING_LOG("Get client type is not supported");
 #endif
@@ -95,7 +95,7 @@ ClientType ClientTypeManager::GetClientTypeByUidSync(int32_t uid)
     uint32_t uidTemp = static_cast<uint32_t>(uid);
     auto it = clientTypeMap_.find(uidTemp);
     if (it == clientTypeMap_.end()) {
-        cv.wait_for(lock, std::chrono::milliseconds(WAIT_CALLBACK_TIMEOUT_IN_MS), [this, uidTemp]() {
+        cv.wait_for(lock, std::chrono::milliseconds(WAIT_CALLBACK_TIMEOUT_IN_MS), [this, &uidTemp]() {
             return clientTypeMap_.find(uidTemp) != clientTypeMap_.end();
         });
     }
@@ -104,7 +104,7 @@ ClientType ClientTypeManager::GetClientTypeByUidSync(int32_t uid)
 
 void ClientTypeManager::OnClientTypeQueryCompleted(uint32_t uid, ClientType clientType)
 {
-    std::lock_guard<ffrt::mutex> lock(clientTypeMapMutex_);
+    std::unique_lock<ffrt::mutex> lock(clientTypeMapMutex_);
     AUDIO_INFO_LOG("uid: %{public}u, client type: %{public}d", uid, clientType);
     clientTypeMap_.insert_or_assign(uid, clientType);
     cv.notify_all();

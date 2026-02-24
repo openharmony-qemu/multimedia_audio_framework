@@ -17,8 +17,8 @@ package OHOS.AudioStandard;
 
 sequenceable OHOS.IRemoteObject;
 sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBuffer;
-sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
 sequenceable audio_info..OHOS.AudioStandard.AudioPlaybackCaptureConfig;
+sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
 sequenceable audio_info..OHOS.AudioStandard.StaticBufferInfo;
 
 interface IIpcStream {
@@ -56,15 +56,15 @@ interface IIpcStream {
     void GetStreamManagerType();
     void SetSilentModeAndMixWithOthers([in] boolean on);
     void SetClientVolume();
+    void SetLoudnessGain([in] float loudnessGain);
     void SetMute([in] boolean isMute);
     void SetDuckFactor([in] float duckFactor, [in] unsigned int durationMs);
     void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method,
         [in] unsigned int threadPriority); // BoostTriggerMethod method
     void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] boolean skipForce); // DeviceType defaultOutputDevice
     void SetSourceDuration([in] long duration);
-    void SetOffloadDataCallbackState([in] int state);
     void SetSpeed([in] float speed);
-    void SetLoudnessGain([in] float loudnessGain);
+    void SetOffloadDataCallbackState([in] int state);
     void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer,
         [out] unsigned int spanSizeInFrame, [out] unsigned long engineTotalSizeInFrame);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
