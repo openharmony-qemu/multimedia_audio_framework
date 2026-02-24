@@ -40,7 +40,7 @@ void AudioEndpointInner::InitLatencyMeasurement()
         return;
     }
     signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr!");
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     signalDetectAgent_->sampleFormat_ = SAMPLE_S16LE;
     signalDetectAgent_->formatByteSize_ = GetFormatByteSize(SAMPLE_S16LE);
     latencyMeasEnabled_ = true;
@@ -58,7 +58,7 @@ void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
     if (!latencyMeasEnabled_) {
         return;
     }
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr!");
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     size_t byteSize = static_cast<size_t>(GetFormatByteSize(dstStreamInfo_.format));
     size_t newlyCheckedTime = bufferSize / (dstStreamInfo_.samplingRate /
         MILLISECOND_PER_SECOND) / (byteSize * sizeof(uint8_t) * dstStreamInfo_.channels);
@@ -73,14 +73,14 @@ void AudioEndpointInner::CheckPlaySignal(uint8_t *buffer, size_t bufferSize)
             LatencyMonitor::GetInstance().UpdateDspTime(dspTime);
             LatencyMonitor::GetInstance().UpdateSinkOrSourceTime(true,
                 signalDetectAgent_->lastPeakBufferTime_);
-            AUDIO_INFO_LOG("LatencyMeas fastSink signal detected!");
+            AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
             LatencyMonitor::GetInstance().ShowTimestamp(true);
             signalDetectAgent_->dspTimestampGot_ = true;
             signalDetectAgent_->signalDetected_ = false;
     }
     signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
     if (signalDetected_) {
-        AUDIO_INFO_LOG("LatencyMeas fastSink signal detected!");
+        AUDIO_INFO_LOG("LatencyMeas fastSink signal detected");
         detectedTime_ = 0;
     }
 }
@@ -90,7 +90,7 @@ void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
     if (!latencyMeasEnabled_) {
         return;
     }
-    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr!");
+    CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "LatencyMeas signalDetectAgent_ is nullptr");
     signalDetected_ = signalDetectAgent_->CheckAudioData(buffer, bufferSize);
     if (signalDetected_) {
         AudioParamKey key = NONE;

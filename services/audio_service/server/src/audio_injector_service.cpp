@@ -23,6 +23,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+AudioInjectorService& AudioInjectorService::GetInstance()
+{
+    static AudioInjectorService instance;
+    return instance;
+}
+
 AudioInjectorService::AudioInjectorService()
 {
     sinkPortIndex_ = UINT32_INVALID_VALUE;

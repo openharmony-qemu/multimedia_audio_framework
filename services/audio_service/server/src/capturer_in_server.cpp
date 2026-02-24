@@ -78,7 +78,7 @@ CapturerInServer::~CapturerInServer()
 int32_t CapturerInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
-        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed.");
+        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null!");
@@ -116,7 +116,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
 int32_t CapturerInServer::InitBufferStatus()
 {
     if (audioServerBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer!");
+        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer.");
         return ERR_ILLEGAL_STATE;
     }
 
@@ -330,8 +330,8 @@ void CapturerInServer::ReadData(size_t length)
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr!");
-    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null!");
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null");
 
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
@@ -398,7 +398,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(requestDataLen);

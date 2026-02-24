@@ -24,14 +24,14 @@
 #include "common/hdi_adapter_info.h"
 #include "util/id_handler.h"
 #include "sink/audio_render_sink.h"
+#include "sink/auxiliary_sink.h"
 #include "sink/bluetooth_audio_render_sink.h"
+#include "sink/direct_audio_render_sink.h"
 #include "sink/fast_audio_render_sink.h"
 #include "sink/file_audio_render_sink.h"
 #include "sink/cabin_audio_render_sink.h"
 #include "sink/multichannel_audio_render_sink.h"
 #include "sink/offload_audio_render_sink.h"
-#include "sink/direct_audio_render_sink.h"
-#include "sink/auxiliary_sink.h"
 #include "source/audio_capture_source.h"
 #include "source/bluetooth_audio_capture_source.h"
 #include "source/wakeup_audio_capture_source.h"
@@ -69,7 +69,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
     CHECK_AND_RETURN_RET(idHandler.CheckId(renderId, HDI_ID_BASE_RENDER), nullptr);
     uint32_t type = idHandler.ParseType(renderId);
     std::string info = idHandler.ParseInfo(renderId);
-    AUDIO_INFO_LOG("Type: %{public}u", type);
+    AUDIO_INFO_LOG("type: %{public}u", type);
 
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
     switch (type) {
@@ -121,6 +121,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
     CHECK_AND_RETURN_RET(idHandler.CheckId(captureId, HDI_ID_BASE_CAPTURE), nullptr);
     uint32_t type = idHandler.ParseType(captureId);
     std::string info = idHandler.ParseInfo(captureId);
+    AUDIO_INFO_LOG("type: %{public}u, info: %{public}s", type, info.c_str());
 
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     switch (type) {

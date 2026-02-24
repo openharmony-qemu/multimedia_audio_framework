@@ -32,7 +32,7 @@ void SetProcessDataThreadPriority(int32_t priority);
 void ResetProcessDataThreadPriority();
 void UnscheduleReportData(pid_t pid, pid_t tid, const char* bundleName);
 bool SetEndpointThreadPriority();
-bool ResetEndpointThreadPriority();
+bool ResetEndpointThreadPriority(void);
 
 #ifdef __cplusplus
 }
