@@ -20,6 +20,7 @@
 #include "napi_audio_renderer_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
+#include "xpower_event_js.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -207,7 +208,7 @@ void NapiAudioRendererCallback::InterruptTsfnFinalize(napi_env env, void *data, 
 void NapiAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRendererJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackInterrupt: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
         return;
     }
 
@@ -264,7 +265,7 @@ void NapiAudioRendererCallback::StateChangeTsfnFinalize(napi_env env, void *data
 void NapiAudioRendererCallback::OnJsCallbackStateChange(std::unique_ptr<AudioRendererJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackStateChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackStateChange: jsCb.get() is null");
         return;
     }
     

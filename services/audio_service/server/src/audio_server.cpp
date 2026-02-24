@@ -232,7 +232,7 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr!");
+    CHECK_AND_RETURN_LOG(primarySink, "primarySink is nullptr");
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
@@ -366,7 +366,7 @@ static std::vector<StringPair> ConvertStringPair(const std::vector<std::pair<std
 
 void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
-    CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is nullptr!");
+    CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
     audioServer_->RemoveRendererDataTransferCallback(pid_);
     AudioStreamMonitor::GetInstance().OnCallbackAppDied(pid_);
 }

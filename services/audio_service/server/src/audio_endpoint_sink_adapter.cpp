@@ -28,14 +28,11 @@ bool AudioEndpointSinkAdapter::IsOtherEndpointRunning(const uint32_t fastRenderI
 {
     std::lock_guard<std::mutex> lock(checkerOperationMapMutex_);
     auto fastRenderIt = operationMap.find(fastRenderId);
-    if (fastRenderIt == operationMap.end()) {
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(fastRenderIt != operationMap.end(), false, "Invalid operation iterator");
     const auto &operationList = fastRenderIt->second;
     for (const auto &pair : operationList) {
-        if (pair.first != key && pair.second == AudioEndpoint::EndpointStatus::RUNNING) {
-            return true;
-        }
+        CHECK_AND_RETURN_RET_LOG(!(pair.first != key && pair.second == AudioEndpoint::EndpointStatus::RUNNING), true,
+            "Detected other running endpoint");
     }
     return false;
 }

@@ -29,7 +29,8 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioScheduleGuard {
 public:
-    AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPriority, const std::string &bundleName = "audio_server");
+    AudioScheduleGuard(pid_t pid, pid_t tid, uint32_t threadPriority,
+        const std::string &bundleName = "audio_server");
 
     AudioScheduleGuard(const AudioScheduleGuard&) = delete;
 

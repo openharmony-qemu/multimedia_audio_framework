@@ -21,11 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioInjectorService {
 public:
-    static AudioInjectorService& GetInstance()
-    {
-        static AudioInjectorService instance;
-        return instance;
-    }
+    static AudioInjectorService& GetInstance();
     int32_t PeekAudioData(const uint32_t sinkPortIndex, uint8_t *buffer, const size_t bufferSize,
         AudioStreamInfo &streamInfo);
     void SetSinkPortIdx(uint32_t sinkPortIdx);
@@ -38,7 +34,7 @@ private:
     AudioInjectorService(const AudioInjectorService&) = delete;
     AudioInjectorService& operator=(const AudioInjectorService&) = delete;
 private:
-    AudioModuleInfo moduleInfo_;
+    AudioModuleInfo moduleInfo_ = {};
     uint32_t sinkPortIndex_;
 };
 } //  namespace AudioStandard

@@ -140,7 +140,7 @@ struct RingBufferWrapper {
             remainSize -= setSize;
             if (buffer != nullptr && bufLength != 0 && setSize != 0) {
                 auto ret = memset_s(buffer, bufLength, ch, setSize);
-                [[unlikely]] if (ret != EOK) {
+                if (ret != EOK) [[unlikely]] {
                     AUDIO_ERR_LOG("memset err :%{public}d", ret);
                 }
             }
@@ -184,14 +184,14 @@ struct RingBufferWrapper {
                 remainSize});
             remainSize -= copySize;
 
-            [[unlikely]] if (copySize == 0) {
+            if (copySize == 0) [[unlikely]] {
                 // This branch should never be executed under any valid conditions. Consider let it crash?
                 AUDIO_ERR_LOG("copySize is 0");
                 return ERR_INVALID_PARAM;
             }
             auto ret = memcpy_s(dstBuffer.basicBufferDescs[0].buffer, dstBuffer.basicBufferDescs[0].bufLength,
                 srcBuffer.basicBufferDescs[0].buffer, copySize);
-            [[unlikely]] if (ret != EOK) {
+            if (ret != EOK) [[unlikely]] {
                 AUDIO_ERR_LOG("memcpy err :%{public}d", ret);
             }
             dstBuffer.SeekFromStart(copySize);

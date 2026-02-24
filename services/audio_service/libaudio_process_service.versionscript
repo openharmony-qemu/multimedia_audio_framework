@@ -77,13 +77,15 @@
     *StartGroup*;
     *StopGroup*;
     *AudioWorkgroupCallback*;
-    *ImproveAudioWorkgroupPrio*;
-    *RestoreAudioWorkgroupPrio*;
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
     *HpaeCapturerStreamImpl*;
+    *ImproveAudioWorkgroupPrio*;
+    *RestoreAudioWorkgroupPrio*;
     *GetPrivacyType*;
     *GetEndPointByType*;
+    *SetSinkPortIdx*;
+    *GetModuleInfo*;
     *SetEndpointMuteForSwitchDevice*;
     *RequestUserPrivacyAuthority*;
   local:
