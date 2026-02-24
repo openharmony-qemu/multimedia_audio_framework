@@ -39,6 +39,7 @@ static OHOS::AudioStandard::OHAudioDeviceDescriptor *convertDeviceDescriptor(
     return (OHOS::AudioStandard::OHAudioDeviceDescriptor*) deviceDescriptor;
 }
 
+const size_t MAX_VALID_SIZE = 128; // MAX AudioDevice size.
 const std::set<OH_AudioDevice_Usage> VALID_OH_AUDIO_DEVICE_UASGES = {
     AUDIO_DEVICE_USAGE_MEDIA_OUTPUT,
     AUDIO_DEVICE_USAGE_MEDIA_INPUT,
@@ -120,11 +121,11 @@ bool OH_AudioSessionManager_IsOtherMediaPlaying(OH_AudioSessionManager *audioSes
 OH_AudioCommon_Result OH_AudioSessionManager_GetAvailableDevices(OH_AudioSessionManager *audioSessionManager,
     OH_AudioDevice_Usage deviceUsage, OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray)
 {
-    if (audioSessionManager == nullptr || !VALID_OH_AUDIO_DEVICE_UASGES.count(deviceUsage) ||
-        audioDeviceDescriptorArray == nullptr) {
-        AUDIO_ERR_LOG("Invalid params!");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(VALID_OH_AUDIO_DEVICE_UASGES.count(deviceUsage),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "Invalid param deviceUsage");
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
@@ -132,7 +133,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_GetAvailableDevices(OH_AudioSession
 
     *audioDeviceDescriptorArray = ohAudioSessionManager->GetAvailableDevices(usage);
     CHECK_AND_RETURN_RET_LOG(*audioDeviceDescriptorArray != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_NO_MEMORY, "*audioDeviceDescriptorArray is nullptr");
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "*audioDeviceDescriptorArray is nullptr");
 
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -146,9 +147,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_SelectMediaInputDevice(
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
 
-    if (deviceDescriptor == nullptr) {
-        return ohAudioSessionManager->ClearSelectedMediaInputDevice();
-    }
+    CHECK_AND_RETURN_RET(deviceDescriptor != nullptr, ohAudioSessionManager->ClearSelectedMediaInputDevice());
 
     OHAudioDeviceDescriptor* ohDeviceDescriptor = convertDeviceDescriptor(deviceDescriptor);
     CHECK_AND_RETURN_RET_LOG(ohDeviceDescriptor != nullptr,
@@ -162,16 +161,15 @@ OH_AudioCommon_Result OH_AudioSessionManager_SelectMediaInputDevice(
 OH_AudioCommon_Result OH_AudioSessionManager_GetSelectedMediaInputDevice(
     OH_AudioSessionManager *audioSessionManager, OH_AudioDeviceDescriptor **audioDeviceDescriptor)
 {
-    if (audioSessionManager == nullptr || audioDeviceDescriptor == nullptr) {
-        AUDIO_ERR_LOG("Invalid params!");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr && audioDeviceDescriptor != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager or audioDeviceDescriptor is nullptr");
+
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
     *audioDeviceDescriptor = ohAudioSessionManager->GetSelectedMediaInputDevice();
     CHECK_AND_RETURN_RET_LOG(*audioDeviceDescriptor != nullptr,
-        AUDIOCOMMON_RESULT_ERROR_NO_MEMORY, "*audioDeviceDescriptor is nullptr");
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "*audioDeviceDescriptor is nullptr");
 
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -180,10 +178,9 @@ OH_AudioCommon_Result OH_AudioSessionManager_SetBluetoothAndNearlinkPreferredRec
     OH_AudioSessionManager *audioSessionManager,
     OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    if (audioSessionManager == nullptr) {
-        AUDIO_ERR_LOG("Invalid params!");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
@@ -197,10 +194,9 @@ OH_AudioCommon_Result OH_AudioSessionManager_GetBluetoothAndNearlinkPreferredRec
     OH_AudioSessionManager *audioSessionManager,
     OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory *category)
 {
-    if (audioSessionManager == nullptr) {
-        AUDIO_ERR_LOG("Invalid params!");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+
     OHAudioSessionManager *ohAudioSessionManager = convertManager(audioSessionManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
@@ -414,10 +410,6 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
 namespace OHOS {
 namespace AudioStandard {
 
-namespace {
-const size_t MAX_VALID_SIZE = 128; // MAX AudioDevice size.
-}
-
 static void DestroyAudioDeviceDescriptor(OH_AudioDeviceDescriptorArray *array)
 {
     if (array) {
@@ -433,40 +425,43 @@ static void DestroyAudioDeviceDescriptor(OH_AudioDeviceDescriptorArray *array)
     }
 }
 
+bool CheckAudioDeviceDescriptorArray(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
+{
+    CHECK_AND_RETURN_RET(audioDeviceDescriptorArray->descriptors == nullptr, true);
+    free(audioDeviceDescriptorArray);
+    audioDeviceDescriptorArray = nullptr;
+    AUDIO_ERR_LOG("failed to malloc descriptors.");
+    return false;
+}
+
+bool CheckAudioDeviceDescriptorArrayItem(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray, uint32_t index)
+{
+    CHECK_AND_RETURN_RET(audioDeviceDescriptorArray->descriptors[index] == nullptr, true);
+    DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray);
+    return false;
+}
+
 OH_AudioDeviceDescriptorArray *ConvertDesc(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     size_t size = desc.size();
-    if (size == 0 || size >= MAX_VALID_SIZE) {
-        AUDIO_ERR_LOG("failed to convert device info, size is %{public}zu", size);
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size < MAX_VALID_SIZE,
+        nullptr, "failed to convert device info, size is %{public}zu", size);
 
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
         (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
 
-    if (audioDeviceDescriptorArray == nullptr) {
-        AUDIO_ERR_LOG("failed to malloc.");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray != nullptr, nullptr, "failed to malloc.");
     audioDeviceDescriptorArray->size = 0;
     audioDeviceDescriptorArray->descriptors =
         (OH_AudioDeviceDescriptor **)malloc(sizeof(OH_AudioDeviceDescriptor *) * size);
-    if (audioDeviceDescriptorArray->descriptors == nullptr) {
-        free(audioDeviceDescriptorArray);
-        audioDeviceDescriptorArray = nullptr;
-        AUDIO_ERR_LOG("failed to malloc descriptors.");
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET(CheckAudioDeviceDescriptorArray(audioDeviceDescriptorArray), nullptr);
 
     uint32_t index = 0;
     for (auto deviceDescriptor : desc) {
         audioDeviceDescriptorArray->descriptors[index] =
             (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
-        if (audioDeviceDescriptorArray->descriptors[index] == nullptr) {
-            DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray);
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET(CheckAudioDeviceDescriptorArrayItem(audioDeviceDescriptorArray, index), nullptr);
         index++;
         audioDeviceDescriptorArray->size = index;
     }
@@ -533,10 +528,9 @@ OH_AudioDeviceDescriptorArray *OHAudioSessionManager::GetAvailableDevices(AudioD
         nullptr, "failed, audioSessionManager_ is null");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempDesc =
         audioSessionManager_->GetAvailableDevices(deviceUsage);
-    if (tempDesc.size() == 0) {
-        AUDIO_ERR_LOG("get no device");
-        return nullptr;
-    }
+
+    CHECK_AND_RETURN_RET_LOG(tempDesc.size() > 0, nullptr, "get no device");
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> altaDesc = {};
     for (const auto &availableDesc : tempDesc) {
         std::shared_ptr<AudioDeviceDescriptor> dec = std::make_shared<AudioDeviceDescriptor>(*availableDesc);
@@ -700,16 +694,12 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAvailableDeviceChangeCallback(
     CHECK_AND_RETURN_RET_LOG(audioMngr_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioMngr_ is null");
 
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("invalid callback");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid callback");
 
     std::lock_guard<std::mutex> lock(availableDeviceCbMutex_);
-    if (availableDeviceCallbacks_.count(callback) != 0) {
-        AUDIO_INFO_LOG("callback already registed");
-        return AUDIOCOMMON_RESULT_SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(availableDeviceCallbacks_.count(callback) == 0,
+        AUDIOCOMMON_RESULT_SUCCESS, "callback already registed");
 
     std::shared_ptr<OHAudioAvailableDeviceCallback> ohAudioAvailableDeviceCallback =
         std::make_shared<OHAudioAvailableDeviceCallback>(deviceUsage, callback);
@@ -717,10 +707,9 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAvailableDeviceChangeCallback(
         "Failed to create AudioAvailableDevice callback!");
 
     int32_t ret = audioMngr_->SetAvailableDeviceChangeCallback(deviceUsage, ohAudioAvailableDeviceCallback);
-    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
-        AUDIO_ERR_LOG("failed to SetAvailableDeviceChangeCallback.");
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to SetAvailableDeviceChangeCallback.");
+
     availableDeviceCallbacks_.emplace(callback, ohAudioAvailableDeviceCallback);
 
     return AUDIOCOMMON_RESULT_SUCCESS;
@@ -731,18 +720,17 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAvailableDeviceChangeCallback(
 {
     CHECK_AND_RETURN_RET_LOG(audioMngr_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioMngr_ is null");
+    
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid callback");
 
     std::lock_guard<std::mutex> lock(availableDeviceCbMutex_);
-    if ((callback == nullptr) || (availableDeviceCallbacks_.count(callback) == 0)) {
-        AUDIO_ERR_LOG("invalid callback or callback not registered");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(availableDeviceCallbacks_.count(callback) != 0,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback not registered");
 
     int32_t ret = audioMngr_->UnsetAvailableDeviceChangeCallback(D_ALL_DEVICES);
-    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
-        AUDIO_ERR_LOG("failed to UnsetAvailableDeviceChangeCallback.");
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to UnsetAvailableDeviceChangeCallback.");
     availableDeviceCallbacks_.erase(callback);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -753,16 +741,12 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionCurrentInputDeviceCh
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
 
-    if (callback == nullptr) {
-        AUDIO_ERR_LOG("invalid callback");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid callback");
 
     std::lock_guard<std::mutex> lock(sessionInputDeviceCbMutex_);
-    if (sessionInputDeviceCallbacks_.count(callback) != 0) {
-        AUDIO_INFO_LOG("callback already registed");
-        return AUDIOCOMMON_RESULT_SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(sessionInputDeviceCallbacks_.count(callback) == 0,
+        AUDIOCOMMON_RESULT_SUCCESS, "callback already registed");
 
     std::shared_ptr<OHAudioSessionInputDeviceCallback> ohAudioSessionInputDeviceCallback =
         std::make_shared<OHAudioSessionInputDeviceCallback>(callback);
@@ -771,10 +755,8 @@ OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionCurrentInputDeviceCh
 
     int32_t ret =
         audioSessionManager_->SetAudioSessionCurrentInputDeviceChangeCallback(ohAudioSessionInputDeviceCallback);
-    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
-        AUDIO_ERR_LOG("failed to SetAudioSessionCurrentInputDeviceChangeCallback.");
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to SetAudioSessionCurrentInputDeviceChangeCallback.");
     sessionInputDeviceCallbacks_.emplace(callback, ohAudioSessionInputDeviceCallback);
 
     return AUDIOCOMMON_RESULT_SUCCESS;
@@ -786,18 +768,17 @@ OH_AudioCommon_Result OHAudioSessionManager::UnsetAudioSessionCurrentInputDevice
     CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
         AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
 
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid callback");
+
     std::lock_guard<std::mutex> lock(sessionInputDeviceCbMutex_);
-    if ((callback == nullptr) || (sessionInputDeviceCallbacks_.count(callback) == 0)) {
-        AUDIO_ERR_LOG("invalid callback or callback not registered");
-        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(sessionInputDeviceCallbacks_.count(callback) != 0,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback not registered");
 
     int32_t ret = audioSessionManager_->UnsetAudioSessionCurrentInputDeviceChangeCallback(
         sessionInputDeviceCallbacks_[callback]);
-    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
-        AUDIO_ERR_LOG("failed to UnsetAudioSessionCurrentInputDeviceChangeCallback.");
-        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to UnsetAudioSessionCurrentInputDeviceChangeCallback.");
     sessionInputDeviceCallbacks_.erase(callback);
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
@@ -927,13 +908,12 @@ void OHAudioAvailableDeviceCallback::OnAvailableDeviceChange(const AudioDeviceUs
     const DeviceChangeAction &deviceChangeAction)
 {
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
+
     CHECK_AND_RETURN_LOG(usage == deviceUsage_, "other device usage's callback");
 
     uint32_t size = deviceChangeAction.deviceDescriptors.size();
-    if ((size == 0) || (size > MAX_VALID_SIZE)) {
-        AUDIO_ERR_LOG("audioDeviceDescriptors is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(size > 0 && size <= MAX_VALID_SIZE,
+        "audioDeviceDescriptors is null or audioDeviceDescriptors size exceeds maximum valid size");
 
     OH_AudioDeviceDescriptorArray *array = ConvertDesc(deviceChangeAction.deviceDescriptors);
     callback_(static_cast<OH_AudioDevice_ChangeType>(deviceChangeAction.type), array);
@@ -945,10 +925,9 @@ void OHAudioSessionInputDeviceCallback::OnAudioSessionCurrentInputDeviceChanged(
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
 
     uint32_t size = deviceChangedEvent.devices.size();
-    if ((size == 0) || (size > MAX_VALID_SIZE)) {
-        AUDIO_ERR_LOG("audioDeviceDescriptors is null");
-        return;
-    }
+    CHECK_AND_RETURN_LOG(size > 0 && size <= MAX_VALID_SIZE,
+        "audioDeviceDescriptors is null or audioDeviceDescriptors size exceeds maximum valid size");
+
     OH_AudioDeviceDescriptorArray *array = ConvertDesc(deviceChangedEvent.devices);
     callback_(array, static_cast<OH_AudioStream_DeviceChangeReason>(deviceChangedEvent.changeReason));
 }
