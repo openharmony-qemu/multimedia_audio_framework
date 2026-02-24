@@ -870,7 +870,7 @@ void OHAudioSessionDeviceCallback::OnAudioSessionCurrentDeviceChanged(
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the function is nullptr");
 
     uint32_t size = deviceChangedEvent.devices.size();
-    if (size == 0) {
+    if ((size == 0) || (size > MAX_VALID_SIZE)) {
         AUDIO_ERR_LOG("audioDeviceDescriptors is null");
         return;
     }
