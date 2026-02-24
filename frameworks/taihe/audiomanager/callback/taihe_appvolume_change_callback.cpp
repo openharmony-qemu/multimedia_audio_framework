@@ -150,6 +150,7 @@ void TaiheAudioManagerAppVolumeChangeCallback::SafeJsCallbackAppVolumeChangeWork
         [](AudioManagerAppVolumeChangeJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;
@@ -233,11 +234,13 @@ void TaiheAudioManagerAppVolumeChangeCallback::RemoveAllSelfAudioVolumeChangeCbR
 
 int32_t TaiheAudioManagerAppVolumeChangeCallback::GetAppVolumeChangeForUidListSize()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return appVolumeChangeForUidList_.size();
 }
 
 int32_t TaiheAudioManagerAppVolumeChangeCallback::GetSelfAppVolumeChangeListSize()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return selfAppVolumeChangeList_.size();
 }
 } // namespace ANI::Audio

@@ -37,7 +37,7 @@ NapiAudioRendererDeviceChangeCallback::~NapiAudioRendererDeviceChangeCallback()
 
 void NapiAudioRendererDeviceChangeCallback::AddCallbackReference(napi_value args)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::shared_mutex> lock(mutex_);
     napi_ref callback;
     const int32_t refCount = 1;
     bool isEquals = false;
@@ -77,7 +77,7 @@ bool NapiAudioRendererDeviceChangeCallback::GetRendererDeviceChangeTsfnFlag()
 
 void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value args)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::shared_mutex> lock(mutex_);
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
@@ -104,20 +104,21 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env
 
 void NapiAudioRendererDeviceChangeCallback::RemoveAllCallbacks()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::shared_mutex> lock(mutex_);
     callbacks_.clear();
     AUDIO_INFO_LOG("RemoveAllCallbacks successful");
 }
 
 int32_t NapiAudioRendererDeviceChangeCallback::GetCallbackListSize() const
 {
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     return callbacks_.size();
 }
 
 void NapiAudioRendererDeviceChangeCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
         OnJsCallbackRendererDeviceInfo((*autoRef)->cb_, deviceInfo);
     }
@@ -133,6 +134,7 @@ void NapiAudioRendererDeviceChangeCallback::SafeJsCallbackRendererDeviceInfoWork
         static_cast<AudioRendererDeviceChangeJsCallback*>(data),
         [](AudioRendererDeviceChangeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback_;
     napi_handle_scope scope = nullptr;
@@ -190,7 +192,7 @@ NapiAudioRendererOutputDeviceChangeWithInfoCallback::~NapiAudioRendererOutputDev
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(napi_value args)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::shared_mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = 1;
     bool isEquals = false;
@@ -230,7 +232,7 @@ bool NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetOutputDeviceChangeT
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(napi_env env, napi_value args)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::shared_mutex> lock(mutex_);
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
@@ -258,20 +260,21 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReferenc
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveAllCallbacks()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::shared_mutex> lock(mutex_);
     callbacks_.clear();
     AUDIO_INFO_LOG("RemoveAllCallbacks successful");
 }
 
 int32_t NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetCallbackListSize() const
 {
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     return callbacks_.size();
 }
 
 void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason reason)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock<std::shared_mutex> lock(mutex_);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
         OnJsCallbackOutputDeviceInfo((*autoRef)->cb_, deviceInfo, reason);
     }
@@ -288,6 +291,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputDe
         static_cast<AudioRendererOutputDeviceChangeWithInfoJsCallback*>(data),
         [](AudioRendererOutputDeviceChangeWithInfoJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback_;
     napi_handle_scope scope = nullptr;

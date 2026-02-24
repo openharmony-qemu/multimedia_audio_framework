@@ -92,6 +92,7 @@ void NapiAudioPreferredOutputDeviceChangeCallback::SafeJsCallbackActiveOutputDev
         static_cast<AudioActiveOutputDeviceChangeJsCallback*>(data),
         [](AudioActiveOutputDeviceChangeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -221,6 +222,7 @@ void NapiAudioPreferredInputDeviceChangeCallback::SafeJsCallbackActiveInputDevic
         static_cast<AudioActiveInputDeviceChangeJsCallback*>(data),
         [](AudioActiveInputDeviceChangeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

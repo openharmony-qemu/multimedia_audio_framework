@@ -115,6 +115,7 @@ void NapiRendererPositionCallback::SafeJsCallbackPositionWork(napi_env env, napi
         static_cast<RendererPositionJsCallback*>(data),
         [](RendererPositionJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
