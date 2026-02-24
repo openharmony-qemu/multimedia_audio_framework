@@ -83,6 +83,7 @@ public:
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
+    int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -233,6 +234,7 @@ public:
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
 
+    bool ResetStaticPlayPosition() override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -266,6 +268,7 @@ private:
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
+    void WriteAudioVividDirect(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     bool IsMutePlaying();
     void MonitorMutePlay(bool isPlayEnd);
@@ -322,8 +325,6 @@ private:
 
     void CheckOperations();
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
-
     void CheckFrozenStateInStaticMode();
 
     int32_t CallStartWhenInStandby();
@@ -331,6 +332,8 @@ private:
     void NotifyStopWaiting();
 
     void UpdateStopState();
+
+    void NotifyStreamSilentChange();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -340,6 +343,8 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
+    std::vector<uint8_t> outPackedBuf_;
+    size_t outPackedLen_ = 0;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
     AudioRendererInfo rendererInfo_ = {};
@@ -473,6 +478,7 @@ private:
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
+    bool backMute_ = false;
 
     // for getAudioTimeStampInfo
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair_ = {
@@ -560,6 +566,8 @@ private:
     std::function<uid_t()> uidGetter_ = [] { return getuid(); };
 
     std::string bundleName = "";
+
+    std::atomic<bool> needNotifyStreamSilentChange_ = true;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

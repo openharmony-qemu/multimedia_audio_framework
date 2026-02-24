@@ -367,7 +367,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_DisconnectNodes(OH_AudioNode *sourceAud
 
 OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type nodeType, bool *isSupported)
 {
-    AUDIO_INFO_LOG("IsNodeTypeSupported enter.");
+    AUDIO_DEBUG_LOG("IsNodeTypeSupported enter.");
     using namespace OHOS::AudioStandard::AudioSuite;
     CHECK_AND_RETURN_RET_LOG(
         isSupported != nullptr, AUDIOSUITE_ERROR_INVALID_PARAM, "isSupported is nullptr.");
@@ -376,7 +376,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_IsNodeTypeSupported(OH_AudioNode_Type n
     CHECK_AND_RETURN_RET_LOG(
         suiteEngine != nullptr, AUDIOSUITE_ERROR_ENGINE_NOT_EXIST, "isNodeTypeSupported suiteEngine is nullptr");
     int32_t error = suiteEngine->IsNodeTypeSupported(nodeType, isSupported);
-    AUDIO_INFO_LOG("IsNodeTypeSupported leave with code: %{public}d.", error);
+    AUDIO_DEBUG_LOG("IsNodeTypeSupported leave with code: %{public}d.", error);
     return ConvertError(error);
 }
 
@@ -680,7 +680,6 @@ int32_t OHAudioSuiteEngine::RenderFrame(OHAudioSuitePipeline *audioPipeline,
 
     uint32_t pipelineId = audioPipeline->GetPipelineId();
 
-    AUDIO_INFO_LOG("OHAudioSuiteEngine::RenderFrame enter start.");
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().RenderFrame(
         pipelineId, audioData, requestFrameSize, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderFrame failed, ret = %{public}d.", ret);
@@ -697,7 +696,6 @@ int32_t OHAudioSuiteEngine::MultiRenderFrame(OHAudioSuitePipeline *audioPipeline
 
     uint32_t pipelineId = audioPipeline->GetPipelineId();
 
-    AUDIO_INFO_LOG("OHAudioSuiteEngine::MultiRenderFrame enter start.");
     int32_t ret = IAudioSuiteManager::GetAudioSuiteManager().MultiRenderFrame(
         pipelineId, audioDataArray, responseSize, finishedFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "MultiRenderFrame failed, ret = %{public}d.", ret);

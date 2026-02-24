@@ -45,6 +45,8 @@ public:
         AudioRendererOptions const &options);
     static int32_t GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
         AudioCapturerInfo const &in);
+    static int32_t GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
+        AudioCapturerOptions const &options);
     static int32_t GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
         AudioCapturerOptions const &options);
     static int32_t GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,
@@ -125,6 +127,9 @@ public:
     static AudioSessionDeactivatedEvent ToTaiheSessionDeactivatedEvent(
         const OHOS::AudioStandard::AudioSessionDeactiveEvent &audioSessionDeactiveEvent);
     static bool IsSameRef(std::shared_ptr<uintptr_t> src, std::shared_ptr<uintptr_t> dst);
+    static AudioDeviceDescriptor MakeEmptyDeviceDescriptor();
+    static CurrentInputDeviceChangedEvent SetValueCurrentInputDeviceChangedEvent(
+        const OHOS::AudioStandard::CurrentInputDeviceChangedEvent &event);
 
     template<typename E>
     static std::shared_ptr<uintptr_t> TypeCallback(callback_view<void(E)> callback)

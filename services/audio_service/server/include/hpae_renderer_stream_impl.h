@@ -78,7 +78,7 @@ public:
     void GetSpanSizePerFrame(size_t &spanSizeInFrame) const override;
     void SetStreamIndex(uint32_t index) override;
     uint32_t GetStreamIndex() override;
-    void AbortCallback(int32_t abortTimes);
+    void AbortCallback(int32_t abortTimes) override;
     // offload
     int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
     int32_t UnsetOffloadMode() override;
@@ -104,6 +104,8 @@ public:
     void SetSendDataEnabled(bool enabled) override;
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
+    void TriggerAppsUidUpdate() override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
@@ -122,8 +124,10 @@ private:
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
-    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
-        std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
+    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType, std::string volumeDeviceClass);
+    uint64_t GetOffloadLatency();
+    bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
+    void UpdateInnerCapWriteState(bool isWriteFirst);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
@@ -145,7 +149,7 @@ private:
     // Only for debug
     int32_t abortFlag_ = 0;
     // offload
-    bool offloadEnable_ = false;
+    std::atomic<bool> offloadEnable_ = false;
     std::atomic<int32_t> offloadStatePolicy_ = OFFLOAD_DEFAULT;
     // offload end
     float clientVolume_ = 1.0f;
@@ -180,8 +184,8 @@ private:
     std::atomic<size_t> mutePaddingFrames_ = 0;
     bool noWaitDataFlag_ = true;
 
-    std::unordered_map<int32_t, PositionData> currentPositionData;
-    std::unordered_map<int32_t, PositionData> speedPositionData;
+    std::vector<PositionData> currentPositionData_ = {Timestamp::Timestampbase::BASESIZE, PositionData{}};
+    std::vector<PositionData> speedPositionData_ = {Timestamp::Timestampbase::BASESIZE, PositionData{}};
 
     uint32_t usedSampleRate_ = 0;
 
@@ -189,6 +193,11 @@ private:
     std::condition_variable firstStreamDataCv_;
     std::atomic<bool> firstStreamDataReceived_ = false;
     std::atomic<bool> sendDataEnabled_ = true;
+
+    std::pair<uint64_t, TimePoint> hdiPos_ = std::make_pair(0, std::chrono::high_resolution_clock::now());
+    uint64_t writePos_ = 0;
+    float speed_ = 1.0f;
+    bool isWriteFirst_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

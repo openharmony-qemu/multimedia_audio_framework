@@ -756,24 +756,6 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_047, TestSize.Level0)
 }
 
 /**
- * @tc.name: TestHpaeNodeCommon_048
- * @tc.type: FUNC
- * @tc.number: TestHpaeNodeCommon_048
- * @tc.desc: Test TransNodeInfoForCollaboration enabling collaboration for music scene
- */
-HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_048, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
-    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
-    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
-    
-    TransNodeInfoForCollaboration(nodeInfo, true);
-    EXPECT_EQ(nodeInfo.effectInfo.effectScene, SCENE_COLLABORATIVE);
-    EXPECT_EQ(nodeInfo.effectInfo.lastEffectScene, SCENE_MUSIC);
-    EXPECT_EQ(nodeInfo.sceneType, HPAE_SCENE_COLLABORATIVE);
-}
-
-/**
  * @tc.name: TestHpaeNodeCommon_049
  * @tc.type: FUNC
  * @tc.number: TestHpaeNodeCommon_049

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -55,7 +55,9 @@ constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
+constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
+constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
@@ -107,6 +109,8 @@ constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
 
 // For common stream
 constexpr uint32_t STREAM_ID_INVALID = 0;
+constexpr uint32_t UID_INVALID = 0;
+constexpr bool MUTE_INVALID = false;
 
 //#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
 // Maximun number of sine waves in a tone segment
@@ -542,6 +546,7 @@ struct A2dpDeviceConfigInfo {
     DeviceStreamInfo streamInfo;
     bool absVolumeSupport = false;
     int32_t volumeLevel = -1;
+    int32_t volumeDegree = -1;
     bool mute = false;
 };
 
@@ -631,6 +636,21 @@ enum AudioLoopbackEqualizerPreset {
     EQUALIZER_PRESET_BRIGHT = 3,
 };
 
+enum UltraFastFlags : uint32_t {
+    /**
+     * Client has not set the ultra fast flag, and the current stream is not using the server's ultra fast route(pipe).
+     */
+    ULTRA_NONE = 0,
+    /**
+     * Client has set the ultra fast flag
+     */
+    ULTRA_REQUESTED = 1 << 0,
+    /**
+     * Current stream is using the server's ultra fast route(pipe)
+     */
+    ULTRA_IMPLEMENTED = 1 << 1,
+};
+
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -663,6 +683,7 @@ struct AudioRendererInfo : public Parcelable {
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
+    uint8_t ultraFastFlag = ULTRA_NONE;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -1293,6 +1314,8 @@ struct AudioRegisterTrackerInfo {
     int32_t channelCount;
     uint32_t appTokenId;
     AudioStreamInfo streamInfo;
+    // callback for backMute status to renderChangeinfo
+    bool backMute = false;
 };
 
 enum StateChangeCmdType {
@@ -1371,6 +1394,8 @@ struct AudioProcessConfig : public Parcelable {
 
     DeviceType deviceType = DEVICE_TYPE_INVALID;
 
+    uint32_t ultraFastFlag = false;
+
     bool isInnerCapturer = false;
 
     bool isWakeupCapturer = false;
@@ -1425,6 +1450,9 @@ struct AudioProcessConfig : public Parcelable {
 
         // deviceType
         parcel.WriteInt32(deviceType);
+
+        // Renderer only
+        parcel.WriteUint32(ultraFastFlag);
 
         // Recorder only
         parcel.WriteBool(isInnerCapturer);
@@ -1485,6 +1513,9 @@ struct AudioProcessConfig : public Parcelable {
 
         // deviceType
         config->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+
+        // Renderer only
+        config->ultraFastFlag = parcel.ReadUint32();
 
         // Recorder only
         config->isInnerCapturer = parcel.ReadBool();
@@ -1555,7 +1586,6 @@ struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
-    uint32_t volumeDegree = 0;
 };
 
 enum AppIsBackState {
@@ -1842,14 +1872,14 @@ enum DeviceGroup {
     DEVICE_GROUP_DP,
 };
 
-static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+static inline const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
     {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
     {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
     {DEVICE_TYPE_DP, DEVICE_GROUP_DP}, {DEVICE_TYPE_HDMI, DEVICE_GROUP_DP},
-    {DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_GROUP_WIRED},
+    {DEVICE_TYPE_LINE_DIGITAL, DEVICE_GROUP_DP}, {DEVICE_TYPE_WIRED_HEADPHONES, DEVICE_GROUP_WIRED},
 };
 
 static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
@@ -2101,6 +2131,11 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_MAX
 };
 
+enum ThreadPriorityConfig : uint32_t {
+    THREAD_PRIORITY_QOS_7 = 0,
+    THREAD_PRIORITY_4,
+};
+
 enum XperfEventId : int32_t {
     XPERF_EVENT_START = 0,
     XPERF_EVENT_STOP = 1,
@@ -2181,6 +2216,8 @@ struct RendererStreamInfo {
     StreamUsage usage_ = STREAM_USAGE_INVALID;
 
     RendererState state_ = RENDERER_INVALID;
+
+    std::string bundleName_ = "";
 };
 
 struct CapturerStreamInfo {
@@ -2189,6 +2226,12 @@ struct CapturerStreamInfo {
     SourceType source_ = SOURCE_TYPE_INVALID;
 
     CapturerState state_ = CAPTURER_INVALID;
+
+    std::string bundleName_ = "";
+
+    bool mute_ = MUTE_INVALID;
+
+    int32_t uid_ = UID_INVALID;
 };
 
 /**
@@ -2222,6 +2265,22 @@ enum LatencyFlag : uint32_t {
     LATENCY_FLAG_SOFTWARE = 0X0FFFFFFF,
     LATENCY_FLAG_HARDWARE = 1U << 31,
     LATENCY_FLAG_ALL = 0XFFFFFFFF
+};
+
+struct AudioInterruptResult {
+    bool needSetAudioScene;
+    AudioScene targetAudioScene;
+    int32_t ownerUid;
+    int32_t ownerPid;
+    int32_t retCode;
+    AudioInterruptResult()
+        : needSetAudioScene(false),
+          targetAudioScene(AUDIO_SCENE_INVALID),
+          ownerUid(-1),
+          ownerPid(-1),
+          retCode(0)
+    {
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

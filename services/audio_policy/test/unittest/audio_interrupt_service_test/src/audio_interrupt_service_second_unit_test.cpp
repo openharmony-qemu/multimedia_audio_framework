@@ -62,6 +62,16 @@ public:
         return SUCCESS;
     }
 
+    ErrCode OnCheckMediaControllerBundle(const std::string& bundleName, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
+    ErrCode OnQueryIsForceGetZoneDevice(const std::string& bundleName, bool& ret) override
+    {
+        return SUCCESS;
+    }
+
     ErrCode OnCheckVKBInfo(const std::string& bundleName, bool& isValid) override
     {
         return SUCCESS;
@@ -147,7 +157,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_002, TestSize.
     audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
     auto ret = audioInterruptService->ActivateAudioSession(AudioInterruptService::ZONEID_DEFAULT,
         fakePid, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret.retCode);
 }
 
 /**
@@ -168,7 +178,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_003, TestSize.
     AudioSessionStrategy audioSessionStrategy;
     audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
     auto ret = audioInterruptService->ActivateAudioSession(1, fakePid, audioSessionStrategy);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret.retCode);
 }
 
 /**
@@ -259,7 +269,10 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_008, TestSize.
 
     pid_t pid = 123;
     uint32_t streamId = 123;
-    audioInterruptService->interruptClients_[streamId] = nullptr;
+    std::shared_ptr<AudioInterruptService::AudioInterruptClient> client =
+        std::make_shared<AudioInterruptService::AudioInterruptClient>(nullptr, nullptr, nullptr);
+    client->SetCallingUid(1001);
+    audioInterruptService->interruptClients_[streamId] = client;
     auto audioInterruptZone = make_shared<AudioInterruptZone>();
     AudioInterrupt audioInterrupt;
     audioInterrupt.pid = pid;
@@ -269,7 +282,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_008, TestSize.
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
 
     auto ret = audioInterruptService->UnsetAudioInterruptCallback(0, streamId);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
@@ -1118,7 +1131,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_038, TestSize.
     EXPECT_TRUE(ret);
 
     AudioStreamType audioStreamType = STREAM_ALARM;
-    ret = audioInterruptService->IsMediaStream(audioStreamType);
+    ret = AudioInterruptUtils::IsMediaStream(audioStreamType);
     EXPECT_FALSE(ret);
 }
 
@@ -1855,7 +1868,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_068, TestSize.
  * @tc.number: ActivateAudioInterruptCoreProcedure01
  * @tc.desc  : Test ActivateAudioInterruptCoreProcedure
  */
-HWTEST_F(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedure01, TestSize.Level1)
+HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptCoreProcedure01, TestSize.Level1)
 {
     auto audioInterruptService = std::make_shared<AudioInterruptService>();
 
@@ -1900,8 +1913,8 @@ HWTEST(AudioInterruptServiceSecondUnitTest, ActivateAudioInterruptInternal01, Te
         audioInterrupt, false, updateScene);
     EXPECT_EQ(ret, ERR_FOCUS_DENIED);
     audioInterruptService->GameRecogSetParam(CLIENT_TYPE_GAME, SOURCE_TYPE_VOICE_RECOGNITION, false);
-    ret = audioInterruptService->DeactivateAudioInterrupt(DEFAULT_ZONE_ID, audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
+    auto ret1 = audioInterruptService->DeactivateAudioInterrupt(DEFAULT_ZONE_ID, audioInterrupt);
+    EXPECT_EQ(ret1.retCode, SUCCESS);
 }
 
 } // namespace AudioStandard

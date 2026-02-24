@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. All rights reserved.
  */
 
 import { importSongs } from '../utils/importSongs/ImportSongs';
-import { SongInfo } from '../utils/importSongs/InterfaceInfo';
+import { SongInfo } from '../utils/InterfaceInfo';
 import audioNapi from 'libentry.so';
 import fileUri from '@ohos.file.fileuri';
 import fs, { ReadOptions } from '@ohos.file.fs';

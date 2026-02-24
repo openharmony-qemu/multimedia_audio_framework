@@ -74,7 +74,7 @@ public:
     void OnPeriodReach(int64_t frame, callback_view<void(int64_t)> callback);
     void OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback);
     void OffStateChange(optional_view<callback<void(AudioState)>> callback);
-    void OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback);
+    void OffAudioInterrupt();
     void OffInputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback);
     void OffAudioCapturerChange(optional_view<callback<void(AudioCapturerChangeInfo const&)>> callback);
     void OffReadData(optional_view<callback<void(array_view<uint8_t>)>> callback);

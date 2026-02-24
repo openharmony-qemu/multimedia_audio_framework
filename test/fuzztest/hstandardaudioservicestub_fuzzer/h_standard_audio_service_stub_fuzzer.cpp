@@ -199,6 +199,25 @@ void CreateAudioProcess(FuzzedDataProvider &provider)
     audioServer->CreateAudioProcess(config, errorCode, filterConfig, client);
 }
 
+void LoadAudioEffectLibraries(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    std::vector<Library> libraries;
+    std::vector<Effect> effects;
+    std::vector<Effect> successEffectList;
+    bool hasEffectsLoaded = provider.ConsumeBool();
+    audioServer->LoadAudioEffectLibraries(libraries, effects, successEffectList, hasEffectsLoaded);
+}
+
+void CreateEffectChainManager(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    std::vector<EffectChain> effectChains;
+    EffectChainManagerParam effectParam;
+    EffectChainManagerParam enhanceParam;
+    audioServer->CreateEffectChainManager(effectChains, effectParam, enhanceParam);
+}
+
 void SetOutputDeviceSink(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -235,6 +254,20 @@ void SetWakeupSourceCallback(FuzzedDataProvider &provider)
     audioServer->SetWakeupSourceCallback(object);
 }
 
+void UpdateSpatializationState(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioSpatializationState spatializationState;
+    audioServer->UpdateSpatializationState(spatializationState);
+}
+
+void UpdateSpatialDeviceType(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    int32_t spatialDeviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->UpdateSpatialDeviceType(spatialDeviceType);
+}
+
 void OffloadSetVolume(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -252,6 +285,13 @@ void NotifyStreamVolumeChanged(FuzzedDataProvider &provider)
     audioServer->NotifyStreamVolumeChanged(streamType, volume);
 }
 
+void SetSpatializationSceneType(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    int32_t spatializationSceneType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetSpatializationSceneType(spatializationSceneType);
+}
+
 void GetMaxAmplitude(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -267,6 +307,14 @@ void ResetRouteForDisconnect(FuzzedDataProvider &provider)
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     int32_t streamType = provider.ConsumeIntegral<int32_t>();
     audioServer->ResetRouteForDisconnect(streamType);
+}
+
+void GetEffectLatency(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    std::string sessionId = provider.ConsumeRandomLengthString();
+    uint32_t latency = provider.ConsumeIntegral<uint32_t>();
+    audioServer->GetEffectLatency(sessionId, latency);
 }
 
 void UpdateLatencyTimestamp(FuzzedDataProvider &provider)
@@ -365,6 +413,59 @@ void IsWhispering(FuzzedDataProvider &provider)
     audioServer->IsWhispering(whisperRes);
 }
 
+void GetEffectOffloadEnabled(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    bool isEffectOffloadEnabled = provider.ConsumeBool();
+    audioServer->GetEffectOffloadEnabled(isEffectOffloadEnabled);
+}
+
+void GetAudioEffectPropertyV3(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioEffectPropertyArrayV3 propertyArray;
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->GetAudioEffectProperty(propertyArray, deviceType);
+}
+
+void SetAudioEffectPropertyV3(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioEffectPropertyArrayV3 propertyArray;
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetAudioEffectProperty(propertyArray, deviceType);
+}
+
+void GetAudioEnhanceProperty(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioEnhancePropertyArray propertyArray;
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->GetAudioEnhanceProperty(propertyArray, deviceType);
+}
+
+void GetAudioEffectProperty(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioEffectPropertyArray propertyArray;
+    audioServer->GetAudioEffectProperty(propertyArray);
+}
+
+void SetAudioEnhanceProperty(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioEnhancePropertyArray propertyArray;
+    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
+    audioServer->SetAudioEnhanceProperty(propertyArray, deviceType);
+}
+
+void SetAudioEffectProperty(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    AudioEffectPropertyArray propertyArray;
+    audioServer->SetAudioEffectProperty(propertyArray);
+}
+
 void SuspendRenderSink(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -379,6 +480,19 @@ void RestoreRenderSink(FuzzedDataProvider &provider)
     audioServer->RestoreRenderSink(sinkName);
 }
 
+void LoadHdiEffectModel(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServer->LoadHdiEffectModel();
+}
+
+void UpdateEffectBtOffloadSupported(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    bool isSupported = provider.ConsumeBool();
+    audioServer->UpdateEffectBtOffloadSupported(isSupported);
+}
+
 void SetSinkMuteForSwitchDevice(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -386,6 +500,13 @@ void SetSinkMuteForSwitchDevice(FuzzedDataProvider &provider)
     int32_t durationUs = provider.ConsumeIntegral<int32_t>();
     bool mute = provider.ConsumeBool();
     audioServer->SetSinkMuteForSwitchDevice(devceClass, durationUs, mute);
+}
+
+void SetRotationToEffect(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    uint32_t rotate = provider.ConsumeIntegral<uint32_t>();
+    audioServer->SetRotationToEffect(rotate);
 }
 
 void UpdateSessionConnectionState(FuzzedDataProvider &provider)
@@ -410,6 +531,21 @@ void RestoreSession(FuzzedDataProvider &provider)
     uint32_t sessionID = provider.ConsumeIntegral<uint32_t>();
     RestoreInfoIpc restoreInfoIn;
     audioServer->RestoreSession(sessionID, restoreInfoIn);
+}
+
+void CreateIpcOfflineStream(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    int32_t errorCode = provider.ConsumeIntegral<int32_t>();
+    sptr<IRemoteObject> client = nullptr;
+    audioServer->CreateIpcOfflineStream(errorCode, client);
+}
+
+void GetOfflineAudioEffectChains(FuzzedDataProvider &provider)
+{
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    std::vector<std::string> effectChains;
+    audioServer->GetOfflineAudioEffectChains(effectChains);
 }
 
 void GetStandbyStatus(FuzzedDataProvider &provider)
@@ -782,15 +918,21 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     SetAudioMonoState,
     SetAudioBalanceValue,
     CreateAudioProcess,
+    LoadAudioEffectLibraries,
+    CreateEffectChainManager,
     SetOutputDeviceSink,
     SetActiveOutputDevice,
     CreatePlaybackCapturerManager,
     RegiestPolicyProvider,
     SetWakeupSourceCallback,
+    UpdateSpatializationState,
+    UpdateSpatialDeviceType,
     OffloadSetVolume,
     NotifyStreamVolumeChanged,
+    SetSpatializationSceneType,
     GetMaxAmplitude,
     ResetRouteForDisconnect,
+    GetEffectLatency,
     UpdateLatencyTimestamp,
     SetAsrAecMode,
     GetAsrAecMode,
@@ -804,12 +946,24 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     SetAsrVoiceControlMode,
     SetAsrVoiceMuteMode,
     IsWhispering,
+    GetEffectOffloadEnabled,
+    GetAudioEffectPropertyV3,
+    SetAudioEffectPropertyV3,
+    GetAudioEnhanceProperty,
+    GetAudioEffectProperty,
+    SetAudioEnhanceProperty,
+    SetAudioEffectProperty,
     SuspendRenderSink,
     RestoreRenderSink,
+    LoadHdiEffectModel,
+    UpdateEffectBtOffloadSupported,
     SetSinkMuteForSwitchDevice,
+    SetRotationToEffect,
     UpdateSessionConnectionState,
     SetNonInterruptMute,
     RestoreSession,
+    CreateIpcOfflineStream,
+    GetOfflineAudioEffectChains,
     GetStandbyStatus,
     GenerateSessionId,
     GetAllSinkInputs,

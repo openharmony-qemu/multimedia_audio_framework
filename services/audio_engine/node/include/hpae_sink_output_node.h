@@ -59,8 +59,10 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     uint32_t GetLatency();
     void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t sessionId, StreamUsage usage, RendererState state);
+        uint32_t sessionId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
     int32_t SetAuxiliarySinkEnable(bool isEnabled);
+    void CheckAndSetCollDelayForRenderFrameFailed();
+    void SetCollaborationState(bool collaborationState);
 
 private:
     void HandleRemoteTiming();
@@ -105,6 +107,8 @@ private:
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
 #endif
+    std::atomic<size_t> collRenderFrameFailedCount_ = 0;
+    std::atomic<bool> collaborationState_ = false;
 };
 
 }  // namespace HPAE

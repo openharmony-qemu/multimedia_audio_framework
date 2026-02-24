@@ -73,16 +73,15 @@ float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, So
     return maxAmplitude;
 }
 
-int64_t AudioServerProxy::GetVolumeDataCount(std::string sinkName)
+int32_t AudioServerProxy::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
 
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int64_t volumeDataCount = 0;
-    gsp->GetVolumeDataCount(sinkName, volumeDataCount);
+    int32_t ret = gsp->GetVolumeDataCount(sinkName, volumeData);
     IPCSkeleton::SetCallingIdentity(identity);
-    return volumeDataCount;
+    return ret;
 }
 
 void AudioServerProxy::UpdateEffectBtOffloadSupportedProxy(const bool &isSupported)
@@ -366,7 +365,7 @@ void AudioServerProxy::NotifyTaskIdInfoProxy(std::string &taskId, bool connected
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->NotifyDeviceInfo(taskId, connected);
+    gsp->NotifyTaskIdProxy(taskId, connected);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

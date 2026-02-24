@@ -387,6 +387,9 @@ int32_t AudioSocketThread::AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUe
 #ifdef USB_ENABLE
 int32_t AudioSocketThread::AudioDetectUsbSoundCard(const AudioPnpUevent &audioPnpUevent)
 {
+    if (!audioPnpUevent.devPath || !audioPnpUevent.subSystem || !audioPnpUevent.action) {
+        return HDF_ERR_INVALID_PARAM;
+    }
     CHECK_AND_RETURN_RET(strcmp(audioPnpUevent.subSystem, "sound") == 0, HDF_ERR_INVALID_PARAM);
     string devPath{audioPnpUevent.devPath};
     const char *strs[] {"/usb", "/sound/card", "/pcmC"};
@@ -526,7 +529,7 @@ int32_t AudioSocketThread::DetectAnalogHeadsetState(AudioEvent *audioEvent)
         AUDIO_ERR_LOG("audioEvent is null!");
         return ERROR;
     }
-    int8_t state = 0;
+    char state = '0';
     FILE *fp = fopen(SWITCH_STATE_PATH, "r");
     if (fp == NULL) {
         AUDIO_ERR_LOG("audio open switch state node fail, %{public}d", errno);
@@ -540,7 +543,7 @@ int32_t AudioSocketThread::DetectAnalogHeadsetState(AudioEvent *audioEvent)
         return ERROR;
     }
 
-    AudioSocketThread::SetAudioPnpUevent(audioEvent, state);
+    SetAudioPnpUevent(audioEvent, state);
 
     fclose(fp);
     return SUCCESS;

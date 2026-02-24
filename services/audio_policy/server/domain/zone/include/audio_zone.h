@@ -104,7 +104,7 @@ public:
 
     bool CheckDeviceInZone(AudioDeviceDescriptor device);
 
-    bool CheckExistUidInZone();
+    bool HasVolumeControllableDeviceInZone();
 
 private:
     int32_t zoneId_ = -1;

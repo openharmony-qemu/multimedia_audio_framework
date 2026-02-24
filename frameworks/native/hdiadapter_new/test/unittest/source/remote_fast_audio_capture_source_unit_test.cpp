@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "source/remote_fast_audio_capture_source.h"
 
 using namespace testing::ext;
 
@@ -112,6 +113,58 @@ HWTEST_F(RemoteFastAudioCaptureSourceUnitTest, RemoteFastSourceUnitTest_003, Tes
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
     ret = source_->Reset();
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+    ret = source_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test RemoteFastSource API
+ * @tc.number : RemoteFastSourceUnitTest_004
+ * @tc.desc   : Test remote fast source set invalid state
+ */
+HWTEST_F(RemoteFastAudioCaptureSourceUnitTest, RemoteFastSourceUnitTest_004, TestSize.Level1)
+{
+    std::shared_ptr<RemoteFastAudioCaptureSource> source = std::make_shared<RemoteFastAudioCaptureSource>("test");
+    IAudioSourceAttr attr = {};
+    attr.adapterName = "test";
+    attr.channel = 2;
+    source->SetInvalidState();
+    int32_t ret = source->Init(attr);
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    ret = source->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    source->captureInited_.store(true);
+    ret = source->Init(attr);
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    ret = source->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    source->validState_.store(true);
+    ret = source->Init(attr);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = source->Start();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : Test RemoteFastSource API
+ * @tc.number : RemoteFastSourceUnitTest_005
+ * @tc.desc   : Test remote fast source update app uid
+ */
+HWTEST_F(RemoteFastAudioCaptureSourceUnitTest, RemoteFastSourceUnitTest_005, TestSize.Level1)
+{
+    EXPECT_TRUE(source_ && source_->IsInited());
+    std::vector<int32_t> appsUid = {};
+    source_->UpdateAppsUid(appsUid);
+    appsUid.push_back(20000001);
+    appsUid.push_back(20000002);
+    source_->UpdateAppsUid(appsUid);
+    int32_t ret = source_->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    source_->UpdateAppsUid(appsUid);
+    appsUid.clear();
+    source_->UpdateAppsUid(appsUid);
     ret = source_->Stop();
     EXPECT_EQ(ret, SUCCESS);
 }

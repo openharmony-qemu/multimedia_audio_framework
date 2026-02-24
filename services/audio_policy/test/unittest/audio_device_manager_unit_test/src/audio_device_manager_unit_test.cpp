@@ -15,6 +15,7 @@
 
 #include "audio_device_descriptor.h"
 #include "audio_device_manager_unit_test.h"
+#include "audio_policy_utils.h"
 
 using namespace testing::ext;
 
@@ -373,6 +374,235 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_017, TestSize.Le
     audioDeviceManager.MakePairedDPDeviceDescriptor(desc1, DeviceRole::OUTPUT_DEVICE);
     EXPECT_NE(desc1->pairDeviceDescriptor_, desc2);
     audioDeviceManager.RemoveConnectedDevices(desc2);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: CheckNearlinkInHQRecordingSupport_001.
+ * @tc.desc  : Test CheckNearlinkInHQRecordingSupport.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, CheckNearlinkInHQRecordingSupport_001, TestSize.Level4)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK_IN, DeviceRole::INPUT_DEVICE);
+    desc->highQualityRecordingSupported_ = true;
+    bool result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::INPUT_DEVICE, DeviceUsage::MEDIA);
+    EXPECT_EQ(result, true);
+
+    desc->highQualityRecordingSupported_ = false;
+    result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::INPUT_DEVICE, DeviceUsage::MEDIA);
+    EXPECT_EQ(result, false);
+
+    result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::INPUT_DEVICE, DeviceUsage::VOICE);
+    EXPECT_EQ(result, true);
+
+    result = AudioDeviceManager::GetAudioDeviceManager().CheckNearlinkInHQRecordingSupport(
+        desc, DeviceRole::OUTPUT_DEVICE, DeviceUsage::VOICE);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: UpdateDeviceConnectTimestamp_001.
+ * @tc.desc  : Test UpdateDeviceConnectTimestamp.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceConnectTimestamp_001, TestSize.Level4)
+{
+    AudioDeviceDescriptor desc{DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE};
+
+    auto ts = AudioPolicyUtils::GetInstance().GetCurrentTimeMS();
+
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    EXPECT_GE(desc.connectTimeStamp_, ts);
+
+    desc.deviceCategory_ = BT_GLASSES;
+    desc.glassesWearCount_ = 0;
+    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    EXPECT_GE(desc.connectTimeStamp_, ts);
+
+    desc.deviceCategory_ = BT_GLASSES;
+    desc.glassesWearCount_ = 1;
+    AudioDeviceManager::GetAudioDeviceManager().UpdateDeviceConnectTimestamp(desc);
+    EXPECT_LE(desc.connectTimeStamp_, ts);
+}
+
+/**
+ * @tc.name  : Test AudioDeviceManager.
+ * @tc.number: UpdateDeviceCategory_001.
+ * @tc.desc  : Test UpdateDeviceCategory.
+ */
+HWTEST_F(AudioDeviceManagerUnitTest, UpdateDeviceCategory_001, TestSize.Level4)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto backup = deviceManager.connectedDevices_;
+
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->deviceCategory_ = BT_GLASSES;
+
+    deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
+    desc->glassesWearCount_ = 0;
+    EXPECT_TRUE(deviceManager.UpdateDeviceCategory(desc));
+
+    deviceManager.connectedDevices_ = { std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE) };
+    desc->glassesWearCount_ = 2;
+    EXPECT_TRUE(deviceManager.UpdateDeviceCategory(desc));
+
+    deviceManager.connectedDevices_ = backup;
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_001
+* @tc.desc  : Test IsDeviceAvailable interface.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_001, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with normal device
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(true, result);
+    
+    // Test with exception flag set
+    desc->exceptionFlag_ = true;
+    result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+    
+    // Test with disabled device
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = false;
+    result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_002
+* @tc.desc  : Test IsDeviceAvailable interface for Bluetooth SCO.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_002, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with Bluetooth SCO device in normal connected state
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(true, result);
+    
+    // Test with Bluetooth SCO device in suspend connected state
+    desc->connectState_ = SUSPEND_CONNECTED;
+    result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_003
+* @tc.desc  : Test IsDeviceAvailable interface for virtual connected devices.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_003, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with virtual connected device
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = VIRTUAL_CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_004
+* @tc.desc  : Test IsDeviceAvailable interface for Bluetooth A2DP.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_004, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with Bluetooth A2DP device in suspend connected state (should be available)
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->connectState_ = SUSPEND_CONNECTED;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(true, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_005
+* @tc.desc  : Test IsDeviceAvailable interface with nullptr.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_005, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    
+    // Test with nullptr
+    std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
+    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: TriggerDeviceInfoUpdatedCallback_001
+* @tc.desc  : Test TriggerDeviceInfoUpdatedCallback with different conditions.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, TriggerDeviceInfoUpdatedCallback_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc{DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+
+    // Test case 1: not glasses
+    desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
+    desc.glassesWearCount_ = 0;
+    bool result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_TRUE(result);
+
+    // Test case 2: glasses first unwear
+    desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
+    desc.glassesWearCount_ = 1;
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_FALSE(result);
+
+    // Test case 3: glasses unwear again
+    desc.deviceCategory_ = DeviceCategory::BT_UNWEAR_HEADPHONE;
+    desc.glassesWearCount_ = 2;
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_FALSE(result);
+
+    // Test case 4: not glasses
+    desc.deviceCategory_ = DeviceCategory::CATEGORY_DEFAULT;
+    desc.glassesWearCount_ = 0;  // WEAR_FIRST is 1, so 0 < 1
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_TRUE(result);
+
+    // Test case 5: glasses first wear
+    desc.deviceCategory_ = DeviceCategory::BT_GLASSES;
+    desc.glassesWearCount_ = 1;
+    result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
+    EXPECT_TRUE(result);
 }
 } // namespace AudioStandard
 } // namespace OHOS

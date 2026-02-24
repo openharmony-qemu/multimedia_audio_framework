@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 #include "audio_stream_info.h"
 #include "audio_policy_config_manager.h"
 #include "audio_concurrency_parser.h"
+#include "audio_zone_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,6 +36,7 @@ public:
     std::vector<std::shared_ptr<AudioPipeInfo>> FetchPipesAndExecute(
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateRendererPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
 
 private:
     void UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -60,6 +62,16 @@ private:
     void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+#ifdef MULTI_BUS_ENABLE
+    void HandleFindBusPipe(const std::vector<std::string> &busAddresses,
+                           std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+                           const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+                           std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &busPipeIter);
+#endif
+    void HandleFindMatchPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+                             const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+                             const std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToOldPipeInfo,
+                             std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &matchPipeIter);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
     void MoveStreamsToNormalPipes(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove,
@@ -76,10 +88,12 @@ private:
     bool IsNeedTempMoveToNormal(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
     bool FindExistingPipe(std::vector<std::shared_ptr<AudioPipeInfo>> &selectedPipeInfoList,
-        const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const std::shared_ptr<AdapterPipeInfo> &pipeInfoPtr, std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo);
     void MatchRemoteOffloadPipe(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void MatchUltraFastPipe(const std::shared_ptr<AudioPipeInfo> &pipeInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePipeInfoFromStreamProp(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info);
     bool IsPipeFormatMatch(const std::shared_ptr<PipeStreamPropInfo> &streamPropInfo,
@@ -93,7 +107,16 @@ private:
         const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
     void CheckIfConcedeExisting(ConcurrencyAction &action, const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
-
+    void GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
+                                          std::shared_ptr<PipeStreamPropInfo> &info);
+    void SortStreamByStatus(std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>,
+        std::shared_ptr<AudioPipeInfo>>> &streamList);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> UpdateStreamDescs(
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
+        const std::unordered_set<uint32_t> &originalStreamSessionIds);
+    void AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
+    
     AudioPolicyConfigManager& configManager_;
 };
 } // namespace AudioStandard

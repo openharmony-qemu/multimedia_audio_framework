@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,8 +60,7 @@ public:
     AudioEndpointInner(EndpointType type, uint64_t id, AudioMode audioMode);
     ~AudioEndpointInner();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, const std::string &adapterName,
-        const int32_t pin, AudioStreamType streamType) override;
+    bool Config(const AudioEndpointConfig &endpointConfig) override;
     bool StartDevice(EndpointStatus preferredState = INVALID,
         int64_t delayStopTime_ = INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS);
     void HandleStartDeviceFailed();
@@ -71,6 +70,8 @@ public:
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
+    // when audio process mute change.
+    int32_t OnStreamMute(IAudioProcessStream *processStream, bool mute) override;
 
     /**
      * Call LinkProcessStream when first create process or link other process with this endpoint.
@@ -204,8 +205,7 @@ private:
 
     std::shared_ptr<IAudioRenderSink> GetFastSink(const AudioDeviceDescriptor &deviceInfo, EndpointType type);
     std::shared_ptr<IAudioCaptureSource> GetFastSource(const std::string &networkId, EndpointType type);
-    IAudioSinkAttr InitSinkAttr(const AudioDeviceDescriptor &deviceInfo, const std::string &adapterName,
-        const int32_t pin);
+    IAudioSinkAttr InitSinkAttr(const AudioEndpointConfig &endpointConfig);
     IAudioSourceAttr InitSourceAttr(const AudioDeviceDescriptor &deviceInfo);
 
     void InitLatencyMeasurement();
@@ -253,7 +253,7 @@ private:
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase>& processBuffer);
     void NotifyStreamChange(StreamChangeType change,
-        IAudioProcessStream *processStream, RendererState state);
+        IAudioProcessStream *processStream, RendererState state, bool mute = false);
     AudioEndpointInner::VolumeResult ConstructEnforcedToneVolume();
 
 private:
@@ -342,7 +342,7 @@ private:
 
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
-    int64_t delayStopTime_ = INT64_MAX;
+    std::atomic<int64_t> delayStopTime_ = INT64_MAX;
     int64_t zeroVolumeStartTime_ = INT64_MAX;
     ZeroVolumeState zeroVolumeState_ = INACTIVE;
 

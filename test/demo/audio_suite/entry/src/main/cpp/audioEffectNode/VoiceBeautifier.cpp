@@ -5,8 +5,8 @@
 #include "VoiceBeautifier.h"
 #include <string>
 #include "hilog/log.h"
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audio_suite_engine.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
 #include "NodeManager.h"
 #include "audioSuiteError/AudioSuiteError.h"
 #include "audioEffectNode/Equalizer.h"
@@ -58,6 +58,7 @@ int AddVBEffectNode(std::string& inputId, int mode, std::string& voiceBeautifier
  
 int ModifyVBEffectNode(std::string inputId, int mode, std::string voiceBeautifierId)
 {
+    (void)inputId;
     OH_VoiceBeautifierType type = (mode < sizeof(TYPE_MAP) / sizeof(TYPE_MAP[0])) ? TYPE_MAP[mode] : TYPE_MAP[0];
  
     Node node = g_nodeManager->GetNodeById(voiceBeautifierId);

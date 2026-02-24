@@ -164,6 +164,7 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_005, TestSize.Level4)
     audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
     audioPolicyServer_->coreService_->Init();
     audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
+    audioPolicyServer_->eventEntry_->NotifyServiceReady();
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     uint32_t flag = 1;

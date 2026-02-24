@@ -33,11 +33,14 @@ namespace AudioSuite {
 
 static constexpr uint32_t DEFAULT_NODE_OUTPUT_NUM = 1;
 static constexpr uint32_t AUDIO_SEPARATION_NODE_OUTPUT_NUM = 2;
+const uint32_t DOUBLE_FRAME_NEED_LENGTH = 40;
+const uint32_t SINGLE_FRAME_NEED_LENGTH = 20;
 
 AudioOutputNode::AudioOutputNode(AudioFormat format)
     : AudioNode(AudioNodeType::NODE_TYPE_OUTPUT, format),
       preNodeOutputNum_(DEFAULT_NODE_OUTPUT_NUM)
 {
+    SetAudioNodeFormat(format);
     AUDIO_INFO_LOG("AudioOutputNode create nodeId is %{public}u.", GetAudioNodeId());
 }
 
@@ -52,6 +55,10 @@ void AudioOutputNode::SetAudioNodeFormat(AudioFormat audioFormat)
 {
     AUDIO_INFO_LOG("numChannels:%{public}u, sampleFormat:%{public}u, sampleRate:%{public}d, encodingType:%{public}d",
         audioFormat.audioChannelInfo.numChannels, audioFormat.format, audioFormat.rate, audioFormat.encodingType);
+    needDataLength_ = SINGLE_FRAME_NEED_LENGTH;
+    if (audioFormat.rate == AudioSamplingRate::SAMPLE_RATE_11025) {
+        needDataLength_ = DOUBLE_FRAME_NEED_LENGTH;
+    }
     AudioNode::SetAudioNodeFormat(audioFormat);
 }
 
@@ -86,9 +93,10 @@ int32_t AudioOutputNode::Flush()
     return SUCCESS;
 }
 
-int32_t AudioOutputNode::DoProcess()
+int32_t AudioOutputNode::DoProcess(uint32_t needDataLength)
 {
-    std::vector<AudioSuitePcmBuffer *> &inputs = inputStream_.ReadPreOutputData(GetAudioNodeInPcmFormat(), true);
+    std::vector<AudioSuitePcmBuffer *> &inputs =
+        inputStream_.ReadPreOutputData(GetAudioNodeInPcmFormat(), true, needDataLength);
 
     outputs_.clear();
     outputs_.insert(outputs_.end(), inputs.begin(), inputs.end());
@@ -156,7 +164,7 @@ int32_t AudioOutputNode::DoProcess(uint8_t **audioDataArray, int32_t arraySize,
             return SUCCESS;
         }
 
-        CHECK_AND_RETURN_RET_LOG(DoProcess() == SUCCESS, ERROR, "Get data from pre node failed.");
+        CHECK_AND_RETURN_RET_LOG(DoProcess(needDataLength_) == SUCCESS, ERROR, "Get data from pre node failed.");
     } while (writeDataSize < requestFrameSize);
 
     AUDIO_ERR_LOG("write data failed, writeDataSize = %{public}d.", writeDataSize);

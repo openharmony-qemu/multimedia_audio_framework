@@ -172,7 +172,7 @@ void HpaeSinkInputNode::DoProcess()
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
-    if (ret != SUCCESS) {
+    if (ret != 0) {
         if (pipeType != PIPE_TYPE_UNKNOWN) {
             AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
                 static_cast<uint32_t>(appUid_));
@@ -275,6 +275,13 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     OnStreamInfoChange(false);
 }
 
+void HpaeSinkInputNode::NotifyOffloadHdiPos(const std::pair<uint64_t, TimePoint> &hdiPos)
+{
+    auto writeCallback = writeCallback_.lock();
+    CHECK_AND_RETURN_LOG(writeCallback, "writeCallback is null, Id: %{public}d fatal err", GetSessionId());
+    writeCallback->OnNotifyHdiData(hdiPos);
+}
+
 void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
 {
     offloadEnable_ = offloadEnable;
@@ -320,9 +327,11 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     // offload enable, never force data
     bool forceData = offloadEnable_ ? false : true;
     uint64_t latency = 0;
+    OffloadCallbackData callbackData;
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), latency);
+        callbackData = nodeCallback->GetOffloadCallbackData();
     }
     latency += GetLatency();
     streamInfo_ = {
@@ -335,7 +344,9 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
         .needData = needData,
-        .forceData = forceData
+        .forceData = forceData,
+        .writePos_ = callbackData.writePos_,
+        .isWriteFirst_ = callbackData.isFlush_
     };
     ClockTime::GetAllTimeStamp(streamInfo_.timestamp);
     return writeCallback->OnStreamData(streamInfo_);
@@ -348,6 +359,11 @@ bool HpaeSinkInputNode::QueryUnderrun()
     return writeCallback->OnQueryUnderrun();
 }
 
+bool HpaeSinkInputNode::IsDrain()
+{
+    return isDrain_;
+}
+
 void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
 {
     if ((nodeInfo.customSampleRate == 0 && nodeInfo.samplingRate == SAMPLE_RATE_11025) ||
@@ -358,11 +374,6 @@ void HpaeSinkInputNode::UpdateDataFlag(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("SessionId:%{public}u, update pullDataCount for 100ms frameLen", GetSessionId());
         pullDataCount_ = 0;
     }
-}
-
-bool HpaeSinkInputNode::IsDrain()
-{
-    return isDrain_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -20,12 +20,19 @@
 #include "audio_stream_info.h"
 #include "i_capturer_stream.h"
 #include "i_renderer_stream.h"
+// Note: IStreamCallback is defined in i_renderer_stream.h
+// Note: ICapturerStreamCallback is defined in i_capturer_stream.h
+#include <atomic>
 
 namespace OHOS {
 namespace AudioStandard {
+
+// Test callback class for renderer operations
 class WriteFixedDataCb : public IStreamCallback, public std::enable_shared_from_this<WriteFixedDataCb> {
 public:
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
+    bool OnQueryUnderrun() override { return false; }
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint>& hdiPos) override {}
 
     explicit WriteFixedDataCb(AudioSampleFormat format) : format_(format)
     {}
@@ -36,7 +43,7 @@ private:
     int32_t writeNum_ = 0;
     AudioSampleFormat format_ = SAMPLE_F32LE;
 };
-
+ 
 class ReadDataCb : public ICapturerStreamCallback, public std::enable_shared_from_this<ReadDataCb> {
 public:
     explicit ReadDataCb(const std::string &fileName);
@@ -45,6 +52,56 @@ public:
 private:
     FILE *testFile_ = nullptr;
 };
+
+class TestCallbackWithDestruction : public IStreamCallback,
+                                    public std::enable_shared_from_this<TestCallbackWithDestruction> {
+public:
+    virtual ~TestCallbackWithDestruction() = default;
+    int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override
+    {
+        callbackInvokedCount_++;
+        return SUCCESS;
+    }
+
+    bool OnQueryUnderrun() override
+    {
+        underrunQueryCount_++;
+        return false;
+    }
+
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint>& hdiPos) override
+    {
+        hdiNotifyCount_++;
+    }
+
+    void Reset()
+    {
+        callbackInvokedCount_ = 0;
+        underrunQueryCount_ = 0;
+        hdiNotifyCount_ = 0;
+    }
+
+    int32_t GetInvokedCount() const
+    {
+        return callbackInvokedCount_;
+    }
+
+    int32_t GetUnderrunQueryCount() const
+    {
+        return underrunQueryCount_;
+    }
+
+    int32_t GetHdiNotifyCount() const
+    {
+        return hdiNotifyCount_;
+    }
+
+private:
+    std::atomic<int32_t> callbackInvokedCount_ {0};
+    std::atomic<int32_t> underrunQueryCount_ {0};
+    std::atomic<int32_t> hdiNotifyCount_ {0};
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // HPAE_OFFLOAD_RENDERER_MANAGER_FUZZER_H

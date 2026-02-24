@@ -20,6 +20,7 @@
 #include "audio_suite_soundfield_node.h"
 #include "audio_suite_voice_beautifier_node.h"
 #include "audio_suite_log.h"
+#include "audio_suite_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -62,8 +63,8 @@ int32_t TestEffectNodeSignalProcess(std::shared_ptr<T> node,
     int32_t frames = inputFileBufferSize / frameSizeInput;
     for (int32_t i = 0; i < frames; i++) {
         memcpy_s(inputData, frameSizeInput, readPtr, frameSizeInput);
-        AudioSuitePcmBuffer *out = node->SignalProcess(inputs);
-        memcpy_s(writePtr, frameSizeOutput, out->GetPcmData(), frameSizeOutput);
+        std::vector<AudioSuitePcmBuffer *> out = node->SignalProcess(inputs);
+        memcpy_s(writePtr, frameSizeOutput, out[0]->GetPcmData(), frameSizeOutput);
 
         readPtr += frameSizeInput;
         writePtr += frameSizeOutput;
@@ -161,6 +162,23 @@ bool IsFilesEqual(const std::string &filename1, const std::string &filename2)
         }
     } while (bytesRead > 0);
 
+    return true;
+}
+
+bool AllNodeTypesSupported()
+{
+    AudioSuiteCapabilities capabilities;
+    for (const auto& nodeTypeEntry : NODETYPE_TOSTRING_MAP) {
+        if (nodeTypeEntry.first == NODE_TYPE_EMPTY) {
+            continue;
+        }
+        AudioNodeType nodeType = nodeTypeEntry.first;
+        bool isCurrentSupported = false;
+        int32_t ret = capabilities.IsNodeTypeSupported(nodeType, &isCurrentSupported);
+        if (ret != SUCCESS || !isCurrentSupported) {
+            return false;
+        }
+    }
     return true;
 }
 

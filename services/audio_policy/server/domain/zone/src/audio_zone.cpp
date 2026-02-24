@@ -533,13 +533,12 @@ bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
     return false;
 }
 
-bool AudioZone::CheckExistUidInZone()
+bool AudioZone::HasVolumeControllableDeviceInZone()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    for (const auto &it : keys_) {
-        if (it.GetUid() > 0) {
-            return true;
-        }
+    for (const auto &it : devices_) {
+        CHECK_AND_RETURN_RET(it.first == nullptr || !it.second ||
+            it.first->volumeBehavior_.isVolumeControlDisabled, true);
     }
     return false;
 }

@@ -19,6 +19,7 @@
 #include "hpae_co_buffer_node.h"
 #include "hpae_define.h"
 #include "audio_effect_log.h"
+#include "audio_collaboration_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -26,9 +27,10 @@ namespace HPAE {
 static constexpr int32_t DEFAULT_FRAME_LEN = 960;
 static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t MS_PER_SECOND = 1000;
-static constexpr int32_t TEST_LATENCY = 260;
+static constexpr int32_t DEFAULT_CO_LATENCY = 260;
 static constexpr int32_t DEFAULT_WAIT_COUNT = 10;
 static constexpr int32_t COLLABORATION_CHANNELS = 2;
+static constexpr float COLL_SMALL_SIGNAL_NUM = 1e-6;
 
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
@@ -49,6 +51,10 @@ HpaeCoBufferNode::HpaeCoBufferNode()
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     waitCountThreshold_ = DEFAULT_WAIT_COUNT;
+
+    for (int i = 0; i < silenceData_.GetFrameLen() * silenceData_.GetChannelCount(); i++) {
+        silenceData_.GetPcmDataBuffer()[i] += COLL_SMALL_SIGNAL_NUM;
+    }
 }
 
 HpaeCoBufferNode::~HpaeCoBufferNode()
@@ -62,6 +68,7 @@ HpaeCoBufferNode::~HpaeCoBufferNode()
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_LOG(buffer != nullptr, "Enqueue failed, buffer is nullptr");
     
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ && buffer) {
@@ -71,7 +78,7 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
 #endif
 
     // delay alignment
-    if (!DelayAlignmentInner()) {
+    if (!DelayAlignmentInner(buffer)) {
         return;
     }
 
@@ -84,7 +91,11 @@ void HpaeCoBufferNode::DoProcess()
     std::unique_lock<std::mutex> lock(mutex_);
     
     // return if enqueue is not running
-    CHECK_AND_RETURN_LOG(enqueueRunning_, "Dequeue failed, Enqueue is not running");
+    if (enqueueRunning_ == false) {
+        outputStream_.WriteDataToOutput(&silenceData_);
+        AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
+        return;
+    }
     
     // process output buffer
     ProcessOutputFrameInner();
@@ -132,6 +143,7 @@ OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
+    std::unique_lock<std::mutex> lock(mutex_);
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
         connectedProcessCluster_.insert(nodeInfo.sceneType);
@@ -141,7 +153,6 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
         inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
         HILOG_COMM_INFO("[Connect]HpaeCoBufferNode connect to preNode");
     }
-
     // reset status flag
     enqueueCount_ = 1;
     enqueueRunning_ = false;
@@ -170,30 +181,31 @@ void HpaeCoBufferNode::SetLatency(uint32_t latency)
     AUDIO_INFO_LOG("latency is %{public}d", latency);
 }
 
-void HpaeCoBufferNode::FillSilenceFramesInner(uint32_t latencyMs)
+void HpaeCoBufferNode::FillSilenceFramesInner(int32_t latencyMs)
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
-    
-    uint32_t offset = 0;
-    const size_t frameSize = silenceData_.GetFrameLen() * silenceData_.GetChannelCount() * sizeof(float);
-    
-    while (offset < latencyMs) {
-        // check writable size
-        OptResult result = ringCache_->GetWritableSize();
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
-        if (result.size < frameSize) {
-            AUDIO_WARNING_LOG("Insufficient space for silence frame: %{public}zu < %{public}zu",
-                result.size, frameSize);
-            break;
-        }
-        
-        // create silence frame
-        BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(silenceData_.GetPcmDataBuffer()), frameSize};
-        result = ringCache_->Enqueue(bufferWrap);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
-        offset += FRAME_LEN_20MS;
+    if (latencyMs < 0) {
+        latencyMs = DEFAULT_CO_LATENCY;
     }
-    AUDIO_INFO_LOG("Filled %{public}u ms of silence frames", offset);
+
+    const size_t frameSize = silenceData_.GetFrameLen() * silenceData_.GetChannelCount() * sizeof(float) *
+        (latencyMs / FRAME_LEN_20MS);
+    
+    // check writable size
+    OptResult result = ringCache_->GetWritableSize();
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Get writable size failed");
+    if (result.size < frameSize) {
+        AUDIO_WARNING_LOG("Insufficient space for silence frame: %{public}zu < %{public}zu",
+            result.size, frameSize);
+        return;
+    }
+    
+    std::vector<uint8_t> silenceData(frameSize, 0);
+    // create silence frame
+    BufferWrap bufferWrap = {silenceData.data(), frameSize};
+    result = ringCache_->Enqueue(bufferWrap);
+    CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Enqueue silence frame failed");
+    AUDIO_INFO_LOG("Filled %{public}u ms of silence frames", latencyMs);
 }
 
 void HpaeCoBufferNode::ProcessInputFrameInner(HpaePcmBuffer* buffer)
@@ -237,8 +249,8 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
         // read buffer
         BufferWrap bufferWrap = {reinterpret_cast<uint8_t *>(coBufferOut_.GetPcmDataBuffer()), requestDataLen};
         result = ringCache_->Dequeue(bufferWrap);
-        CHECK_AND_RETURN_LOG(result.ret == OPERATION_SUCCESS, "Dequeue data failed");
         if (result.ret != OPERATION_SUCCESS) {
+            AUDIO_INFO_LOG("Dequeue data failed");
             outputStream_.WriteDataToOutput(&silenceData_);
         } else {
             outputStream_.WriteDataToOutput(&coBufferOut_);
@@ -269,7 +281,7 @@ void HpaeCoBufferNode::SetDelayCount(int32_t delayCount)
     enqueueRunning_ = false;
 }
 
-bool HpaeCoBufferNode::DelayAlignmentInner()
+bool HpaeCoBufferNode::DelayAlignmentInner(HpaePcmBuffer* buffer)
 {
     if (enqueueCount_ < waitCountThreshold_) {
         enqueueCount_++;
@@ -280,21 +292,30 @@ bool HpaeCoBufferNode::DelayAlignmentInner()
         enqueueCount_++;
         enqueueRunning_ = true;
         // fill silence frame for latency adjustment
-        AUDIO_INFO_LOG("Fillig silence frames for latency adjustment");
         ringCache_->ResetBuffer();
 
-        FillSilenceFramesInner(TEST_LATENCY);
+        int32_t latency = DEFAULT_CO_LATENCY;
+        ChangeLatencyByCollManager(latency);
+        AUDIO_INFO_LOG("Fillig silence frames for latency adjustment, use latency: %{public}d", latency);
+        FillSilenceFramesInner(latency);
         // smoothen collaborative data
         float gain = 0;
         float deltaGain = 1.0f / DEFAULT_FRAME_LEN;
         for (int32_t i = 0; i < DEFAULT_FRAME_LEN; i++) {
-            coBufferOut_.GetPcmDataBuffer()[COLLABORATION_CHANNELS * i] *= gain;
-            coBufferOut_.GetPcmDataBuffer()[(COLLABORATION_CHANNELS * i) + 1] *= gain;
+            buffer->GetPcmDataBuffer()[COLLABORATION_CHANNELS * i] *= gain;
+            buffer->GetPcmDataBuffer()[(COLLABORATION_CHANNELS * i) + 1] *= gain;
             gain += deltaGain;
         }
     }
 
     return true;
+}
+
+void HpaeCoBufferNode::ChangeLatencyByCollManager(int32_t &latency)
+{
+    AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
+    latency = audioCollaborationManager->GetCollaborationLatency();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -429,7 +429,6 @@ void NapiAudioSessionMgr::RegisterAudioSessionInputDeviceCallback(napi_env env, 
         return;
     }
 
-    std::lock_guard<std::mutex> lock(napiSessionMgr->sessionInputDeviceCbMutex_);
     CHECK_AND_RETURN_LOG(GetAudioSessionInputDeviceCallback(args[PARAM1], napiSessionMgr) == nullptr,
         "The callback function already registered.");
 
@@ -823,6 +822,10 @@ napi_value NapiAudioSessionMgr::Off(napi_env env, napi_callback_info info)
     CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioMngr_ != nullptr && napiSessionMgr->audioSessionMngr_ != nullptr,
         undefinedResult, "audio system mgr or audio session mgr instance is null.");
 
+    if (argc == ARGS_ONE) {
+        args[PARAM1] = nullptr;
+    }
+
     return UnregisterCB(env, jsThis, args, handler, napiSessionMgr);
 }
 
@@ -867,8 +870,8 @@ napi_value NapiAudioSessionMgr::SelectMediaInputDevice(napi_env env, napi_callba
 {
     auto context = std::make_shared<AudioSessionMgrAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("ActivateAudioSession failed : no memory");
-        NapiAudioError::ThrowError(env, "ActivateAudioSession failed : no memory", NAPI_ERR_NO_MEMORY);
+        AUDIO_ERR_LOG("SelectMediaInputDevice failed : no memory");
+        NapiAudioError::ThrowError(env, "SelectMediaInputDevice failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -969,7 +972,7 @@ napi_value NapiAudioSessionMgr::ClearSelectedMediaInputDevice(napi_env env, napi
     if (context == nullptr) {
         AUDIO_ERR_LOG("ClearSelectedMediaInputDevice failed : no memory");
         NapiAudioError::ThrowError(env, "ClearSelectedMediaInputDevice failed : no memory",
-            NAPI_ERR_NO_MEMORY);
+            NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
     context->GetCbInfo(env, info);
@@ -1001,7 +1004,7 @@ napi_value NapiAudioSessionMgr::PreferBluetoothAndNearlinkRecord(napi_env env, n
     auto context = std::make_shared<AudioSessionMgrAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("PreferBluetoothAndNearlinkRecord failed : no memory");
-        NapiAudioError::ThrowError(env, "PreferBluetoothAndNearlinkRecord failed : no memory", NAPI_ERR_NO_MEMORY);
+        NapiAudioError::ThrowError(env, "PreferBluetoothAndNearlinkRecord failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 

@@ -998,5 +998,10 @@ int32_t AudioSystemManager::GetMinVolumeDegree(AudioVolumeType volumeType)
 {
     return AudioVolumeClientManager::GetInstance().GetMinVolumeDegree(volumeType);
 }
+
+int32_t AudioSystemManager::UpdateSafeVolumeByStrMode()
+{
+    return AudioVolumeClientManager::GetInstance().UpdateSafeVolumeByStrMode();
+}
 } // namespace AudioStandard
 } // namespace OHOS

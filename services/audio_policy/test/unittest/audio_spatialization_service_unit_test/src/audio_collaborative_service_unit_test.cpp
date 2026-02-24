@@ -15,6 +15,7 @@
 #include <cstring>
 #include "audio_collaborative_service_unit_test.h"
 #include "audio_errors.h"
+#include "audio_core_service.h"
 
 using namespace testing::ext;
 using namespace testing;
@@ -62,13 +63,16 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_001, TestS
 
 /**
 * @tc.name  : Test Su.
-* @tc.number: AudioSpatializationService_002
-* @tc.desc  : Test SetCollaborativePlaybackEnabledForDevice.
+* @tc.number: AudioCollaborativeService_002
+* @tc.desc  : Test IsCollaborativePlaybackEnabledForDevice.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_002, TestSize.Level0)
 {
+    audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
+    audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
     const std::shared_ptr<AudioDeviceDescriptor> audioDevice1 = std::make_shared<AudioDeviceDescriptor>();
     audioDevice1->macAddress_ = testAddr1;
+    AudioCoreService::GetCoreService()->Init();
     int32_t ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);
     EXPECT_EQ(ret, SUCCESS);
     ret = audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(audioDevice1, true);

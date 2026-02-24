@@ -424,6 +424,13 @@ public:
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
 
     /**
+     * @brief update safe volume by str mode.
+     *
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     */
+    int32_t UpdateSafeVolumeByStrMode();
+
+    /**
      * @brief Get the maximum volume level for the specified stream usage.
      *
      * @param streamUsage Specifies the stream usage.

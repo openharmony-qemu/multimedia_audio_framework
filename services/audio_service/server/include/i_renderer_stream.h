@@ -25,6 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+typedef std::chrono::high_resolution_clock::time_point TimePoint;
 class IWriteCallback {
 public:
     virtual int32_t OnWriteData(size_t length) = 0;
@@ -36,6 +37,7 @@ class IStreamCallback {
 public:
     virtual int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) = 0;
     virtual bool OnQueryUnderrun() { return false; };
+    virtual void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos){};
 };
 
 class IRendererStream : public IStream {
@@ -59,6 +61,7 @@ public:
     virtual int32_t GetMinimumBufferSize(size_t &minBufferSize) const = 0;
     virtual void GetByteSizePerFrame(size_t &byteSizePerFrame) const = 0;
     virtual void GetSpanSizePerFrame(size_t &spanSizeInFrame) const = 0;
+    virtual void AbortCallback(int32_t abortTimes) = 0;
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) = 0;
     virtual int32_t UnsetOffloadMode() = 0;
@@ -84,6 +87,7 @@ public:
     {
         return ERR_NOT_SUPPORTED;
     }
+    virtual void TriggerAppsUidUpdate() { return; }
 };
 
 struct CaptureInfo {

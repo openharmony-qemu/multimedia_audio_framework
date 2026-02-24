@@ -26,8 +26,6 @@
 #include "none_mix_engine.h"
 #include "audio_performance_monitor.h"
 #include "audio_volume.h"
-#include "format_converter.h"
-#include "audio_service.h"
 #include "audio_mute_factor_manager.h"
 #include "audio_sink_latency_fetcher.h"
 
@@ -187,7 +185,7 @@ int32_t NoneMixEngine::StopAudioSink()
     if (sink && sink->IsInited()) {
         ret = sink->Stop();
     } else {
-        AUDIO_ERR_LOG("sink is null or not init.");
+        AUDIO_ERR_LOG("sink is null or not init");
     }
     return ret;
 }
@@ -413,7 +411,7 @@ AudioSamplingRate NoneMixEngine::GetDirectVoipSampleRate(AudioSamplingRate sampl
     return result;
 }
 
-AudioSampleFormat NoneMixEngine::GetDirectDeviceFormat(AudioSampleFormat format)
+AudioSampleFormat NoneMixEngine::GetDirectDeviceFormate(AudioSampleFormat format)
 {
     switch (format) {
         case AudioSampleFormat::SAMPLE_U8:
@@ -468,7 +466,7 @@ void NoneMixEngine::GetTargetSinkStreamInfo(const AudioStreamInfo &clientStreamI
         targetFormat = GetDirectVoipDeviceFormat(clientStreamInfo.format);
     } else {
         targetSampleRate = GetDirectSampleRate(clientStreamInfo.samplingRate);
-        targetFormat = GetDirectDeviceFormat(clientStreamInfo.format);
+        targetFormat = GetDirectDeviceFormate(clientStreamInfo.format);
     }
 }
 
@@ -508,8 +506,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ERR_INVALID_HANDLE;
     }
     IAudioSinkAttr attr = {};
-    bool isDefaultAdapterEnable = AudioService::GetInstance()->GetDefaultAdapterEnable();
-    attr.adapterName = isDefaultAdapterEnable ? "dp" : SINK_ADAPTER_NAME;
+    attr.adapterName = SINK_ADAPTER_NAME;
     attr.sampleRate = rate;
     attr.channel = channel;
     attr.format = format;
@@ -524,8 +521,8 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
         return ret;
     }
     RegisterSinkLatencyFetcher(renderId_);
-    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
-    float volume = 1.0f * mdmMuteFactor;
+    auto mdmMute = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
+    float volume = mdmMute ? 0.0f : 1.0f;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;

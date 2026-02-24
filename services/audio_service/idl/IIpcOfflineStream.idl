@@ -20,8 +20,8 @@ sequenceable audio_shared_memory..OHOS.AudioStandard.AudioSharedMemory;
 interface IIpcOfflineStream {
     [ipccode 0] void CreateOfflineEffectChain([in] String chainName);
     void ConfigureOfflineEffectChain([in] AudioStreamInfo inInfo, [in] AudioStreamInfo outInfo);
+    void SetParamOfflineEffectChain([in] List<unsigned char> param);
     void PrepareOfflineEffectChain([out] sharedptr<AudioSharedMemory> inBuffer, [out] sharedptr<AudioSharedMemory> outBuffer);
     void ProcessOfflineEffectChain([in] unsigned int inSize, [in] unsigned int outSize);
     void ReleaseOfflineEffectChain();
-    void SetParamOfflineEffectChain([in] List<unsigned char> param);
 }

@@ -250,7 +250,7 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
     return SUCCESS;
 }
 
-int64_t MultichannelAudioRenderSink::GetVolumeDataCount()
+int32_t MultichannelAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     return volumeDataCount_;
 }
@@ -289,6 +289,12 @@ int32_t MultichannelAudioRenderSink::SetVolume(float left, float right)
     }
 
     return ret;
+}
+
+int32_t MultichannelAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("MultichannelAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
 }
 
 int32_t MultichannelAudioRenderSink::GetVolume(float &left, float &right)

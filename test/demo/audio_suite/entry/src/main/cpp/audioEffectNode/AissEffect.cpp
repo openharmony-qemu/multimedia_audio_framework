@@ -9,8 +9,8 @@
 #include <string>
 #include "napi/native_api.h"
 #include "hilog/log.h"
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audio_suite_engine.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
 #include "NodeManager.h"
 #include "callback/RegisterCallback.h"
 #include "audioSuiteError/AudioSuiteError.h"
@@ -30,44 +30,50 @@ const char *AISS_TAG = "[AudioEditTestApp_AISS_cpp]";
 napi_value addAudioSeparation(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation---IN");
-    size_t argc = 4;
-    napi_value *argv = new napi_value[argc];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    std::string uuidStr;
-    napi_status status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_1], uuidStr);
-    std::string inputIdStr;
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_2], inputIdStr);
-    std::string selectedNodeId;
-    status = ParseNapiString(env, argv[NAPI_ARGV_INDEX_3], selectedNodeId);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "uuid:%{public}s, inputId:%{public}s,"
-                 "selectedNodeId:%{public}s", uuidStr.c_str(), inputIdStr.c_str(), selectedNodeId.c_str());
+    size_t argc = 5;
+    napi_value argv[5] = {nullptr};
     napi_value ret = nullptr;
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     napi_create_int64(env, AUDIOSUITE_ERROR_SYSTEM, &ret);
-    Node node = CreateNodeByType(uuidStr, OH_AudioNode_Type::EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
-    if (node.physicalNode == nullptr) {
-        delete[] argv;
+
+    std::string uuidStr;
+    std::string inputIdStr;
+    std::string selectedNodeId;
+    bool isAllSep = false;
+    if (ParseNapiString(env, argv[ARG_1], uuidStr) != napi_ok ||
+        ParseNapiString(env, argv[ARG_2], inputIdStr) != napi_ok ||
+        ParseNapiString(env, argv[ARG_3], selectedNodeId) != napi_ok ||
+        napi_get_value_bool(env, argv[ARG_4], &isAllSep) != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "Parse params failed");
         return ret;
     }
-    if (selectedNodeId.empty()) {
-        int insertRes = AddEffectNodeToNodeManager(inputIdStr, uuidStr);
-        if (insertRes == static_cast<int>(AudioSuiteResult::NODE_MANAGER_OPERATION_ERROR)) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "AddEffectNodeToNodeManager ERROR!");
+
+    Node node = CreateNodeByType(uuidStr, EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION);
+    if (!node.physicalNode) return ret;
+
+    OH_AudioSuite_Result result = AUDIOSUITE_ERROR_SYSTEM;
+    if (isAllSep) {
+        auto outputNodes = g_nodeManager->getNodesByType(OUTPUT_NODE_TYPE_DEFAULT);
+        if (outputNodes.empty()) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "No output node found");
             return ret;
         }
+        result = g_nodeManager->insertNode(uuidStr, outputNodes[0].id, BEFORE);
     } else {
-        OH_AudioSuite_Result result =
-            g_nodeManager->insertNode(uuidStr, selectedNodeId, Direction::LATER);
-        if (result != AUDIOSUITE_SUCCESS) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG,
-                         "audioEditTest addAudioSeparation insertNode ERROR %{public}u", result);
-            delete[] argv;
-            return ret;
-        }
+        result = selectedNodeId.empty() ?
+            (OH_AudioSuite_Result)AddEffectNodeToNodeManager(inputIdStr, uuidStr) :
+            g_nodeManager->insertNode(uuidStr, selectedNodeId, LATER);
     }
+
+    if (result != AUDIOSUITE_SUCCESS) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, AISS_TAG, "insertNode failed: %d", (int)result);
+        return ret;
+    }
+
     g_multiRenderFrameFlag = true;
+    if (g_threadPipelineManager) g_threadPipelineManager->multiRenderFrameFlag = true;
     napi_create_int64(env, AUDIOSUITE_SUCCESS, &ret);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation: operation success");
-    delete[] argv;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, AISS_TAG, "addAudioSeparation: success");
     return ret;
 }
 

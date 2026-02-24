@@ -31,7 +31,7 @@ namespace AudioStandard {
  */
 struct AudioCapturerParams {
     /** Audio source type */
-    SourceType inputSource = SOURCE_TYPE_MIC;
+    AudioSourceType inputSource = AUDIO_MIC;
     /** Audio codec format */
     AudioEncodingType audioEncoding = ENCODING_PCM;
     /** Sampling rate */
@@ -175,7 +175,7 @@ public:
 class AudioCapturerOnPlaybackCaptureStartCallback {
 public:
     virtual ~AudioCapturerOnPlaybackCaptureStartCallback() = default;
- 
+
     /**
      * Called to notify internal recording started result.
      *
@@ -433,15 +433,6 @@ public:
      * @since 8
      */
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
-
-    /**
-     * @brief Obtains the first pkg ts in capturer path.
-     *
-     * @param latencyInNanoSeconds the nanosecond latency in the capturing path.
-     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
-     * @since 16
-     */
-    virtual bool GetFirstPkgTimeStampInfo(int64_t &firstTs) const = 0;
 
     /**
      * @brief Pause audio capturing.

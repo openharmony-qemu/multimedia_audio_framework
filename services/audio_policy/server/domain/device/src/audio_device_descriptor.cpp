@@ -69,6 +69,16 @@ static const char *DeviceTypeToString(DeviceType type)
     return "UNKNOWN";
 }
 
+static bool ConverteToUint32(const std::string &str, uint32_t &result)
+{
+    if (str == "-0") {
+        result = 0;
+        return true;
+    }
+    auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), result);
+    return ec == std::errc{} && ptr == str.data() + str.size();
+}
+
 static std::string ParseAudioFormat(std::string format)
 {
     if (format == "AUDIO_FORMAT_PCM_16_BIT") {
@@ -282,6 +292,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     dmDeviceInfo_ = deviceDescriptor.dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor.volumeBehavior_;
     deviceSupportMmap_ = deviceDescriptor.GetDeviceSupportMmap();
+    glassesWearCount_ = deviceDescriptor.glassesWearCount_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -324,6 +335,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     dmDeviceInfo_ = deviceDescriptor->dmDeviceInfo_;
     volumeBehavior_ = deviceDescriptor->volumeBehavior_;
     deviceSupportMmap_ = deviceDescriptor->GetDeviceSupportMmap();
+    glassesWearCount_ = deviceDescriptor->glassesWearCount_;
 }
 
 DeviceType AudioDeviceDescriptor::getType() const
@@ -399,7 +411,8 @@ uint32_t AudioDeviceDescriptor::ParseArmUsbAudioParameters(const std::string &au
         return static_cast<uint32_t>(g_formatStrToEnum[parseRet]);
     }
     CHECK_AND_RETURN_RET_LOG(!parseRet.empty(), ret, "convert invalid parseRet");
-    ret = static_cast<uint32_t>(std::stoi(parseRet));
+    CHECK_AND_RETURN_RET_LOG(ConverteToUint32(parseRet, ret), ret,
+        "convert invalid parseRet: %{public}s", parseRet.c_str());
     return ret;
 }
 
@@ -666,7 +679,8 @@ void AudioDeviceDescriptor::SetExtraDeviceInfo(const DStatusInfo &statusInfo, bo
     if (statusInfo.model == "hiplay") { model_ = "hiplay"; }
     networkId_ = statusInfo.networkId;
     dmDeviceType_ = statusInfo.dmDeviceType;
-    connectState_ = dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX ? VIRTUAL_CONNECTED : CONNECTED;
+    connectState_ = (dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX || dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST) ?
+        VIRTUAL_CONNECTED : CONNECTED;
     dmDeviceInfo_ = hasSystemPermission ? statusInfo.dmDeviceInfo : "";
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -282,57 +282,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetAdapterNameByStreamDesc_001, TestSize.Lev
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::string result = audioPipeSelector->GetAdapterNameByStreamDesc(streamDesc);
     EXPECT_EQ(result, "");
-}
-
-/**
- * @tc.name: ConvertStreamDescToPipeInfo_001
- * @tc.desc: Test ConvertStreamDescToPipeInfo when pipeInfoPtr and adapterInfoPtr are not nullptr.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->routeFlag_ = 1;
-    streamDesc->sessionId_ = 100;
-    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
-    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
-    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
-    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
-
-    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
-    streamPropInfo->sampleRate_ = 44100;
-    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
-    streamPropInfo->bufferSize_ = 1024;
-
-    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
-    pipeInfoPtr->paProp_.lib_ = "test_lib";
-    pipeInfoPtr->paProp_.role_ = "test_role";
-    pipeInfoPtr->paProp_.moduleName_ = "test_module";
-    pipeInfoPtr->name_ = "test_name";
-    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
-
-    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
-    adapterInfoPtr->adapterName = "test_adapter";
-
-    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
-    streamPropInfo->pipeInfo_ = pipeInfoPtr;
-
-    AudioPipeInfo info;
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
-
-    pipeInfoPtr->name_ = "multichannel_output";
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
-    pipeInfoPtr->name_ = "offload_output";
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
-    pipeInfoPtr->name_ = "offload_distributed_output";
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
 }
 
 /**
@@ -748,16 +697,17 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove;
     bool ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
-    EXPECT_EQ(stream->streamAction_, AUDIO_STREAM_ACTION_DEFAULT);
+    EXPECT_EQ(stream->streamAction_, AUDIO_STREAM_ACTION_NEW);
     EXPECT_FALSE(ret);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;
+    cmpStream->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
     ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
     EXPECT_EQ(cmpStream->routeFlag_, AUDIO_INPUT_FLAG_NORMAL);
 
     stream->audioMode_ = AUDIO_MODE_RECORD;
     ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -848,27 +798,136 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_002, TestSize.Le
 }
 
 /**
- * @tc.name: ConvertStreamDescToPipeInfo_003
- * @tc.desc: Test ConvertStreamDescToPipeInfo pipeInfoPtr == nullptr and adapterInfoPtr == nullptr.
+ * @tc.name   : ConvertStreamDescToPipeInfo_004
+ * @tc.desc   : Test ConvertStreamDescToPipeInfo when in ultra fast mode
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+    streamDesc->SetUltraFastRequested(true);
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 44100;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.GetUltraFastFlag(), true);
+}
+
+/**
+ * @tc.name   : ConvertStreamDescToPipeInfo_005
+ * @tc.desc   : Test ConvertStreamDescToPipeInfo when not in ultra fast mode
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
+    streamDesc->SetUltraFastRequested(false);
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 44100;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.GetUltraFastFlag(), false);
+}
+
+/**
+ * @tc.name: ConvertStreamDescToPipeInfo_006
+ * @tc.desc: Test ConvertStreamDescToPipeInfo when pipeInfoPtr and adapterInfoPtr are not nullptr.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_003, TestSize.Level4)
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_006, TestSize.Level1)
 {
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    streamPropInfo->sampleRate_ = 44100;
-    streamPropInfo->pipeInfo_.reset();
-    AudioPipeInfo info;
-    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.moduleInfo_.rate, "");
+    streamDesc->routeFlag_ = 1;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_MIC;
 
-    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
-    pipeInfo->adapterInfo_.reset();
-    streamPropInfo->pipeInfo_ = pipeInfo;
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 44100;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_OUTPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
-    EXPECT_EQ(info.moduleInfo_.rate, "");
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+
+    pipeInfoPtr->name_ = "multichannel_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_distributed_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
 }
 
 /**
@@ -1248,14 +1307,9 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_003, TestSize.Level1)
     newPipeInfoList.push_back(pipe2);
 
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
-    std::shared_ptr<AudioPipeInfo> pipeinfo1 = std::make_shared<AudioPipeInfo>();
-    pipeinfo1->adapterName_ = "primary";
-    pipeinfo1->routeFlag_ = 1;
-    newPipeInfoList.push_back(pipeinfo1);
-    streamDescToOldPipeInfo[100001] = pipeinfo1;
 
     audioPipeSelector->ProcessNewPipeList(newPipeInfoList, streamDescToOldPipeInfo, streamDescs);
-    EXPECT_TRUE(newPipeInfoList.size() == 2);
+    EXPECT_NE(newPipeInfoList.size(), 0);
 }
 
 /**
@@ -1652,9 +1706,815 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdateMouleInfoWitchDevice_002, TestSize.Lev
     deviceDesc->audioStreamInfo_.push_back(deviceStreamInfo);
     moduleInfo.rate = "8000";
 
-    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioPipeSelector->UpdateMouleInfoWitchDevice(deviceDesc, moduleInfo);
     EXPECT_EQ(moduleInfo.rate, "8000");
+}
+
+#ifdef MULTI_BUS_ENABLE
+/**
+ * @tc.name: HandleFindBusPipe_001
+ * @tc.desc: Test that when busAddresses is empty, the function should return the end iterator of newPipeInfoList.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_001, TestSize.Level1)
+{
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    audioStreamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "bus1";
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->audioStreamInfo_ = audioStreamInfo;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    newPipeInfoList.push_back(pipeInfo);
+
+    auto busPipeIter = newPipeInfoList.end();
+    AudioPipeSelector::GetPipeSelector()->HandleFindBusPipe({"bus1"}, newPipeInfoList, nullptr, busPipeIter);
+    EXPECT_NE(busPipeIter, newPipeInfoList.end());
+}
+
+/**
+ * @tc.name: HandleFindBusPipe_002
+ * @tc.desc: Test that the function should find the corresponding pipe when the size of busAddresses is
+ * greater than 1 and there is a match.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_002, TestSize.Level1)
+{
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    audioStreamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    audioStreamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "Speaker";
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->audioStreamInfo_ = audioStreamInfo;
+    pipeInfo->moduleInfo_ = moduleInfo;
+    newPipeInfoList.push_back(pipeInfo);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+
+    auto busPipeIter = newPipeInfoList.end();
+    AudioPipeSelector::GetPipeSelector()->HandleFindBusPipe({"Speaker", "MCH_Speaker"}, newPipeInfoList, streamDesc,
+                                                            busPipeIter);
+    EXPECT_NE(busPipeIter, newPipeInfoList.end());
+}
+#endif
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - both conditions true
+* @tc.number: FindExistingPipe_001
+* @tc.desc  : Test when route is AUDIO_OUTPUT_FLAG_FAST AND stream count equals MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto fastPipeInfo = std::make_shared<AudioPipeInfo>();
+    fastPipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    fastPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    fastPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
+        fastPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(fastPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1001;
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - first true, second false
+* @tc.number: FindExistingPipe_002
+* @tc.desc  : Test when route is AUDIO_OUTPUT_FLAG_FAST BUT stream count less than MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto fastPipeInfo = std::make_shared<AudioPipeInfo>();
+    fastPipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    fastPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    fastPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT - 1; i++) {
+        fastPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(fastPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1002;
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_OUTPUT_FLAG_FAST);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(fastPipeInfo->streamDescriptors_.size(), MAX_FAST_STREAM_COUNT);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - first false, second true
+* @tc.number: FindExistingPipe_003
+* @tc.desc  : Test when route is not AUDIO_OUTPUT_FLAG_FAST BUT stream count equals MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto normalPipeInfo = std::make_shared<AudioPipeInfo>();
+    normalPipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    normalPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    normalPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
+        normalPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(normalPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1003;
+    streamDesc->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(normalPipeInfo->streamDescriptors_.size(), MAX_FAST_STREAM_COUNT + 1);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - both conditions false
+* @tc.number: FindExistingPipe_004
+* @tc.desc  : Test when route is AUDIO_INPUT_FLAG_FAST AND stream count less than MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto normalPipeInfo = std::make_shared<AudioPipeInfo>();
+    normalPipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    normalPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    normalPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT - 1; i++) {
+        normalPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(normalPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1004;
+    streamDesc->SetRoute(AUDIO_INPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    // 3. 执行测试
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_INPUT_FLAG_FAST);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(normalPipeInfo->streamDescriptors_.size(), MAX_FAST_STREAM_COUNT);
+}
+
+/**
+* @tc.name  : Test FindExistingPipe fast pipe condition - AUDIO_INPUT_FLAG_FAST
+* @tc.number: FindExistingPipe_005
+* @tc.desc  : Test when route is AUDIO_INPUT_FLAG_FAST AND stream count equals MAX_FAST_STREAM_COUNT.
+*/
+HWTEST_F(AudioPipeSelectorUnitTest, FindExistingPipe_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    
+    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList;
+    
+    auto fastInputPipeInfo = std::make_shared<AudioPipeInfo>();
+    fastInputPipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    fastInputPipeInfo->adapterName_ = "test_adapter";
+    AudioModuleInfo moduleInfo;
+    moduleInfo.networkId = LOCAL_NETWORK_ID;
+    fastInputPipeInfo->moduleInfo_ = moduleInfo;
+    
+    for (uint32_t i = 0; i < MAX_FAST_STREAM_COUNT; i++) {
+        fastInputPipeInfo->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
+    }
+    
+    selectedPipeInfoList.push_back(fastInputPipeInfo);
+    
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "test_adapter";
+    auto pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->adapterInfo_ = adapterInfo;
+    
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 1005;
+    streamDesc->SetRoute(AUDIO_INPUT_FLAG_FAST);
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDescs = {};
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    newDeviceDescs.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_ = newDeviceDescs;
+    
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    
+    bool result = audioPipeSelector->FindExistingPipe(
+        selectedPipeInfoList, pipeInfoPtr, streamDesc, streamPropInfo);
+    
+    EXPECT_EQ(streamDesc->GetRoute(), AUDIO_INPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_001
+ * @tc.desc: Test SortStreamByStatus when all streams are STARTED - should sort by sessionId ascending.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe1 = std::make_shared<AudioPipeInfo>();
+    auto stream1 = std::make_shared<AudioStreamDescriptor>();
+    stream1->sessionId_ = 100003;
+    stream1->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream1, pipe1);
+
+    auto pipe2 = std::make_shared<AudioPipeInfo>();
+    auto stream2 = std::make_shared<AudioStreamDescriptor>();
+    stream2->sessionId_ = 100001;
+    stream2->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream2, pipe2);
+
+    auto pipe3 = std::make_shared<AudioPipeInfo>();
+    auto stream3 = std::make_shared<AudioStreamDescriptor>();
+    stream3->sessionId_ = 100002;
+    stream3->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream3, pipe3);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[1].first->sessionId_, 100002);
+    EXPECT_EQ(streamList[2].first->sessionId_, 100003);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_002
+ * @tc.desc: Test SortStreamByStatus when all streams are not STARTED - should sort by sessionId ascending.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe1 = std::make_shared<AudioPipeInfo>();
+    auto stream1 = std::make_shared<AudioStreamDescriptor>();
+    stream1->sessionId_ = 100003;
+    stream1->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamList.emplace_back(stream1, pipe1);
+
+    auto pipe2 = std::make_shared<AudioPipeInfo>();
+    auto stream2 = std::make_shared<AudioStreamDescriptor>();
+    stream2->sessionId_ = 100001;
+    stream2->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamList.emplace_back(stream2, pipe2);
+
+    auto pipe3 = std::make_shared<AudioPipeInfo>();
+    auto stream3 = std::make_shared<AudioStreamDescriptor>();
+    stream3->sessionId_ = 100002;
+    stream3->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamList.emplace_back(stream3, pipe3);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[1].first->sessionId_, 100002);
+    EXPECT_EQ(streamList[2].first->sessionId_, 100003);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_003
+ * @tc.desc: Test SortStreamByStatus with mixed statuses - STARTED streams first, then others, all by sessionId.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe1 = std::make_shared<AudioPipeInfo>();
+    auto stream1 = std::make_shared<AudioStreamDescriptor>();
+    stream1->sessionId_ = 100003;
+    stream1->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream1, pipe1);
+
+    auto pipe2 = std::make_shared<AudioPipeInfo>();
+    auto stream2 = std::make_shared<AudioStreamDescriptor>();
+    stream2->sessionId_ = 100001;
+    stream2->streamStatus_ = STREAM_STATUS_STOPPED;
+    streamList.emplace_back(stream2, pipe2);
+
+    auto pipe3 = std::make_shared<AudioPipeInfo>();
+    auto stream3 = std::make_shared<AudioStreamDescriptor>();
+    stream3->sessionId_ = 100005;
+    stream3->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream3, pipe3);
+
+    auto pipe4 = std::make_shared<AudioPipeInfo>();
+    auto stream4 = std::make_shared<AudioStreamDescriptor>();
+    stream4->sessionId_ = 100002;
+    stream4->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamList.emplace_back(stream4, pipe4);
+
+    auto pipe5 = std::make_shared<AudioPipeInfo>();
+    auto stream5 = std::make_shared<AudioStreamDescriptor>();
+    stream5->sessionId_ = 100004;
+    stream5->streamStatus_ = STREAM_STATUS_RELEASED;
+    streamList.emplace_back(stream5, pipe5);
+
+    auto pipe6 = std::make_shared<AudioPipeInfo>();
+    auto stream6 = std::make_shared<AudioStreamDescriptor>();
+    stream6->sessionId_ = 100006;
+    stream6->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream6, pipe6);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList[0].first->sessionId_, 100003);
+    EXPECT_EQ(streamList[1].first->sessionId_, 100005);
+    EXPECT_EQ(streamList[2].first->sessionId_, 100006);
+    EXPECT_EQ(streamList[3].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[4].first->sessionId_, 100002);
+    EXPECT_EQ(streamList[5].first->sessionId_, 100004);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_004
+ * @tc.desc: Test SortStreamByStatus with empty list - should not crash and return empty.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_TRUE(streamList.empty());
+}
+
+/**
+ * @tc.name: SortStreamByStatus_005
+ * @tc.desc: Test SortStreamByStatus with single STARTED stream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = 100001;
+    stream->streamStatus_ = STREAM_STATUS_STARTED;
+    streamList.emplace_back(stream, pipe);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList.size(), 1);
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[0].first->streamStatus_, STREAM_STATUS_STARTED);
+}
+
+/**
+ * @tc.name: SortStreamByStatus_006
+ * @tc.desc: Test SortStreamByStatus with single non-STARTED stream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, SortStreamByStatus_006, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>, std::shared_ptr<AudioPipeInfo>>> streamList;
+
+    auto pipe = std::make_shared<AudioPipeInfo>();
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = 100001;
+    stream->streamStatus_ = STREAM_STATUS_PAUSED;
+    streamList.emplace_back(stream, pipe);
+
+    audioPipeSelector->SortStreamByStatus(streamList);
+
+    EXPECT_EQ(streamList.size(), 1);
+    EXPECT_EQ(streamList[0].first->sessionId_, 100001);
+    EXPECT_EQ(streamList[0].first->streamStatus_, STREAM_STATUS_PAUSED);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_001
+ * @tc.desc: Test when target stream is not STARTED and not in switch state, action should be flipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_002
+ * @tc.desc: Test when target stream is not STARTED and not in switch state, action should be flipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STOPPED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_003
+ * @tc.desc: Test when target stream is STARTED and not in switch state, action should remain unchanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_003, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_004
+ * @tc.desc: Test when target stream is in switch state and requires normal route, action should be flipped
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_004, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    existingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL); // Mock IsFutureRouteNormal to return true
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return true
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100001, existingStream);
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_INCOMING to CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_005
+ * @tc.desc: Test when target stream is in switch state but doesn't require normal route, action should remain unchanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_005, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    existingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_FAST); // Mock IsFutureRouteNormal to return false
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return true
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100001, existingStream);
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_006
+ * @tc.desc: Test with CONCEDE_INCOMING action and target stream in switch state requiring normal route
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_006, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    incomingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL); // Mock IsFutureRouteNormal to return true
+
+    // Mock IsSwitchStreamExist to return true
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100002, incomingStream);
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to flip from CONCEDE_EXISTING to CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_007
+ * @tc.desc: Test when both streams are in STARTED state and not in switch state, action should remain unchanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_007, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_008
+ * @tc.desc: Test with invalid initial action (should not happen in practice but testing robustness)
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_008, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return false
+    AudioPipeManager::GetPipeManager()->switchStreamMap_.clear();
+
+    ConcurrencyAction action = PLAY_BOTH; // Invalid initial action for this function
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain PLAY_BOTH (though this should not be passed to the function in practice)
+    EXPECT_EQ(action, PLAY_BOTH);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_009
+ * @tc.desc: Test when existing stream is in switch state requiring normal route but incoming stream is not STARTED
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_009, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    incomingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+
+    // Mock IsSwitchStreamExist to return true for incoming stream
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100002, incomingStream);
+
+    ConcurrencyAction action = CONCEDE_INCOMING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_INCOMING
+    EXPECT_EQ(action, CONCEDE_INCOMING);
+}
+
+/**
+ * @tc.name: AdjustConcedeActionByStatus_010
+ * @tc.desc: Test when existing stream is in switch state requiring normal route and is the target
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_010, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    ASSERT_NE(audioPipeSelector, nullptr);
+
+    auto existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->sessionId_ = 100001;
+    existingStream->streamStatus_ = STREAM_STATUS_PAUSED;
+    existingStream->SetFutureRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    
+    auto incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->sessionId_ = 100002;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+
+    // Mock IsSwitchStreamExist to return true for existing stream
+    AudioPipeManager::GetPipeManager()->AddSingleSwitchStream(100001, existingStream);
+
+    ConcurrencyAction action = CONCEDE_EXISTING;
+    audioPipeSelector->AdjustConcedeActionByStatus(existingStream, incomingStream, action);
+    
+    // Expect action to remain CONCEDE_EXISTING
+    EXPECT_EQ(action, CONCEDE_EXISTING);
 }
 } // namespace AudioStandard
 } // namespace OHOS

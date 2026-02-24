@@ -55,6 +55,7 @@ public:
     void SetBtConnecting(bool flag);
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const int32_t uid = INVALID_UID, const std::string caller = "");
+    bool IsSelectedByMediaController();
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
     std::string GetNewSinkPortName(DeviceType deviceType);
@@ -92,11 +93,11 @@ public:
     bool IsDataShareReady();
 
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
+    int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     bool IsBundleNameInList(const std::string &bundleName, const std::string &listType);
     bool IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission);
 
     bool IsWirelessDevice(DeviceType deviceType);
-    bool IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_t sessionId);
 
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -110,6 +111,7 @@ public:
     static int32_t startDeviceId;
     static std::map<std::string, ClassType> portStrToEnum;
 private:
+    std::mutex mutex_;
     bool isBTReconnecting_ = false;
     bool isScoExcluded_ = false;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
@@ -120,6 +122,7 @@ private:
     AudioPolicyConfigManager& audioConfigManager_;
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
 };
 
 }

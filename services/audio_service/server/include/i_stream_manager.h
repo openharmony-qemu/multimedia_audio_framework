@@ -33,6 +33,7 @@ enum ManagerType : int32_t {
     EAC3_PLAYBACK,
     HWDECODING_PLAYBACK,
     RECORDER,
+    AUDIO_VIVID_3DA_DIRECT_PLAYBACK,
 };
 
 class IStreamManager {
@@ -61,6 +62,7 @@ public:
     virtual int32_t AddUnprocessStream(int32_t appUid) = 0;
     virtual uint64_t GetLatency() noexcept = 0;
     virtual void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) = 0;
+    virtual int32_t GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

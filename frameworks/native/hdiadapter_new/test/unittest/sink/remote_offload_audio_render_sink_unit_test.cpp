@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "sink/remote_offload_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -170,19 +171,55 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_007, Te
     EXPECT_TRUE(sink_);
     int32_t ret = sink_->LockOffloadRunningLock();
     EXPECT_EQ(ret, SUCCESS);
-
     std::vector<int32_t> appsUid = { 20000001, 20000002, 20000003 };
-    ret = sink_->UpdateAppsUid(appsUid);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
-
-    ret = sink_->UpdateAppsUid(appsUid);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
-
+    sink_->UpdateAppsUid(appsUid);
     appsUid.clear();
-    ret = sink_->UpdateAppsUid(appsUid);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
-
+    sink_->UpdateAppsUid(appsUid);
     ret = sink_->UnLockOffloadRunningLock();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test OffloadSink API
+ * @tc.number : RemoteOffloadSinkUnitTest_008
+ * @tc.desc   : Test remote offload sink set invalid state
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_008, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sink->SetInvalidState();
+    sink->sinkInited_.store(true);
+    int32_t ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    sink->renderInited_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+
+    sink->validState_.store(true);
+    ret = sink->Start();
+    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name   : Test OffloadSink API
+ * @tc.number : RemoteOffloadSinkUnitTest_009
+ * @tc.desc   : Test remote offload sink update app uid
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_009, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    std::vector<int32_t> appsUid = {};
+    sink_->UpdateAppsUid(appsUid);
+    appsUid.push_back(20000001);
+    appsUid.push_back(20000002);
+    sink_->UpdateAppsUid(appsUid);
+    int32_t ret = sink_->Start();
+    EXPECT_EQ(ret, ERR_NOT_STARTED);
+    sink_->UpdateAppsUid(appsUid);
+    appsUid.clear();
+    sink_->UpdateAppsUid(appsUid);
+    ret = sink_->Stop();
     EXPECT_EQ(ret, SUCCESS);
 }
 

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "audio_unit_test.h"
 #include "audio_interrupt_unit_test.h"
 using namespace testing::ext;
 
@@ -172,6 +173,37 @@ HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_006, TestSize.Level
     auto ret = audioInterruptZoneManager->GetAudioFocusInfoList(zoneId, deviceTag, focusInfoList);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(focusInfoList.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInterruptZoneManager
+* @tc.number: AudioInterruptZoneManager_014
+* @tc.desc  : Test TryActiveAudioFocusForZone
+*/
+HWTEST(AudioInterruptZoneUnitTest, AudioInterruptZoneManager_014, TestSize.Level1)
+{
+    auto audioInterruptZoneManager = std::make_shared<AudioInterruptZoneManager>();
+    ASSERT_NE(audioInterruptZoneManager, nullptr);
+
+    audioInterruptZoneManager->service_ = new AudioInterruptService();
+    ASSERT_NE(audioInterruptZoneManager->service_, nullptr);
+
+    int32_t zoneId = 1;
+    audioInterruptZoneManager->service_->zonesMap_.clear();
+    auto interruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt a1;
+    a1.streamId = 0;
+    interruptZone->context.backStrategy_ = MediaBackStrategy::STOP;
+    interruptZone->audioFocusInfoList.clear();
+    interruptZone->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    audioInterruptZoneManager->service_->zonesMap_[zoneId] = interruptZone;
+ 
+    audioInterruptZoneManager->TryActiveAudioFocusForZone(zoneId, interruptZone->audioFocusInfoList);
+    EXPECT_TRUE(interruptZone->audioFocusInfoList.size() > 0);
+
+    interruptZone->audioFocusInfoList.clear();
+    audioInterruptZoneManager->TryActiveAudioFocusForZone(zoneId, interruptZone->audioFocusInfoList);
+    EXPECT_TRUE(interruptZone->audioFocusInfoList.size() == 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

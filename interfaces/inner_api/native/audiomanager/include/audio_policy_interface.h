@@ -124,6 +124,8 @@ class AudioClientInfoMgrCallback {
 public:
     virtual ~AudioClientInfoMgrCallback() = default;
     virtual bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) = 0;
+    virtual bool OnCheckMediaControllerBundle(const std::string &bundleName) = 0;
+    virtual bool OnQueryIsForceGetZoneDevice(const std::string &bundleName) = 0;
     virtual bool OnQueryIsForceGetDevByVolumeType(const std::string &bundleName) = 0;
 };
 

@@ -215,6 +215,12 @@ int32_t HpaeInjectorRendererManager::SuspendStreamManager(bool isSuspend)
 
 int32_t HpaeInjectorRendererManager::StopManager()
 {
+    auto request = [this] {
+        Trace trace("StopManager");
+        CHECK_AND_RETURN_LOG(sinkOutputNode_ != nullptr, "sink output node is nullptr");
+        sinkOutputNode_->RenderSinkStop();
+    };
+    SendRequest(request, __func__);
     return SUCCESS;
 }
 
@@ -594,10 +600,9 @@ int32_t HpaeInjectorRendererManager::CreateInputSession(const HpaeStreamInfo &st
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceName = sinkInfo_.deviceName;
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d",
-        nodeInfo.streamType,
-        nodeInfo.sessionId,
-        nodeInfo.sceneType);
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u,channels:%{public}u,rate:%{public}u",
+        nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.channels,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     return SUCCESS;
 }
 

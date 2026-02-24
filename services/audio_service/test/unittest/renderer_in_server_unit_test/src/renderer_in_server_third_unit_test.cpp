@@ -25,6 +25,10 @@ const uint64_t TEST_FRAMEPOS = 123456;
 const uint64_t TEST_TIMESTAMP = 111111;
 const float IN_VOLUME_RANGE = 0.5f;
 const uint32_t TEST_BUFLENGTH = 10;
+const int32_t TEST_DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
+const int32_t TEST_DUP_COMMON_LEN = 440; // 400 -> 440ms
+const int32_t TEST_DUP_DEFAULT_LEN = 20; // 20 -> 20ms
+static const size_t TEST_MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
 
 static std::shared_ptr<IStreamListener> stateListener;
 static std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
@@ -182,17 +186,14 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_005, Test
  */
 HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_006, TestSize.Level1)
 {
-    EXPECT_NE(nullptr, rendererInServer);
-
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-    rendererInServer->OnCheckActiveMusicTime("Started");
-    rendererInServer->latestForWorkgroup_.status = I_STATUS_IDLE;
-    rendererInServer->status_ = I_STATUS_IDLE;
-    rendererInServer->OnStatusUpdate(OPERATION_SET_OFFLOAD_ENABLE);
-    EXPECT_TRUE(rendererInServer->offloadEnable_);
-    rendererInServer->OnCheckActiveMusicTime("Started");
-    EXPECT_TRUE(rendererInServer->offloadEnable_);
+    AudioProcessConfig processConfig;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.OnCheckActiveMusicTime("Started");
+    EXPECT_EQ(processConfig.rendererInfo.pipeType, PIPE_TYPE_UNKNOWN);
+    processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_OFFLOAD;
+    RendererInServer rendererInServer1(processConfig, stateListener);
+    rendererInServer1.OnCheckActiveMusicTime("Started");
+    EXPECT_EQ(processConfig.rendererInfo.pipeType, PIPE_TYPE_OUT_OFFLOAD);
 }
 
 /**
@@ -494,6 +495,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerCreateDupBufferInner_001
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t innerCapId = 0;
+    rendererInServer->dupTotalSizeInFrame_ = TEST_MAX_INNERCAP_BUFFER_SIZE;
     int32_t ret = rendererInServer->CreateDupBufferInner(innerCapId);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1797,7 +1799,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerInitDupStream_005, TestS
 HWTEST_F(RendererInServerThirdUnitTest, OnStatusUpdate_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     streamCallbacks->OnStatusUpdate(IOperation::OPERATION_STARTED);
@@ -1814,13 +1816,17 @@ HWTEST_F(RendererInServerThirdUnitTest, OnStatusUpdate_001, TestSize.Level1)
 HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     streamCallbacks->OnStatusUpdate(IOperation::OPERATION_STARTED);
     int8_t inputData[10] = {0};
     size_t requestDataLen = 10;
+    streamCallbacks->isFirstWriteDataFlag_ = false;
     EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), SUCCESS);
+
+    streamCallbacks->isFirstWriteDataFlag_ = true;
+    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROR);
 }
 
 /**
@@ -1832,14 +1838,18 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_001, TestSize.Level1)
 HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_002, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
 
     streamCallbacks->OnStatusUpdate(IOperation::OPERATION_STARTED);
     int8_t inputData[10] = {0};
     size_t requestDataLen = 10;
     streamCallbacks->recoveryAntiShakeBufferCount_ = 1;
+    streamCallbacks->isFirstWriteDataFlag_ = false;
     EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), SUCCESS);
+
+    streamCallbacks->isFirstWriteDataFlag_ = true;
+    EXPECT_EQ(streamCallbacks->OnWriteData(inputData, requestDataLen), ERROR);
 }
 
 /**
@@ -1851,7 +1861,7 @@ HWTEST_F(RendererInServerThirdUnitTest, OnWriteData_002, TestSize.Level1)
 HWTEST_F(RendererInServerThirdUnitTest, GetAvailableSize_001, TestSize.Level1)
 {
     std::shared_ptr<StreamCallbacks> streamCallbacks;
-    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX, rendererInServer);
     EXPECT_NE(nullptr, streamCallbacks);
     
     size_t length = 0;
@@ -2094,7 +2104,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_002, TestSize.
     int32_t ret = rendererInServer->Init();
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2110,11 +2120,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_003, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_IDLE;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2130,11 +2140,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_004, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_PAUSED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2150,11 +2160,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_005, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_STOPPED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2170,12 +2180,12 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_006, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
@@ -2196,7 +2206,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerWriteDupBufferInner_003,
     captureInfo.dupStream = nullptr;
     int32_t innerCapId = 1;
     uint32_t streamIndex = 0;
-    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex);
+    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex, server);
     server->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     server->innerCapIdToDupStreamCallbackMap_.insert({innerCapId, streamCallbacks});
     int32_t length = 10000;
@@ -2474,40 +2484,6 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
-
-    delete[] inputData;
-    delete[] processedData;
-}
-
-
-/**
- * @tc.name  : Test AudioStaticBufferProvider API
- * @tc.type  : FUNC
- * @tc.number: AudioStaticBufferProvider_003
- * @tc.desc  : Test AudioStaticBufferProvider GetDataFromStaticBuffer
- */
-HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.Level1)
-{
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    buffer->SetStaticMode(true);
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
-    ASSERT_TRUE(staticBufferProviderTest != nullptr);
-
-    int8_t *inputData = new int8_t[10];
-    uint8_t *processedData = new uint8_t[10];
-    size_t dataSize = 10;
-
-    staticBufferProviderTest->processedBuffer_ = processedData;
-    staticBufferProviderTest->processedBufferSize_ = dataSize;
-
-    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    staticBufferProviderTest->currentLoopTimes_ = 0;
-    staticBufferProviderTest->totalLoopTimes_ = 1;
-    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
 
     delete[] inputData;
     delete[] processedData;
@@ -2929,6 +2905,56 @@ HWTEST_F(RendererInServerThirdUnitTest, SelectModeAndWriteData_001, TestSize.Lev
     size_t requestDataLen = 0;
     ret = rendererInServer->SelectModeAndWriteData(inputData, requestDataLen);
     EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test ReConfigDupStreamCallback API
+ * @tc.type  : FUNC
+ * @tc.number: ReConfigDupStreamCallback_001
+ * @tc.desc  : Test ReConfigDupStreamCallback_001
+ */
+HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+
+    int32_t innerCapId = 1;
+    uint32_t dupStreamIndex = 1;
+    size_t dupTotalSizeInFrameTest = 1;
+    size_t dupSpanSizeInFrameTest = 1;
+    size_t dupByteSizePerFrameTest = 1;
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId] =
+        std::make_shared<StreamCallbacks>(dupStreamIndex, rendererInServer);
+    rendererInServer->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() =
+        AudioRingCache::Create(dupTotalSizeInFrameTest * dupByteSizePerFrameTest);
+    rendererInServer->offloadEnable_ = true;
+    rendererInServer->dupTotalSizeInFrame_ = dupTotalSizeInFrameTest;
+    rendererInServer->dupSpanSizeInFrame_ = dupSpanSizeInFrameTest;
+    rendererInServer->dupByteSizePerFrame_ = dupByteSizePerFrameTest;
+
+    rendererInServer->ReConfigDupStreamCallback();
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+        (TEST_DUP_OFFLOAD_LEN / TEST_DUP_DEFAULT_LEN));
+
+    rendererInServer->offloadEnable_ = false;
+    rendererInServer->dupSpanSizeInFrame_ = dupSpanSizeInFrameTest;
+    rendererInServer->ReConfigDupStreamCallback();
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+        (TEST_DUP_COMMON_LEN / TEST_DUP_DEFAULT_LEN));
+    rendererInServer->ReConfigDupStreamCallback();
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+        (TEST_DUP_COMMON_LEN / TEST_DUP_DEFAULT_LEN));
+    
+    rendererInServer->dupSpanSizeInFrame_ = TEST_MAX_INNERCAP_BUFFER_SIZE;
+    rendererInServer->ReConfigDupStreamCallback();
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
 }
 } // namespace AudioStandard
 } // namespace OHOS

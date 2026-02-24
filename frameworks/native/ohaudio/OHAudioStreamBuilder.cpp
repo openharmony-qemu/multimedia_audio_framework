@@ -459,13 +459,15 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetEncodingType(AudioEncodingType en
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetPlaybackCaptureMode(uint32_t mode)
 {
+    modernInnerCapturer_ = true;
+    sourceType_ = SOURCE_TYPE_PLAYBACK_CAPTURE;
     playbackCaptureMode_ = mode;
     return AUDIOSTREAM_SUCCESS;
 }
 
 OH_AudioStream_Result OHAudioStreamBuilder::SetSourceType(SourceType type)
 {
-    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID,
+    CHECK_AND_RETURN_RET_LOG(streamType_ != RENDERER_TYPE && type != SOURCE_TYPE_INVALID && !modernInnerCapturer_,
         AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, invalid type input");
 
     sourceType_ = type;
@@ -624,7 +626,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
         capturerInfo
     };
 
-    if (sourceType_ == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+    if (modernInnerCapturer_) {
         InitPlaybackCaptureConfig(options.playbackCaptureConfig, playbackCaptureMode_);
     }
 

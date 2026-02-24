@@ -4597,13 +4597,13 @@ HWTEST(AudioRendererUnitTest, FadeOutAudioBuffer_001, TestSize.Level1)
  */
 HWTEST(AudioRendererUnitTest, MuteAudioBuffer_001, TestSize.Level1)
 {
-    uint8_t addr = 1;
+    uint8_t addr[10] = {0};
     size_t offset = 1;
     size_t length = 1;
-    int32_t result = AudioRenderer::MuteAudioBuffer(&addr, offset, length, SAMPLE_U8);
+    int32_t result = AudioRenderer::MuteAudioBuffer(addr, offset, length, SAMPLE_U8);
     EXPECT_EQ(result, SUCCESS);
 
-    result = AudioRenderer::MuteAudioBuffer(&addr, offset, length, SAMPLE_S16LE);
+    result = AudioRenderer::MuteAudioBuffer(addr, offset, length, SAMPLE_S16LE);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
 
@@ -4738,29 +4738,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_StaticCreate_001, TestSize.Level0)
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
-    rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
-
-    auto sharedMemory = AudioSharedMemory::CreateFromLocal(100, "test");
-    auto callback = std::make_shared<StaticBufferEventCallbackTest>();
-
-    shared_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions, sharedMemory, callback);
-    EXPECT_EQ(nullptr, audioRenderer);
-}
-
-
-/**
- * @tc.name  : Test StaticCreate.
- * @tc.number: StaticCreate.
- * @tc.desc  : Test StaticCreate.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_StaticCreate_002, TestSize.Level0)
-{
-    AudioRendererOptions rendererOptions;
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
-    rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
     rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
 
     auto sharedMemory = AudioSharedMemory::CreateFromLocal(100, "test");

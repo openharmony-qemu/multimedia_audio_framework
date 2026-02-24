@@ -126,18 +126,23 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_DegreeTest_001, TestSize.Lev
 
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.
- * @tc.number: CheckExistUidInAudioZone_001
- * @tc.desc  : Test CheckExistUidInAudioZone interface.
+ * @tc.number: HasVolumeControllableDeviceInAudioZone_001
+ * @tc.desc  : Test HasVolumeControllableDeviceInAudioZone interface.
  */
-HWTEST_F(AudioZoneServiceUnitTest, CheckExistUidInAudioZone_001, TestSize.Level1)
+HWTEST_F(AudioZoneServiceUnitTest, HasVolumeControllableDeviceInZone_001, TestSize.Level1)
 {
     AudioZoneContext context;
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
     std::shared_ptr<AudioZone> audioZone = AudioZoneService::GetInstance().FindZone(zoneId);
-    audioZone->BindByKey(AudioZoneBindKey(0, "", "", STREAM_USAGE_UNKNOWN));
-    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistUidInAudioZone(), false);
-    audioZone->BindByKey(AudioZoneBindKey(1, "", "", STREAM_USAGE_UNKNOWN));
-    EXPECT_EQ(AudioZoneService::GetInstance().CheckExistUidInAudioZone(), true);
+    EXPECT_EQ(AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone(), false);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE
+    );
+    desc->volumeBehavior_.isVolumeControlDisabled = false;
+    devices.push_back(desc);
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
+    EXPECT_EQ(AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone(), true);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 
@@ -248,7 +253,74 @@ HWTEST_F(AudioZoneServiceUnitTest, GetDeviceDescriptor, TestSize.Level1)
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, ""), nullptr);
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_SPEAKER, ""), nullptr);
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, "Test"), nullptr);
-    EXPECT_NE(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_SPEAKER, "Test"), nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: CheckDeviceInAudioZone_002
+ * @tc.desc  : Test CheckDeviceInAudioZone interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, CheckDeviceInAudioZone_002, TestSize.Level1)
+{
+    AudioZoneContext context;
+    std::string name = "TestZone";
+    std::shared_ptr<AudioZoneClientManager> manager = nullptr;
+    manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    EXPECT_NE(manager, nullptr);
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(
+        manager, name, context);
+    EXPECT_NE(zone, nullptr);
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+    AudioDeviceDescriptor device;
+    device.deviceType_ = desc->deviceType_;
+    device.networkId_ = desc->networkId_;
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+
+    int32_t id = 0;
+    AudioZoneService::GetInstance().zoneMaps_.clear();
+    AudioZoneService::GetInstance().zoneMaps_.insert({id, zone});
+
+    auto ret = AudioZoneService::GetInstance().CheckDeviceInAudioZone(device);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: CheckDeviceInAudioZone_003
+ * @tc.desc  : Test CheckDeviceInAudioZone interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, CheckDeviceInAudioZone_003, TestSize.Level1)
+{
+    AudioZoneContext context;
+    std::string name = "TestZone";
+    std::shared_ptr<AudioZoneClientManager> manager = nullptr;
+    manager = std::make_shared<AudioZoneClientManager>(nullptr);
+    EXPECT_NE(manager, nullptr);
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(
+        manager, name, context);
+    EXPECT_NE(zone, nullptr);
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+    AudioDeviceDescriptor device;
+    device.deviceType_ = desc->deviceType_;
+    device.networkId_ = desc->networkId_;
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+
+    int32_t id = 0;
+    AudioZoneService::GetInstance().zoneMaps_.clear();
+    AudioZoneService::GetInstance().zoneMaps_.insert({id, zone});
+
+    auto ret = AudioZoneService::GetInstance().CheckDeviceInAudioZone(device);
+    EXPECT_FALSE(ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

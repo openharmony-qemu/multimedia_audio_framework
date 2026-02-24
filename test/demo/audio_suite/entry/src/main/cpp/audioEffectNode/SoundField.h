@@ -6,8 +6,8 @@
 #define TEST1_SOUNDFIELD_H
 
 #include <cstdint>
-#include "ohaudio/native_audio_suite_base.h"
-#include "ohaudio/native_audio_suite_engine.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_engine.h"
 
 class SoundField {
 };

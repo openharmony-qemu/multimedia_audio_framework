@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -109,6 +109,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
+    config.ultraFastFlag = info.ultraFastFlag;
     AUDIO_DEBUG_LOG("%{public}s: originalSessionId:%{public}u",
         logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
@@ -415,6 +416,13 @@ int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
     return ret;
 }
 
+int32_t FastAudioStream::SetBackMute(bool backMute)
+{
+    AUDIO_INFO_LOG("when finish old stream and generate new stream, store the old backMute");
+    backMute_ = backMute;
+    return SUCCESS;
+}
+
 bool FastAudioStream::GetMute()
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false,
@@ -526,9 +534,15 @@ int32_t FastAudioStream::SetRendererFirstFrameWritingCallback(
     const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
 {
     AUDIO_INFO_LOG("%{public}s: in.", logTag_.c_str());
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "%{public}s: callback is nullptr", logTag_.c_str());
+    CHECK_AND_RETURN_RET_LOG(callback && processClient_ != nullptr,
+        ERR_INVALID_PARAM, "%{public}s: callback is nullptr", logTag_.c_str());
     firstFrameWritingCb_ = callback;
+    if (rendererInfo_.isStatic) {
+        procFirstFrameClientCb_ = std::make_shared<FastStaticFirstFrameCallbackImpl>(callback, *this);
+        int32_t ret = processClient_->SetFirstFrameWritingCallback(procFirstFrameClientCb_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "%{public}s: save firstFrame data callback fail, ret %{public}d.", logTag_.c_str(), ret);
+    }
     return SUCCESS;
 }
 
@@ -716,7 +730,8 @@ void FastAudioStream::RegisterThreadPriorityOnStart(StateChangeCmdType cmdType)
 
     CHECK_AND_RETURN_LOG(processClient_ != nullptr, "%{public}s: process client is null.", logTag_.c_str());
     processClient_->RegisterThreadPriority(tid,
-        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START);
+        AppBundleManager::GetSelfBundleName(processconfig_.appInfo.appUid), METHOD_START,
+        THREAD_PRIORITY_QOS_7);
 }
 
 bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
@@ -732,6 +747,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state before starting", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
+    processClient_->SetIsFirstFrame(true);
     int32_t ret = ERROR;
     if (state_ == PAUSED || state_ == STOPPED) {
         ret = processClient_->Resume();
@@ -1015,6 +1031,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
     info.renderRate = renderRate_;
+    info.backMute = backMute_;
 
     info.underFlowCount = GetUnderflowCount();
     info.overFlowCount = GetOverflowCount();
@@ -1023,7 +1040,10 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.defaultOutputDevice = defaultOutputDevice_;
 
     if (rendererInfo_.isStatic) {
-        processClient_->GetStaticBufferInfo(info.staticBufferInfo);
+        CHECK_AND_RETURN_LOG(processClient_ != nullptr, "processClient is nullptr");
+        processClient_->GetStaticPlayPosition(info.staticBufferInfo);
+        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
         info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     }
 
@@ -1062,6 +1082,8 @@ void FastAudioStream::ResetFirstFrameState()
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
+    CHECK_AND_RETURN(processClient_ != nullptr && rendererInfo_.isStatic);
+    processClient_->SetIsFirstFrame(true);
 }
 
 void FastAudioStream::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
@@ -1101,6 +1123,11 @@ void FastAudioStreamCaptureCallback::OnHandleData(size_t length)
 {
     CHECK_AND_RETURN_LOG(captureCallback_!= nullptr, "OnHandleData failed: captureCallback_ is null.");
     captureCallback_->OnReadData(length);
+}
+
+void FastStaticFirstFrameCallbackImpl::OnFirstFrameWriting()
+{
+    audioStreamImpl_.OnFirstFrameWriting();
 }
 
 int32_t FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
@@ -1380,6 +1407,7 @@ int32_t FastAudioStream::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "processClient_ is null");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    staticBufferInfo_.totalLoopTimes_ = bufferLoopTimes;
     return processClient_->SetLoopTimes(bufferLoopTimes);
 }
 
@@ -1391,6 +1419,16 @@ const std::string FastAudioStream::GetBundleName()
 void FastAudioStream::SetBundleName(std::string &name)
 {
     bundleName = name;
+}
+
+bool FastAudioStream::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "Not in Static Mode");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null!");
+
+    int32_t ret = processClient_->ResetStaticPlayPosition();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "ResetStaticPlayPosition fail!");
+    return true;
 }
 
 } // namespace AudioStandard

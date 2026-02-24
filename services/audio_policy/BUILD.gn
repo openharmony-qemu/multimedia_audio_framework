@@ -229,6 +229,8 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/interrupt/src/audio_interrupt_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_service_ext.cpp",
     "server/domain/interrupt/src/audio_interrupt_custom.cpp",
+    "server/domain/interrupt/src/audio_interrupt_dfx.cpp",
+    "server/domain/interrupt/src/audio_interrupt_utils.cpp",
     "server/domain/interrupt/src/audio_interrupt_zone.cpp",
     "server/domain/device/src/device_status_listener.cpp",
     "server/domain/interrupt/src/power_state_listener.cpp",
@@ -250,13 +252,11 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_a2dp_offload_flag.cpp",
     "server/domain/pipe/src/audio_a2dp_offload_manager.cpp",
     "server/domain/device/src/audio_active_device.cpp",
-    "server/domain/pipe/src/audio_capturer_session.cpp",
     "server/domain/device/src/audio_connected_device.cpp",
     "server/domain/device/src/audio_device_capability.cpp",
     "server/domain/device/src/audio_device_common.cpp",
     "server/domain/device/src/audio_device_lock.cpp",
     "server/domain/device/src/audio_device_status.cpp",
-    "server/domain/pipe/src/audio_ec_manager.cpp",
     "server/domain/pipe/src/audio_iohandle_map.cpp",
     "server/domain/device/src/audio_microphone_descriptor.cpp",
     "server/domain/pipe/src/audio_offload_stream.cpp",
@@ -292,6 +292,11 @@ audio_ohos_library("audio_policy_service") {
   defines = []
   if (!audio_framework_feature_mutesink_enable) {
     defines += [ "MUTE_SINK_DISABLE" ]
+  }
+
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+    sources += [ "server/domain/pipe/src/audio_bus_selector.cpp" ]
   }
 
   if (audio_framework_feature_wired_audio) {
@@ -330,6 +335,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
 
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
+
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [
@@ -344,7 +353,8 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
-    "../audio_engine:audio_engine_manager",
+    "../audio_engine:hpae_engine_manager",
+    "../../frameworks/native/hdiadapter_new:hdiadapter_new",
   ]
 
   external_deps = [
@@ -409,6 +419,10 @@ audio_ohos_library("audio_policy_service") {
 
   if (audio_framework_feature_wireless_default_exclude) {
     defines += [ "WIRELESS_DEFAULT_EXCLUDE" ]
+  }
+
+  if (audio_framework_feature_exclude_indirect_usb_input_device) {
+    defines += [ "EXCLUDE_INDIRECT_USB_INPUT_DEVICE" ]
   }
 
   if (audio_framework_config_policy_enable) {
@@ -646,10 +660,8 @@ group("audio_policy_test_packages") {
     "server/domain/device/test:audio_device_status_extended_test",
     "server/domain/effect/test:audio_spatialization_service_extended_test",
     "server/domain/device/test:audio_active_device_new_unit_test",
-    "server/domain/pipe/test:audio_policy_pipe_unittest_packages",
     "server/domain/router/test:audio_router_unittest_packages",
     "server/domain/session/test:audio_policy_session_unit_test",
-    "server/domain/pipe/test:audio_capturer_session_ext_unit_test",
     "server/domain/volume/test:audio_volume_unittest_packages",
     "server/service/service_main/test:audio_policy_dump_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
@@ -680,6 +692,9 @@ ohos_executable("audio_dump_test") {
   deps = [
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
   ]
 
   include_dirs = []
@@ -706,6 +721,9 @@ ohos_executable("audio_policy_test") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_policy_client",
     "../audio_service:audio_client",
+    "../audio_service:audio_engine_manager",
+    "../audio_service:audio_policy_manager",
+    "../audio_service:audio_stream_client",
   ]
 
   include_dirs = []
@@ -748,6 +766,7 @@ ohos_shared_library("audio_foundation") {
   install_enable = true
   sources = [
     "../audio_service/client/src/audio_filter.cpp",
+    "../audio_service/client/src/audio_manager_util.cpp",
     "server/domain/device/src/audio_device_descriptor.cpp",
     "server/domain/device/src/audio_device_type.cpp",
     "server/domain/effect/src/audio_effect_map.cpp",
@@ -794,6 +813,7 @@ config("audio_manager_client_public_config") {
     "../../frameworks/native/audiodefinitions/include",
     "../../frameworks/native/audiodefinitions/include/common",
     "../../frameworks/native/hdiadapter_new/include/common",
+    "../../interfaces/inner_api/native/audiocommon/include"
   ]
 }
 
@@ -813,6 +833,7 @@ ohos_shared_library("audio_manager_client") {
     "../audio_service/client/src/audio_anahs_manager.cpp",
     "../audio_service/client/src/audio_focus_info_change_callback_impl.cpp",
     "client/service/src/audio_general_manager.cpp",
+    "server/domain/device/src/audio_device_capability.cpp",
   ]
 
   public_configs = [ ":audio_manager_client_public_config" ]
@@ -827,6 +848,7 @@ ohos_shared_library("audio_manager_client") {
   external_deps = [
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "cJSON:cjson",
     "eventhandler:libeventhandler",
     "hicollie:libhicollie",
     "hilog:libhilog",

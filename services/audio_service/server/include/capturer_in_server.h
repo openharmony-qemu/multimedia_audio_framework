@@ -25,10 +25,11 @@
 #include "capturer_clock_manager.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CapturerInServer : public IStatusCallback, public IReadCallback,
+class CapturerInServer : public IStatusCallback, public IReadCallback, public IHandler,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
     CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
@@ -72,8 +73,6 @@ public:
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
 
-    void ReleaseCaptureInjector();
-
 private:
     bool CheckBGCapture();
     int32_t InitCacheBuffer(size_t targetSize);
@@ -82,10 +81,15 @@ private:
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     void HandleOperationFlushed();
-    void HandleOperationStopped(CapturerStage stage);
     void UpdateBufferTimeStamp(size_t readLen);
     void RebuildCaptureInjector();
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
+    void HandleOperationStopped(CapturerStage stage);
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+    void ReleaseCallbackHandler();
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
+    void ResetAsrFlag();
     void RecordOverflowStatus(bool currentStatus);
 
     std::mutex statusLock_;
@@ -123,6 +127,7 @@ private:
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
     int32_t innerCapId_ = 0;
+    std::string asrBundleName_ = "";
     std::atomic<bool> rebuildFlag_ = false;
 
     int64_t lastStartTime_{};
@@ -137,6 +142,9 @@ private:
     std::atomic<bool> lastOverflowStatus_ = false;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     bool hasRequestUserPrivacyAuthority_ = false;
+
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

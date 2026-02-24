@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "audio_interrupt_service.h"
+#include "audio_interrupt_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {

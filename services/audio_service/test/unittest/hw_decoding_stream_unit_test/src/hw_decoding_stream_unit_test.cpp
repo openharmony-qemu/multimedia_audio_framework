@@ -88,9 +88,10 @@ public:
     int32_t Flush(void) override { return SUCCESS; }
     int32_t Reset(void) override { return SUCCESS; }
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override { return SUCCESS; }
-    int64_t GetVolumeDataCount() override { return SUCCESS; }
+    int32_t GetVolumeDataCount(int64_t &volumeData) override { return SUCCESS; }
 
     int32_t SetVolume(float left, float right) override { return SUCCESS; }
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override { return SUCCESS; }
     int32_t GetVolume(float &left, float &right) override { return SUCCESS; }
 
     int32_t GetLatency(uint32_t &latency) override { return SUCCESS; }

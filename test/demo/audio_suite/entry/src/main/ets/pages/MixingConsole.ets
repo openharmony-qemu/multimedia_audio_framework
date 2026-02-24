@@ -15,7 +15,7 @@ import {
     PIPELINECASCADMODE_2,
     PIPELINECASCADMODE_3,
     BitsPerSampleMode
-} from "../utils/importSongs/InterfaceInfo";
+} from "../utils/InterfaceInfo";
 import { Logger } from '../utils/Logger';
 import audioNapi from 'libentry.so';
 import { importSingleSong } from '../utils/importSongs/ImportSongs';
@@ -28,7 +28,7 @@ import { fileUri, picker } from '@kit.CoreFileKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import fs, { ReadOptions } from '@ohos.file.fs';
-import { AlertDialog, SymbolGlyphModifier, window } from '@kit.ArkUI';
+import { AlertDialog, LoadingDialog, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import display from '@ohos.display';
 
 import { getDateStringWithTimeStamp } from '../utils/Util';
@@ -96,6 +96,8 @@ export struct MixingConsole {
     @StorageLink('isCurrentMulPipeline') isCurrentMulPipeline: boolean = false;
     @StorageLink('currentPipelineId') currentPipelineId: string = '';
     @State bitsPerSampleMode: number = BitsPerSampleMode.FLOAT;
+    private isSaving: boolean = false;
+    @State isAudioCache: boolean = false;
 
     aboutToAppear(): void {
         Logger.info(TAG, 'aboutToAppear');
@@ -117,10 +119,13 @@ export struct MixingConsole {
                         Logger.info(TAG, 'taskpool onClick then');
                         this.SaveBuffer(value as ArrayBuffer);
                     });
+                } else {
+                    audioNapi.resetTotalWriteAudioDataSize();
                 }
                 this.isExported = false;
                 this.g_isRecord = false;
                 this.isPlay = false;
+                audioNapi.audioRendererStop();
             }
         })
 
@@ -147,7 +152,19 @@ export struct MixingConsole {
                     this.bitsPerSampleMode = BitsPerSampleMode.FLOAT;
                     break;
             }
-        })
+        });
+        audioNapi.registerAudioCacheCallback((result: boolean) => {
+            Logger.info(TAG, `registerAudioCacheCallback result: ${result}`);
+            if (!result) {
+                this.importAudioProgress.close();
+                this.isAudioCache = result;
+                try {
+                    fs.closeSync(this.fd);
+                } catch (e) {
+                    Logger.error(TAG, `Failed to close fd: ${e}`);
+                }
+            }
+        });
     }
 
     aboutToDisappear(): void {
@@ -170,7 +187,37 @@ export struct MixingConsole {
         window.getLastWindow(context).then((windowClass) => {
             windowClass.setPreferredOrientation(window.Orientation.AUTO_ROTATION);
         });
+        audioNapi.clear();
+        try{
+            audioNapi.unregisterFinishedCallback();
+        }catch (e){
+            Logger.error(TAG, `unregisterFinishedCallback faild`);
+        }
+        try{
+            audioNapi.unregisterAudioFormatCallback();
+        }catch (e){
+            Logger.error(TAG, `unregisterAudioFormatCallback faild`);
+        }
+        try{
+            audioNapi.unregisterAudioCacheCallback();
+        }catch (e){
+            Logger.error(TAG, `unregisterAudioCacheCallback faild`);
+        }
     }
+
+    importAudioProgress: CustomDialogController = new CustomDialogController({
+        builder: LoadingDialog({
+            content: '添加音频中...',
+        }),
+        autoCancel: false,
+    })
+
+    saveAudioProgress: CustomDialogController = new CustomDialogController({
+        builder: LoadingDialog({
+            content: '保存音频中...',
+        }),
+        autoCancel: false,
+    })
 
     // Set up pop-up window
     dialogControllerSet: CustomDialogController | null = new CustomDialogController({
@@ -248,6 +295,8 @@ export struct MixingConsole {
                         .width('30')
                         .height('30')
                         .onClick(() => {
+                            this.isSaving = true;
+                            this.saveAudioProgress.open();
                             // Rendering on the pipeline cascade page
                             if (this.param.pipelineCascadMode === PIPELINECASCADMODE_1 || this.param.pipelineCascadMode === PIPELINECASCADMODE_2) {
                                 this.pipelineCascadMap.set(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || '', {
@@ -259,6 +308,8 @@ export struct MixingConsole {
                                 });
                                 Logger.info(TAG, `this.pipelineCascadMap: ${this.pipelineCascadMap.size}`);
                                 this.pageInfos.pop(this.pipelineCascadMap.get(outputNodeSongNameMap.get(this.param.pipelineCascadMode) || ''));
+                                this.isSaving = false;
+                                this.saveAudioProgress.close();                                
                                 return;
                             }
                             if (this.sampleRate === -1) {
@@ -266,6 +317,8 @@ export struct MixingConsole {
                                     title: '提示',
                                     message: '请在设置页面输入采样率'
                                 });
+                                this.isSaving = false;
+                                this.saveAudioProgress.close();                                
                                 return;
                             }
                             if (this.channels === -1) {
@@ -273,6 +326,8 @@ export struct MixingConsole {
                                     title: '提示',
                                     message: '请在设置页面输入声道'
                                 });
+                                this.isSaving = false;
+                                this.saveAudioProgress.close();
                                 return;
                             }
                             if (this.bitsPerSample === -1) {
@@ -280,15 +335,23 @@ export struct MixingConsole {
                                     title: '提示',
                                     message: '请在设置页面输入位深'
                                 });
+                                this.isSaving = false;
+                                this.saveAudioProgress.close();
                                 return;
                             }
+                            audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample, this.bitsPerSampleMode);
                             taskpool.execute(saveFileBuffer).then(async (value: object) => {
                                 Logger.info(TAG,
                                     `taskpool onClick save mixingConsole start, param.mode: ${this.param.mode}, length: ${(value as ArrayBuffer).byteLength}`);
                                 this.SaveBuffer(value as ArrayBuffer);
                                 // Set the totalWriteAudioDataSize in the buffer's map to 0
                                 audioNapi.resetTotalWriteAudioDataSize();
+                                this.isSaving = false;
+                                this.saveAudioProgress.close();
+                                Logger.info(TAG, 'save successfully');
                             });
+                            audioNapi.stopPipeline();
+                            audioNapi.resetTotalWriteAudioDataSize();
                         })
                 }.visibility(this.param.mode === 1 ? Visibility.Visible : Visibility.None)
                 Row() {
@@ -354,6 +417,7 @@ export struct MixingConsole {
                             }
                             this.isPlayRealTime = true;
                             this.isPlay = !this.isPlay;
+                            audioNapi.setFormat(this.channels, this.sampleRate, this.bitsPerSample, this.bitsPerSampleMode);
                             // Play
                             if (this.isPlay) {
                                 // initialize Renderer
@@ -431,10 +495,12 @@ export struct MixingConsole {
                                                                 return;
                                                             }
                                                         }
-                                                        audioNapi.audioInAndOutInit(inputId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                                                        this.isAudioCache = true;
+                                                        this.importAudioProgress.open();
+                                                        let nodeIds: string[] = [inputId, this.outputNode.id, this.mixerNode.id];
+                                                        audioNapi.audioInAndOutInit(nodeIds, this.fd, this.wavBuffer.byteLength, 0);
                                                         Logger.error(TAG, `fd: ${this.fd}`);
                                                     }
-                                                    fs.closeSync(this.fd);
                                                     setTimeout(() => {
                                                         if (tmpInfo) {
                                                             tmpInfo.sampleRate = this.sampleRate;
@@ -625,7 +691,10 @@ export struct MixingConsole {
                                     return;
                                 }
                             }
-                            audioNapi.audioInAndOutInit(nodeId, this.outputNode.id, this.mixerNode.id, this.fd, this.wavBuffer.byteLength);
+                            this.isAudioCache = true;
+                            this.importAudioProgress.open();
+                            let nodeIds: string[] = [nodeId, this.outputNode.id, this.mixerNode.id];
+                            audioNapi.audioInAndOutInit(nodeIds, this.fd, this.wavBuffer.byteLength, 0);
                             Logger.error(TAG, `fd: ${this.fd}`);
                             setTimeout(() => {
                                 if (songInfo) {
@@ -634,7 +703,6 @@ export struct MixingConsole {
                                     songInfo.bitsPerSample = this.bitsPerSample;
                                 }
                             }, 100);
-                            fs.closeSync(this.fd);
                         }
                         this.nodeList.set(nodeId, songInfo)
                         const index = this.inputList.findIndex(song => song?.nodeId === nodeId);
@@ -736,6 +804,7 @@ export struct MixingConsole {
                 this.newAudioFileName = this.newAudioFileName + ' ' + getDateStringWithTimeStamp(new Date().getTime());   
             }
             let newFileNames = `${this.newAudioFileName}${this.audioFormate}`;
+            this.newAudioFileName = '';
             Logger.info(TAG, `SaveBuffer newFileNames is: ${newFileNames}`);
             documentSaveOptions.newFileNames = [newFileNames];
             let context = getContext() as common.Context; // Please ensure that getContext(this) returns a result of UIAbilityContext

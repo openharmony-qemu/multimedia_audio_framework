@@ -49,7 +49,7 @@ public:
     virtual int32_t Flush(void) = 0;
     virtual int32_t Reset(void) = 0;
     virtual int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) = 0;
-    virtual int64_t GetVolumeDataCount() = 0;
+    virtual int32_t GetVolumeDataCount(int64_t &volumeData) = 0;
 
     virtual int32_t SuspendRenderSink(void) SUCCESS_RET
     virtual int32_t RestoreRenderSink(void) SUCCESS_RET
@@ -59,6 +59,7 @@ public:
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) { return ""; }
 
     virtual int32_t SetVolume(float left, float right) = 0;
+    virtual int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;
 
     virtual int32_t GetLatency(uint32_t &latency) = 0;
@@ -147,7 +148,7 @@ public:
 
     virtual std::shared_ptr<AudioOutputPipeInfo> GetOutputPipeInfo();
     virtual void NotifyStreamChangeToSink(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state);
+        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
     // Implement by self (end)
 
 protected:
@@ -157,7 +158,7 @@ protected:
     virtual void ChangePipeStatus(AudioPipeStatus state);
     virtual void ChangePipeDevice(const std::vector<DeviceType> &devices);
     virtual void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, StreamUsage usage, RendererState state);
+        uint32_t streamId, StreamUsage usage, RendererState state, uint32_t appUid = INVALID_UID);
     virtual void DeinitPipeInfo();
 
     // Common variables

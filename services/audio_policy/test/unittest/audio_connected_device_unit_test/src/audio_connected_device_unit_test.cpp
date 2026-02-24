@@ -364,12 +364,13 @@ HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_016, TestSiz
 */
 HWTEST_F(AudioConnectedDeviceUnitTest, AudioConnectedDeviceUnitTest_017, TestSize.Level1)
 {
-    std::string selectedDevice = "test";
+    std::string networkId = "test";
     auto audioConnectedDevice = std::make_shared<AudioConnectedDevice>();
     auto desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP,
         DeviceRole::OUTPUT_DEVICE);
-    desc->networkId_ = selectedDevice;
+    desc->networkId_ = networkId;
     audioConnectedDevice->connectedDevices_.push_back(desc);
+    std::string selectedDevice = networkId + "_out";
     bool result = audioConnectedDevice->CheckDeviceConnected(selectedDevice);
     EXPECT_EQ(result, true);
 

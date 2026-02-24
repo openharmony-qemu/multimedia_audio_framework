@@ -113,7 +113,7 @@ int32_t FileAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wri
     return SUCCESS;
 }
 
-int64_t FileAudioRenderSink::GetVolumeDataCount()
+int32_t FileAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
     return 0;
@@ -123,6 +123,12 @@ int32_t FileAudioRenderSink::SetVolume(float left, float right)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
+}
+
+int32_t FileAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("FileAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
 }
 
 int32_t FileAudioRenderSink::GetVolume(float &left, float &right)

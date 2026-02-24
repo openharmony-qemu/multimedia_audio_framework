@@ -120,12 +120,12 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         }
         SplitStreamType splitStreamType = outputData->GetSplitStreamType();
         AudioStreamType type = outputData->GetAudioStreamType();
-        // navigation not send empty
-        if (type == STREAM_NAVIGATION && !outputData->IsValid()) {
-            AUDIO_WARNING_LOG("navigation not send empty chunk");
-            continue;
-        }
-        StreamUsage usage = outputData->IsValid() ? outputData->GetAudioStreamUsage() : STREAM_USAGE_UNKNOWN;
+        // HiCarSDK(car) audio data buffer will be clear by empty chunk(usage = 0)
+        // navigation and wechat voice message cannot use the empty chunk that usage eq 0,
+        // the voice data of the last few words may be lost on some head units
+        StreamUsage usage = (!outputData->IsValid() && (type == STREAM_MUSIC || type == STREAM_MOVIE))
+            ? STREAM_USAGE_UNKNOWN : outputData->GetAudioStreamUsage();
+
         audioRendererSink_->UpdateStreamInfo(splitStreamType, type, usage);
         ConvertFromFloat(
             GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), renderFrameData_.data());
@@ -356,6 +356,7 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkStop(void)
     int64_t interval = timer.Elapsed();
     AUDIO_INFO_LOG("name %{public}s, Elapsed: %{public}" PRId64 " ms", sinkOutAttr_.adapterName.c_str(), interval);
 #endif
+
     return SUCCESS;
 }
 
@@ -366,9 +367,9 @@ StreamManagerState HpaeRemoteSinkOutputNode::GetSinkState(void)
 
 int32_t HpaeRemoteSinkOutputNode::SetSinkState(StreamManagerState sinkState)
 {
-    HILOG_COMM_INFO("[SetSinkState]Sink"
-        "[%{public}s] state change: [%{public}s]-->[%{public}s]", GetDeviceClass().c_str(),
-        ConvertStreamManagerState2Str(state_).c_str(), ConvertStreamManagerState2Str(sinkState).c_str());
+    HILOG_COMM_INFO("[SetSinkState(]Sink[%{public}s] state change:"
+        "[%{public}s]-->[%{public}s]", GetDeviceClass().c_str(), ConvertStreamManagerState2Str(state_).c_str(),
+        ConvertStreamManagerState2Str(sinkState).c_str());
         state_ = sinkState;
         return SUCCESS;
 }

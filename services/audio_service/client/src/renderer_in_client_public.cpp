@@ -241,7 +241,15 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
             AUDIO_ERR_LOG("AudioStream: converter construct error");
             return ERR_NOT_SUPPORTED;
         }
-        converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+
+        AUDIO_INFO_LOG("rendererInfo rendererFlags: %{public}u", rendererInfo_.rendererFlags);
+        if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
+            curStreamParams_.channelLayout = (std::find(cfg.supportOutChannelLayout.begin(),
+            cfg.supportOutChannelLayout.end(), cfg.outChannelLayout) != cfg.supportOutChannelLayout.end()) ?\
+            cfg.outChannelLayout : CH_LAYOUT_5POINT1POINT2;
+        } else {
+            converter_->ConverterChannels(curStreamParams_.channels, curStreamParams_.channelLayout);
+        }
     }
 
     CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(curStreamParams_, sizePerFrameInByte_) == SUCCESS,
@@ -578,6 +586,12 @@ int32_t RendererInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
         AUDIO_ERR_LOG("Set Mute failed:%{public}u", ret);
         return ERROR;
     }
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::SetBackMute(bool backMute)
+{
+    backMute_ = backMute;
     return SUCCESS;
 }
 
@@ -1041,6 +1055,8 @@ bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
     mutePlayStartTime_ = 0;
+    volumeDataCount_ = 0;
+    needNotifyStreamSilentChange_.store(true);
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     CHECK_AND_RETURN_RET_LOG(state_ == PREPARED || state_ == STOPPED || state_ == PAUSED, false, "Start failed");
@@ -1540,10 +1556,6 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     info.target = renderTarget_;
 
-    if (rendererInfo_.isStatic) {
-        GetStaticBufferInfo(info.staticBufferInfo);
-    }
-    info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1580,6 +1592,15 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.unprocessSamples = audioWriteState_.load().unprocessedFramesBytes_ +
         audioWriteState_.load().perPeriodFrame_ +
         lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC];
+
+    if (rendererInfo_.isStatic) {
+        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "Client OHAudioBuffer is nullptr");
+        clientBuffer_->GetStaticPlayPosition(
+            info.staticBufferInfo.currentLoopTimes_, info.staticBufferInfo.curStaticDataPos_);
+        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
+        info.staticBufferEventCallback = audioStaticBufferEventCallback_;
+    }
 }
 
 IAudioStream::StreamClass RendererInClientInner::GetStreamClass()
@@ -2071,6 +2092,17 @@ void RendererInClientInner::UpdateStopState()
     CHECK_AND_RETURN(renderMode_ == RENDER_MODE_CALLBACK || renderMode_ == RENDER_MODE_STATIC);
     state_ = STOPPING;
     AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
+}
+
+bool RendererInClientInner::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "Not in Static Mode");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
+
+    int32_t ret = ipcStream_->ResetStaticPlayPosition();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "ResetStaticPlayPosition fail!");
+    return true;
 }
 
 } // namespace AudioStandard

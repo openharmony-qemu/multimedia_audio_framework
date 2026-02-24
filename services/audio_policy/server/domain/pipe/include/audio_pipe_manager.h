@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,7 @@ namespace AudioStandard {
 class AudioPipeManager {
 public:
     AudioPipeManager();
-    ~AudioPipeManager();
+    virtual ~AudioPipeManager();
 
     static std::shared_ptr<AudioPipeManager> GetPipeManager()
     {
@@ -44,7 +44,7 @@ public:
     void Assign(std::shared_ptr<AudioPipeInfo> dst, std::shared_ptr<AudioPipeInfo> src);
     bool IsSamePipe(std::shared_ptr<AudioPipeInfo> info, std::shared_ptr<AudioPipeInfo> cmpInfo);
 
-    const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
+    virtual const std::vector<std::shared_ptr<AudioPipeInfo>> GetPipeList();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedPipe();
     std::vector<std::shared_ptr<AudioPipeInfo>> GetUnusedRecordPipe();
     std::shared_ptr<AudioPipeInfo> GetPipeinfoByNameAndFlag(const std::string adapterName, const uint32_t routeFlag);
@@ -59,6 +59,7 @@ public:
     void RemoveClient(uint32_t sessionId);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsCopy();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
@@ -77,6 +78,7 @@ public:
     void RemoveModemCommunicationId(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDesc();
+    std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDescCopy();
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
     void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
@@ -99,6 +101,15 @@ public:
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
+    bool HasRunningStream();
+    bool HasFastOutputPipe();
+    bool IsStreamUseUltraFastRoute(uint32_t sessionId);
+    bool HasRunningRecognitionCapturerStream();
+    bool IsOnPrimaryAdapter(uint32_t sessionId);
+    void AddSingleSwitchStream(uint32_t sessionId, std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void RemoveSwitchStream(uint32_t sessionId);
+    bool IsSwitchStreamExist(uint32_t sessionId);
+    void AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
@@ -111,6 +122,8 @@ private:
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap_{};
     std::vector<std::shared_ptr<AudioPipeInfo>> curPipeList_{};
     std::shared_mutex pipeListLock_;
+    std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> switchStreamMap_{};
+    mutable std::shared_mutex switchStreamMapLock_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

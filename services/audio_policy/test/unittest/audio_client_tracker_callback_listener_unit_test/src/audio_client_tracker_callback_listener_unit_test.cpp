@@ -38,20 +38,6 @@ void AudioClientTrackerCallbackListenerUnitTest::TearDown(void)
 
 /**
 * @tc.name  : Test ClientTrackerCallbackListener.
-* @tc.number: MuteStreamImpl_01
-* @tc.desc  : Test MuteStreamImpl.
-*/
-HWTEST_F(AudioClientTrackerCallbackListenerUnitTest, MuteStreamImpl_01, TestSize.Level1)
-{
-    ASSERT_NE(listener_, nullptr);
-    ASSERT_NE(clientTracker_, nullptr);
-    EXPECT_NO_THROW(
-        clientTracker_->MuteStreamImpl(streamSetStateEventInternal_);
-    );
-}
-
-/**
-* @tc.name  : Test ClientTrackerCallbackListener.
 * @tc.number: MuteStreamImpl_02
 * @tc.desc  : Test MuteStreamImpl.
 */

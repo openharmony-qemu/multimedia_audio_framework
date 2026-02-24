@@ -735,10 +735,13 @@ public:
         int32_t volumeFlag, int32_t uid);
     int32_t GetSystemVolumeDegree(AudioVolumeType volumeType, int32_t uid);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
+    int32_t UpdateSafeVolumeByStrMode();
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
     AudioScene GetAudioSceneFromAllZones();
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
+    int32_t NotifyStreamSilentChange(uint32_t streamId);
 
 private:
     AudioPolicyManager() {}

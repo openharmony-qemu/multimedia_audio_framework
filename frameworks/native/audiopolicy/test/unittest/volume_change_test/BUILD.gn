@@ -23,6 +23,7 @@ ohos_unittest("audio_volume_change_unit_test") {
     "./include",
     "../../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../services/audio_service/test/unittest/include"
   ]
 
   cflags = [
@@ -32,8 +33,15 @@ ohos_unittest("audio_volume_change_unit_test") {
 
   sources = [ "src/audio_volume_change_unit_test.cpp" ]
 
-  deps = [ "../../../../../../services/audio_service:audio_client" ]
+  deps = [
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
+  ]
   external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokensetproc_shared",
     "hilog:libhilog",
     "ipc:ipc_core",
   ]

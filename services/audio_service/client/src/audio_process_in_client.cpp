@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -73,7 +73,7 @@ public:
 
     int32_t SaveUnderrunCallback(const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback) override;
 
-    int32_t GetBufferDesc(BufferDesc &bufDesc) const override;
+    int32_t GetBufferDesc(BufferDesc &bufDesc) override;
 
     int32_t Enqueue(const BufferDesc &bufDesc) override;
 
@@ -146,7 +146,8 @@ public:
 
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code) override;
 
-    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
+    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method,
+        ThreadPriorityConfig threadPriority) override;
 
     bool GetStopFlag() const override;
 
@@ -166,12 +167,19 @@ public:
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t GetStaticPlayPosition(StaticBufferInfo &staticBufferInfo) override;
 
     int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
+
+    int32_t SetFirstFrameWritingCallback(
+        const std::shared_ptr<AudioFirstFrameCallback> &callback) override;
+
+    void SetIsFirstFrame(bool value) override;
+
+    int32_t ResetStaticPlayPosition() override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
-
 private:
 
     bool InitAudioBuffer();
@@ -179,7 +187,7 @@ private:
     void CallClientHandleCurrent();
     void CheckOperations();
 
-    int32_t ReadFromProcessClient() const;
+    int32_t ReadFromProcessClient();
     int32_t RecordReSyncServicePos();
     int32_t RecordFinishHandleCurrent(uint64_t &curReadPos, int64_t &clientReadCost);
 
@@ -200,8 +208,6 @@ private:
     void ProcessVolume(const AudioStreamData &targetData) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
     int32_t ProcessData(const BufferDesc &srcDesc, const RingBufferWrapper &dstDesc);
-    void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime);
-    void CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost);
 
     void DoFadeInOut(const BufferDesc &buffDesc);
 
@@ -220,6 +226,14 @@ private:
     void WaitForReadableSpace() const;
 
     bool CheckStaticAndOperate();
+
+    void CalcClientSpanInfo();
+
+    void CalcClientSpanBasedOnServerSize();
+
+    void CalcDefaultClientSpanSize();
+
+    void NotifyStreamSilentChange();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -252,7 +266,7 @@ private:
     uint32_t totalSizeInFrame_ = 0;
     uint32_t spanSizeInFrame_ = 0;
     uint32_t byteSizePerFrame_ = 0;
-    uint32_t spanSizeInMs_ = 0;
+    float serverSpanSizeInMs_ = 0;
     size_t spanSizeInByte_ = 0;
     std::weak_ptr<AudioDataCallback> audioDataCallback_;
     std::weak_ptr<ClientUnderrunCallBack> underrunCallback_;
@@ -305,6 +319,8 @@ private:
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
     std::function<void()> sendStaticRecreateFunc_ = nullptr;
     std::mutex staticBufferMutex_;
+    std::weak_ptr<AudioFirstFrameCallback> staticFirstFrameCallback_;
+    std::atomic<bool> needNotifyStreamSilentChange_ = true;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -633,17 +649,19 @@ bool AudioProcessInClientInner::InitAudioBuffer()
 
     audioBuffer_->GetSizeParameter(totalSizeInFrame_, byteSizePerFrame_);
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    spanSizeInMs_ = spanSizeInFrame_ * MILLISECOND_PER_SECOND / processConfig_.streamInfo.samplingRate;
-
-    clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
-    clientSpanSizeInFrame_ = spanSizeInFrame_;
+    serverSpanSizeInMs_ = static_cast<float>(spanSizeInFrame_) * static_cast<float>(MILLISECOND_PER_SECOND) /
+        static_cast<float>(processConfig_.streamInfo.samplingRate);
+    CalcClientSpanInfo();
+    
     if ((processConfig_.audioMode != AUDIO_MODE_PLAYBACK) && (!isVoipMmap_)) {
         clientSpanSizeInByte_ = spanSizeInByte_;
     }
 
     AUDIO_INFO_LOG("Using totalSizeInFrame_ %{public}d spanSizeInFrame_ %{public}d byteSizePerFrame_ %{public}d "
-        "spanSizeInByte_ %{public}zu, spanSizeInMs_ %{public}u", totalSizeInFrame_, spanSizeInFrame_,
-        byteSizePerFrame_, spanSizeInByte_, spanSizeInMs_);
+        "spanSizeInByte_ %{public}zu, serverSpanSizeInMs_ %{public}f, clientSpanSizeInFrame_ %{public}zu, "
+        "ultraFastFlag %{public}u",
+        totalSizeInFrame_, spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, serverSpanSizeInMs_,
+        clientSpanSizeInFrame_, processConfig_.ultraFastFlag);
 
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
     CHECK_AND_RETURN_RET_LOG(callbackBuffer_ != nullptr, false, "Init callbackBuffer_ failed.");
@@ -707,6 +725,11 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 #endif
     std::unique_lock<std::mutex> statusLock(loopMutex_);
     callbackLoop_ = std::thread([this, weakStream] {
+        ThreadPriorityConfig threadPriority = THREAD_PRIORITY_QOS_7;
+        if (processConfig_.ultraFastFlag == (ULTRA_REQUESTED | ULTRA_IMPLEMENTED)) {
+            BindBigAndMidCore();
+            threadPriority = THREAD_PRIORITY_4;
+        }
         bool keepRunning = true;
         uint64_t curWritePos = 0;
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
@@ -715,7 +738,8 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         processProxy_->RegisterThreadPriority(
             gettid(),
             AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ);
+            METHOD_WRITE_OR_READ,
+            threadPriority);
         // Callback loop
         while (keepRunning) {
             strongStream = weakStream.lock();
@@ -746,7 +770,8 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
         processProxy_->RegisterThreadPriority(
             gettid(),
             AppBundleManager::GetSelfBundleName(processConfig_.appInfo.appUid),
-            METHOD_WRITE_OR_READ);
+            METHOD_WRITE_OR_READ,
+            THREAD_PRIORITY_QOS_7);
         // Callback loop
         while (keepRunning) {
             strongStream = weakStream.lock();
@@ -830,7 +855,17 @@ void AudioProcessInClientInner::WaitForReadableSpace() const
     CHECK_AND_RETURN_LOG(futexRes == SUCCESS, "futex err: %{public}d", futexRes);
 }
 
-int32_t AudioProcessInClientInner::ReadFromProcessClient() const
+void AudioProcessInClientInner::NotifyStreamSilentChange()
+{
+    CHECK_AND_RETURN(needNotifyStreamSilentChange_.load() && volumeDataCount_ > 0);
+    int64_t stamp = ClockTime::GetCurNano();
+    Trace trace("AudioProcessInClientInner::NotifyStreamSilentChange " + std::to_string(sessionId_));
+    AudioPolicyManager::GetInstance().NotifyStreamSilentChange(sessionId_);
+    needNotifyStreamSilentChange_.store(false);
+    AUDIO_INFO_LOG("NotifyStreamSilentChange cost %{public}" PRId64 " ns", ClockTime::GetCurNano() - stamp);
+}
+
+int32_t AudioProcessInClientInner::ReadFromProcessClient()
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERR_INVALID_HANDLE,
         "%{public}s audio buffer is null.", __func__);
@@ -850,17 +885,17 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         .dataLength = spanSizeInByte_}.CopyInputBufferValueToCurBuffer(ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
-    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_);
     VolumeTools::DfxOperation(BufferDesc{.buffer = callbackBuffer_.get(),
         .bufLength = spanSizeInByte_, .dataLength = spanSizeInByte_},
         processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
-
+    NotifyStreamSilentChange();
+    DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_);
     ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     return SUCCESS;
 }
 
 // the buffer will be used by client
-int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
+int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(isInited_, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[GetBufferDesc]not inited!"));
@@ -1099,6 +1134,8 @@ int32_t AudioProcessInClientInner::Start()
 {
     Trace traceStart("AudioProcessInClient::Start");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    volumeDataCount_ = 0;
+    needNotifyStreamSilentChange_.store(true);
 
     AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
     AudioSampleFormat format = processConfig_.streamInfo.format;
@@ -1343,8 +1380,7 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
     uint64_t serverHandlePos = 0;
     int64_t serverHandleTime = 0;
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "processProxy_ is nullptr");
-    int32_t ret = isAysnc ? processProxy_->RequestHandleInfoAsync() : processProxy_->RequestHandleInfo();
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RequestHandleInfo failed ret:%{public}d", ret);
+
     audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
 
     CheckPosTimeRes res = handleTimeModel_.UpdataFrameStamp(serverHandlePos, serverHandleTime);
@@ -1354,7 +1390,7 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
 
     if (resetReadWritePos) {
         uint64_t nextWritePos = serverHandlePos + spanSizeInFrame_;
-        ret = audioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
+        int32_t ret = audioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "ResetCurReadWritePos failed ret:%{public}d", ret);
     }
 }
@@ -1701,30 +1737,6 @@ bool AudioProcessInClientInner::KeepLoopRunningIndependent()
     return false;
 }
 
-void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime)
-{
-    curTime = ClockTime::GetCurNano();
-    int64_t wakeupCost = curTime - wakeUpTime;
-    if (wakeupCost > ONE_MILLISECOND_DURATION) {
-        if (wakeupCost > TWO_MILLISECOND_DURATION) {
-            AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
-        }
-        wakeUpTime = curTime;
-    }
-}
-
-void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime, int64_t clientWriteCost)
-{
-    curTime = ClockTime::GetCurNano();
-    int64_t round = static_cast<int64_t>(spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
-    int64_t clientBufferDurationInMs = static_cast<int64_t>(spanSizeInMs_) * ONE_MILLISECOND_DURATION * round;
-    if (wakeUpTime - curTime > clientBufferDurationInMs + clientWriteCost) {
-        Trace trace("BigWakeUpTime curTime[" + std::to_string(curTime) + "] target[" + std::to_string(wakeUpTime) +
-            "] delay " + std::to_string(wakeUpTime - curTime) + "ns");
-        AUDIO_PRERELEASE_LOGW("wakeUpTime is too late...");
-    }
-}
-
 int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "set failed with null ipcProxy.");
@@ -1771,10 +1783,10 @@ void AudioProcessInClientInner::SaveAdjustStreamVolumeInfo(float volume, uint32_
 }
 
 int32_t AudioProcessInClientInner::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-    BoostTriggerMethod method)
+    BoostTriggerMethod method, ThreadPriorityConfig threadPriority)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
-    return processProxy_->RegisterThreadPriority(tid, bundleName, method);
+    return processProxy_->RegisterThreadPriority(tid, bundleName, method, threadPriority);
 }
 
 bool AudioProcessInClientInner::GetStopFlag() const
@@ -1822,6 +1834,12 @@ void AudioProcessInClientInner::CheckOperations()
             audioStaticBufferEventCallback_->OnStaticBufferEvent(LOOP_END_EVENT);
             audioBuffer_->SetIsNeedSendLoopEndCallback(false);
         }
+        if (audioBuffer_->IsFirstFrame()) {
+            audioBuffer_->SetIsFirstFrame(false);
+            std::shared_ptr<AudioFirstFrameCallback> cb = staticFirstFrameCallback_.lock();
+            CHECK_AND_RETURN_LOG(cb != nullptr, "audio staticFirstFrameCallback is null.");
+            cb->OnFirstFrameWriting();
+        }
         return;
     }
 }
@@ -1855,7 +1873,8 @@ int32_t AudioProcessInClientInner::SetLoopTimes(int64_t bufferLoopTimes)
 bool AudioProcessInClientInner::CheckStaticAndOperate()
 {
     if (processConfig_.rendererInfo.isStatic) {
-        return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback();
+        return audioBuffer_->IsNeedSendLoopEndCallback() || audioBuffer_->IsNeedSendBufferEndCallback() ||
+            audioBuffer_->IsFirstFrame();
     } else {
         uint32_t writableSizeInFrame = static_cast<uint32_t>(audioBuffer_->GetWritableDataFrames());
         if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
@@ -1865,12 +1884,13 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
     return false;
 }
 
-int32_t AudioProcessInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+int32_t AudioProcessInClientInner::GetStaticPlayPosition(StaticBufferInfo &staticBufferInfo)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
-    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
-        ERR_NULL_POINTER, "GetStaticBufferInfo processProxy_ is nullptr");
-    return processProxy_->GetStaticBufferInfo(staticBufferInfo);
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERROR_INVALID_PARAM, "audioBuffer is nullptr");
+    audioBuffer_->GetStaticPlayPosition(
+        staticBufferInfo.currentLoopTimes_, staticBufferInfo.curStaticDataPos_);
+    return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderRate)
@@ -1881,5 +1901,57 @@ int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderR
     return processProxy_->SetStaticRenderRate(renderRate);
 }
 
+int32_t AudioProcessInClientInner::SetFirstFrameWritingCallback(
+    const std::shared_ptr<AudioFirstFrameCallback> &callback)
+{
+    AUDIO_INFO_LOG("enter.");
+    CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
+    staticFirstFrameCallback_ = callback;
+    return SUCCESS;
+}
+
+void AudioProcessInClientInner::SetIsFirstFrame(bool value)
+{
+    CHECK_AND_RETURN_LOG(processConfig_.rendererInfo.isStatic, "not support!");
+    CHECK_AND_RETURN_LOG(audioBuffer_ != nullptr, "audioBuffer is nullptr");
+    audioBuffer_->SetIsFirstFrame(value);
+}
+
+void AudioProcessInClientInner::CalcClientSpanInfo()
+{
+    if (processConfig_.audioMode != AUDIO_MODE_PLAYBACK) {
+        CalcClientSpanBasedOnServerSize();
+        return;
+    }
+
+    if (!(processConfig_.ultraFastFlag & ULTRA_REQUESTED) && (processConfig_.ultraFastFlag & ULTRA_IMPLEMENTED)) {
+        CalcDefaultClientSpanSize();
+    } else {
+        CalcClientSpanBasedOnServerSize();
+    }
+}
+
+void AudioProcessInClientInner::CalcClientSpanBasedOnServerSize()
+{
+    clientSpanSizeInFrame_ = spanSizeInFrame_;
+    clientSpanSizeInByte_ = spanSizeInFrame_ * clientByteSizePerFrame_;
+}
+
+void AudioProcessInClientInner::CalcDefaultClientSpanSize()
+{
+    clientSpanSizeInFrame_ =
+        DEFAULT_FAST_SPAN_SIZE_INT_IN_MS * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
+    clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
+}
+
+int32_t AudioProcessInClientInner::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERR_INCORRECT_MODE, "not support!");
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_NULL_POINTER, "processProxy_ is nullptr");
+
+    ExitStandByIfNeed();
+    return processProxy_->ResetStaticPlayPosition();
+}
 } // namespace AudioStandard
 } // namespace OHOS

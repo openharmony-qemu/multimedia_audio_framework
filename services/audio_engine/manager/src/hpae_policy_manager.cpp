@@ -241,11 +241,11 @@ bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout 
     return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
-void HpaePolicyManager::updateCollaborativeProductId(const std::string &productId)
+void HpaePolicyManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
-    audioCollaborationManager->updateCollaborativeProductId(productId);
+    audioCollaborationManager->UpdateCollaborativeProductId(productId);
 }
 
 void HpaePolicyManager::LoadCollaborationConfig()
@@ -253,13 +253,6 @@ void HpaePolicyManager::LoadCollaborationConfig()
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
     audioCollaborationManager->LoadCollaborationConfig();
-}
-
-void HpaePolicyManager::SetBypassSpatializationForStereo(bool bypass)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
-    audioEffectChainManager->SetBypassSpatializationForStereo(bypass);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

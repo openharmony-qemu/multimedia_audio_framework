@@ -400,20 +400,7 @@ bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
 bool AudioSession::IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
     const std::shared_ptr<AudioDeviceDescriptor> desc)
 {
-    bool ret = false;
-
-    if ((changeReason == AudioStreamDeviceChangeReason::OVERRODE) || (desc == nullptr)) {
-        return ret;
-    }
-
-    if ((deviceManager_.GetDevicePrivacyType(std::make_shared<AudioDeviceDescriptor>(deviceDescriptor_)) ==
-        AudioDevicePrivacyType::TYPE_PRIVACY) && (deviceManager_.GetDevicePrivacyType(desc) !=
-        AudioDevicePrivacyType::TYPE_PRIVACY)) {
-        ret = true;
-    }
-
-    deviceDescriptor_ = AudioDeviceDescriptor(desc);
-    return ret;
+    return changeReason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
 }
 
 bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc)
@@ -435,18 +422,20 @@ StreamUsage AudioSession::GetSessionStreamUsage()
     return GetStreamUsageInner();
 }
 
-StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice(const uint32_t streamId)
+StreamUsage AudioSession::GetAudioSessionStreamUsageForDevice()
 {
     StreamUsage streamUsage = GetStreamUsageInner();
     if (streamUsage != StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION) {
         return streamUsage;
     }
-    for (auto &iter : streamsInSession_) {
-        if (iter.streamId == streamId && iter.audioFocusType.streamType == STREAM_RING) {
-            AUDIO_INFO_LOG("get audio session stream usage for device is stream ring");
+    
+    for (const auto& iter : streamsInSession_) {
+        if (iter.audioFocusType.streamType == STREAM_RING) {
+            AUDIO_INFO_LOG("pid [%{public}d] ringtone exists", callerPid_);
             return iter.streamUsage;
         }
     }
+
     return streamUsage;
 }
 

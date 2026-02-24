@@ -41,10 +41,6 @@ constexpr uint32_t PARAMS_NUM_ONE = 1;
 constexpr uint32_t PARAMS_NUM_TWO = 2;
 constexpr uint32_t PARAMS_NUM_THREE = 3;
 constexpr uint32_t PARAMS_NUM_FOUR = 4;
-constexpr uint32_t INPUT_TIME = 20;
-constexpr uint32_t INPUT_RATE = 48000;
-constexpr uint32_t INPUT_CHANNEL = 2;
-constexpr uint32_t INPUT_DATA_LENGTH = INPUT_TIME * INPUT_RATE * INPUT_CHANNEL / 1000;
 
 const std::string SPACE_RENDER_POSITIONS_MOD = "AudioSpaceRenderPositionParams";
 const std::string SPACE_RENDER_ROTATION_MOD = "AudioSpaceRenderRotationParams";
@@ -85,7 +81,17 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Init()
     CHECK_AND_RETURN_RET_LOG(algoApi_.applyAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderApply");
     algoApi_.releaseAlgo = reinterpret_cast<FunSpaceRenderRelease>(dlsym(libHandle_, "SpaceRenderRelease"));
     CHECK_AND_RETURN_RET_LOG(algoApi_.releaseAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderRelease");
+    algoApi_.setParamsAlgo = reinterpret_cast<FunSpaceRenderSetParams>(dlsym(libHandle_, "SpaceRenderSetParams"));
+    CHECK_AND_RETURN_RET_LOG(algoApi_.setParamsAlgo != nullptr, ERROR, "Failed to get symbol SpaceRenderSetParams");
  
+    int32_t handleSize = algoApi_.getSize(&spaceRenderParam_);
+    CHECK_AND_RETURN_RET_LOG(handleSize >= 0, handleSize, "getSize error.");
+ 
+    spaceRenderHandle_.resize(handleSize);
+ 
+    int32_t ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render init failed.");
+
     isSpaceRenderAlgoInit_ = true;
     return SUCCESS;
 }
@@ -204,9 +210,6 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
     const std::string &paramValue)
 {
     int32_t ret;
-    if (spaceRenderHandle_.data()) {
-        algoApi_.releaseAlgo(spaceRenderHandle_.data());
-    }
 
     if (paramType == SPACE_RENDER_POSITIONS_MOD) {
         ret = SetPositionParameter(paramValue);
@@ -221,13 +224,16 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::SetParameter(const std::string &
  
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set parameter.");
  
-    int32_t handleSize = algoApi_.getSize(&spaceRenderParam_);
-    CHECK_AND_RETURN_RET_LOG(handleSize >= 0, handleSize, "getSize error.");
- 
-    spaceRenderHandle_.resize(handleSize);
- 
-    ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render init failed.");
+    if (paramType == SPACE_RENDER_EXTENSION_MOD) {
+        ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render extension init failed.");
+    } else {
+        ret = algoApi_.setParamsAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+        if (ret == SPACE_RENDER_ERR_SET_MODE) {
+            ret = algoApi_.initAlgo(spaceRenderHandle_.data(), &spaceRenderParam_);
+        }
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render SetParameter failed.");
+    }
 
     return SUCCESS;
 }
@@ -302,8 +308,14 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pc
 
     const short *bufIn = reinterpret_cast<const short *>(pcmInBuf[0]);
     short *pcmOut = reinterpret_cast<short *>(pcmOutBuf[0]);
+    CHECK_AND_RETURN_RET_LOG(
+        nodeParameter_.frameLen < MAX_SAMPLE_POINT && nodeParameter_.outChannels <= MAX_CHANNEL_COUNT,
+        ERROR,
+        "The algorithm returned more than the maximum number of sample points.");
+    uint32_t INPUT_DATA_LENGTH = nodeParameter_.frameLen * nodeParameter_.outChannels;
     int32_t ret = algoApi_.applyAlgo(spaceRenderHandle_.data(), bufIn, INPUT_DATA_LENGTH, pcmOut);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "space render apply failed %{public}d ", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
+        HILOG_COMM_ERROR("[Apply]SpaceRender algo apply failed, return error is %{public}d", ret));
  
     return SUCCESS;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -335,7 +335,7 @@ void IpcStreamInServerRegisterThreadPriorityFuzzTest()
     int32_t tid = g_fuzzUtils.GetData<int32_t>();
     std::string bundleName = "testBundleName";
     uint32_t method = g_fuzzUtils.GetData<uint32_t>();
-    ipcStreamInServerRet->RegisterThreadPriority(tid, bundleName, method);
+    ipcStreamInServerRet->RegisterThreadPriority(tid, bundleName, method, THREAD_PRIORITY_QOS_7);
 }
 
 void IpcStreamInServerSetDefaultOutputDeviceFuzzTest()
@@ -392,6 +392,68 @@ void IpcStreamInServerSetAudioHapticsSyncIdFuzzTest()
     ipcStreamInServerRet->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 
+void RequestHandleDataFuzzTest()
+{
+    shared_ptr<IpcStreamInServer> ipcStreamInServerRet = CreateIpcStreamInServer();
+    CHECK_AND_RETURN(ipcStreamInServerRet != nullptr);
+    ipcStreamInServerRet->mode_ = g_fuzzUtils.GetData<AudioMode>();
+
+    uint64_t syncFramePts = g_fuzzUtils.GetData<uint64_t>();
+    uint32_t size = g_fuzzUtils.GetData<uint32_t>();
+    ipcStreamInServerRet->RequestHandleData(syncFramePts, size);
+}
+
+void UpdatePositionFuzzTest()
+{
+    shared_ptr<IpcStreamInServer> ipcStreamInServerRet = CreateIpcStreamInServer();
+    CHECK_AND_RETURN(ipcStreamInServerRet != nullptr);
+    ipcStreamInServerRet->mode_ = g_fuzzUtils.GetData<AudioMode>();
+    AudioBufferHolder bufferHolder;
+    uint32_t totalSize = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t spanSize = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t byteSize = g_fuzzUtils.GetData<uint32_t>();
+    ipcStreamInServerRet->rendererInServer_->audioServerBuffer_ =
+        std::make_shared<OHAudioBufferBase>(bufferHolder, totalSize, byteSize);
+    if (ipcStreamInServerRet->rendererInServer_->audioServerBuffer_ == nullptr) {
+        return;
+    }
+    auto basicInfo = std::make_shared<BasicBufferInfo>();
+    ipcStreamInServerRet->rendererInServer_->audioServerBuffer_->basicBufferInfo_ = basicInfo.get();
+    if (ipcStreamInServerRet->rendererInServer_->audioServerBuffer_->basicBufferInfo_ == nullptr) {
+        return;
+    }
+    ipcStreamInServerRet->capturerInServer_->audioServerBuffer_ =
+        std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT, totalSize, spanSize, byteSize);
+    if (ipcStreamInServerRet->capturerInServer_->audioServerBuffer_ == nullptr) {
+        return;
+    }
+    auto bufferInfo = std::make_shared<BasicBufferInfo>();
+    ipcStreamInServerRet->capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
+    if (ipcStreamInServerRet->capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ == nullptr) {
+        return;
+    }
+    ipcStreamInServerRet->UpdatePosition();
+}
+
+void SetLoopTimesFuzzTest()
+{
+    shared_ptr<IpcStreamInServer> ipcStreamInServerRet = CreateIpcStreamInServer();
+    CHECK_AND_RETURN(ipcStreamInServerRet != nullptr);
+    ipcStreamInServerRet->mode_ = g_fuzzUtils.GetData<AudioMode>();
+    int64_t bufferLoopTimes = g_fuzzUtils.GetData<int64_t>();
+    ipcStreamInServerRet->SetLoopTimes(bufferLoopTimes);
+}
+
+void GetLatencyWithFlagFuzzTest()
+{
+    shared_ptr<IpcStreamInServer> ipcStreamInServerRet = CreateIpcStreamInServer();
+    CHECK_AND_RETURN(ipcStreamInServerRet != nullptr);
+    ipcStreamInServerRet->mode_ = g_fuzzUtils.GetData<AudioMode>();
+    uint64_t latency = g_fuzzUtils.GetData<uint64_t>();
+    uint32_t flag = g_fuzzUtils.GetData<uint32_t>();
+    ipcStreamInServerRet->GetLatencyWithFlag(latency, flag);
+}
+
 vector<TestFuncs> g_testFuncs = {
     StreamListenerHolderIsWakeUpLaterNeededFuzzTest,
     StreamListenerHolderRegisterStreamListenerFuzzTest,
@@ -435,6 +497,10 @@ vector<TestFuncs> g_testFuncs = {
     IpcStreamInServerSetOffloadDataCallbackStateFuzzTest,
     IpcStreamInServerResolveBufferBaseAndGetServerSpanSizeFuzzTest,
     IpcStreamInServerSetAudioHapticsSyncIdFuzzTest,
+    RequestHandleDataFuzzTest,
+    UpdatePositionFuzzTest,
+    SetLoopTimesFuzzTest,
+    GetLatencyWithFlagFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS

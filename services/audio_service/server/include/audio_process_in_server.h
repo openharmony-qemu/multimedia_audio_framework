@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +31,7 @@
 #include "format_converter.h"
 #include "audio_static_buffer_processor.h"
 #include "audio_static_buffer_provider.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,7 +54,16 @@ private:
     int64_t createTime_ = 0;
 };
 
-class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
+class AudioProcessInServerHandler : public IHandler {
+public:
+    AudioProcessInServerHandler(IHandler* handler);
+    void OnHandle(uint32_t code, int64_t data) override;
+private:
+    IHandler *handler_ = nullptr;
+};
+
+class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream,
+    public IHandler {
 public:
 
     enum HandleRendererDataType : uint32_t {
@@ -101,7 +111,7 @@ public:
     int32_t RegisterProcessCb(const sptr<IRemoteObject>& object) override;
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
-        uint32_t method) override;
+        uint32_t method, uint32_t threadPriority) override;
 
     int32_t SetRebuildFlag() override;
 
@@ -148,6 +158,8 @@ public:
     virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
 
+    void NotifyMuteStateChange(bool muteFlag);
+
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
     std::time_t GetStartMuteTime() override;
@@ -177,8 +189,9 @@ public:
     void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
     int32_t SetStaticRenderRate(uint32_t renderRate) override;
+
+    int32_t ResetStaticPlayPosition() override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -188,7 +201,7 @@ private:
     void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);
     AudioProcessInServer(const AudioProcessConfig &processConfig, ProcessReleaseCallback *releaseCallback);
     int32_t InitBufferStatus();
-    void InitRendererStream(uint32_t spanTime,
+    void InitRendererStream(float spanTime,
         const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
     void InitCapturerStream(uint32_t spanSizeInByte,
         const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo);
@@ -217,6 +230,10 @@ private:
     int32_t ProcessAndSetStaticBuffer();
     void MarkStaticFadeOut(bool isRefresh);
     void MarkStaticFadeIn();
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+    void ReleaseCallbackHandler();
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -294,6 +311,10 @@ private:
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
+
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+    std::shared_ptr<AudioProcessInServerHandler> handler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

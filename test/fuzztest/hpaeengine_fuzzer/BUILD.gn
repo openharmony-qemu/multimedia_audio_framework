@@ -48,7 +48,7 @@ ohos_fuzztest("HpaeEngineFuzzTest") {
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../frameworks/native/audioadapter:pro_audio_service_adapter",
     "../../../frameworks/native/audioutils:audio_utils",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_service:audio_common",
   ]

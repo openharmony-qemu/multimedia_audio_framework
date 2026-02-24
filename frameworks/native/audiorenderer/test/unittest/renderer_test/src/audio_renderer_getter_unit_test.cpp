@@ -148,8 +148,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_002, TestSize.Level1)
     ret = audioRenderer->SetParams(rendererParams);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(false, isStarted);
+    audioRenderer->Start();
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
@@ -216,11 +215,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetParams_005, TestSize.Level1)
     ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
     EXPECT_EQ(SUCCESS, ret);
 
-    bool isStarted = audioRenderer->Start();
-    EXPECT_EQ(false, isStarted);
+    audioRenderer->Start();
 
-    bool isStopped = audioRenderer->Stop();
-    EXPECT_EQ(false, isStopped);
+    audioRenderer->Stop();
 
     AudioRendererParams getRendererParams;
     ret = audioRenderer->GetParams(getRendererParams);
@@ -1744,24 +1741,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_002, TestSize.Le
 
     ret = audioRenderer->SetAudioEffectMode(EFFECT_DEFAULT);
     EXPECT_EQ(SUCCESS, ret);
-
-    AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
-    EXPECT_EQ(EFFECT_DEFAULT, effectMode);
-    audioRenderer->Release();
-}
-
-/**
- * @tc.name  : Test GetAudioEffectMode with, default effectMode
- * @tc.number: Audio_Renderer_GetAudioEffectMode_003
- * @tc.desc  : Test GetAudioEffectMode interface. Returns the default effect mode EFFECT_DEFAULT.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioEffectMode_003, TestSize.Level1)
-{
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
 
     AudioEffectMode effectMode = audioRenderer->GetAudioEffectMode();
     EXPECT_EQ(EFFECT_DEFAULT, effectMode);

@@ -34,8 +34,10 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
+#ifndef CONFIG_FACTORY_VERSION
 static constexpr float FADE_LOW = 0.0f;
 static constexpr float FADE_HIGH = 1.0f;
+#endif
 static constexpr float SHORT_FADE_PERIOD = 0.005f; // 5ms fade for 10ms < playback duration <= 40ms
 static constexpr float EPSILON = 1e-6f;
 
@@ -174,6 +176,7 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         statusCallback->OnFadeDone(GetSessionId());
         return;
     }
+#ifndef CONFIG_FACTORY_VERSION
     AudioRawFormat rawFormat;
     rawFormat.format = SAMPLE_F32LE; // for now PCM in gain node is float32
     rawFormat.channels = GetChannelCount();
@@ -181,10 +184,14 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     uint32_t index = GetFadeLength(byteLength, input);
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
+#endif
     // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
+        auto ret = SUCCESS;
+#ifndef CONFIG_FACTORY_VERSION
         AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        auto ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+        ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+#endif
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
@@ -200,8 +207,11 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
             SilenceData(input);
             return;
         }
+        auto ret = SUCCESS;
+#ifndef CONFIG_FACTORY_VERSION
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
-        auto ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+        ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+#endif
         fadeInState_ = false;
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
     }
@@ -223,7 +233,8 @@ void HpaeGainNode::SilenceData(HpaePcmBuffer *pcmBuffer)
 uint32_t HpaeGainNode::CalcRemainDurationMs(uint32_t duration, uint32_t frameLen, float *curSysGain, float *preSysGain)
 {
     uint32_t remainDurationMs = 0;
-    uint32_t spaneInFrameMs = (frameLen * 1000u) / GetSampleRate();
+    uint32_t sampleRate = static_cast<uint32_t>(GetSampleRate());
+    uint32_t spaneInFrameMs = static_cast<uint32_t>((frameLen * 1000.0f) / sampleRate);
     uint32_t times = duration / spaneInFrameMs;
     if (times > 0) {
         *curSysGain = (*curSysGain - *preSysGain) / times + *preSysGain;
@@ -252,15 +263,16 @@ void HpaeGainNode::DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t chan
     }
 
     remainDurationMs = CalcRemainDurationMs(durationMs, frameLen, &curSystemGain, &preSystemGain);
-    
+
     Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeGainNode::DoGain, curSystemGain: " +
         std::to_string(curSystemGain) + ", preSystemGain: " + std::to_string(preSystemGain)+ ", durationMs" +
         std::to_string(durationMs));
     CHECK_AND_RETURN_LOG(frameLen != 0, "framelen is zero, invalid val.");
     float systemStepGain = (curSystemGain - preSystemGain) / frameLen;
-    AUDIO_DEBUG_LOG("curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f " \
-        "durationMs: %{public}u deviceClass :%{public}s", curSystemGain, preSystemGain, systemStepGain,
-        durationMs, GetDeviceClass().c_str());
+    AUDIO_DEBUG_LOG(
+        "curSystemGain:%{public}f, preSystemGain:%{public}f, systemStepGain:%{public}f " \
+        "durationMs: %{public}u deviceClass :%{public}s",
+        curSystemGain, preSystemGain, systemStepGain, durationMs, GetDeviceClass().c_str());
     if (audioVolume->IsSameVolume(0.0f, curSystemGain) && audioVolume->IsSameVolume(0.0f, preSystemGain)) {
         SilenceData(input);
         input->SetBufferSilence(true);

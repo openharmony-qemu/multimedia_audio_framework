@@ -26,6 +26,21 @@ namespace OHOS {
 namespace AudioStandard {
 static const char *ENCODING_EAC3_NAME = "eac3";
 static const char *FAST_DISTRIBUTE_TAG = "fast_distributed";
+constexpr int32_t LENGTH_OF_PAIR = 2;
+
+bool StrToInt(const std::string &str, int32_t &value)
+{
+    CHECK_AND_RETURN_RET_LOG(!str.empty(), false, "input str is empty");
+    char* end = nullptr;
+    errno = 0;
+    int64_t result = std::strtoll(str.c_str(), &end, 10);
+    CHECK_AND_RETURN_RET_LOG(result >= INT32_MIN && result <= INT32_MAX, false,
+        "false, input str is %{public}s", str.c_str());
+    CHECK_AND_RETURN_RET_LOG(end != str.c_str() && end[0] == '\0' && errno != ERANGE, false,
+        "false, input str is %{public}s", str.c_str());
+    value = static_cast<int32_t>(result);
+    return true;
+}
 
 // LCOV_EXCL_START
 bool AudioPolicyConfigParser::LoadConfiguration()
@@ -218,6 +233,7 @@ void AudioPolicyConfigParser::ParsePaProp(std::shared_ptr<AudioXmlNode> curNode,
     curNode->GetProp("moduleName", paProp.moduleName_);
     curNode->GetProp("fixed_latency", paProp.fixedLatency_);
     curNode->GetProp("render_in_idle_state", paProp.renderInIdleState_);
+    curNode->GetProp("bus_address", paProp.busAddress_);
     pipeInfo->paProp_ = std::move(paProp);
 }
 
@@ -303,6 +319,28 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         } else {
             pipeInfo->suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
         }
+    } else if (attributeInfo.name_ == "support_ultra_fast") {
+        AUDIO_INFO_LOG("Support ultra fast");
+        supportUltraFast_ = (attributeInfo.value_ == "true");
+    } else if (attributeInfo.name_ == "notuse_vendorid_productid") {
+        if (attributeInfo.value_ == "All") {
+            pipeInfo->allUsbDeviceDisable_ = true;
+            AUDIO_INFO_LOG("All usb devices disable");
+            return;
+        }
+        std::list<std::string> productList = {};
+        SplitStringToList(attributeInfo.value_, productList, ";");
+        for (auto product : productList) {
+            std::list<std::string> vendorIdAndProductId = {};
+            SplitStringToList(product, vendorIdAndProductId, "-");
+            int32_t vendorId;
+            int32_t productId;
+            if (vendorIdAndProductId.size() == LENGTH_OF_PAIR && StrToInt(*vendorIdAndProductId.begin(), vendorId) &&
+                StrToInt(*vendorIdAndProductId.rbegin(), productId)) {
+                pipeInfo->disableUsbDeviceSet_.insert({vendorId, productId});
+                AUDIO_INFO_LOG("disable usb device vendorId: %{public}d, productId: %{public}d", vendorId, productId);
+            }
+        }
     }
 }
 
@@ -317,6 +355,9 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             AdapterDeviceInfo deviceInfo {};
             deviceInfo.adapterInfo_ = adapterInfo;
             curNode->GetProp("name", deviceInfo.name_);
+            std::string preload;
+            curNode->GetProp("preload", preload);
+            deviceInfo.preload_ = preload == "true";
             std::string type;
             curNode->GetProp("type", type);
             deviceInfo.type_ = AudioDefinitionPolicyUtils::deviceTypeStrToEnum[type];
@@ -626,9 +667,11 @@ void AudioPolicyConfigParser::ConvertAdapterInfoToAudioModuleInfo()
 
         AudioPipeRole currentRole = PIPE_ROLE_NONE;
         for (auto &pipeInfo : adapterInfoIt.second->pipeInfos) {
-            if (currentRole == pipeInfo->role_) {
-                continue;
-            }
+#ifdef MULTI_BUS_ENABLE
+            CHECK_AND_CONTINUE(!pipeInfo->paProp_.busAddress_.empty());
+#else
+            CHECK_AND_CONTINUE(currentRole != pipeInfo->role_);
+#endif
             currentRole = pipeInfo->role_;
             CHECK_AND_CONTINUE_LOG(pipeInfo->name_.find(MODULE_SINK_OFFLOAD) == std::string::npos,
                 "skip offload out sink.");
@@ -693,6 +736,7 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
     }
 
     audioModuleInfo.lib = pipeInfo->paProp_.lib_;
+    audioModuleInfo.busAddress = pipeInfo->paProp_.busAddress_;
 
     if (pipeInfo->streamPropInfos_.size() != 0) {
         audioModuleInfo.rate = std::to_string(pipeInfo->streamPropInfos_.front()->sampleRate_);
@@ -711,6 +755,8 @@ void AudioPolicyConfigParser::GetCommontAudioModuleInfo(std::shared_ptr<AdapterP
     audioModuleInfo.fixedLatency = pipeInfo->paProp_.fixedLatency_;
     audioModuleInfo.renderInIdleState = pipeInfo->paProp_.renderInIdleState_;
     audioModuleInfo.suspendIdleTimeout = pipeInfo->suspendIdleTimeout_;
+    audioModuleInfo.allUsbDeviceDisable_ = pipeInfo->allUsbDeviceDisable_;
+    audioModuleInfo.disableUsbDeviceSet_ = pipeInfo->disableUsbDeviceSet_;
 }
 
 std::string AudioPolicyConfigParser::GetAudioModuleInfoName(std::string &pipeInfoName,

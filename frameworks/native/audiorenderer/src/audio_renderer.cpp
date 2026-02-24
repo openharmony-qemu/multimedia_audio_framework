@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -84,8 +84,10 @@ static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
     {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
     {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, STREAM_USAGE_ANNOUNCEMENT},
     {STREAM_EMERGENCY, STREAM_USAGE_EMERGENCY}
+#endif
 };
 
 static const std::map<AudioFlag, int32_t> OUTPUT_ROUTE_TO_STREAM_MAP = {
@@ -730,6 +732,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 
     isHWDecodingType_ = IsHWDecodingType(params.encodingType);
     rendererInfo_.audioFlag = isHWDecodingType_ ? AUDIO_OUTPUT_FLAG_HWDECODING : AUDIO_OUTPUT_FLAG_NORMAL;
+
     ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
@@ -828,7 +831,10 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
 IAudioStream::StreamClass AudioRendererPrivate::DecideStreamClassAndUpdateRendererInfo(uint32_t flag)
 {
     IAudioStream::StreamClass ret = IAudioStream::StreamClass::PA_STREAM;
-    if (flag & AUDIO_OUTPUT_FLAG_FAST) {
+    if (flag & AUDIO_OUTPUT_FLAG_3DA_DIRECT) {
+        rendererInfo_.rendererFlags = AUDIO_FLAG_3DA_DIRECT;
+        rendererInfo_.pipeType = PIPE_TYPE_OUT_3DA_DIRECT;
+    } else if (flag & AUDIO_OUTPUT_FLAG_FAST) {
         if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
             rendererInfo_.originalFlag = AUDIO_FLAG_VOIP_FAST;
             rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_FAST;
@@ -2200,6 +2206,9 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     res = audioStream->SetDuckVolume(info.duckVolume);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetDuckVolume failed");
     audioStream->SetUnderflowCount(info.underFlowCount);
+    if (info.backMute) {
+        audioStream->SetMute(true, CMD_FROM_SYSTEM);
+    }
 
     if (info.userSettedPreferredFrameSize.has_value()) {
         audioStream->SetPreferredFrameSize(info.userSettedPreferredFrameSize.value(), true);
@@ -2220,30 +2229,8 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     }
 
     // set callback
-    if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
-        audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);
-    }
+    SetSwitchInfoCallbacks(info, audioStream);
 
-    if ((info.capturePositionCb != nullptr) && (info.frameMarkPosition > 0)) {
-        audioStream->SetCapturerPositionCallback(info.frameMarkPosition, info.capturePositionCb);
-    }
-
-    if ((info.renderPeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
-        audioStream->SetRendererPeriodPositionCallback(info.framePeriodNumber, info.renderPeriodPositionCb);
-    }
-
-    if ((info.capturePeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
-        audioStream->SetCapturerPeriodPositionCallback(info.framePeriodNumber, info.capturePeriodPositionCb);
-    }
-
-    if (info.rendererInfo.isStatic && info.staticBufferEventCallback != nullptr) {
-        audioStream->SetStaticBufferEventCallback(info.staticBufferEventCallback);
-    }
-
-    audioStream->SetStreamCallback(info.audioStreamCallback);
-    audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
-
-    audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
     audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair, info.lastFramePosAndTimePairWithSpeed);
     return true;
 }
@@ -2363,6 +2350,9 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
     audioStream_->SetMute(true, CMD_FROM_SYSTEM); // Do not record this status in recover(InitSwitchInfo)
+    bool backMute = false;
+    GetCurrentBackMuteStatus(backMute);
+    audioStream_->SetBackMute(backMute);
     bool switchResult = false;
     if (previousState == RENDERER_RUNNING) {
         switchResult = audioStream_->StopAudioStream();
@@ -3179,6 +3169,7 @@ void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStream
     audioStreamParams.isRemoteSpatialChannel = streamDesc->newDeviceDescs_.front()->IsDistributedSpeaker();
     audioStreamParams.remoteChannelLayout =
         static_cast<uint64_t>(*streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().channelLayout.begin());
+    audioStreamParams.ultraFastFlag = streamDesc->GetUltraFastFlag();
 }
 
 void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
@@ -3193,6 +3184,40 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
         audioStream->SetStaticBufferInfo(info.staticBufferInfo);
         audioStream->SetRenderRate(info.renderRate);
     }
+    if (info.backMute) {
+        // resume the backMute flag for new stream
+        audioStream->SetBackMute(true);
+    }
+}
+
+void AudioRendererPrivate::SetSwitchInfoCallbacks(IAudioStream::SwitchInfo &info,
+    std::shared_ptr<IAudioStream> audioStream)
+{
+    if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
+        audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);
+    }
+
+    if ((info.capturePositionCb != nullptr) && (info.frameMarkPosition > 0)) {
+        audioStream->SetCapturerPositionCallback(info.frameMarkPosition, info.capturePositionCb);
+    }
+
+    if ((info.renderPeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
+        audioStream->SetRendererPeriodPositionCallback(info.framePeriodNumber, info.renderPeriodPositionCb);
+    }
+
+    if ((info.capturePeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
+        audioStream->SetCapturerPeriodPositionCallback(info.framePeriodNumber, info.capturePeriodPositionCb);
+    }
+
+    if (info.rendererInfo.isStatic && info.staticBufferEventCallback != nullptr) {
+        audioStream->SetStaticBufferEventCallback(info.staticBufferEventCallback);
+        audioStream->SetStaticTriggerRecreateCallback([this]() {AsyncCheckAudioRenderer("StaticRecreate", false);});
+    }
+
+    audioStream->SetStreamCallback(info.audioStreamCallback);
+    audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
+
+    audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
 }
 
 int32_t AudioRendererPrivate::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const
@@ -3201,5 +3226,46 @@ int32_t AudioRendererPrivate::GetLatencyWithFlag(uint64_t &latency, LatencyFlag 
     CHECK_AND_RETURN_RET_LOG(GetStatusInner() != RENDERER_RELEASED, ERR_ILLEGAL_STATE, "state is released");
     return audioStream_->GetLatencyWithFlag(latency, flag);
 }
+
+int32_t AudioRendererPrivate::GetCurrentBackMuteStatus(bool &backMute)
+{
+    // gain background mute status for stream
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    uint32_t sessionId = static_cast<uint32_t>(-1);
+    int32_t ret = GetAudioStreamIdInner(sessionId);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, " Get sessionId failed");
+
+    ret = AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    CHECK_AND_RETURN_RET_LOG(!ret, ret, "Get Current Renderer backMute failed");
+
+    for (auto it = audioRendererChangeInfos.begin(); it != audioRendererChangeInfos.end(); it++) {
+        if ((*it)->sessionId == static_cast<int32_t>(sessionId)) {
+            backMute = (*it)->backMute;
+        }
+    }
+    return SUCCESS;
+}
+
+// Only can be used in static mode
+bool AudioRendererPrivate::ResetStaticPlayPosition()
+{
+    Trace trace("KeyAction AudioRenderer::ResetStaticPlayPosition" + std::to_string(sessionID_));
+    AUDIO_INFO_LOG("StreamClientState for Renderer::ResetStaticPlayPosition");
+
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "not in static mode");
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, false,
+        "ResetStaticPlayPosition failed. Illegal state:%{public}u", state);
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
+        "ResetStaticPlayPosition failed. Switching state: %{public}d", isSwitching_);
+    return audioStream_->ResetStaticPlayPosition();
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

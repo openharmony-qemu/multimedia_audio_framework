@@ -39,7 +39,6 @@
 #include "audio_microphone_descriptor.h"
 #include "audio_offload_stream.h"
 #include "audio_device_common.h"
-#include "audio_capturer_session.h"
 #include "audio_device_status.h"
 #include "audio_recovery_device.h"
 #include "audio_a2dp_offload_flag.h"
@@ -78,9 +77,11 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-        sptr<AudioRendererFilter> filter = nullptr);
-    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "");
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "");
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    void OnConnectFailed(AudioDeviceDescriptor &desc);
     void UpdateAppVolume(int32_t appUid, int32_t volume);
     /*****IDeviceStatusObserver*****/
 private:
@@ -95,7 +96,6 @@ private:
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
-        audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
         audioRecoveryDevice_(AudioRecoveryDevice::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
@@ -112,7 +112,6 @@ private:
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
     AudioOffloadStream& audioOffloadStream_;
     AudioDeviceCommon& audioDeviceCommon_;
-    AudioCapturerSession& audioCapturerSession_;
     AudioDeviceStatus& audioDeviceStatus_;
     AudioRecoveryDevice& audioRecoveryDevice_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;

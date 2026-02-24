@@ -235,8 +235,11 @@ OH_AudioSuite_Result NodeManager::disconnect(const std::string &fromId, const st
 void NodeManager::DisconnectAll(const std::string &nodeId)
 {
     // todo:The mixing node needs to disconnect all connections.
-    nodes[nodeId].nextNodeId = "";
-    nodes[nodeId].preNodeIds.clear();
+    auto it = nodes.find(nodeId);
+    if (it != nodes.end()) {
+        it->second.nextNodeId = "";
+        it->second.preNodeIds.clear();
+    }
 }
 
 const std::unordered_map<std::string, Node> &NodeManager::getAllNodes() const
@@ -373,7 +376,7 @@ const std::vector<Node> NodeManager::getNodesByType(const OH_AudioNode_Type targ
     return result;
 }
 
-bool NodeManager::IsValidNode(const std::string &nodeId)
+bool NodeManager::IsValidNode(const std::string &nodeId) const
 {
     return nodes.find(nodeId) != nodes.end();
 }

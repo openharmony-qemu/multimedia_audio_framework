@@ -38,6 +38,12 @@ public:
     std::shared_ptr<MockAudioRenderSink> mockSink_;
 };
 
+class HpaeOffloadCallbackInfo : public IOffloadCallback {
+public:
+    void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override {}
+    ~HpaeOffloadCallbackInfo() override {}
+};
+
 static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     size_t frameLen = 960;
@@ -89,6 +95,7 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, OffloadNeedSleep_FullMovieStream_ShouldU
     // Expect unlock method called
     EXPECT_CALL(*mockSink_, UnLockOffloadRunningLock()).Times(1);
     offloadNode_->OffloadNeedSleep(OFFLOAD_FULL);
+    offloadNode_->SetSpeed(1.0f);
     // Verify state changes
     EXPECT_TRUE(offloadNode_->isHdiFull_.load());
 }
@@ -286,6 +293,11 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateForegr
     offloadNode_->SetPolicyState(0);
     EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_ACTIVE_FOREGROUND);
     EXPECT_FALSE(offloadNode_->setPolicyStateTask_.flag);
+    offloadNode_->NotifyHdiPos();
+    std::shared_ptr<IOffloadCallback> callback = std::make_shared<HpaeOffloadCallbackInfo>();
+    offloadNode_->offloadCallback_ = callback.get();
+    offloadNode_->NotifyHdiPos();
+    EXPECT_NE(offloadNode_->offloadCallback_, nullptr);
 }
 
 HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateBackground, TestSize.Level0)
@@ -294,6 +306,62 @@ HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetPolicyState_TaskNotExsist_StateBackgr
     offloadNode_->SetPolicyState(3);
     EXPECT_EQ(offloadNode_->hdiPolicyState_, OFFLOAD_INACTIVE_BACKGROUND);
     EXPECT_TRUE(offloadNode_->setPolicyStateTask_.flag);
+}
+
+// Test SetBufferSize with small buffer and running state should lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_SmallBufferRunning_ShouldLock, TestSize.Level0)
+{
+    // Set running state and foreground (small buffer 200ms)
+    offloadNode_->state_ = STREAM_MANAGER_RUNNING;
+    offloadNode_->hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
+
+    // Expect lock method called once, SetBufferSize called once
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(1);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
+}
+
+// Test SetBufferSize with small buffer but not running state should not lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_SmallBufferNotRunning_ShouldNotLock, TestSize.Level0)
+{
+    // Set IDLE state (not running)
+    offloadNode_->state_ = STREAM_MANAGER_IDLE;
+    offloadNode_->hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
+
+    // Expect lock method NOT called, only SetBufferSize
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(0);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
+}
+
+// Test SetBufferSize with large buffer (background) and running state should not lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_LargeBufferRunning_ShouldNotLock, TestSize.Level0)
+{
+    // Set running state but BACKGROUND (large buffer 7000ms)
+    offloadNode_->state_ = STREAM_MANAGER_RUNNING;
+    offloadNode_->hdiPolicyState_ = OFFLOAD_INACTIVE_BACKGROUND;
+
+    // Expect lock method NOT called (buffer is large)
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(0);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
+}
+
+// Test SetBufferSize with MOVIE stream type (500ms buffer) should not lock
+HWTEST_F(HpaeOffloadSinkOutputNodeTest, SetBufferSize_MovieStream_ShouldNotLock, TestSize.Level0)
+{
+    // Set running state with MOVIE stream (500ms buffer, not small)
+    offloadNode_->state_ = STREAM_MANAGER_RUNNING;
+    offloadNode_->nodeInfo_.streamType = STREAM_MOVIE;
+
+    // Expect lock method NOT called (buffer is 500ms > 200ms)
+    EXPECT_CALL(*mockSink_, LockOffloadRunningLock()).Times(0);
+    EXPECT_CALL(*mockSink_, SetBufferSize(_)).Times(1);
+
+    offloadNode_->SetBufferSize();
 }
 } // namespace HPAE
 } // namespace AudioStandard

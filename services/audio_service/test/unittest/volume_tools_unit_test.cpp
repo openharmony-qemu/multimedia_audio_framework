@@ -280,5 +280,89 @@ HWTEST_F(VolumeToolsUnitTest, VolumeTools_014, TestSize.Level1)
     EXPECT_EQ(VolumeTools::IsZeroVolume(0.5f), false);
     EXPECT_EQ(VolumeTools::IsZeroVolume(-0.5f), false);
 }
+
+/**
+ * @tc.name  : Test VolumeTools Process API with S16 format
+ * @tc.type  : FUNC
+ * @tc.number: VolumeTools_Process_007
+ * @tc.desc  : Test VolumeTools::Process interface with S16 format.
+ */
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_Process_007, TestSize.Level1)
+{
+    // Test Process function with S16 format - indirectly tests ProcessOneFrame
+    int16_t buffer[2] = {32767, -32768}; // Max positive and negative values
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = reinterpret_cast<uint8_t*>(buffer);
+    bufferDesc.bufLength = sizeof(buffer);
+    bufferDesc.dataLength = sizeof(buffer);
+
+    ChannelVolumes channelVolumes = {STEREO, {32768, 32768}, {32768, 32768}}; // Half volume
+
+    int32_t result = VolumeTools::Process(bufferDesc, SAMPLE_S16LE, channelVolumes);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test VolumeTools Process API with S32 format
+ * @tc.type  : FUNC
+ * @tc.number: VolumeTools_Process_008
+ * @tc.desc  : Test VolumeTools::Process interface with S32 format.
+ */
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_Process_008, TestSize.Level1)
+{
+    // Test Process function with S32 format - indirectly tests ProcessOneFrame
+    int32_t buffer[2] = {2147483647, -2147483648}; // Max positive and negative values
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = reinterpret_cast<uint8_t*>(buffer);
+    bufferDesc.bufLength = sizeof(buffer);
+    bufferDesc.dataLength = sizeof(buffer);
+
+    ChannelVolumes channelVolumes = {STEREO, {32768, 32768}, {32768, 32768}}; // Half volume
+
+    int32_t result = VolumeTools::Process(bufferDesc, SAMPLE_S32LE, channelVolumes);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test VolumeTools Process API with F32 format
+ * @tc.type  : FUNC
+ * @tc.number: VolumeTools_Process_009
+ * @tc.desc  : Test VolumeTools::Process interface with F32 format.
+ */
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_Process_009, TestSize.Level1)
+{
+    // Test Process function with F32 format - indirectly tests ProcessOneFrame
+    float buffer[2] = {1.0f, -1.0f}; // Normal values
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = reinterpret_cast<uint8_t*>(buffer);
+    bufferDesc.bufLength = sizeof(buffer);
+    bufferDesc.dataLength = sizeof(buffer);
+
+    ChannelVolumes channelVolumes = {STEREO, {32768, 32768}, {32768, 32768}}; // Half volume
+
+    int32_t result = VolumeTools::Process(bufferDesc, SAMPLE_F32LE, channelVolumes);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test VolumeTools Process API with invalid format
+ * @tc.type  : FUNC
+ * @tc.number: VolumeTools_Process_010
+ * @tc.desc  : Test VolumeTools::Process interface with invalid format.
+ */
+HWTEST_F(VolumeToolsUnitTest, VolumeTools_Process_010, TestSize.Level1)
+{
+    // Test Process function with invalid format - should return error
+    int16_t buffer[2] = {32767, -32768};
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = reinterpret_cast<uint8_t*>(buffer);
+    bufferDesc.bufLength = sizeof(buffer);
+    bufferDesc.dataLength = sizeof(buffer);
+
+    ChannelVolumes channelVolumes = {STEREO, {32768, 32768}, {32768, 32768}};
+
+    int32_t result = VolumeTools::Process(bufferDesc, static_cast<AudioSampleFormat>(999), channelVolumes);
+    EXPECT_NE(result, SUCCESS); // Should fail with invalid format
+}
 }
 }

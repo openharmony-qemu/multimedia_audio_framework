@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,12 +40,21 @@
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
+#ifdef FEATURE_CALL_MANAGER
+#include "call_manager_client.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 // poraudio only support F32 resample
 static constexpr AudioSampleFormat RESAMPLE_FORMAT = SAMPLE_F32LE;
+#ifdef FEATURE_CALL_MANAGER
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
+#endif
+enum CallbackHandlerEvent : uint32_t {
+    NOTIFY_VOIP_START = 0,
+};
 }
 
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
@@ -100,11 +109,20 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId_, [this](bool flag) {
             AUDIO_INFO_LOG("recv mute state change flag %{public}d", flag ? 1 : 0);
             muteFlag_ = flag;
+            NotifyMuteStateChange(flag);
         });
     }
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
     streamStatusInServer_ = STREAM_IDEL;
+}
+
+void AudioProcessInServer::NotifyMuteStateChange(bool muteFlag)
+{
+    std::lock_guard<std::mutex> lock(listenerListLock_);
+    for (auto &listener : listenerList_) {
+        listener->OnStreamMute(this, muteFlag);
+    }
 }
 
 AudioProcessInServer::~AudioProcessInServer()
@@ -232,6 +250,7 @@ void AudioProcessInServer::SetNonInterruptMute(const bool muteFlag)
 {
     muteFlag_ = muteFlag;
     HILOG_COMM_INFO("[SetNonInterruptMute]muteFlag_: %{public}d", muteFlag);
+    NotifyMuteStateChange(muteFlag);
     AudioService::GetInstance()->UpdateMuteControlSet(sessionId_, muteFlag);
 }
 
@@ -416,8 +435,7 @@ int32_t AudioProcessInServer::StartInner()
     MarkStaticFadeIn();
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        AudioService::GetInstance()->NotifyVoIPStart(
-            processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
+        NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
     }
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
@@ -584,6 +602,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
 int32_t AudioProcessInServer::Release(bool isSwitchStream)
 {
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
+    ReleaseCallbackHandler();
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
         std::lock_guard lockSch(scheduleGuardsMutex_);
@@ -774,10 +793,11 @@ void AllocateBufferDesc(size_t spanSizeInByte, BufferDesc &buffer,  std::unique_
     buffer.dataLength = spanSizeInByte;
 }
 
-size_t CalcSpanSize(uint32_t spanTime, AudioSamplingRate samplingRate, AudioChannel channels,
+size_t CalcSpanSize(float spanTime, AudioSamplingRate samplingRate, AudioChannel channels,
     AudioSampleFormat format)
 {
-    uint32_t bufferSpanSizeInFrame = spanTime * samplingRate / AUDIO_MS_PER_SECOND;
+    uint32_t bufferSpanSizeInFrame = static_cast<uint32_t>(spanTime * static_cast<float>(samplingRate) /
+        static_cast<float>(AUDIO_MS_PER_SECOND));
     size_t spanSizeInByte = static_cast<size_t>(channels * PcmFormatToBits(format) * bufferSpanSizeInFrame);
     return spanSizeInByte;
 }
@@ -791,24 +811,22 @@ void AudioProcessInServer::InitCapturerStream(uint32_t spanSizeInByte,
     }
 }
 
-void AudioProcessInServer::InitRendererStream(uint32_t spanTime,
+void AudioProcessInServer::InitRendererStream(float spanTime,
     const AudioStreamInfo &clientStreamInfo, const AudioStreamInfo &serverStreamInfo)
 {
     AudioStreamInfo resampleStreamInfo = clientStreamInfo;
     if (clientStreamInfo.samplingRate != serverStreamInfo.samplingRate) {
         if (clientStreamInfo.format != RESAMPLE_FORMAT) {
             resampleStreamInfo.format = RESAMPLE_FORMAT;
-
-            clientToResampleKey_.srcChn =  clientStreamInfo.channels;
-            clientToResampleKey_.srcFormat = clientStreamInfo.format;
-            clientToResampleKey_.dstChn = clientStreamInfo.channels;
-            clientToResampleKey_.dstFormat = resampleStreamInfo.format;
-            
             handleRendererDataType_ = handleRendererDataType_ | CONVERT_TO_F32_ACTION;
             auto f32SpanSize = CalcSpanSize(spanTime, clientStreamInfo.samplingRate, clientStreamInfo.channels,
                 resampleStreamInfo.format);
             AllocateBufferDesc(f32SpanSize, f32Buffer_, f32BufferNew_);
         }
+        clientToResampleKey_.srcChn =  clientStreamInfo.channels;
+        clientToResampleKey_.srcFormat = clientStreamInfo.format;
+        clientToResampleKey_.dstChn = clientStreamInfo.channels;
+        clientToResampleKey_.dstFormat = resampleStreamInfo.format;
         resampler_ = std::make_unique<HPAE::ProResampler>(clientStreamInfo.samplingRate,
             serverStreamInfo.samplingRate, clientStreamInfo.channels, 1);
         handleRendererDataType_ = handleRendererDataType_ | RESAMPLE_ACTION;
@@ -905,9 +923,21 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     
     serverStreamInfo_ = serverStreamInfo;
 
-    uint32_t spanTime = spanSizeInframe * AUDIO_MS_PER_SECOND / serverStreamInfo.samplingRate;
-    spanSizeInframe_ = spanTime * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
-    totalSizeInframe_ = totalSizeInframe / spanSizeInframe * spanSizeInframe_;
+    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate != 0, ERR_INVALID_PARAM,
+        "invalid sampling rate!");
+    float spanTime = static_cast<float>(spanSizeInframe) * static_cast<float>(AUDIO_MS_PER_SECOND) /
+        static_cast<float>(serverStreamInfo.samplingRate);
+    spanSizeInframe_ = static_cast<uint32_t>(spanTime * static_cast<float>(processConfig_.streamInfo.samplingRate) /
+        static_cast<float>(AUDIO_MS_PER_SECOND));
+    if (abs(DEFAULT_FAST_SPAN_SIZE_FLOAT_IN_MS - spanTime) < std::numeric_limits<float>::epsilon()) {
+        totalSizeInframe_ = totalSizeInframe / spanSizeInframe * DEFAULT_FAST_SPAN_SIZE_INT_IN_MS *
+            processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
+    } else {
+        totalSizeInframe_ = totalSizeInframe / spanSizeInframe * spanSizeInframe_;
+    }
+    AUDIO_INFO_LOG("SpanTime: %{public}f ms, SpanSizeInframe: %{public}u, TotalSizeInframe: %{public}u",
+        spanTime, spanSizeInframe_, totalSizeInframe_);
+
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
@@ -956,11 +986,12 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
+int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+    uint32_t threadPriority)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), threadPriority, bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
     return SUCCESS;
@@ -1357,12 +1388,6 @@ int32_t AudioProcessInServer::SetLoopTimes(int64_t bufferLoopTimes)
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
-}
-
 int32_t AudioProcessInServer::SetStaticRenderRate(uint32_t renderRate)
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
@@ -1442,7 +1467,7 @@ void AudioProcessInServer::MarkStaticFadeOut(bool isRefresh)
     }
     // Refresh needs to be called after fadeout
     if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->RefreshBufferStatus();
+        staticBufferProvider_->ResetStaticPlayPosition();
     }
 }
 
@@ -1453,5 +1478,71 @@ void AudioProcessInServer::MarkStaticFadeIn()
     staticBufferProvider_->NeedProcessFadeIn();
 }
 
+AudioProcessInServerHandler::AudioProcessInServerHandler(IHandler* handler) : handler_(handler) {}
+
+void AudioProcessInServerHandler::OnHandle(uint32_t code, int64_t data)
+{
+    CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is nullptr");
+    handler_->OnHandle(code, data);
+}
+
+void AudioProcessInServer::InitCallbackHandler()
+{
+    CHECK_AND_RETURN(streamStatusInServer_ != STREAM_RELEASED);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ == nullptr);
+    handler_ = std::make_shared<AudioProcessInServerHandler>(this);
+    callbackHandler_ = CallbackHandler::GetInstance(handler_,
+        "OS_AudioCallbackHandler", false);
+}
+
+void AudioProcessInServer::ReleaseCallbackHandler()
+{
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->ReleaseEventRunner();
+    callbackHandler_ = nullptr;
+    handler_ = nullptr;
+}
+
+void AudioProcessInServer::OnHandle(uint32_t code, int64_t data)
+{
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}" PRIu64 "", code, data);
+    switch (code) {
+        case NOTIFY_VOIP_START : {
+#ifdef FEATURE_CALL_MANAGER
+            std::shared_ptr<Telephony::CallManagerClient> callManager =
+                DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+            CHECK_AND_RETURN_LOG(callManager != nullptr, "get callmanager failed");
+            callManager->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+            int32_t ret = callManager->NotifyVoIPAudioStreamStart(data);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+#endif
+            break;
+        }
+        default :
+            break;
+    }
+}
+
+void AudioProcessInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+    CHECK_AND_RETURN(sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+    InitCallbackHandler();
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->SendCallbackEvent(NOTIFY_VOIP_START, uid);
+}
+
+int32_t AudioProcessInServer::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET(processConfig_.rendererInfo.isStatic, ERR_ILLEGAL_STATE);
+    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "BufferProvider_ is nullptr");
+
+    staticBufferProvider_->NeedProcessFadeOut();
+    staticBufferProvider_->ResetStaticPlayPosition();
+    staticBufferProvider_->NeedProcessFadeIn();
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

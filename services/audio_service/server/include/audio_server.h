@@ -143,6 +143,8 @@ public:
 
     int32_t NotifyDeviceInfo(const std::string &networkId, bool connected) override;
 
+    int32_t NotifyTaskIdProxy(const std::string &taskId, bool connected) override;
+
     int32_t CheckRemoteDeviceState(const std::string& networkId, int32_t deviceRole, bool isStartDevice) override;
 
     int32_t CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
@@ -189,7 +191,7 @@ public:
     int32_t GetMaxAmplitude(bool isOutputDevice, const std::string& deviceClass, int32_t sourceType,
         float& maxAmplitude) override;
 
-    int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount) override;
+    int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData) override;
 
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;
 
@@ -485,6 +487,7 @@ private:
 
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
+    std::string playTaskId_ = "0"; // only use by homemusic
 
     bool isEarpiece_ = false;
     float audioBalanceValue_ = 0.0f;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. All rights reserved.
  */
 
 import { Logger } from '../utils/Logger';
@@ -7,7 +7,7 @@ import { StyleConst } from '../utils/StyleConst';
 import window from '@ohos.window';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { display } from '@kit.ArkUI';
-import { NavigationParams, OFFLINEPIPELINE, PIPELINECASCADMODE_0, REALTIMEPIPELINE } from '../utils/importSongs/InterfaceInfo';
+import { NavigationParams, OFFLINEPIPELINE, PIPELINECASCADMODE_0, REALTIMEPIPELINE } from '../utils/InterfaceInfo';
 
 const TAG: string = 'AudioEditTestApp_Index';
 
@@ -93,12 +93,14 @@ struct Index {
                 Text($r('app.string.music_editor'))
                   .fontSize($r('app.float.font_size_24'))
                   .fontColor($r('app.color.index_title_text_color'))
-                  .margin({ bottom: $r('app.float.margin_10') })
                 Text($r('app.string.music_editor_desc'))
                   .fontSize($r('app.float.font_size_20'))
                   .fontColor($r('app.color.index_title_text_color'))
                   .opacity(0.5)
               }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
             }
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
@@ -130,12 +132,14 @@ struct Index {
                 Text($r('app.string.mixing_console_playing'))
                   .fontSize($r('app.float.font_size_24'))
                   .fontColor($r('app.color.index_title_text_color'))
-                  .margin({ bottom: $r('app.float.margin_10') })
                 Text($r('app.string.mixing_console_desc'))
                   .fontSize($r('app.float.font_size_20'))
                   .fontColor($r('app.color.index_title_text_color'))
                   .opacity(0.5)
               }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
             }
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
@@ -170,12 +174,14 @@ struct Index {
                 Text($r('app.string.mixing_console_cascade'))
                   .fontSize($r('app.float.font_size_24'))
                   .fontColor($r('app.color.index_title_text_color'))
-                  .margin({ bottom: $r('app.float.margin_10') })
                 Text($r('app.string.mixing_console_desc'))
                   .fontSize($r('app.float.font_size_20'))
                   .fontColor($r('app.color.index_title_text_color'))
                   .opacity(0.5)
               }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
             }
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
@@ -210,12 +216,14 @@ struct Index {
                 Text($r('app.string.pipeline_cascad'))
                   .fontSize($r('app.float.font_size_24'))
                   .fontColor($r('app.color.index_title_text_color'))
-                  .margin({ bottom: $r('app.float.margin_10') })
                 Text($r('app.string.pipeline_cascad_desc'))
                   .fontSize($r('app.float.font_size_20'))
                   .fontColor($r('app.color.index_title_text_color'))
                   .opacity(0.5)
               }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
             }
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
@@ -247,12 +255,14 @@ struct Index {
                 Text($r('app.string.auto_test'))
                   .fontSize($r('app.float.font_size_24'))
                   .fontColor($r('app.color.index_title_text_color'))
-                  .margin({ bottom: $r('app.float.margin_10') })
                 Text($r('app.string.auto_test_desc'))
                   .fontSize($r('app.float.font_size_20'))
                   .fontColor($r('app.color.index_title_text_color'))
                   .opacity(0.5)
               }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
             }
             .width(StyleConst.FULL_WIDTH)
             .height(StyleConst.FULL_HEIGHT)
@@ -266,6 +276,48 @@ struct Index {
             left: $r('app.float.padding_20'),
             right: $r('app.float.padding_20')
           })
+          .border({ radius: $r('app.float.border_16') })
+          .backgroundColor($r('app.color.index_audio_clip_card'))
+
+          Column() {
+            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
+              Column() {
+                Image($r('app.media.icon_home_clip'))
+                  .width(StyleConst.SIXTY_PERCENT_WIDTH)
+                  .height(StyleConst.SIXTY_PERCENT_HEIGHT)
+                  .objectFit(ImageFit.Contain)
+              }
+              .width(StyleConst.THIRTY_PERCENT_WIDTH)
+
+              Column() {
+                Text($r('app.string.audio_track_edit'))
+                  .fontSize($r('app.float.font_size_24'))
+                  .fontColor($r('app.color.index_title_text_color'))
+                Text($r('app.string.audio_track_edit_desc'))
+                  .fontSize($r('app.float.font_size_20'))
+                  .fontColor($r('app.color.index_title_text_color'))
+                  .opacity(0.5)
+              }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
+            }
+            .width(StyleConst.FULL_WIDTH)
+            .height(StyleConst.FULL_HEIGHT)
+            .onClick(() => {
+              this.pageInfos.pushPath({
+                name: 'audioTrackEdit',
+                param: { mode: OFFLINEPIPELINE, pipelineCascadMode: PIPELINECASCADMODE_0 } as NavigationParams
+              })
+            })
+          }
+          .width(StyleConst.FULL_WIDTH)
+          .height($r('app.float.height_100'))
+          .padding({
+            left: $r('app.float.padding_20'),
+            right: $r('app.float.padding_20')
+          })
+          .margin({bottom: $r('app.float.margin_10'), top: $r('app.float.margin_10')})
           .border({ radius: $r('app.float.border_16') })
           .backgroundColor($r('app.color.index_audio_clip_card'))
         }

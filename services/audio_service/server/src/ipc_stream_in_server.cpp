@@ -521,11 +521,12 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor, uint32_t durationMs)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
+int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+    uint32_t threadPriority)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), threadPriority, bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
     return SUCCESS;
@@ -601,21 +602,19 @@ int32_t IpcStreamInServer::SetLoopTimes(int64_t bufferLoopTimes)
     return rendererInServer_->SetLoopTimes(bufferLoopTimes);
 }
 
-int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
-        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
-            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
-        return ERR_OPERATION_FAILED;
-    }
-    return rendererInServer_->GetStaticBufferInfo(staticBufferInfo);
-}
-
 int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)
 {
     CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
         "GetLatencyWithFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return rendererInServer_->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(flag));
 }
+
+int32_t IpcStreamInServer::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "ResetStaticPlayPosition failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->ResetStaticPlayPosition();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

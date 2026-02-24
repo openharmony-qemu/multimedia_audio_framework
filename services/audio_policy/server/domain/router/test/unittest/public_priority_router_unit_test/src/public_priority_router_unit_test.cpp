@@ -193,7 +193,7 @@ HWTEST(PublicPriorityRouterUnitTest, PublicPriorityRouter_009, TestSize.Level4)
     desc->deviceType_ = DEVICE_TYPE_DP;
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPublicDevices_ = { desc };
     auto descriptors = router.GetRingRenderDevices(streamUsage, clientUID);
-    EXPECT_EQ(descriptors.empty(), true);
+    EXPECT_TRUE(!descriptors.empty() && descriptors[0]->deviceType_ != DEVICE_TYPE_DP);
 }
 } // namespace AudioStandard
 } // namespace OHOS

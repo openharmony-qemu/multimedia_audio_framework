@@ -1549,6 +1549,13 @@ public:
      */
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
 
+    /**
+     * @brief update safe volume by str mode.
+     *
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     */
+    int32_t UpdateSafeVolumeByStrMode();
+
     std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
     int32_t ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
         const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);

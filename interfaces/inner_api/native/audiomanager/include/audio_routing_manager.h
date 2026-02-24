@@ -22,9 +22,17 @@
 #include "microphone_descriptor.h"
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"
+#include "audio_zone_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+enum class RecommendInputDevices {
+    NO_UNAVAILABLE_DEVICE,
+    RECOMMEND_BUILT_IN_MIC,
+    RECOMMEND_EXTERNAL_MIC
+};
+
 class AudioRoutingManager {
 public:
     AudioRoutingManager() = default;
@@ -40,6 +48,7 @@ public:
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback = nullptr);
     int32_t GetPreferredInputDeviceForCapturerInfo(AudioCapturerInfo captureInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+    RecommendInputDevices GetRecommendInputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     int32_t SetPreferredInputDeviceChangeCallback(AudioCapturerInfo capturerInfo,
         const std::shared_ptr<AudioPreferredInputDeviceChangeCallback> &callback);
     int32_t UnsetPreferredInputDeviceChangeCallback(
@@ -54,6 +63,9 @@ public:
     int32_t RestoreOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc, const bool isConnected);
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
+private:
+    RecommendInputDevices ConvertRecommendInputDevices(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 };
 
 } // namespace AudioStandard

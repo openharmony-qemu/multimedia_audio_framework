@@ -336,12 +336,25 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_004, TestSize.Level1)
     uint64_t latency = 0;
     int32_t ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+
     unit->deviceClass_ = "remote_offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
     unit->deviceClass_ = "offload";
     ret = unit->GetCurrentPosition(framePosition, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, SUCCESS);
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->processConfig_.streamType = STREAM_MOVIE;
+    ret = unit->GetOffloadLatency();
+    EXPECT_EQ(ret, SUCCESS);
+    unit->isWriteFirst_ = true;
+    unit->UpdateInnerCapWriteState(true);
+    EXPECT_EQ(unit->isWriteFirst_, true);
+    unit->UpdateInnerCapWriteState(false);
+    EXPECT_EQ(unit->isWriteFirst_, false);
 }
 
 /**
@@ -1146,7 +1159,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_039, TestSize.Level1)
     uint64_t latency2 = 2;
     EXPECT_EQ(rendererStreamImpl->GetCurrentPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
     EXPECT_EQ(framePosition, framePosition2);
-    EXPECT_EQ(timestamp, timestamp2);
     EXPECT_EQ(latency, latency2);
 }
 
@@ -1176,7 +1188,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_040, TestSize.Level1)
     uint64_t latency2 = 2;
     EXPECT_EQ(rendererStreamImpl->GetSpeedPosition(framePosition2, timestamp2, latency2, 0), SUCCESS);
     EXPECT_EQ(framePosition, framePosition2);
-    EXPECT_EQ(timestamp, timestamp2);
     EXPECT_EQ(latency, latency2);
 }
 

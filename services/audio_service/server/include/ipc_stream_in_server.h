@@ -52,7 +52,7 @@ public:
 
     int32_t Config();
 
-    int32_t RegisterStreamListener(const sptr<IRemoteObject>& object) override;
+    int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
 
@@ -121,7 +121,8 @@ public:
 
     int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override;
 
-    int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override;
+    int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
+        uint32_t threadPriority) override;
 
     int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce = false) override;
 
@@ -142,9 +143,9 @@ public:
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override; // for static renderer only
-
     int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override;
+
+    int32_t ResetStaticPlayPosition() override; // for static renderer only
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

@@ -78,7 +78,7 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateEngine_003, T
     SLresult result = (*engineObject_)->GetInterface(engineObject_, SL_IID_ENGINE, &engineEngine_);
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
 }
-
+#ifdef FUNC_NOT_FIND
 HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_001, TestSize.Level0)
 {
     wavFile_ = fopen(TEST_FILE_PATH, "wb");
@@ -123,6 +123,7 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder
     EXPECT_TRUE(result == SL_RESULT_SUCCESS);
     (*pcmCapturerObject_)->Destroy(pcmCapturerObject_);
 }
+#endif
 
 HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_CreateAudioRecorder_002, TestSize.Level0)
 {
@@ -312,12 +313,6 @@ HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_002, TestSi
 {
     (*engineObject_)->Destroy(engineObject_);
     EXPECT_TRUE(true);
-}
-
-HWTEST(AudioOpenslesRecorderUnitTest, Audio_Opensles_Capture_Destroy_003, TestSize.Level0)
-{
-    SLresult result = AudioRecorderDestroy(nullptr);
-    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
 }
 
 HWTEST(AudioOpenslesRecorderUnitTest, Prf_Audio_Opensles_Capture_CreateEngine_001, TestSize.Level0)

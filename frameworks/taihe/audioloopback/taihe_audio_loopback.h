@@ -37,6 +37,10 @@ public:
     AudioLoopbackStatus GetStatusSync();
     void SetVolumeSync(double volume);
     bool EnableSync(bool enable);
+    bool SetReverbPreset(AudioLoopbackReverbPreset preset);
+    AudioLoopbackReverbPreset GetReverbPreset();
+    bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset);
+    AudioLoopbackEqualizerPreset GetEqualizerPreset();
     void OnStatusChange(callback_view<void(AudioLoopbackStatus data)> callback);
     void OffStatusChange(optional_view<callback<void(AudioLoopbackStatus data)>> callback);
     std::shared_ptr<OHOS::AudioStandard::AudioLoopback> loopback_;

@@ -86,7 +86,6 @@ constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 constexpr uint32_t DEFAULT_SINK_LATENCY_MS = 40;
 constexpr uint32_t PRIMARY_SINK_LATENCY_MS = 100;
 uint32_t AudioServer::paDaemonTid_;
-std::string g_playtaskId = "0";
 std::map<std::string, std::string> AudioServer::audioParameters;
 std::unordered_map<std::string, std::unordered_map<std::string, std::set<std::string>>> AudioServer::audioParameterKeys;
 const string DEFAULT_COOKIE_PATH = "/data/data/.pulse_dir/state/cookie";
@@ -237,7 +236,7 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
-static void SetAudioSceneForAllSource(AudioScene audioScene)
+static void SetAudioSceneForAllSource(AudioScene audioScene, bool scoExcludeFlag)
 {
     std::vector<std::pair<HdiIdType, std::string>> sourceConfigs = {
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB},
@@ -249,21 +248,21 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
         {HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOICE_RECOGNITION},
         {HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT}
     };
-    
+
     for (const auto& config : sourceConfigs) {
         std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(config.first, config.second);
         if (source != nullptr && source->IsInited()) {
-            source->SetAudioScene(audioScene);
+            source->SetAudioScene(audioScene, scoExcludeFlag);
         }
     }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
-        fastSource->SetAudioScene(audioScene);
+        fastSource->SetAudioScene(audioScene, scoExcludeFlag);
     }
     std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
     if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
-        fastVoipSource->SetAudioScene(audioScene);
+        fastVoipSource->SetAudioScene(audioScene, scoExcludeFlag);
     }
 #endif
 }
@@ -322,14 +321,11 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
     }
 }
 
-static void UpdateDeviceForAllSinks(std::vector<DeviceType> &deviceTypes)
+static void UpdateDeviceForOtherSinks(std::vector<DeviceType> &deviceTypes)
 {
     auto limitFunc = [](uint32_t renderId) -> bool {
         uint32_t type = IdHandler::GetInstance().ParseType(renderId);
         std::string info = IdHandler::GetInstance().ParseInfo(renderId);
-        if (type == HDI_ID_TYPE_PRIMARY) {
-            return info == HDI_ID_INFO_DEFAULT;
-        }
         if (type == HDI_ID_TYPE_OFFLOAD) {
             return info == HDI_ID_INFO_DEFAULT;
         }
@@ -1046,7 +1042,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
 
 int32_t AudioServer::SetAuxiliarySinkEnable(bool isEnabled)
 {
-    uid_t callingUid = IPCSkeleton::GetCallingUid();
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     // root user case for auto test
     if (callingUid == ROOT_UID) {
@@ -1111,9 +1107,9 @@ int32_t AudioServer::GetTaskIdParameter(const std::vector<std::string> &subKeys,
     std::vector<std::pair<std::string, std::string>> &result)
 {
     for (const std::string &key : subKeys) {
-        result.push_back(std::make_pair(key, g_playtaskId));
+        result.push_back(std::make_pair(key, playTaskId_));
     }
-    AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", g_playtaskId.c_str());
+    AUDIO_INFO_LOG("GetTaskIdParameter %{public}s", playTaskId_.c_str());
     return SUCCESS;
 }
 
@@ -1218,15 +1214,15 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
 
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    AudioParamKey parmKey = AudioParamKey::NONE;
     if (deviceManager != nullptr) {
         if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
-            parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
-            return deviceManager->GetAudioParameter("primary", AudioParamKey(parmKey), "");
+            return deviceManager->GetAudioParameter("primary", PARAM_KEY_LOWPOWER, "");
         }
-        if (key.find("need_change_usb_device#C", 0) == 0) {
-            parmKey = AudioParamKey::USB_DEVICE;
-            return deviceManager->GetAudioParameter("primary", AudioParamKey(parmKey), key);
+        if (key.starts_with("need_change_usb_device#C")) {
+            return deviceManager->GetAudioParameter("primary", USB_DEVICE, key);
+        }
+        if (key.starts_with("is_root_hub#C")) {
+            return deviceManager->GetAudioParameter("primary", USB_DEVICE, key);
         }
         if (key == "getSmartPAPOWER" || key == "show_RealTime_ChipModel") {
             return deviceManager->GetAudioParameter("primary", AudioParamKey::NONE, key);
@@ -1248,8 +1244,7 @@ const std::string AudioServer::GetAudioParameterInner(const std::string &key)
         const std::string mmiPre = "mmi_";
         if (key.size() > mmiPre.size()) {
             if (key.substr(0, mmiPre.size()) == mmiPre) {
-                parmKey = AudioParamKey::MMI;
-                return deviceManager->GetAudioParameter("primary", AudioParamKey(parmKey),
+                return deviceManager->GetAudioParameter("primary", MMI,
                     key.substr(mmiPre.size(), key.size() - mmiPre.size()));
             }
         }
@@ -1488,11 +1483,13 @@ int32_t AudioServer::SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, 
 {
     AUDIO_INFO_LOG("Scene: %{public}d, a2dpOffloadFlag: %{public}d, scoExcludeFlag: %{public}d",
         audioScene, a2dpOffloadFlag, scoExcludeFlag);
+    AudioScene audioSceneIn = static_cast<AudioScene>(audioScene);
+    CHECK_AND_RETURN_RET_LOG(audioSceneIn > AUDIO_SCENE_INVALID && audioSceneIn < AUDIO_SCENE_MAX,
+        ERR_INVALID_PARAM, "param is invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
-    return SetAudioSceneInner(static_cast<AudioScene>(audioScene), static_cast<BluetoothOffloadState>(a2dpOffloadFlag),
-        scoExcludeFlag);
+    return SetAudioSceneInner(audioSceneIn, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), scoExcludeFlag);
 }
 
 int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag,
@@ -1502,7 +1499,7 @@ int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadS
     AudioXCollie audioXCollie("AudioServer::SetAudioScene", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
 
-    SetAudioSceneForAllSource(audioScene);
+    SetAudioSceneForAllSource(audioScene, scoExcludeFlag);
     SetAudioSceneForAllSink(audioScene, scoExcludeFlag);
     audioScene_ = audioScene;
     SetAudioBalanceStatus();
@@ -1555,11 +1552,13 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        UpdateDeviceForAllSinks(deviceTypes);
+        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForOtherSinks(deviceTypes);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
-        UpdateDeviceForAllSinks(deviceTypes);
+        sink->UpdateActiveDevice(deviceTypes);
+        UpdateDeviceForOtherSinks(deviceTypes);
     } else {
         AUDIO_ERR_LOG("SetIORoutes invalid device flag");
         return ERR_INVALID_PARAM;
@@ -1734,8 +1733,8 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     if (networkId.find("taskId") != std::string::npos) {
         size_t colon_pos = networkId.find(":");
         size_t brace_pos = networkId.find("}");
-        g_playtaskId = networkId.substr(colon_pos + 1, brace_pos - colon_pos - 1);
-        AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", g_playtaskId.c_str());
+        playTaskId_ = networkId.substr(colon_pos + 1, brace_pos - colon_pos - 1);
+        AUDIO_INFO_LOG("NotifyDeviceInfo taskId %{public}s", playTaskId_.c_str());
         return SUCCESS;
     }
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId.c_str());
@@ -1753,6 +1752,20 @@ int32_t AudioServer::NotifyDeviceInfo(const std::string &networkId, bool connect
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
+
+int32_t AudioServer::NotifyTaskIdProxy(const std::string &taskId, bool connected)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
+    if (taskId.find("taskId") != std::string::npos) {
+        size_t colon_pos = taskId.find(":");
+        size_t brace_pos = taskId.find("}");
+        playTaskId_ = taskId.substr(colon_pos + 1, brace_pos - colon_pos - 1);
+        AUDIO_INFO_LOG("NotifyTaskIdProxy taskId %{public}s", playTaskId_.c_str());
+    }
+    return SUCCESS;
+}
 
 inline bool IsParamEnabled(std::string key, bool &isEnabled)
 {
@@ -1906,8 +1919,8 @@ bool AudioServer::CheckStreamInfoFormat(const AudioProcessConfig &config)
         return false;
     }
 
-    if (config.audioMode == AUDIO_MODE_PLAYBACK && NotContain(RENDERER_SUPPORTED_CHANNELS,
-        config.streamInfo.channels)) {
+    if (config.audioMode == AUDIO_MODE_PLAYBACK && (config.rendererInfo.rendererFlags != AUDIO_FLAG_3DA_DIRECT) &&
+        NotContain(RENDERER_SUPPORTED_CHANNELS, config.streamInfo.channels)) {
         AUDIO_ERR_LOG("Check format failed invalid renderer channels:%{public}d", config.streamInfo.channels);
         return false;
     }
@@ -2230,7 +2243,8 @@ bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         return config.rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL ||
             config.rendererInfo.rendererFlags == AUDIO_FLAG_VOIP_DIRECT ||
-            config.rendererInfo.rendererFlags == AUDIO_FLAG_DIRECT;
+            config.rendererInfo.rendererFlags == AUDIO_FLAG_DIRECT ||
+            config.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT;
     } else if (config.audioMode == AUDIO_MODE_RECORD) {
         return config.capturerInfo.capturerFlags == AUDIO_FLAG_NORMAL;
     }
@@ -2812,19 +2826,19 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
     return SUCCESS;
 }
 
-int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount)
+int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
         IPCSkeleton::GetCallingUid());
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
-    if (sink != nullptr) {
-        volumeDataCount = sink->GetVolumeDataCount();
-    } else {
-        volumeDataCount = 0;
+
+    if (sink == nullptr) {
         AUDIO_WARNING_LOG("can not find: %{public}s", sinkName.c_str());
+        return ERR_OPERATION_FAILED;
     }
-    return SUCCESS;
+
+    return sink->GetVolumeDataCount(volumeData);
 }
 
 int32_t AudioServer::UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer)
@@ -3492,8 +3506,7 @@ int32_t AudioServer::RegistAdapterManagerCallback(const sptr<IRemoteObject>& obj
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");
-    auto callbackPtr = std::shared_ptr<IAudioSinkCallback>(this);
-    deviceManager->RegistAdapterManagerCallback(networkId.c_str(), callbackPtr);
+    deviceManager->RegistAdapterManagerCallback(networkId.c_str(), this);
     return SUCCESS;
 }
 
@@ -3532,7 +3545,7 @@ int32_t AudioServer::GetRemoteAudioParameter(const std::string& networkId, int32
     bool ret = VerifyClientPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio() || ret, ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
-    
+
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "device manager is nullptr");

@@ -334,9 +334,10 @@ int32_t BluetoothAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t
     return ret;
 }
 
-int64_t BluetoothAudioRenderSink::GetVolumeDataCount()
+int32_t BluetoothAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 int32_t BluetoothAudioRenderSink::SuspendRenderSink(void)
@@ -418,6 +419,12 @@ int32_t BluetoothAudioRenderSink::SetVolume(float left, float right)
     }
 
     return ret;
+}
+
+int32_t BluetoothAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("BluetoothAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
 }
 
 int32_t BluetoothAudioRenderSink::GetVolume(float &left, float &right)

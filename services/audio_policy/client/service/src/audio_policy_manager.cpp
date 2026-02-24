@@ -40,6 +40,8 @@ constexpr int64_t SLEEP_TIME = 1;
 constexpr int32_t RETRY_TIMES = 10;
 const unsigned int TIME_OUT_SECONDS = 10;
 constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
+constexpr int32_t CREATE_RETRY_WAIT_TIME_MS = 500; // 500ms
+constexpr int32_t CREATE_MAX_RETRY_COUNT = 8;
 std::mutex g_cBMapMutex;
 std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
@@ -1511,7 +1513,14 @@ int32_t AudioPolicyManager::CreateRendererClient(std::shared_ptr<AudioStreamDesc
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    int32_t ret = gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    for (int32_t retrycount = 0; (ret == ERR_RETRY_IN_CLIENT) && (retrycount < CREATE_MAX_RETRY_COUNT);
+        retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(CREATE_RETRY_WAIT_TIME_MS));
+        ret = gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
+    }
+    return ret;
 }
 
 int32_t AudioPolicyManager::CreateCapturerClient(
@@ -1519,7 +1528,14 @@ int32_t AudioPolicyManager::CreateCapturerClient(
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+    int32_t ret = gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+    for (int32_t retrycount = 0; (ret == ERR_RETRY_IN_CLIENT) && (retrycount < CREATE_MAX_RETRY_COUNT);
+        retrycount++) {
+        AUDIO_WARNING_LOG("retry in client");
+        std::this_thread::sleep_for(std::chrono::milliseconds(CREATE_RETRY_WAIT_TIME_MS));
+        ret = gsp->CreateCapturerClient(streamDesc, flag, sessionId);
+    }
+    return ret;
 }
 
 int32_t AudioPolicyManager::GetCurrentRendererChangeInfos(
@@ -3434,6 +3450,14 @@ int32_t AudioPolicyManager::GetMinVolumeDegree(AudioVolumeType volumeType, Devic
     return volumeDegree;
 }
 
+int32_t AudioPolicyManager::UpdateSafeVolumeByStrMode()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->UpdateSafeVolumeByStrMode();
+}
+
 int32_t AudioPolicyManager::RegisterCollaborationEnabledForCurrentDeviceEventListener(
     const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback)
 {
@@ -3475,6 +3499,12 @@ int32_t AudioPolicyManager::UnregisterCollaborationEnabledForCurrentDeviceEventL
     return SUCCESS;
 }
 
+int32_t AudioPolicyManager::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetCustomAudioMix(zoneName, audioMixes);
+}
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
@@ -3488,6 +3518,15 @@ AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
     int32_t audioScene = AUDIO_SCENE_DEFAULT;
     gsp->GetAudioSceneFromAllZones(audioScene);
     return static_cast<AudioScene>(audioScene);
+}
+
+int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+ 
+    gsp->NotifyStreamSilentChange(streamId);
+    return SUCCESS;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

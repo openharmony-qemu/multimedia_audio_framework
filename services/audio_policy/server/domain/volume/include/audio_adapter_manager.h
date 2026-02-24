@@ -135,6 +135,8 @@ public:
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute);
 
+    int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
+
     bool GetStreamMute(AudioStreamType streamType);
 
     bool GetAppMute(int32_t appUid);
@@ -349,7 +351,7 @@ public:
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
-    void updateCollaborativeProductId(const std::string &productId);
+    void UpdateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
@@ -428,9 +430,6 @@ private:
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass,
         const std::string &networkId = LOCAL_NETWORK_ID);
-    int32_t SetStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
-        bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
     bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t GetStreamVolumeInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
@@ -455,6 +454,7 @@ private:
     bool IsPaRoute(uint32_t routeFlag);
     void DepressVolume(float &volume, int32_t volumeLevel,
         AudioStreamType streamType, std::shared_ptr<AudioDeviceDescriptor> &device);
+    float GetVolumeReductionRatio(AudioStreamType streamUsage);
     AudioIOHandle OpenPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex, std::string moduleArgs);
     AudioIOHandle OpenNotPaAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
@@ -492,6 +492,8 @@ private:
     void RegistAdapterManagerCallback(std::string networkId);
     void SetRemoteVolumeForPassThroughDevice(std::shared_ptr<AudioDeviceDescriptor> device, int32_t volumeLevel);
     void UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
+    void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
+ 	    AudioVolumeType &volumeType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -518,7 +520,8 @@ private:
     std::mutex systemSoundMutex_;
     std::unordered_map<std::string, std::string> systemSoundUriMap_;
     StreamVolumeInfoMap streamVolumeInfos_;
-    AudioRingerMode ringerMode_ = RINGER_MODE_NORMAL;
+    LowerVolumeInfoMap lowerVolumeInfos_;
+    std::atomic<AudioRingerMode> ringerMode_ = RINGER_MODE_NORMAL;
     int32_t safeVolume_ = 0;
     SafeStatus safeStatus_ = SAFE_ACTIVE;
     SafeStatus safeStatusBt_ = SAFE_ACTIVE;
@@ -581,6 +584,7 @@ private:
     std::mutex ringerNoMuteDeviceMutex_;
     std::shared_ptr<AudioDeviceDescriptor> ringerNoMuteDevice_ = nullptr;
     std::shared_ptr<RemoteVolumeCallback> remoteVolumeCallback_ = nullptr;
+    std::mutex deviceConnectMutex_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
@@ -622,8 +626,10 @@ public:
             STREAM_ULTRASONIC,
             STREAM_SYSTEM,
             STREAM_VOICE_CALL_ASSISTANT,
+#ifdef MULTI_ALARM_LEVEL
             STREAM_ANNOUNCEMENT,
             STREAM_EMERGENCY,
+#endif
             STREAM_ALL
         };
         for (auto &volumeType : volumeList) {

@@ -42,25 +42,34 @@ namespace AudioStandard {
 
 void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    HILOG_COMM_INFO("[SetAudioScenePre]Set audio scene start %{public}d, lastScene %{public}d",
-        audioScene, audioScene_);
-    lastAudioScene_ = audioScene_;
-    audioScene_ = audioScene;
-    if (lastAudioScene_ != AUDIO_SCENE_DEFAULT && audioScene_ == AUDIO_SCENE_DEFAULT) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "SetAudioScenePre");
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
-            std::make_shared<AudioDeviceDescriptor>());
-        std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevices =
-            AudioStateManager::GetAudioStateManager().GetExcludedDevices(CALL_OUTPUT_DEVICES);
-        AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(CALL_OUTPUT_DEVICES, unexcludedDevices);
+    AudioScene oldScene;
+    AudioScene newScene;
+    {
+        std::lock_guard<std::mutex> lock(sceneMutex_);
+        HILOG_COMM_INFO("[SetAudioScenePre]Set audio scene start %{public}d, lastScene %{public}d",
+            audioScene, audioScene_);
+        oldScene = lastAudioScene_;
+        lastAudioScene_ = audioScene_;
+        audioScene_ = audioScene;
+        newScene = audioScene_;
+    }
+    if (oldScene != AUDIO_SCENE_DEFAULT && newScene == AUDIO_SCENE_DEFAULT) {
+        if (oldScene != AUDIO_SCENE_RINGING || !VolumeUtils::IsPCVolumeEnable()) {
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+                std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "SetAudioScenePre");
+            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
+                std::make_shared<AudioDeviceDescriptor>());
+            std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevices =
+                AudioStateManager::GetAudioStateManager().GetExcludedDevices(CALL_OUTPUT_DEVICES);
+            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(CALL_OUTPUT_DEVICES, unexcludedDevices);
+        }
 #ifdef BLUETOOTH_ENABLE
-        Bluetooth::AudioHfpManager::UpdateAudioScene(audioScene_);
+        Bluetooth::AudioHfpManager::UpdateAudioScene(newScene);
         Bluetooth::AudioHfpManager::DisconnectSco();
         AudioPolicyUtils::GetInstance().SetScoExcluded(false);
 #endif
     }
-    if (audioScene_ == AUDIO_SCENE_DEFAULT) {
+    if (newScene == AUDIO_SCENE_DEFAULT) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState();
     }
 }
@@ -92,6 +101,7 @@ int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOf
 
 AudioScene AudioSceneManager::GetAudioScene(bool hasSystemPermission) const
 {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     AUDIO_DEBUG_LOG("GetAudioScene return value: %{public}d", audioScene_);
     if (!hasSystemPermission) {
         switch (audioScene_) {
@@ -107,16 +117,19 @@ AudioScene AudioSceneManager::GetAudioScene(bool hasSystemPermission) const
 
 AudioScene AudioSceneManager::GetLastAudioScene() const
 {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     return lastAudioScene_;
 }
 
 bool AudioSceneManager::IsSameAudioScene()
 {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     return lastAudioScene_ == audioScene_;
 }
 
 bool AudioSceneManager::IsVoiceCallRelatedScene()
 {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     return audioScene_ == AUDIO_SCENE_RINGING ||
         audioScene_ == AUDIO_SCENE_PHONE_CALL ||
         audioScene_ == AUDIO_SCENE_PHONE_CHAT ||
@@ -125,13 +138,21 @@ bool AudioSceneManager::IsVoiceCallRelatedScene()
 
 bool AudioSceneManager::IsInPhoneCallScene()
 {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     return audioScene_ == AUDIO_SCENE_PHONE_CALL;
 }
 
 bool AudioSceneManager::IsHangUpScene()
 {
+    std::lock_guard<std::mutex> lock(sceneMutex_);
     return (lastAudioScene_ == AUDIO_SCENE_PHONE_CALL || lastAudioScene_ == AUDIO_SCENE_PHONE_CHAT) &&
         audioScene_ == AUDIO_SCENE_DEFAULT;
+}
+
+bool AudioSceneManager::IsPhoneCallOrChatScene() const
+{
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    return audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT;
 }
 }
 }

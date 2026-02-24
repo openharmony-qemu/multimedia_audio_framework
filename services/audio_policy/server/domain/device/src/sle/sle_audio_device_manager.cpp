@@ -107,14 +107,13 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    HILOG_COMM_INFO("[StartPlaying] device [%{public}s] sle streamType [%{public}u] timeout [%{public}d]",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType, timeoutMs);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     int32_t ret = ERROR;
     if (startedSleStreamType_[device][streamType].isStarted) {
-        HILOG_COMM_INFO("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
     }
+    HILOG_COMM_INFO("StartPlaying device [%{public}s] sle streamType [%{public}u] timeout [%{public}d]",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(device).c_str(), streamType, timeoutMs);
     callback_->StartPlaying(device, streamType, timeoutMs, ret);
     if (ret != SUCCESS) {
         HILOG_COMM_ERROR("[startplaying] failed");
@@ -367,7 +366,7 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     auto &sessionSet = startedSleStreamType_[deviceAddr][streamType].sessionIds;
-    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] streamType %{public}u sessionId %{public}d",
+    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u sessionId %{public}d",
         AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
     if (isAdd) {
         sessionSet.insert(sessionId);
@@ -444,7 +443,7 @@ void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioD
 
     for (const auto &pair : it->second) {
         uint32_t streamType = pair.first;
-        CHECK_AND_CONTINUE_LOG(!pair.second.sessionIds.empty(), "streamType %{public}u has no session", streamType);
+        CHECK_AND_CONTINUE_LOG(!pair.second.sessionIds.empty(), "sle streamType %{public}u has no session", streamType);
         StopPlaying(deviceDesc->macAddress_, streamType);
     }
 
@@ -496,6 +495,39 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel(const std::string &d
         deviceVolumeConfigInfo_[device].second.volumeLevel = volumeLevel;
     }
     return SUCCESS;
+}
+
+int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeDegree(const std::string &device, AudioStreamType streamType,
+    int32_t volumeDegree)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(device) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (streamType == STREAM_MUSIC) {
+        deviceVolumeConfigInfo_[device].first.volumeDegree = volumeDegree;
+    } else if (streamType == STREAM_VOICE_CALL) {
+        if (volumeDegree > 0) {
+            deviceVolumeConfigInfo_[device].second.volumeDegree = volumeDegree;
+        } else {
+            return ERR_INVALID_PARAM;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t SleAudioDeviceManager::GetVolumeDegreeByVolumeType(AudioVolumeType volumeType,
+    const AudioDeviceDescriptor &deviceDesc)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(deviceDesc.macAddress_) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (volumeType == STREAM_MUSIC) {
+        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
+            deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeDegree;
+    } else if (volumeType == STREAM_VOICE_CALL) {
+        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeDegree;
+    }
+    return 0;
 }
 
 int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volumeType,

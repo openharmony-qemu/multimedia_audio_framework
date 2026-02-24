@@ -56,6 +56,7 @@
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
+#include "audio_pipe_selector.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -71,6 +72,7 @@ struct VolumeUpdateOption {
     bool mute = false;
     int32_t zoneId = 0;
     bool syncDegree = true;
+    bool hasCheckLoudVolume = false;
 };
 
 struct VolInfoForUpdateMute {
@@ -228,6 +230,12 @@ public:
 
     int32_t SetRingerMode(int32_t ringMode) override;
 
+    void SetLatestMuteStateForUid(int32_t uid, bool setMute);
+
+    int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool mute);
+
+    int32_t SetSourceOutputStreamMute(int32_t uid, bool mute);
+
 #ifdef FEATURE_DTMF_TONE
     int32_t GetSupportedTones(const std::string &countryCode, std::vector<int32_t> &throw_with_nested) override;
 
@@ -258,6 +266,8 @@ public:
     int32_t ActivateAudioSession(int32_t strategy) override;
 
     int32_t DeactivateAudioSession() override;
+
+    int32_t NotifyStreamSilentChange(uint32_t streamId) override;
 
     int32_t IsAudioSessionActivated(bool &active) override;
 
@@ -738,8 +748,10 @@ public:
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
+    int32_t UpdateSafeVolumeByStrMode() override;
     void HandleDataShareReadyEvent();
     int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
+    int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -787,7 +799,7 @@ private:
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
-        bool isUpdateUi, int32_t zoneId = 0, bool syncDegree = true);
+        int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     int32_t SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);
@@ -832,6 +844,7 @@ private:
     bool IsContinueAddVol();
     void TriggerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
+    void GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
     void AddAudioServiceOnStart();
@@ -878,10 +891,14 @@ private:
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
     int32_t GetSystemVolumeDegreeInternal(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        bool isUpdatedAudioStrategy);
+    int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
+        const AudioSessionStrategy &strategy, const bool isStandalone);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
-    AudioCapturerSession &audioCapturerSession_;
     AudioStateManager &audioStateManager_;
     AudioToneManager &audioToneManager_;
     AudioMicrophoneDescriptor &audioMicrophoneDescriptor_;
@@ -955,13 +972,15 @@ private:
     pid_t lastMicMuteSettingPid_ = 0;
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
 
+    int32_t micRefEnableState_ = 0;
     int32_t sessionIdByRemote_ = -1;
-    bool isUT_ = false;
+    bool isNeedPublished_ = false;
     bool isPublishCalled_ = false;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     bool isAlreadyRegisterCommonEventListener_ = false;
     std::mutex distributeDeviceMutex_;
     std::condition_variable distributeDeviceCond_;
+    std::mutex focusUpdateMutex_;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
