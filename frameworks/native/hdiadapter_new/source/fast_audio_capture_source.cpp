@@ -35,7 +35,7 @@ FastAudioCaptureSource::~FastAudioCaptureSource()
 
 int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("In, flag: %{public}d", attr.audioStreamFlag);
+    AUDIO_INFO_LOG("in, flag: %{public}d", attr.audioStreamFlag);
     attr_ = attr;
 
     int32_t ret = CreateCapture();
@@ -45,8 +45,7 @@ int32_t FastAudioCaptureSource::Init(const IAudioSourceAttr &attr)
         AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     ret = PrepareMmapBuffer();
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
-        HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
     sourceInited_ = true;
     InitPipeInfo(hdiCaptureId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_FAST,
         { static_cast<DeviceType>(attr_.deviceType) });
@@ -468,7 +467,7 @@ void FastAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &device
             break;
         case DEVICE_TYPE_USB_ARM_HEADSET:
             deviceDesc.desc = const_cast<char *>(attr_.macAddress.c_str());
-            deviceDesc.pins = PIN_OUT_USB_HEADSET;
+            deviceDesc.pins = PIN_IN_USB_HEADSET;
             break;
         default:
             AUDIO_WARNING_LOG("unsupport, use default, deviceType: %{public}d", attr_.deviceType);
@@ -511,8 +510,6 @@ int32_t FastAudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_FAST));
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
-    AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, input :%{public}d",
-        attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(attr_.adapterName, inputDevice, streamId, inputType);
     ChangePipeDevice({ inputDevice });
     return ret;
