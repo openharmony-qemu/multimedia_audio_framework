@@ -98,7 +98,6 @@ private:
     void CheckJank();
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
-    void DoSetOutputRoute(std::vector<DeviceType> &outputDevices);
     void InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, AudioScene audioScene);
     void SetAudioRouteInfoForEnhanceChain(void);
     int32_t CreateRender(void);
