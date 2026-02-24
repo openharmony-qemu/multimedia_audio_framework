@@ -112,7 +112,6 @@ public:
 
     MOCK_METHOD(int32_t, SplitRenderFrame,
         (char &data, uint64_t len, uint64_t &writeLen, SplitStreamType splitStreamType), (override));
-    MOCK_METHOD(int32_t, UpdatePrimaryConnectionState, (uint32_t operation), (override));
     MOCK_METHOD(void, SetDmDeviceType, (uint16_t dmDeviceType, DeviceType deviceType), (override));
 
     MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));
