@@ -904,7 +904,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     // [Capturer NOTE 1.3] should use the new device.
     CheckForRemoteDeviceState(deviceDesc);
     if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
-        return ReloadCaptureSession(sessionId, SESSION_OPERATION_START);
+        ReloadCaptureSession(sessionId, SESSION_OPERATION_START);
     }
     return SUCCESS;
 }
