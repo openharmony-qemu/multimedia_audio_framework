@@ -541,7 +541,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_027, TestSize.Le
 {
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioSpatializationEnabledChangeCallback>();
-    int32_t result = audioPolicyClient->AddSpatializationEnabledChangeCallback(cb);
+    int32_t result = audioPolicyClient->AddSpatializationEnabledChangeCallback(cb, true);
     EXPECT_EQ(result, SUCCESS);
 
     bool enabled = true;
@@ -562,7 +562,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_028, TestSize.Le
 {
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioHeadTrackingEnabledChangeCallback>();
-    int32_t result = audioPolicyClient->AddHeadTrackingEnabledChangeCallback(cb);
+    int32_t result = audioPolicyClient->AddHeadTrackingEnabledChangeCallback(cb, true);
     EXPECT_EQ(result, SUCCESS);
 
     bool enabled = true;
@@ -1794,6 +1794,26 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_084, TestSize.Le
 * @tc.desc  : Test onAdaptiveSpatialRenderingEnabledChangeForAnyDevice.
 */
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_085, TestSize.Level1)
+{
+    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
+    auto cb = std::make_shared<ConcreteAudioAdaptiveSpatialRenderingEnabledChangeCallback>();
+    int32_t result = audioPolicyClient->AddAdaptiveSpatialRenderingEnabledChangeCallback(cb);
+    EXPECT_EQ(result, SUCCESS);
+
+    bool enabled = true;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioPolicyClient->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    EXPECT_NE(audioPolicyClient, nullptr);
+}
+
+
+/**
+* @tc.name  : Test AudioPolicyClientStubImpl.
+* @tc.number: AudioPolicyClientStubImpl_086
+* @tc.desc  : Test onAdaptiveSpatialRenderingEnabledChangeForAnyDevice.
+*/
+HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_086, TestSize.Level1)
 {
     auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
     auto cb = std::make_shared<ConcreteAudioAdaptiveSpatialRenderingEnabledChangeCallback>();

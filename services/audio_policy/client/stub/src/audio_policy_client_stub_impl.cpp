@@ -1309,10 +1309,14 @@ int32_t AudioPolicyClientStubImpl::OnHeadTrackingDeviceChange(const std::unorder
 }
 
 int32_t AudioPolicyClientStubImpl::AddSpatializationEnabledChangeCallback(
-    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb)
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb, bool isFromBluetooth)
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     spatializationEnabledChangeCallbackList_.push_back(cb);
+    if (isFromBluetooth) {
+        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::AddSpatializationEnabledChangeCallback isFromBluetooth");
+        spatializationEnabledChangeCallbackList_ForBT.push_back(cb);
+    }
     return SUCCESS;
 }
 
@@ -1320,6 +1324,7 @@ int32_t AudioPolicyClientStubImpl::RemoveSpatializationEnabledChangeCallback()
 {
     std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
     spatializationEnabledChangeCallbackList_.clear();
+    spatializationEnabledChangeCallbackList_ForBT.clear();
     return SUCCESS;
 }
 
@@ -1382,10 +1387,13 @@ int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForCurrentDevice
 }
 
 int32_t AudioPolicyClientStubImpl::AddHeadTrackingEnabledChangeCallback(
-    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb)
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb, bool isFromNearlink)
 {
     std::lock_guard<std::mutex> lockCbMap(headTrackingEnabledChangeMutex_);
     headTrackingEnabledChangeCallbackList_.push_back(cb);
+    if (isFromNearlink) {
+        headTrackingEnabledChangeCallbackListFromNearlink_.push_back(cb);
+    }
     return SUCCESS;
 }
 
@@ -1429,6 +1437,33 @@ int32_t AudioPolicyClientStubImpl::OnAdaptiveSpatialRenderingEnabledChangeForAny
     std::lock_guard<std::mutex> lockCbMap(adaptiveSpatialRenderingEnabledChangeMutex_);
     for (const auto &callback : adaptiveSpatialRenderingEnabledChangeCallbackList_) {
         callback->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, bool enabled, bool headTrackingEnabled)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatializationEnabledChangeMutex_);
+    AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice %{public}d %{public}d",
+        int(spatializationEnabledChangeCallbackList_ForBT.size()),
+        int(headTrackingEnabledChangeCallbackListFromNearlink_.size()));
+    for (const auto &callback : spatializationEnabledChangeCallbackList_ForBT) {
+        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnSpatializationEnabledChangeForBTDevice");
+        callback->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
+    }
+    for (const auto &callback : headTrackingEnabledChangeCallbackListFromNearlink_) {
+        AUDIO_INFO_LOG("AudioPolicyClientStubImpl::OnHeadTrackingEnabledChangeForBTDevice");
+        callback->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, headTrackingEnabled);
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::OnSpatialAudioSourceTypeChange(int32_t mode)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
+    for (const auto &callback : spatialAudioSourceTypeChangeCallbackList_) {
+        callback->OnSpatialAudioSourceTypeChange(SpatialAudioSourceType(mode));
     }
     return SUCCESS;
 }
@@ -1599,6 +1634,27 @@ size_t AudioPolicyClientStubImpl::GetAdaptiveSpatialRenderingEnabledChangeCallba
 {
     std::lock_guard<std::mutex> lockCbMap(adaptiveSpatialRenderingEnabledChangeMutex_);
     return adaptiveSpatialRenderingEnabledChangeCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::AddSpatialAudioSourceTypeChangeCallback(
+    const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
+    spatialAudioSourceTypeChangeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveSpatialAudioSourceTypeChangeCallback()
+{
+    std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
+    spatialAudioSourceTypeChangeCallbackList_.clear();
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetCurrentSpatialAudioSourceTypeChangeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(spatialAudioSourceTypeChangeMutex_);
+    return spatialAudioSourceTypeChangeCallbackList_.size();
 }
 } // namespace AudioStandard
 } // namespace OHOS

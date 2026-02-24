@@ -188,7 +188,7 @@ HWTEST_F(AudioPolicyClientHolderUnitTest, OnPreferredDeviceSet_002, TestSize.Lev
     clientHolder_->OnPreferredDeviceSet(preferredType, deviceDesc, uid, caller);
 }
 
-/**
+/*
  * @tc.name  : Test OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice.
  * @tc.number: AudioPolicyClientHolderTest_OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice_001
  * @tc.desc  : Verify that hasSystemPermission_ == true.

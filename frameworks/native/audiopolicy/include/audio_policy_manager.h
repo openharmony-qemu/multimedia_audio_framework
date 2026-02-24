@@ -473,19 +473,24 @@ public:
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
+    int32_t GetCurrentSpatialAudioSourceType();
+
     int32_t RegisterSpatializationEnabledEventListener(
-        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback, bool isFromBluetooth = false);
 
     int32_t RegisterSpatializationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &callback);
 
     int32_t RegisterHeadTrackingEnabledEventListener(
-        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback, bool isFromNearlink);
 
     int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
     int32_t RegisterAdaptiveSpatialRenderingEnabledEventListener(
         const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback);
+
+    int32_t RegisterSpatialAudioSourceTypeEventListener(
+        const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &callback);
 
     int32_t UnregisterSpatializationEnabledEventListener();
 
@@ -496,6 +501,8 @@ public:
     int32_t UnregisterNnStateEventListener();
 
     int32_t UnregisterAdaptiveSpatialRenderingEnabledEventListener();
+
+    int32_t UnregisterSpatialAudioSourceTypeEventListener();
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 

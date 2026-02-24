@@ -2224,8 +2224,10 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
 
 int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
 {
-    auto request = [spatializationState]() {
+    auto request = [this, spatializationState]() {
         HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
+        adaptiveSpatialRenderingEnabled_ = spatializationState.adaptiveSpatialRenderingEnabled;
+        UpdateBypassSpatializationForStereo(bypassSpatializationForStereo_);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -2865,6 +2867,22 @@ void HpaeManager::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint
             AUDIO_WARNING_LOG("Can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType, sessionId);
         }
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::UpdateBypassSpatializationForStereo(bool bypass)
+{
+    bypassSpatializationForStereo_ = bypass;
+    AUDIO_INFO_LOG("HpaeManager::UpdateBypassSpatializationForStereo %{public}d", bypass);
+    HpaePolicyManager::GetInstance().SetBypassSpatializationForStereo(bypass && adaptiveSpatialRenderingEnabled_);
+}
+ 
+void HpaeManager::HandleBypassSpatializationForStereo(bool bypass)
+{
+    AUDIO_INFO_LOG("HpaeManager::HandleBypassSpatializationForStereo %{public}d", bypass);
+    auto request = [this, bypass]() {
+        UpdateBypassSpatializationForStereo(bypass);
     };
     SendRequest(request, __func__);
 }

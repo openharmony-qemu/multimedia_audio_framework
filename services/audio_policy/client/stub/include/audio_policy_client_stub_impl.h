@@ -111,14 +111,16 @@ public:
         const std::shared_ptr<HeadTrackingDataRequestedChangeCallback> &cb);
     int32_t RemoveHeadTrackingDataRequestedChangeCallback(const std::string &macAddress);
     size_t GetHeadTrackingDataRequestedChangeCallbackSize() const;
-    int32_t AddSpatializationEnabledChangeCallback(const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb);
+    int32_t AddSpatializationEnabledChangeCallback(
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &cb, bool isFromBlueTooth = false);
     int32_t RemoveSpatializationEnabledChangeCallback();
     size_t GetSpatializationEnabledChangeCallbackSize() const;
     int32_t AddSpatializationEnabledChangeForCurrentDeviceCallback(
         const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &cb);
     int32_t RemoveSpatializationEnabledChangeForCurrentDeviceCallback();
     size_t GetSpatializationEnabledChangeForCurrentDeviceCallbackSize() const;
-    int32_t AddHeadTrackingEnabledChangeCallback(const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb);
+    int32_t AddHeadTrackingEnabledChangeCallback(
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &cb, bool isFromNearlink);
     int32_t RemoveHeadTrackingEnabledChangeCallback();
     size_t GetHeadTrackingEnabledChangeCallbacSize() const;
     int32_t AddNnStateChangeCallback(const std::shared_ptr<AudioNnStateChangeCallback> &cb);
@@ -161,6 +163,10 @@ public:
         const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &cb);
     int32_t RemoveAdaptiveSpatialRenderingEnabledChangeCallback();
     size_t GetAdaptiveSpatialRenderingEnabledChangeCallbackSize() const;
+    int32_t AddSpatialAudioSourceTypeChangeCallback(
+        const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &cb);
+    int32_t RemoveSpatialAudioSourceTypeChangeCallback();
+    size_t GetCurrentSpatialAudioSourceTypeChangeCallbackSize() const;
 
     int32_t OnRecreateRendererStreamEvent(uint32_t sessionId, int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt &reason) override;
@@ -211,7 +217,11 @@ public:
     int32_t OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         bool enabled) override;
-
+    int32_t OnSpatializationEnabledChangeForBTDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+        bool enabled,
+        bool headTrackingEnabled) override;
+    int32_t OnSpatialAudioSourceTypeChange(int32_t mode) override;
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);
@@ -235,9 +245,13 @@ private:
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbackList_;
     std::vector<std::weak_ptr<AudioCapturerStateChangeCallback>> capturerStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>> spatializationEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSpatializationEnabledChangeCallback>>
+        spatializationEnabledChangeCallbackList_ForBT;
     std::vector<std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback>>
         spatializationEnabledChangeForCurrentDeviceCallbackList_;
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>>
+        headTrackingEnabledChangeCallbackListFromNearlink_;
     std::vector<std::shared_ptr<AudioNnStateChangeCallback>> nnStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::weak_ptr<AudioSessionStateChangedCallback>> audioSessionStateCallbackList_;
@@ -249,6 +263,7 @@ private:
     std::vector<std::shared_ptr<AudioFormatUnsupportedErrorCallback>> AudioFormatUnsupportedErrorCallbackList_;
     std::vector<std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback>>
         adaptiveSpatialRenderingEnabledChangeCallbackList_;
+    std::vector<std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback>> spatialAudioSourceTypeChangeCallbackList_;
 
     std::unordered_map<StreamUsage,
         std::vector<std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>>> preferredOutputDeviceCallbackMap_;
@@ -295,6 +310,7 @@ private:
     mutable std::mutex collaborationEnabledChangeForCurrentDeviceMutex_;
     mutable std::mutex preferredDeviceSetMutex_;
     mutable std::mutex adaptiveSpatialRenderingEnabledChangeMutex_;
+    mutable std::mutex spatialAudioSourceTypeChangeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

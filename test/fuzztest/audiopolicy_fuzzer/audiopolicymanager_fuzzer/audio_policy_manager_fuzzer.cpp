@@ -393,7 +393,8 @@ void AudioPolicyManagerSixFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(
         audioSpatializationEnabledChangeCallback);
     AudioPolicyManager::GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(currentDeviceCallback);
-    AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(audioHeadTrackingEnabledChangeCallback);
+    AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(audioHeadTrackingEnabledChangeCallback,
+        true);
     AudioPolicyManager::GetInstance().RegisterNnStateEventListener(audioNnStateChangeCallback);
     AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledEventListener();
     AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledForCurrentDeviceEventListener();

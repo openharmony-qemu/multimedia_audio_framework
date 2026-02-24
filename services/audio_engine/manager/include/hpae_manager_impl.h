@@ -114,6 +114,7 @@ public:
     void InitHdiState() override;
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value) override;
+    void HandleBypassSpatializationForStereo(bool bypass) override;
     // interfaces for capture effect
     void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,

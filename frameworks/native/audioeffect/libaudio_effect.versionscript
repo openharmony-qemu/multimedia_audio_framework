@@ -100,9 +100,10 @@
     *IsChannelLayoutSupportedForDspEffect*;
     *UpdateCollaborativeProductId*;
     *LoadCollaborationConfig*;
-    *IsSpatializationEnabledForChains*;
-    *IsEffectChainFading*;
     *GetCollaborationLatency*;
+    *SetBypassSpatializationForStereo*;
+    *IsSpatializationEnabledForChains*;
+    *IsDownSamplingForSpatialization*;
   local:
     *;
 };

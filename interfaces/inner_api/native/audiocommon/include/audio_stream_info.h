@@ -555,6 +555,12 @@ enum StreamChangeType : int32_t {
     STREAM_CHANGE_TYPE_REMOVE_ALL,
     STREAM_CHANGE_TYPE_STATE_CHANGE,
 };
+
+enum SpatialAudioSourceType : int32_t {
+    SPATIAL_AUDIO_SOURCE_TYPE_STEREO,
+    SPATIAL_AUDIO_SOURCE_TYPE_AUDIO_VIVID,
+    SPATIAL_AUDIO_SOURCE_TYPE_MULTI_CHANNEL,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H
