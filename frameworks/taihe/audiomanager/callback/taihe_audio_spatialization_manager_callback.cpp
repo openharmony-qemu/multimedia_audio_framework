@@ -188,6 +188,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatialization
         [](AudioSpatializationEnabledJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     AUDIO_INFO_LOG("SafeJsCallbackSpatializationEnabledWork: safe js callback working.");
@@ -327,6 +328,7 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::SafeJsCallbackSpatial
         [](AudioSpatializationEnabledForCurrentDeviceJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     AUDIO_INFO_LOG("SafeJsCallbackSpatializationEnabledForCurrentDeviceWork: safe js callback working.");
@@ -520,6 +522,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnab
         [](AudioHeadTrackingEnabledJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     AUDIO_INFO_LOG("SafeJsCallbackHeadTrackingEnabledWork: safe js callback working.");

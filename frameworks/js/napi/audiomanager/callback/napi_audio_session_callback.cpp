@@ -89,6 +89,7 @@ void NapiAudioSessionCallback::SafeJsCallbackAudioSessionWork(napi_env env, napi
         static_cast<AudioSessionJsCallback*>(data),
         [](AudioSessionJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
 
     std::string request = event->callbackName;

@@ -171,6 +171,7 @@ void NapiAudioRendererCallback::SafeJsCallbackInterruptWork(napi_env env, napi_v
         static_cast<AudioRendererJsCallback*>(data),
         [](AudioRendererJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -226,6 +227,7 @@ void NapiAudioRendererCallback::SafeJsCallbackStateChangeWork(napi_env env, napi
         static_cast<AudioRendererJsCallback*>(data),
         [](AudioRendererJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

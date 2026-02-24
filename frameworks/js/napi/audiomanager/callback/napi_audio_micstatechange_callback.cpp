@@ -120,6 +120,7 @@ void NapiAudioManagerMicStateChangeCallback::SafeJsCallbackMicStateChangeWork(
         static_cast<AudioManagerMicStateChangeJsCallback*>(data),
         [](AudioManagerMicStateChangeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

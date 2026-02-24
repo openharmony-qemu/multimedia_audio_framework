@@ -73,6 +73,7 @@ void TaiheAudioManagerMicStateChangeCallback::SafeJsCallbackMicStateChangeWork(
         [](AudioManagerMicStateChangeJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;
