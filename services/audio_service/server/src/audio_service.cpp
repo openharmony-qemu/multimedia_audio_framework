@@ -1474,16 +1474,6 @@ void AudioService::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     IStreamManager::GetPlaybackManager(PLAYBACK).GetAllSinkInputs(sinkInputs);
 }
 
-void AudioService::SetDefaultAdapterEnable(bool isEnable)
-{
-    isDefaultAdapterEnable_ = isEnable;
-}
-
-bool AudioService::GetDefaultAdapterEnable()
-{
-    return isDefaultAdapterEnable_;
-}
-
 // need call with streamLifeCycleMutex_ lock
 bool AudioService::IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid,
     int32_t maxStreamCntPerUid)

@@ -325,7 +325,6 @@ private:
     void UnregisterBluetoothListener();
 
     BluetoothOffloadState GetA2dpOffloadFlag();
-    void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
     bool CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property);
 private:

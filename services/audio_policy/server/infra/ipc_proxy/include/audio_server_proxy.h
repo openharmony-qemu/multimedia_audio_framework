@@ -101,7 +101,6 @@ public:
     void NotifyAccountsChanged();
     void GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs);
     void NotifyAudioPolicyReady();
-    void SetDefaultAdapterEnableProxy(bool isEnable);
     void SetDmDeviceTypeProxy(uint16_t dmDeviceType, DeviceType deviceType = DEVICE_TYPE_INVALID);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimitProxy(uint32_t innerCapLimit);
