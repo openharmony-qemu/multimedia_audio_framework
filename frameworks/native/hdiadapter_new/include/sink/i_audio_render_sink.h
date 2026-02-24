@@ -122,8 +122,6 @@ public:
 
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
-    // for a2dp_offload connection state
-    virtual int32_t UpdatePrimaryConnectionState(uint32_t operation) NOT_SUPPORT_RET;
 
     virtual bool IsInA2dpOffload() {return false;}
 

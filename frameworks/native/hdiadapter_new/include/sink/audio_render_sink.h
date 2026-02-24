@@ -76,9 +76,6 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
-    // for a2dp_offload connection state
-    int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
-
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
@@ -113,7 +110,6 @@ private:
     std::string GetRouting(void) const;
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
-    void WaitForDataLinkConnected();
     void UpdateNearlinkOutputRoute();
 
 private:
@@ -135,9 +131,6 @@ private:
     static constexpr const char *RUNNING_LOCK_NAME_BASE = "AudioPrimaryBackgroundPlay";
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-    static constexpr uint32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000;
-    static constexpr uint32_t DATA_LINK_CONNECTING = 10; // DATA_LINK_CONNECTING in audio_a2dp_offload_manager.cpp
-    static constexpr uint32_t DATA_LINK_CONNECTED = 11; // DATA_LINK_CONNECTED in audio_a2dp_offload_manager.cpp
     uint32_t renderId_ = HDI_INVALID_ID;
     const std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
@@ -190,10 +183,6 @@ private:
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;
 
-    // for a2dp_offload datalink connection
-    std::mutex dataConnectionMutex_;
-    bool isDataLinkConnected_ = false;
-    std::condition_variable dataConnectionCV_;
     std::function<void(bool)> deviceCallback_ = nullptr;
 };
 

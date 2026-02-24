@@ -146,7 +146,6 @@ int32_t AudioRenderSink::Start(void)
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
-    isDataLinkConnected_ = false;
     return SUCCESS;
 }
 
@@ -1198,20 +1197,6 @@ void AudioRenderSink::UpdateSinkState(bool started)
     callback_.OnRenderSinkStateChange(GetUniqueId(), started);
 }
 
-int32_t AudioRenderSink::UpdatePrimaryConnectionState(uint32_t operation)
-{
-    if (operation == DATA_LINK_CONNECTING) {
-        AUDIO_INFO_LOG("Primary sink is connecting");
-        isDataLinkConnected_ = false;
-    }
-    if (operation == DATA_LINK_CONNECTED) {
-        AUDIO_INFO_LOG("Primary sink is connected");
-        isDataLinkConnected_ = true;
-        dataConnectionCV_.notify_all();
-    }
-    return SUCCESS;
-}
-
 void AudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
@@ -1229,25 +1214,6 @@ void AudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceTy
     AUDIO_INFO_LOG("dm deviceType update, need update output port pin");
     int32_t ret = DoSetOutputRoute(outputDevices);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "DoSetOutputRoute fails");
-}
-
-void AudioRenderSink::WaitForDataLinkConnected()
-{
-    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
-    if (!isDataLinkConnected_ && (halName_ == "primary") && (sinkType_ == ADAPTER_TYPE_PRIMARY)) {
-        AUDIO_INFO_LOG("data-connection blocking starts");
-        bool stopWaiting = dataConnectionCV_.wait_for(
-            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
-                return isDataLinkConnected_;
-            });
-        if (stopWaiting) {
-            AUDIO_INFO_LOG("data-connection blocking ends");
-        } else {
-            AUDIO_WARNING_LOG("data-connection time out, start RenderFrame anyway.");
-        }
-        isDataLinkConnected_ = true;
-    }
-    dataConnectionWaitLock.unlock();
 }
 
 bool AudioRenderSink::IsInA2dpOffload()
