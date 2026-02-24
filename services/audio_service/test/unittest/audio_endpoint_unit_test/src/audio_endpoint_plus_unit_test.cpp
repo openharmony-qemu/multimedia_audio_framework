@@ -1814,8 +1814,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, NotifyStreamChange_001, TestSize.Level4)
         .adapterName = adapterName,
         .audioMode = config.audioMode,
         .streamType = config.streamType,
-        .isUltraFast = isUltraFast,
-        .isLoopback = config.rendererInfo.isLoopback
+        .isUltraFast = isUltraFast
     };
     testEndpoint->Config(endpointConfig);
 
