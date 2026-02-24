@@ -1987,6 +1987,9 @@ std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioMo
 
 std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const
 {
+    if (!audioModuleInfo.busAddress.empty()) {
+        return audioModuleInfo.busAddress;
+    }
     if (audioModuleInfo.className == "primary" && audioModuleInfo.sourceType == "SOURCE_TYPE_WAKEUP") {
         return audioModuleInfo.name;
     }

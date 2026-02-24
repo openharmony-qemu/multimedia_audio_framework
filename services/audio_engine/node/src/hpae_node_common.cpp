@@ -364,6 +364,7 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     }
     sourceInfo.deviceNetId = audioModuleInfo.networkId;
     sourceInfo.deviceClass = audioModuleInfo.className;
+    sourceInfo.busAddress = audioModuleInfo.busAddress;
     sourceInfo.adapterName = audioModuleInfo.adapterName;
     sourceInfo.sourceName = audioModuleInfo.name;  // built_in_mic
     sourceInfo.deviceName = audioModuleInfo.name;

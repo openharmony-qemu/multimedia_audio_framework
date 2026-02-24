@@ -219,9 +219,14 @@ int32_t AudioCaptureSource::Start(void)
 
     InitLatencyMeasurement();
     InitRunningLock();
-
+    std::string dumpFilePrefix = halName_;
+#ifdef MULTI_BUS_ENABLE
+    if (!address_.empty()) {
+        dumpFilePrefix = address_;
+    }
+#endif
     // eg: primary_source_0_20240527202236189_44100_2_1.pcm
-    dumpFileName_ = halName_ + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
+    dumpFileName_ = dumpFilePrefix + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
         std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
         std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);

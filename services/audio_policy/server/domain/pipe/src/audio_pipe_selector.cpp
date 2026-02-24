@@ -245,12 +245,17 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
                                           const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
                                           std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &busPipeIter)
 {
-    auto findPipe = [&](std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos, const auto &condition) {
+    auto FindPipe = [&](std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos, const auto &condition) {
                 return std::find_if(pipeInfos.begin(), pipeInfos.end(), condition);
     };
-    if (busAddresses.size() == 1) {
+    if (streamDesc->IsRecording()) {
+        std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+        busPipeIter = FindPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+            return IsPipeMatch(streamDesc, newPipeInfo, streamDescAdapterName);
+        });
+    } else if (busAddresses.size() == 1) {
         // Vehicle system scenario enter.
-        busPipeIter = findPipe(newPipeInfoList, [&busAddresses](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+        busPipeIter = FindPipe(newPipeInfoList, [&busAddresses](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return newPipeInfo->moduleInfo_.name == busAddresses[0];
         });
     } else if (busAddresses.size() > 1) {
@@ -259,7 +264,7 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         std::shared_ptr<AudioStreamDescriptor> tempDesc = streamDesc;
         configManager_.GetStreamPropInfo(tempDesc, streamPropInfo, busAddresses);
-        busPipeIter = findPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+        busPipeIter = FindPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return std::any_of(busAddresses.begin(), busAddresses.end(),
                                [&](const auto &busAddress) { return newPipeInfo->moduleInfo_.name == busAddress; }) &&
                    newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
@@ -804,6 +809,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;
     info.moduleInfo_.name = pipeInfoPtr->paProp_.moduleName_;
+    info.moduleInfo_.busAddress = pipeInfoPtr->paProp_.busAddress_;
     info.moduleInfo_.adapterName = adapterInfoPtr->adapterName;
     info.moduleInfo_.className = adapterInfoPtr->adapterName;
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
@@ -1055,6 +1061,9 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
 
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+#ifdef MULTI_BUS_ENABLE
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.busAddress, true);
+#endif
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
 
     return pipeInfo->IsSameNetworkId(deviceDesc->networkId_);
