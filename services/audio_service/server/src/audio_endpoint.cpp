@@ -193,7 +193,7 @@ int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
             result.size, requestDataLen);
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupRingBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed!");\
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
@@ -276,11 +276,11 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId, const std::optiona
 
     AUDIO_INFO_LOG("Dup Renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex,
         GetStatusStr(endpointStatus_).c_str());
-    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid!");
+    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid");
 
     // buffer init
     dupBufferSize_ = dstSpanSizeInframe_ * dstByteSizePerFrame_; // each
-    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr");
     CHECK_AND_RETURN_RET_LOG(dupBufferSize_ < dstAudioBuffer_->GetDataSize(), ERR_OPERATION_FAILED, "Init buffer fail");
     dupBuffer_ = std::make_unique<uint8_t []>(dupBufferSize_);
     ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
@@ -326,7 +326,7 @@ int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId, const std::op
 {
     CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
     int32_t ret = InitDupStream(innerCapId, dualDeviceName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed!");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
     return SUCCESS;
 }
 
@@ -367,7 +367,7 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     }
     if (captureInfo.dupStream == nullptr) {
         captureInfo.isInnerCapEnabled = false;
-        AUDIO_INFO_LOG("dupStream is nullptr.");
+        AUDIO_INFO_LOG("dupStream is nullptr");
         return SUCCESS;
     }
     captureInfo.isInnerCapEnabled = false;
@@ -1402,10 +1402,10 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     isExistLoopback_ = false;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr!");
+        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
-        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is nullptr!");
+        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is null");
         auto processConfig = processList_[i]->GetAudioProcessConfig();
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;

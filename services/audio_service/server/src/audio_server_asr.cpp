@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -184,13 +184,13 @@ int32_t AudioServer::SetAsrAecMode(int32_t asrAecMode)
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", parmKey, "", value);
     deviceManager->SetAudioParameter("primary", parmKey, "", valueAec);
     return 0;
 }
 
-int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
+int32_t AudioServer::GetAsrAecMode(int32_t &asrAecMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -199,7 +199,7 @@ int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     std::string asrAecModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {
@@ -215,7 +215,7 @@ int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
         } else if (asrAecSink == "ASR_AEC=OFF") {
             asrAecMode = static_cast<int>(AsrAecMode::BYPASS);
         } else {
-            AUDIO_ERR_LOG("get value failed!");
+            AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
         }
         return 0;
@@ -230,11 +230,11 @@ int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
         if (itAecMode != AEC_MODE_MAP.end()) {
             asrAecMode = static_cast<int>(itAecMode->second);
         } else {
-            AUDIO_ERR_LOG("get value failed!");
+            AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
         }
     } else {
-        AUDIO_ERR_LOG("get value failed!");
+        AUDIO_ERR_LOG("get value failed.");
         return ERR_INVALID_PARAM;
     }
     return 0;
@@ -259,12 +259,12 @@ int32_t AudioServer::SetAsrNoiseSuppressionMode(int32_t asrNoiseSuppressionMode)
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", parmKey, "", value);
     return 0;
 }
 
-int32_t AudioServer::GetAsrNoiseSuppressionMode(int32_t& asrNoiseSuppressionMode)
+int32_t AudioServer::GetAsrNoiseSuppressionMode(int32_t &asrNoiseSuppressionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -273,7 +273,7 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(int32_t& asrNoiseSuppressionMode
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     std::string asrNoiseSuppressionModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {
@@ -326,7 +326,7 @@ int32_t AudioServer::SetAsrWhisperDetectionMode(int32_t asrWhisperDetectionMode)
     return 0;
 }
 
-int32_t AudioServer::GetAsrWhisperDetectionMode(int32_t& asrWhisperDetectionMode)
+int32_t AudioServer::GetAsrWhisperDetectionMode(int32_t &asrWhisperDetectionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -364,6 +364,7 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(int32_t& asrWhisperDetectionMode
     return 0;
 }
 // LCOV_EXCL_STOP
+
 
 int32_t AudioServer::SetAsrVoiceSuppressionControlMode(
     const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode, bool on, int32_t modifyVolume)
@@ -425,7 +426,7 @@ int32_t AudioServer::SetAsrVoiceControlMode(int32_t asrVoiceControlMode, bool on
     if ((itCallAssistant != VOICE_CALL_ASSISTANT_SUPPRESSION.end()) && (res != RES_MAP_VERSE.end())) {
         return SetAsrVoiceSuppressionControlMode(paramKey, asrVoiceControlModeTmp, on, modifyVolume);
     }
-    
+
     return 0;
 }
 
@@ -454,7 +455,7 @@ int32_t AudioServer::SetAsrVoiceMuteMode(int32_t asrVoiceMuteMode, bool on)
     return SUCCESS;
 }
 
-int32_t AudioServer::IsWhispering(int32_t& whisperRes)
+int32_t AudioServer::IsWhispering(int32_t &whisperRes)
 {
     whisperRes = 0;
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,

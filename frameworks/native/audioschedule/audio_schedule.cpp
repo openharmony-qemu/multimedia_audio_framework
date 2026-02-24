@@ -135,7 +135,7 @@ void SetProcessDataThreadPriority(int32_t priority)
     return;
 }
 
-void ResetProcessDataThreadPriority()
+void ResetProcessDataThreadPriority(void)
 {
     struct sched_param param = {0};
     param.sched_priority = 0;
@@ -191,7 +191,7 @@ void ScheduleThreadInServer(pid_t pid, pid_t tid) {};
 void UnscheduleThreadInServer(pid_t tid) {};
 void OnAddResSchedService(uint32_t audioServerPid) {};
 void SetProcessDataThreadPriority(int32_t priority) {};
-void ResetProcessDataThreadPriority() {};
+void ResetProcessDataThreadPriority(void) {};
 void UnscheduleReportData(uint32_t /* pid */, uint32_t /* tid */, const char* /* bundleName*/) {};
 bool SetEndpointThreadPriority() { return false; };
 bool ResetEndpointThreadPriority() { return false; };

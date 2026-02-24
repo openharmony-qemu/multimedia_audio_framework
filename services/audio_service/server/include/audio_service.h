@@ -88,8 +88,9 @@ public:
     // override for ProcessReleaseCallback, do release process work.
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
+    void WaitForRelease(const std::string endpointName, const int32_t delayTime);
 
-    void CheckBeforeRecordEndpointCreate(bool isRecord);
+    void CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
         AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(const AudioEndpointConfig &endpointConfig,
@@ -116,7 +117,7 @@ public:
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
     std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
-    void SetNonInterruptMuteForProcess(const uint32_t SessionId, const bool muteFlag);
+    void SetNonInterruptMuteForProcess(const uint32_t sessionId, const bool muteFlag);
     void UpdateMuteControlSet(uint32_t sessionId, bool muteFlag);
     int32_t UpdateSourceType(SourceType sourceType);
     void SetIncMaxRendererStreamCnt(AudioMode audioMode);
@@ -149,7 +150,6 @@ public:
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
-    bool IsSameAudioStreamInfoNotIncludeSample(AudioStreamInfo &newStreamInfo, AudioStreamInfo &oldStreamInfo);
     ReuseEndpointType GetReuseEndpointType(const std::string &deviceKey, const AudioStreamInfo &streamInfo);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);

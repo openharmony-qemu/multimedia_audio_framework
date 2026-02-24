@@ -152,7 +152,7 @@ void NapiRendererPositionCallback::PositionTsfnFinalize(napi_env env, void *data
 void NapiRendererPositionCallback::OnJsRendererPositionCallback(std::unique_ptr<RendererPositionJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackInterrupt: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
         return;
     }
 
