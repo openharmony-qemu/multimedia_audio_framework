@@ -218,6 +218,7 @@ void NapiAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatializationE
         static_cast<AudioSpatializationEnabledJsCallback*>(data),
         [](AudioSpatializationEnabledJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback->cb_;
     napi_handle_scope scope = nullptr;
@@ -390,6 +391,7 @@ void NapiAudioCurrentSpatializationEnabledChangeCallback::SafeJsCallbackSpatiali
         static_cast<AudioSpatializationEnabledForCurrentDeviceJsCallback*>(data),
         [](AudioSpatializationEnabledForCurrentDeviceJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback->cb_;
     napi_handle_scope scope = nullptr;
@@ -622,6 +624,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnabl
         static_cast<AudioHeadTrackingEnabledJsCallback*>(data),
         [](AudioHeadTrackingEnabledJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback->cb_;
     napi_handle_scope scope = nullptr;

@@ -44,6 +44,7 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::SafeJsCallbackActiveVolume
         [](AudioManagerActiveVolumeTypeChangeJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;
@@ -167,6 +168,7 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::RemoveCallbackReference(st
 
 int32_t TaiheAudioManagerActiveVolumeTypeChangeCallback::GetActiveVolumeTypeChangeListSize()
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     return activeVolumeTypeChangeList_.size();
 }
 } // namespace ANI::Audio
