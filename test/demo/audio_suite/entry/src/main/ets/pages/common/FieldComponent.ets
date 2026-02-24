@@ -11,7 +11,10 @@ const TAG: string = 'AudioEditTestApp_Field';
 @Component
 export struct FieldComponent {
   @Prop selectedSoundFiled: SoundFiledType;
-  @State soundField: SoundFiledType = this.selectedSoundFiled;
+  @State soundField: SoundFiledType = SoundFiledType.SOUND_FIELD_CLOSE;
+  aboutToAppear() {
+    this.soundField = this.selectedSoundFiled;
+  }
   onCancel?: () => void;
   onAgree?: (soundFieldType: SoundFiledType) => void;
 
