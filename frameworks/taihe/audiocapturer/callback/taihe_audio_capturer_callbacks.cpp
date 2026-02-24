@@ -144,6 +144,7 @@ void TaiheAudioCapturerCallback::SafeJsCallbackInterruptWork(AudioCapturerJsCall
         [](AudioCapturerJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;
