@@ -284,7 +284,7 @@ void NapiAudioManagerCallback::RemoveAudioManagerDeviceChangeCbRef(napi_env env,
     for (auto it = audioManagerDeviceChangeCbList_.begin(); it != audioManagerDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = IsSameCallback(env_, callback, (*it).first->cb_);
         if (isSameCallback) {
-            AUDIO_INFO_LOG("RemoveRoutingManagerDeviceChangeCbRef: find js callback, delete it");
+            AUDIO_INFO_LOG("RemoveAudioManagerDeviceChangeCbRef: find js callback, delete it");
             napi_delete_reference(env, (*it).first->cb_);
             (*it).first->cb_ = nullptr;
             audioManagerDeviceChangeCbList_.erase(it);
