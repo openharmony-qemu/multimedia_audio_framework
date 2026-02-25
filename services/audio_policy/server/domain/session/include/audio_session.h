@@ -62,7 +62,7 @@ public:
     AudioSessionStrategy GetSessionStrategy();
     bool IsAudioSessionEmpty();
     bool IsAudioRendererEmpty();
-    int32_t SetSessionDefaultOutputDevice(const DeviceType &deviceType);
+    int32_t SetSessionDefaultOutputDevice(const DeviceType &deviceType, bool forceFetch = false);
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     bool GetAndClearNeedToFetchFlag();
@@ -85,7 +85,7 @@ private:
     bool CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt);
     int32_t EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
     int32_t EnableVoipStreamsDefaultOutputDevice();
-    int32_t EnableDefaultDevice();
+    int32_t EnableDefaultDevice(bool forceFetch = false);
     void UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
     bool IsSessionDefaultDeviceEnabled();
     bool IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage);
