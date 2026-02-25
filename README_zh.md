@@ -128,7 +128,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 
 12. 使用 audioRenderer->**SetVolume(float)** 和 audioRenderer->**GetVolume()** 来设置和获取当前音频流音量, 可选范围为 0.0 到 1.0。
 
-提供上述基本音频播放使用范例。更多接口说明请参考[**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiorenderer/include/audio_renderer.h) 和 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
+提供上述基本音频播放使用范例。更多接口说明请参考[**audio_renderer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiorenderer/include/audio_renderer.h) 和 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
 
 ### 音频录制<a name="section295162052813"></a>
 
@@ -182,10 +182,10 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
 9.  AudioCapturer 实例调用 audioCapturer->**Stop**() 函数停止录音。
 10. 录音任务完成后，调用 AudioCapturer 实例的 audioCapturer->**Release**() 函数释放资源。
 
-提供上述基本音频录制使用范例。更多API请参考[**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h)和[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
+提供上述基本音频录制使用范例。更多API请参考[**audio_capturer.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocapturer/include/audio_capturer.h)和[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
 
 ### 音频管理<a name="section645572311287"></a>
-可以使用 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) 内的接口来控制音量和设备。
+可以使用 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h) 内的接口来控制音量和设备。
 1. 使用 **GetInstance** 接口获取 **AudioSystemManager** 实例.
     ```
     AudioSystemManager *audioSystemMgr = AudioSystemManager::GetInstance();
@@ -206,7 +206,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     ```
     int32_t result = audioSystemMgr->SetMute(streamType, true);
     bool isMute = audioSystemMgr->IsStreamMute(streamType);
-5. 使用 **SetRingerMode** 和 **GetRingerMode** 接口来设置和获取铃声模式。参考在 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)  定义的 **AudioRingerMode** 枚举来获取支持的铃声模式。
+5. 使用 **SetRingerMode** 和 **GetRingerMode** 接口来设置和获取铃声模式。参考在 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)  定义的 **AudioRingerMode** 枚举来获取支持的铃声模式。
     ```
     int32_t result = audioSystemMgr->SetRingerMode(RINGER_MODE_SILENT);
     AudioRingerMode ringMode = audioSystemMgr->GetRingerMode();
@@ -217,7 +217,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     bool isMicMute = audioSystemMgr->IsMicrophoneMute();
     ```
 #### 设备控制<a name="section645572311287_002"></a>
-7. 使用 **GetDevices**, **deviceType_** 和 **deviceRole_** 接口来获取音频输入输出设备信息。 参考 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) 内定义的DeviceFlag, DeviceType 和 DeviceRole 枚举。
+7. 使用 **GetDevices**, **deviceType_** 和 **deviceRole_** 接口来获取音频输入输出设备信息。 参考 [**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) 内定义的DeviceFlag, DeviceType 和 DeviceRole 枚举。
     ```
     DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
     vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors
@@ -232,7 +232,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     int32_t result = audioSystemMgr->SetDeviceActive(deviceType, true);
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
-9. 提供其它用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
+9. 提供其它用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
 10. 应用程序可以使用 **AudioManagerNapi::On**注册系统音量的更改。 在此，如果应用程序监听到系统音量更改的事件,就会用以下参数通知应用程序:
 volumeType : 更改的系统音量的类型
 volume : 当前的音量等级
@@ -259,7 +259,7 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
     ```
 有关支持的音频场景，请参阅 **AudioScene** 中的枚举[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h)。
 #### 音频流管理<a name="section645572311287_004"></a>
-可以使用[**audio_stream_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiomanager/include/audio_stream_manager.h)提供的接口用于流管理功能。
+可以使用[**audio_stream_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_stream_manager.h)提供的接口用于流管理功能。
 1. 使用 **GetInstance** 接口获得 **AudioSystemManager** 实例。
     ```
     AudioStreamManager *audioStreamMgr = AudioStreamManager::GetInstance();
@@ -315,7 +315,7 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     int32_t currentCapturerChangeInfo = audioStreamMgr->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     ```
-    有关结构，请参阅[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) **audioRendererChangeInfos** 和 **audioCapturerChangeInfos**.
+    有关结构，请参阅[**audio_info.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiocommon/include/audio_info.h) **audioRendererChangeInfos** 和 **audioCapturerChangeInfos**.
 
 6. 使用 **IsAudioRendererLowLatencySupported** 检查低延迟功能是否支持。
     ```
@@ -334,7 +334,7 @@ JavaScript应用可以使用系统提供的音频管理接口，来控制音量�
 请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-audio-kit/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
 
 ### 蓝牙SCO呼叫<a name="section645572311287_007"></a>
-可以使用提供的接口 [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_framework/blob/master/frameworks/native/bluetoothclient/audio_bluetooth_manager.h) 实现同步连接导向链路（SCO）的蓝牙呼叫。
+可以使用提供的接口 [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) 实现同步连接导向链路（SCO）的蓝牙呼叫。
 
 1. 为监听SCO状态更改，您可以使用 **OnScoStateChanged**.
 ```
