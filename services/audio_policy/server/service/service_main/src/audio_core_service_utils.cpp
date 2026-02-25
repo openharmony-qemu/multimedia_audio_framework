@@ -64,23 +64,29 @@ bool AudioCoreServiceUtils::IsRingScene(AudioScene scene)
     }
 }
 
-bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
-    const int32_t sessionId)
+bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+    const int32_t sessionId, AudioStreamCollector& streamCollector_)
 {
     if (descs.size() !=  AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT) {
         return false;
     }
+    CHECK_AND_RETURN_RET_LOG(descs.front() != nullptr, false, "front is nullptr");
+    CHECK_AND_RETURN_RET_LOG(descs.back() != nullptr, false, "back is nullptr");
     if (AudioPolicyUtils::GetInstance().GetSinkName(*descs.front(), sessionId) != PRIMARY_SPEAKER) {
         return false;
     }
     if (AudioPolicyUtils::GetInstance().GetSinkName(*descs.back(), sessionId) != PRIMARY_SPEAKER) {
         return false;
     }
-    CHECK_AND_RETURN_RET_LOG(descs.back() != nullptr, false, "back is nullptr");
     if (descs.back()->deviceType_ != DEVICE_TYPE_SPEAKER) {
         return false;
     }
     AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
+    AudioStreamType streamType = streamCollector_.GetStreamType(sessionId);
+    if (streamType == STREAM_MUSIC) {
+        AudioVolume::GetInstance()->SetStreamVolumeMute(sessionId, true);
+    }
     return true;
 }
 

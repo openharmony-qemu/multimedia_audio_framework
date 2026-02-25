@@ -1926,7 +1926,7 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
         } else {
             bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
-                streamDesc->newDeviceDescs_, sessionId);
+                streamDesc->newDeviceDescs_, sessionId, streamCollector_);
             if (((isRingDualToneOnPrimarySpeaker_ == false && streamDesc->newDupDeviceDescs_.size() == 0) ||
                 isRingDualToneOnPrimarySpeaker_ == true) &&
                 enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
@@ -2776,7 +2776,8 @@ void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioSt
     if (!IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->deviceType_)) {
         return;
     }
-    if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
+    if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_,
+        streamDesc->sessionId_, streamCollector_)) {
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
