@@ -16,6 +16,7 @@
 #define NAPI_AUDIO_RENDERER_DEVICE_CHANGE_CALLBACK_H
 
 #include <uv.h>
+#include <shared_mutex>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"

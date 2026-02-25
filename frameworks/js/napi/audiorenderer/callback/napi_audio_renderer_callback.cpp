@@ -20,7 +20,9 @@
 #include "napi_audio_renderer_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
+#ifndef CROSS_PLATFORM
 #include "xpower_event_js.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
