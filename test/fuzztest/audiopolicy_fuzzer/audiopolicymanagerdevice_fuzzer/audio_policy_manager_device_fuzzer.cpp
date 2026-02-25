@@ -397,8 +397,8 @@ void GetActiveBluetoothDeviceFuzzTest(FuzzedDataProvider& fdp)
 
 void TriggerFetchDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioStreamDeviceChangeReasonExt reason = 
-        static_cast<AudioStreamDeviceChangeReasonExt>(GetData<int32_t>() % 10);
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
     AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
 }
 
@@ -415,7 +415,7 @@ void SetDeviceVolumeBehaviorFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string networkId = fdp.ConsumeRandomLengthString(20);
     DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    VolumeBehavior volumeBehavior = static_cast<VolumeBehavior>(GetData<int32_t>() % 5);
+    VolumeBehavior volumeBehavior;
     AudioPolicyManager::GetInstance().SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 

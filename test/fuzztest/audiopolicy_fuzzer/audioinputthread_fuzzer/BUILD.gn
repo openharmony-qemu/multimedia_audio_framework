@@ -23,7 +23,7 @@ ohos_fuzztest("AudioInputThreadFuzzTest") {
   include_dirs = [
     "../../../../services/audio_policy/server/domain/device/src/pnp",
     "../../../../services/audio_policy/server/include/service",
-    "../../../../services/audio_policy/server/include",
+  "../../../../services/audio_policy/server/include",
     "../../../../frameworks/native/audioutils/include",
   ]
   cflags = [
@@ -43,6 +43,7 @@ ohos_fuzztest("AudioInputThreadFuzzTest") {
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
+    "drivers_interface_audio:libaudio_proxy_6.0",
     "c_utils:utils",
     "hilog:libhilog",
     "hdf_core:libhdf_ipc_adapter",
