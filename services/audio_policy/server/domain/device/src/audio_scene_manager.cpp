@@ -48,10 +48,10 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
         std::lock_guard<std::mutex> lock(sceneMutex_);
         HILOG_COMM_INFO("[SetAudioScenePre]Set audio scene start %{public}d, lastScene %{public}d",
             audioScene, audioScene_);
-        oldScene = lastAudioScene_;
+        oldScene = audioScene_;
         lastAudioScene_ = audioScene_;
         audioScene_ = audioScene;
-        newScene = audioScene_;
+        newScene = audioScene;
     }
     if (oldScene != AUDIO_SCENE_DEFAULT && newScene == AUDIO_SCENE_DEFAULT) {
         if (oldScene != AUDIO_SCENE_RINGING || !VolumeUtils::IsPCVolumeEnable()) {
