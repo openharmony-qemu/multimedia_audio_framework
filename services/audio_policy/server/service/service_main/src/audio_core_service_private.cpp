@@ -2776,7 +2776,8 @@ void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioSt
     if (!IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->deviceType_)) {
         return;
     }
-    if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, streamDesc->sessionId_, streamCollector_)) {
+    if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_,
+        streamDesc->sessionId_, streamCollector_)) {
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
