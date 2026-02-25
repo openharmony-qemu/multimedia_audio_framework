@@ -149,10 +149,20 @@ bool AudioSceneManager::IsHangUpScene()
         audioScene_ == AUDIO_SCENE_DEFAULT;
 }
 
-bool AudioSceneManager::IsPhoneCallOrChatScene() const
+bool AudioSceneManager::IsPhoneCallOrChatSceneTriggeredByUid(int32_t uid) const
 {
     std::lock_guard<std::mutex> lock(sceneMutex_);
-    return audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT;
+    return (audioScene_ == AUDIO_SCENE_PHONE_CALL || audioScene_ == AUDIO_SCENE_PHONE_CHAT) &&
+        (phoneCallOrChatSceneTriggerUid_ == uid);
+}
+
+void AudioSceneManager::SetPhoneCallOrChatSceneTriggerUid(int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(sceneMutex_);
+    if (audioScene_ != AUDIO_SCENE_PHONE_CALL && audioScene_ != AUDIO_SCENE_PHONE_CHAT) {
+        return;
+    }
+    phoneCallOrChatSceneTriggerUid_ = uid;
 }
 }
 }

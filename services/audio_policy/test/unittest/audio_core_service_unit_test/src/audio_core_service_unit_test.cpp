@@ -2732,8 +2732,10 @@ HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_003, TestSiz
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    streamDesc->callerUid_ = 1000;
 
     audioCoreService->audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    audioCoreService->audioSceneManager_.SetPhoneCallOrChatSceneTriggerUid(1000);
 
     audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
 

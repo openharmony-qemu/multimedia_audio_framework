@@ -807,7 +807,7 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
     if (streamDesc->streamStatus_ == STREAM_STATUS_RELEASED) {
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamDesc->sessionId_);
     }
-    if (!audioSceneManager_.IsPhoneCallOrChatScene()) {
+    if (!audioSceneManager_.IsPhoneCallOrChatSceneTriggeredByUid(streamDesc->callerUid_)) {
         FetchOutputDeviceAndRoute(caller);
     }
 
@@ -993,6 +993,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
 int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     audioSceneManager_.SetAudioScenePre(audioScene);
+    audioSceneManager_.SetPhoneCallOrChatSceneTriggerUid(uid);
     audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
     AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
