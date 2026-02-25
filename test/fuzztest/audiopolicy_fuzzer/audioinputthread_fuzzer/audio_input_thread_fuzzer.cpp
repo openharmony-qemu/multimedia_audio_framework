@@ -17,7 +17,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <linux/input.h>
 #include "audio_input_thread.h"
 #include "audio_errors.h"
 #include <fuzzer/FuzzedDataProvider.h>
@@ -30,22 +29,6 @@ const size_t THRESHOLD = 10;
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
-
-template<class T>
-T GetData()
-{
-    T object {};
-    size_t objectSize = sizeof(object);
-    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
-        return object;
-    }
-    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
-    if (ret != EOK) {
-        return {};
-    }
-    g_pos += objectSize;
-    return object;
-}
 
 void AudioPnpInputOpenFuzzTest(FuzzedDataProvider& fdp)
 {

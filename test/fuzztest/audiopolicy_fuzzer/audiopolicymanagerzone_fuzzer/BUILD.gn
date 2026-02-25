@@ -48,6 +48,7 @@ ohos_fuzztest("AudioPolicyManagerZoneFuzzTest") {
     "../../../../services/audio_service:audio_common",
     "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_engine:hpae_engine_manager",
+    "../../../../services/audio_policy:audio_policy_client_static",
   ]
 
   external_deps = [
@@ -60,7 +61,6 @@ ohos_fuzztest("AudioPolicyManagerZoneFuzzTest") {
     "access_token:libprivacy_sdk",
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
-    "background_task_taskmgr:bgtaskmgr_innerkits",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",

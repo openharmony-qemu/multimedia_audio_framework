@@ -34,7 +34,7 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-const size_t THRESHreshold = 10;
+const size_t THRESHOLD = 10;
 static const uint8_t* RAW_DATA = nullptr;
 static int32_t NUM_2 = 2;
 static size_t g_dataSize = 0;
@@ -277,7 +277,7 @@ void InjectInterruptToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
         AudioInterrupt interrupt;
         interrupt.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
         interrupt.contentType = static_cast<ContentType>(GetData<int32_t>() % 10);
-        interrupt.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % 20);
+        interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % 20);
         AudioFocuState state = static_cast<AudioFocuState>(GetData<int32_t>() % 10);
         interrupts.push_back({interrupt, state});
     }
@@ -294,7 +294,7 @@ void InjectInterruptToAudioZoneWithDeviceTagFuzzTest(FuzzedDataProvider& fdp)
         AudioInterrupt interrupt;
         interrupt.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
         interrupt.contentType = static_cast<ContentType>(GetData<int32_t>() % 10);
-        interrupt.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % 20);
+        interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % 20);
         AudioFocuState state = static_cast<AudioFocuState>(GetData<int32_t>() % 10);
         interrupts.push_back({interrupt, state});
     }

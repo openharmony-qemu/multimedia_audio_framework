@@ -219,6 +219,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiobufferbase_fuzzer:fuzztest",
     "fuzztest/audiocapturersession_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioclienttrackercallbacklistener_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioclienttrackercallbackservice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiocollaborativeservice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioconnecteddevice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiocoreservice_fuzzer:fuzztest",

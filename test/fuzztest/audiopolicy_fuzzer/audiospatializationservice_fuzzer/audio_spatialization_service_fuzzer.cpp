@@ -575,18 +575,6 @@ void AudioSpatializationServiceRegisterSpatializationStateEventListenerFuzzTest(
     ptrAudioSpatializationService->RegisterSpatializationStateEventListener(sessionID, streamUsage, object);
 }
 
-void AudioSpatializationServiceHandleAdaptiveSpatialRenderingEnabledChangeFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr) {
-        return;
-    }
-    const bool enable = GetData<bool>();
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    ptrAudioSpatializationService->HandleAdaptiveSpatialRenderingEnabledChange(selectedAudioDevice, enable);
-}
-
 void AudioSpatializationServiceHandleDeviceConfigChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
@@ -596,30 +584,6 @@ void AudioSpatializationServiceHandleDeviceConfigChangedFuzzTest(FuzzedDataProvi
     const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleDeviceConfigChanged(selectedAudioDevice);
-}
-
-void AudioSpatializationServiceIsAdaptiveSpatialRenderingEnabledFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr) {
-        return;
-    }
-    std::string address = "test_address";
-    AudioSpatializationState state;
-    state.adaptiveSpatialRenderingEnabled = GetData<uint32_t>() % NUM_2;
-    ptrAudioSpatializationService->addressToAdaptiveSpatialRenderingEnabledMap_[address] = state.adaptiveSpatialRenderingEnabled;
-    ptrAudioSpatializationService->IsAdaptiveSpatialRenderingEnabled(address);
-}
-
-void AudioSpatializationServiceSetAdaptiveSpatialRenderingEnabledFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr) {
-        return;
-    }
-    const std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    const bool enable = GetData<bool>();
-    ptrAudioSpatializationService->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
 }
 
 void AudioSpatializationServiceHandleSpatializationEnabledChangeBoolFuzzTest(FuzzedDataProvider& fdp)
@@ -642,17 +606,6 @@ void AudioSpatializationServiceHandleHeadTrackingEnabledChangeBoolFuzzTest(Fuzze
     const bool enable = GetData<bool>();
     ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     ptrAudioSpatializationService->HandleHeadTrackingEnabledChange(enable);
-}
-
-void AudioSpatializationServiceHandleAdaptiveSpatialRenderingEnabledChangeBoolFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
-    if (ptrAudioSpatializationService == nullptr) {
-        return;
-    }
-    const bool enable = GetData<bool>();
-    ptrAudioSpatializationService->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    ptrAudioSpatializationService->HandleAdaptiveSpatialRenderingEnabledChange(enable);
 }
 
 void AudioSpatializationServiceGetSpatializationStateDefaultFuzzTest(FuzzedDataProvider& fdp)
@@ -791,13 +744,9 @@ void Test(FuzzedDataProvider& fdp)
     AudioSpatializationServiceGetCurrentDeviceAddressFuzzTest,
     AudioSpatializationServiceUpdateSpatializationSupportedFuzzTest,
     AudioSpatializationServiceRegisterSpatializationStateEventListenerFuzzTest,
-    AudioSpatializationServiceHandleAdaptiveSpatialRenderingEnabledChangeFuzzTest,
     AudioSpatializationServiceHandleDeviceConfigChangedFuzzTest,
-    AudioSpatializationServiceIsAdaptiveSpatialRenderingEnabledFuzzTest,
-    AudioSpatializationServiceSetAdaptiveSpatialRenderingEnabledFuzzTest,
     AudioSpatializationServiceHandleSpatializationEnabledChangeBoolFuzzTest,
     AudioSpatializationServiceHandleHeadTrackingEnabledChangeBoolFuzzTest,
-    AudioSpatializationServiceHandleAdaptiveSpatialRenderingEnabledChangeBoolFuzzTest,
     AudioSpatializationServiceGetSpatializationStateDefaultFuzzTest,
     AudioSpatializationServiceUpdateSpatialDeviceStateMultipleFuzzTest,
     AudioSpatializationServiceSetSpatializationEnabledWithStateFuzzTest,
