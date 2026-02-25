@@ -26,6 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+AudioSettingProvider* AudioSettingProvider::instance_;
 std::mutex AudioSettingProvider::mutex_;
 std::atomic<bool> AudioSettingProvider::isDataShareReady_ = false;
 sptr<IRemoteObject> AudioSettingProvider::remoteObj_;
@@ -42,6 +43,7 @@ constexpr int64_t SLEEP_TIME = 1;
 
 AudioSettingProvider::~AudioSettingProvider()
 {
+    instance_ = nullptr;
     remoteObj_ = nullptr;
 }
 
@@ -70,12 +72,14 @@ void AudioSettingObserver::SetUpdateFunc(UpdateFunc &func)
 AudioSettingProvider& AudioSettingProvider::GetInstance(
     int32_t systemAbilityId)
 {
-    static AudioSettingProvider instance_;
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (remoteObj_ == nullptr) {
-        Initialize(systemAbilityId);
+    if (instance_ == nullptr) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (instance_ == nullptr) {
+            Initialize(systemAbilityId);
+            instance_ = new AudioSettingProvider();
+        }
     }
-    return instance_;
+    return *instance_;
 }
 
 ErrCode AudioSettingProvider::GetIntValue(const std::string &key, int32_t &value,
