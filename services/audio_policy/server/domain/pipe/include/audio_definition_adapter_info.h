@@ -148,6 +148,7 @@ public:
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
     uint32_t suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
     bool supportEncodingEac3_ = false;
+    bool supportMultSupMode_ = false;
     bool allUsbDeviceDisable_ = false;
     std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
 
