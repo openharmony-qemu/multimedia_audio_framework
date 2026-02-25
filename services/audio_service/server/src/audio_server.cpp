@@ -3066,15 +3066,6 @@ int32_t AudioServer::GetAllSinkInputs(std::vector<SinkInput> &sinkInputs)
     return SUCCESS;
 }
 
-int32_t AudioServer::SetDefaultAdapterEnable(bool isEnable)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
-        "Refused for %{public}d", callingUid);
-    AudioService::GetInstance()->SetDefaultAdapterEnable(isEnable);
-    return SUCCESS;
-}
-
 int32_t AudioServer::NotifyAudioPolicyReady()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();

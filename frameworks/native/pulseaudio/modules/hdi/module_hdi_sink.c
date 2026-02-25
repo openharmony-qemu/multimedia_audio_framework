@@ -56,7 +56,6 @@ PA_MODULE_USAGE(
         "network_id<device network id>"
         "device_type<device type or port>"
         "offload_enable<if device support offload>"
-        "default_adapter_enable<if set default adapter>"
         );
 
 static const char * const VALID_MODARGS[] = {
@@ -78,7 +77,6 @@ static const char * const VALID_MODARGS[] = {
     "network_id",
     "device_type",
     "offload_enable",
-    "default_adapter_enable",
     NULL
 };
 

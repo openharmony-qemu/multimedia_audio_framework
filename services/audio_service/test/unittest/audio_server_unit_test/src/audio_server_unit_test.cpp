@@ -1432,20 +1432,6 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetDefaultAdapterEnable API
- * @tc.type  : FUNC
- * @tc.number: SetDefaultAdapterEnable_001
- * @tc.desc  : Test SetDefaultAdapterEnable interface.
- */
-HWTEST_F(AudioServerUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    bool isEnable = false;
-    audioServer->SetDefaultAdapterEnable(isEnable);
-    EXPECT_NE(nullptr, audioServer);
-}
-
-/**
  * @tc.name  : Test RendererDataTransferCallback API
  * @tc.type  : FUNC
  * @tc.number: RendererDataTransferCallback_001

@@ -2048,22 +2048,6 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
     audioService->allRendererMap_.clear();
 }
 
-/**
- * @tc.name  : Test SetDefaultAdapterEnable API
- * @tc.type  : FUNC
- * @tc.number: SetDefaultAdapterEnable_001
- * @tc.desc  : Test SetDefaultAdapterEnable interface.
- */
-HWTEST(AudioServiceUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    EXPECT_NE(audioService, nullptr);
-    bool isEnable = false;
-    audioService->SetDefaultAdapterEnable(isEnable);
-    bool result = audioService->GetDefaultAdapterEnable();
-    EXPECT_EQ(result, isEnable);
-}
-
 /*
  * @tc.name  : Test SetSessionMuteState API
  * @tc.type  : FUNC

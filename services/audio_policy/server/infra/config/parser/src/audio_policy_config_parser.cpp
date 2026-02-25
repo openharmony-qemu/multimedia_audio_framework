@@ -509,9 +509,6 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
             } else if (configInfo.name_ == "anahsShowType") {
                 AUDIO_INFO_LOG("anahs pc support: %{public}s", configInfo.value_.c_str());
                 HandleUpdateAnahsSupportParsed(configInfo.value_);
-            } else if (configInfo.name_ == "setDefaultAdapter") {
-                AUDIO_INFO_LOG("default adapter support: %{public}s", configInfo.value_.c_str());
-                HandleDefaultAdapterSupportParsed(configInfo.value_);
             }
         }
         curNode->MoveToNext();
@@ -536,17 +533,6 @@ void AudioPolicyConfigParser::HandleUpdateAnahsSupportParsed(std::string &value)
     anahsShowType = value;
     AUDIO_INFO_LOG("HandleUpdateAnahsSupportParsed show type: %{public}s", anahsShowType.c_str());
     configManager_->OnUpdateAnahsSupport(anahsShowType);
-}
-
-void AudioPolicyConfigParser::HandleDefaultAdapterSupportParsed(std::string &value)
-{
-    if (value == "true") {
-        configManager_->OnUpdateDefaultAdapter(true);
-        shouldSetDefaultAdapter_ = true;
-    } else {
-        configManager_->OnUpdateDefaultAdapter(false);
-        shouldSetDefaultAdapter_ = false;
-    }
 }
 
 void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo,

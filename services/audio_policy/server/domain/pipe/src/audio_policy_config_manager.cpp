@@ -159,16 +159,6 @@ void AudioPolicyConfigManager::OnUpdateRouteSupport(bool isSupported)
     isUpdateRouteSupported_ = isSupported;
 }
 
-void AudioPolicyConfigManager::OnUpdateDefaultAdapter(bool isEnable)
-{
-    isDefaultAdapterEnable_ = isEnable;
-}
-
-bool AudioPolicyConfigManager::GetDefaultAdapterEnable()
-{
-    return isDefaultAdapterEnable_;
-}
-
 void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs_ = globalConfigs;
