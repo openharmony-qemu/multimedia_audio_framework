@@ -21,6 +21,8 @@
 
 #include <climits>
 #include <future>
+#include <atomic>
+#include "parameter.h"
 #include "parameters.h"
 #include "audio_hdi_log.h"
 #include "audio_log.h"
@@ -35,6 +37,36 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+
+// Hiview UE parameter monitoring
+static std::atomic_bool g_hiviewUeEnable{false};
+
+static void HiviewUeEnableChangeCallback(const char *key, const char *value, void *context)
+{
+    CHECK_AND_RETURN_LOG(value != nullptr, "HiviewUeEnableChangeCallback: value is null");
+    bool enable = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
+    g_hiviewUeEnable.store(enable, std::memory_order_release);
+    AUDIO_INFO_LOG("VACaptureSource: HiviewUeEnable changed to %{public}d", enable);
+}
+
+static void InitHiviewUeParameterWatch()
+{
+    static bool inited = false;
+    CHECK_AND_RETURN(!inited);
+    inited = true;
+
+    // Initialize with current value
+    g_hiviewUeEnable.store(system::GetBoolParameter("persist.hiviewdfx.hiview.ue.enable", false),
+        std::memory_order_release);
+
+    // Register parameter change callback
+    int32_t ret = WatchParameter("persist.hiviewdfx.hiview.ue.enable",
+        HiviewUeEnableChangeCallback, nullptr);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "VACaptureSource: WatchParameter failed!");
+    AUDIO_INFO_LOG("VACaptureSource: WatchParameter success, current value: %{public}d",
+        g_hiviewUeEnable.load(std::memory_order_relaxed));
+}
 
 VACaptureSource::VACaptureSource(const uint32_t captureId) : captureId_(captureId)
 {
@@ -56,6 +88,12 @@ int32_t VACaptureSource::Init(const IAudioSourceAttr &attr)
     attr_ = attr;
     CHECK_AND_RETURN_RET_LOG(!sourceInited_.load(), SUCCESS, "va source already inited");
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
+
+    // Initialize hiview ue parameter watch
+    InitHiviewUeParameterWatch();
+
+    // Initialize hiview ue parameter watch
+    InitHiviewUeParameterWatch();
 
     int ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "va create capture failed");
@@ -268,6 +306,7 @@ void VACaptureSource::SetAudioParameter(const AudioParamKey key, const std::stri
 
 void VACaptureSource::PrintUsageTimeDfx(int64_t useTime)
 {
+    CHECK_AND_RETURN(g_hiviewUeEnable.load(std::memory_order_relaxed));
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "AUDIO_DEVICE_UTILIZATION_STATS",
         HiviewDFX::HiSysEvent::EventType::STATISTIC,
         "DEVICE_TYPE", DeviceType::DEVICE_TYPE_BT_SPP,
@@ -347,4 +386,3 @@ void VACaptureSource::DumpInfo(std::string &dumpString)
 
 } // namespace AudioStandard
 } // namespace OHOS
-xxx
