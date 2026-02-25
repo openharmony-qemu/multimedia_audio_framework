@@ -1215,7 +1215,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     bool isScoActive = audioActiveDevice_.IsDeviceInActiveOutputDevices(DEVICE_TYPE_BLUETOOTH_SCO, false);
     AudioVolume::GetInstance()->SetScoActive(isScoActive);
 
-    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
+    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     for (auto &streamDesc : streamDescs) {
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
         auto desc = streamDesc->newDeviceDescs_.front();
@@ -1362,7 +1362,7 @@ float AudioAdapterManager::GetVolumeReductionRatio(AudioStreamType streamType)
 
 void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
 {
-    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
+    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     for (auto &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
@@ -3678,7 +3678,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
-    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
+    auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     for (auto &streamDesc : streamDescs) {
         AudioStreamType newStreamType = streamType;
         auto device = streamDesc->newDeviceDescs_.front();

@@ -479,7 +479,7 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
 {
     std::lock_guard<std::mutex> lock(deviceForVolumeMutex_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     descs.push_back(AudioPipeManager::GetPipeManager()->GetModemCommunicationStreamDescCopy());
     activeOutputDevices_.clear();
     volumeTypeDeviceMap_.clear();
@@ -652,7 +652,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int32_t appUid)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
     for (auto desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
@@ -668,7 +668,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetActiveDeviceForVolume(int32_t appUid)
 {
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
-        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsCopy();
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> tmp;
     for (auto desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr && GetRealUid(desc) == appUid);
