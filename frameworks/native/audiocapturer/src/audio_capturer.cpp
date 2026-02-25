@@ -533,17 +533,17 @@ void AudioCapturerPrivate::InitLatencyMeasurement(const AudioStreamParams &audio
 
 int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
 {
-    if (audioInterrupt_.streamId != 0) {
+    if (audioInterrupt_.sessionId != 0) {
         AUDIO_INFO_LOG("old session already has interrupt, need to reset");
         (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
-        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.streamId);
+        (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.sessionId);
     }
 
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("GetAudioSessionID failed for INDEPENDENT_MODE");
         return ERR_INVALID_INDEX;
     }
-    audioInterrupt_.streamId = sessionID_;
+    audioInterrupt_.sessionId = sessionID_;
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
@@ -827,7 +827,7 @@ bool AudioCapturerPrivate::Start()
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        audioInterrupt_.streamId != INVALID_SESSION_ID, false);
+        audioInterrupt_.sessionId != INVALID_SESSION_ID, false);
     std::unique_lock<std::mutex> audioInterruptLock(audioInterruptMutex_);
     AudioInterrupt audioInterrupt = audioInterrupt_;
     audioInterruptLock.unlock();

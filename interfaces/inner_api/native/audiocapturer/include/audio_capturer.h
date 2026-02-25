@@ -31,7 +31,7 @@ namespace AudioStandard {
  */
 struct AudioCapturerParams {
     /** Audio source type */
-    SourceType inputSource = SOURCE_TYPE_MIC;
+    AudioSourceType inputSource = AUDIO_MIC;
     /** Audio codec format */
     AudioEncodingType audioEncoding = ENCODING_PCM;
     /** Sampling rate */
