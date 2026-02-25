@@ -161,7 +161,7 @@ int32_t DirectAudioRenderSink::Pause(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Pause(audioRender_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Pause fail:%{public}d", ret);
-    started_ = false;
+
     return SUCCESS;
 }
 
