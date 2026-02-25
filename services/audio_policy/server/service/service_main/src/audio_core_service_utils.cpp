@@ -64,7 +64,8 @@ bool AudioCoreServiceUtils::IsRingScene(AudioScene scene)
     }
 }
 
-bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const int32_t sessionId, AudioStreamCollector& streamCollector_)
 {
     if (descs.size() !=  AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT) {
