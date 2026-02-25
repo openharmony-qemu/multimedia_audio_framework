@@ -318,8 +318,9 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
     return streamDescs;
 }
 
-std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsCopy()
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutputStreamDescsInfo()
 {
+    // this function only get useful info for volume control
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     for (auto &it : curPipeList_) {
@@ -327,7 +328,16 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
         CHECK_AND_CONTINUE(it->pipeRole_ == PIPE_ROLE_OUTPUT);
         for (auto &desc : it->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
-            streamDescs.push_back(std::make_shared<AudioStreamDescriptor>(desc));
+            std::shared_ptr<AudioStreamDescriptor> tmp = std::make_shared<AudioStreamDescriptor>();
+            tmp->newDeviceDescs_ = desc->newDeviceDescs_;
+            tmp->rendererInfo_ = desc->rendererInfo_;
+            tmp->appInfo_ = desc->appInfo_;
+            tmp->sessionId_ = desc->sessionId_;
+            tmp->callerUid_ = desc->callerUid_;
+            tmp->callerPid_ = desc->callerPid_;
+            tmp->streamStatus_ = desc->streamStatus_;
+            tmp->bundleName_ = desc->bundleName_;
+            streamDescs.push_back(tmp);
         }
     }
     return streamDescs;
