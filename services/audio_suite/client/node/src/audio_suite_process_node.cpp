@@ -64,8 +64,7 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteProcessNode::SignalProcess(
     CHECK_AND_RETURN_RET_LOG(inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()), retError, "Invalid input format");
 
     algoInput_[0] = inputs[0]->GetPcmData();
-    int32_t ret =
-        algoInterface_->Apply(algoInput_, algoOutput_);
+    int32_t ret = algoInterface_->Apply(algoInput_, algoOutput_);
     CHECK_AND_RETURN_RET_LOG(ret >= 0, retError, "Node SignalProcess Apply failed");
 
     return intermediateResult_;
@@ -153,9 +152,7 @@ int32_t AudioSuiteProcessNode::ProcessWithCache()
         for (size_t idx = 0; idx < algoProcessedResult_.size(); ++idx) {  // 用algoProcessedResult_的size
             CHECK_AND_RETURN_RET_LOG(
                 algoProcessedResult_[idx] != nullptr && algoProcessedResult_[idx]->GetPcmData() != nullptr,
-                ERR_OPERATION_FAILED,
-                "node %{public}d do SignalProcess failed, return a nullptr.",
-                GetNodeType());
+                ERR_OPERATION_FAILED, "node %{public}d do SignalProcess failed, return a nullptr.", GetNodeType());
 
             cachedBuffer_[idx].PushData(algoProcessedResult_[idx]->GetPcmData(), frameOutBytes_);
         }
@@ -214,7 +211,7 @@ int32_t AudioSuiteProcessNode::ProcessBypassMode(uint32_t needDataLength)
 
 int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
 {
-    CHECK_AND_RETURN_RET_LOG(needDataLength <= maxRequestLength, ERROR, "Request data length error.");
+    CHECK_AND_RETURN_RET_LOG(needDataLength <= maxRequestLength_, ERROR, "Request data length error.");
     if (GetAudioNodeDataFinishedFlag() && cachedBuffer_[0].GetSize() == 0) {
         AUDIO_DEBUG_LOG("Current node type = %{public}d does not have more data to process.", GetNodeType());
         return ERROR;
