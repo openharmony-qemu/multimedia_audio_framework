@@ -3091,7 +3091,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
         };
     } else {
         devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
-            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
+            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->rendererInfo_.privacyType);
     }
 
     streamDesc->UpdateNewDevice(devices);
@@ -3112,7 +3112,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->GetSessionId());
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
     auto devices = audioRouterCenter_.FetchOutputDevices(streamDesc->GetRenderUsage(),
-        GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
+        GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->rendererInfo_.privacyType);
 
     streamDesc->UpdateNewDeviceWithoutCheck(devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",

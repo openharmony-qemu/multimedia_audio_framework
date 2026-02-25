@@ -35,7 +35,7 @@ enum AudioStreamAction : uint32_t {
 
 class AudioStreamDescriptor : public Parcelable {
 public:
-    AudioStreamInfo streamInfo_;
+    AudioStreamInfo streamInfo_ = {};
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
     AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
     uint32_t routeFlag_ = AUDIO_FLAG_NONE;
@@ -64,7 +64,7 @@ public:
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioCapturerInfo rendererInfo, AppInfo appInfo);
-    AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> &streamDescriptor);
+    AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> streamDescriptor);
     virtual ~AudioStreamDescriptor() = default;
 
     // Need to delete later
@@ -104,11 +104,6 @@ public:
     StreamUsage GetRenderUsage() const
     {
         return rendererInfo_.streamUsage;
-    }
-
-    AudioPrivacyType GetRenderPrivacyType() const
-    {
-        return rendererInfo_.privacyType;
     }
 
     void SetStatus(AudioStreamStatus status)
@@ -201,11 +196,12 @@ public:
     {
         return callerPid_ == pid && callerUid_ == uid;
     }
-
+ 
     bool IsSamePid(int32_t pid) const
     {
         return callerPid_ == pid;
     }
+
     bool IsNoRunningOffload() const
     {
         return IsRouteOffload() && !IsRunning();
@@ -315,7 +311,7 @@ public:
         return false;
     }
 
-    uint32_t GetUltraFastFlag()
+    uint8_t GetUltraFastFlag()
     {
         std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
         return ultraFastFlag_;
@@ -373,7 +369,7 @@ private:
 
     std::mutex lock_;
     std::shared_mutex ultraFastFlagLock_;
-    uint32_t ultraFastFlag_ = ULTRA_NONE;
+    uint8_t ultraFastFlag_ = ULTRA_NONE;
 };
 } // namespace AudioStandard
 } // namespace OHOS

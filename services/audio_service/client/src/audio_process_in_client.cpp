@@ -153,7 +153,7 @@ public:
 
     void JoinCallbackLoop() override;
 
-    void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
     void SetRebuildFlag() override;
 
@@ -1794,10 +1794,11 @@ void AudioProcessInClientInner::GetKeepRunning(bool &keepRunning)
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Get keepRunning failed");
 }
 
-void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+void AudioProcessInClientInner::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetAudioHapticsSyncId processProxy_ is nullptr");
-    processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    int32_t ret = processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
 }
 
 void AudioProcessInClientInner::CheckOperations()

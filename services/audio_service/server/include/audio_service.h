@@ -22,6 +22,7 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 #ifdef SUPPORT_LOW_LATENCY
 #include "audio_process_in_server.h"

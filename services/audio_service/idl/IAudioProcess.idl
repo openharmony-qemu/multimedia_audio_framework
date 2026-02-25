@@ -16,6 +16,7 @@
 package OHOS.AudioStandard;
 
 sequenceable OHOS.IRemoteObject;
+sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBuffer;
 sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
 sequenceable audio_info..OHOS.AudioStandard.StaticBufferInfo;
 
