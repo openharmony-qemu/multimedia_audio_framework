@@ -2879,12 +2879,6 @@ int32_t RendererInServer::SetLoopTimes(int64_t bufferLoopTimes)
     return SUCCESS;
 }
 
-int32_t RendererInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
-}
-
 int32_t RendererInServer::ProcessAndSetStaticBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr && staticBufferProcessor_ != nullptr,
