@@ -107,6 +107,7 @@ interface IStandardAudioService {
     void GetStandbyStatus([in] unsigned int sessionId, [out] boolean isStandby, [out] long enterStandbyTime);
     void GenerateSessionId([out] unsigned int sessionId);
     void GetAllSinkInputs([out] List<SinkInput> sinkInputs);
+    // TODO remove void SetDefaultAdapterEnable([in] boolean isEnable);
     void NotifyAccountsChanged();
     void NotifyAudioPolicyReady();
     void SetInnerCapLimit([in] unsigned int innerCapLimit);void LoadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName);
