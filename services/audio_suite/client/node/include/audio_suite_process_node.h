@@ -106,7 +106,7 @@ private:
     int32_t signalProcessTotalCount_ = 0;
     std::array<int32_t, RTF_OVERTIME_LEVELS> rtfOvertimeCounters_{};
     int32_t rtfOver100Count_ = 0;
-    uint32_t maxRequestLength = 100;
+    uint32_t maxRequestLength_ = 100;
 };
 
 }
