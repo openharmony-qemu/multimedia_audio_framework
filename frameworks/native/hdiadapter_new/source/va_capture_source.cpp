@@ -38,7 +38,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-
 // Hiview UE parameter monitoring
 static std::atomic_bool g_hiviewUeEnable{false};
 
@@ -88,9 +87,6 @@ int32_t VACaptureSource::Init(const IAudioSourceAttr &attr)
     attr_ = attr;
     CHECK_AND_RETURN_RET_LOG(!sourceInited_.load(), SUCCESS, "va source already inited");
     logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
-
-    // Initialize hiview ue parameter watch
-    InitHiviewUeParameterWatch();
 
     // Initialize hiview ue parameter watch
     InitHiviewUeParameterWatch();
