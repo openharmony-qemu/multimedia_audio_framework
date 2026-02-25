@@ -37,8 +37,11 @@ public:
 
 private:
     AudioConverterParser();
+    void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode);
+    void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)
     std::unique_ptr<ConverterConfig> cfg_;
     std::mutex loadConfigMutex_;
+    std::share_ptr<AudioXmlNode> curNode_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

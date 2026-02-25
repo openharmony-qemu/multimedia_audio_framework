@@ -532,13 +532,13 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     if (lastPrintTimestamp_.load() + PRINT_TIMESTAMP_INTERVAL_NS < timestampCurrent[0]) {
         AUDIO_INFO_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
             ", base %{public}d, timestamp %{public}" PRIi64
-            ", sink Latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
+            ", sink Latency: %{public}u, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
             framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
         lastPrintTimestamp_.store(timestampCurrent[0]);
     } else {
         AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
             ", base %{public}d, timestamp %{public}" PRIu64
-            ", sink Latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
+            ", sink Latency: %{public}u, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
             framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
     }
 }
@@ -622,7 +622,7 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
 
     // If hdiFramePosition has a value, it indicates that the remote offload device has performed a flush.
     // The value of hdiFramePosition needs to be accumulated into lastHdiFramePosition_
-    // hdiFramePosition > 0 only when callBackStreamInfo.deviceClass = DEVICE_CALSSS_REMOTE_OFFLOAD
+    // hdiFramePosition > 0 only when callBackStreamInfo.deviceClass = DEVICE_CALSS_REMOTE_OFFLOAD
     if (callBackStreamInfo.hdiFramePosition > 0) {
         lastHdiFramePosition_ +=
             // from time (us) to sample

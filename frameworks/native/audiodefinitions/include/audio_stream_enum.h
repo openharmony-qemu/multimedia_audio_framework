@@ -37,8 +37,8 @@ enum AudioFlag : uint32_t {
     AUDIO_OUTPUT_FLAG_HWDECODING = 0x100, // select, route
     AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD = 0x200, // select, route
     AUDIO_OUTPUT_FLAG_MODEM_COMMUNICATION = 0x400, // select, route
-    AUDIO_OUTPUT_FLAG_3DA_DIRECT = 0x800, // select
     AUDIO_INPUT_FLAG_NORMAL = 0x1000, // route
+    AUDIO_OUTPUT_FLAG_3DA_DIRECT = 0x800, // select
     AUDIO_INPUT_FLAG_FAST = 0x2000, // select, route
     AUDIO_INPUT_FLAG_VOIP = 0x4000, // select
     AUDIO_INPUT_FLAG_VOIP_FAST = 0x8000, // select, route
