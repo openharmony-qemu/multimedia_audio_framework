@@ -48,6 +48,8 @@ ohos_fuzztest("AudioInputThreadFuzzTest") {
     "hilog:libhilog",
     "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",
+    "hdf_core:libhdf_host",
+    "hdf_core:libpub_utils",
   ]
 
   defines = []
