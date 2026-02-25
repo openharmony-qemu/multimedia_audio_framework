@@ -54,7 +54,8 @@ public:
     bool IsVoiceCallRelatedScene();
     bool IsInPhoneCallScene();
     bool IsHangUpScene();
-    bool IsPhoneCallOrChatScene() const;
+    bool IsPhoneCallOrChatSceneTriggeredByUid(int32_t uid) const;
+    void SetPhoneCallOrChatSceneTriggerUid(int32_t uid);
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -65,6 +66,7 @@ private:
     mutable std::mutex sceneMutex_;  // Protect audioScene_ and lastAudioScene_
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+    int32_t phoneCallOrChatSceneTriggerUid_ = INVALID_UID;
 
     AudioRouterCenter& audioRouterCenter_;
     AudioStreamCollector& streamCollector_;
