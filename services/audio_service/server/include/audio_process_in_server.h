@@ -59,7 +59,7 @@ public:
     AudioProcessInServerHandler(IHandler* handler);
     void OnHandle(uint32_t code, int64_t data) override;
 private:
-    IHandler *handler_ = nullptr;
+    IHandler* handler_ = nullptr;
 };
 
 class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream,
@@ -89,7 +89,7 @@ public:
 
     int32_t Resume() override;
 
-    int32_t Stop(int32_t stage) override;
+    int32_t Stop(int32_t stage = AUDIO_PROC_STAGE_STOP) override;
 
     int32_t RequestHandleInfo() override;
 
@@ -104,9 +104,6 @@ public:
     int32_t SetSourceDuration(int64_t duration) override;
 
     int32_t SetUnderrunCount(uint32_t underrunCnt) override;
-
-    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, const std::string& adjustTime,
-        uint32_t code) override;
 
     int32_t RegisterProcessCb(const sptr<IRemoteObject>& object) override;
 
@@ -179,7 +176,8 @@ public:
 
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
-
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
+        const std::string &adjustTime, uint32_t code) override;
     uint32_t GetSpanSizeInFrame() override;
     uint32_t GetByteSizePerFrame() override;
 
@@ -213,6 +211,7 @@ private:
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void NotifyXperfOnPlayback(AudioMode audioMode, XperfEventId eventId);
+    void RemoveStreamInfo();
 
     int32_t HandleCapturerDataParams(RingBufferWrapper &writeBuf, AudioCaptureDataProcParams &procParams);
     void SetCaptureStreamInfo(AudioStreamInfo &srcInfo, AudioCaptureDataProcParams &procParams);
@@ -221,7 +220,7 @@ private:
     int32_t CapturerDataFormatAndChnConv(RingBufferWrapper &writeBuf, BufferDesc &resampleOutBuf,
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
-    void RemoveStreamInfo();
+
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
@@ -299,7 +298,6 @@ private:
     std::atomic<uint32_t> checkCount_ = 0;
 
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
-
     std::unique_ptr<HPAE::ProResampler> resampler_ = nullptr;
 
     std::atomic<bool> rebuildFlag_ = false;
