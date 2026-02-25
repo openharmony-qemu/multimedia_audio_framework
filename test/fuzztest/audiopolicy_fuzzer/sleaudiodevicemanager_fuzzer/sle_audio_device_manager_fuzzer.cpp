@@ -522,6 +522,73 @@ void SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest(FuzzedDataProvider&
     manager.GetVolumeLevelByVolumeType(volumeType, deviceDesc);
 }
 
+void SleAudioDeviceManagerIsGameAppFuzzTest(FuzzedDataProvider& fdp)
+{
+    SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    int32_t uid = GetData<int32_t>();
+    manager.IsGameApp(uid);
+}
+
+void SleAudioDeviceManagerUpdateStreamTypeMapFuzzTest(FuzzedDataProvider& fdp)
+{
+    SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    std::string deviceAddr = "test_device";
+    uint32_t streamType = GetData<uint32_t>();
+    uint32_t sessionId = GetData<uint32_t>();
+    bool isAdd = GetData<bool>();
+    manager.UpdateStreamTypeMap(deviceAddr, streamType, sessionId, isAdd);
+}
+
+void SleAudioDeviceManagerResetSleStreamTypeCountFuzzTest(FuzzedDataProvider& fdp)
+{
+    SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    if (manager.callback_ == nullptr) {
+        sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
+        manager.SetSleAudioOperationCallback(callback);
+    }
+    auto deviceDesc = make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc->macAddress_ = "test_device";
+    manager.ResetSleStreamTypeCount(deviceDesc);
+}
+
+void SleAudioDeviceManagerGetNearlinkStreamTypeMapByDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    std::string deviceAddr = "test_device";
+    manager.GetNearlinkStreamTypeMapByDevice(deviceAddr);
+}
+
+void SleAudioDeviceManagerIsNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    if (g_testDeviceTypes.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    manager.IsNearlinkDevice(deviceType);
+}
+
+void SleAudioDeviceManagerIsMoveToNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    auto streamDesc = make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_NEARLINK;
+    manager.IsMoveToNearlinkDevice(streamDesc);
+}
+
+void SleAudioDeviceManagerIsNearlinkMoveToOtherDeviceFuzzTest(FuzzedDataProvider& fdp)
+{
+    SleAudioDeviceManager &manager = SleAudioDeviceManager::GetInstance();
+    auto streamDesc = make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->oldDeviceDescs_.push_back(make_shared<AudioDeviceDescriptor>());
+    streamDesc->oldDeviceDescs_[0]->deviceType_ = DEVICE_TYPE_NEARLINK;
+    manager.IsNearlinkMoveToOtherDevice(streamDesc);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -542,6 +609,12 @@ void Test(FuzzedDataProvider& fdp)
     SleAudioDeviceManagerSetNearlinkDeviceMuteFuzzTest,
     SleAudioDeviceManagerSetNearlinkDeviceVolumeLevelFuzzTest,
     SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest,
+    SleAudioDeviceManagerUpdateStreamTypeMapFuzzTest,
+    SleAudioDeviceManagerResetSleStreamTypeCountFuzzTest,
+    SleAudioDeviceManagerGetNearlinkStreamTypeMapByDeviceFuzzTest,
+    SleAudioDeviceManagerIsNearlinkDeviceFuzzTest,
+    SleAudioDeviceManagerIsMoveToNearlinkDeviceFuzzTest,
+    SleAudioDeviceManagerIsNearlinkMoveToOtherDeviceFuzzTest,
     });
     func(fdp);
 }

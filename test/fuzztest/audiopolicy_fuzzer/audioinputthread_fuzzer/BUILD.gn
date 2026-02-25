@@ -1,0 +1,64 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../../accessibility.gni")
+import("../../../../config.gni")
+
+ohos_fuzztest("AudioInputThreadFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_policy"
+  fuzz_config_file = "../audioinputthread_fuzzer"
+
+  include_dirs = [
+    "../../../../services/audio_policy/server/domain/device/src/pnp",
+    "../../../../services/audio_policy/server/include/service",
+  "../../../../services/audio_policy/server/include",
+    "../../../../frameworks/native/audioutils/include",
+  ]
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control",
+  ]
+  configs = [ "../../../../services/audio_policy:audio_policy_public_config" ]
+
+  sources = [ "audio_input_thread_fuzzer.cpp" ]
+
+  deps = [
+    "../../../../services/audio_policy:audio_policy_service_static",
+  ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "drivers_interface_audio:libaudio_proxy_6.0",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libhdf_host",
+    "hdf_core:libpub_utils",
+  ]
+
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":AudioInputThreadFuzzTest" ]
+}

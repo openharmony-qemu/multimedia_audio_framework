@@ -234,6 +234,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicy_fuzzer/audioeffectservice_fuzzer:fuzztest",
     "fuzztest/audioeffectvolume_fuzzer:fuzztest",
     "fuzztest/audiofilter_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioinputthread_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiointerruptdfxcollector_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiointerruptgroupinfo_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiointerruptservice_fuzzer:fuzztest",
@@ -255,7 +256,9 @@ group("audio_fuzz_test") {
     # "fuzztest/audiopolicy_fuzzer/audiopolicyclient_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiopolicyconfigmanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiopolicymanager_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audiopolicymanagerdevice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiopolicymanagerlistenerstubimpl_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audiopolicymanagerzone_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicy_fuzzer/audiopolicymore_fuzzer:fuzztest",
 
@@ -296,6 +299,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicy_fuzzer/audiostreamcollector_fuzzer:fuzztest",
     "fuzztest/audiostreamdescriptor_fuzzer:fuzztest",
     "fuzztest/audiostreammonitor_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audiostreamidallocator_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiousbmanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioutils_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiovolume_fuzzer:fuzztest",
