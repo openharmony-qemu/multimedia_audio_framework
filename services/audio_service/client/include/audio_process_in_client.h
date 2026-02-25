@@ -156,7 +156,7 @@ public:
 
     virtual void GetKeepRunning(bool &keepRunning) = 0;
 
-    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
+    virtual int32_t GetStaticPlayPosition(StaticBufferInfo &staticBufferInfo) = 0;
 
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 

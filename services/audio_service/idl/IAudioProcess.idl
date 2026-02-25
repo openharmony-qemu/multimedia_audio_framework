@@ -42,7 +42,6 @@ interface IAudioProcess {
     void GetServerKeepRunning([out] boolean keepRunning);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
     void SetLoopTimes([in] long bufferLoopTimes);
-    void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
     void SetStaticRenderRate([in] unsigned int renderRate);
     void ResetStaticPlayPosition();
 }

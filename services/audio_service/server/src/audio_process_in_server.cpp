@@ -1378,12 +1378,6 @@ int32_t AudioProcessInServer::SetLoopTimes(int64_t bufferLoopTimes)
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
-}
-
 int32_t AudioProcessInServer::SetStaticRenderRate(uint32_t renderRate)
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");

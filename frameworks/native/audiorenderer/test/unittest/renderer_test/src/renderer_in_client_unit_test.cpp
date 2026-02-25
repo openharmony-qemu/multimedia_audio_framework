@@ -162,8 +162,6 @@ public:
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
 
     virtual int32_t ResetStaticPlayPosition() override { return SUCCESS; }
-
-    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
@@ -2975,21 +2973,23 @@ HWTEST(RendererInClientInnerUnitTest, GetSwitchInfo_001, TestSize.Level4)
 /**
  * @tc.name  : Test GetSwitchInfo API
  * @tc.type  : FUNC
- * @tc.number: GetSwitchInfo_002
+ * @tc.number: GetStreamSwitchInfo_002
  * @tc.desc  : Test GetSwitchInfo
  */
-HWTEST(RendererInClientInnerUnitTest, GetSwitchInfo_002, TestSize.Level4)
+HWTEST(RendererInClientInnerUnitTest, GetStreamSwitchInfo_002, TestSize.Level4)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     ASSERT_TRUE(ptrRendererInClientInner != nullptr);
 
     IAudioStream::SwitchInfo info;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
+    ptrRendererInClientInner->staticBufferInfo_.totalLoopTimes_ = 9;
+    ptrRendererInClientInner->GetStreamSwitchInfo(info);
+    EXPECT_EQ(info.staticBufferInfo.totalLoopTimes_, 0);
     ptrRendererInClientInner->rendererInfo_.isStatic = true;
-    ptrRendererInClientInner->GetSwitchInfo(info);
-    EXPECT_EQ(info.rendererFirstFrameWritingCallback, nullptr);
-    ptrRendererInClientInner->firstFrameWritingCb_ = std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
-    ptrRendererInClientInner->GetSwitchInfo(info);
-    EXPECT_NE(info.rendererFirstFrameWritingCallback, nullptr);
+    ptrRendererInClientInner->GetStreamSwitchInfo(info);
+    EXPECT_EQ(info.staticBufferInfo.totalLoopTimes_, 9);
 }
 
 /**
@@ -3008,6 +3008,7 @@ HWTEST(RendererInClientInnerUnitTest, CheckStaticAndOperate_001, TestSize.Level4
     ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, 0, 0);
     ptrRendererInClientInner->clientBuffer_->SetStaticMode(true);
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    ptrRendererInClientInner->clientBuffer_->SetIsFirstFrame(false);
     EXPECT_EQ(ptrRendererInClientInner->CheckStaticAndOperate(), false);
 }
 
