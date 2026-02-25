@@ -49,7 +49,7 @@ public:
 
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
-    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType, 
+    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType,
         bool forceFetch = false);
     bool IsStreamAllowedToSetDevice(const uint32_t streamId);
     DeviceType GetSessionDefaultOutputDevice(const int32_t callerPid);
