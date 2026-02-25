@@ -50,6 +50,7 @@ public:
     static std::unordered_map<std::string, AudioFlag> flagStrToEnum;
     static std::unordered_map<std::string, uint32_t> usageStrToEnum;
     static std::unordered_map<std::string, AudioPreloadType> preloadStrToEnum;
+    static std::unordered_map<std::string, bool> supModeStrToBool;
 };
 
 } // namespace AudioStandard
