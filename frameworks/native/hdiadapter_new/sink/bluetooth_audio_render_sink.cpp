@@ -679,8 +679,6 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     std::string adapterNameCase = "";
     if (halName_ == HDI_ID_INFO_HEARING_AID) {
         adapterNameCase = "bt_hearing_aid";
-    } else if (attr_.adapterName == "dp") {
-        adapterNameCase = attr_.adapterName;
     } else {
         adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation
     }

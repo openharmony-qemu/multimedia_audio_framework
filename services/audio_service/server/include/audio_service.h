@@ -132,8 +132,6 @@ public:
     void CleanAppUseNumMap(int32_t appUid);
     bool HasBluetoothEndpoint();
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
-    void SetDefaultAdapterEnable(bool isEnable);
-    bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
     int32_t ForceStopAudioStream(StopAudioType audioType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
@@ -220,7 +218,6 @@ private:
 
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;
-    bool isDefaultAdapterEnable_ = false;
     AudioPlaybackCaptureConfig workingConfig_;
     std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;
 
