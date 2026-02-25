@@ -52,6 +52,7 @@ public:
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
+    void OnMultSupMode(bool supportMultSupMode);
     void OnSupportUltraFast(bool supportUltraFast);
 
     void SetEcEnableState(bool ecEnableState);
@@ -107,6 +108,7 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
+    bool GetSupportMultSupMode();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoForMultiChannel(
         std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
@@ -159,6 +161,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     AudioSampleFormat fastFormat_ = SAMPLE_S16LE;
     bool normalVoipFlag_ = false;
+    bool supportMultSupMode_ = false;
     bool supportUltraFast_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;
