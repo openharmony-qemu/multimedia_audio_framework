@@ -37,6 +37,10 @@ using namespace std;
 const size_t THRESHOLD = 10;
 static const uint8_t* RAW_DATA = nullptr;
 static int32_t NUM_2 = 2;
+static int32_t NUM_5 = 5;
+static int32_t NUM_10 = 10;
+static int32_t NUM_20 = 20;
+static int32_t NUM_50 = 50;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 
@@ -66,8 +70,8 @@ void CreateAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string name = fdp.ConsumeRandomLengthString(100);
     AudioZoneContext context;
-    context.focusStrategy_ = static_cast<AudioZoneFocusStrategy>(GetData<int32_t>() % 2);
-    context.backStrategy_ = static_cast<MediaBackStrategy>(GetData<int32_t>() % 2);
+    context.focusStrategy_ = static_cast<AudioZoneFocusStrategy>(GetData<int32_t>() % NUM_2);
+    context.backStrategy_ = static_cast<MediaBackStrategy>(GetData<int32_t>() % NUM_2);
     AudioPolicyManager::GetInstance().CreateAudioZone(name, context);
 }
 
@@ -81,8 +85,8 @@ void UpdateContextForAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t zoneId = GetData<int32_t>();
     AudioZoneContext context;
-    context.focusStrategy_ = static_cast<AudioZoneFocusStrategy>(GetData<int32_t>() % 2);
-    context.backStrategy_ = static_cast<MediaBackStrategy>(GetData<int32_t>() % 2);
+    context.focusStrategy_ = static_cast<AudioZoneFocusStrategy>(GetData<int32_t>() % NUM_2);
+    context.backStrategy_ = static_cast<MediaBackStrategy>(GetData<int32_t>() % NUM_2);
     AudioPolicyManager::GetInstance().UpdateContextForAudioZone(zoneId, context);
 }
 
@@ -188,8 +192,8 @@ void AddStreamToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t zoneId = GetData<int32_t>();
     AudioZoneStream stream;
-    stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
-    stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % 10);
+    stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_50);
+    stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % NUM_10);
     stream.isPlay = GetData<uint32_t>() % NUM_2;
     AudioPolicyManager::GetInstance().AddStreamToAudioZone(zoneId, stream);
 }
@@ -201,8 +205,8 @@ void AddStreamsToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
     uint32_t streamCount = GetData<uint32_t>() % 5;
     for (uint32_t i = 0; i < streamCount; i++) {
         AudioZoneStream stream;
-        stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
-        stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % 10);
+        stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_50);
+        stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % NUM_10);
         stream.isPlay = GetData<uint32_t>() % NUM_2;
         streams.push_back(stream);
     }
@@ -219,8 +223,8 @@ void RemoveStreamFromAudioZoneFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t zoneId = GetData<int32_t>();
     AudioZoneStream stream;
-    stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
-    stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % 10);
+    stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_50);
+    stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % NUM_10);
     stream.isPlay = GetData<uint32_t>() % NUM_2;
     AudioPolicyManager::GetInstance().RemoveStreamFromAudioZone(zoneId, stream);
 }
@@ -232,8 +236,8 @@ void RemoveStreamsFromAudioZoneFuzzTest(FuzzedDataProvider& fdp)
     uint32_t streamCount = GetData<uint32_t>() % 5;
     for (uint32_t i = 0; i < streamCount; i++) {
         AudioZoneStream stream;
-        stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
-        stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % 10);
+        stream.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_50);
+        stream.sourceType = static_cast<SourceType>(GetData<int32_t>() % NUM_10);
         stream.isPlay = GetData<uint32_t>() % NUM_2;
         streams.push_back(stream);
     }
@@ -275,10 +279,10 @@ void InjectInterruptToAudioZoneFuzzTest(FuzzedDataProvider& fdp)
     uint32_t interruptCount = GetData<uint32_t>() % 5;
     for (uint32_t i = 0; i < interruptCount; i++) {
         AudioInterrupt interrupt;
-        interrupt.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
-        interrupt.contentType = static_cast<ContentType>(GetData<int32_t>() % 10);
-        interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % 20);
-        AudioFocuState state = static_cast<AudioFocuState>(GetData<int32_t>() % 10);
+        interrupt.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_50);
+        interrupt.contentType = static_cast<ContentType>(GetData<int32_t>() % NUM_10);
+        interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % NUM_20);
+        AudioFocuState state = static_cast<AudioFocuState>(GetData<int32_t>() % NUM_10);
         interrupts.push_back({interrupt, state});
     }
     AudioPolicyManager::GetInstance().InjectInterruptToAudioZone(zoneId, interrupts);
@@ -292,10 +296,10 @@ void InjectInterruptToAudioZoneWithDeviceTagFuzzTest(FuzzedDataProvider& fdp)
     uint32_t interruptCount = GetData<uint32_t>() % 5;
     for (uint32_t i = 0; i < interruptCount; i++) {
         AudioInterrupt interrupt;
-        interrupt.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 50);
-        interrupt.contentType = static_cast<ContentType>(GetData<int32_t>() % 10);
-        interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % 20);
-        AudioFocuState state = static_cast<AudioFocuState>(GetData<int32_t>() % 10);
+        interrupt.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_50);
+        interrupt.contentType = static_cast<ContentType>(GetData<int32_t>() % NUM_10);
+        interrupt.audioFocusType.streamType = static_cast<AudioStreamType>(GetData<int32_t>() % NUM_20);
+        AudioFocuState state = static_cast<AudioFocuState>(GetData<int32_t>() % NUM_10);
         interrupts.push_back({interrupt, state});
     }
     AudioPolicyManager::GetInstance().InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);

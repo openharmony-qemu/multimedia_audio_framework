@@ -51,6 +51,7 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 static int32_t NUM_2 = 2;
+static int32_t NUM_3 = 3;
 
 typedef void (*TestFuncs)();
 
@@ -526,7 +527,7 @@ void AudioSpatializationServiceUpdateRendererInfoFuzzTest(FuzzedDataProvider& fd
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
     auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
     if (changeInfo != nullptr) {
-        changeInfo->rendererState = static_cast<RendererState>(GetData<int32_t>() % 3);
+        changeInfo->rendererState = static_cast<RendererState>(GetData<int32_t>() % NUM_3);
         changeInfo->outputDeviceInfo.macAddress_ = "00:11:22:33:44:55";
         changeInfo->rendererInfo.streamUsage = StreamUsageVec[GetData<uint32_t>() % StreamUsageVec.size()];
         rendererChangeInfo.push_back(changeInfo);
@@ -670,10 +671,10 @@ void AudioSpatializationServiceUpdateRendererInfoMultipleFuzzTest(FuzzedDataProv
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfo;
-    for (size_t i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < NUM_3; ++i) {
         auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
         if (changeInfo != nullptr) {
-            changeInfo->rendererState = static_cast<RendererState>(GetData<int32_t>() % 3);
+            changeInfo->rendererState = static_cast<RendererState>(GetData<int32_t>() % NUM_3);
             changeInfo->outputDeviceInfo.macAddress_ = "00:11:22:33:44:" + std::to_string(i);
             changeInfo->rendererInfo.streamUsage = StreamUsageVec[GetData<uint32_t>() % StreamUsageVec.size()];
             rendererChangeInfo.push_back(changeInfo);

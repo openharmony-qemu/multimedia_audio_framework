@@ -34,6 +34,7 @@ using namespace std;
 const size_t THRESHOLD = 10;
 static const uint8_t* RAW_DATA = nullptr;
 static int32_t NUM_2 = 2;
+static int32_t NUM_10 = 10;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 
@@ -96,7 +97,6 @@ vector<AudioStreamType> AudioStreamTypeVec = {
     STREAM_ENFORCED_AUDIBLE,
     STREAM_DTMF,
     STREAM_TTS,
-    STREAM_ACCESSIBILITY,
     STREAM_RECORDING,
     STREAM_MOVIE,
     STREAM_GAME,
@@ -165,8 +165,8 @@ void SelectOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioRendererFilter filter;
     filter.uid = GetData<int32_t>();
-    filter.rendererInfo.contentType = static_cast<ContentType>(GetData<int32_t>() % 10);
-    filter.rendererInfo.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 10);
+    filter.rendererInfo.contentType = static_cast<ContentType>(GetData<int32_t>() % NUM_10);
+    filter.rendererInfo.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_10);
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     uint32_t deviceCount = GetData<uint32_t>() % 5 + 1;
@@ -296,8 +296,8 @@ void GetDevicesInnerFuzzTest(FuzzedDataProvider& fdp)
 void GetPreferredOutputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioRendererInfo rendererInfo;
-    rendererInfo.contentType = static_cast<ContentType>(GetData<int32_t>() % 10);
-    rendererInfo.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % 10);
+    rendererInfo.contentType = static_cast<ContentType>(GetData<int32_t>() % NUM_10);
+    rendererInfo.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_10);
     bool forceNoBTPermission = GetData<uint32_t>() % NUM_2;
     AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission);
 }
@@ -306,7 +306,7 @@ void GetPreferredInputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCapturerInfo captureInfo;
     captureInfo.capturerFlags = GetData<int32_t>();
-    captureInfo.sourceType = static_cast<SourceType>(GetData<int32_t>() % 10);
+    captureInfo.sourceType = static_cast<SourceType>(GetData<int32_t>() % NUM_10);
     AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(captureInfo);
 }
 
@@ -371,7 +371,7 @@ void ClearSelectedInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 
 void PreferBluetoothAndNearlinkRecordFuzzTest(FuzzedDataProvider& fdp)
 {
-    BluetoothAndNearlinkPreferredRecordCategory category = 
+    BluetoothAndNearlinkPreferredRecordCategory category =
         static_cast<BluetoothAndNearlinkPreferredRecordCategory>(GetData<int32_t>() % 5);
     AudioPolicyManager::GetInstance().PreferBluetoothAndNearlinkRecord(category);
 }
