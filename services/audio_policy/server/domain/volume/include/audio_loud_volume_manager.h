@@ -79,6 +79,6 @@ private:
     std::map<AudioVolumeType, LoudVolumeHoldType>& GetLoudVolumeEnableMap();
 };
 #endif
-}
-}
-#endif
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // ST_AUDIO_POLICY_SERVER_H
