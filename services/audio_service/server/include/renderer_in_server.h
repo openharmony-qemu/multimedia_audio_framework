@@ -162,6 +162,7 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
+    
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
