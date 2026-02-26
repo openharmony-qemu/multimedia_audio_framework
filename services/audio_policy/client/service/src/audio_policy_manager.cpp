@@ -1140,6 +1140,14 @@ int32_t AudioPolicyManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     return gsp->SetQueryClientTypeCallback(object);
 }
 
+int32_t AudioPolicyManager::SetAncoSourceOutputStreamMute(int32_t uid, bool setMute)
+{
+    AUDIO_INFO_LOG("In");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAncoSourceOutputStreamMute(uid, setMute);
+}
+
 int32_t AudioPolicyManager::SetQueryBundleNameListCallback(
     const std::shared_ptr<AudioQueryBundleNameListCallback> &callback)
 {
