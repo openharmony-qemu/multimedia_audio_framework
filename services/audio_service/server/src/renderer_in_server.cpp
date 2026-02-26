@@ -1175,7 +1175,7 @@ int32_t RendererInServer::StartInner()
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
-        AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("RendererInServer::Start failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
@@ -1276,8 +1276,10 @@ int32_t RendererInServer::Pause()
     AudioXCollie audioXCollie("RendererInServer::Pause", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
-    CHECK_AND_RETURN_RET_LOG(status_ == I_STATUS_STARTED, ERR_ILLEGAL_STATE,
-        "RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
+    if (status_ != I_STATUS_STARTED) {
+        AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_);
+        return ERR_ILLEGAL_STATE;
+    }
     status_ = I_STATUS_PAUSING;
     bool isStandbyTmp = false;
     if (standByEnable_) {
@@ -1362,7 +1364,7 @@ int32_t RendererInServer::Flush()
     } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
-        AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("RendererInServer::Flush failed, Illegal state: %{public}u", status_);
         return ERR_ILLEGAL_STATE;
     }
 
@@ -1412,7 +1414,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED) {
-            AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
+            AUDIO_ERR_LOG("RendererInServer::Drain failed, Illegal state: %{public}u", status_);
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_DRAINING;
@@ -1455,7 +1457,7 @@ int32_t RendererInServer::Stop()
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
             status_ != I_STATUS_STARTING) {
-            AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
+            AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_);
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_STOPPING;
@@ -1764,7 +1766,7 @@ int32_t RendererInServer::DisableInnerCapHandle(int32_t innerCapId)
         return ERR_INVALID_OPERATION;
     }
     captureInfos_[innerCapId].isInnerCapEnabled = false;
-    AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
+    AUDIO_INFO_LOG("Disable dup renderer %{public}u with status: %{public}d", streamIndex_, status_);
     // in plan: call stop?
     if (captureInfos_[innerCapId].dupStream != nullptr) {
         uint32_t dupStreamIndex = captureInfos_[innerCapId].dupStream->GetStreamIndex();
@@ -1815,7 +1817,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
     capInfo.dupStream->RegisterStatusCallback(innerCapIdToDupStreamCallbackMap_[innerCapId]);
     capInfo.dupStream->RegisterWriteCallback(innerCapIdToDupStreamCallbackMap_[innerCapId]);
 
-    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_.load());
+    AUDIO_INFO_LOG("Dup Renderer %{public}u with status: %{public}d", streamIndex_, status_);
     capInfo.isInnerCapEnabled = true;
     InitDupStreamVolume(dupStreamIndex);
     capInfo.dupStream->SetLoudnessGain(loudnessGain_);
@@ -1852,7 +1854,7 @@ int32_t RendererInServer::DisableDualToneInner()
     isDualToneEnabled_ = false;
     dupSinkName_ = std::nullopt;
     AUDIO_INFO_LOG("Disable dual tone renderer:[%{public}u] with status: %{public}d",
-        dualToneStreamIndex_, status_.load());
+        dualToneStreamIndex_, status_);
     IStreamManager::GetDualPlaybackManager().ReleaseRender(dualToneStreamIndex_);
     AudioVolume::GetInstance()->RemoveStreamVolume(dualToneStreamIndex_);
     dualToneStream_ = nullptr;
@@ -2059,7 +2061,7 @@ void RendererInServer::HandleOffloadStream(const int32_t captureId, const Captur
 
 int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 {
-    AUDIO_INFO_LOG("SetOffloadMode, status: %{public}u", status_.load());
+    AUDIO_INFO_LOG("SetOffloadMode, status: %{public}u", status_);
     int32_t ret = stream_->SetOffloadMode(state, isAppBack);
     {
         std::lock_guard<std::mutex> lock(dupMutex_);
@@ -2080,7 +2082,7 @@ int32_t RendererInServer::SetOffloadMode(int32_t state, bool isAppBack)
 
 int32_t RendererInServer::UnsetOffloadMode()
 {
-    AUDIO_INFO_LOG("UnsetOffloadMode, status: %{public}u", status_.load());
+    AUDIO_INFO_LOG("UnsetOffloadMode, status: %{public}u", status_);
     int32_t ret = stream_->UnsetOffloadMode();
 
     for (auto &softInfo : softLinkInfos_) {
@@ -2461,7 +2463,7 @@ void RendererInServer::DumpStreamInfo(std::string &dumpString)
 void RendererInServer::DumpStatusInfo(std::string &dumpString)
 {
     // dump status info
-    AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_.load()).c_str());
+    AppendFormat(dumpString, "  - Current stream status: %s\n", GetStatusStr(status_).c_str());
     if (audioServerBuffer_ != nullptr) {
         AppendFormat(dumpString, "  - Current read position: %u\n", audioServerBuffer_->GetCurReadFrame());
         AppendFormat(dumpString, "  - Current write position: %u\n", audioServerBuffer_->GetCurWriteFrame());
@@ -2628,7 +2630,7 @@ int32_t RendererInServer::StopSession()
     return SUCCESS;
 }
 
-int32_t RendererInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+int32_t RendererInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     audioHapticsSyncId_.store(audioHapticsSyncId);
     return SUCCESS;

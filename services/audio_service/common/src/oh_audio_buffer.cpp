@@ -30,8 +30,26 @@
 #include "audio_utils.h"
 #include "audio_parcel_helper.h"
 
+namespace {
+static constexpr int MINFD = 2;
+}
+
 namespace OHOS {
 namespace AudioStandard {
+
+class ScopedFd {
+public:
+    explicit ScopedFd(int fd) : fd_(fd) {}
+    ~ScopedFd()
+    {
+        if (fd_ > MINFD) {
+            CloseFd(fd_);
+        }
+    }
+private:
+    int fd_ = -1;
+};
+
 OHAudioBuffer::OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
     uint32_t byteSizePerFrame) : ohAudioBufferBase_(bufferHolder, totalSizeInFrame, byteSizePerFrame),
     spanBasicInfo_(spanSizeInFrame, totalSizeInFrame, byteSizePerFrame),
@@ -166,33 +184,26 @@ OHAudioBuffer *OHAudioBuffer::Unmarshalling(Parcel &parcel)
 
     int dataFd = messageParcel.ReadFileDescriptor();
     int infoFd = messageParcel.ReadFileDescriptor();
+    ScopedFd dataFdHandle(dataFd);
+    ScopedFd infoFdHandle(infoFd);
 
-    int minfd = 2; // ignore stdout, stdin and stderr.
-    CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "invalid dataFd: %{public}d", dataFd);
+    AUDIO_DEBUG_LOG("dataFd %{public}d, infoFd %{public}d", dataFd, infoFd);
+    CHECK_AND_RETURN_RET_LOG(dataFd > MINFD, nullptr, "invalid dataFd: %{public}d", dataFd);
+    CHECK_AND_RETURN_RET_LOG(infoFd == INVALID_FD || infoFd > MINFD, nullptr, "invalid infoFd: %{public}d", infoFd);
 
-    if (infoFd != INVALID_FD) {
-        CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
-    }
     auto buffer = new(std::nothrow) OHAudioBuffer(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, nullptr, "failed to create");
     if (buffer == nullptr || buffer->Init(dataFd, infoFd) != SUCCESS ||
         buffer->ohAudioBufferBase_.basicBufferInfo_ == nullptr) {
-        AUDIO_ERR_LOG("failed to init.");
+        AUDIO_ERR_LOG("buffer init failed.");
         if (buffer != nullptr) delete buffer;
-        CloseFd(dataFd);
-        CloseFd(infoFd);
         return nullptr;
     }
 
     if ((totalSizeInFrame != buffer->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame) ||
         (byteSizePerFrame != buffer->ohAudioBufferBase_.basicBufferInfo_->byteSizePerFrame)) {
         AUDIO_WARNING_LOG("data in shared memory diff.");
-    } else {
-        AUDIO_DEBUG_LOG("Read some data done.");
     }
-    CloseFd(dataFd);
-    CloseFd(infoFd);
     return buffer;
 }
 

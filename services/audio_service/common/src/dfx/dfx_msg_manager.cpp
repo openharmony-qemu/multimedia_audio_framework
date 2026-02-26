@@ -22,6 +22,10 @@
 #include "dfx_msg_manager.h"
 #include "hisysevent.h"
 #include "audio_common_log.h"
+#include "parameters.h"
+#include "media_monitor_manager.h"
+#include "parameter.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -140,6 +144,9 @@ void DfxMsgManager::Init()
     lock.unlock();
 
     SafeSendCallBackEvent(DFX_CHECK_REPORT_MSG, 0, DFX_CHECK_REPORT_MSG_TIME_MS);
+
+    // Watch hiview ue enable parameter
+    WatchHiviewUeEnableParameter();
 }
 
 DfxMsgManager::~DfxMsgManager()
@@ -647,6 +654,7 @@ void DfxMsgManager::WriteRunningAppMsg(DfxMessage &msg, const std::unique_ptr<Df
 void DfxMsgManager::WritePlayAudioStatsEvent(const std::unique_ptr<DfxReportResult> &result)
 {
     CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
+    CHECK_AND_RETURN(IsHiviewUeEnable());
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "PLAY_AUDIO_STATS",
         HiviewDFX::HiSysEvent::EventType::STATISTIC,
         "APP_NAME", result->appName,
@@ -721,6 +729,36 @@ bool DfxMsgManager::CheckIsInterrupted(InterruptStage stage)
         stage == INTERRUPT_STAGE_RESUMED ||
         stage == INTERRUPT_STAGE_DUCK_END);
     return ret;
+}
+
+// Static member initialization
+std::atomic_bool DfxMsgManager::hiviewUeEnable_{false};
+
+bool DfxMsgManager::IsHiviewUeEnable()
+{
+    return hiviewUeEnable_.load(std::memory_order_relaxed);
+}
+
+void DfxMsgManager::HiviewUeEnableChangeCallback(const char *key, const char *value, void *context)
+{
+    CHECK_AND_RETURN_LOG(value != nullptr, "HiviewUeEnableChangeCallback: value is null");
+    bool enable = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
+    hiviewUeEnable_.store(enable, std::memory_order_release);
+    AUDIO_INFO_LOG("HiviewUeEnable changed to %{public}d", enable);
+}
+
+void DfxMsgManager::WatchHiviewUeEnableParameter()
+{
+    // Initialize with current value
+    hiviewUeEnable_.store(OHOS::system::GetBoolParameter("persist.hiviewdfx.hiview.ue.enable", false),
+        std::memory_order_release);
+
+    // Register parameter change callback
+    int32_t ret = WatchParameter("persist.hiviewdfx.hiview.ue.enable",
+        HiviewUeEnableChangeCallback, this);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "WatchHiviewUeEnableParameter failed!");
+    AUDIO_INFO_LOG("WatchHiviewUeEnableParameter success, current value: %{public}d",
+        hiviewUeEnable_.load(std::memory_order_relaxed));
 }
 } // namespace AudioStandard
 } // namespace OHOS
