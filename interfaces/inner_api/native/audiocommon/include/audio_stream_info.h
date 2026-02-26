@@ -323,7 +323,7 @@ enum AudioChannelLayout: uint64_t {
         | (HOA_COMORD_FUMA << CH_HOA_COMORD_OFFSET),
 };
 
-const std::vector<AudioChannelLayout> RENDERER_SUPPORTED_CHANNELLAYOUTS {
+inline const std::vector<AudioChannelLayout> RENDERER_SUPPORTED_CHANNELLAYOUTS {
     CH_LAYOUT_UNKNOWN,
     CH_LAYOUT_MONO,
     CH_LAYOUT_STEREO, CH_LAYOUT_STEREO_DOWNMIX,
