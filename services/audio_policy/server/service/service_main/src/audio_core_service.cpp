@@ -1182,7 +1182,6 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(
             forceFetch = true;
         }
     }
-
     return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch);
 }
 
