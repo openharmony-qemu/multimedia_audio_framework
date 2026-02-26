@@ -187,30 +187,27 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
     int32_t frameIndex = 0;
     uint32_t loopCount = 0;
 
+    EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
+        .WillRepeatedly(::testing::Invoke([this, &frameIndex, &frames, frameSizeInput, &readPtr, preNode]() {
+            if (frameIndex >= frames) {
+                buffer->SetIsFinished(true);
+                std::vector<uint8_t> zeros(frameSizeInput, 0);
+                memcpy_s(buffer->GetPcmData(), frameSizeInput, zeros.data(), frameSizeInput);
+                return preNode->PushCurrentFrame(NEED_DATA_LENGTH);
+            }
+
+            if (frameIndex == frames - 1) {
+                buffer->SetIsFinished(true);
+            }
+
+            memcpy_s(buffer->GetPcmData(), frameSizeInput, readPtr, frameSizeInput);
+
+            frameIndex++;
+            readPtr += frameSizeInput;
+            return preNode->PushCurrentFrame(NEED_DATA_LENGTH);
+        }));
+
     while (loopCount < MAX_FRAMES) {
-        // Each downstream pull triggers preNode->DoProcess(needDataLength)
-        EXPECT_CALL(*preNode, DoProcess(needDataLength))
-            .WillRepeatedly(::testing::Invoke([&]() {
-                if (frameIndex >= frames) {
-                    buffer->SetIsFinished(true);
-                    std::vector<uint8_t> zeros(frameSizeInput, 0);
-                    memcpy_s(buffer->GetPcmData(), frameSizeInput, zeros.data(), frameSizeInput);
-                    return preNode->PushCurrentFrame(NEED_DATA_LENGTH);
-                }
-
-                if (frameIndex == frames - 1) {
-                    buffer->SetIsFinished(true);
-                }
-                memcpy_s(buffer->GetPcmData(), frameSizeInput, readPtr, frameSizeInput);
-
-                frameIndex++;
-                readPtr += frameSizeInput;
-
-                return preNode->PushCurrentFrame(needDataLength);
-            }));
-
-        // Old UT: PullOutputData(outFormat_, false, needDataLength)
-        // Keep consistent: needConvert=false
         std::vector<AudioSuitePcmBuffer *> result = node->PullForTest(outFormat_, false, NEED_DATA_LENGTH);
         CHECK_AND_RETURN_RET(result.size() == 1, ERROR);
 
