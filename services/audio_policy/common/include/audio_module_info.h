@@ -145,6 +145,8 @@ struct AudioModuleInfo {
     std::string micRefFormat;
     std::string micRefChannels;
     uint32_t suspendIdleTimeout = DEFAULT_SUSPEND_TIME_IN_MS;
+    bool allUsbDeviceDisable_ = false;
+    std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
 
     std::list<AudioModuleInfo> ports;
     std::string extra;
