@@ -154,12 +154,6 @@ class ConcretePreferredDeviceSetCallback : public PreferredDeviceSetCallback {
     void OnPreferredDeviceSet(PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
         int32_t uid, const std::string &caller) override {};
 };
-
-class ConcreteAudioAdaptiveSpatialRenderingEnabledChangeCallback :
-    public AudioAdaptiveSpatialRenderingEnabledChangeCallback {
-    void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) override {}
-};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_TEST_H

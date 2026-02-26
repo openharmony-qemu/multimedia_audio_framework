@@ -43,7 +43,6 @@ static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
-static const std::string SPEAKER_SINK_NAME = "Speaker";
 
 HpaeManagerThread::~HpaeManagerThread()
 {

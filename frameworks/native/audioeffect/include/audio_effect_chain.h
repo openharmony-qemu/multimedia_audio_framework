@@ -84,7 +84,6 @@ public:
     void SetEarphoneProduct(AudioEarphoneProduct earphoneProduct);
     void SetOutdoorMode(const std::string &outdoorMode);
     void SetSuperLoudnessMode(const std::string &superLoudnessMode);
-    bool IsEffectChainFading();
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();

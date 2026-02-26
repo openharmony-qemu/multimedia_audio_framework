@@ -114,10 +114,6 @@ public:
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) {return 0;};
     virtual int32_t SetSinkVirtualOutputNode(const std::shared_ptr<HpaeSinkVirtualOutputNode> &sinkVirtualOutputNode);
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; }
-    virtual bool IsBypassSpatializationForStereo()
-    {
-        return true;
-    }
 
 private:
 #ifdef ENABLE_HIDUMP_DFX

@@ -37,7 +37,6 @@ public:
     bool backMute = false;
     int32_t appVolume;
     mutable std::optional<AudioDeviceDescriptor::ClientInfo> clientInfo_ = std::nullopt;
-    AudioStreamInfo streamInfo;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
@@ -77,9 +76,7 @@ public:
             && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererStateTemp))
-            && outputDeviceInfo.Marshalling(parcel)
-            && parcel.WriteInt32(appVolume)
-            && streamInfo.Marshalling(parcel);
+            && outputDeviceInfo.Marshalling(parcel);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -103,7 +100,6 @@ public:
         rendererState = static_cast<RendererState>(parcel.ReadInt32());
         outputDeviceInfo.UnmarshallingSelf(parcel);
         appVolume = parcel.ReadInt32();
-        streamInfo.UnmarshallingSelf(parcel);
     }
 
     static AudioRendererChangeInfo *Unmarshalling(Parcel &parcel)

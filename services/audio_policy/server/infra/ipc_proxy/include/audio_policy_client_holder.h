@@ -72,8 +72,6 @@ public:
     void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled);
     void OnPreferredDeviceSet(PreferredType preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
-    void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled);
 
 public:
     bool hasBTPermission_ = true;

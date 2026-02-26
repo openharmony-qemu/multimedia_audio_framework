@@ -254,13 +254,6 @@ void HpaePolicyManager::LoadCollaborationConfig()
     CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
     audioCollaborationManager->LoadCollaborationConfig();
 }
-
-void HpaePolicyManager::SetBypassSpatializationForStereo(bool bypass)
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
-    audioEffectChainManager->SetBypassSpatializationForStereo(bypass);
-}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
