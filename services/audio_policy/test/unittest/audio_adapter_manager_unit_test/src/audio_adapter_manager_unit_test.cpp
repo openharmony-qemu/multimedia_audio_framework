@@ -469,6 +469,47 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeLimit_001, TestSize.Level1)
 
     newLimit = audioAdapterManager->volumeLimit_.load();
     EXPECT_EQ(oldLimit, newLimit);
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    int32_t testDb = -6;
+    info->streamType = STREAM_MUSIC;
+    info->duckedDb = testDb;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, desc);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    newLimit = audioAdapterManager->volumeLimit_.load();
+    EXPECT_LT(volume, newLimit);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: GetVolumeReductionRatio_001
+ * @tc.type: FUNC
+ * @tc.desc: Get Volume Reduction
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetVolumeReductionRatio_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    int32_t testDb = 6;
+    int32_t testDb2 = -6;
+    info->streamType = STREAM_ALARM;
+    info->duckedDb = testDb;
+
+    audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = nullptr;
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+
+    audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+
+    info->duckedDb = testDb2;
+    audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
+    EXPECT_NE(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
 }
 
 /**
