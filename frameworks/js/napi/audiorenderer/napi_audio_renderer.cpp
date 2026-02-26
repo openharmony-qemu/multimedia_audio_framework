@@ -1033,8 +1033,7 @@ napi_value NapiAudioRenderer::Stop(napi_env env, napi_callback_info info)
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
         context->intValue = napiAudioRenderer->audioRenderer_->StopApi();
-        context->status = context->intValue == SUCCESS ? napi_ok : napi_generic_failure;
-        if (context->status != napi_ok) {
+        if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };

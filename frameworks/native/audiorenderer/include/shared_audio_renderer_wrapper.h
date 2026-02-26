@@ -128,6 +128,7 @@ public:
     {
         return sharedAudioRenderer_->PauseTransitent(cmdType);
     }
+
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
     {
         return sharedAudioRenderer_->Pause(cmdType);
