@@ -166,7 +166,7 @@ std::vector<std::future<AudioSuiteMixerNode::PullResult>> AudioSuiteMixerNode::S
     return futures;
 }
 
-bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer>& preOutputs,
+bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer*>& preOutputs,
     std::vector<std::future<PullResult>>& futures)
 {
     bool isFinished = true;
