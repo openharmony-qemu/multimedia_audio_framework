@@ -481,7 +481,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     (void)isFlush;
 
     {
-        std::lock_guard lockSch(scheduleGuardsMutex_);
+        std::lock_guard lock(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -550,12 +550,12 @@ int32_t AudioProcessInServer::Resume()
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::Stop(int32_t stage)
+int32_t AudioProcessInServer::Stop(int32_t stageIn)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-
+    AudioProcessStage stage = static_cast<AudioProcessStage>(stageIn);
     {
-        std::lock_guard lockSch(scheduleGuardsMutex_);
+        std::lock_guard lock(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -605,7 +605,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     ReleaseCallbackHandler();
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
-        std::lock_guard lockSch(scheduleGuardsMutex_);
+        std::lock_guard lock(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
         scheduleGuards_[METHOD_START] = nullptr;
     }
@@ -756,24 +756,6 @@ SourceType AudioProcessInServer::GetSource()
 AudioProcessConfig AudioProcessInServer::GetAudioProcessConfig()
 {
     return processConfig_;
-}
-
-inline uint32_t PcmFormatToBits(AudioSampleFormat format)
-{
-    switch (format) {
-        case SAMPLE_U8:
-            return 1; // 1 byte
-        case SAMPLE_S16LE:
-            return 2; // 2 byte
-        case SAMPLE_S24LE:
-            return 3; // 3 byte
-        case SAMPLE_S32LE:
-            return 4; // 4 byte
-        case SAMPLE_F32LE:
-            return 4; // 4 byte
-        default:
-            return 2; // 2 byte
-    }
 }
 
 int32_t AudioProcessInServer::InitBufferStatus()
