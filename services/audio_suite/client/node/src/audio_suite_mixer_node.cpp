@@ -80,15 +80,15 @@ int32_t AudioSuiteMixerNode::InitAudioLimiter()
 int32_t AudioSuiteMixerNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteMixerNode::Init begin");
-    if (!isOutputPortInit_) {
-        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
-        isOutputPortInit_ = true;
+    if (!isOutputStreamInit_) {
+        CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutputStream error");
+        isOutputStreamInit_ = true;
     }
 
     int32_t ret = InitAudioLimiter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init Mixer node");
 
-    nodeNeedDataDuration_  = PCM_DATA_DEFAULT_DURATION_20_MS;
+    nodeNeedDataDuration_ = PCM_DATA_DEFAULT_DURATION_20_MS;
     AUDIO_INFO_LOG("AudioSuiteMixerNode::Init end");
     return SUCCESS;
 }
@@ -140,21 +140,21 @@ void AudioSuiteMixerNode::StopPullPool()
     }
 }
 
-std::vector<std::future<AudioSuiteMixerNode::PullResult>> AudioSuiteMixerNode::SubmitPullTasks(
-    const std::unordered_map<OutputPort<AudioSuitePcmBuffer*>*, std::shared_ptr<AudioNode>>& preOutputMap)
+std::vector<std::future<AudioSuiteMixerNode::PullResult>> AudioSuiteMixerNode::SubmitPullTasks()
 {
     std::vector<std::future<PullResult>> futures;
-    futures.reserve(preOutputMap.size());
+    futures.reserve(preNodes_.size());
 
-    for (auto& o : preOutputMap) {
-        auto nodePair = o;
-        futures.emplace_back(pullThreadPool_->Submit([this, nodePair]() -> PullResult {
+    for (auto& weakNode : preNodes_) {
+        auto node = weakNode.lock();
+        if (!node) {
+            continue;
+        }
+        futures.emplace_back(pullThreadPool_->Submit([this, node]() -> PullResult {
             PullResult r;
-            r.preNode = nodePair.second;
-            CHECK_AND_RETURN_RET_LOG(nodePair.first != nullptr && nodePair.second, r,
-                "node %{public}d has a invalid connection with prenode, node connection error.", GetNodeType());
-            auto data = nodePair.first->PullOutputData(GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(),
-                requestPreNodeDuration_);
+            r.preNode = node;
+            auto data =
+                node->PullOutputData(GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(), requestPreNodeDuration_);
             if (!data.empty() && data[0] != nullptr) {
                 r.ok = true;
                 r.data = std::move(data);
@@ -166,7 +166,7 @@ std::vector<std::future<AudioSuiteMixerNode::PullResult>> AudioSuiteMixerNode::S
     return futures;
 }
 
-bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer*>& preOutputs,
+bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer>& preOutputs,
     std::vector<std::future<PullResult>>& futures)
 {
     bool isFinished = true;
@@ -178,7 +178,7 @@ bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer*>& 
         }
         if (finishedPrenodeSet.find(r.preNode) != finishedPrenodeSet.end()) {
             AUDIO_DEBUG_LOG(
-                "current node type is %{public}d, it's prenode type = %{public}d is finished, skip this outputport.",
+                "current node type is %{public}d, it's prenode type = %{public}d is finished, skip this node.",
                 GetNodeType(), r.preNode->GetNodeType());
             continue;
         }
@@ -191,24 +191,24 @@ bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer*>& 
             finishedPrenodeSet.insert(r.preNode);
         }
         isFinished = isFinished && r.isFinished;
-        preOutputs.insert(preOutputs.end(), r.data.begin(), r.data.end());
+        for (auto* ptr : r.data) {
+            if (ptr) {
+                preOutputs.push_back(*ptr);
+            }
+        }
     }
 
     return isFinished;
 }
 
-std::vector<AudioSuitePcmBuffer*>& AudioSuiteMixerNode::ReadProcessNodePreOutputData()
+void AudioSuiteMixerNode::ReadProcessNodePreOutputData()
 {
-    auto& preOutputs = inputStream_.getInputDataRef();
-    preOutputs.clear();
-    auto& preOutputMap = inputStream_.GetPreOutputMap();
-
-    auto futures = SubmitPullTasks(preOutputMap);
-    bool isFinished = CollectPullResults(preOutputs, futures);
+    preNodeResult_.clear();
+    auto futures = SubmitPullTasks();
+    bool isFinished = CollectPullResults(preNodeResult_, futures);
 
     AUDIO_DEBUG_LOG("set node type = %{public}d isFinished status: %{public}d.", GetNodeType(), isFinished);
     SetAudioNodeDataFinishedFlag(isFinished);
-    return preOutputs;
 }
 
 }  // namespace AudioSuite

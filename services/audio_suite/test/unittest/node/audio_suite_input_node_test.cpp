@@ -127,17 +127,6 @@ HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeFlush_001, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
 }
 
-HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeGetOutputPort_001, TestSize.Level0)
-{
-    AudioFormat audioFormat = GetTestAudioFormat();
-    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(audioFormat);
-    EXPECT_NE(inputNode, nullptr);
-    inputNode->Init();
-
-    OutputPort<AudioSuitePcmBuffer*>* outport = inputNode->GetOutputPort();
-    EXPECT_NE(outport, nullptr);
-}
-
 HWTEST_F(AudioSuiteInputNodeTest, AudioSuiteInputNodeSetRequestDataCallback_001, TestSize.Level0)
 {
     AudioFormat audioFormat = GetTestAudioFormat();

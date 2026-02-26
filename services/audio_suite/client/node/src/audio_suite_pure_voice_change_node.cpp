@@ -47,10 +47,10 @@ int32_t AudioSuitePureVoiceChangeNode::Init()
         return ERROR;
     }
     
-    if (!isOutputPortInit_) {
+    if (!isOutputStreamInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
-        isOutputPortInit_ = true;
-        AUDIO_ERR_LOG("InitOutputStream SUCCESS");
+        isOutputStreamInit_ = true;
+        AUDIO_DEBUG_LOG("InitOutputStream SUCCESS");
     }
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_PURE_VOICE_CHANGE, nodeParameter_);

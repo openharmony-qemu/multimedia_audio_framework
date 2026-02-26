@@ -112,7 +112,13 @@ int32_t AudioSuiteProcessNode::InitCacheLength(uint32_t needDataLength)
 
 int32_t AudioSuiteProcessNode::ObtainProcessedData()
 {
-    std::vector<AudioSuitePcmBuffer *> preOutputs = ReadProcessNodePreOutputData();
+    ReadProcessNodePreOutputData();
+    
+    std::vector<AudioSuitePcmBuffer *> preOutputs;
+    for (auto& buffer : preNodeResult_) {
+        preOutputs.push_back(&buffer);
+    }
+    
     if (preOutputs.empty()) {
         AUDIO_ERR_LOG("node %{public}d can't get pcmbuffer from prenodes", GetNodeType());
         return ERROR;
@@ -165,7 +171,7 @@ int32_t AudioSuiteProcessNode::ProcessWithCache()
         int32_t ret = cachedBuffer_[idx].GetData(downStreamData_[idx].GetPcmData(), CopyDataLength);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get data from cachedBuffer_ fail");
         downStreamData_[idx].SetIsFinished(GetAudioNodeDataFinishedFlag() && cachedBuffer_[idx].GetSize() == 0);
-        outputStream_.WriteDataToOutput(&downStreamData_[idx]);
+        WriteOutputData(&downStreamData_[idx]);
     }
     return SUCCESS;
 }
@@ -189,7 +195,7 @@ int32_t AudioSuiteProcessNode::ProcessDirectly()
             algoProcessedResult_[idx]->GetDataSize());
         CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "memcpy failed, ret is %{public}d.", ret);
         downStreamData_[idx].SetIsFinished(GetAudioNodeDataFinishedFlag());
-        outputStream_.WriteDataToOutput(&downStreamData_[idx]);
+        WriteOutputData(&downStreamData_[idx]);
     }
     return SUCCESS;
 }
@@ -197,13 +203,19 @@ int32_t AudioSuiteProcessNode::ProcessDirectly()
 int32_t AudioSuiteProcessNode::ProcessBypassMode(uint32_t needDataLength)
 {
     requestPreNodeDuration_ = needDataLength;
-    std::vector<AudioSuitePcmBuffer *> preOutputs = ReadProcessNodePreOutputData();
+    ReadProcessNodePreOutputData();
+    
+    std::vector<AudioSuitePcmBuffer *> preOutputs;
+    for (auto& buffer : preNodeResult_) {
+        preOutputs.push_back(&buffer);
+    }
+    
     CHECK_AND_RETURN_RET_LOG(
         !preOutputs.empty(), ERROR, "node %{public}d can't get pcmbuffer from prenodes.", GetNodeType());
     AUDIO_DEBUG_LOG("node type = %{public}d signalProcess is not enabled.", GetNodeType());
     for (size_t idx = 0; idx < downStreamData_.size(); ++idx) {
         preOutputs[0]->SetIsFinished(GetAudioNodeDataFinishedFlag());
-        outputStream_.WriteDataToOutput(preOutputs[0]);
+        WriteOutputData(preOutputs[0]);
     }
 
     return SUCCESS;
@@ -238,37 +250,17 @@ int32_t AudioSuiteProcessNode::DoProcess(uint32_t needDataLength)
     return SUCCESS;
 }
 
-std::vector<AudioSuitePcmBuffer*>& AudioSuiteProcessNode::ReadProcessNodePreOutputData()
+void AudioSuiteProcessNode::ReadProcessNodePreOutputData()
 {
     bool isFinished = true;
-    auto& preOutputs = inputStream_.getInputDataRef();
-    preOutputs.clear();
-    auto& preOutputMap = inputStream_.GetPreOutputMap();
+    ReadPreNodeData(GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(), requestPreNodeDuration_);
 
-    for (auto& o : preOutputMap) {
-        if (o.first == nullptr || !o.second) {
-            AUDIO_ERR_LOG("node %{public}d has a invalid connection with prenode, "
-                "node connection error.", GetNodeType());
-            continue;
-        }
-        if (finishedPrenodeSet.find(o.second) != finishedPrenodeSet.end()) {
-            AUDIO_DEBUG_LOG("current node type is %{public}d, it's prenode type = %{public}d is "
-                "finished, skip this outputport.", GetNodeType(), o.second->GetNodeType());
-            continue;
-        }
-        std::vector<AudioSuitePcmBuffer *> outputData = o.first->PullOutputData(
-            GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(), requestPreNodeDuration_);
-        if (!outputData.empty() && (outputData[0] != nullptr)) {
-            if (outputData[0]->GetIsFinished()) {
-                finishedPrenodeSet.insert(o.second);
-            }
-            isFinished = isFinished && outputData[0]->GetIsFinished();
-            preOutputs.insert(preOutputs.end(), outputData.begin(), outputData.end());
-        }
+    // Track finished pre-nodes (based on output data)
+    for (auto& buffer : preNodeResult_) {
+        isFinished = isFinished && buffer.GetIsFinished();
     }
     AUDIO_DEBUG_LOG("set node type = %{public}d isFinished status: %{public}d.", GetNodeType(), isFinished);
     SetAudioNodeDataFinishedFlag(isFinished);
-    return preOutputs;
 }
 
 int32_t AudioSuiteProcessNode::SetOptions(std::string name, std::string value)
@@ -322,7 +314,6 @@ int32_t AudioSuiteProcessNode::Flush()
         SetOptions(paraName_, paraValue_);
     }
     finishedPrenodeSet.clear();
-    outputStream_.ResetResampleCfg();
     
     AUDIO_INFO_LOG("Flush SUCCESS");
     return SUCCESS;
@@ -331,8 +322,8 @@ int32_t AudioSuiteProcessNode::Flush()
 int32_t AudioSuiteProcessNode::InitOutputStream()
 {
     CHECK_AND_RETURN_RET_LOG(GetSharedInstance() != nullptr, ERROR, "GetSharedInstance returns a nullptr");
-    int32_t ret = outputStream_.SetOutputPort(GetSharedInstance());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetOutputPort failed.");
+    int32_t ret = InitFormatConverters();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "InitFormatConverters failed.");
     return SUCCESS;
 }
 
@@ -342,8 +333,10 @@ int32_t AudioSuiteProcessNode::Connect(const std::shared_ptr<AudioNode>& preNode
         AUDIO_ERR_LOG("node type = %{public}d preNode is null!", GetNodeType());
         return ERR_INVALID_PARAM;
     }
-    CHECK_AND_RETURN_RET_LOG(preNode->GetOutputPort() != nullptr, ERROR, "OutputPort is null");
-    inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+    // Add upstream node to preNodes_
+    AddPreNode(preNode);
+    // Add this node to upstream's nextNodes_
+    preNode->AddNextNode(shared_from_this());
     return SUCCESS;
 }
 
@@ -353,7 +346,10 @@ int32_t AudioSuiteProcessNode::DisConnect(const std::shared_ptr<AudioNode>& preN
         AUDIO_ERR_LOG("node type = %{public}d preNode is null!", GetNodeType());
         return ERR_INVALID_PARAM;
     }
-    inputStream_.DisConnect(preNode);
+    // Remove from preNodes_
+    RemovePreNode(preNode);
+    // Remove this node from upstream's nextNodes_
+    preNode->RemoveNextNode(shared_from_this());
     return SUCCESS;
 }
 
@@ -434,6 +430,24 @@ void AudioSuiteProcessNode::CheckEffectNodeOvertimeCount()
     std::fill(rtfOvertimeCounters_.begin(), rtfOvertimeCounters_.end(), 0);
 }
 
+// Format converter initialization for ProcessNode
+int32_t AudioSuiteProcessNode::InitFormatConverters()
+{
+    constexpr uint32_t AUDIO_SEPARATION_OUTPUT_COUNT = 2;
+    
+    formatConverters_.clear();
+    formatConversionBuffers_.clear();
+    formatConverters_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
+    formatConversionBuffers_.resize(1);
+
+    // Audio separation node needs an additional converter
+    if (GetNodeType() == NODE_TYPE_AUDIO_SEPARATION) {
+        formatConverters_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
+        formatConversionBuffers_.resize(AUDIO_SEPARATION_OUTPUT_COUNT);
+    }
+
+    return SUCCESS;
+}
 }
 }
 }

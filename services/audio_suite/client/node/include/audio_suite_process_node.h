@@ -19,9 +19,9 @@
 #include <memory>
 #include <vector>
 #include "audio_errors.h"
-#include "audio_suite_channel.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_capabilities.h"
+#include "audio_suite_node.h"
 #include "audio_suite_perf.h"
 #include "audio_suite_algo_interface.h"
 
@@ -55,14 +55,12 @@ public:
         return AudioNode::GetAudioNodeInfo().audioFormat.audioChannelInfo.numChannels;
     }
 
-    virtual OutputPort<AudioSuitePcmBuffer*>* GetOutputPort() override
-    {
-        return &outputStream_;
-    }
-
+    // Format converter initialization (override for audio separation node)
+    int32_t InitFormatConverters() override;
+    
 protected:
     virtual std::vector<AudioSuitePcmBuffer *> SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs);
-    virtual std::vector<AudioSuitePcmBuffer*>& ReadProcessNodePreOutputData();
+    virtual void ReadProcessNodePreOutputData();
     virtual uint32_t CalculationNeedBytes(uint32_t frameLengthMs);
     int32_t InitCacheLength(uint32_t needDataLength);
     int32_t ProcessBypassMode(uint32_t needDataLength);
@@ -75,10 +73,7 @@ protected:
     void CheckEffectNodeOvertimeCount();
 
     std::unordered_set<std::shared_ptr<AudioNode>> finishedPrenodeSet;
-    OutputPort<AudioSuitePcmBuffer *> outputStream_;
-    InputPort<AudioSuitePcmBuffer *> inputStream_;
     AudioSuiteFormatConversion convert_;
-    
     uint32_t nodeNeedDataDuration_ = 0;
     uint32_t requestPreNodeDuration_ = 0;
     uint32_t frameOutBytes_ = 0;
@@ -99,7 +94,7 @@ protected:
  
     bool secondCall_ = false;
     bool needCache_ = false;
-    bool isOutputPortInit_ = false;
+    bool isOutputStreamInit_ = false;
 
 private:
     // for dfx

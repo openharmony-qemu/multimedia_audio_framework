@@ -23,7 +23,6 @@
 #include "audio_proresampler.h"
 #include "hpae_format_convert.h"
 #include "channel_converter.h"
-#include "audio_suite_node.h"
 
 namespace OHOS {
 namespace AudioStandard {

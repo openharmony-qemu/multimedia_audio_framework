@@ -80,7 +80,6 @@ if (audio_framework_feature_audiosuite_support) {
       "tool/audio_suite_unittest_tools.cpp",
       "node/audio_suite_input_node_test.cpp",
       "node/audio_suite_output_node_test.cpp",
-      "node/audio_suite_channel_test.cpp",
       "node/audio_suite_eq_node_test.cpp",
       "node/audio_suite_env_node_test.cpp",
       "node/audio_suite_mixer_node_test.cpp",

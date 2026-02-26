@@ -40,9 +40,9 @@ AudioSuiteNrNode::~AudioSuiteNrNode()
 int32_t AudioSuiteNrNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteNrNode::Init begin");
-    if (!isOutputPortInit_) {
+    if (!isOutputStreamInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
-        isOutputPortInit_ = true;
+        isOutputStreamInit_ = true;
     }
 
     algoInterface_ =
