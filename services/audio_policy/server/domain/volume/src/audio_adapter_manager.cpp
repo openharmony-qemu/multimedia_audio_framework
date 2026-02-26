@@ -3635,8 +3635,6 @@ void AudioAdapterManager::SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> 
 void AudioAdapterManager::UpdateVolumeWhenDeviceDisconnect(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "UptdateVolumeWhenDeviceConnect desc is null");
-    volumeDataMaintainer_.DeInitDeviceVolumeMap(desc);
-    volumeDataMaintainer_.DeInitDeviceMuteMap(desc);
     if (desc->volumeBehavior_.controlMode == PASS_THROUGH_MODE ||
         desc->volumeBehavior_.controlMode == HILINK_MODE) {
         AudioServerProxy::GetInstance().UnRegistAdapterManagerCallback(desc->networkId_);
