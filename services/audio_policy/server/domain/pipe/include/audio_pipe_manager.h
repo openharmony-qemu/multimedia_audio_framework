@@ -106,7 +106,6 @@ public:
     bool HasFastOutputPipe();
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
     bool HasRunningRecognitionCapturerStream();
-    bool IsOnPrimaryAdapter(uint32_t sessionId);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
