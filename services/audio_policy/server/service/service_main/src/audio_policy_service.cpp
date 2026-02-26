@@ -230,6 +230,12 @@ int32_t AudioPolicyService::SetSourceOutputStreamMuteByStreamId(int32_t sessionI
     return status;
 }
 
+int32_t AudioPolicyService::SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) const
+{
+    streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
+    return SUCCESS;
+}
+
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
     (void)streamType;

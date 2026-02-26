@@ -369,6 +369,12 @@ int32_t AudioSystemManager::SetQueryClientTypeCallback(const std::shared_ptr<Aud
     return AudioSystemClientPolicyManager::GetInstance().SetQueryClientTypeCallback(callback);
 }
 
+int32_t AudioSystemManager::SetAncoSourceOutputStreamMute(int32_t uid, bool setMute)
+{
+    AUDIO_INFO_LOG("In");
+    return AudioSystemClientPolicyManager::GetInstance().SetAncoSourceOutputStreamMute(uid, setMute);
+}
+
 int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback)
 {
     return AudioSystemClientPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);

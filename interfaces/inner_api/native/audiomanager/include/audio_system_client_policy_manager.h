@@ -135,6 +135,7 @@ public:
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
     int32_t SetBackgroundMuteCallback(const std::shared_ptr<AudioBackgroundMuteCallback> &callback);
     int32_t SetQueryBundleNameListCallback(const std::shared_ptr<AudioQueryBundleNameListCallback> &callback);
+    int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
 
     /**
      * @brief Set system sound uri
