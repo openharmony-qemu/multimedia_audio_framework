@@ -301,7 +301,7 @@ You can use the APIs provided in [**audio_stream_manager.h**](https://gitee.com/
     ```
 #### Using JavaScript APIs
 JavaScript applications can call the audio management APIs to control the volume and devices.  
-For details, see [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis-audio-kit/js-apis-audio.md#audiomanager).
+For details, see [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis/js-apis-audio.md#audiomanager).
 
 ### Bluetooth SCO Call
 You can use the APIs provided in [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) to implement Bluetooth calls over synchronous connection-oriented (SCO) links.
