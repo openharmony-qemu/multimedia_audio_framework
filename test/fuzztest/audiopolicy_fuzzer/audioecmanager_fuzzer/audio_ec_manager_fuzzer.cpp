@@ -437,6 +437,108 @@ void ReloadSourceSoftLinkFuzzTest(FuzzedDataProvider& fdp)
     ecManager.ReloadSourceSoftLink(pipeInfo, moduleInfo);
 }
 
+void GetEcFeatureEnableFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.GetEcFeatureEnable();
+}
+
+void ReloadSourceForInputPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    uint32_t targetSessionId = g_fuzzUtils.GetData<uint32_t>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.ReloadSourceForInputPipe(pipeInfo, targetSessionId);
+}
+
+void SetPrimaryMicModuleInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "primary_mic_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.SetPrimaryMicModuleInfo(moduleInfo);
+}
+
+void UpdateStreamEcAndMicRefInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+}
+
+void SetOpenedNormalSourceFuzzTest(FuzzedDataProvider& fdp)
+{
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.SetOpenedNormalSource(sourceType);
+}
+
+void SetOpenedNormalSourceSessionIdFuzzTest(FuzzedDataProvider& fdp)
+{
+    uint64_t sessionId = g_fuzzUtils.GetData<uint64_t>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.SetOpenedNormalSourceSessionId(sessionId);
+}
+
+void UpdateStreamEcInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateStreamEcInfo(moduleInfo, sourceType);
+}
+
+void UpdateStreamMicRefInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateStreamMicRefInfo(moduleInfo, sourceType);
+}
+
+void IsValidSourcePipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    pipeInfo->name_ = "primary_input";
+    bool isFromEcMicRef = g_fuzzUtils.GetData<bool>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.IsValidSourcePipe(pipeInfoInfo, isFromEcMicRef);
+}
+
+void UpdateModuleInfoForPrimaryFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.adapterName = "primary";
+    PipeStreamPropInfo targetInfo;
+    targetInfo.channels_ = g_fuzzUtils.GetData<uint32_t>();
+    targetInfo.sampleRate_ = g_fuzzUtils.GetData<uint32_t>();
+    targetInfo.format_ = g_fuzzUtils.GetData<AudioSampleFormat>();
+    targetInfo.bufferSize_ = g_fuzzUtils.GetData<uint32_t>();
+    targetInfo.channelLayout_ = g_fuzzUtils.GetData<uint32_t>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateModuleInfoForPrimary(moduleInfo, targetInfo);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -470,6 +572,16 @@ void Test(FuzzedDataProvider& fdp)
     UpdateModuleInfoForMicRefFuzzTest,
     UpdateArmModuleInfoWithdataFuzzTest,
     ReloadSourceSoftLinkFuzzTest,
+    GetEcFeatureEnableFuzzTest
+    ReloadSourceForInputPipeFuzzTest,
+    SetPrimaryMicModuleInfoFuzzTest,
+    UpdateStreamEcAndMicRefInfoFuzzTest,
+    SetOpenedNormalSourceFuzzTest,
+    SetOpenedNormalSourceSessionIdFuzzTest,
+    UpdateStreamEcInfoFuzzTest,
+    UpdateStreamMicRefInfoFuzzTest,
+    IsValidSourcePipeFuzzTest,
+    UpdateModuleInfoForPrimaryFuzzTest,
 });
     func(fdp);
 }
