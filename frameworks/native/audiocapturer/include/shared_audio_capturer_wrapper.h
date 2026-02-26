@@ -30,6 +30,21 @@ public:
     {
     }
 
+    int32_t StartApi() override
+    {
+        return sharedAudioCapturer_->StartApi();
+    }
+
+    int32_t StopApi() const override
+    {
+        return sharedAudioCapturer_->StopApi();
+    }
+
+    int32_t ReleaseApi() override
+    {
+        return sharedAudioCapturer_->ReleaseApi();
+    }
+
     int32_t SetParams(const AudioCapturerParams params) override
     {
         return sharedAudioCapturer_->SetParams(params);
@@ -312,6 +327,23 @@ public:
     SharedCapturerWrapper(SharedCapturerWrapper&&) = delete;
     SharedCapturerWrapper& operator=(const SharedCapturerWrapper&) = delete;
     SharedCapturerWrapper& operator=(SharedCapturerWrapper&&) = delete;
+
+private:
+    int32_t StartImpl() override
+    {
+        return SUCCESS;
+    }
+
+    int32_t StopImpl() const override
+    {
+        return SUCCESS;
+    }
+
+    int32_t ReleaseImpl() override
+    {
+        return SUCCESS;
+    }
+
 private:
     std::shared_ptr<AudioCapturer> sharedAudioCapturer_;
 };

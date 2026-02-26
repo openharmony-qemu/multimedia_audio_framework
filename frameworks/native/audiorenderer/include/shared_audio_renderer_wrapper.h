@@ -24,6 +24,35 @@ namespace OHOS {
 namespace AudioStandard {
 class SharedAudioRendererWrapper : public AudioRenderer {
 public:
+    int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return sharedAudioRenderer_->StartApi(cmdType);
+    }
+    
+    int32_t DrainApi() const override
+    {
+        return sharedAudioRenderer_->DrainApi();
+    }
+
+    int32_t FlushApi() const override
+    {
+        return sharedAudioRenderer_->FlushApi();
+    }
+
+    int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return sharedAudioRenderer_->PauseApi(cmdType);
+    }
+
+    int32_t StopApi() override
+    {
+        return sharedAudioRenderer_->StopApi();
+    }
+
+    int32_t ReleaseApi() override
+    {
+        return sharedAudioRenderer_->ReleaseApi();
+    }
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override
     {
         sharedAudioRenderer_->SetAudioPrivacyType(privacyType);
@@ -113,7 +142,6 @@ public:
     {
         return sharedAudioRenderer_->PauseTransitent(cmdType);
     }
-
     bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
     {
         return sharedAudioRenderer_->Pause(cmdType);
@@ -517,6 +545,38 @@ public:
     SharedAudioRendererWrapper &operator=(const SharedAudioRendererWrapper &) = delete;
     SharedAudioRendererWrapper(SharedAudioRendererWrapper &&) = delete;
     SharedAudioRendererWrapper &operator=(SharedAudioRendererWrapper &&) = delete;
+
+private:
+    int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return SUCCESS;
+    }
+    
+    int32_t DrainImpl() const override
+    {
+        return SUCCESS;
+    }
+
+    int32_t FlushImpl() const override
+    {
+        return SUCCESS;
+    }
+
+    int32_t PauseImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t StopImpl() override
+    {
+        return SUCCESS;
+    }
+
+    int32_t ReleaseImpl() override
+    {
+        return SUCCESS;
+    }
+
 private:
     std::shared_ptr<AudioRenderer> sharedAudioRenderer_ = nullptr;
 };

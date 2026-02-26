@@ -34,6 +34,7 @@
 #include "taihe_audio_renderer_policy_service_died_callback.h"
 #include "taihe_audio_renderer_write_data_callback.h"
 #include "audio_utils.h"
+#include "audio_errors.h"
 
 namespace ANI::Audio {
 std::unique_ptr<OHOS::AudioStandard::AudioRendererOptions> AudioRendererImpl::sRendererOptions_ = nullptr;
@@ -154,9 +155,9 @@ void AudioRendererImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    bool ret = audioRenderer_->Start();
-    if (!ret) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    int32_t ret = audioRenderer_->StartApi();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -207,9 +208,9 @@ void AudioRendererImpl::DrainSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    bool ret = audioRenderer_->Drain();
-    if (!ret) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Drain failure!");
+    int32_t ret = audioRenderer_->DrainApi();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -220,9 +221,9 @@ void AudioRendererImpl::FlushSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    bool ret = audioRenderer_->Flush();
-    if (!ret) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "Flush failure!");
+    int32_t ret = audioRenderer_->FlushApi();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -233,9 +234,9 @@ void AudioRendererImpl::PauseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    bool ret = audioRenderer_->Pause();
-    if (!ret) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Pause failure!");
+    int32_t ret = audioRenderer_->PauseApi();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -246,9 +247,9 @@ void AudioRendererImpl::StopSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    bool ret = audioRenderer_->Stop();
-    if (!ret) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Stop failure!");
+    int32_t ret = audioRenderer_->StopApi();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -259,9 +260,9 @@ void AudioRendererImpl::ReleaseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    bool ret = audioRenderer_->Release();
-    if (!ret) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Release failure!");
+    int32_t ret = audioRenderer_->ReleaseApi();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }

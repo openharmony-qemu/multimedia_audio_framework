@@ -809,7 +809,7 @@ int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
     return SUCCESS;
 }
 
-bool AudioCapturerPrivate::Start()
+int32_t AudioCapturerPrivate::StartImpl()
 {
     AsyncCheckAudioCapturer("Start");
     Trace trace("KeyAction AudioCapturer::Start" + std::to_string(sessionID_));
@@ -822,21 +822,21 @@ bool AudioCapturerPrivate::Start()
 
     CapturerState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == CAPTURER_PREPARED) || (state == CAPTURER_STOPPED) || (state == CAPTURER_PAUSED),
-        false, "Start failed. Illegal state %{public}u.", state);
+        ERR_ILLEGAL_STATE, "Start failed. Illegal state %{public}u.", state);
 
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE, "Operation failed, in switching");
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        audioInterrupt_.streamId != INVALID_SESSION_ID, false);
+        audioInterrupt_.streamId != INVALID_SESSION_ID, ERR_ILLEGAL_STATE);
     std::unique_lock<std::mutex> audioInterruptLock(audioInterruptMutex_);
     AudioInterrupt audioInterrupt = audioInterrupt_;
     audioInterruptLock.unlock();
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, false, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
 
     // When the cellular call stream is starting, only need to activate audio interrupt.
-    CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, true);
-    CHECK_AND_RETURN_RET(audioStream_ != nullptr, false, "audioStream_ is null");
+    CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, SUCCESS);
+    CHECK_AND_RETURN_RET(audioStream_ != nullptr, ERROR, "audioStream_ is null");
     if (state == CAPTURER_STOPPED && getuid() == UID_MEDIA_SA) {
         AUDIO_INFO_LOG("Media SA is startting, flush data.");
         audioStream_->FlushAudioStream();
@@ -850,7 +850,7 @@ bool AudioCapturerPrivate::Start()
         }
     }
 
-    return result;
+    return result ? SUCCESS : ERROR;
 }
 
 int32_t AudioCapturerPrivate::Read(uint8_t &buffer, size_t userSize, bool isBlockingRead)
@@ -908,7 +908,7 @@ bool AudioCapturerPrivate::Pause() const
     return audioStream_->PauseAudioStream();
 }
 
-bool AudioCapturerPrivate::Stop() const
+int32_t AudioCapturerPrivate::StopImpl() const
 {
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
@@ -916,7 +916,7 @@ bool AudioCapturerPrivate::Stop() const
     }
     Trace trace("KeyAction AudioCapturer::Stop" + std::to_string(sessionID_));
     HILOG_COMM_INFO("StreamClientState for Capturer::Stop. id %{public}u", sessionID_);
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Operation failed, in switching");
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE, "Operation failed, in switching");
 
     WriteOverflowEvent();
     int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
@@ -924,9 +924,9 @@ bool AudioCapturerPrivate::Stop() const
         AUDIO_WARNING_LOG("AudioCapturer: DeactivateAudioInterrupt Failed");
     }
 
-    CHECK_AND_RETURN_RET(isVoiceCallCapturer_ != true, true);
+    CHECK_AND_RETURN_RET(isVoiceCallCapturer_ != true, SUCCESS);
 
-    return audioStream_->StopAudioStream();
+    return audioStream_->StopAudioStream() ? SUCCESS : ERROR;
 }
 
 bool AudioCapturerPrivate::Flush() const
@@ -938,7 +938,7 @@ bool AudioCapturerPrivate::Flush() const
     return currentStream->FlushAudioStream();
 }
 
-bool AudioCapturerPrivate::Release()
+int32_t AudioCapturerPrivate::ReleaseImpl()
 {
     Trace trace("KeyAction AudioCapturer::Release" + std::to_string(sessionID_));
     HILOG_COMM_INFO("StreamClientState for Capturer::Release. id %{public}u", sessionID_);
@@ -948,9 +948,9 @@ bool AudioCapturerPrivate::Release()
     }
     abortRestore_ = true;
     std::lock_guard<std::mutex> lock(lock_);
-    CHECK_AND_RETURN_RET_LOG(isValid_, false, "Release when capturer invalid");
+    CHECK_AND_RETURN_RET_LOG(isValid_, ERR_ILLEGAL_STATE, "Release when capturer invalid");
 
-    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audioStream_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
     audioInterrupt_.state = State::RELEASED;
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
@@ -959,7 +959,7 @@ bool AudioCapturerPrivate::Release()
 
     RemoveCapturerPolicyServiceDiedCallback();
 
-    return audioStream_->ReleaseAudioStream();
+    return audioStream_->ReleaseAudioStream() ? SUCCESS : ERROR;
 }
 
 int32_t AudioCapturerPrivate::GetBufferSize(size_t &bufferSize) const

@@ -1180,7 +1180,7 @@ bool AudioRendererPrivate::WaitSwitchStreamIfNeeded(bool needWait)
     return true;
 }
 
-bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
+int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
 {
     Trace trace("KeyAction AudioRenderer::Start " + std::to_string(sessionID_));
     AsyncCheckAudioRenderer("Start", true);
@@ -1197,20 +1197,20 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
     bool silentControl = false;
     CHECK_AND_CALL_FUNC_RETURN_RET(IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
-        false, HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
+        ERR_PERMISSION_DENIED, HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
     RendererState state = GetStatusInner();
     CHECK_AND_CALL_FUNC_RETURN_RET((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) ||
-        (state == RENDERER_PAUSED), false, HILOG_COMM_ERROR("[Start]Start failed. Illegal state:%{public}u", state));
+        (state == RENDERER_PAUSED), ERR_ILLEGAL_STATE,
+        HILOG_COMM_ERROR("[Start]Start failed. Illegal state:%{public}u", state));
 
-    CHECK_AND_CALL_FUNC_RETURN_RET(!isSwitching_, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(!isSwitching_, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Start]Start failed. Switching state: %{public}d", isSwitching_));
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT || audioInterrupt_.streamId == INVALID_SESSION_ID) {
-        return false;
+        return ERR_ILLEGAL_STATE;
     }
 
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioStream_ != nullptr, false,
-        HILOG_COMM_ERROR("[Start]audio stream is null"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioStream_ != nullptr, ERROR, HILOG_COMM_ERROR("[Start]audio stream is null"));
 
     float duckVolume = audioStream_->GetDuckVolume();
     bool isMute = audioStream_->GetMute() || silentControl;
@@ -1229,16 +1229,16 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, false, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
     }
 
     if (IsNoStreamRenderer()) {
         // no stream renderer only need to activate audio interrupt
         state_ = RENDERER_RUNNING;
-        return true;
+        return SUCCESS;
     }
 
-    return GetStartStreamResult(cmdType);
+    return GetStartStreamResult(cmdType) ? SUCCESS : ERROR;
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
@@ -1303,20 +1303,20 @@ bool AudioRendererPrivate::GetAudioPosition(Timestamp &timestamp, Timestamp::Tim
     return currentStream->GetAudioPosition(timestamp, base);
 }
 
-bool AudioRendererPrivate::Drain() const
+int32_t AudioRendererPrivate::DrainImpl() const
 {
     Trace trace("KeyAction AudioRenderer::Drain");
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->DrainAudioStream();
+    return currentStream->DrainAudioStream() ? SUCCESS : ERROR;
 }
 
-bool AudioRendererPrivate::Flush() const
+int32_t AudioRendererPrivate::FlushImpl() const
 {
     Trace trace("KeyAction AudioRenderer::Flush " + std::to_string(sessionID_));
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    return currentStream->FlushAudioStream();
+    return currentStream->FlushAudioStream() ? SUCCESS : ERROR;
 }
 
 bool AudioRendererPrivate::PauseTransitent(StateChangeCmdType cmdType)
@@ -1377,7 +1377,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
     return true;
 }
 
-bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
+int32_t AudioRendererPrivate::PauseImpl(StateChangeCmdType cmdType)
 {
     Trace trace("KeyAction AudioRenderer::Pause " + std::to_string(sessionID_));
     AudioXCollie audioXCollie("AudioRenderer::Pause", TIME_OUT_SECONDS,
@@ -1390,7 +1390,8 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
     }
     HILOG_COMM_INFO("StreamClientState for Renderer::Pause. id: %{public}u", sessionID_);
 
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false, "Pause failed. Switching state: %{public}d", isSwitching_);
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE, "Pause failed. Switching state: %{public}d",
+        isSwitching_);
 
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
@@ -1398,11 +1399,11 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
             AUDIO_ERR_LOG("DeactivateAudioInterrupt Failed");
         }
         state_ = RENDERER_PAUSED;
-        return true;
+        return SUCCESS;
     }
 
     RendererState state = GetStatusInner();
-    CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_RUNNING, false,
+    CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_RUNNING, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Pause]State of stream is not running. Illegal state:%{public}u", state));
     bool result = audioStream_->PauseAudioStream(cmdType);
     if (result) {
@@ -1416,10 +1417,10 @@ bool AudioRendererPrivate::Pause(StateChangeCmdType cmdType)
     }
     (void)audioStream_->SetDuckVolume(1.0f);
 
-    return result;
+    return result ? SUCCESS : ERROR;
 }
 
-bool AudioRendererPrivate::Stop()
+int32_t AudioRendererPrivate::StopImpl()
 {
     Trace trace("KeyAction AudioRenderer::Stop " + std::to_string(sessionID_));
     HILOG_COMM_INFO("StreamClientState for Renderer::Stop. id: %{public}u", sessionID_);
@@ -1427,7 +1428,7 @@ bool AudioRendererPrivate::Stop()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
@@ -1435,7 +1436,7 @@ bool AudioRendererPrivate::Stop()
             AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
         }
         state_ = RENDERER_STOPPED;
-        return true;
+        return SUCCESS;
     }
 
     WriteUnderrunEvent();
@@ -1449,7 +1450,7 @@ bool AudioRendererPrivate::Stop()
     }
     (void)audioStream_->SetDuckVolume(1.0f);
 
-    return result;
+    return result ? SUCCESS : ERROR;
 }
 
 void AudioRendererPrivate::SetReleaseFlagWithLock(bool releaseFlag)
@@ -1463,7 +1464,7 @@ void AudioRendererPrivate::SetReleaseFlagNoLock(bool releaseFlag)
     releaseFlag_ = releaseFlag;
 }
 
-bool AudioRendererPrivate::Release()
+int32_t AudioRendererPrivate::ReleaseImpl()
 {
     Trace trace("KeyAction AudioRenderer::Release " + std::to_string(sessionID_));
 
@@ -1482,7 +1483,7 @@ bool AudioRendererPrivate::Release()
     if (audioStream_ == nullptr) {
         AUDIO_ERR_LOG("audioStream is null");
         SetReleaseFlagNoLock(false);
-        return true;
+        return ERR_ILLEGAL_STATE;
     }
     bool result = audioStream_->ReleaseAudioStream();
 
@@ -1503,7 +1504,7 @@ bool AudioRendererPrivate::Release()
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback();
 
-    return result;
+    return result ? SUCCESS : ERROR;
 }
 
 int32_t AudioRendererPrivate::GetBufferSize(size_t &bufferSize) const

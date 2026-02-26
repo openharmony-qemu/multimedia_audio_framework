@@ -22,6 +22,7 @@
 #include "microphone_descriptor.h"
 #include "timestamp.h"
 #include "audio_capturer_options.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -385,7 +386,16 @@ public:
      * @return Returns <b>true</b> if the capturing is successfully started; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Start() = 0;
+    virtual bool Start() { return StartImpl() == SUCCESS; }
+
+    /**
+     * @brief Starts audio capturing.
+     *
+     * @return Returns {@link SUCCESS} if the capturing is successfully started; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t StartApi() { return StartImpl(); }
 
     /**
      * @brief capture audio data.
@@ -448,7 +458,16 @@ public:
      * @return Returns <b>true</b> if the capturing is successfully stopped; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Stop() const = 0;
+    virtual bool Stop() const { return StopImpl() == SUCCESS; }
+
+    /**
+     * @brief Stops audio capturing.
+     *
+     * @return Returns {@link SUCCESS} if the capturing is successfully stopped; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t StopApi() const { return StopImpl(); }
     /**
      * @brief flush capture stream.
      *
@@ -463,7 +482,16 @@ public:
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Release() = 0;
+    virtual bool Release() { return ReleaseImpl() == SUCCESS; }
+
+    /**
+     * @brief Releases a local <b>AudioCapturer</b> object.
+     *
+     * @return Returns {@link SUCCESS} if the object is successfully released; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t ReleaseApi() { return ReleaseImpl(); }
 
     /**
      * @brief Obtains a reasonable minimum buffer size for capturer, however, the capturer can
@@ -791,6 +819,9 @@ protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
 
 private:
+    virtual int32_t StartImpl() = 0;
+    virtual int32_t StopImpl() const = 0;
+    virtual int32_t ReleaseImpl() = 0;
     static void SendCapturerCreateError(const SourceType &sourceType,
         const int32_t &errorCode);
 };

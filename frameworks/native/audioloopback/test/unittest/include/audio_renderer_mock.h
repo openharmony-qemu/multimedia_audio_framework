@@ -129,6 +129,12 @@ public:
     MOCK_METHOD(RenderTarget, GetTarget, (), (const, override));
     MOCK_METHOD(int32_t, GetKeepRunning, (bool &keepRunning), (const, override));
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
+    MOCK_METHOD(int32_t, StartImpl, (StateChangeCmdType cmdType), (override));
+    MOCK_METHOD(int32_t, DrainImpl, (), (const, override));
+    MOCK_METHOD(int32_t, FlushImpl, (), (const, override));
+    MOCK_METHOD(int32_t, PauseImpl, (StateChangeCmdType cmdType), (override));
+    MOCK_METHOD(int32_t, StopImpl, (), (override));
+    MOCK_METHOD(int32_t, ReleaseImpl, (), (override));
 };
 
 } // namespace AudioStandard
