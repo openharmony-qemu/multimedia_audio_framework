@@ -836,7 +836,7 @@ int32_t AudioCapturerPrivate::StartImpl()
 
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, SUCCESS);
-    CHECK_AND_RETURN_RET(audioStream_ != nullptr, ERROR, "audioStream_ is null");
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR, "audioStream_ is null");
     if (state == CAPTURER_STOPPED && getuid() == UID_MEDIA_SA) {
         AUDIO_INFO_LOG("Media SA is startting, flush data.");
         audioStream_->FlushAudioStream();
