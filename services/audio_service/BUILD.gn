@@ -886,6 +886,7 @@ ohos_shared_library("audio_sasdk") {
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "ipc:ipc_single",
+    "samgr:samgr_proxy",
   ]
 
   version_script = "../../audio_framework.versionscript"
@@ -939,6 +940,7 @@ ohos_executable("audio_process_client_test") {
     "hilog:libhilog",
     "init:libbegetutil",
     "eventhandler:libeventhandler",
+    "samgr:samgr_proxy",
   ]
 
   part_name = "audio_framework"
