@@ -17,8 +17,8 @@
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "audio_stream_monitor.h"
-#include "volume_tools.h"
 #include "audio_stream_checker_thread.h"
+#include "volume_tools.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -146,6 +146,7 @@ void AudioStreamChecker::OnRemoteAppDied(const int32_t pid)
     AUDIO_INFO_LOG("Delete check para end when remote app died, pid = %{public}d", pid);
 }
 
+
 void AudioStreamChecker::CheckVolume()
 {
     std::lock_guard<std::mutex> lock(volumeLock_);
@@ -179,7 +180,7 @@ void AudioStreamChecker::MonitorCheckFrame()
         return;
     }
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
-    for (int32_t index = 0; index < checkParaVector_.size(); index++) {
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
         MonitorCheckFrameSub(checkParaVector_[index]);
     }
 }
@@ -318,13 +319,14 @@ void AudioStreamChecker::InitCallbackInfo(DataTransferStateChangeType type,
     callbackInfo.stateChangeType = type;
     callbackInfo.clientPid = streamConfig_.appInfo.appPid;
     callbackInfo.clientUID = streamConfig_.appInfo.appUid;
-    callbackInfo.streamUsage = streamConfig_.rendererInfo.streamUsage;
-    callbackInfo.sessionId = streamConfig_.originalSessionId;
+    callbackInfo.audioMode = streamConfig_.audioMode;
+    callbackInfo.streamUsage = streamConfig_.audioMode == AUDIO_MODE_PLAYBACK ?
+        streamConfig_.rendererInfo.streamUsage : static_cast<StreamUsage>(streamConfig_.capturerInfo.sourceType);
+    callbackInfo.sessionId = static_cast<int32_t>(streamConfig_.originalSessionId);
     {
         std::lock_guard<std::recursive_mutex> lock(backgroundStateLock_);
         callbackInfo.isBackground = isBackground_;
     }
-    callbackInfo.audioMode = streamConfig_.audioMode;
 }
 
 void AudioStreamChecker::MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback, CheckerParam &para)
@@ -356,7 +358,8 @@ bool AudioStreamChecker::IsMonitorMuteFrame(const CheckerParam &para)
 {
     AUDIO_INFO_LOG("badDataTransferTypeBitMap = %{public}d", para.para.badDataTransferTypeBitMap);
     if (para.hasInitCheck) {
-        return para.para.badDataTransferTypeBitMap & (1 << SILENCE_DATA_TRANS);
+        return static_cast<uint32_t>(para.para.badDataTransferTypeBitMap) &
+            (1 << static_cast<uint32_t>(SILENCE_DATA_TRANS));
     }
     return false;
 }
@@ -365,7 +368,8 @@ bool AudioStreamChecker::IsMonitorNoDataFrame(const CheckerParam &para)
 {
     AUDIO_INFO_LOG("badDataTransferTypeBitMap = %{public}d", para.para.badDataTransferTypeBitMap);
     if (para.hasInitCheck) {
-        return para.para.badDataTransferTypeBitMap & (1 << NO_DATA_TRANS);
+        return static_cast<uint32_t>(para.para.badDataTransferTypeBitMap) &
+            (1 << static_cast<uint32_t>(NO_DATA_TRANS));
     }
     return false;
 }

@@ -143,9 +143,9 @@ typedef enum {
      */
     AUDIOSTREAM_SAMPLE_S32LE = 3,
     /**
-     * 32 bit IEEE floating point, little endian.
+     * Float 32, little endian.
      *
-     * @since 16
+     * @since 18
      */
     AUDIOSTREAM_SAMPLE_F32LE = 4,
 } OH_AudioStream_SampleFormat;
@@ -583,7 +583,7 @@ typedef enum {
      */
     AUDIOSTREAM_SOURCE_TYPE_UNPROCESSED = 14,
     /**
-     * live broadcast source type.
+     * Live Broadcast source type.
      *
      * @since 20
      */
@@ -591,7 +591,7 @@ typedef enum {
 } OH_AudioStream_SourceType;
 
 /**
- * Defines the audio interrupt mode.
+ * @brief Defines the audio interrupt mode.
  *
  * @since 12
  */
@@ -890,9 +890,9 @@ typedef enum {
  * @since 12
  */
 typedef enum {
-    /** Result of audio data callabck is invalid. */
+    /** Result of audio data callback is invalid. */
     AUDIO_DATA_CALLBACK_RESULT_INVALID = -1,
-    /** Result of audio data callabck is valid. */
+    /** Result of audio data callback is valid. */
     AUDIO_DATA_CALLBACK_RESULT_VALID = 0,
 } OH_AudioData_Callback_Result;
 
@@ -962,33 +962,42 @@ typedef enum {
     AUDIOSTREAM_LATENCY_TYPE_HARDWARE = 2
 } OH_AudioStream_LatencyType;
 
+/**
+ * @brief Defines mode for playback capture, each mode means different target
+ * streams to capture.
+ *
+ * @since 23
+ */
 typedef enum {
     /**
-     * default mode".
-     *
+     * Default mode. Capture most of the audio streams, except tone streams and privacy streams.
      * @since 23
      */
     AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT = 0x0,
     /**
-     * media mode.
-     *
+     * Media mode. Capture media, voice message and also unknown streams.
      * @since 23
      */
     AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA = 0x1,
     /**
-     * Self-exclusion mode.
-     *
+     * Excluding self mode. Cpature streams excluding the audio played by application itself.
      * @since 23
      */
     AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF = 0x8000,
 } OH_AudioStream_PlaybackCaptureMode;
- 
+
+/**
+ * @brief Defines the playback capture start state, which is returned asynchronously
+ * after calling {@link #OH_AudioCapturer_RequestPlaybackCaptureStart} function.
+ *
+ * @since 23
+ */
 typedef enum {
-    /**
-     * Internal recording started successfully.
-     *
-     * @since 23
-     */
+/**
+ * Start playback capture success state.
+ *
+ * @since 23
+ */
     AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_SUCCESS = 0,
 /**
  * Start playback capture failed state, because the request for interrupt is denied
