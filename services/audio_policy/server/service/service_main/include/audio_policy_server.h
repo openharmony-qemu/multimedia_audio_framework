@@ -302,6 +302,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) override;
+
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;

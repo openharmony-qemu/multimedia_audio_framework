@@ -1199,6 +1199,7 @@ public:
     std::string GetSelfBundleName();
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+    int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);

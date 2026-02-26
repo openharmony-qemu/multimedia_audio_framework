@@ -166,6 +166,7 @@ public:
     static bool IsFoldAble(const char ch);
     static void UpdateBGSet();
     static bool VerifyIsAudio();
+    static bool VerifyIsAudioBroker();
     static bool VerifyIsShell();
     static bool VerifyIsSystemApp();
     static bool VerifySelfPermission();
