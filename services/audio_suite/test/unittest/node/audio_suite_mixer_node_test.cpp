@@ -396,8 +396,8 @@ HWTEST_F(AudioSuiteMixerTest, ReadProcessNodePreOutputData_EmptyInputs, TestSize
     node->Init();
     node->InitCacheLength(NEED_DATA_LENGTH);
 
-    auto &preOutputs = node->ReadProcessNodePreOutputData();
-    EXPECT_TRUE(preOutputs.empty());
+    node->ReadProcessNodePreOutputData();
+    EXPECT_TRUE(node->preNodeResult_.empty());
 }
 
 HWTEST_F(AudioSuiteMixerTest, CollectPullResults_NullPreNode, TestSize.Level0)
