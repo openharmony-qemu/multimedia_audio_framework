@@ -75,6 +75,7 @@ if (!audio_framework_feature_dtmf_tone) {
       "hilog:libhilog",
       "init:libbegetutil",
       "ipc:ipc_single",
+      "samgr:samgr_proxy",
     ]
 
     if (audio_telephony_core_service_enable) {
