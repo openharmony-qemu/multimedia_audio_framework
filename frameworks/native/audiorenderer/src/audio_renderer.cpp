@@ -1199,14 +1199,14 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     CHECK_AND_CALL_FUNC_RETURN_RET(IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
         ERR_PERMISSION_DENIED, HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
     RendererState state = GetStatusInner();
-    CHECK_AND_CALL_FUNC_RETURN_RET((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) ||
-        (state == RENDERER_PAUSED), ERR_ILLEGAL_STATE,
-        HILOG_COMM_ERROR("[Start]Start failed. Illegal state:%{public}u", state));
+    CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED,
+        ERR_ILLEGAL_STATE, HILOG_COMM_ERROR("[Start]Start failed. Illegal state:%{public}u", state));
 
     CHECK_AND_CALL_FUNC_RETURN_RET(!isSwitching_, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Start]Start failed. Switching state: %{public}d", isSwitching_));
 
-    if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT || audioInterrupt_.streamId == INVALID_SESSION_ID) {
+    if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
+        audioInterrupt_.streamId == INVALID_SESSION_ID) {
         return ERR_ILLEGAL_STATE;
     }
 

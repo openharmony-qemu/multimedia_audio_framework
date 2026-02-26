@@ -84,8 +84,11 @@ public:
     MOCK_METHOD(int32_t, SetInterruptStrategy, (InterruptStrategy strategy), (override));
     MOCK_METHOD(void, SetInterruptEventCallbackType, (InterruptEventCallbackType callbackType), (override));
     MOCK_METHOD(int32_t, StartImpl, (), (override));
-    MOCK_METHOD(int32_t, StopImpl, (), (override));
+    MOCK_METHOD(int32_t, StopImpl, (), (const, override));
     MOCK_METHOD(int32_t, ReleaseImpl, (), (override));
+    MOCK_METHOD(int32_t, StartApi, (), (override));
+    MOCK_METHOD(int32_t, StopApi, (), (const, override));
+    MOCK_METHOD(int32_t, ReleaseApi, (), (override));
 };
 
 } // namespace AudioStandard
