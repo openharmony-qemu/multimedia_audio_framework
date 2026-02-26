@@ -346,4 +346,3 @@ void VACaptureSource::DumpInfo(std::string &dumpString)
 }
 
 } // namespace AudioStandard
-} // namespace OHOS
