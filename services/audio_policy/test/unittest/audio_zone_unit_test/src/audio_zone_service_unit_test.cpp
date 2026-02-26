@@ -141,7 +141,8 @@ HWTEST_F(AudioZoneServiceUnitTest, HasVolumeControllableDeviceInZone_001, TestSi
     );
     desc->volumeBehavior_.isVolumeControlDisabled = false;
     devices.push_back(desc);
-    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId, devices);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
+    audioZone->AddDeviceDescriptor(devices);
     EXPECT_EQ(AudioZoneService::GetInstance().HasVolumeControllableDeviceInAudioZone(), true);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
