@@ -49,10 +49,10 @@ public:
     void OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs);
     void OnVoipConfigParsed(bool enableFastVoip);
     void OnUpdateRouteSupport(bool isSupported);
-    void OnUpdateDefaultAdapter(bool isEnable);
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
+    void OnMultSupMode(bool supportMultSupMode);
     void OnSupportUltraFast(bool supportUltraFast);
     
     // update
@@ -82,7 +82,6 @@ public:
     void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
     bool GetVoipConfig();
     bool GetUpdateRouteSupport();
-    bool GetDefaultAdapterEnable();
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
@@ -107,6 +106,7 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
+    bool GetSupportMultSupMode();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoForMultiChannel(
         std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
@@ -149,7 +149,6 @@ private:
     std::unordered_map<ClassType, AudioModuleInfo> dynamicCapturerConfig_ = {};
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
-    bool isDefaultAdapterEnable_ = false;
     bool isSupportEac3_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
@@ -159,6 +158,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     AudioSampleFormat fastFormat_ = SAMPLE_S16LE;
     bool normalVoipFlag_ = false;
+    bool supportMultSupMode_ = false;
     bool supportUltraFast_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;

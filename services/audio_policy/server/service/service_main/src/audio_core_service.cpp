@@ -475,6 +475,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_VOIP;
             return;
         case AUDIO_FLAG_ULTRA_FAST:
+            streamDesc->ResetUltraFastFlag();
             CHECK_AND_RETURN(!IsSupportUltraFast(streamDesc));
             break;
         default:
@@ -917,12 +918,7 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(
             forceFetch = true;
         }
     }
-    if (forceFetch) {
-        FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
-            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
-    }
-
-    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType);
+    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch);
 }
 
 bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)

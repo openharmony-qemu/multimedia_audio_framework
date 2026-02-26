@@ -27,10 +27,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AUDIOSESSION_CALLBACK_NAME = "audioSessionDeactivated";
-const std::string AUDIOSESSION_STATE_CALLBACK_NAME = "audioSessionStateChanged";
-const std::string AUDIOSESSION_DEVICE_CALLBACK_NAME = "currentOutputDeviceChanged";
-const std::string AUDIOSESSION_INPUT_DEVICE_CALLBACK_NAME = "currentInputDeviceChanged";
+inline const std::string AUDIOSESSION_CALLBACK_NAME = "audioSessionDeactivated";
+inline const std::string AUDIOSESSION_STATE_CALLBACK_NAME = "audioSessionStateChanged";
+inline const std::string AUDIOSESSION_DEVICE_CALLBACK_NAME = "currentOutputDeviceChanged";
+inline const std::string AUDIOSESSION_INPUT_DEVICE_CALLBACK_NAME = "currentInputDeviceChanged";
 
 class NapiAudioSessionMgr {
 public:

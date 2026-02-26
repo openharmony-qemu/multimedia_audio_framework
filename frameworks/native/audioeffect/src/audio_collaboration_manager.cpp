@@ -62,7 +62,7 @@ AudioCollaborationManager *AudioCollaborationManager::GetInstance()
     return &audioCollaborationManager;
 }
 
-void AudioCollaborationManager::updateCollaborativeProductId(const std::string &productId)
+void AudioCollaborationManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     auto pos = productId.find('_');

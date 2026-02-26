@@ -37,7 +37,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
     } else {
         descs = AudioDeviceManager::GetAudioDeviceManager().GetMediaRenderPublicDevices();
     }
-    shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(audioDevUsage, descs);
+    shared_ptr<AudioDeviceDescriptor> desc = GetLatestNonExcludedConnectDevice(audioDevUsage, descs, streamUsage);
     AUDIO_DEBUG_LOG("streamUsage %{public}d clientUID %{public}d fetch device %{public}d", streamUsage,
         clientUID, desc->deviceType_);
     return desc;
@@ -68,7 +68,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
         audioDevUsage = MEDIA_OUTPUT_DEVICES;
     }
 
-    shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs);
+    shared_ptr<AudioDeviceDescriptor> latestConnDesc = GetLatestNonExcludedConnectDevice(audioDevUsage, curDescs,
+        streamUsage);
     if (!latestConnDesc.get() || latestConnDesc->getType() == DEVICE_TYPE_NONE) {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
@@ -106,11 +107,6 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> PublicPriorityRouter::GetRingRend
                 break;
         }
     } else if (latestConnDesc->getType() != DEVICE_TYPE_NONE) {
-        if (audioPolicyManager_.IsDPCastingConnect() && latestConnDesc->getType() == DEVICE_TYPE_DP &&
-            streamUsage == STREAM_USAGE_ALARM) {
-            AUDIO_INFO_LOG("Wired cast scenarios, alarm clock's sound on the local device.");
-            return descs;
-        }
         descs.push_back(move(latestConnDesc));
     } else {
         descs.push_back(make_shared<AudioDeviceDescriptor>());

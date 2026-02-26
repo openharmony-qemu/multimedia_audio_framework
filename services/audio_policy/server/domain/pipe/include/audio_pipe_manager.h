@@ -59,6 +59,7 @@ public:
     void RemoveClient(uint32_t sessionId);
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescs();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllOutputStreamDescsCopy();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllInputStreamDescs();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByIoHandle(AudioIOHandle id);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescById(uint32_t sessionId);
@@ -77,6 +78,7 @@ public:
     void RemoveModemCommunicationId(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDescById(uint32_t sessionId);
     std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDesc();
+    std::shared_ptr<AudioStreamDescriptor> GetModemCommunicationStreamDescCopy();
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> GetModemCommunicationMap();
     void UpdateModemStreamStatus(AudioStreamStatus streamStatus);
     void UpdateModemStreamDevice(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
@@ -101,7 +103,7 @@ public:
     bool HasPrimarySink();
     bool HasRunningStream();
     bool HasFastOutputPipe();
-    bool IsStreamUltraFast(uint32_t sessionId);
+    bool IsStreamUseUltraFastRoute(uint32_t sessionId);
     bool HasRunningRecognitionCapturerStream();
     bool IsOnPrimaryAdapter(uint32_t sessionId);
 

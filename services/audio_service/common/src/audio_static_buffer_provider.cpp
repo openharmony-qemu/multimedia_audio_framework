@@ -68,7 +68,7 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
             IncreaseCurrentLoopTimes();
             sharedBuffer_->IncreaseBufferEndCallbackSendTimes();
             curStaticDataPos_ = 0;
-            if (IsLoopEnd()) {
+            if (currentLoopTimes_ == totalLoopTimes_) {
                 sharedBuffer_->SetIsNeedSendLoopEndCallback(true);
                 memset_s(inputData + offset, remainSize, 0, remainSize);
                 offset += remainSize;
@@ -79,7 +79,7 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
             sharedBuffer_->WakeFutex();
         }
     }
-
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     if (sharedBuffer_->IsFirstFrame()) {
         sharedBuffer_->WakeFutex();
     }
@@ -92,7 +92,6 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
 
 int32_t AudioStaticBufferProvider::ProcessFadeInOutIfNeed(int8_t *inputData, size_t requestDataLen)
 {
-    std::unique_lock<std::mutex> lock(fadeMutex_);
     CHECK_AND_RETURN_RET(needFadeIn_ || needFadeOut_, SUCCESS);
     Trace traceFade("CopyDataFromSharedBuffer " + std::string(needFadeOut_ ? "FadeOutData" : "FadeInData"));
     int32_t ret = AudioStaticBufferProcessor::ProcessFadeInOut(inputData, requestDataLen, streamInfo_, needFadeOut_);
@@ -122,50 +121,47 @@ int32_t AudioStaticBufferProvider::CheckIsValid(int8_t *inputData,
 
 void AudioStaticBufferProvider::SetStaticBufferInfo(const StaticBufferInfo &staticBufferInfo)
 {
+    std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(curStaticDataPos_ <= MAX_STATIC_BUFFER_SIZE, "SetStaticBufferInfo invalid param");
     totalLoopTimes_ = staticBufferInfo.totalLoopTimes_;
     currentLoopTimes_ = staticBufferInfo.currentLoopTimes_;
     curStaticDataPos_ = staticBufferInfo.curStaticDataPos_;
-}
-
-int32_t AudioStaticBufferProvider::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(sharedBuffer_ != nullptr, ERR_NULL_POINTER, "Not in static mode");
-    staticBufferInfo.totalLoopTimes_ = totalLoopTimes_;
-    staticBufferInfo.currentLoopTimes_ = currentLoopTimes_;
-    staticBufferInfo.curStaticDataPos_ = curStaticDataPos_;
-    staticBufferInfo.sharedMemory_ = sharedBuffer_->GetSharedMem();
-    return SUCCESS;
+    CHECK_AND_RETURN_LOG(sharedBuffer_ != nullptr, "sharedBuffer is nullptr");
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
 }
 
 void AudioStaticBufferProvider::SetProcessedBuffer(uint8_t **bufferBase, size_t bufferSize)
 {
     std::unique_lock<std::mutex> lock(eventMutex_);
     CHECK_AND_RETURN_LOG(bufferBase != nullptr, "bufferBase in SetProcessedBuffer is nullptr!");
+    CHECK_AND_RETURN_LOG(sharedBuffer_ != nullptr, "sharedBuffer is nullptr");
 
     // calculate the buffer beginning position when set renderRate
     curStaticDataPos_ = (processedBufferSize_ == 0 ? 0 : curStaticDataPos_ * 1.0 / processedBufferSize_ * bufferSize);
     uint32_t byteSizePerFrame = streamInfo_.channels * PcmFormatToBits(streamInfo_.format);
     curStaticDataPos_ = (byteSizePerFrame == 0 ? 0 : curStaticDataPos_ / byteSizePerFrame * byteSizePerFrame);
+
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     processedBuffer_ = *bufferBase;
     processedBufferSize_ = bufferSize;
 }
 
 void AudioStaticBufferProvider::SetLoopTimes(int64_t times)
 {
+    CHECK_AND_RETURN_LOG(sharedBuffer_ != nullptr, "sharedBuffer is nullptr");
     std::unique_lock<std::mutex> lock(eventMutex_);
     totalLoopTimes_ = times;
     currentLoopTimes_ = 0;
-    curStaticDataPos_ = 0;
     sharedBuffer_->ResetBufferEndCallbackSendTimes();
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     AUDIO_INFO_LOG("SetLoopTimes %{public}" PRId64, times);
 }
 
 void AudioStaticBufferProvider::RefreshBufferStatus()
 {
     // fadeout needs to be done before resfresh bufferStatus
-    if (needFadeOut_ && !IsLoopEnd()) {
+    if (needFadeOut_ && currentLoopTimes_ != totalLoopTimes_) {
         Trace trace1("RefreshBufferStatus need delay Refresh");
         delayRefreshBufferStatus_ = true;
         return;
@@ -173,6 +169,7 @@ void AudioStaticBufferProvider::RefreshBufferStatus()
     Trace trace("RefreshBufferStatus");
     currentLoopTimes_ = 0;
     curStaticDataPos_ = 0;
+    sharedBuffer_->SetStaticPlayPosition(currentLoopTimes_, curStaticDataPos_);
     sharedBuffer_->ResetBufferEndCallbackSendTimes();
     sharedBuffer_->SetIsNeedSendLoopEndCallback(false);
     AUDIO_INFO_LOG("RefreshBufferStatus, curTotalLoopTimes %{public}" PRId64, totalLoopTimes_);
@@ -199,7 +196,7 @@ int32_t AudioStaticBufferProvider::IncreaseCurrentLoopTimes()
 void AudioStaticBufferProvider::NeedProcessFadeIn()
 {
     Trace trace("NeedProcessFadeIn");
-    std::unique_lock<std::mutex> lock(fadeMutex_);
+    std::unique_lock<std::mutex> lock(eventMutex_);
     needFadeIn_ = true;
     playFinished_ = false;
 }
@@ -207,18 +204,19 @@ void AudioStaticBufferProvider::NeedProcessFadeIn()
 void AudioStaticBufferProvider::NeedProcessFadeOut()
 {
     Trace trace("NeedProcessFadeOut");
-    std::unique_lock<std::mutex> lock(fadeMutex_);
+    std::unique_lock<std::mutex> lock(eventMutex_);
     needFadeOut_ = true;
 }
 
 bool AudioStaticBufferProvider::IsLoopEnd()
 {
+    std::unique_lock<std::mutex> lock(eventMutex_);
     return currentLoopTimes_ == totalLoopTimes_;
 }
 
 bool AudioStaticBufferProvider::NeedProvideData()
 {
-    if (IsLoopEnd() || playFinished_) {
+    if (currentLoopTimes_ == totalLoopTimes_ || playFinished_) {
         Trace tracezero("GetDataFromStaticBuffer ZeroData LoopEnd");
         return false;
     }
@@ -241,6 +239,12 @@ bool AudioStaticBufferProvider::NeedProvideData()
         return false;
     }
     return true;
+}
+
+void AudioStaticBufferProvider::ResetStaticPlayPosition()
+{
+    std::unique_lock<std::mutex> lock(eventMutex_);
+    RefreshBufferStatus();
 }
 
 } // namespace AudioStandard

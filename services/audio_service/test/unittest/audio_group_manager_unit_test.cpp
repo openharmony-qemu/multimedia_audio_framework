@@ -341,31 +341,14 @@ HWTEST(AudioGroupManagerUnitTest, SetRingerMode_001, TestSize.Level1)
     audioGroupManager.netWorkId_ = LOCAL_NETWORK_ID;
     AudioRingerMode ringMode = RINGER_MODE_SILENT;
     float result = audioGroupManager.SetRingerMode(ringMode);
-    EXPECT_NE(result, 0);
+    int modeError = -1;
+    EXPECT_NE(result, modeError);
     ringMode = RINGER_MODE_NORMAL;
     result = audioGroupManager.SetRingerMode(ringMode);
-    EXPECT_NE(result, 0);
+    EXPECT_NE(result, modeError);
     ringMode = RINGER_MODE_VIBRATE;
     result = audioGroupManager.SetRingerMode(ringMode);
-    EXPECT_NE(result, 0);
-}
-
-/**
-* @tc.name  : Test AdjustVolumeByStep_001 API
-* @tc.type  : FUNC
-* @tc.number: AdjustVolumeByStep_001_001
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, AdjustVolumeByStep_001, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.netWorkId_ = LOCAL_NETWORK_ID;
-    VolumeAdjustType adjustType = VOLUME_UP;
-    float result = audioGroupManager.AdjustVolumeByStep(adjustType);
-    EXPECT_NE(result, 0);
-    adjustType = VOLUME_DOWN;
-    result = audioGroupManager.AdjustVolumeByStep(adjustType);
-    EXPECT_NE(result, 0);
+    EXPECT_NE(result, modeError);
 }
 
 /**

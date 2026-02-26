@@ -110,6 +110,7 @@ void TaiheAudioLoopbackCallback::SafeJsCallbackStatusChangeWork(AudioLoopbackJsC
         [](AudioLoopbackJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;

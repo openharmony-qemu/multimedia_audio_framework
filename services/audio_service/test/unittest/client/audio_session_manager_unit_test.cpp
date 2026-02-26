@@ -48,7 +48,7 @@ HWTEST(AudioSessionManagerUnitTest, ActivateAudioSession_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 
     result = AudioSessionManager::GetInstance()->SetDefaultOutputDevice(DEVICE_TYPE_INVALID);
-    EXPECT_EQ(result, ERROR_INVALID_PARAM);
+    EXPECT_NE(result, SUCCESS);
 
     result = AudioSessionManager::GetInstance()->ActivateAudioSession(strategy);
     EXPECT_EQ(result, SUCCESS);

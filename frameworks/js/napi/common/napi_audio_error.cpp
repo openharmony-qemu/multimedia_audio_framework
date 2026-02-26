@@ -28,6 +28,7 @@ const std::string NAPI_ERR_TIMEOUT_INFO = "time out";
 const std::string NAPI_ERR_STREAM_LIMIT_INFO = "stream number limited";
 const std::string NAPI_ERR_SYSTEM_INFO = "system error";
 const std::string NAPI_ERR_NO_PERMISSION_INFO = "permission denied";
+const std::string NAPI_ERR_UNAVAILABLE_ON_DEVICE_INFO = "unavailable on device";
 
 napi_status NapiAudioError::ThrowError(napi_env env, const char *napiMessage, int32_t napiCode)
 {
@@ -69,6 +70,21 @@ napi_value NapiAudioError::ThrowErrorAndReturn(napi_env env, int32_t errCode, co
 {
     ThrowError(env, errCode, errMessage);
     return nullptr;
+}
+
+static std::string GetMessageByCodeSubOne(int32_t &code)
+{
+    std::string errMessage;
+    switch (code) {
+        case NAPI_ERR_UNAVAILABLE_ON_DEVICE:
+            errMessage = NAPI_ERR_UNAVAILABLE_ON_DEVICE_INFO;
+            break;
+        default:
+            errMessage = NAPI_ERR_SYSTEM_INFO;
+            code = NAPI_ERR_SYSTEM;
+            break;
+    }
+    return errMessage;
 }
 
 std::string NapiAudioError::GetMessageByCode(int32_t &code)
@@ -114,8 +130,7 @@ std::string NapiAudioError::GetMessageByCode(int32_t &code)
             code = NAPI_ERR_NO_PERMISSION;
             break;
         default:
-            errMessage = NAPI_ERR_SYSTEM_INFO;
-            code = NAPI_ERR_SYSTEM;
+            errMessage = GetMessageByCodeSubOne(code);
             break;
     }
     return errMessage;

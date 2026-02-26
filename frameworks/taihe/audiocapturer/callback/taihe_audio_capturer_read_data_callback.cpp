@@ -160,6 +160,7 @@ void TaiheCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(CapturerR
         [](CapturerReadDataJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     CHECK_AND_RETURN_LOG(event->readDataCallbackPtr != nullptr, "CapturerReadDataCallback is already released");

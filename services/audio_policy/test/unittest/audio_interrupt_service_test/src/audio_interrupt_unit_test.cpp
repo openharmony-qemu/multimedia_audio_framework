@@ -25,6 +25,7 @@
 #include "binder_invoker.h"
 #include "invoker_factory.h"
 #include "ipc_thread_skeleton.h"
+#include "i_hpae_manager.h"
 
 using namespace testing::ext;
 
@@ -94,6 +95,7 @@ sptr<AudioPolicyServer> GetPolicyServerTest()
     static sptr<AudioPolicyServer> server =
         sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
     if (!g_hasServerInit) {
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -109,6 +111,138 @@ sptr<AudioPolicyServer> GetPolicyServerTest()
 }
 
 #define PRINT_LINE printf("debug __LINE__:%d\n", __LINE__)
+
+/**
+* @tc.name  : Test UpdateFocusListForInject
+* @tc.number: UpdateFocusListForInject_01
+* @tc.desc  : Test UpdateFocusListForInject
+*/
+HWTEST_F(AudioInterruptUnitTest, UpdateFocusListForInject_01, TestSize.Level1)
+{
+    auto interruptZoneManager_ = std::make_shared<AudioInterruptZoneManager>();
+    string deviceTag = "ABCDEFG";
+    AudioFocusList newFocusList;
+    AudioFocusList activeFocusList;
+    AudioFocusList oldFocusList;
+    AudioFocusIterator oldFocusIterator;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.sessionId = 100100;
+    audioInterrupt.uid = 100;
+    audioInterrupt.deviceTag = "ABCDEFG";
+    oldFocusList.emplace_back(std::make_pair(audioInterrupt, PLACEHOLDER));
+    oldFocusIterator.emplace_back(oldFocusList.begin());
+    newFocusList.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
+
+    interruptZoneManager_->UpdateFocusListForInject(deviceTag, newFocusList, activeFocusList, oldFocusIterator);
+    EXPECT_EQ(activeFocusList.size(), 1);
+}
+
+/**
+* @tc.name  : Test UpdateFocusListForInject
+* @tc.number: UpdateFocusListForInject_02
+* @tc.desc  : Test UpdateFocusListForInject
+*/
+HWTEST_F(AudioInterruptUnitTest, UpdateFocusListForInject_02, TestSize.Level1)
+{
+    auto interruptZoneManager_ = std::make_shared<AudioInterruptZoneManager>();
+    string deviceTag = "ABCDEFG";
+    AudioFocusList newFocusList;
+    AudioFocusList activeFocusList;
+    AudioFocusList oldFocusList;
+    AudioFocusIterator oldFocusIterator;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.sessionId = 100100;
+    audioInterrupt.uid = 100;
+    audioInterrupt.deviceTag = "ABCDEFG";
+    oldFocusList.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
+    oldFocusIterator.emplace_back(oldFocusList.begin());
+    newFocusList.emplace_back(std::make_pair(audioInterrupt, PLACEHOLDER));
+
+    interruptZoneManager_->UpdateFocusListForInject(deviceTag, newFocusList, activeFocusList, oldFocusIterator);
+    EXPECT_EQ(activeFocusList.size(), 1);
+}
+
+/**
+* @tc.name  : Test UpdateFocusListForInject
+* @tc.number: UpdateFocusListForInject_03
+* @tc.desc  : Test UpdateFocusListForInject
+*/
+HWTEST_F(AudioInterruptUnitTest, UpdateFocusListForInject_03, TestSize.Level1)
+{
+    auto interruptZoneManager_ = std::make_shared<AudioInterruptZoneManager>();
+    string deviceTag = "ABCDEFG";
+    AudioFocusList newFocusList;
+    AudioFocusList activeFocusList;
+    AudioFocusIterator oldFocusIterator;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.sessionId = 100100;
+    audioInterrupt.uid = 100;
+    audioInterrupt.deviceTag = "ABCDEFG";
+    newFocusList.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
+
+    interruptZoneManager_->UpdateFocusListForInject(deviceTag, newFocusList, activeFocusList, oldFocusIterator);
+    EXPECT_EQ(activeFocusList.size(), 1);
+}
+
+/**
+* @tc.name  : Test UpdateFocusListForInject
+* @tc.number: UpdateFocusListForInject_04
+* @tc.desc  : Test UpdateFocusListForInject
+*/
+HWTEST_F(AudioInterruptUnitTest, UpdateFocusListForInject_04, TestSize.Level1)
+{
+    auto interruptZoneManager_ = std::make_shared<AudioInterruptZoneManager>();
+    string deviceTag = "ABCDEFG";
+    AudioFocusList newFocusList;
+    AudioFocusList activeFocusList;
+    AudioFocusList oldFocusList;
+    AudioFocusIterator oldFocusIterator;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.sessionId = 100100;
+    audioInterrupt.uid = 100;
+    audioInterrupt.deviceTag = "ABCDEFG";
+    oldFocusList.emplace_back(std::make_pair(audioInterrupt, PAUSE));
+    oldFocusIterator.emplace_back(oldFocusList.begin());
+    newFocusList.emplace_back(std::make_pair(audioInterrupt, DUCK));
+
+    interruptZoneManager_->UpdateFocusListForInject(deviceTag, newFocusList, activeFocusList, oldFocusIterator);
+    EXPECT_EQ(activeFocusList.size(), 1);
+}
+
+/**
+* @tc.name  : Test UpdateFocusListForInject
+* @tc.number: UpdateFocusListForInject_05
+* @tc.desc  : Test UpdateFocusListForInject
+*/
+HWTEST_F(AudioInterruptUnitTest, UpdateFocusListForInject_05, TestSize.Level1)
+{
+    auto interruptZoneManager_ = std::make_shared<AudioInterruptZoneManager>();
+    string deviceTag = "ABCDEFG";
+    AudioFocusList newFocusList;
+    AudioFocusList activeFocusList;
+    AudioFocusList oldFocusList;
+    AudioFocusIterator oldFocusIterator;
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamUsage = STREAM_USAGE_MUSIC;
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.sessionId = 100100;
+    audioInterrupt.uid = 100;
+    audioInterrupt.deviceTag = "ABCDEFG";
+    oldFocusList.emplace_back(std::make_pair(audioInterrupt, DUCK));
+    oldFocusIterator.emplace_back(oldFocusList.begin());
+    newFocusList.emplace_back(std::make_pair(audioInterrupt, PAUSE));
+
+    interruptZoneManager_->UpdateFocusListForInject(deviceTag, newFocusList, activeFocusList, oldFocusIterator);
+    EXPECT_EQ(activeFocusList.size(), 1);
+}
 
 /**
 * @tc.name  : Test AudioInterruptService.

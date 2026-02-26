@@ -39,23 +39,22 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
-            AUDIO_ERR_LOG("audioEffectChainManager is nullptr!");
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
             return;
         }
         audioEffectChainManager->UpdateParamExtra(mainkey, subkey, extraSceneType);
         
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr!");
+        CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is nullptr");
         return audioEnhanceChainManager->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
     }
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::CreateEffectChainManager(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
 {
     CHECK_AND_RETURN_RET_LOG(effectChains.size() >= 0 && effectChains.size() <= AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT,
-        AUDIO_ERR, "Create audio effect chains failed, invalid countChains!");
+        AUDIO_ERR, "Create audio effect chains failed, invalid countChains");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "not audio calling!");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
@@ -106,7 +105,7 @@ int32_t AudioServer::UpdateSpatializationState(const AudioSpatializationState& s
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
-            AUDIO_ERR_LOG("audioEffectChainManager is nullptr!");
+            AUDIO_ERR_LOG("audioEffectChainManager is nullptr");
             return ERROR;
         }
         return audioEffectChainManager->UpdateSpatializationState(spatializationState);
@@ -124,7 +123,7 @@ int32_t AudioServer::UpdateSpatialDeviceType(int32_t spatialDeviceType)
             static_cast<AudioSpatialDeviceType>(spatialDeviceType));
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr!");
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
 
         return audioEffectChainManager->UpdateSpatialDeviceType(
             static_cast<AudioSpatialDeviceType>(spatialDeviceType));
@@ -132,7 +131,6 @@ int32_t AudioServer::UpdateSpatialDeviceType(int32_t spatialDeviceType)
 }
 // LCOV_EXCL_STOP
 
-// LCOV_EXCL_START
 int32_t AudioServer::SetSpatializationSceneType(int32_t spatializationSceneType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -151,7 +149,7 @@ int32_t AudioServer::SetSpatializationSceneType(int32_t spatializationSceneType)
 }
 // LCOV_EXCL_STOP
 
-int32_t AudioServer::GetEffectLatency(const std::string &sessionId, uint32_t& latency)
+int32_t AudioServer::GetEffectLatency(const std::string &sessionId, uint32_t &latency)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
@@ -159,8 +157,7 @@ int32_t AudioServer::GetEffectLatency(const std::string &sessionId, uint32_t& la
     return SUCCESS;
 }
 
-// LCOV_EXCL_START
-int32_t AudioServer::GetEffectOffloadEnabled(bool& isEffectOffloadEnabled)
+int32_t AudioServer::GetEffectOffloadEnabled(bool &isEffectOffloadEnabled)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
@@ -349,7 +346,6 @@ int32_t AudioServer::GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &pr
     return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::UpdateEffectBtOffloadSupported(bool isSupported)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -425,7 +421,6 @@ int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
     }
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::LoadAudioEffectLibraries(const std::vector<Library> &libraries,
     const std::vector<Effect> &effects, std::vector<Effect> &successEffectList, bool &hasEffectsLoaded)
 {
@@ -436,7 +431,6 @@ int32_t AudioServer::LoadAudioEffectLibraries(const std::vector<Library> &librar
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "LoadAudioEffectLibraries refused for %{public}d", callingUid);
-    CHECK_AND_RETURN_RET_LOG(audioEffectServer_ != nullptr, ERROR, "audioEffectServer_ is nullptr");
     hasEffectsLoaded = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
     if (!hasEffectsLoaded) {
         AUDIO_WARNING_LOG("Load audio effect failed, please check log");
@@ -479,7 +473,7 @@ int32_t AudioServer::NotifySettingsDataReady()
     return SUCCESS;
 }
 
-int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool& isSupported)
+int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool &isSupported)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
@@ -493,6 +487,7 @@ int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool& 
     AUDIO_INFO_LOG("IsAcousticEchoCancelerSupported not support");
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetKaraokeParameters(int32_t deviceType, const std::string &parameters, bool &ret)
 {
@@ -539,6 +534,5 @@ int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, int32_t deviceType, 
     AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
     return SUCCESS;
 }
-// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

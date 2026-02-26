@@ -60,7 +60,7 @@ constexpr int32_t BASE_AUDIO_ERR_OFFSET = -ErrCodeOffset(SUBSYS_AUDIO, MODULE_AU
 const int32_t  SUCCESS = 0;
 
 /** Fail */
-const int32_t  ERROR = BASE_AUDIO_ERR_OFFSET; // base is 62980096
+const int32_t  ERROR = BASE_AUDIO_ERR_OFFSET; // base is -62980096
 
 /** Status error */
 const int32_t  ERR_ILLEGAL_STATE = BASE_AUDIO_ERR_OFFSET - 1;

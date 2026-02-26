@@ -31,9 +31,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-const std::string AISS_LIBRARY_INFO_SYM_AS_STR = "AISSLIB";
-const std::string PITCH_LIBRARY_INFO_SYM_AS_STR = "PITCHLIB";
-
 class AudioSuiteCapabilities {
 public:
     AudioSuiteCapabilities(const AudioSuiteCapabilities&) = delete;

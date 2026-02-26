@@ -176,7 +176,7 @@ private:
 class OHRendererPositionCallback : public RendererPositionCallback {
 public:
     OHRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
-        OH_AudioRenderer *ohAudioRenderer, void *userData)
+        OH_AudioRenderer* ohAudioRenderer, void* userData)
         : callback_(callback), ohAudioRenderer_(ohAudioRenderer), userData_(userData)
     {
     }
@@ -184,8 +184,8 @@ public:
 
 private:
     OH_AudioRenderer_OnMarkReachedCallback callback_;
-    OH_AudioRenderer *ohAudioRenderer_;
-    void *userData_;
+    OH_AudioRenderer* ohAudioRenderer_;
+    void* userData_;
 };
 
 struct RendererCallback {
@@ -238,20 +238,17 @@ public:
         void *userData);
     bool IsFastRenderer();
 
+    uint32_t GetUnderflowCount();
     void SetRendererFastStatusChangeCallback(OH_AudioRenderer_OnFastStatusChange callback, void *userData);
-
     int32_t SetVolume(float volume) const;
     int32_t SetVolumeWithRamp(float volume, int32_t duration);
     float GetVolume() const;
     int32_t SetLoudnessGain(float loudnessGain) const;
     float GetLoudnessGain() const;
     int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
-        uint32_t markPosition, void *userData);
+        uint32_t markPosition, void* userData);
     void UnsetRendererPositionCallback();
-    uint32_t GetUnderflowCount();
     void SetInterruptMode(InterruptMode mode);
-    void SetSilentModeAndMixWithOthers(bool on);
-    bool GetSilentModeAndMixWithOthers();
     int32_t GetKeepRunning(bool &keepRunning);
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const;
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
@@ -267,9 +264,16 @@ public:
     ErrorCallbackType GetRendererErrorCallbackType();
 
     void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
+    void SetSilentModeAndMixWithOthers(bool on);
+    bool GetSilentModeAndMixWithOthers();
 
     StreamUsage GetOriginalStreamUsage();
 private:
+    void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
+        AudioEncodingType encodingType);
+    void SetInterruptCallback(RendererCallback rendererCallbacks, void *userData);
+    void SetErrorCallback(RendererCallback rendererCallbacks, void *userData);
+
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
     std::shared_ptr<OHAudioRendererDeviceChangeCallbackWithInfo> audioRendererDeviceChangeCallbackWithInfo_;
@@ -279,11 +283,6 @@ private:
     InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
     StreamUsage originalStreamUsage_ = STREAM_USAGE_UNKNOWN;
-
-    void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
-        AudioEncodingType encodingType);
-    void SetInterruptCallback(RendererCallback rendererCallbacks, void *userData);
-    void SetErrorCallback(RendererCallback rendererCallbacks, void *userData);
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

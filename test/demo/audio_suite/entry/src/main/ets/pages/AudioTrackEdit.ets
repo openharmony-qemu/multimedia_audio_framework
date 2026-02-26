@@ -27,7 +27,7 @@ import {
   AudioSeparationType
 } from "../utils/InterfaceInfo";
 import { Logger } from '../utils/Logger';
-import { MainTitleTextModifier } from '../utils/ExportFile';
+import { MainTitleTextModifier, RealTimeSaveFileBuffer } from '../utils/ExportFile';
 import { common } from "@kit.AbilityKit";
 import { AlertDialog, display, LoadingDialog, SymbolGlyphModifier, window } from '@kit.ArkUI';
 import { TimeLine } from "./audioWave/TimeLine";
@@ -69,6 +69,7 @@ export struct AudioTrackEdit {
   @State mainTitleModifier: MainTitleTextModifier = new MainTitleTextModifier();
   private symbolModifier: SymbolGlyphModifier =
     new SymbolGlyphModifier($r('sys.symbol.chevron_backward')).fontColor([$r('app.color.index_title_text_color')]);
+  @State aissEffectId: string = '0';
   @State audioTrackList: AudioTrack[] = [];
   @State notRenderTrackList: string[] = [];
   @State renderTrackList: string[] = [];
@@ -344,7 +345,7 @@ export struct AudioTrackEdit {
       .map(num => NumberToNodeTypeMap.get(num)) // Convert numbers to NodeType
       .filter(type => {
         if (type === undefined || type === NodeType.EQ || type === NodeType.SPACE_RENDER ||
-          type === NodeType.GENERAL_VOICE_CHANGE || type === NodeType.PURE_VOICE_CHANGE) {
+          type === NodeType.GENERAL_VOICE_CHANGE || type === NodeType.PURE_VOICE_CHANGE || type === NodeType.SEPARATION) {
           return false;
         } else {
           return true;
@@ -354,11 +355,18 @@ export struct AudioTrackEdit {
     audioNapi.registerFinishedCallback((result: boolean) => {
       Logger.info(TAG, `registerFinishedCallback finished: ${result}`);
       if (result) {
+        if (this.g_isRecord) {
+          taskpool.execute(RealTimeSaveFileBuffer).then(async (value: object) => {
+            Logger.info(TAG, 'taskpool onClick then');
+            this.SaveBuffer(value as ArrayBuffer);
+          });
+        } else {
+          audioNapi.resetTotalWriteAudioDataSize();
+        }
         this.isPlay = false;
+        this.g_isRecord = false;
         // 暂停
         audioNapi.audioRendererStop();
-        // 将buffer的map中的 totalWriteAudioDataSize 置为 0
-        audioNapi.resetTotalWriteAudioDataSize();
       }
     })
   }
@@ -394,8 +402,23 @@ export struct AudioTrackEdit {
   spaceRenderDialogController: CustomDialogController | null = new CustomDialogController({
     builder: SpaceRenderDialog({
       spaceRenderPara: this.spaceRenderPara,
+      selectedEffectNodeId: this.selectedEffectNodeId,
+      // Callback for real-time coordinate changes.
+      onPositionChange: (x: number, y: number, z: number, effectNodeId: string) => {
+        if (!effectNodeId) {
+          Logger.warn(TAG, 'selectedEffectNodeId is empty, skip real-time update');
+          return;
+        }
+        let result = audioNapi.ResetFixedPositionEffect(x, y, z, effectNodeId);
+        if (result !== 0) {
+          Logger.error(TAG, `Real-time update fixed position failed: ${result}`);
+        } else {
+          Logger.info(TAG, `Real-time update fixed position success: x=${x}, y=${y}, z=${z}`);
+          // Updating the local status in real time.
+          this.spaceRenderPara.fixedPosition = { x, y, z };
+        }
+      },
       onAgree: (spaceRenderState: SpaceRender) => {
-        // 调用napi的底层效果节点
         if (spaceRenderState.mode === -1) {
           this.getUIContext().showAlertDialog({
             message: `请选择一种模式`,
@@ -481,7 +504,7 @@ export struct AudioTrackEdit {
       onAgree: (balanceBandGains: number[]) => {
         // 调用napi的底层效果节点
         let result =
-          audioNapi.setEqualizerFrequencyBandGains(this.balanceBandGains, this.selectedEffectNodeId,
+          audioNapi.setEqualizerFrequencyBandGains(balanceBandGains, this.selectedEffectNodeId,
             this.selectedAudioTrackId);
         if (result !== 0) {
           Logger.error(TAG, `setEqualizerFrequencyBandGains result: ${result}`);
@@ -752,7 +775,7 @@ export struct AudioTrackEdit {
   //init record
   @Builder
   InitRecord() {
-    Image($r('app.media.ic_record_circle'))
+    Image($r('app.media.mic'))
       .width('30')
       .height('30')
       .margin({ right: $r('app.float.margin_5') })
@@ -1234,29 +1257,6 @@ export struct AudioTrackEdit {
       })
       return;
     }
-    // aiss
-    // const aissEffectId: string = util.generateRandomUUID(true);
-    // result = audioNapi.addAudioSeparation(0, aissEffectId, inputId);
-    // if (result !== 0) {
-    //   this.getUIContext().showAlertDialog({
-    //     title: '提示',
-    //     message: `error addAudioSeparation: ${result}`
-    //   });
-    // } else {
-    //   audioAsset.nodes.push({
-    //     id: aissEffectId,
-    //     type: NodeType['SEPARATION'],
-    //     audioSeparationType: AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE
-    //   });
-    // }
-    // ret = audioNapi.setEffectNodeBypass(inputId, aissEffectId, true);
-    // if (!ret) {
-    //   this.getUIContext().showAlertDialog({
-    //     title: '提示',
-    //     message: `error set aissEffect bypass`
-    //   })
-    //   return;
-    // }
   }
 
   build() {
@@ -1507,6 +1507,16 @@ export struct AudioTrackEdit {
         }
       }
 
+      Image(this.g_isRecord ? $r('app.media.ic_record_circle_2') : $r('app.media.ic_record_circle'))
+        .width('30')
+        .height('30')
+        .margin({right: $r('app.float.margin_5')})
+        .onClick(() => {
+          audioNapi.record();
+          this.g_isRecord = !this.g_isRecord;
+          audioNapi.setIsRecord(this.g_isRecord);
+        })
+
       // clear record
       Column() {
         Image($r('app.media.clean'))
@@ -1514,24 +1524,48 @@ export struct AudioTrackEdit {
           .height($r('app.float.height_30'))
           .margin({ right: $r('app.float.margin_10') })
           .onClick(() => {
-            this.getUIContext().showAlertDialog({
-              title: '清空录音',
-              message: '是否清空录音',
-              primaryButton: {
-                value: '删除',
-                action: () => {
-                  // 用户确认后执行的逻辑
-                  for (let id of this.recordInputIdSet) {
-                    audioNapi.clearByInputId(id, 0); // 销毁录制的音频
-                    Logger.warn(TAG, `recordInputID is ${id}`)
-                  }
-                  this.recordInputIdSet.clear();
+            if (!this.audioTrackList.some(track => track.audioAssetArray?.length !== 0)) {
+              this.getUIContext().showAlertDialog({
+                title: '提示',
+                message: '至少添加一个音频才可以播放'
+              });
+              return;
+            }
+            const executeSeparation = (mode: number) => {
+              if (this.aissEffectId == '0') {
+                this.aissEffectId = util.generateRandomUUID(true); // 唯一效果节点ID
+                const inputId: string = util.generateRandomUUID(true);
+                const selectedNodeId: string = util.generateRandomUUID(true);
+                const result = audioNapi.addAudioSeparation(mode, this.aissEffectId, inputId, selectedNodeId, true);
+                if (result !== 0) {
+                  this.getUIContext().showAlertDialog({
+                    title: '错误',
+                    message: `添加分离节点失败: ${result}`,
+                    autoCancel: true
+                  });
+                  return;
                 }
+              }
+              audioNapi.setSeparationMode(mode); // 设置分离模式：0=人声，1=伴奏
+
+              this.getUIContext().showAlertDialog({
+                title: '成功',
+                message: mode === 0 ? '已提取人声' : '已提取伴奏',
+                autoCancel: true
+              });
+            };
+
+            // 4. 弹出单选对话框
+            this.getUIContext().showAlertDialog({
+              title: '选择分离模式',
+              message: '请选择要分离的音频类型',
+              primaryButton: {
+                value: '人声',
+                action: () => executeSeparation(0)
               },
               secondaryButton: {
-                value: '取消',
-                action: () => {
-                }
+                value: '伴奏',
+                action: () => executeSeparation(1)
               }
             });
           })
@@ -1832,22 +1866,21 @@ export struct AudioTrackEdit {
   }
 
   /**
-   * 根据 AudioTrack 的 isSilent 状态，更新 renderTrackList 和 notRenderTrackList
+   * Updates the renderTrackList and notRenderTrackList based on the isSilent status of AudioTrack.
    *
-   * @param notRenderTrackList - 初始为空的字符串数组，用于存放不渲染的 trackId
-   * @param renderTrackList - 初始为空的字符串数组，用于存放渲染的 trackId
-   * @param audioTrackList - 所有音轨的列表
+   * @param notRenderTrackList - initially empty and used to store the track IDs that are not rendered.
+   * @param renderTrackList - initially empty and used to store the track IDs that are rendered.
+   * @param audioTrackList - A list of all audio tracks.
    */
   updateTrackRenderLists(
     notRenderTrackList: string[],
     renderTrackList: string[],
     audioTrackList: AudioTrack[]
   ): void {
-    //清空输入数组（每次进来前已初始化，但确保干净）
     notRenderTrackList.length = 0;
     renderTrackList.length = 0;
 
-    //遍历所有音轨，根据 isSilent 分类
+    //Traverse all audio tracks and classify them based on isSilent.
     audioTrackList.forEach(track => {
       if (track.isSilent) {
         notRenderTrackList.push(track.audioTrackId);

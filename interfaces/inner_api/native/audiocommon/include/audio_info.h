@@ -71,8 +71,8 @@ constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
-constexpr uint32_t MIN_STREAMID = 100000;
-constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
+constexpr uint32_t MIN_SESSIONID = 100000;
+constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIN_SESSIONID;
 
 constexpr uint64_t AUDIO_US_PER_MS = 1000;
 constexpr uint64_t AUDIO_NS_PER_US = 1000;
@@ -633,6 +633,21 @@ enum AudioLoopbackEqualizerPreset {
     EQUALIZER_PRESET_BRIGHT = 3,
 };
 
+enum UltraFastFlags : uint32_t {
+    /**
+     * Client has not set the ultra fast flag, and the current stream is not using the server's ultra fast route(pipe).
+     */
+    ULTRA_NONE = 0,
+    /**
+     * Client has set the ultra fast flag
+     */
+    ULTRA_REQUESTED = 1 << 0,
+    /**
+     * Current stream is using the server's ultra fast route(pipe)
+     */
+    ULTRA_IMPLEMENTED = 1 << 1,
+};
+
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -665,7 +680,7 @@ struct AudioRendererInfo : public Parcelable {
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
-    bool isUltraFast = false;
+    uint8_t ultraFastFlag = ULTRA_NONE;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -1376,7 +1391,7 @@ struct AudioProcessConfig : public Parcelable {
 
     DeviceType deviceType = DEVICE_TYPE_INVALID;
 
-    bool isUltraFast = false;
+    uint32_t ultraFastFlag = false;
 
     bool isInnerCapturer = false;
 
@@ -1434,7 +1449,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(deviceType);
 
         // Renderer only
-        parcel.WriteBool(isUltraFast);
+        parcel.WriteUint32(ultraFastFlag);
 
         // Recorder only
         parcel.WriteBool(isInnerCapturer);
@@ -1497,7 +1512,7 @@ struct AudioProcessConfig : public Parcelable {
         config->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
 
         // Renderer only
-        config->isUltraFast = parcel.ReadBool();
+        config->ultraFastFlag = parcel.ReadUint32();
 
         // Recorder only
         config->isInnerCapturer = parcel.ReadBool();

@@ -29,7 +29,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME = "AudioVolumeManager";
+inline const std::string AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME = "AudioVolumeManager";
 class NapiAudioVolumeManager {
 public:
     static napi_value Init(napi_env env, napi_value exports);

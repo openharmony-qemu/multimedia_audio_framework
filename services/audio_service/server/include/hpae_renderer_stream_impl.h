@@ -105,6 +105,7 @@ public:
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     void OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos) override;
+    void TriggerAppsUidUpdate() override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
@@ -123,8 +124,7 @@ private:
     int32_t FetchSinkLatency(uint32_t &sinkLatency);
     void ResetSinkLatencyFetcher(const AudioCallBackStreamInfo &callBackStreamInfo);
     int32_t GetA2dpOffloadLatencyInner(uint32_t &sinkLatency);
-    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType,
-        std::string volumeDeviceClass, std::string deviceClass, std::string deviceNetId);
+    void OffloadVolumeRmap(uint32_t sessionId, AudioStreamType streamType, std::string volumeDeviceClass);
     uint64_t GetOffloadLatency();
     bool InitLatencyInfo(const AudioCallBackStreamInfo &callBackStreamInfo);
     void UpdateInnerCapWriteState(bool isWriteFirst);
@@ -188,11 +188,11 @@ private:
     std::vector<PositionData> speedPositionData_ = {Timestamp::Timestampbase::BASESIZE, PositionData{}};
 
     uint32_t usedSampleRate_ = 0;
+    std::atomic<bool> sendDataEnabled_ = true;
 
     std::mutex firstStreamDataMutex_;
     std::condition_variable firstStreamDataCv_;
     std::atomic<bool> firstStreamDataReceived_ = false;
-    std::atomic<bool> sendDataEnabled_ = true;
 
     std::pair<uint64_t, TimePoint> hdiPos_ = std::make_pair(0, std::chrono::high_resolution_clock::now());
     uint64_t writePos_ = 0;

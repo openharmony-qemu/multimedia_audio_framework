@@ -62,10 +62,11 @@ public:
     void RecordStandbyTime(bool isStart);
     void RecordOverflowTime(bool isStart);
     void UpdateAppState(bool isBackground);
-    void SetVolume(float volume);
-    float GetVolume();
 
     std::atomic<bool> isNeedCreateThread_ = true;
+    void SetVolume(float volume);
+    float GetVolume();
+    void CheckVolume();
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);
@@ -73,7 +74,7 @@ private:
     void MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum, float badFrameRatio);
     void CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum);
     void CalculateFrameAfterOverflow(CheckerParam &para, int64_t &abnormalFrameNum);
-    void CheckVolume();
+
     std::vector<CheckerParam> checkParaVector_;
     bool monitorSwitch_ = false;
     bool isBackground_ = false;

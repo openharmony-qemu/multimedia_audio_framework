@@ -51,6 +51,7 @@ interface IStandardAudioService {
     void GetAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
     void SetAudioParameter([in] String networkId, [in] int key, [in] String condition, [in] String value);
     void NotifyDeviceInfo([in] String networkId, [in] boolean connected);
+    void NotifyTaskIdProxy([in] String taskId, [in] boolean connected);
     void CheckRemoteDeviceState([in] String networkId, [in] int deviceRole, [in] boolean isStartDevice);
     void SetVoiceVolume([in] float volume);
     void SetAudioMonoState([in] boolean audioMono);
@@ -106,7 +107,7 @@ interface IStandardAudioService {
     void GetStandbyStatus([in] unsigned int sessionId, [out] boolean isStandby, [out] long enterStandbyTime);
     void GenerateSessionId([out] unsigned int sessionId);
     void GetAllSinkInputs([out] List<SinkInput> sinkInputs);
-    void SetDefaultAdapterEnable([in] boolean isEnable);
+    // TODO remove void SetDefaultAdapterEnable([in] boolean isEnable);
     void NotifyAccountsChanged();
     void NotifyAudioPolicyReady();
     void SetInnerCapLimit([in] unsigned int innerCapLimit);void LoadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName);

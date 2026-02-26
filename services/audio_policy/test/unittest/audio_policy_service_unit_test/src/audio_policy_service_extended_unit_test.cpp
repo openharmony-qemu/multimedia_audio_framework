@@ -28,7 +28,7 @@ namespace AudioStandard {
 bool g_hasPermission = false;
 static const std::string INNER_CAPTURER_SINK_LEGACY = "InnerCapturer";
 const int32_t CONNECTING_NUMBER = 10;
-const int32_t TEST_SESSIONID = MIN_STREAMID + 1010;
+const int32_t TEST_SESSIONID = MIN_SESSIONID + 1010;
 const int32_t ROUTER_MAP_ID0 = 1000;
 const int32_t ROUTER_MAP_ID1 = 1001;
 const int32_t ROUTER_MAP_ID2 = 1002;
@@ -255,19 +255,6 @@ static const std::vector<AudioRingerMode>audioRingerModes = {
     RINGER_MODE_VIBRATE,
     RINGER_MODE_NORMAL
 };
-
-/**
-* @tc.name  : Test AudioPolicyService.
-* @tc.number: SetDefaultAdapterEnable
-* @tc.desc  : Test SetDefaultAdapterEnable.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, SetDefaultAdapterEnable, TestSize.Level1)
-{
-    bool isEnable = false;
-    EXPECT_NO_THROW(
-        AudioPolicyService::GetAudioPolicyService().SetDefaultAdapterEnable(isEnable);
-    );
-}
 
 /**
 * @tc.name  : Test AudioPolicyService.

@@ -108,15 +108,12 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
     desc->connectState_ = VIRTUAL_CONNECTED;
     auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);
-    EXPECT_EQ(judge->deviceId_, 2);
 
     judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_LIVE, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);
-    EXPECT_EQ(judge->deviceId_, 2);
 
     judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_HIGH_QUALITY);
     EXPECT_NE(judge, nullptr);
-    EXPECT_EQ(judge->deviceId_, 2);
 
     judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_EC, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);

@@ -450,12 +450,12 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
 HWTEST(AudioServiceUnitTest, AudioServiceUpdateMuteControlSet_001, TestSize.Level1)
 {
     AudioService::GetInstance()->UpdateMuteControlSet(1, true);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID + 1, true);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, false);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, true);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, false);
-    AudioService::GetInstance()->UpdateMuteControlSet(MAX_STREAMID - 1, true);
-    AudioService::GetInstance()->RemoveIdFromMuteControlSet(MAX_STREAMID - 1);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID + 1, true);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, false);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, true);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, false);
+    AudioService::GetInstance()->UpdateMuteControlSet(MAX_SESSIONID - 1, true);
+    AudioService::GetInstance()->RemoveIdFromMuteControlSet(MAX_SESSIONID - 1);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -581,28 +581,15 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     AudioService::GetInstance()->RenderersCheckForAudioWorkgroup(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
-    config = {};
-    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PRIVATE;
-    config.audioMode = AUDIO_MODE_RECORD;
-    config.streamType = STREAM_VOICE_CALL;
-    config.streamInfo.channels = AudioChannel::MONO;
-    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
-    config.streamInfo.format = SAMPLE_S16LE;
-    config.streamInfo.encoding = ENCODING_PCM;
-    auto audioProcess = AudioService::GetInstance()->GetAudioProcess(config);
-    EXPECT_NE(audioProcess, nullptr);
-
     AudioService::GetInstance()->OnInitInnerCapList(1);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(false);
     EXPECT_EQ(0, floatRet);
-    int32_t ret = AudioService::GetInstance()->EnableDualStream(MAX_STREAMID - 1, "Speaker");
+    int32_t ret = AudioService::GetInstance()->EnableDualStream(MAX_SESSIONID - 1, "Speaker");
     EXPECT_NE(SUCCESS, ret);
-    ret = AudioService::GetInstance()->DisableDualStream(MAX_STREAMID - 1);
+    ret = AudioService::GetInstance()->DisableDualStream(MAX_SESSIONID - 1);
     EXPECT_NE(SUCCESS, ret);
-    ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
-    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -766,7 +753,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetNonInterruptMute_001, TestSize.Level
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
-    AudioService::GetInstance()->SetNonInterruptMute(MAX_STREAMID - 1, muteFlag);
+    AudioService::GetInstance()->SetNonInterruptMute(MAX_SESSIONID - 1, muteFlag);
     EXPECT_EQ(0, floatRet);
 }
 
@@ -2061,22 +2048,6 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
     audioService->allRendererMap_.clear();
 }
 
-/**
- * @tc.name  : Test SetDefaultAdapterEnable API
- * @tc.type  : FUNC
- * @tc.number: SetDefaultAdapterEnable_001
- * @tc.desc  : Test SetDefaultAdapterEnable interface.
- */
-HWTEST(AudioServiceUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    EXPECT_NE(audioService, nullptr);
-    bool isEnable = false;
-    audioService->SetDefaultAdapterEnable(isEnable);
-    bool result = audioService->GetDefaultAdapterEnable();
-    EXPECT_EQ(result, isEnable);
-}
-
 /*
  * @tc.name  : Test SetSessionMuteState API
  * @tc.type  : FUNC
@@ -2225,15 +2196,15 @@ HWTEST(AudioServiceUnitTest, InForegroundList_001, TestSize.Level1)
 
 #ifdef SUPPORT_LOW_LATENCY
 /**
- * @tc.name  : Test CheckBeforeRecordEndpointCreate API
+ * @tc.name  : Test CheckBeforeVoipEndpointCreate API
  * @tc.type  : FUNC
- * @tc.number: CheckBeforeRecordEndpointCreate_001,
- * @tc.desc  : Test CheckBeforeRecordEndpointCreate interface.
+ * @tc.number: CheckBeforeVoipEndpointCreate_001,
+ * @tc.desc  : Test CheckBeforeVoipEndpointCreate interface.
  */
-HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, CheckBeforeVoipEndpointCreate_001, TestSize.Level1)
 {
     bool isRecord = false;
-    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(true, isRecord);
 
     isRecord = true;
     std::string endpointName = "test";
@@ -2243,16 +2214,16 @@ HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_001, TestSize.Level
     EXPECT_NE(endpoint, nullptr);
     endpoint->audioMode_ = AudioMode::AUDIO_MODE_RECORD;
     AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
-    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(true, isRecord);
 }
 
 /**
- * @tc.name  : Test CheckBeforeRecordEndpointCreate API
+ * @tc.name  : Test CheckBeforeVoipEndpointCreate API
  * @tc.type  : FUNC
- * @tc.number: CheckBeforeRecordEndpointCreate_002,
- * @tc.desc  : Test CheckBeforeRecordEndpointCreate interface.
+ * @tc.number: CheckBeforeVoipEndpointCreate_002,
+ * @tc.desc  : Test CheckBeforeVoipEndpointCreate interface.
  */
-HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_002, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, CheckBeforeVoipEndpointCreate_002, TestSize.Level1)
 {
     bool isRecord = true;
     std::string endpointName = "test";
@@ -2262,7 +2233,7 @@ HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_002, TestSize.Level
     EXPECT_NE(endpoint, nullptr);
     endpoint->audioMode_ = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
-    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(true, isRecord);
 }
 
 /**

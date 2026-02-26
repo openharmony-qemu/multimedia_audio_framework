@@ -143,9 +143,9 @@ public:
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override; // for static renderer only
-
     int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override;
+
+    int32_t ResetStaticPlayPosition() override; // for static renderer only
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

@@ -94,7 +94,6 @@ audio_ohos_library("audio_effect") {
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "drivers_interface_audio:libeffect_proxy_1.0",
-    "hdf_core:libhdf_utils",
     "hilog:libhilog",
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",

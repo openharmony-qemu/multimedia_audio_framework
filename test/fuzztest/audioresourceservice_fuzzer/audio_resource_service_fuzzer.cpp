@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -113,6 +113,34 @@ void ResourceServiceDumpAudioWorkgroupMapFuzzTest()
     audioResourceService->DumpAudioWorkgroupMap();
 }
 
+void AudioWorkgroupGetMethodFuzzTest()
+{
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(id);
+    workgroup->GetWorkgroupId();
+    workgroup->GetThreadsNums();
+    workgroup->GetCgroupLimitId();
+}
+
+void AudioWorkgroupAddAndRemoveThreadFuzzTest()
+{
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(id);
+    int32_t tid = g_fuzzUtils.GetData<int32_t>();
+    workgroup->AddThread(tid);
+    workgroup->RemoveThread(tid);
+}
+
+void AudioWorkgroupStartAndStopFuzzTest()
+{
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(id);
+    uint64_t startTime = g_fuzzUtils.GetData<uint64_t>();
+    uint64_t deadlineTime = g_fuzzUtils.GetData<uint64_t>();
+    workgroup->Start(startTime, deadlineTime);
+    workgroup->Stop();
+}
+
 vector<TestFuncs> g_testFuncs = {
     ResourceServiceCreateAudioWorkgroupFuzzTest,
     ResourceServiceAudioWorkgroupDeathRecipientFuzzTest,
@@ -121,6 +149,9 @@ vector<TestFuncs> g_testFuncs = {
     ResourceServiceReleaseWorkgroupDeathRecipientFuzzTest,
     ResourceServiceWorkgroupRendererMonitorFuzzTest,
     ResourceServiceDumpAudioWorkgroupMapFuzzTest,
+    AudioWorkgroupGetMethodFuzzTest,
+    AudioWorkgroupAddAndRemoveThreadFuzzTest,
+    AudioWorkgroupStartAndStopFuzzTest,
 };
 
 } // namespace AudioStandard

@@ -427,6 +427,7 @@ void AudioSessionManagerImpl::RegisterAudioSessionDeviceCallback(std::shared_ptr
         return;
     }
 
+    std::lock_guard<std::mutex> lock(taiheSessionManager->sessionDeviceCbMutex_);
     CHECK_AND_RETURN_LOG(GetAudioSessionDeviceCallback(callback, taiheSessionManager) == nullptr,
         "The callback function already registered.");
 
@@ -640,7 +641,7 @@ void AudioSessionManagerImpl::ClearSelectedMediaInputDeviceSync()
 void AudioSessionManagerImpl::SetBluetoothAndNearlinkPreferredRecordCategorySync(
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
-    uint32_t recCategory = category.get_value();
+    uint32_t recCategory = static_cast<uint32_t>(category.get_value());
     if (!TaiheAudioEnum::IsLegalBluetoothAndNearlinkPreferredRecordCategory(recCategory)) {
         TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
             "parameter verification failed: category wrong value");

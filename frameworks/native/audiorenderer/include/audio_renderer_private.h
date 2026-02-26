@@ -162,6 +162,7 @@ public:
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    bool ResetStaticPlayPosition() override;
 
     bool IsVirtualKeyboard(const int32_t flags);
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
@@ -262,6 +263,7 @@ private:
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
     int32_t GetCurrentBackMuteStatus(bool &backMute);
+    void SetSwitchInfoCallbacks(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

@@ -236,54 +236,6 @@ describe("AudioManagerJsUnitTest", function () {
     })
 
     /*
-     * @tc.name:SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004
-     * @tc.desc:setExtraParameters - Promise
-     * @tc.type: FUNC
-     * @tc.require: SR20231218728353
-     */
-    it("SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004", 0, function (done) {
-        try {
-            audioManager.setExtraParameters('mmi', { }).then(() => {
-                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004 FAIL`);
-                expect(false).assertTrue();
-                done();
-            }).catch(err => {
-                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004 SUCCESS: ${err}.`);
-                expect(err.code).assertEqual(6800101);
-                done();
-            });
-        } catch (err) {
-            console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_004 FAIL: ${err}.`);
-            expect(false).assertTrue();
-            done();
-        }
-    })
-
-    /*
-     * @tc.name:SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005
-     * @tc.desc:setExtraParameters - Promise
-     * @tc.type: FUNC
-     * @tc.require: SR20231218728353
-     */
-    it("SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005", 0, function (done) {
-        try {
-            audioManager.setExtraParameters('mmi', { 'mmi_test': 'on' }).then(() => {
-                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005 SUCCESS`);
-                expect(true).assertTrue();
-                done();
-            }).catch(err => {
-                console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005 FAIL: ${err}.`);
-                expect(true).assertTrue();
-                done();
-            });
-        } catch (err) {
-            console.info(`SUB_AUDIO_MANAGER_SET_EXTRA_PARAMETERS_005 try-catch FAIL: ${err}.`);
-            expect(false).assertTrue();
-            done();
-        }
-    })
-
-    /*
      * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_001
      * @tc.desc:getExtraParameters - Promise
      * @tc.type: FUNC
@@ -334,54 +286,6 @@ describe("AudioManagerJsUnitTest", function () {
             });
         } catch (err) {
             console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_003 FAIL try-catch`);
-            expect(false).assertTrue();
-            done();
-        }
-    })
-
-    /*
-     * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004
-     * @tc.desc:getExtraParameters - Promise
-     * @tc.type: FUNC
-     * @tc.require: SR20231218728353
-     */
-    it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004", 0, function (done) {
-        try {
-            audioManager.getExtraParameters('mmi').then((value) => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 SUCCESS ` + JSON.stringify(value));
-                expect(true).assertTrue();
-                done();
-            }).catch(err => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 FAIL: ${err.code}.`);
-                expect(false).assertTrue();
-                done();
-            });
-        } catch (err) {
-            console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_004 FAIL try-catch: ${err.code}.`);
-            expect(false).assertTrue();
-            done();
-        }
-    })
-
-    /*
-     * @tc.name:SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005
-     * @tc.desc:getExtraParameters - Promise
-     * @tc.type: FUNC
-     * @tc.require: SR20231218728353
-     */
-    it("SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005", 0, function (done) {
-        try {
-            audioManager.getExtraParameters('mmi', ['getSmartPANV']).then((value) => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 SUCCESS ` + JSON.stringify(value));
-                expect(true).assertTrue();
-                done();
-            }).catch(err => {
-                console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 FAIL: ${err.code}.`);
-                expect(false).assertTrue();
-                done();
-            });
-        } catch (err) {
-            console.info(`SUB_AUDIO_MANAGER_GET_EXTRA_PARAMETERS_005 FAIL try-catch: ${err}.`);
             expect(false).assertTrue();
             done();
         }

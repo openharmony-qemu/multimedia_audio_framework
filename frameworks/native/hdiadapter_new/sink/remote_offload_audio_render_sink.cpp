@@ -324,6 +324,12 @@ int32_t RemoteOffloadAudioRenderSink::SetVolume(float left, float right)
     return SetVolumeInner(left, right);
 }
 
+int32_t RemoteOffloadAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
+}
+
 int32_t RemoteOffloadAudioRenderSink::GetVolume(float &left, float &right)
 {
     left = leftVolume_;
@@ -434,8 +440,10 @@ int32_t RemoteOffloadAudioRenderSink::ForceRefreshPresentationPosition(uint64_t 
     int32_t ret = GetRenderPositionInner();
     frames = lastHdiOriginFramesUS_;
     hdiFrames = lastHdiFramesUS_;
-    timeSec = lastHdiTimeSec_;
-    timeNanoSec = lastHdiTimeNanoSec_;
+
+    int64_t now = ClockTime::GetCurNano();
+    timeSec = now / AUDIO_NS_PER_SECOND;
+    timeNanoSec = now % AUDIO_NS_PER_SECOND;
     AUDIO_INFO_LOG("frames: %{public}" PRIu64 ", hdiFrames: %{public}" PRIu64, frames, hdiFrames);
     return ret;
 }
@@ -470,7 +478,7 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
             renderFrameUS, lastHdiOriginFramesUS_, lastHdiFramesUS_);
         return SUCCESS;
     }
-    
+
     uint64_t originFrameUS = lastHdiOriginFramesUS_ + durationUS * speed_;
     if (originFrameUS > renderFrameUS) {
         auto excess = (renderFrameUS - lastHdiOriginFramesUS_) / speed_;
@@ -550,11 +558,11 @@ void RemoteOffloadAudioRenderSink::FlushResetPosition()
     // Calculate the latest sampling time during flush operations
     // += previous sampling time + (current system time - previous system sampling time) * rate / 1000
     // after scaling to one times speed
-    lastHdiOriginFlushFramesUS_ += lastHdiOriginFramesUS_ +
-        (ClockTime::GetCurNano() - lastSystemTimeNS_) * speed_ / NANOSECOND_TO_MICROSECOND;
+    int64_t now = ClockTime::GetCurNano();
+    uint64_t durationNS = now > lastSystemTimeNS_ ? static_cast<uint64_t>(now - lastSystemTimeNS_) : 0;
+    lastHdiOriginFlushFramesUS_ += lastHdiOriginFramesUS_ + durationNS * speed_ / NANOSECOND_TO_MICROSECOND;
     // before scaling to one times speed
-    lastHdiFlushFramesUS_ += lastHdiFramesUS_ +
-        (ClockTime::GetCurNano() - lastSystemTimeNS_) / NANOSECOND_TO_MICROSECOND;
+    lastHdiFlushFramesUS_ += lastHdiFramesUS_ + durationNS / NANOSECOND_TO_MICROSECOND;
     AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::FlushResetPosition lastHdiOriginFlushFramesUS_: [%{public}" PRIu64
         "], lastHdiFlushFramesUS_: [%{public}" PRIu64 "]", lastHdiOriginFlushFramesUS_, lastHdiFlushFramesUS_);
 
@@ -718,15 +726,13 @@ int32_t RemoteOffloadAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &
     std::unordered_set<int32_t> lastAppsUid = appsUid_;
     std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
     appsUid_ = std::move(appsUidSet);
-    if (appsUid_ != lastAppsUid || appInfoNeedReset_) {
-        appInfoNeedReset_ = true;
+    if (appsUid_ != lastAppsUid) {
         CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "audioRender_ is null");
         CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
         std::string appInfoStr = GenerateAppsUidStr(appsUid_);
         int32_t ret = audioRender_->SetExtraParams(appInfoStr.c_str());
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
         AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
-        appInfoNeedReset_ = false;
     }
     return SUCCESS;
 }
@@ -939,6 +945,8 @@ int32_t RemoteOffloadAudioRenderSink::CreateRender(void)
         << attr_.channel << "," << attr_.channelLayout;
     SetAudioParameter(AudioParamKey::NONE, "", val.str());
     deviceManager->RegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_, shared_from_this());
+    int32_t ret = audioRender_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    AUDIO_INFO_LOG("set app info params, ret: %{public}d", ret);
     validState_.store(true);
     return SUCCESS;
 }

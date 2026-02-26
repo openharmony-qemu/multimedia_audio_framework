@@ -20,6 +20,9 @@
 #include "napi_audio_renderer_callback.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
+#ifndef CROSS_PLATFORM
+#include "xpower_event_js.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -171,6 +174,7 @@ void NapiAudioRendererCallback::SafeJsCallbackInterruptWork(napi_env env, napi_v
         static_cast<AudioRendererJsCallback*>(data),
         [](AudioRendererJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -206,7 +210,7 @@ void NapiAudioRendererCallback::InterruptTsfnFinalize(napi_env env, void *data, 
 void NapiAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRendererJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackInterrupt: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
         return;
     }
 
@@ -226,6 +230,7 @@ void NapiAudioRendererCallback::SafeJsCallbackStateChangeWork(napi_env env, napi
         static_cast<AudioRendererJsCallback*>(data),
         [](AudioRendererJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -262,7 +267,7 @@ void NapiAudioRendererCallback::StateChangeTsfnFinalize(napi_env env, void *data
 void NapiAudioRendererCallback::OnJsCallbackStateChange(std::unique_ptr<AudioRendererJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackStateChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackStateChange: jsCb.get() is null");
         return;
     }
     

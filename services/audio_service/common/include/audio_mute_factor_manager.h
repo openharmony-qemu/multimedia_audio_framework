@@ -28,7 +28,7 @@ public:
 
     bool IsMdmMuted() const;
 
-    float GetMdmMuteFactor() const;
+    float GetMdmMuteStatus() const;
 
     void SetMdmMuteStatus(const bool mdmMute);
 

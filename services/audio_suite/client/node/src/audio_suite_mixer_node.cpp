@@ -31,14 +31,16 @@ static constexpr AudioChannel DEFAULT_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout DEFAULT_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 }
 
-AudioSuiteMixerNode::AudioSuiteMixerNode()
+AudioSuiteMixerNode::AudioSuiteMixerNode(uint32_t threadCount)
     : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_AUDIO_MIXER,
           AudioFormat{{DEFAULT_CHANNEL_LAYOUT, DEFAULT_CHANNEL_COUNT}, DEFAULT_SAMPLE_FORMAT, DEFAULT_SAMPLE_RATE}),
+      pullThreadPool_(std::make_unique<ThreadPool>("AudioSuitePullPool")),
       tmpOutput_(
-          PcmBufferFormat{DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_CHANNEL_LAYOUT, DEFAULT_SAMPLE_FORMAT}),
-      mixerOutput_(
           PcmBufferFormat{DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_CHANNEL_LAYOUT, DEFAULT_SAMPLE_FORMAT})
-{}
+{
+    pullThreadPool_->SetMaxTaskNum(threadCount);
+    pullThreadPool_->Start(threadCount);
+}
 
 AudioSuiteMixerNode::~AudioSuiteMixerNode()
 {
@@ -57,7 +59,6 @@ void AudioSuiteMixerNode::SetAudioNodeFormat(AudioFormat audioFormat)
 
     PcmBufferFormat newPcmFormat = GetAudioNodeInPcmFormat();
     tmpOutput_.ResizePcmBuffer(newPcmFormat);
-    mixerOutput_.ResizePcmBuffer(newPcmFormat);
 
     int32_t ret = InitAudioLimiter();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to Init Mixer node");
@@ -87,7 +88,7 @@ int32_t AudioSuiteMixerNode::Init()
     int32_t ret = InitAudioLimiter();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to Init Mixer node");
 
-    pcmDurationMs_ = PCM_DATA_DEFAULT_DURATION_20_MS;
+    nodeNeedDataDuration_  = PCM_DATA_DEFAULT_DURATION_20_MS;
     AUDIO_INFO_LOG("AudioSuiteMixerNode::Init end");
     return SUCCESS;
 }
@@ -97,36 +98,117 @@ int32_t AudioSuiteMixerNode::DeInit()
     AUDIO_INFO_LOG("AudioSuiteMixerNode::DeInit begin");
 
     limiter_.reset();
+    StopPullPool();
 
     AUDIO_INFO_LOG("AudioSuiteMixerNode::DeInit end");
     return SUCCESS;
 }
 
-AudioSuitePcmBuffer *AudioSuiteMixerNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
+std::vector<AudioSuitePcmBuffer *> AudioSuiteMixerNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
 {
-    CHECK_AND_RETURN_RET_LOG(limiter_ != nullptr, nullptr, "limiter_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuitePcmBuffer inputs is nullptr");
-
+    std::vector<AudioSuitePcmBuffer *> retError{ nullptr };
+    CHECK_AND_RETURN_RET_LOG(limiter_ != nullptr, retError, "limiter_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), retError, "AudioSuitePcmBuffer inputs is nullptr");
+ 
     tmpOutput_.Reset();
     float *outData = reinterpret_cast<float *>(tmpOutput_.GetPcmData());
     float *inData = nullptr;
     for (auto input : inputs) {
-        CHECK_AND_RETURN_RET_LOG(input != nullptr, nullptr, "Input pcm buffer is nullptr");
-        CHECK_AND_RETURN_RET_LOG(input->IsSameFormat(tmpOutput_), nullptr, "Invalid inputPcmBuffer format");
+        CHECK_AND_RETURN_RET_LOG(input != nullptr, retError, "Input pcm buffer is nullptr");
+        CHECK_AND_RETURN_RET_LOG(input->IsSameFormat(tmpOutput_), retError, "Invalid inputPcmBuffer format");
         CHECK_AND_RETURN_RET_LOG(input->GetSampleCount() == tmpOutput_.GetSampleCount(),
-            nullptr, "Invalid inputPcmBuffer data");
+            retError, "Invalid inputPcmBuffer data");
         inData = reinterpret_cast<float *>(input->GetPcmData());
-        CHECK_AND_RETURN_RET_LOG(inData != nullptr, nullptr, "Input data is nullptr");
+        CHECK_AND_RETURN_RET_LOG(inData != nullptr, retError, "Input data is nullptr");
         for (size_t idx = 0; idx < tmpOutput_.GetSampleCount(); ++idx) {
             outData[idx] += inData[idx];
         }
     }
-
+ 
     limiter_->Process(tmpOutput_.GetSampleCount(),
         reinterpret_cast<float *>(tmpOutput_.GetPcmData()),
-        reinterpret_cast<float *>(mixerOutput_.GetPcmData()));
+        reinterpret_cast<float *>(algoOutput_[0]));
+ 
+    return intermediateResult_;
+}
 
-    return &mixerOutput_;
+void AudioSuiteMixerNode::StopPullPool()
+{
+    if (pullThreadPool_ != nullptr) {
+        pullThreadPool_->Stop();
+        pullThreadPool_.reset();
+    }
+}
+
+std::vector<std::future<AudioSuiteMixerNode::PullResult>> AudioSuiteMixerNode::SubmitPullTasks(
+    const std::unordered_map<OutputPort<AudioSuitePcmBuffer*>*, std::shared_ptr<AudioNode>>& preOutputMap)
+{
+    std::vector<std::future<PullResult>> futures;
+    futures.reserve(preOutputMap.size());
+
+    for (auto& o : preOutputMap) {
+        auto nodePair = o;
+        futures.emplace_back(pullThreadPool_->Submit([this, nodePair]() -> PullResult {
+            PullResult r;
+            r.preNode = nodePair.second;
+            CHECK_AND_RETURN_RET_LOG(nodePair.first != nullptr && nodePair.second, r,
+                "node %{public}d has a invalid connection with prenode, node connection error.", GetNodeType());
+            auto data = nodePair.first->PullOutputData(GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(),
+                requestPreNodeDuration_);
+            if (!data.empty() && data[0] != nullptr) {
+                r.ok = true;
+                r.data = std::move(data);
+                r.isFinished = r.data[0]->GetIsFinished();
+            }
+            return r;
+        }));
+    }
+    return futures;
+}
+
+bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer*>& preOutputs,
+    std::vector<std::future<PullResult>>& futures)
+{
+    bool isFinished = true;
+
+    for (auto& f : futures) {
+        PullResult r = f.get();
+        if (!r.ok || r.preNode == nullptr) {
+            continue;
+        }
+        if (finishedPrenodeSet.find(r.preNode) != finishedPrenodeSet.end()) {
+            AUDIO_DEBUG_LOG(
+                "current node type is %{public}d, it's prenode type = %{public}d is finished, skip this outputport.",
+                GetNodeType(), r.preNode->GetNodeType());
+            continue;
+        }
+        // Check if data is empty to avoid invalid pointer access
+        if (r.data.empty()) {
+            isFinished = isFinished && r.isFinished;
+            continue;
+        }
+        if (r.data[0]->GetIsFinished()) {
+            finishedPrenodeSet.insert(r.preNode);
+        }
+        isFinished = isFinished && r.isFinished;
+        preOutputs.insert(preOutputs.end(), r.data.begin(), r.data.end());
+    }
+
+    return isFinished;
+}
+
+std::vector<AudioSuitePcmBuffer*>& AudioSuiteMixerNode::ReadProcessNodePreOutputData()
+{
+    auto& preOutputs = inputStream_.getInputDataRef();
+    preOutputs.clear();
+    auto& preOutputMap = inputStream_.GetPreOutputMap();
+
+    auto futures = SubmitPullTasks(preOutputMap);
+    bool isFinished = CollectPullResults(preOutputs, futures);
+
+    AUDIO_DEBUG_LOG("set node type = %{public}d isFinished status: %{public}d.", GetNodeType(), isFinished);
+    SetAudioNodeDataFinishedFlag(isFinished);
+    return preOutputs;
 }
 
 }  // namespace AudioSuite

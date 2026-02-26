@@ -57,6 +57,7 @@ export struct EffectNodeDialog {
       if (this.selectedEffectNode === NodeType.FIELD) {
         FieldComponent({
           selectedSoundFiled: this.selectedSoundFiled,
+          soundField: this.selectedSoundFiled,
           onCancel: () => {
             this.controllerTwo?.close();
           },
@@ -71,17 +72,16 @@ export struct EffectNodeDialog {
               });
               return;
             }
-
-            // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.FIELD)) {
-              return;
-            }
-
+            this.selectedSoundFiled = soundFieldType;
             let node: Node = {
               id: this.selectedEffectNodeId,
               type: NodeType.FIELD,
               isByPass: soundFieldType === SoundFiledType.SOUND_FIELD_CLOSE ? false : true,
               soundFiledType: soundFieldType
+            }
+            // Bypass control node via the addAudioAssetEffectNode interface
+            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.FIELD, !node.isByPass ?? false)) {
+              return;
             }
             if (this.onAgree) {
               this.onAgree(node);
@@ -107,16 +107,15 @@ export struct EffectNodeDialog {
               return;
             }
 
-            // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.ENV)) {
-              return;
-            }
-
             let node: Node = {
               id: this.selectedEffectNodeId,
               type: NodeType.ENV,
               isByPass: environmentType === EnvironmentType.ENVIRONMENT_TYPE_CLOSE ? false : true,
               environmentType: environmentType
+            }
+            // Bypass control node via the addAudioAssetEffectNode interface
+            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.ENV, !node.isByPass ?? false)) {
+              return;
             }
             if (this.onAgree) {
               this.onAgree(node);
@@ -130,15 +129,14 @@ export struct EffectNodeDialog {
             this.controllerTwo?.close();
           },
           onAgree: () => {
-            // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.NR)) {
-              return;
-            }
-
             let node: Node = {
               id: this.selectedEffectNodeId,
               type: NodeType.NR,
               isByPass: true
+            }
+            // Bypass control node via the addAudioAssetEffectNode interface
+            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.NR, !node.isByPass ?? false)) {
+              return;
             }
             if (this.onAgree) {
               this.onAgree(node);
@@ -165,57 +163,20 @@ export struct EffectNodeDialog {
               return;
             }
 
-            // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.VB)) {
-              return;
-            }
-
             let node: Node = {
               id: this.selectedEffectNodeId,
               type: NodeType.VB,
               isByPass: voiceBeautifierType === VoiceBeautifierType.VOICE_BEAUTIFIER_TYPE_NORMAL ? false : true,
               voiceBeautifierType: voiceBeautifierType
             }
-            if (this.onAgree) {
-              this.onAgree(node);
-            }
-            this.controllerTwo?.close();
-          }
-        })
-      } else if (this.selectedEffectNode === NodeType.SEPARATION) {
-        AudioSeparationComponent({
-          selectedAudioSeparation: this.selectedAudioSeparation,
-          onCancel: () => {
-            this.controllerTwo?.close();
-          },
-          onAgree: (audioSeparationType: AudioSeparationType) => {
-            // Call the NAPI interface to add the audio source separation node to the corresponding audioAsset.
-            let result = audioSeparationType === AudioSeparationType.AUDIO_NODE_BACKGROUND_SOUND_OUTPORT_TYPE ?
-              audioNapi.setSeparationMode(0) : audioNapi.setSeparationMode(1);
-            if (result !== 0) {
-              this.getUIContext().showAlertDialog({
-                message: '设置音源分离模式失败',
-                autoCancel: true
-              });
-              return;
-            }
-
             // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.SEPARATION)) {
+            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.VB, !node.isByPass ?? false)) {
               return;
-            }
-
-            let node: Node = {
-              id: this.selectedEffectNodeId,
-              type: NodeType.SEPARATION,
-              isByPass: true,
-              audioSeparationType: audioSeparationType
             }
             if (this.onAgree) {
               this.onAgree(node);
             }
             this.controllerTwo?.close();
-            this.isSeparation = true;
           }
         })
       } else if (this.selectedEffectNode === NodeType.SOUND_SPEED_TONE) {
@@ -237,10 +198,6 @@ export struct EffectNodeDialog {
               });
               return;
             }
-            // Bypass control node via the addAudioAssetEffectNode interface
-            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.SOUND_SPEED_TONE)) {
-              return;
-            }
 
             let node: Node = {
               id: this.selectedEffectNodeId,
@@ -248,6 +205,10 @@ export struct EffectNodeDialog {
               isByPass: true,
               soundSpeed: soundSpeed,
               soundTone: soundTone
+            }
+            // Bypass control node via the addAudioAssetEffectNode interface
+            if (!this.isSuccessAddEffectToAudioAssetNapi(NodeType.SOUND_SPEED_TONE, !node.isByPass ?? false)) {
+              return;
             }
             if (this.onAgree) {
               this.onAgree(node);
@@ -259,7 +220,7 @@ export struct EffectNodeDialog {
     }
   }
 
-  isSuccessAddEffectToAudioAssetNapi(type: NodeType) {
+  isSuccessAddEffectToAudioAssetNapi(type: NodeType, isBypass: boolean) {
     Logger.info(TAG, `enter isSuccessAddEffectToAudioAssetNapi, nodeType:${type}`);
     if (this.isNodeTypeInAudioAsset(type)) {
       let addAssetResult =
@@ -273,7 +234,7 @@ export struct EffectNodeDialog {
         return false;
       }
       Logger.info(TAG, `enter bypass set`);
-      let ret = audioNapi.setEffectNodeBypass(this.selectedAudioTrackId, this.selectedEffectNodeId, false);
+      let ret = audioNapi.setEffectNodeBypass(this.selectedAudioTrackId, this.selectedEffectNodeId, isBypass);
       if (!ret) {
         this.getUIContext().showAlertDialog({
           message: `设置效果节点Bypass失败`,

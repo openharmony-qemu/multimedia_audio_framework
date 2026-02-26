@@ -45,7 +45,7 @@ private:
     };
     void OnJsCallbackRendererDeviceInfo(std::unique_ptr<AudioRendererDeviceChangeJsCallback> &jsCb);
     static void SafeJsCallbackRendererDeviceInfoWork(AudioRendererDeviceChangeJsCallback *event);
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
     std::shared_ptr<AutoRef> renderPeriodPositionCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
@@ -74,7 +74,7 @@ private:
     void OnJsCallbackOutputDeviceInfo(std::unique_ptr<AudioRendererOutputDeviceChangeWithInfoJsCallback> &jsCb);
     static void SafeJsCallbackOutputDeviceInfoWork(AudioRendererOutputDeviceChangeWithInfoJsCallback *event);
 
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };

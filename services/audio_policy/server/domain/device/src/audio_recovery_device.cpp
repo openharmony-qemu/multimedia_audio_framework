@@ -248,17 +248,15 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
-    SetRenderDeviceForUsage(strUsage, selectedDesc[0], audioRendererFilter->uid);
-    CheckAndWriteDeviceChangeExceptionEvent(res == SUCCESS, AudioStreamDeviceChangeReason::OVERRODE,
-        selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_, res, "SetRenderDeviceForUsage fail");
+    res = SetRenderDeviceForUsage(strUsage, selectedDesc[0], audioRendererFilter->uid);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
 
     // If the selected device is virtual device, connect it.
     if (isVirtualDevice) {
         int32_t ret = ConnectVirtualDevice(selectedDesc[0]);
-        CheckAndWriteDeviceChangeExceptionEvent(ret == SUCCESS, AudioStreamDeviceChangeReason::OVERRODE,
-            selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_, ret, "Connect virtual device fail");
-        return ret;
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Connect device [%{public}s] failed",
+            GetEncryptStr(selectedDesc[0]->macAddress_).c_str());
+        return SUCCESS;
     }
 
     if (isNeedNotifyBt) {
@@ -502,9 +500,15 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         AudioPolicyUtils::GetInstance().GetDevicesStr(audioDeviceDescriptors).c_str());
 
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors.size() > 0, ERR_INVALID_PARAM, "No device to exclude");
-    std::string taskid = "{\"taskId\":\"0\"}";
-    AudioServerProxy::GetInstance().NotifyTaskIdInfoProxy(taskid, true);
-    AUDIO_INFO_LOG("taskId clean success!");
+    for (const auto& deviceDesc : audioDeviceDescriptors) {
+        CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERROR_INVALID_PARAM, "deviceDesc is null");
+        AUDIO_INFO_LOG("deviceDesc->dmDeviceType_ %{public}d", deviceDesc->dmDeviceType_);
+        if (deviceDesc->dmDeviceType_ == DM_DEVICE_TYPE_MUSIC_HOST) {
+            std::string taskId = "{\"taskId\":\"0\"}";
+            AudioServerProxy::GetInstance().NotifyTaskIdInfoProxy(taskId, false);
+            AUDIO_INFO_LOG("taskId clean success!, is not connected");
+        }
+    }
     if (audioDeviceDescriptors.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         audioDeviceDescriptors.front()->macAddress_.empty()) {
         AudioPolicyUtils::GetInstance().SetScoExcluded(true);

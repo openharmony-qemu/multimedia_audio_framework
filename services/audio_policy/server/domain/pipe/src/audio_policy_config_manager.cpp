@@ -159,16 +159,6 @@ void AudioPolicyConfigManager::OnUpdateRouteSupport(bool isSupported)
     isUpdateRouteSupported_ = isSupported;
 }
 
-void AudioPolicyConfigManager::OnUpdateDefaultAdapter(bool isEnable)
-{
-    isDefaultAdapterEnable_ = isEnable;
-}
-
-bool AudioPolicyConfigManager::GetDefaultAdapterEnable()
-{
-    return isDefaultAdapterEnable_;
-}
-
 void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs_ = globalConfigs;
@@ -177,6 +167,11 @@ void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &global
 void AudioPolicyConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 {
     enableFastVoip_ = enableFastVoip;
+}
+
+void AudioPolicyConfigManager::OnMultSupMode(bool supportMultSupMode)
+{
+    supportMultSupMode_ = supportMultSupMode;
 }
 
 void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
@@ -823,6 +818,11 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         !pipeIt->second->streamPropInfos_.empty()) {
         info = pipeIt->second->streamPropInfos_.front();
     } // if not match, choose first?
+}
+
+bool AudioPolicyConfigManager::GetSupportMultSupMode()
+{
+    return supportMultSupMode_;
 }
 
 void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,

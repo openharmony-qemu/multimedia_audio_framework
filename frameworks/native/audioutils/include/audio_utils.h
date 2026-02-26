@@ -637,6 +637,8 @@ std::string EncodingTypeStr(AudioEncodingType type);
 
 int32_t CheckSupportedParams(const AudioStreamInfo &info);
 
+std::string GetBundleNameByToken(const uint32_t tokenIdNum);
+
 std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
     const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from);
 

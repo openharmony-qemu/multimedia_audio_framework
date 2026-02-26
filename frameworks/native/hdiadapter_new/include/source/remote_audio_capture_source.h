@@ -109,6 +109,7 @@ private:
     std::string logUtilsTag_ = "RemoteAudioSource";
     mutable int64_t volumeDataCount_ = 0;
     bool muteState_ = false;
+    std::unordered_set<int32_t> appsUid_;
 };
 
 } // namespace AudioStandard

@@ -208,15 +208,6 @@ void AudioServerProxy::GetAllSinkInputsProxy(std::vector<SinkInput> &sinkInputs)
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioServerProxy::SetDefaultAdapterEnableProxy(bool isEnable)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetDefaultAdapterEnable(isEnable);
-    IPCSkeleton::SetCallingIdentity(identity);
-}
-
 bool AudioServerProxy::NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -365,7 +356,7 @@ void AudioServerProxy::NotifyTaskIdInfoProxy(std::string &taskId, bool connected
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->NotifyDeviceInfo(taskId, connected);
+    gsp->NotifyTaskIdProxy(taskId, connected);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

@@ -72,7 +72,7 @@ bool LoudVolumeManager::FindLoudVolStreamTypeEnable(
     }
     return false;
 }
-
+ 
 void LoudVolumeManager::SetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool state)
 {
     std::lock_guard<std::mutex> lock(setLoudVolHoldMutex_);
@@ -104,7 +104,7 @@ bool LoudVolumeManager::ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldTy
 {
     bool isHolding = false;
     if (funcHoldType != LOUD_VOLUME_MODE_MUSIC && funcHoldType != LOUD_VOLUME_MODE_VOICE) {
-        AUDIO_ERR_LOG("funHoldType error : %{public}d", funcHoldType);
+        AUDIO_ERR_LOG("funcHoldType error : %{public}d", funcHoldType);
         return false;
     }
     bool isInLoudVolumeMode = GetLoudVolumeHoldMap(funcHoldType, isHolding);
@@ -112,9 +112,9 @@ bool LoudVolumeManager::ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldTy
         case LOUD_VOLUME_SWITCH_ON:
             if (!isInLoudVolumeMode) {
                 if (funcHoldType == LOUD_VOLUME_MODE_MUSIC) {
-                    SetLoudVolumeHoldMap(funcHoldType, true);
+                    SetLoudVolumeHoldMap(funcHoldType, true); // LOUD_VOLUME_MODE_MUSIC mode continuous holding
                 } else {
-                    SetLoudVolumeHoldMap(funcHoldType, false);
+                    SetLoudVolumeHoldMap(funcHoldType, false); // LOUD_VOLUME_MODE_VOICE Mode cannot continuous holding
                 }
                 audioVolumeManager_.SendLoudVolumeMode(funcHoldType, true, true);
             }
@@ -228,5 +228,5 @@ void LoudVolumeManager::LoudVolumeMonitor()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 #endif
-}
-}
+} // namespace AudioStandard
+} // namespace OHOS

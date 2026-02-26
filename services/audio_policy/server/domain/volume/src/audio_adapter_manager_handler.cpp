@@ -122,7 +122,6 @@ void AudioAdapterManagerHandler::HandleUpdateRingerMode(const AppExecFwk::InnerE
 
 void AudioAdapterManagerHandler::ReleaseEventRunner()
 {
-    AUDIO_INFO_LOG("release all events");
     SetEventRunner(nullptr);
 }
 

@@ -497,8 +497,11 @@ void OHAudioCapturerModeCallback::OnReadData(size_t length)
         "pointer to the fuction is nullptr");
     BufferDesc bufDesc;
     int32_t ret = audioCapturer->GetBufferDesc(bufDesc);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "get bufDesc failed, bufLength=%{public}zu, dataLength=%{public}zu",
-        bufDesc.bufLength, bufDesc.dataLength);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("get bufDesc failed, bufLength=%{public}zu, dataLength=%{public}zu",
+            bufDesc.bufLength, bufDesc.dataLength);
+        return;
+    }
 
     if (audioCapturer->GetCapturerReadDataCallbackType() == READ_DATA_CALLBACK_WITHOUT_RESULT &&
         callbacks_.OH_AudioCapturer_OnReadData != nullptr) {
@@ -587,7 +590,7 @@ void OHAudioCapturerOnPlaybackCaptureStartCallback::OnPlaybackCaptureStartResult
 {
     CHECK_AND_RETURN_LOG(ohAudioCapturer_ != nullptr, "capturer client is nullptr");
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "pointer to the function is nullptr");
- 
+
     callback_(ohAudioCapturer_, userData_, static_cast<OH_AudioStream_PlaybackCaptureStartState>(state));
     if (state == START_STATE_SUCCESS) {
         OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(ohAudioCapturer_);
@@ -731,10 +734,10 @@ int32_t OHAudioCapturer::StartPlaybackCapture(OH_AudioCapturer* capturer,
     capturerOnPlaybackCaptureStartCallback_ = std::make_shared<OHAudioCapturerOnPlaybackCaptureStartCallback> (callback,
         reinterpret_cast<OH_AudioCapturer*>(this), userData);
     audioCapturer_->SetPlaybackCaptureStartStateCallback(capturerOnPlaybackCaptureStartCallback_);
- 
+
     return audioCapturer_->StartPlaybackCapture();
 }
- 
+
 bool OHAudioCapturer::IsModernInnerCapturer()
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "capturer client is nullptr");

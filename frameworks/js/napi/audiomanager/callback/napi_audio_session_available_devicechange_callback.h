@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME = "availableDeviceChange";
+inline const std::string AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME = "availableDeviceChange";
 
 class NapiAudioSessionAvailableDeviceChangeCallback : public AudioManagerAvailableDeviceChangeCallback {
 public:

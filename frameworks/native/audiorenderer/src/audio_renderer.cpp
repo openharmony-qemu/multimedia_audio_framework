@@ -2243,30 +2243,8 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     }
 
     // set callback
-    if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
-        audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);
-    }
+    SetSwitchInfoCallbacks(info, audioStream);
 
-    if ((info.capturePositionCb != nullptr) && (info.frameMarkPosition > 0)) {
-        audioStream->SetCapturerPositionCallback(info.frameMarkPosition, info.capturePositionCb);
-    }
-
-    if ((info.renderPeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
-        audioStream->SetRendererPeriodPositionCallback(info.framePeriodNumber, info.renderPeriodPositionCb);
-    }
-
-    if ((info.capturePeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
-        audioStream->SetCapturerPeriodPositionCallback(info.framePeriodNumber, info.capturePeriodPositionCb);
-    }
-
-    if (info.rendererInfo.isStatic && info.staticBufferEventCallback != nullptr) {
-        audioStream->SetStaticBufferEventCallback(info.staticBufferEventCallback);
-    }
-
-    audioStream->SetStreamCallback(info.audioStreamCallback);
-    audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
-
-    audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
     audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair, info.lastFramePosAndTimePairWithSpeed);
     return true;
 }
@@ -3205,7 +3183,7 @@ void AudioRendererPrivate::UpdateAudioStreamParamsByStreamDescriptor(AudioStream
     audioStreamParams.isRemoteSpatialChannel = streamDesc->newDeviceDescs_.front()->IsDistributedSpeaker();
     audioStreamParams.remoteChannelLayout =
         static_cast<uint64_t>(*streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().channelLayout.begin());
-    audioStreamParams.isUltraFast = streamDesc->GetUltraFastFlag();
+    audioStreamParams.ultraFastFlag = streamDesc->GetUltraFastFlag();
 }
 
 void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
@@ -3224,6 +3202,36 @@ void AudioRendererPrivate::SetSwitchInfoInner(IAudioStream::SwitchInfo &info,
         // resume the backMute flag for new stream
         audioStream->SetBackMute(true);
     }
+}
+
+void AudioRendererPrivate::SetSwitchInfoCallbacks(IAudioStream::SwitchInfo &info,
+    std::shared_ptr<IAudioStream> audioStream)
+{
+    if ((info.renderPositionCb != nullptr) && (info.frameMarkPosition > 0)) {
+        audioStream->SetRendererPositionCallback(info.frameMarkPosition, info.renderPositionCb);
+    }
+
+    if ((info.capturePositionCb != nullptr) && (info.frameMarkPosition > 0)) {
+        audioStream->SetCapturerPositionCallback(info.frameMarkPosition, info.capturePositionCb);
+    }
+
+    if ((info.renderPeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
+        audioStream->SetRendererPeriodPositionCallback(info.framePeriodNumber, info.renderPeriodPositionCb);
+    }
+
+    if ((info.capturePeriodPositionCb != nullptr) && (info.framePeriodNumber > 0)) {
+        audioStream->SetCapturerPeriodPositionCallback(info.framePeriodNumber, info.capturePeriodPositionCb);
+    }
+
+    if (info.rendererInfo.isStatic && info.staticBufferEventCallback != nullptr) {
+        audioStream->SetStaticBufferEventCallback(info.staticBufferEventCallback);
+        audioStream->SetStaticTriggerRecreateCallback([this]() {AsyncCheckAudioRenderer("StaticRecreate", false);});
+    }
+
+    audioStream->SetStreamCallback(info.audioStreamCallback);
+    audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
+
+    audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
 }
 
 int32_t AudioRendererPrivate::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const
@@ -3251,5 +3259,27 @@ int32_t AudioRendererPrivate::GetCurrentBackMuteStatus(bool &backMute)
     }
     return SUCCESS;
 }
+
+// Only can be used in static mode
+bool AudioRendererPrivate::ResetStaticPlayPosition()
+{
+    Trace trace("KeyAction AudioRenderer::ResetStaticPlayPosition" + std::to_string(sessionID_));
+    AUDIO_INFO_LOG("StreamClientState for Renderer::ResetStaticPlayPosition");
+
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "not in static mode");
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+    RendererState state = GetStatusInner();
+    CHECK_AND_RETURN_RET_LOG(state == RENDERER_RUNNING, false,
+        "ResetStaticPlayPosition failed. Illegal state:%{public}u", state);
+    CHECK_AND_RETURN_RET_LOG(!isSwitching_, false,
+        "ResetStaticPlayPosition failed. Switching state: %{public}d", isSwitching_);
+    return audioStream_->ResetStaticPlayPosition();
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

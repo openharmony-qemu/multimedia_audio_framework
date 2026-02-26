@@ -329,5 +329,11 @@ int32_t CabinAudioRenderSink::CreateRender(void)
 
     return SUCCESS;
 }
+
+int32_t CabinAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("SetVolumeWithRamp not supported, direct setting volume");
+    return SetVolume(left, right);
+}
 } // namespace AudioStandard
 } // namespace OHOS

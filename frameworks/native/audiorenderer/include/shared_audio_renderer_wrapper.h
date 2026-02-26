@@ -467,16 +467,6 @@ public:
         return sharedAudioRenderer_->StartDataCallback();
     }
 
-    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override
-    {
-        sharedAudioRenderer_->SetAudioHapticsSyncId(audioHapticsSyncId);
-    }
-
-    void ResetFirstFrameState() override
-    {
-        sharedAudioRenderer_->ResetFirstFrameState();
-    }
-
     int32_t StopDataCallback() override
     {
         return sharedAudioRenderer_->StopDataCallback();
@@ -485,6 +475,16 @@ public:
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override
     {
         return sharedAudioRenderer_->SetInterruptEventCallbackType(callbackType);
+    }
+    
+    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override
+    {
+        sharedAudioRenderer_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    }
+
+    void ResetFirstFrameState() override
+    {
+        sharedAudioRenderer_->ResetFirstFrameState();
     }
 
     int32_t SetTarget(RenderTarget target) override

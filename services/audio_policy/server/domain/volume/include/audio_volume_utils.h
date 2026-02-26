@@ -30,13 +30,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const std::vector<AudioStreamType> DISTRIBUTED_VOLUME_TYPE_LIST = {
+static inline const std::vector<AudioStreamType> DISTRIBUTED_VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_MUSIC
 };
 
-static const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
+static inline const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
     STREAM_VOICE_CALL,
@@ -51,7 +51,7 @@ static const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
 #endif
 };
 
-static const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
+static inline const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
     STREAM_VOICE_CALL,
@@ -69,7 +69,7 @@ static const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
     STREAM_MUSIC
 };
 
-static const std::unordered_map<DeviceType, DeviceVolumeType> DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP = {
+static inline const std::unordered_map<DeviceType, DeviceVolumeType> DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP = {
     {DEVICE_TYPE_EARPIECE, EARPIECE_VOLUME_TYPE},
     {DEVICE_TYPE_SPEAKER, SPEAKER_VOLUME_TYPE},
     {DEVICE_TYPE_WIRED_HEADSET, HEADSET_VOLUME_TYPE}

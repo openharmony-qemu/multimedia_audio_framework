@@ -195,6 +195,7 @@ public:
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
     uint64_t ProcessPendingTransitionsAndGetNextDelay();
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     // interfaces for injector
     void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
     void AddCaptureInjector(
@@ -203,12 +204,11 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
-
-    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
-    void updateCollaborativeProductId(const std::string &productId) override;
+    void UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
 
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
+    void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     int32_t CloseInAudioPort(std::string sourceName);
@@ -237,7 +237,7 @@ private:
     int32_t OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
     int32_t OpenVirtualAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex);
-    bool HandleRendererManager(const std::string& sinkName, const HpaeStreamInfo &streamInfo);
+    bool HandleRendererManager(const std::string &sinkName, const HpaeStreamInfo &streamInfo);
     void CreateStreamForCapInner(const HpaeStreamInfo &streamInfo);
     int32_t CreateRendererManager(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex,
         bool isReload = false);
@@ -250,13 +250,13 @@ private:
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name);
 
-    void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> &serviceCallback);
+    void MoveToPreferSink(const std::string &name, std::shared_ptr<AudioServiceHpaeCallback> &serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo, bool isReload = false);
     int32_t ReloadCaptureManager(HpaeSourceInfo &sourceInfo, bool isReload = false);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
 
-    bool MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode>& sinkInput);
+    bool MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &sinkInput);
     bool SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
     void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
@@ -276,8 +276,6 @@ private:
     std::vector<HpaeCaptureMoveInfo> GetUsedMoveInfos(std::vector<HpaeCaptureMoveInfo> &moveInfos);
     std::vector<uint32_t> GetAllRenderSession(const std::string &name);
     std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
-    void UpdateBypassSpatializationForStereo();
-    void HandleBypassSpatializationForStereo();
     std::shared_ptr<IHpaeRendererManager> GetAuxiliaryRendererManager();
 
 private:
@@ -317,9 +315,6 @@ private:
 
     std::unordered_map<uint32_t, std::shared_ptr<HpaeSinkVirtualOutputNode>> sinkVirtualOutputNodeMap_;
     std::mutex sinkVirtualOutputNodeMapMutex_;
-
-    bool bypassSpatializationForStereo_ = false;
-    bool adaptiveSpatialRenderingEnabled_ = false;
 };
 
 }  // namespace HPAE

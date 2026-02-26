@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "audio_errors.h"
@@ -23,13 +24,15 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const size_t BUFFER_LENGTH_FOUR = 4;
-const size_t BUFFER_LENGTH_EIGHT = 8;
+constexpr size_t BUFFER_LENGTH_THREE = 3;
+constexpr size_t BUFFER_LENGTH_FOUR = 4;
+constexpr size_t BUFFER_LENGTH_EIGHT = 8;
 constexpr size_t NUMBER2 = 2;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER8 = 8;
 constexpr float FLOAT_SCALE_16 = 1.0f / (1 << (16 - 1));
 constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (32 - 1));
+constexpr int32_t VOLUME_DIV_NUMBER = 65536;
 }
 class FormatConverterUnitTest : public testing::Test {
 public:
@@ -431,6 +434,35 @@ HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_004, TestSize.Level
 
     ret = FormatConverter::DataAccumulationWithoutVolume(srcDataList, dstData);
     EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: DataAccumulationFromVolume_005
+ * @tc.desc  : Test DataAccumulationFromVolume interface:S24
+ */
+HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_005, TestSize.Level0)
+{
+    uint8_t srcBuffer[BUFFER_LENGTH_THREE] = {0x56, 0x34, 0x12};
+    BufferDesc srcDesc = {srcBuffer, BUFFER_LENGTH_THREE, BUFFER_LENGTH_THREE};
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, STEREO};
+    srcData.bufferDesc = srcDesc;
+    srcData.volumeStart = VOLUME_DIV_NUMBER / 2;
+    std::vector<AudioStreamData> srcDataList = {srcData};
+
+    uint8_t dstBuffer[BUFFER_LENGTH_THREE] = {0, 0, 0};
+    BufferDesc dstDesc = {dstBuffer, BUFFER_LENGTH_THREE, BUFFER_LENGTH_THREE};
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, STEREO};
+    dstData.bufferDesc = dstDesc;
+
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(dstBuffer[0], 0x56 / 2);
+    EXPECT_EQ(dstBuffer[1], 0x34 / 2);
+    EXPECT_EQ(dstBuffer[2], 0x12 / 2);
 }
 
 /**

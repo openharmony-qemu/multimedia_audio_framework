@@ -513,7 +513,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
 
     bool scoExcludeFlag = false;
     int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag);
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    EXPECT_EQ(SUCCESS, ret);
+#else
     EXPECT_NE(SUCCESS, ret);
+#endif
 }
 
 #ifdef TEMP_DISABLE
@@ -1316,7 +1320,7 @@ HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->OffloadSetVolume(0.5f, "offload", "default");
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    EXPECT_EQ(ret, ERROR);
 }
 
 /**
@@ -1408,7 +1412,7 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
     std::string testName = "testSink";
     int64_t volueDataCount = 0;
     int32_t ret = audioServer->GetVolumeDataCount(testName, volueDataCount);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
     EXPECT_EQ(volueDataCount, 0);
 }
 
@@ -1425,20 +1429,6 @@ HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_002, TestSize.Level1)
     int64_t volueDataCount = INVALID_VALUE;
     audioServer->GetVolumeDataCount(testName, volueDataCount);
     EXPECT_EQ(volueDataCount, 0);
-}
-
-/**
- * @tc.name  : Test SetDefaultAdapterEnable API
- * @tc.type  : FUNC
- * @tc.number: SetDefaultAdapterEnable_001
- * @tc.desc  : Test SetDefaultAdapterEnable interface.
- */
-HWTEST_F(AudioServerUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    bool isEnable = false;
-    audioServer->SetDefaultAdapterEnable(isEnable);
-    EXPECT_NE(nullptr, audioServer);
 }
 
 /**

@@ -87,6 +87,8 @@ public:
     void Init();
     void SaveAppInfo(const DfxRunningAppInfo info);
     void UpdateAppState(int32_t appUid, DfxAppState appstate, bool forceUpdate = false);
+    
+    static bool IsHiviewUeEnable();
 private:
     DfxMsgManager();
     virtual ~DfxMsgManager();
@@ -131,6 +133,11 @@ private:
     std::condition_variable cvReachLimit_;
     std::mutex mutexLock_;
     std::map<int32_t, std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>> indexesInfo_;
+    
+    // Hiview UE parameter monitoring
+    static std::atomic_bool hiviewUeEnable_;
+    static void HiviewUeEnableChangeCallback(const char *key, const char *value, void *context);
+    void WatchHiviewUeEnableParameter();
 
     enum {
         DFX_CHECK_REPORT_MSG = 0,

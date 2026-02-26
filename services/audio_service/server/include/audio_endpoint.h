@@ -26,9 +26,6 @@
 #include "i_process_status_listener.h"
 #include "linear_pos_time_model.h"
 #include "audio_device_descriptor.h"
-#include "i_stream_manager.h"
-#include "i_renderer_stream.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,6 +51,7 @@ struct AudioEndpointConfig {
     AudioMode audioMode;
     AudioStreamType streamType;
     bool isUltraFast;
+    bool isLoopback;
 };
 
 class AudioEndpoint : public IProcessStatusListener {

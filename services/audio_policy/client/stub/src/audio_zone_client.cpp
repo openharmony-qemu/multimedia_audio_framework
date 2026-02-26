@@ -202,7 +202,7 @@ int32_t AudioZoneClient::OnAudioZoneChange(int32_t zoneId, const AudioZoneDescri
     CHECK_AND_RETURN_RET_LOG(audioZoneChangeCallbackMap_.find(zoneId) != audioZoneChangeCallbackMap_.end(),
         ERR_OPERATION_FAILED, "audioZoneChangeCallbackMap_ not find zoneId %{public}d.", zoneId);
     CHECK_AND_RETURN_RET_LOG(audioZoneChangeCallbackMap_[zoneId] != nullptr,
-        ERR_OPERATION_FAILED, "audioZoneChangeCallback is nullptr, zoneId %{public}d.", zoneId);
+        ERR_OPERATION_FAILED, "cb is nullptr");
     audioZoneChangeCallbackMap_[zoneId]->OnAudioZoneChange(zoneDescriptor,
         static_cast<AudioZoneChangeReason>(reason));
     return SUCCESS;
@@ -234,8 +234,6 @@ int32_t AudioZoneClient::OnInterruptEvent(int32_t zoneId, const std::string &dev
     std::lock_guard<std::mutex> lk(audioZoneInterruptMutex_);
     CHECK_AND_RETURN_RET_LOG(audioZoneInterruptCallbackMap_.find(key) != audioZoneInterruptCallbackMap_.end(),
         ERR_OPERATION_FAILED, "audioZoneInterruptCallbackMap_ not find key %{public}s.", key.c_str());
-    CHECK_AND_RETURN_RET_LOG(audioZoneInterruptCallbackMap_[key] != nullptr,
-        ERR_OPERATION_FAILED, "audioZoneInterruptCallback is nullptr, key %{public}s.", key.c_str());
 
     audioZoneInterruptCallbackMap_[key]->OnInterruptEvent(interrupts,
         static_cast<AudioZoneInterruptReason>(reason));
@@ -249,7 +247,7 @@ int32_t AudioZoneClient::SetSystemVolume(int32_t zoneId, int32_t volumeType,
     CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end(),
         ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
     CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+        ERR_OPERATION_FAILED, "cb is nullptr");
 
     audioZoneVolumeProxyMap_[zoneId]->SetSystemVolume(static_cast<AudioVolumeType>(volumeType),
         volumeLevel);
@@ -262,7 +260,7 @@ int32_t AudioZoneClient::GetSystemVolume(int32_t zoneId, int32_t volumeType, flo
     CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end(),
         ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
     CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+        ERR_OPERATION_FAILED, "cb is nullptr");
 
     outVolume = audioZoneVolumeProxyMap_[zoneId]->GetSystemVolume(static_cast<AudioVolumeType>(volumeType));
     return SUCCESS;

@@ -133,6 +133,7 @@ void NapiAudioRendererStateCallback::SafeJsCallbackRendererStateWork(
         static_cast<AudioRendererStateJsCallback*>(data),
         [](AudioRendererStateJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     napi_ref callback = event->callback->cb_;
     napi_handle_scope scope = nullptr;

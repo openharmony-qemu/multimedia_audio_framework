@@ -46,7 +46,7 @@ CoreServiceHandler::~CoreServiceHandler()
 
 int32_t CoreServiceHandler::ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> coreServiceProvider)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceProvider != nullptr, ERR_INVALID_PARAM, "Failed with null provider!");
+    CHECK_AND_RETURN_RET_LOG(coreServiceProvider != nullptr, ERR_INVALID_PARAM, "Failed with null provider.");
     if (iCoreServiceProvider_ == nullptr) {
         iCoreServiceProvider_ = coreServiceProvider;
         return SUCCESS;
@@ -58,27 +58,27 @@ int32_t CoreServiceHandler::ConfigCoreServiceProvider(const sptr<ICoreServicePro
 int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
     SessionOperationMsg opMsg)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
 int32_t CoreServiceHandler::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     return iCoreServiceProvider_->ReloadCaptureSession(sessionId, operation);
 }
 
 int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     return iCoreServiceProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning,
         skipForce);
 }
 
 std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, "", "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, "", "iCoreServiceProvider_ is nullptr");
     std::string ret{};
     iCoreServiceProvider_->GetAdapterNameBySessionId(sessionId, ret);
     return ret;
@@ -102,7 +102,7 @@ int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, 
 
 uint32_t CoreServiceHandler::GenerateSessionId()
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     uint32_t ret{};
     iCoreServiceProvider_->GenerateSessionId(ret);
     return ret;
@@ -121,6 +121,15 @@ uint32_t CoreServiceHandler::GetPaIndexByPortName(const std::string &portName)
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     uint32_t ret = OPEN_PORT_FAILURE;
     iCoreServiceProvider_->GetPaIndexByPortName(portName, ret);
+    return ret;
+}
+
+int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
+                                                         uint32_t &timeStamp)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp, ret);
     return ret;
 }
 
@@ -156,15 +165,6 @@ void CoreServiceHandler::RebuildCaptureInjector(uint32_t sessionId)
 {
     CHECK_AND_RETURN_LOG(iCoreServiceProvider_ != nullptr, "Injector::iCoreServiceProvider_ is nullptr!");
     iCoreServiceProvider_->RebuildCaptureInjector(sessionId);
-}
-
-int32_t CoreServiceHandler::A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
-                                                         uint32_t &timeStamp)
-{
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    int32_t ret = ERROR;
-    iCoreServiceProvider_->A2dpOffloadGetRenderPosition(delayValue, sendDataSize, timeStamp, ret);
-    return ret;
 }
 
 void CoreServiceHandler::OnCheckActiveMusicTime(const std::string &reason)

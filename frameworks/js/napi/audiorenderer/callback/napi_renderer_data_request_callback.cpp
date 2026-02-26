@@ -129,6 +129,7 @@ void NapiRendererDataRequestCallback::SafeJsCallbackDataRequestWork(
         static_cast<RendererDataRequestJsCallback*>(data),
         [](RendererDataRequestJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

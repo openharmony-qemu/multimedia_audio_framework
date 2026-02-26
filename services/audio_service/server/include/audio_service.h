@@ -22,6 +22,7 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 #ifdef SUPPORT_LOW_LATENCY
 #include "audio_process_in_server.h"
@@ -33,9 +34,6 @@
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
 #include "playback_capturer_filter_listener.h"
-#ifdef FEATURE_CALL_MANAGER
-#include "call_manager_client.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -90,8 +88,9 @@ public:
     // override for ProcessReleaseCallback, do release process work.
     int32_t OnProcessRelease(IAudioProcessStream *process, bool isSwitchStream = false) override;
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
+    void WaitForRelease(const std::string endpointName, const int32_t delayTime);
 
-    void CheckBeforeRecordEndpointCreate(bool isRecord);
+    void CheckBeforeVoipEndpointCreate(bool isVoip, bool isRecord);
     AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
         AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(const AudioEndpointConfig &endpointConfig,
@@ -118,7 +117,7 @@ public:
     std::shared_ptr<RendererInServer> GetRendererBySessionID(const uint32_t &session);
     std::shared_ptr<CapturerInServer> GetCapturerBySessionID(const uint32_t &session);
     void SetNonInterruptMute(const uint32_t SessionId, const bool muteFlag);
-    void SetNonInterruptMuteForProcess(const uint32_t SessionId, const bool muteFlag);
+    void SetNonInterruptMuteForProcess(const uint32_t sessionId, const bool muteFlag);
     void UpdateMuteControlSet(uint32_t sessionId, bool muteFlag);
     int32_t UpdateSourceType(SourceType sourceType);
     void SetIncMaxRendererStreamCnt(AudioMode audioMode);
@@ -133,8 +132,6 @@ public:
     void CleanAppUseNumMap(int32_t appUid);
     bool HasBluetoothEndpoint();
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
-    void SetDefaultAdapterEnable(bool isEnable);
-    bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
     int32_t ForceStopAudioStream(StopAudioType audioType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
@@ -147,12 +144,10 @@ public:
 #endif
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
-    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
-    bool IsSameAudioStreamInfoNotIncludeSample(AudioStreamInfo &newStreamInfo, AudioStreamInfo &oldStreamInfo);
     ReuseEndpointType GetReuseEndpointType(const std::string &deviceKey, const AudioStreamInfo &streamInfo);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
@@ -223,7 +218,6 @@ private:
 
     // for inner-capturer
     bool isRegisterCapturerFilterListened_ = false;
-    bool isDefaultAdapterEnable_ = false;
     AudioPlaybackCaptureConfig workingConfig_;
     std::unordered_map<int32_t, AudioPlaybackCaptureConfig> workingConfigs_;
 
@@ -238,8 +232,8 @@ private:
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
     int32_t currentRendererStreamCnt_ = 0;
-    int32_t currentLoopbackRendererStreamCnt_ = 0;
-    int32_t currentLoopbackCapturerStreamCnt_ = 0;
+    std::atomic<int32_t> currentLoopbackRendererStreamCnt_{0};
+    std::atomic<int32_t> currentLoopbackCapturerStreamCnt_{0};
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap_;
     std::mutex allRunningSinksMutex_;
@@ -254,11 +248,6 @@ private:
     float audioWorkGroupSystemVolume_ = 0.0f;
 
     std::mutex dualStreamMutex_;
-
-#ifdef FEATURE_CALL_MANAGER
-    std::shared_ptr<Telephony::CallManagerClient> callManager_ = nullptr;
-    std::mutex callManagerMutex_;
-#endif
 };
 } // namespace AudioStandard
 } // namespace OHOS

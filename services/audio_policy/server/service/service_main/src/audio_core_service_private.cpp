@@ -728,7 +728,7 @@ int32_t AudioCoreService::SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDesc
     Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDescriptor->macAddress_);
     std::string productId;
     device.GetDeviceProductId(productId);
-    AudioCollaborativeService::GetAudioCollaborativeService().updateCollaborativeProductId(productId);
+    AudioCollaborativeService::GetAudioCollaborativeService().UpdateCollaborativeProductId(productId);
     AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
 
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
@@ -1241,7 +1241,7 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
     deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
-    isUltraFast = pipeManager_->IsStreamUltraFast(sessionId);
+    isUltraFast = pipeManager_->IsStreamUseUltraFastRoute(sessionId);
     return SUCCESS;
 }
 
@@ -1926,7 +1926,7 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
         } else {
             bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
-                streamDesc->newDeviceDescs_, sessionId);
+                streamDesc->newDeviceDescs_, sessionId, streamCollector_);
             if (((isRingDualToneOnPrimarySpeaker_ == false && streamDesc->newDupDeviceDescs_.size() == 0) ||
                 isRingDualToneOnPrimarySpeaker_ == true) &&
                 enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
@@ -2770,9 +2770,14 @@ void AudioCoreService::CheckAndSleepBeforeVoiceCallDeviceSet(const AudioStreamDe
  */
 void AudioCoreService::HandlePrimaryMediaMuteForDualRing(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_.front() != nullptr, "Invalid streamDesc");
     CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
-    if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_, streamDesc->sessionId_)) {
+    if (!IsRingerOrAlarmerDualDevicesRange(streamDesc->newDeviceDescs_.front()->deviceType_)) {
+        return;
+    }
+    if (!AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(streamDesc->newDeviceDescs_,
+        streamDesc->sessionId_, streamCollector_)) {
         return;
     }
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
@@ -3087,7 +3092,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
         };
     } else {
         devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
-            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
+            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->rendererInfo_.privacyType);
     }
 
     streamDesc->UpdateNewDevice(devices);
@@ -3108,7 +3113,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->GetSessionId());
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
     auto devices = audioRouterCenter_.FetchOutputDevices(streamDesc->GetRenderUsage(),
-        GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
+        GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->rendererInfo_.privacyType);
 
     streamDesc->UpdateNewDeviceWithoutCheck(devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
@@ -3670,7 +3675,7 @@ bool AudioCoreService::IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor>
         streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
         return false;
     }
-    streamDesc->SetUltraFastFlag(true);
+    streamDesc->SetUltraFastRequested(true);
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
     AUDIO_INFO_LOG("Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
     return true;

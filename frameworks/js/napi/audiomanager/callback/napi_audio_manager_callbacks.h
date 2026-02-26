@@ -23,9 +23,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
-const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
-const std::string MICROPHONE_BLOCKED_CALLBACK_NAME = "micBlockStatusChanged";
+inline const std::string DEVICE_CHANGE_CALLBACK_NAME = "deviceChange";
+inline const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
+inline const std::string MICROPHONE_BLOCKED_CALLBACK_NAME = "micBlockStatusChanged";
 
 class NapiAudioManagerCallback : public AudioManagerDeviceChangeCallback,
     public AudioManagerMicrophoneBlockedCallback {

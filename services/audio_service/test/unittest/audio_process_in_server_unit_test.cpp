@@ -30,8 +30,8 @@ namespace AudioStandard {
     const uint32_t SPAN_SIZE_IN_FRAME = 1000;
     const uint32_t TOTAL_SIZE_IN_FRAME = 1000;
     const int32_t INTELL_VOICE_SERVICR_UID = 1042;
-    constexpr uint32_t MIN_STREAMID_2 = UINT32_MAX - MIN_STREAMID + DEFAULT_STREAM_ID;
-    constexpr uint32_t MIN_STREAMID_3 = UINT32_MAX - MIN_STREAMID - DEFAULT_STREAM_ID;
+    constexpr uint32_t MIN_STREAMID_2 = UINT32_MAX - MIN_SESSIONID + DEFAULT_STREAM_ID;
+    constexpr uint32_t MIN_STREAMID_3 = UINT32_MAX - MIN_SESSIONID - DEFAULT_STREAM_ID;
 class AudioProcessInServerUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);

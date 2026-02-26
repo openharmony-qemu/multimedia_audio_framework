@@ -59,6 +59,7 @@ public:
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) { return ""; }
 
     virtual int32_t SetVolume(float left, float right) = 0;
+    virtual int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;
 
     virtual int32_t GetLatency(uint32_t &latency) = 0;

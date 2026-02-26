@@ -131,15 +131,15 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
  */
 HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
 {
-    uint32_t sessionId = MIN_STREAMID - 1;
+    uint32_t sessionId = MIN_SESSIONID - 1;
     OffloadAdapter adapter = OFFLOAD_IN_PRIMARY;
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 
-    sessionId = MAX_STREAMID + 1;
+    sessionId = MAX_SESSIONID + 1;
     adapter = OFFLOAD_IN_REMOTE;
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 
-    sessionId = MIN_STREAMID + 1;
+    sessionId = MIN_SESSIONID + 1;
     AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId, adapter);
 }
 
@@ -469,6 +469,47 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeLimit_001, TestSize.Level1)
 
     newLimit = audioAdapterManager->volumeLimit_.load();
     EXPECT_EQ(oldLimit, newLimit);
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    int32_t testDb = -6;
+    info->streamType = STREAM_MUSIC;
+    info->duckedDb = testDb;
+    audioAdapterManager->lowerVolumeInfos_[info->streamType] = info;
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_PHONE_CALL);
+    audioAdapterManager->DepressVolume(volume, volumeLevel, STREAM_MUSIC, desc);
+    AudioSceneManager::GetInstance().SetAudioScenePre(AUDIO_SCENE_DEFAULT);
+    newLimit = audioAdapterManager->volumeLimit_.load();
+    EXPECT_LT(volume, newLimit);
+}
+
+/**
+ * @tc.name: Test DepressVolume
+ * @tc.number: GetVolumeReductionRatio_001
+ * @tc.type: FUNC
+ * @tc.desc: Get Volume Reduction
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetVolumeReductionRatio_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    auto info = std::make_shared<LowerVolumeInfo>();
+    ASSERT_NE(info, nullptr);
+    int32_t testDb = 6;
+    int32_t testDb2 = -6;
+    info->streamType = STREAM_ALARM;
+    info->duckedDb = testDb;
+
+    audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = nullptr;
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+
+    audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
+    EXPECT_EQ(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
+
+    info->duckedDb = testDb2;
+    audioAdapterManager->lowerVolumeInfos_[STREAM_ALARM] = info;
+    EXPECT_NE(audioAdapterManager->GetVolumeReductionRatio(STREAM_ALARM), 0);
 }
 
 /**

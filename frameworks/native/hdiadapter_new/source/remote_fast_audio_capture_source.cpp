@@ -312,7 +312,19 @@ int32_t RemoteFastAudioCaptureSource::UpdateAppsUid(const int32_t appsUid[PA_MAX
 
 int32_t RemoteFastAudioCaptureSource::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 {
-    return ERR_NOT_SUPPORTED;
+    Trace trace("RemoteFastAudioCaptureSource:UpdateAppsUid");
+    std::unordered_set<int32_t> lastAppsUid = appsUid_;
+    std::unordered_set<int32_t> appsUidSet(appsUid.cbegin(), appsUid.cend());
+    appsUid_ = std::move(appsUidSet);
+    if (appsUid_ != lastAppsUid) {
+        CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "audioCapture_ is null");
+        CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
+        std::string appInfoStr = GenerateAppsUidStr(appsUid_);
+        int32_t ret = audioCapture_->SetExtraParams(appInfoStr.c_str());
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_HANDLE, "SetExtraParams error");
+        AUDIO_INFO_LOG("set parameter: %{public}s", appInfoStr.c_str());
+    }
+    return SUCCESS;
 }
 
 void RemoteFastAudioCaptureSource::SetInvalidState(void)
@@ -493,6 +505,8 @@ int32_t RemoteFastAudioCaptureSource::CreateCapture(void)
     if (param.type == AudioCategory::AUDIO_MMAP_NOIRQ || param.type == AudioCategory::AUDIO_MMAP_VOIP) {
         PrepareMmapBuffer(param);
     }
+    int32_t ret = audioCapture_->SetExtraParams(GenerateAppsUidStr(appsUid_).c_str());
+    AUDIO_INFO_LOG("set app info params, ret: %{public}d", ret);
     validState_.store(true);
     AUDIO_INFO_LOG("end");
     return SUCCESS;

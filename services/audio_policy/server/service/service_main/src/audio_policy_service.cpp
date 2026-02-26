@@ -91,7 +91,6 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
-    SetDefaultAdapterEnable(audioConfigManager_.GetDefaultAdapterEnable());
     return ret;
 }
 
@@ -138,7 +137,7 @@ void AudioPolicyService::CreateRecoveryThread()
     RecoveryDevicesThread_ = std::make_unique<std::thread>([this] {
         audioRecoveryDevice_.RecoverExcludedOutputDevices();
         audioRecoveryDevice_.RecoveryPreferredDevices();
-        audioBackgroundManager_.RecoryAppState();
+        audioBackgroundManager_.RecoveryAppState();
     });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
 }
@@ -1097,11 +1096,6 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
         return audioA2dpOffloadManager_->GetA2dpOffloadFlag();
     }
     return NO_A2DP_DEVICE;
-}
-
-void AudioPolicyService::SetDefaultAdapterEnable(bool isEnable)
-{
-    return AudioServerProxy::GetInstance().SetDefaultAdapterEnableProxy(isEnable);
 }
 
 int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)

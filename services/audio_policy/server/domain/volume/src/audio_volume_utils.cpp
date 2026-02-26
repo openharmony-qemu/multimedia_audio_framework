@@ -105,7 +105,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDevi
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt != nullptr, "deviceVolumeInfoIt is null");
     
-    CHECK_AND_RETURN_LOG(deviceVolumeInfoIt->defaultLevel != -1, "defaultLevel is -1, not use");
+    CHECK_AND_RETURN(deviceVolumeInfoIt->defaultLevel != -1);
     volumeLevel = deviceVolumeInfoIt->defaultLevel;
 }
 
@@ -189,7 +189,7 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt != nullptr, "deviceVolumeInfoIt is null");
     
-    CHECK_AND_RETURN_LOG(deviceVolumeInfoIt->maxLevel != -1, "maxLevel is -1, not use");
+    CHECK_AND_RETURN(deviceVolumeInfoIt->maxLevel != -1);
     volumeLevel = deviceVolumeInfoIt->maxLevel;
 }
 
@@ -233,7 +233,7 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     auto deviceVolumeInfoIt = streamVolumeInfo->deviceVolumeInfos[deviceVolumeType];
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt != nullptr, "deviceVolumeInfoIt is null");
     
-    CHECK_AND_RETURN_LOG(deviceVolumeInfoIt->minLevel != -1, "minLevel is -1, not use");
+    CHECK_AND_RETURN(deviceVolumeInfoIt->minLevel != -1);
     volumeLevel = deviceVolumeInfoIt->minLevel;
 }
 

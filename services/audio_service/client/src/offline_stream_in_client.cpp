@@ -17,7 +17,6 @@
 #endif
 
 #include "offline_stream_in_client.h"
-
 #include <mutex>
 
 #include "ipc_skeleton.h"
@@ -78,7 +77,7 @@ int32_t OfflineStreamInClient::GetOfflineAudioEffectChains(std::vector<std::stri
 OfflineStreamInClient::OfflineStreamInClient(const sptr<IIpcOfflineStream> &ipcProxy) : streamProxy_(ipcProxy) {}
 
 #ifdef FEATURE_OFFLINE_EFFECT
-int32_t OfflineStreamInClient::CreateOfflineEffectChain(const std::string &effectName) //TEST
+int32_t OfflineStreamInClient::CreateOfflineEffectChain(const std::string &effectName)
 {
     CHECK_AND_RETURN_RET_LOG(streamProxy_ != nullptr, ERR_OPERATION_FAILED, "Create failed with null ipcProxy.");
     return streamProxy_->CreateOfflineEffectChain(effectName);

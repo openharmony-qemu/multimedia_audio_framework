@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. All rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. All rights reserved.
  */
 
 import audioNapi from 'libentry.so';
@@ -8,7 +8,7 @@ import fs from '@ohos.file.fs';
 import { common } from '@kit.AbilityKit';
 import { picker } from '@kit.CoreFileKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { SongInfo } from '../utils/importSongs/InterfaceInfo';
+import { SongInfo } from '../utils/InterfaceInfo';
 import { MainTitleTextModifier, saveFileBuffer } from '../utils/ExportFile';
 import { taskpool } from '@kit.ArkTS';
 import { SymbolGlyphModifier, TextModifier } from '@kit.ArkUI';
@@ -319,12 +319,11 @@ export struct Export {
               fs.closeSync(file);
             }
           } catch (e) {
-            fs.closeSync(file);
             Logger.error(TAG, `SavePcmBuffer writeLen error: ${e}`);
           }
         } catch (e) {
           Logger.error(TAG, `SaveBuffer filePath error: ${e}`);
-        } 
+        }
       })
     } catch (e) {
       Logger.error(TAG, `SaveBuffer catch: ${JSON.stringify(e)}`)

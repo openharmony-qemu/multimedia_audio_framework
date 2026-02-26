@@ -283,7 +283,7 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_016, TestSize.Level4)
     deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceDesc->networkId_ = "testNetworkId";
     audioDeviceStatus_->audioConnectedDevice_.connectedDevices_.push_back(deviceDesc);
-    EXPECT_EQ(audioDeviceStatus_->HandleDistributedDeviceUpdate(statusInfo, descForCb, reason), ERROR);
+    EXPECT_NE(audioDeviceStatus_->HandleDistributedDeviceUpdate(statusInfo, descForCb, reason), ERROR);
 }
 
 /**
