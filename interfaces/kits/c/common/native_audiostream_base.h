@@ -980,7 +980,7 @@ typedef enum {
      */
     AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA = 0x1,
     /**
-     * Excluding self mode. Cpature streams excluding the audio played by application itself.
+     * Excluding self mode. Capture streams excluding the audio played by application itself.
      * @since 23
      */
     AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF = 0x8000,
@@ -995,7 +995,6 @@ typedef enum {
 typedef enum {
 /**
  * Start playback capture success state.
- *
  * @since 23
  */
     AUDIOSTREAM_PLAYBACKCAPTURE_START_STATE_SUCCESS = 0,
