@@ -240,7 +240,8 @@ void FindPipeByStreamIdFuzzTest(FuzzedDataProvider& fdp)
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos;
     VoipType type = NO_VOIP;
     uint32_t streamId = GetData<uint32_t>();
-    std::shared_ptr<AudioPipeInfo> result = AudioInjectorPolicy::GetInstance().FindPipeByStreamId(pipeInfos, type, streamId);
+    std::shared_ptr<AudioPipeInfo> result =
+        AudioInjectorPolicy::GetInstance().FindPipeByStreamId(pipeInfos, type, streamId);
 }
 
 void FetchCapDeviceInjectPreProcFuzzTest(FuzzedDataProvider& fdp)

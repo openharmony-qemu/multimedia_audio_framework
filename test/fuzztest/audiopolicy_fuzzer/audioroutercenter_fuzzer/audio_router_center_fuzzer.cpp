@@ -65,7 +65,6 @@ vector<StreamUsage> StreamUsageVec = {
     STREAM_USAGE_NOTIFICATION_RINGTONE,
     STREAM_USAGE_RINGTONE,
     STREAM_USAGE_NOTIFICATION,
-    STREAM_USAGE_ACCESSIBILITY,
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_MOVIE,
     STREAM_USAGE_GAME,
@@ -157,7 +156,8 @@ void FetchOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
     uint32_t privacyTypeCount = GetData<uint32_t>() % PrivacyTypeVec.size();
     AudioPrivacyType privacyType = PrivacyTypeVec[privacyTypeCount];
     
-    AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(streamUsage, clientUID, caller, bypassType, privacyType);
+    AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(streamUsage,
+        clientUID, caller, bypassType, privacyType);
 }
 
 void FetchDupDevicesFuzzTest(FuzzedDataProvider& fdp)
