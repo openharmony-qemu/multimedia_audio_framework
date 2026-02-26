@@ -381,7 +381,7 @@ int32_t FormatConverter::F32StereoToF32Mono(const BufferDesc &srcDesc, const Buf
     CHECK_AND_RETURN_RET(dstDesc.buffer != nullptr, -1);
     const size_t half = 2; // stereo has 2 channels
     if (srcDesc.bufLength == 0 || dstDesc.bufLength == 0 ||
-        srcDesc.bufLength / half != dstDesc.bufLength) {
+        srcDesc.bufLength / half  != dstDesc.bufLength) {
         return -1;
     }
 
@@ -651,52 +651,6 @@ int32_t FormatConverter::F32StereoToS16Stereo(const BufferDesc &srcDesc, const B
         int16_t temp = ConvertFromFloatTo16Bit(stcPtr);
         stcPtr++;
         *(dstPtr++) = temp;
-    }
-    return 0;
-}
-
-int32_t FormatConverter::S32MonoToS16Mono(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted)
-{
-    size_t half = 2;
-    int32_t size = audioBuffer.size();
-    if (size == 0) {
-        return -1;
-    }
-
-    audioBufferConverted.resize(size / half);
-    int32_t *stcPtr = reinterpret_cast<int32_t *>(audioBuffer.data());
-    int16_t *dstPtr = reinterpret_cast<int16_t *>(audioBufferConverted.data());
-    size_t count = size / sizeof(int32_t);
-
-    double maxInt32 = INT32_MAX;
-    double maxInt16 = INT16_MAX;
-    for (size_t idx = 0; idx < count; idx++) {
-        int16_t temp = static_cast<int16_t>((static_cast<double>(*stcPtr) / maxInt32) * maxInt16);
-        *(dstPtr++) = temp;
-        stcPtr++;
-    }
-    return 0;
-}
-
-int32_t FormatConverter::S32StereoToS16Stereo(std::vector<char> &audioBuffer, std::vector<char> &audioBufferConverted)
-{
-    size_t half = 2;
-    int32_t size = audioBuffer.size();
-    if (size == 0) {
-        return -1;
-    }
-
-    audioBufferConverted.resize(size / half);
-    int32_t *stcPtr = reinterpret_cast<int32_t *>(audioBuffer.data());
-    int16_t *dstPtr = reinterpret_cast<int16_t *>(audioBufferConverted.data());
-    size_t count = size / sizeof(int32_t);
-
-    double maxInt32 = INT32_MAX;
-    double maxInt16 = INT16_MAX;
-    for (size_t idx = 0; idx < count; idx++) {
-        int16_t temp = static_cast<int16_t>((static_cast<double>(*stcPtr) / maxInt32) * maxInt16);
-        *(dstPtr++) = temp;
-        stcPtr++;
     }
     return 0;
 }
