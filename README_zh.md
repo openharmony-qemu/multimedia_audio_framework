@@ -232,7 +232,7 @@ PCM（Pulse Code Modulation），即脉冲编码调制，是一种将模拟信�
     int32_t result = audioSystemMgr->SetDeviceActive(deviceType, true);
     bool isDevActive = audioSystemMgr->IsDeviceActive(deviceType);
     ```
-9. 提供其它用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
+9. 提供其他用途的接口如 **IsStreamActive**, **SetAudioParameter** and **GetAudioParameter**, 详细请参考 [**audio_system_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/interfaces/inner_api/native/audiomanager/include/audio_system_manager.h)
 10. 应用程序可以使用 **AudioManagerNapi::On**注册系统音量的更改。 在此，如果应用程序监听到系统音量更改的事件,就会用以下参数通知应用程序:
 volumeType : 更改的系统音量的类型
 volume : 当前的音量等级
@@ -331,7 +331,7 @@ updateUi : 是否需要显示变化详细信息。（如果音量被增大/减�
 
 #### JavaScript 用法:<a name="section645572311287_005"></a>
 JavaScript应用可以使用系统提供的音频管理接口，来控制音量和设备。\
-请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-audio-kit/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
+请参考 [**js-apis-audio.md**](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis/js-apis-audio.md#audiomanager) 来获取音量和设备管理相关JavaScript接口的用法。
 
 ### 蓝牙SCO呼叫<a name="section645572311287_007"></a>
 可以使用提供的接口 [**audio_bluetooth_manager.h**](https://gitee.com/openharmony/multimedia_audio_standard/blob/master/services/include/audio_bluetooth/client/audio_bluetooth_manager.h) 实现同步连接导向链路（SCO）的蓝牙呼叫。
