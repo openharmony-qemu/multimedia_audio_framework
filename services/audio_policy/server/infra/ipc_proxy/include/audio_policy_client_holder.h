@@ -65,11 +65,11 @@ public:
     void OnFormatUnsupportedError(const AudioErrors &errorCode);
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent);
     void OnSystemVolumeChange(VolumeEvent volumeEvent);
-    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
     void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent);
+    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent);
     void OnAudioSessionCurrentInputDeviceChanged(const CurrentInputDeviceChangedEvent &deviceChangedEvent);
-    void OnVolumeDegreeEvent(const VolumeEvent &volumeEvent);
     void OnCollaborationEnabledChangeForCurrentDevice(const bool &enabled);
+    void OnVolumeDegreeEvent(const VolumeEvent &volumeEvent);
     void OnPreferredDeviceSet(PreferredType preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
     void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPolicyManagerListenercallback"
+#define LOG_TAG "AudioPolicyManagerListenerCallback"
 #endif
 
 #include "audio_policy_manager_listener.h"
