@@ -25,7 +25,6 @@
 #include <mutex>
 #include "audio_effect.h"
 #include "audio_stream_change_info.h"
-#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -382,7 +381,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully started; returns <b>false</b> otherwise.
      * @since 10
      */
-    virtual bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return StartImpl(cmdType) == SUCCESS; }
+    virtual bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Starts audio rendering.
@@ -391,7 +390,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    virtual int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT){ return StartImpl(cmdType); }
+    virtual int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Writes audio data.
@@ -477,7 +476,7 @@ public:
      * @return Returns <b>true</b> if the buffer is successfully drained; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Drain() const { return DrainImpl() == SUCCESS; }
+    virtual bool Drain() const = 0;
 
     /**
      * @brief drain renderer buffer.
@@ -486,7 +485,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t DrainApi() const { return DrainImpl(); }
+    virtual int32_t DrainApi() const = 0;
 
     /**
      * @brief flush renderer stream.
@@ -494,7 +493,7 @@ public:
      * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Flush() const { return FlushImpl() == SUCCESS; }
+    virtual bool Flush() const = 0;
 
     /**
      * @brief flush renderer stream.
@@ -503,7 +502,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t FlushApi() const { return FlushImpl(); }
+    virtual int32_t FlushApi() const = 0;
 
     /**
      * @brief Pauses audio rendering transitent.
@@ -519,7 +518,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully Paused; returns <b>false</b> otherwise.
      * @since 10
      */
-    virtual bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return PauseImpl(cmdType) == SUCCESS; }
+    virtual bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Pauses audio rendering.
@@ -528,7 +527,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    virtual int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return PauseImpl(cmdType); }
+    virtual int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Stops audio rendering.
@@ -536,7 +535,7 @@ public:
      * @return Returns <b>true</b> if the rendering is successfully stopped; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Stop() { return StopImpl() == SUCCESS; }
+    virtual bool Stop() = 0;
 
     /**
      * @brief Stops audio rendering.
@@ -545,7 +544,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StopApi() { return StopImpl(); }
+    virtual int32_t StopApi() = 0;
 
     /**
      * @brief Releases a local <b>AudioRenderer</b> object.
@@ -553,7 +552,7 @@ public:
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Release() { return ReleaseImpl() == SUCCESS; }
+    virtual bool Release() = 0;
 
     /**
      * @brief Releases a local <b>AudioRenderer</b> object.
@@ -562,7 +561,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t ReleaseApi() { return ReleaseImpl(); }
+    virtual int32_t ReleaseApi() = 0;
 
     /**
      * @brief Obtains a reasonable minimum buffer size for rendering, however, the renderer can

@@ -24,6 +24,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_capturer_proxy_obj.h"
 #include "audio_task_loop.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,12 @@ class InputDeviceChangeWithInfoCallbackImpl;
 
 class AudioCapturerPrivate : public AudioCapturer, public std::enable_shared_from_this<AudioCapturerPrivate> {
 public:
+    bool Start() override { return StartImpl() == SUCCESS; }
+    int32_t StartApi() override { return StartImpl(); }
+    bool Stop() const override { return StopImpl() == SUCCESS; }
+    int32_t StopApi() const override { return StopImpl(); }
+    bool Release() override { return ReleaseImpl() == SUCCESS; }
+    int32_t ReleaseApi() override { return ReleaseImpl(); }
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t SetParams(const AudioCapturerParams params) override;
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;

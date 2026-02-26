@@ -24,35 +24,6 @@ namespace OHOS {
 namespace AudioStandard {
 class SharedAudioRendererWrapper : public AudioRenderer {
 public:
-    int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
-    {
-        return sharedAudioRenderer_->StartApi(cmdType);
-    }
-    
-    int32_t DrainApi() const override
-    {
-        return sharedAudioRenderer_->DrainApi();
-    }
-
-    int32_t FlushApi() const override
-    {
-        return sharedAudioRenderer_->FlushApi();
-    }
-
-    int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
-    {
-        return sharedAudioRenderer_->PauseApi(cmdType);
-    }
-
-    int32_t StopApi() override
-    {
-        return sharedAudioRenderer_->StopApi();
-    }
-
-    int32_t ReleaseApi() override
-    {
-        return sharedAudioRenderer_->ReleaseApi();
-    }
     void SetAudioPrivacyType(AudioPrivacyType privacyType) override
     {
         sharedAudioRenderer_->SetAudioPrivacyType(privacyType);
@@ -91,6 +62,11 @@ public:
     bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
     {
         return sharedAudioRenderer_->Start(cmdType);
+    }
+
+    int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return sharedAudioRenderer_->StartApi(cmdType);
     }
 
     int32_t Write(uint8_t *buffer, size_t bufferSize) override
@@ -133,9 +109,19 @@ public:
         return sharedAudioRenderer_->Drain();
     }
 
+    int32_t DrainApi() const override
+    {
+        return sharedAudioRenderer_->DrainApi();
+    }
+
     bool Flush() const override
     {
         return sharedAudioRenderer_->Flush();
+    }
+
+    int32_t FlushApi() const override
+    {
+        return sharedAudioRenderer_->FlushApi();
     }
 
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
@@ -147,14 +133,29 @@ public:
         return sharedAudioRenderer_->Pause(cmdType);
     }
 
+    int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return sharedAudioRenderer_->PauseApi(cmdType);
+    }
+
     bool Stop() override
     {
         return sharedAudioRenderer_->Stop();
     }
 
+    int32_t StopApi() override
+    {
+        return sharedAudioRenderer_->StopApi();
+    }
+
     bool Release() override
     {
         return sharedAudioRenderer_->Release();
+    }
+
+    int32_t ReleaseApi() override
+    {
+        return sharedAudioRenderer_->ReleaseApi();
     }
 
     int32_t GetBufferSize(size_t &bufferSize) const override

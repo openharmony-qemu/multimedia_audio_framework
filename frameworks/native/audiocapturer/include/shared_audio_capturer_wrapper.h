@@ -30,21 +30,6 @@ public:
     {
     }
 
-    int32_t StartApi() override
-    {
-        return sharedAudioCapturer_->StartApi();
-    }
-
-    int32_t StopApi() const override
-    {
-        return sharedAudioCapturer_->StopApi();
-    }
-
-    int32_t ReleaseApi() override
-    {
-        return sharedAudioCapturer_->ReleaseApi();
-    }
-
     int32_t SetParams(const AudioCapturerParams params) override
     {
         return sharedAudioCapturer_->SetParams(params);
@@ -80,6 +65,11 @@ public:
         return sharedAudioCapturer_->Start();
     }
 
+    int32_t StartApi() override
+    {
+        return sharedAudioCapturer_->StartApi();
+    }
+
     int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override
     {
         return sharedAudioCapturer_->Read(buffer, userSize, isBlockingRead);
@@ -105,6 +95,11 @@ public:
         return sharedAudioCapturer_->Stop();
     }
 
+    int32_t StopApi() const override
+    {
+        return sharedAudioCapturer_->StopApi();
+    }
+
     bool Flush() const override
     {
         return sharedAudioCapturer_->Flush();
@@ -113,6 +108,11 @@ public:
     bool Release() override
     {
         return sharedAudioCapturer_->Release();
+    }
+
+    int32_t ReleaseApi() override
+    {
+        return sharedAudioCapturer_->ReleaseApi();
     }
 
     int32_t GetBufferSize(size_t &bufferSize) const override

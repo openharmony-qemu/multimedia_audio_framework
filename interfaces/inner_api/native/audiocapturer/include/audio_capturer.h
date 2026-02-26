@@ -22,7 +22,6 @@
 #include "microphone_descriptor.h"
 #include "timestamp.h"
 #include "audio_capturer_options.h"
-#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -386,7 +385,7 @@ public:
      * @return Returns <b>true</b> if the capturing is successfully started; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Start() { return StartImpl() == SUCCESS; }
+    virtual bool Start() = 0;
 
     /**
      * @brief Starts audio capturing.
@@ -395,7 +394,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StartApi() { return StartImpl(); }
+    virtual int32_t StartApi() = 0;
 
     /**
      * @brief capture audio data.
@@ -458,7 +457,7 @@ public:
      * @return Returns <b>true</b> if the capturing is successfully stopped; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Stop() const { return StopImpl() == SUCCESS; }
+    virtual bool Stop() const = 0;
 
     /**
      * @brief Stops audio capturing.
@@ -467,7 +466,8 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StopApi() const { return StopImpl(); }
+    virtual int32_t StopApi() const = 0;
+
     /**
      * @brief flush capture stream.
      *
@@ -482,7 +482,7 @@ public:
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
      * @since 8
      */
-    virtual bool Release() { return ReleaseImpl() == SUCCESS; }
+    virtual bool Release() = 0;
 
     /**
      * @brief Releases a local <b>AudioCapturer</b> object.
@@ -491,7 +491,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t ReleaseApi() { return ReleaseImpl(); }
+    virtual int32_t ReleaseApi() = 0;
 
     /**
      * @brief Obtains a reasonable minimum buffer size for capturer, however, the capturer can

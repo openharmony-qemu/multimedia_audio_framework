@@ -42,6 +42,18 @@ class AudioRouteCallbackImpl;
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
     friend class AudioRouteCallbackImpl;
 public:
+    bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return StartImpl(cmdType) == SUCCESS; }
+    int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return StartImpl(cmdType); }
+    bool Drain() const override { return DrainImpl() == SUCCESS; }
+    int32_t DrainApi() const override { return DrainImpl(); }
+    bool Flush() const override { return FlushImpl() == SUCCESS; }
+    int32_t FlushApi() const override { return FlushImpl(); }
+    bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return PauseImpl(cmdType) == SUCCESS; }
+    int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return PauseImpl(cmdType); }
+    bool Stop() override { return StopImpl() == SUCCESS; }
+    int32_t StopApi() override { return StopImpl(); }
+    bool Release() override { return ReleaseImpl() == SUCCESS; }
+    int32_t ReleaseApi() override { return ReleaseImpl(); }
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const override;
