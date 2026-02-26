@@ -102,8 +102,8 @@ int32_t AudioOutputNode::DoProcess(uint32_t needDataLength)
     ReadPreNodeData(GetAudioNodeInPcmFormat(), true, needDataLength);
 
     outputs_.clear();
-    for (auto& buffer : preNodeResult_) {
-        outputs_.push_back(&buffer);
+    for (auto* buffer : preNodeResult_) {
+        outputs_.push_back(buffer);
     }
     CHECK_AND_RETURN_RET_LOG(outputs_.size() == static_cast<size_t>(preNodeOutputNum_), ERROR,
         "outputs size = %{public}zu not equals nodeOutputNum = %{public}d", outputs_.size(), preNodeOutputNum_);

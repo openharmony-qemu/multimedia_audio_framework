@@ -114,7 +114,7 @@ protected:
     // Format conversion buffers (temporary storage for format conversion)
     std::vector<AudioSuitePcmBuffer> formatConversionBuffers_;
 
-    std::vector<AudioSuitePcmBuffer> preNodeResult_;
+    std::vector<AudioSuitePcmBuffer*> preNodeResult_;
 private:
     static uint32_t GenerateAudioNodeId();
     AudioNodeInfo audioNodeInfo_;

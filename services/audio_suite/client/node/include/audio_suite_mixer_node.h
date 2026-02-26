@@ -51,7 +51,7 @@ private:
     AudioSuitePcmBuffer tmpOutput_;
     void StopPullPool();
     std::vector<std::future<PullResult>> SubmitPullTasks();
-    bool CollectPullResults(std::vector<AudioSuitePcmBuffer>& preOutputs,
+    bool CollectPullResults(std::vector<AudioSuitePcmBuffer*>& preOutputs,
         std::vector<std::future<PullResult>>& futures);
 };
 

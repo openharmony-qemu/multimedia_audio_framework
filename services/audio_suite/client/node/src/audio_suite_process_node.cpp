@@ -115,8 +115,8 @@ int32_t AudioSuiteProcessNode::ObtainProcessedData()
     ReadProcessNodePreOutputData();
     
     std::vector<AudioSuitePcmBuffer *> preOutputs;
-    for (auto& buffer : preNodeResult_) {
-        preOutputs.push_back(&buffer);
+    for (auto* buffer : preNodeResult_) {
+        preOutputs.push_back(buffer);
     }
     
     if (preOutputs.empty()) {
@@ -206,8 +206,8 @@ int32_t AudioSuiteProcessNode::ProcessBypassMode(uint32_t needDataLength)
     ReadProcessNodePreOutputData();
     
     std::vector<AudioSuitePcmBuffer *> preOutputs;
-    for (auto& buffer : preNodeResult_) {
-        preOutputs.push_back(&buffer);
+    for (auto* buffer : preNodeResult_) {
+        preOutputs.push_back(buffer);
     }
     
     CHECK_AND_RETURN_RET_LOG(
@@ -256,8 +256,8 @@ void AudioSuiteProcessNode::ReadProcessNodePreOutputData()
     ReadPreNodeData(GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(), requestPreNodeDuration_);
 
     // Track finished pre-nodes (based on output data)
-    for (auto& buffer : preNodeResult_) {
-        isFinished = isFinished && buffer.GetIsFinished();
+    for (auto* buffer : preNodeResult_) {
+        isFinished = isFinished && buffer->GetIsFinished();
     }
     AUDIO_DEBUG_LOG("set node type = %{public}d isFinished status: %{public}d.", GetNodeType(), isFinished);
     SetAudioNodeDataFinishedFlag(isFinished);

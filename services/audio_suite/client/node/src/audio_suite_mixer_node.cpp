@@ -193,7 +193,7 @@ bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer>& p
         isFinished = isFinished && r.isFinished;
         for (auto* ptr : r.data) {
             if (ptr) {
-                preOutputs.push_back(*ptr);
+                preOutputs.push_back(ptr);
             }
         }
     }
