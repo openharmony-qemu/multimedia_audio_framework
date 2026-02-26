@@ -63,6 +63,7 @@ const size_t TIME_TEXT_LENGTH = 32;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 constexpr int32_t UID_AUDIO = 1041;
+constexpr int32_t UID_AUDIO_BROKER = 5557;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
@@ -483,6 +484,15 @@ bool PermissionUtil::VerifyIsAudio()
         return true;
     }
 #endif
+    return false;
+}
+
+bool PermissionUtil::VerifyIsAudioBroker()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (UID_AUDIO_BROKER == callingUid) {
+        return true;
+    }
     return false;
 }
 
