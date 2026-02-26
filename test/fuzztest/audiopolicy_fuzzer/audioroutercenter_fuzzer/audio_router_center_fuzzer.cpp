@@ -54,35 +54,53 @@ static size_t g_pos;
 typedef void (*TestFuncs)();
 
 vector<StreamUsage> StreamUsageVec = {
+    STREAM_USAGE_INVALID,
     STREAM_USAGE_UNKNOWN,
     STREAM_USAGE_MEDIA,
+    STREAM_USAGE_MUSIC,
     STREAM_USAGE_VOICE_COMMUNICATION,
     STREAM_USAGE_VOICE_ASSISTANT,
     STREAM_USAGE_ALARM,
+    STREAM_USAGE_VOICE_MESSAGE,
+    STREAM_USAGE_NOTIFICATION_RINGTONE,
     STREAM_USAGE_RINGTONE,
     STREAM_USAGE_NOTIFICATION,
-    STREAM_USAGE_BLUETOOTH_SCO,
-    STREAM_USAGE_SYSTEM_ENFORCED,
-    STREAM_USAGE_DTMF,
-    STREAM_USAGE_BOOT_COMPLETE,
-    STREAM_USAGE_VOICE_RINGTONE,
-    STREAM_USAGE_ULTRASONIC,
-    STREAM_USAGE_GAME,
-    STREAM_USAGE_NAVIGATION,
+    STREAM_USAGE_ACCESSIBILITY,
+    STREAM_USAGE_SYSTEM,
     STREAM_USAGE_MOVIE,
-    STREAM_USAGE_MUSIC,
+    STREAM_USAGE_GAME,
+    STREAM_USAGE_AUDIOBOOK,
+    STREAM_USAGE_NAVIGATION,
+    STREAM_USAGE_DTMF,
+    STREAM_USAGE_ENFORCED_TONE,
+    STREAM_USAGE_ULTRASONIC,
+    STREAM_USAGE_VIDEO_COMMUNICATION,
+    STREAM_USAGE_RANGING,
+    STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
+    STREAM_USAGE_VOICE_RINGTONE,
+    STREAM_USAGE_VOICE_CALL_ASSISTANT,
+    STREAM_USAGE_MAX,
 };
 
 vector<SourceType> SourceTypeVec = {
     SOURCE_TYPE_INVALID,
     SOURCE_TYPE_MIC,
-    SOURCE_TYPE_VOICE_COMMUNICATION,
     SOURCE_TYPE_VOICE_RECOGNITION,
-    SOURCE_TYPE_VOICE_CALL,
-    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
     SOURCE_TYPE_WAKEUP,
-    SOURCE_TYPE_PLAYBACK,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
     SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_EC,
+    SOURCE_TYPE_MIC_REF,
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_MAX,
 };
 
 vector<RouterType> RouterTypeVec = {
@@ -149,7 +167,7 @@ void FetchDupDevicesFuzzTest(FuzzedDataProvider& fdp)
     fetchDeviceInfo.preStreamUsage = StreamUsageVec[GetData<uint32_t>() % StreamUsageVec.size()];
     fetchDeviceInfo.clientUID = GetData<int32_t>();
     fetchDeviceInfo.routerType = RouterTypeVec[GetData<uint32_t>() % RouterTypeVec.size()];
-    fetchDeviceInfo.audioPipeType = GetData<int32_t>() % NUM_2;
+    fetchDeviceInfo.audioPipeType = GetData<AudioPipeType>();
     fetchDeviceInfo.privacyType = PrivacyTypeVec[GetData<uint32_t>() % PrivacyTypeVec.size()];
     fetchDeviceInfo.caller = "fuzzer_test";
     
@@ -185,12 +203,6 @@ void IsCallRenderRouterFuzzTest(FuzzedDataProvider& fdp)
     AudioRouterCenter::GetAudioRouterCenter().isCallRenderRouter(streamUsage);
 }
 
-void SetAlarmFollowRingRouterFuzzTest(FuzzedDataProvider& fdp)
-{
-    bool flag = GetData<uint32_t>() % NUM_2;
-    AudioRouterCenter::GetAudioRouterCenter().SetAlarmFollowRingRouter(flag);
-}
-
 void GetSplitInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::string splitInfo;
@@ -220,7 +232,6 @@ void Test(FuzzedDataProvider& fdp)
     SetAudioDeviceRefinerCallbackFuzzTest,
     UnsetAudioDeviceRefinerCallbackFuzzTest,
     IsCallRenderRouterFuzzTest,
-    SetAlarmFollowRingRouterFuzzTest,
     GetSplitInfoFuzzTest,
     NotifyDistributedOutputChangeFuzzTest,
     IsConfigRouterStrategyFuzzTest,
