@@ -101,11 +101,11 @@ public:
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
+    bool IsOnPrimaryAdapter(uint32_t sessionId);
     bool HasRunningStream();
     bool HasFastOutputPipe();
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
     bool HasRunningRecognitionCapturerStream();
-    bool IsOnPrimaryAdapter(uint32_t sessionId);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
