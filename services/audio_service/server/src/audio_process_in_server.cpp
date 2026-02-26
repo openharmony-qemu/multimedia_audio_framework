@@ -66,7 +66,7 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 
 void AudioProcessInServer::UpdateStreamInfo()
 {
-    CHECK_AND_RETURN_LOG(checkCount_ <= audioCheckFreq_, "the stream had been already checked");
+    CHECK_AND_RETURN(checkCount_ <= audioCheckFreq_);
 
     if ((audioCheckFreq_ == checkCount_) || (checkCount_ == 0)) {
         AudioStreamConcurrencyDetector::GetInstance().UpdateWriteTime(processConfig_, sessionId_);
@@ -291,7 +291,7 @@ int32_t AudioProcessInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_
     }
     buffer = processBuffer_;
     spanSizeInFrame = spanSizeInframe_;
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is null.");
 
     return SUCCESS;
 }
@@ -813,7 +813,7 @@ void AudioProcessInServer::InitRendererStream(float spanTime,
                 resampleStreamInfo.format);
             AllocateBufferDesc(f32SpanSize, f32Buffer_, f32BufferNew_);
         }
-        clientToResampleKey_.srcChn =  clientStreamInfo.channels;
+        clientToResampleKey_.srcChn = clientStreamInfo.channels;
         clientToResampleKey_.srcFormat = clientStreamInfo.format;
         clientToResampleKey_.dstChn = clientStreamInfo.channels;
         clientToResampleKey_.dstFormat = resampleStreamInfo.format;
@@ -823,6 +823,8 @@ void AudioProcessInServer::InitRendererStream(float spanTime,
         auto resampleSpanSize = CalcSpanSize(spanTime, serverStreamInfo.samplingRate,
             clientStreamInfo.channels, resampleStreamInfo.format);
         AllocateBufferDesc(resampleSpanSize, resampleBuffer_, resampleBufferNew_);
+        AUDIO_INFO_LOG("client samplingRate: %{public}d  server samplingRate: %{public}d",
+            resampleStreamInfo.samplingRate, serverStreamInfo.samplingRate);
     }
 
     if (!AudioStreamCommon::CompareFormatAndChannel(resampleStreamInfo, serverStreamInfo)) {
@@ -835,6 +837,8 @@ void AudioProcessInServer::InitRendererStream(float spanTime,
         auto convertBufferSpanSize = CalcSpanSize(spanTime, serverStreamInfo.samplingRate,
             serverStreamInfo.channels, serverStreamInfo.format);
         AllocateBufferDesc(convertBufferSpanSize, convertedBuffer_, convertedBufferNew_);
+        AUDIO_INFO_LOG("client format: %{public}d  server format: %{public}d",
+            resampleStreamInfo.format, serverStreamInfo.format);
     }
 }
 
@@ -1034,7 +1038,6 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 
 int32_t AudioProcessInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce)
 {
-    CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERROR, "streamStatus_ is nullptr");
     return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice),
         sessionId_, processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING, skipForce);
 }
@@ -1065,6 +1068,7 @@ void AudioProcessInServer::SetSilentState(bool state)
 {
     isInSilentState_ = state;
 }
+
 int32_t AudioProcessInServer::SetSourceDuration(int64_t duration)
 {
     sourceDuration_ = duration;
@@ -1146,7 +1150,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 }
 
 int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
-    const std::string& adjustTime, uint32_t code)
+    const std::string &adjustTime, uint32_t code)
 {
     AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
     return SUCCESS;
@@ -1169,17 +1173,17 @@ uint32_t AudioProcessInServer::GetByteSizePerFrame()
     return byteSizePerFrame_;
 }
 
+StreamStatus AudioProcessInServer::GetStreamInServerStatus()
+{
+    return streamStatusInServer_;
+}
+
 void AudioProcessInServer::NotifyXperfOnPlayback(AudioMode audioMode, XperfEventId eventId)
 {
     CHECK_AND_RETURN(audioMode == AUDIO_MODE_PLAYBACK);
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(eventId,
         processConfig_.rendererInfo.streamUsage, sessionId_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
-}
-
-StreamStatus AudioProcessInServer::GetStreamInServerStatus()
-{
-    return streamStatusInServer_;
 }
 
 int32_t AudioProcessInServer::WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer)
@@ -1305,6 +1309,7 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
 
 int32_t AudioProcessInServer::SetRebuildFlag()
 {
+    AUDIO_INFO_LOG("rebuild::AudioProcessInServer::SetRebuildFlag");
     rebuildFlag_ = true;
     return SUCCESS;
 }
@@ -1338,10 +1343,8 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
     processBuffer_->GetSizeParameter(totalSizeInFrame, byteSizePerFrame);
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame > 0, ERR_OPERATION_FAILED, "byteSizePerFrame is 0");
     uint32_t writeableSizeInFrame = ringBuffer.dataLength / byteSizePerFrame;
-    if (writeableSizeInFrame > dstSpanSizeInframe) {
-        ringBuffer.dataLength = dstSpanSizeInframe * byteSizePerFrame;
-    }
-
+    ringBuffer.dataLength = writeableSizeInFrame > dstSpanSizeInframe ?
+        dstSpanSizeInframe * byteSizePerFrame : ringBuffer.dataLength;
     if (GetMuteState()) {
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     } else {

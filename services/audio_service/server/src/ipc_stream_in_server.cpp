@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -61,7 +61,7 @@ sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &conf
     sptr<IpcStreamInServer> streamInServer = sptr<IpcStreamInServer>::MakeSptr(config, mode);
     ret = streamInServer->Config();
     if (ret != SUCCESS) {
-        HILOG_COMM_ERROR("[IpcStreamInServer::Create]IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
+        HILOG_COMM_ERROR("[Create]IpcStreamInServer Config failed: %{public}d, uid: %{public}d",
             ret, config.appInfo.appUid); // waiting for review: add uid.
         streamInServer = nullptr;
     }
@@ -135,17 +135,17 @@ int32_t IpcStreamInServer::ConfigRenderer()
 int32_t IpcStreamInServer::ConfigCapturer()
 {
     capturerInServer_ = std::make_shared<CapturerInServer>(config_, streamListenerHolder_);
-    CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed!");
+    CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed");
     int32_t ret = capturerInServer_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init CapturerInServer failed");
     return SUCCESS;
 }
 
-int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& object)
+int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject> &object)
 {
-    CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed!");
+    CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed");
     sptr<IIpcStreamListener> listener = iface_cast<IIpcStreamListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed!");
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed");
     streamListenerHolder_->RegisterStreamListener(listener);
 
     // in plan: get session id, use it as key to find IpcStreamInServer
@@ -358,6 +358,7 @@ int32_t IpcStreamInServer::GetRate(int32_t &rate)
         rendererInServer_->SetTarget(static_cast<RenderTarget>(target), ret);
         return SUCCESS;
     }
+    ret = ERR_OPERATION_FAILED;
     AUDIO_ERR_LOG("SetTarget failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
 }
