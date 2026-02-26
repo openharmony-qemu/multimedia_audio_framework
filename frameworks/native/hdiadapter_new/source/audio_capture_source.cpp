@@ -1432,6 +1432,7 @@ enum AudioFlag AudioCaptureSource::ConvertToAudioInputRouteFlag(int32_t sourceTy
         case SOURCE_TYPE_MIC:
         case SOURCE_TYPE_CAMCORDER:
         case SOURCE_TYPE_VOICE_MESSAGE:
+        case SOURCE_TYPE_VOICE_CALL:
             audioInputRouteFlag = AUDIO_INPUT_FLAG_NORMAL;
             break;
         case SOURCE_TYPE_ULTRASONIC:
