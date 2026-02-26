@@ -188,7 +188,7 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
     std::lock_guard<std::mutex> lock(descArrayMutex_);
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
-        descArray.push_back(devDesc);
+        descArray.push_back(make_shared<AudioDeviceDescriptor>(*devDesc));
         AUDIO_WARNING_LOG("Add to %{public}s list, and then %{public}s",
             logName.c_str(), AudioPolicyUtils::GetInstance().GetDevicesStr(descArray).c_str());
     }
