@@ -169,9 +169,9 @@ public:
     void RemoveIdForInjector();
     int32_t CheckPermission(RenderTarget target);
     int32_t SetTarget(RenderTarget target, int32_t &ret);
-
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
     int32_t SetLoopTimes(int64_t bufferLoopTimes);
+    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     int32_t ResetStaticPlayPosition();
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
