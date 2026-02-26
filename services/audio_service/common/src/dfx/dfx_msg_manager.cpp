@@ -743,7 +743,7 @@ void DfxMsgManager::HiviewUeEnableChangeCallback(const char *key, const char *va
 {
     CHECK_AND_RETURN_LOG(value != nullptr, "HiviewUeEnableChangeCallback: value is null");
     bool enable = (strcmp(value, "true") == 0 || strcmp(value, "1") == 0);
-    hiviewUeEnable_store(enable, std::memory_order_release);
+    hiviewUeEnable_.store(enable, std::memory_order_release);
     AUDIO_INFO_LOG("HiviewUeEnable changed to %{public}d", enable);
 }
 
@@ -758,7 +758,7 @@ void DfxMsgManager::WatchHiviewUeEnableParameter()
         HiviewUeEnableChangeCallback, this);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "WatchHiviewUeEnableParameter failed!");
     AUDIO_INFO_LOG("WatchHiviewUeEnableParameter success, current value: %{public}d",
-        hiviewUeEnable_load(std::memory_order_relaxed));
+        hiviewUeEnable_.load(std::memory_order_relaxed));
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <cinttypes>
+#include <inttypes.h>
 #include "audio_stream_checker.h"
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
@@ -228,11 +228,11 @@ void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para)
     int64_t abnormalFrameNum = 0;
     if (para.isMonitorMuteFrame) {
         abnormalFrameNum += para.muteFrameNum;
-        AUDIO_DEBUG_LOG("Check mute frame size = %{public}ld", para.muteFrameNum);
+        AUDIO_DEBUG_LOG("Check mute frame size = %{public}" PRId64, para.muteFrameNum);
     }
     if (para.isMonitorNoDataFrame) {
         abnormalFrameNum += para.noDataFrameNum;
-        AUDIO_DEBUG_LOG("Check no data frame size = %{public}ld", para.noDataFrameNum);
+        AUDIO_DEBUG_LOG("Check no data frame size = %{public}" PRId64, para.noDataFrameNum);
     }
 
     if (timeCost < para.para.timeInterval) {
@@ -244,7 +244,7 @@ void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para)
     CalculateFrameAfterOverflow(para, abnormalFrameNum);
     para.sumFrameCount = para.normalFrameCount + para.noDataFrameNum;
     float badFrameRatio = para.para.badFramesRatio / TRANS_PERCENTAGE;
-    AUDIO_DEBUG_LOG("Check frame sum = %{public}ld, abnormal = %{public}ld, badRatio = %{public}f",
+    AUDIO_DEBUG_LOG("Check frame sum = %{public}" PRId64", abnormal = %{public}" PRId64", badRatio = %{public}f",
         para.sumFrameCount, abnormalFrameNum, badFrameRatio);
     AUDIO_DEBUG_LOG("Last check status = %{public}d", para.lastStatus);
     MonitorCheckFrameAction(para, abnormalFrameNum, badFrameRatio);
@@ -384,7 +384,7 @@ void AudioStreamChecker::RecordMuteFrame()
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
     for (size_t index = 0; index < checkParaVector_.size(); index++) {
         checkParaVector_[index].muteFrameNum++;
-        AUDIO_DEBUG_LOG("Mute frame num = %{public}ld, callbackId = %{public}d",
+        AUDIO_DEBUG_LOG("Mute frame num = %{public}" PRId64", callbackId = %{public}d",
             checkParaVector_[index].muteFrameNum, checkParaVector_[index].callbackId);
     }
 }
@@ -394,7 +394,7 @@ void AudioStreamChecker::RecordNodataFrame()
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
     for (size_t index = 0; index < checkParaVector_.size(); index++) {
         checkParaVector_[index].noDataFrameNum++;
-        AUDIO_DEBUG_LOG("No data frame num = %{public}ld, callbackId = %{public}d",
+        AUDIO_DEBUG_LOG("No data frame num = %{public}" PRId64", callbackId = %{public}d",
             checkParaVector_[index].noDataFrameNum, checkParaVector_[index].callbackId);
     }
 }
@@ -404,7 +404,7 @@ void AudioStreamChecker::RecordNormalFrame()
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
     for (size_t index = 0; index < checkParaVector_.size(); index++) {
         checkParaVector_[index].normalFrameCount++;
-        AUDIO_DEBUG_LOG("Normal frame num = %{public}ld, callbackId = %{public}d",
+        AUDIO_DEBUG_LOG("Normal frame num = %{public}" PRId64", callbackId = %{public}d",
             checkParaVector_[index].normalFrameCount, checkParaVector_[index].callbackId);
     }
 }
