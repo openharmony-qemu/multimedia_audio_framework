@@ -25,7 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AUDIO_COLLABORATIVE_MANAGER_NAPI_CLASS_NAME = "AudioCollaborativeManager";
+inline const std::string AUDIO_COLLABORATIVE_MANAGER_NAPI_CLASS_NAME = "AudioCollaborativeManager";
 class NapiAudioCollaborativeManager {
 public:
     NapiAudioCollaborativeManager();
