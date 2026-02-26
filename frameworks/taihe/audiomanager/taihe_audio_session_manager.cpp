@@ -427,6 +427,7 @@ void AudioSessionManagerImpl::RegisterAudioSessionDeviceCallback(std::shared_ptr
         return;
     }
 
+    std::lock_guard<std::mutex> lock(taiheSessionManager->sessionDeviceCbMutex_);
     CHECK_AND_RETURN_LOG(GetAudioSessionDeviceCallback(callback, taiheSessionManager) == nullptr,
         "The callback function already registered.");
 
