@@ -1183,12 +1183,7 @@ int32_t AudioCoreService::SetSessionDefaultOutputDevice(
             forceFetch = true;
         }
     }
-    if (forceFetch) {
-        FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
-            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
-    }
-
-    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType);
+    return audioSessionService_.SetSessionDefaultOutputDevice(callerPid, deviceType, forceFetch);
 }
 
 bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos)
