@@ -27,9 +27,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
-inline std::string AUDIO_STREAM_MGR_NAPI_CLASS_NAME = "AudioStreamManager";
-inline std::string RENDERERCHANGE_CALLBACK_NAME = "audioRendererChange";
-inline std::string CAPTURERCHANGE_CALLBACK_NAME = "audioCapturerChange";
+inline const std::string AUDIO_STREAM_MGR_NAPI_CLASS_NAME = "AudioStreamManager";
+inline const std::string RENDERERCHANGE_CALLBACK_NAME = "audioRendererChange";
+inline const std::string CAPTURERCHANGE_CALLBACK_NAME = "audioCapturerChange";
 
 class NapiAudioStreamMgr {
 public:

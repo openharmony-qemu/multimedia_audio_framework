@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string NAPI_AUDIO_ROUTING_MANAGER_CLASS_NAME = "AudioRoutingManager";
+inline const std::string NAPI_AUDIO_ROUTING_MANAGER_CLASS_NAME = "AudioRoutingManager";
 class NapiAudioRoutingManager {
 public:
     NapiAudioRoutingManager();

@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
+inline const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
 
 class NapiAudioManagerMicStateChangeCallback : public AudioManagerMicStateChangeCallback {
 public:
