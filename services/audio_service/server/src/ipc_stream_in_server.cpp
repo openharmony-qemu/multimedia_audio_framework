@@ -80,10 +80,10 @@ IpcStreamInServer::~IpcStreamInServer()
     // 2. Avoid RendererInServer/CapturerInServer destructor from AudioService weak_ptr,
     // may cause deadlock in UpdateSessionOperation
     if (rendererInServer_) {
-        rendererInServer_->Release();
+        rendererInServer_->Release(false);
     }
     if (capturerInServer_) {
-        capturerInServer_->Release();
+        capturerInServer_->Release(false);
     }
 }
 
