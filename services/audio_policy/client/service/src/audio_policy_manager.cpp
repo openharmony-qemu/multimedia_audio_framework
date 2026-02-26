@@ -3519,15 +3519,6 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
     return policyManager;
 }
 
-AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_SCENE_DEFAULT, "audio policy manager proxy is NULL.");
-    int32_t audioScene = AUDIO_SCENE_DEFAULT;
-    gsp->GetAudioSceneFromAllZones(audioScene);
-    return static_cast<AudioScene>(audioScene);
-}
-
 int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
