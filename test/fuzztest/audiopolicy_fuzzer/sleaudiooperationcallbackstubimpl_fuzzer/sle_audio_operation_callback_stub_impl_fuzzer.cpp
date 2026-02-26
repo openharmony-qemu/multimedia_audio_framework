@@ -49,9 +49,6 @@ void GetSleAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::vector<AudioDeviceDescriptor> devices;
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN(deviceDesc != nullptr);
@@ -75,9 +72,6 @@ void GetSleVirtualAudioDeviceListFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::vector<AudioDeviceDescriptor> devices;
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN(deviceDesc != nullptr);
@@ -101,9 +95,6 @@ void IsInBandRingOpenFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string device = "test_device";
     bool ret = g_fuzzUtils.GetData<bool>();
     operationCallbackStub->IsInBandRingOpen(device, ret);
@@ -123,9 +114,6 @@ void GetSupportStreamTypeFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string device = "test_device";
     uint32_t retType = g_fuzzUtils.GetData<uint32_t>();
     operationCallbackStub->GetSupportStreamType(device, retType);
@@ -145,9 +133,6 @@ void SetActiveSinkDeviceFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string device = "test_device";
     uint32_t streamType = g_fuzzUtils.GetData<uint32_t>();
     int32_t ret = g_fuzzUtils.GetData<int32_t>();
@@ -169,9 +154,6 @@ void StartPlayingFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string device = "test_device";
     uint32_t streamType = g_fuzzUtils.GetData<uint32_t>();
     int32_t ret = g_fuzzUtils.GetData<int32_t>();
@@ -195,9 +177,6 @@ void StopPlayingFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string device = "test_device";
     uint32_t streamType = g_fuzzUtils.GetData<uint32_t>();
     int32_t ret = g_fuzzUtils.GetData<int32_t>();
@@ -219,9 +198,6 @@ void ConnectAllowedProfilesFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string remoteAddr = "00:11:22:33:44:55";
     int32_t ret = g_fuzzUtils.GetData<int32_t>();
     operationCallbackStub->ConnectAllowedProfiles(remoteAddr, ret);
@@ -241,9 +217,6 @@ void SetDeviceAbsVolumeFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string remoteAddr = "00:11:22:33:44:55";
     uint32_t volume = g_fuzzUtils.GetData<uint32_t>();
     uint32_t streamType = g_fuzzUtils.GetData<uint32_t>();
@@ -267,9 +240,6 @@ void SendUserSelectionFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string device = "test_device";
     uint32_t streamType = g_fuzzUtils.GetData<uint32_t>();
     int32_t ret = g_fuzzUtils.GetData<int32_t>();
@@ -291,9 +261,6 @@ void GetRenderPositionFuzzTest(FuzzedDataProvider& fdp)
     auto operationCallbackStub = std::make_shared<SleAudioOperationCallbackStubImpl>();
     CHECK_AND_RETURN(operationCallbackStub != nullptr);
     operationCallbackStub->sleAudioOperationCallback_ = std::make_shared<SleAudioOperationCallbackTest>();
-    if (operationCallbackStub->sleAudioOperationCallback_.lock() == nullptr) {
-        return;
-    }
     std::string device = "test_device";
     uint32_t delayValue = g_fuzzUtils.GetData<uint32_t>();
     operationCallbackStub->GetRenderPosition(device, delayValue);

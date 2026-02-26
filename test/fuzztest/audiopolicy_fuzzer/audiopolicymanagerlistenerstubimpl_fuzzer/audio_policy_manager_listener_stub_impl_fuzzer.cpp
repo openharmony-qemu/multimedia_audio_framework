@@ -145,9 +145,6 @@ void OnCheckClientInfoFuzzTest(FuzzedDataProvider& fdp)
     int32_t pid = g_fuzzUtils.GetData<int32_t>();
     bool ret = g_fuzzUtils.GetData<bool>();
     policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
-    if (policyListenerStub->audioClientInfoMgrCallback_.lock() == nullptr) {
-        return;
-    }
     policyListenerStub->OnCheckClientInfo(bundleName, uid, pid, ret);
 }
 
@@ -158,9 +155,6 @@ void OnCheckMediaControllerBundleFuzzTest(FuzzedDataProvider& fdp)
     std::string bundleName = "bundleName";
     bool ret = g_fuzzUtils.GetData<bool>();
     policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
-    if (policyListenerStub->audioClientInfoMgrCallback_.lock() == nullptr) {
-        return;
-    }
     policyListenerStub->OnCheckMediaControllerBundle(bundleName, ret);
 }
 
@@ -326,9 +320,6 @@ void OnQueryIsForceGetZoneDeviceFuzzTest(FuzzedDataProvider& fdp)
     policyListenerStub->OnQueryIsForceGetZoneDevice(bundleName, ret);
 
     policyListenerStub->audioClientInfoMgrCallback_ = std::make_shared<AudioClientInfoMgrCallbackFuzzTest>();
-    if (policyListenerStub->audioClientInfoMgrCallback_.lock() == nullptr) {
-        return;
-    }
     policyListenerStub->OnQueryIsForceGetZoneDevice(bundleName, ret);
 }
 

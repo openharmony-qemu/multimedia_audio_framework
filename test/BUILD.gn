@@ -209,8 +209,10 @@ group("audio_fuzz_test") {
   testonly = true
 
   deps = [
+    "fuzztest/audiopolicy_fuzzer/audioroutercenter_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioa2dpdevice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioa2dpoffloadmanager_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audioinjectorpolicy_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioactivedevice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioadaptermanager_fuzzer:fuzztest",
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
