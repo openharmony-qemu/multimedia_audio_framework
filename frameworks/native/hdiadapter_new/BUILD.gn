@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")1
+import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../audio_framework_test_sources.gni")
 import("../../../config.gni")
