@@ -105,8 +105,8 @@ private:
         AudioModuleInfo &moduleInfo);
     bool IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::shared_ptr<AudioPipeInfo> &pipeInfo, const std::string &adapterName);
-    void CheckIfConcedeExisting(ConcurrencyAction &action, const std::shared_ptr<AudioStreamDescriptor> &existingStream,
-        const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
+    ConcurrencyAction DetermineConcurrencyAction(std::shared_ptr<AudioStreamDescriptor> &existingStream,
+        std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     void GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioStreamDescriptor> &desc,
                                           std::shared_ptr<PipeStreamPropInfo> &info);
     void SortStreamByStatus(std::vector<std::pair<std::shared_ptr<AudioStreamDescriptor>,
