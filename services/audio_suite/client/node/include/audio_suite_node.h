@@ -48,7 +48,8 @@ class AudioNode : public std::enable_shared_from_this<AudioNode> {
 public:
     AudioNode(AudioNodeType nodeType);
     AudioNode(AudioNodeType nodeType, AudioFormat audioFormat);
-    virtual ~AudioNode() {
+    virtual ~AudioNode()
+    {
         outputData_.clear();
         preNodeResult_.clear();
     }
