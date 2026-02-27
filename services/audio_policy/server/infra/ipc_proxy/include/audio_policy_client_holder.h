@@ -74,6 +74,9 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t uid, const std::string &caller);
     void OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled);
+    void OnSpatializationEnabledChangeForBTDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+        const bool &enabled, const bool &headTrackingEnabled);
+    void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode);
 
 public:
     bool hasBTPermission_ = true;

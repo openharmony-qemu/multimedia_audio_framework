@@ -29,6 +29,7 @@
 #include "hisysevent.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
+#include "i_hpae_manager.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -848,6 +849,53 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
     }
 }
 
+void AudioCoreService::CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AUDIO_INFO_LOG("not nearlink or bluetooth, device is %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        return;
+    }
+
+    SpatialAudioSourceType sourceType = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = pipeManager_->GetPipeList();
+    for (auto pipe : pipeList) {
+        AUDIO_INFO_LOG("pipe id %{public}d name %{public}s",
+            pipe->id_, pipe->name_.c_str());
+        for (auto it : pipe->streamDescriptors_) {
+            AUDIO_INFO_LOG("stream id %{public}d, encoding %{public}d, channels %{public}d",
+                it->sessionId_, it->streamInfo_.encoding, it->streamInfo_.channels);
+            if (it->streamStatus_ == STREAM_STATUS_STARTED && it->sessionId_ != streamDesc->sessionId_) {
+                AUDIO_INFO_LOG("has running stream %{public}d", it->sessionId_);
+                return;
+            }
+        }
+    }
+    if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID) {
+        sourceType = SPATIAL_AUDIO_SOURCE_TYPE_AUDIO_VIVID;
+    } else if (streamDesc->streamInfo_.channels > STEREO) {
+        sourceType = SPATIAL_AUDIO_SOURCE_TYPE_MULTI_CHANNEL;
+    }
+    AUDIO_INFO_LOG("need update spatializaitonenabled %{public}d", sourceType);
+    // 通知hpaemanager音效模式变化 最终通知给audioeffectchain
+    HPAE::IHpaeManager::GetHpaeManager().HandleBypassSpatializationForStereo(
+        sourceType == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
+    // AudioSpatializationService里面调用回调通知管家音效模式变化
+    AudioSpatializationService::GetAudioSpatializationService().SetSpatialAudioSourceType(sourceType);
+
+    if (!AudioSpatializationService::GetAudioSpatializationService().IsAdaptiveSpatialRenderingEnabled(
+        streamDesc->newDeviceDescs_[0]->macAddress_)) {
+        AUDIO_INFO_LOG("adaptiveSpatialRendering is not enabled");
+        return;
+    }
+    AUDIO_INFO_LOG("IsHeadTrackingEnabled: %{public}d",
+        AudioSpatializationService::GetAudioSpatializationService().IsHeadTrackingEnabled(
+            streamDesc->newDeviceDescs_[0]->macAddress_));
+    // 通知星闪、蓝牙空间音频、头动开关变化
+    AudioSpatializationService::GetAudioSpatializationService().SetBypassSpatialForStereo(
+        streamDesc->newDeviceDescs_[0], sourceType == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(!pipeManager_->IsModemCommunicationIdExist(sessionId), SUCCESS,
@@ -903,6 +951,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
     // [Capturer NOTE 1.3] should use the new device.
     CheckForRemoteDeviceState(deviceDesc);
+    CheckAndUpdateEffect(streamDesc);
     if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         ReloadCaptureSession(sessionId, SESSION_OPERATION_START);
     }

@@ -61,6 +61,7 @@ public:
     bool IsAdaptiveSpatialRenderingEnabled(const std::string address);
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+    int32_t SetBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool bypass);
     void HandleAdaptiveSpatialRenderingEnabledChange(const bool &enabled);
     void HandleAdaptiveSpatialRenderingEnabledChange(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
@@ -82,7 +83,7 @@ public:
     int32_t RegisterSpatializationStateEventListener(const uint32_t sessionID, const StreamUsage streamUsage,
         const sptr<IRemoteObject> &object);
     int32_t UnregisterSpatializationStateEventListener(const uint32_t sessionID);
-    void UpdateCurrentDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+    void UpdateCurrentDevice(const std::string macAddress);
     AudioSpatializationSceneType GetSpatializationSceneType();
     int32_t SetSpatializationSceneType(const AudioSpatializationSceneType spatializationSceneType);
     bool IsHeadTrackingDataRequested(const std::string &macAddress);
@@ -90,6 +91,8 @@ public:
     void InitSpatializationState();
     std::string GetCurrentDeviceAddress() const;
     void UpdateSpatializationSupported(const std::string encryptedAddress);
+    int32_t GetCurrentSpatialAudioSourceType();
+    void SetSpatialAudioSourceType(SpatialAudioSourceType mode);
 private:
     AudioSpatializationService()
         :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
@@ -114,6 +117,7 @@ private:
     void HandleHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo);
     void UpdateDeviceSpatialInfo(const std::string deviceSpatialInfo);
     void UpdateDeviceSpatialMapInfo(const std::string address, const std::string deviceSpatialInfo);
+    void UpdateSpatialStateToNewDevice(const AudioSpatialDeviceState audioSpatialDeviceState);
     bool IsSpatializationSupportedForDeviceInner(const std::string address);
     bool IsHeadTrackingSupportedForDeviceInner(const std::string address);
     std::string RemoveOldestDevice();
@@ -145,6 +149,7 @@ private:
     std::unordered_map<uint32_t, std::pair<std::shared_ptr<AudioSpatializationStateChangeCallback>, StreamUsage>>
         spatializationStateCBMap_;
     std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;
+    SpatialAudioSourceType spatialAudioSourceType_ = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
 };
 } // namespace AudioStandard
 } // namespace OHOS

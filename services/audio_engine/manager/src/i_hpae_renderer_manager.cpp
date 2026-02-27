@@ -33,13 +33,17 @@ static const std::string DEVICE_NAME_CAST_INNER_CAP = "RemoteCastInnerCapturer";
 std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManager(HpaeSinkInfo &sinkInfo)
 {
     if (sinkInfo.deviceClass == DEVICE_CLASS_OFFLOAD || sinkInfo.deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD) {
+        AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeOffloadRendererManager");
         return std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     } else if ((sinkInfo.deviceName.compare(0, DEVICE_NAME_INNER_CAP.length(), DEVICE_NAME_INNER_CAP) == 0)
         || sinkInfo.deviceName == DEVICE_NAME_CAST_INNER_CAP) {
+            AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeInnerCapturerManager");
         return std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     } else if (sinkInfo.deviceName == VIRTUAL_INJECTOR) {
+        AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeInjectorRendererManager");
         return std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
     }
+    AUDIO_INFO_LOG("IHpaeRendererManager::CreateRendererManager HpaeRendererManager");
     return std::make_shared<HpaeRendererManager>(sinkInfo);
 }
 

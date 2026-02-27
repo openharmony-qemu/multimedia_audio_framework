@@ -1827,9 +1827,7 @@ void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescripto
         AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(false);
     }
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
-    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice =
-            std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
-    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(selectedAudioDevice);
+    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
     AudioCollaborativeService::GetAudioCollaborativeService().UpdateCurrentDevice(deviceDescriptor);
 }
 

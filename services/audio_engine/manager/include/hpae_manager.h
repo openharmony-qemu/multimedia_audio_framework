@@ -208,6 +208,7 @@ public:
 
     void UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
+    void HandleBypassSpatializationForStereo(bool bypass) override;
 
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
@@ -279,6 +280,7 @@ private:
     std::vector<uint32_t> GetAllRenderSession(const std::string &name);
     std::vector<uint32_t> GetAllCaptureSession(const std::string &name);
     std::shared_ptr<IHpaeRendererManager> GetAuxiliaryRendererManager();
+    void UpdateBypassSpatializationForStereo(bool bypass);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;

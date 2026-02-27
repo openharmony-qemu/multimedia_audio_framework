@@ -2210,6 +2210,17 @@ HWTEST_F(HpaeManagerUnitTest, StopAudioPort003, TestSize.Level4)
     WaitForMsgProcessing(hpaeManager_);
 }
 
+HWTEST_F(HpaeManagerUnitTest, TriggerAppsUidUpdate001, TestSize.Level4)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    hpaeManager_->capturerManagerMap_["test"] = nullptr;
+    hpaeManager_->rendererManagerMap_["test"] = nullptr;
+    hpaeManager_->TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_INVALID, 1);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_NE(hpaeManager_->capturerManagerMap_.size(), 0);
+}
+
 HWTEST_F(HpaeManagerUnitTest, CreateRendererManager_Test_001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
@@ -2221,16 +2232,5 @@ HWTEST_F(HpaeManagerUnitTest, CreateRendererManager_Test_001, TestSize.Level1)
     hpaeManager_->CreateRendererManager(audioModuleInfo, 1, false);
     std::shared_ptr<IHpaeRendererManager> rendererManager = hpaeManager_->GetRendererManagerByName("Bt_Speaker");
     EXPECT_NE(rendererManager, nullptr);
-}
-
-HWTEST_F(HpaeManagerUnitTest, TriggerAppsUidUpdate001, TestSize.Level4)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    hpaeManager_->capturerManagerMap_["test"] = nullptr;
-    hpaeManager_->rendererManagerMap_["test"] = nullptr;
-    hpaeManager_->TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_INVALID, 1);
-    WaitForMsgProcessing(hpaeManager_);
-    EXPECT_NE(hpaeManager_->capturerManagerMap_.size(), 0);
 }
 }  // namespace

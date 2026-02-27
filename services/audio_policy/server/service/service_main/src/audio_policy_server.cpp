@@ -4373,6 +4373,16 @@ int32_t AudioPolicyServer::SetAdaptiveSpatialRenderingEnabled(
     return audioSpatializationService_.SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
 }
 
+int32_t AudioPolicyServer::GetCurrentSpatialAudioSourceType(int32_t &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.GetCurrentSpatialAudioSourceType();
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetSpatializationState(int32_t streamUsage,
     AudioSpatializationState &state)
 {

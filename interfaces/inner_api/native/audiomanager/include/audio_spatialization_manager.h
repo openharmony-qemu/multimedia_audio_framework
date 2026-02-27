@@ -93,6 +93,13 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
 };
 
+class AudioSpatialAudioSourceTypeChangeCallback {
+public:
+    virtual ~AudioSpatialAudioSourceTypeChangeCallback() = default;
+
+    virtual void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode) = 0;
+};
+
 class HeadTrackingDataRequestedChangeCallback {
 public:
     virtual ~HeadTrackingDataRequestedChangeCallback() = default;
@@ -230,6 +237,16 @@ public:
         const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback);
 
     /**
+     * @brief Register the spatial audio source type change callback listener
+     *
+     * @return Returns {@link SUCCESS} if audio source type changed; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    int32_t RegisterSpatialAudioSourceTypeEventListener(
+        const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &callback);
+
+    /**
      * @brief Unregister the spatialization enabled change callback listener
      *
      * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
@@ -264,6 +281,15 @@ public:
      * @since 23
      */
     int32_t UnregisterAdaptiveSpatialRenderingEnabledEventListener();
+
+    /**
+     * @brief Unregister spatial audio source type change callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 23
+     */
+    int32_t UnregisterSpatialAudioSourceTypeEventListener();
 
     /**
      * @brief Check whether the spatialization is supported
@@ -365,6 +391,14 @@ public:
      */
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
+
+    /**
+     * @brief Get current spatial audio source type.
+     *
+     * @return Returns stereo, audio vivid or multichannel
+     * @since 23
+     */
+    int32_t GetCurrentSpatialAudioSourceType();
 private:
     AudioSpatializationManager();
     virtual ~AudioSpatializationManager();
