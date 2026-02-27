@@ -175,14 +175,14 @@ int32_t AudioPolicyManager::RemoveUidUsagesFromAudioZone(
 int32_t AudioPolicyManager::AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->AddStreamToAudioZone(zoneId, stream);
 }
 
 int32_t AudioPolicyManager::AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->AddStreamsToAudioZone(zoneId, streams);
 }
 
