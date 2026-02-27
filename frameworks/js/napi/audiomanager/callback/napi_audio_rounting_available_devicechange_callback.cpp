@@ -86,7 +86,7 @@ void NapiAudioRountingAvailableDeviceChangeCallback::RemoveRoutingAvailbleDevice
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it).first->cb_);
         if (isSameCallback) {
-            AUDIO_INFO_LOG("RemoveRoutingAvailbleDeviceChangeCbRef: find js callback, erase it");
+            AUDIO_INFO_LOG("RemoveRoutingAvailbleDeviceChangeCbRef: find js callback, delete it");
             availableDeviceChangeCbList_.erase(it);
             return;
         }

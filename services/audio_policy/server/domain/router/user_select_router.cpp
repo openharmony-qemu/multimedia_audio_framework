@@ -94,7 +94,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
         return descs;
     }
     if (selectedDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP && selectedDesc->GetDeviceCategory() == BT_SOUNDBOX) {
-        AUDIO_INFO_LOG("Exclude BT soundbox device for ring.");
+        AUDIO_INFO_LOG("Exclude BT soundbox device for ring");
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }

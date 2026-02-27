@@ -85,7 +85,8 @@ void ClientTypeManagerHandler::HandleGetClientType(const AppExecFwk::InnerEvent:
         AUDIO_WARNING_LOG("Query callback is not inited");
         return;
     }
-    bool isGame = queryClientTypeCallback_->OnQueryClientType(bundleName, uid);
+    bool isGame = false;
+    queryClientTypeCallback_->OnQueryClientType(bundleName, uid, isGame);
     callbackLock.unlock();
     if (isGame) {
         AUDIO_INFO_LOG("%{public}u is game type", uid);

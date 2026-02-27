@@ -29,7 +29,7 @@ namespace AudioStandard {
 NapiAudioSystemVolumeChangeCallback::NapiAudioSystemVolumeChangeCallback(napi_env env)
     :env_(env)
 {
-    AUDIO_INFO_LOG("Constructor");
+    AUDIO_INFO_LOG("::Constructor");
 }
 
 NapiAudioSystemVolumeChangeCallback::~NapiAudioSystemVolumeChangeCallback()

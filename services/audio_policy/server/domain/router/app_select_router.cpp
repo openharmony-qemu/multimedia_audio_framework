@@ -119,10 +119,10 @@ void AppSelectRouter::ConfigureDeviceForSpecialScenario(
     auto scoDevice = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(
         activeOutPutDevice->macAddress_, DeviceRole::INPUT_DEVICE);
 
-    if (pairDevice != nullptr) {
+    if (pairDevice != nullptr && pairDevice->isVrSupported_) {
         AUDIO_INFO_LOG("find pairDevice deviceType_: %{public}d", pairDevice->deviceType_);
         device = pairDevice;
-    } else if (scoDevice != nullptr) {
+    } else if (scoDevice != nullptr && scoDevice->isVrSupported_) {
         AUDIO_INFO_LOG("find scoDevice deviceType_: %{public}d", scoDevice->deviceType_);
         device = scoDevice;
     }
