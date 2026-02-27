@@ -616,5 +616,12 @@ int32_t IpcStreamInServer::ResetStaticPlayPosition()
     return rendererInServer_->ResetStaticPlayPosition();
 }
 
+int32_t IpcStreamInServer::SetInMainThreadState(bool isInMainThread)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_RECORD && capturerInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "Failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return capturerInServer_->SetInMainThreadState(isInMainThread);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

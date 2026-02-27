@@ -1337,6 +1337,19 @@ enum StopAudioType {
 enum RecordErrorCode {
     RECORD_ERROR_GET_FOCUS_FAIL = 0,
     RECORD_ERROR_NO_FOCUS_CFG = 1,
+    RECORD_ERROR_NO_BG_PERMISSION = 2,
+};
+
+enum RecordUnderflowReason {
+    REASON_RECORDING_DEFAULT = 1 << 0,
+    REASON_RECORDING_IN_ARTTS_MAINTHREAD = 1 << 1,
+    REASON_RECORDING_BACKGROUND = 1 << 2,
+};
+
+enum RecordErrorType {
+    RECORD_ERROR_TYPE_INTERRUPT,
+    RECORD_ERROR_TYPE_START_FAIL,
+    RECORD_ERROR_TYPE_OVERFLOW,
 };
 
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.

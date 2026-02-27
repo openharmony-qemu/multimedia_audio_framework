@@ -28,6 +28,7 @@
 #include "audio_service.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
+#include "audio_info.h"
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
@@ -341,6 +342,19 @@ bool AudioProcessInServer::CheckBGCapturer()
     return res;
 }
 
+void AudioProcessInServer::ReportNoBgPermissionEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("INCOMING_SOURCE", processConfig_.capturerInfo.sourceType);
+    bean->Add("INCOMING_PID", processConfig_.appInfo.appPid);
+    bean->Add("INCOMING_UID", processConfig_.appInfo.appUid);
+    bean->Add("REASON", RECORD_ERROR_NO_BG_PERMISSION);
+    bean->Add("TYPE", RECORD_ERROR_TYPE_START_FAIL);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
@@ -352,8 +366,11 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(CheckBGCapturer(), false, "Verify failed");
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED) && !CheckBGCapturer()) {
+        AUDIO_ERR_LOG("Verify failed, incoming: sourceType %{public}d pid %{public}d uid %{public}d",
+            processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
+        ReportNoBgPermissionEvent();
+        return false;
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 

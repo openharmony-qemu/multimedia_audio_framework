@@ -631,6 +631,7 @@ napi_value NapiAudioCapturer::Read(napi_env env, napi_callback_info info)
         if (CheckAudioCapturerStatus(napiAudioCapturer, context) == true) {
             AudioCapturerInfo capturerInfo = {};
             napiAudioCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
+            napiAudioCapturer->audioCapturer_->SetInMainThreadState(true);
             int32_t appUid = static_cast<int32_t>(getuid());
             NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
                 capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::read);
@@ -1332,6 +1333,7 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
         (getpid() == gettid())) {
         AudioCapturerInfo capturerInfo = {};
         napiCapturer->audioCapturer_->GetCapturerInfo(capturerInfo);
+        napiCapturer->audioCapturer_->SetInMainThreadState(true);
         int32_t appUid = static_cast<int32_t>(getuid());
         NapiDfxUtils::ReportAudioMainThreadEvent(appUid, NapiDfxUtils::SteamDirection::capture,
             capturerInfo.sourceType, NapiDfxUtils::MainThreadCallFunc::readCb);

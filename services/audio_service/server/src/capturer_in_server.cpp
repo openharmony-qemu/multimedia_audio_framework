@@ -21,6 +21,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_info.h"
 #include "audio_capturer_log.h"
 #include "audio_service.h"
 #include "audio_process_config.h"
@@ -37,6 +38,7 @@
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
 #endif
+#include "app_mgr_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +49,7 @@ namespace {
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    static const uint32_t OVERFLOW_REPORT_INTERVAL_MS = 60000;
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 #endif
@@ -243,6 +246,52 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
+int32_t CapturerInServer::SetInMainThreadState(bool isInMainThread)
+{
+    isInMainThread_ = isInMainThread;
+    return SUCCESS;
+}
+
+bool CapturerInServer::IsAppStateBackground(int32_t appPid)
+{
+    AppExecFwk::AppMgrClient appManager;
+    AppExecFwk::RunningProcessInfo infos;
+    uint8_t state = 0;
+    appManager.GetRunningProcessInfoByPid(appPid, infos);
+    state = static_cast<uint8_t>(infos.state_);
+    return state == static_cast<uint8_t>(AppExecFwk::AppProcessState::APP_STATE_BACKGROUND);
+}
+
+void CapturerInServer::ReportOverflowEvent()
+{
+    auto now = std::chrono::system_clock::now();
+    auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    int32_t reportCount = overFlowLogFlag_ - lastOverflowCount_;
+    CHECK_AND_RETURN((nowMs - lastOverflowTime_ >= OVERFLOW_REPORT_INTERVAL_MS && reportCount > 0));
+    lastOverflowCount_ = overFlowLogFlag_;
+    lastOverflowTime_ = nowMs;
+    bool isBackground = IsAppStateBackground(processConfig_.appInfo.appPid);
+    AUDIO_INFO_LOG("isInMainThread_: %{public}d, isBackground: %{public}d, Underflow timestamp: %{public}" PRIu64,
+        isInMainThread_, isBackground, static_cast<uint64_t>(nowMs));
+    int32_t reason = REASON_RECORDING_DEFAULT |
+        (isInMainThread_ ? REASON_RECORDING_IN_ARTTS_MAINTHREAD : 0) |
+        (isBackground ? REASON_RECORDING_BACKGROUND : 0);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("INCOMING_SOURCE", processConfig_.capturerInfo.sourceType);
+    bean->Add("INCOMING_PID", processConfig_.appInfo.appPid);
+    bean->Add("INCOMING_UID", processConfig_.appInfo.appUid);
+    bean->Add("TYPE", RECORD_ERROR_TYPE_OVERFLOW);
+    bean->Add("REASON", reason);
+    bean->Add("COUNT", reportCount);
+    bean->Add("START_TIME", static_cast<uint64_t>(nowMs));
+    bean->Add("PIPE_TYPE", processConfig_.capturerInfo.pipeType);
+    bean->Add("HDI_ADAPTER", static_cast<int32_t>(HDI_ADAPTER_TYPE_PRIMARY));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 // LCOV_EXCL_START
 bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
     std::shared_ptr<IStreamListener> stateListener)
@@ -252,8 +301,10 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             AUDIO_INFO_LOG("OverFlow!!!");
         } else if (overFlowLogFlag_ == OVERFLOW_LOG_LOOP_COUNT) {
             overFlowLogFlag_ = 0;
+            lastOverflowCount_ = 0;
         }
         overFlowLogFlag_++;
+        ReportOverflowEvent();
         int32_t engineFlag = GetEngineFlag();
         if (engineFlag != 1) {
             BufferDesc dstBuffer = stream_->DequeueBuffer(length);
@@ -492,6 +543,19 @@ bool CapturerInServer::CheckBGCapture()
     return res;
 }
 
+void CapturerInServer::ReportNoBgPermissionEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("INCOMING_SOURCE", processConfig_.capturerInfo.sourceType);
+    bean->Add("INCOMING_PID", processConfig_.appInfo.appPid);
+    bean->Add("INCOMING_UID", processConfig_.appInfo.appUid);
+    bean->Add("REASON", RECORD_ERROR_NO_BG_PERMISSION);
+    bean->Add("TYPE", RECORD_ERROR_TYPE_START_FAIL);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
@@ -503,8 +567,11 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED) && !CheckBGCapture()) {
+        AUDIO_ERR_LOG("Verify failed, incoming: sourceType %{public}d pid %{public}d uid %{public}d",
+            processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
+        ReportNoBgPermissionEvent();
+        return false;
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 

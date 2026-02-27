@@ -70,6 +70,8 @@ public:
 
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
+    virtual int32_t SetInMainThreadState(bool isInMainThread) override { return 0; }
+
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
 
     virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override

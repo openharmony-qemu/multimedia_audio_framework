@@ -110,6 +110,7 @@ public:
     void SetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
 
     int32_t StartPlaybackCapture() override;
+    int32_t SetInMainThreadState(bool isInMainThread) override;
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
@@ -217,6 +218,7 @@ private:
     std::condition_variable taskLoopCv_;
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
+    bool isFirstTimeSetMainThreadState_ = true;
 };
 
 class AudioCapturerInterruptCallbackImpl : public AudioInterruptCallback {

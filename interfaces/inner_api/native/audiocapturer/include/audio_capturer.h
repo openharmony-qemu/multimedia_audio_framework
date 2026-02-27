@@ -787,6 +787,12 @@ public:
         return 0;
     }
 
+    virtual void SetInMainThreadState(bool isInMainThread)
+    {
+        (void)isInMainThread;
+        return;
+    }
+
 protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
 

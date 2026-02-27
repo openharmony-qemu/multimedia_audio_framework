@@ -300,6 +300,11 @@ public:
         return 0;
     }
 
+    int32_t SetInMainThreadState(bool isInMainThread) override
+    {
+        return sharedAudioCapturer_->SetInMainThreadState(isInMainThread);
+    }
+
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override
     {

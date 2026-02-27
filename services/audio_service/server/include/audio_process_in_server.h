@@ -178,6 +178,7 @@ public:
     StreamStatus GetStreamInServerStatus() override;
 
     bool TurnOnMicIndicator(CapturerState capturerState);
+    void ReportNoBgPermissionEvent();
     bool TurnOffMicIndicator(CapturerState capturerState);
 
     uint32_t GetSpanSizeInFrame() override;
