@@ -366,7 +366,6 @@ enum CallbackChange : int32_t {
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_PREFERRED_DEVICE_SET,
-    CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -428,7 +427,6 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SET_DEVICE_INFO_UPDATE,
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_PREFERRED_DEVICE_SET,
-    CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -1310,7 +1308,6 @@ struct AudioRegisterTrackerInfo {
     AudioCapturerInfo capturerInfo;
     int32_t channelCount;
     uint32_t appTokenId;
-    AudioStreamInfo streamInfo;
     // callback for backMute status to renderChangeinfo
     bool backMute = false;
 };

@@ -2201,19 +2201,6 @@ HWTEST_F(HpaeManagerUnitTest, StopAudioPort003, TestSize.Level4)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, CreateRendererManager_Test_001, TestSize.Level1)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    sleep(1);
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
-
-    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo("Bt_Speaker");
-    hpaeManager_->CreateRendererManager(audioModuleInfo, 1, false);
-    std::shared_ptr<IHpaeRendererManager> rendererManager = hpaeManager_->GetRendererManagerByName("Bt_Speaker");
-    EXPECT_NE(rendererManager, nullptr);
-}
-
 HWTEST_F(HpaeManagerUnitTest, TriggerAppsUidUpdate001, TestSize.Level4)
 {
     EXPECT_NE(hpaeManager_, nullptr);

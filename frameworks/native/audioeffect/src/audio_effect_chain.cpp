@@ -729,11 +729,6 @@ void AudioEffectChain::SetEarphoneProduct(AudioEarphoneProduct earphoneProduct)
     earphoneProduct_ = earphoneProduct;
 }
 
-bool AudioEffectChain::IsEffectChainFading()
-{
-    return fadingCounts_ != 0;
-}
-
 void AudioEffectChain::SetOutdoorMode(const std::string &outdoorMode)
 {
     CHECK_AND_RETURN_LOG(StringConverter(outdoorMode, outdoorMode_),

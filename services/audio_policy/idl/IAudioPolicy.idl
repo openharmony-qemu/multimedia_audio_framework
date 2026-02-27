@@ -310,8 +310,6 @@ interface IAudioPolicy {
     void RestoreDistributedDeviceInfo();
     void SetSleVoiceStatusFlag([in] boolean isSleVoiceStatus);
     void GetVirtualCall([out] boolean isVirtualCall);
-    void IsAdaptiveSpatialRenderingEnabled([in] String address, [out] boolean ret);
-    void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
     void AddUidUsagesToAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void RemoveUidUsagesFromAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void EnableMuteSuggestionWhenMixWithOthers([in] boolean enable);
