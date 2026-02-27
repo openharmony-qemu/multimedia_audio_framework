@@ -741,6 +741,7 @@ public:
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    AudioScene GetAudioSceneFromAllZones();
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
     int32_t NotifyStreamSilentChange(uint32_t streamId);
 
