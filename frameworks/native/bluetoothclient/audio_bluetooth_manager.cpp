@@ -28,6 +28,8 @@
 #include "bluetooth_hfp_interface.h"
 #include "bluetooth_a2dp_interface.h"
 #include "hisysevent.h"
+#include "parameters.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -763,6 +765,7 @@ int32_t AudioHfpManager::DisconnectScoWrapper()
 
 void AudioHfpManager::WriteScoOprFaultEvent()
 {
+    CHECK_AND_RETURN(OHOS::system::GetBoolParameter("persist.hiviewdfx.hiview.ue.enable", false));
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SCO_STATE_AUDIO",
         HiviewDFX::HiSysEvent::EventType::FAULT,
         "PKG_NAME", "",

@@ -87,7 +87,7 @@ public:
     void Init();
     void SaveAppInfo(const DfxRunningAppInfo info);
     void UpdateAppState(int32_t appUid, DfxAppState appstate, bool forceUpdate = false);
-    
+
     static bool IsHiviewUeEnable();
 private:
     DfxMsgManager();
@@ -137,6 +137,11 @@ private:
     // Hiview UE parameter monitoring
     static std::atomic_bool hiviewUeEnable_;
     static void HiviewUeEnableChangeCallback(const char *key, const char *value, void *context);
+    void WatchHiviewUeEnableParameter();
+
+    // Hiview UE parameter monitoring
+    static std::atomic_bool hiviewUeEnable_;
+    static void HiviewUeEnableChangeCallback(const char* key, const char* value, void* context);
     void WatchHiviewUeEnableParameter();
 
     enum {

@@ -24,6 +24,7 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_bundle_manager.h"
+#include "dfx_msg_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +39,7 @@ void AudioStreamConcurrencyDetector::ReportHisysEvent(struct AudioStreamConcurrD
         info.updateTimes.push_back(streamConcurrInfoMap_[info.uid][info.usage][streamId].updateTime);
     }
 
+    CHECK_AND_RETURN(DfxMsgManager::IsHiviewUeEnable());
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_CONCURRENCY_DETECTOR",
         HiviewDFX::HiSysEvent::EventType::STATISTIC,
         "UID", static_cast<uint32_t>(info.uid),

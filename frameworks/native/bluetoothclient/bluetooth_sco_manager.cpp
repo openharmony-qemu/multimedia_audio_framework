@@ -24,6 +24,8 @@
 #include "bluetooth_device_utils.h"
 #include "bluetooth_hfp_interface.h"
 #include "hisysevent.h"
+#include "parameters.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace Bluetooth {
@@ -137,6 +139,7 @@ void BluetoothScoManager::UpdateScoStateWhenDisconnecting(HfpScoConnectState sco
 void BluetoothScoManager::WriteScoStateFaultEvent(HfpScoConnectState scoState,
     const BluetoothRemoteDevice &device, int reason)
 {
+    CHECK_AND_RETURN(OHOS::system::GetBoolParameter("persist.hiviewdfx.hiview.ue.enable", false));
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SCO_STATE_BT",
         HiviewDFX::HiSysEvent::EventType::FAULT,
         "SCO_STATE", static_cast<uint8_t>(currentScoState_),
