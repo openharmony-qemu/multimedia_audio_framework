@@ -622,7 +622,7 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
 
     // If hdiFramePosition has a value, it indicates that the remote offload device has performed a flush.
     // The value of hdiFramePosition needs to be accumulated into lastHdiFramePosition_
-    // hdiFramePosition > 0 only when callBackStreamInfo.deviceClass = DEVICE_CALSS_REMOTE_OFFLOAD
+    // hdiFramePosition > 0 only when callBackStreamInfo.deviceClass = DEVICE_CLASS_REMOTE_OFFLOAD
     if (callBackStreamInfo.hdiFramePosition > 0) {
         lastHdiFramePosition_ +=
             // from time (us) to sample
