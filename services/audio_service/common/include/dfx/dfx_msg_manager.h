@@ -139,11 +139,6 @@ private:
     static void HiviewUeEnableChangeCallback(const char *key, const char *value, void *context);
     void WatchHiviewUeEnableParameter();
 
-    // Hiview UE parameter monitoring
-    static std::atomic_bool hiviewUeEnable_;
-    static void HiviewUeEnableChangeCallback(const char* key, const char* value, void* context);
-    void WatchHiviewUeEnableParameter();
-
     enum {
         DFX_CHECK_REPORT_MSG = 0,
     };
