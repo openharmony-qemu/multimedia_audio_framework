@@ -23,18 +23,31 @@
 #include "audio_utils.h"
 #include "hpae_node_common.h"
 #include "audio_engine_log.h"
+#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
+static int32_t PC_ENABLE_STATE = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
 
 HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       sourceOutputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
-      framesRead_(0), totalFrames_(0), isMute_(false)
+      framesRead_(0), totalFrames_(0), isMute_(false), highpassFilter_(nullptr), filterChannelCount_(0),
+      isSupportHighpassFilter_(false)
 {
+    AUDIO_INFO_LOG("sourceType: %{public}d, PC_ENABLE_STATE: %{public}d", GetSourceType(), PC_ENABLE_STATE);
+    if (GetSourceType() == SOURCE_TYPE_ULTRASONIC && PC_ENABLE_STATE != 0) {
+        isSupportHighpassFilter_ = true;
+        filterChannelCount_ = static_cast<int32_t>(GetChannelCount());
+        CHECK_AND_RETURN_LOG(filterChannelCount_ > 0, "invalid channelCount: %{public}d", filterChannelCount_);
+        highpassFilter_ = std::make_unique<AudioHighPassFilter>();
+        int32_t ret = highpassFilter_->InitFilter(filterChannelCount_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "filter init failed: %{public}d", ret);
+        AUDIO_INFO_LOG("Init HighpassFilter succ");
+    }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSourceOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -52,6 +65,30 @@ HpaeSourceOutputNode::~HpaeSourceOutputNode()
         callback->OnNotifyDfxNodeAdmin(false, GetNodeInfo());
     }
 #endif
+}
+
+void HpaeSourceOutputNode::ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer)
+{
+    CHECK_AND_RETURN_LOG(inputPcmBuffer && inputPcmBuffer->GetPcmDataBuffer(), "invalid inputBuffer");
+    float *pcmData = inputPcmBuffer->GetPcmDataBuffer();
+    CHECK_AND_RETURN_LOG(pcmData != nullptr, "pcmData buffer is nullptr");
+
+    int32_t frameCount = static_cast<int32_t>(GetFrameLen());
+    CHECK_AND_RETURN_LOG(frameCount > 0, "invalid frameCount: %{public}d", frameCount);
+    int32_t nbSamples = filterChannelCount_ * frameCount;
+    std::vector<float> inputSamples(nbSamples);
+    int32_t ret = memcpy_s(inputSamples.data(), static_cast<size_t>(nbSamples) * sizeof(float), pcmData,
+        static_cast<size_t>(nbSamples) * sizeof(float));
+    CHECK_AND_RETURN_LOG(ret == 0, "copy pcmData to filter input failed: %{public}d", ret);
+
+    std::vector<float> filteredSamples(nbSamples);
+    CHECK_AND_RETURN_LOG(highpassFilter_ != nullptr, "highpassFilter_ is nullptr");
+    ret = highpassFilter_->ApplyFilter(inputSamples, filteredSamples);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "filter apply failed: %{public}d", ret);
+
+    ret = memcpy_s(inputPcmBuffer->GetPcmDataBuffer(), static_cast<size_t>(nbSamples) * sizeof(float),
+        filteredSamples.data(), static_cast<size_t>(nbSamples) * sizeof(float));
+    CHECK_AND_RETURN_LOG(ret == 0, "copy filtered samples failed: %{public}d", ret);
 }
 
 void HpaeSourceOutputNode::DoProcess()
@@ -72,6 +109,9 @@ void HpaeSourceOutputNode::DoProcess()
         ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
         CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
     } else {
+        if (isSupportHighpassFilter_) {
+            ApplyHighpassFilter(outputData);
+        }
         ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
             outputData->GetPcmDataBuffer(), sourceOutputData_.data());
     }

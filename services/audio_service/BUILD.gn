@@ -69,6 +69,7 @@ ohos_shared_library("audio_common") {
     "common/src/audio_common_converter.cpp",
     "common/src/audio_down_mix_stereo.cpp",
     "common/src/audio_dump_pcm.cpp",
+    "common/src/audio_highpass_filter.cpp",
     "common/src/audio_log_utils.cpp",
     "common/src/audio_process_config.cpp",
     "common/src/audio_resample.cpp",
