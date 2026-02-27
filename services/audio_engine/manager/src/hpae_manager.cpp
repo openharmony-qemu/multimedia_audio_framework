@@ -732,7 +732,6 @@ int32_t HpaeManager::SetDefaultSink(std::string name)
             AUDIO_INFO_LOG("sink is same as default sink");
             return;
         }
-
         if (!SafeGetMap(rendererManagerMap_, name)) {
             AUDIO_WARNING_LOG("sink: %{public}s not exist, do not change default sink", GetEncryptStr(name).c_str());
             return;
@@ -765,7 +764,6 @@ int32_t HpaeManager::SetDefaultSource(std::string name)
             AUDIO_INFO_LOG("source is same as default source");
             return;
         }
-        
         if (!SafeGetMap(capturerManagerMap_, name)) {
             AUDIO_WARNING_LOG("source: %{public}s not exist, do not change default source", name.c_str());
             return;
@@ -1077,7 +1075,8 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
 void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> sinkInputNode, std::string sinkName)
 {
     uint32_t sessionId = sinkInputNode->GetNodeInfo().sessionId;
-    AUDIO_INFO_LOG("handle move session:%{public}u to new sink:%{public}s", sessionId, sinkName.c_str());
+    AUDIO_INFO_LOG("handle move session:%{public}u to new sink:%{public}s",
+        sessionId, GetEncryptStr(sinkName).c_str());
     if (MovingSinkStateChange(sessionId, sinkInputNode)) {
         return;
     }
@@ -1293,7 +1292,7 @@ void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callb
 void HpaeManager::HandleDumpSinkInfo(std::string deviceName, std::string dumpStr)
 {
     AUDIO_INFO_LOG("deviceName:%{public}s dumpStr:%{public}s",
-        GetEncryptStr(deviceName).c_str(), GetEncryptStr(dumpStr).c_str());
+        GetEncryptStr(deviceName).c_str(), dumpStr.c_str());
     if (auto ptr = dumpCallback_.lock()) {
         ptr->OnDumpSinkInfoCb(dumpStr, SUCCESS);
     }
@@ -1302,7 +1301,7 @@ void HpaeManager::HandleDumpSinkInfo(std::string deviceName, std::string dumpStr
 void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpStr)
 {
     AUDIO_INFO_LOG("deviceName:%{public}s dumpStr:%{public}s",
-        GetEncryptStr(deviceName).c_str(), GetEncryptStr(dumpStr).c_str());
+        GetEncryptStr(deviceName).c_str(), dumpStr.c_str());
     if (auto ptr = dumpCallback_.lock()) {
         ptr->OnDumpSourceInfoCb(dumpStr, SUCCESS);
     }
