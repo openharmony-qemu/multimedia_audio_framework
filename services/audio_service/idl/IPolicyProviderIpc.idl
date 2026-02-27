@@ -33,8 +33,8 @@ interface IPolicyProviderIpc {
     void GetMaxRendererInstances([out] int maxInstances);
     void IsSupportInnerCaptureOffload([out] boolean isSupported);
     void NotifyCapturerRemoved([in] unsigned long sessionId);
-    void LoadModernInnerCapSink([in] int innerCapId); //
-    void UnloadModernInnerCapSink([in] int innerCapId); //
+    void LoadModernInnerCapSink([in] int innerCapId); // [macrodef HAS_FEATURE_INNERCAPTURER]
+    void UnloadModernInnerCapSink([in] int innerCapId); // [macrodef HAS_FEATURE_INNERCAPTURER]
     void LoadModernOffloadCapSource();
     void UnloadModernOffloadCapSource();
     void ClearAudioFocusBySessionID([in] int sessionID);
