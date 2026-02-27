@@ -61,10 +61,10 @@ ohos_unittest("bluetooth_sco_manager_unit_test") {
     "samgr:samgr_proxy",
     "bluetooth:btframework",
     "eventhandler:libeventhandler",
- 	  "init:libbegetutil",
- 	  "media_foundation:media_monitor_client",
- 	  "media_foundation:media_monitor_common",
- 	  "init:libbeget_proxy",
+    "init:libbegetutil",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "init:libbeget_proxy",
   ]
 }
 
