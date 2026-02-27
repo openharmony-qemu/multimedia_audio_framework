@@ -84,7 +84,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_GetMinVolumeByUsage(OH_AudioVolumeMa
     OH_AudioStream_Usage usage, int32_t *minVolumeLevel)
 {
     if (volumeManager == nullptr || !VALID_OH_STREAM_USAGES.count(usage) || minVolumeLevel == nullptr) {
-        AUDIO_ERR_LOG("invalid volumeManager or usage or maxVolumeLevel");
+        AUDIO_ERR_LOG("invalid volumeManager or usage or minVolumeLevel");
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 
@@ -103,7 +103,7 @@ OH_AudioCommon_Result OH_AudioVolumeManager_GetVolumeByUsage(OH_AudioVolumeManag
     OH_AudioStream_Usage usage, int32_t *volumeLevel)
 {
     if (volumeManager == nullptr || !VALID_OH_STREAM_USAGES.count(usage) || volumeLevel == nullptr) {
-        AUDIO_ERR_LOG("invalid volumeManager or usage or maxVolumeLevel");
+        AUDIO_ERR_LOG("invalid volumeManager or usage or VolumeLevel");
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
 

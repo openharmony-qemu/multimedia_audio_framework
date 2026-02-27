@@ -37,8 +37,8 @@ static std::string GetAudioEventInfo(const AudioEvent audioEvent)
 {
     int32_t ret;
     char event[AUDIO_PNP_INFO_LEN_MAX] = {0};
-    if ((audioEvent.eventType == PNP_EVENT_UNKNOWN && audioEvent.anahsName == "") ||
-        (audioEvent.deviceType == PNP_DEVICE_UNKNOWN && audioEvent.anahsName == "")) {
+    if ((audioEvent.eventType == AUDIO_EVENT_UNKNOWN && audioEvent.anahsName == "") ||
+        (audioEvent.deviceType == AUDIO_DEVICE_UNKNOWN && audioEvent.anahsName == "")) {
         AUDIO_ERR_LOG("audio event is not updated");
         return event;
     }
@@ -200,6 +200,7 @@ void AudioPnpServer::DetectAudioDevice()
     int32_t ret;
     AudioEvent audioEvent = {0};
 
+    OsalMSleep(AUDIO_DEVICE_WAIT_USB_ONLINE);
     ret = AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
     if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
         AUDIO_INFO_LOG("audio detect analog headset");

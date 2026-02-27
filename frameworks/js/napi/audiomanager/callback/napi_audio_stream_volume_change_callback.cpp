@@ -182,15 +182,20 @@ void NapiAudioStreamVolumeChangeCallback::StreamVolumeChangeTsfnFinalize(napi_en
     AUDIO_INFO_LOG("StreamVolumeChangeTsfnFinalize: CleanUp is removed.");
     NapiAudioStreamVolumeChangeCallback *context = reinterpret_cast<NapiAudioStreamVolumeChangeCallback*>(data);
     napi_remove_env_cleanup_hook(env, NapiAudioStreamVolumeChangeCallback::CleanUp, context);
-    if (context->GetTsfn() != nullptr) {
+    if (context != nullptr && context->GetTsfn() != nullptr) {
         AUDIO_INFO_LOG("StreamVolumeChangeTsfnFinalize: context is released.");
         delete context;
+        context = nullptr;
     }
 }
 
 void NapiAudioStreamVolumeChangeCallback::CleanUp(void *data)
 {
     NapiAudioStreamVolumeChangeCallback *context = reinterpret_cast<NapiAudioStreamVolumeChangeCallback*>(data);
+    if (context == nullptr) {
+        AUDIO_INFO_LOG("CleanUp: context is null ptr.");
+        return;
+    }
     napi_threadsafe_function tsfn = context->GetTsfn();
     std::unique_lock<std::mutex> lock(context->mutex_);
     context->amVolEntTsfn_ = nullptr;
