@@ -1911,7 +1911,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CaptureConcurrentCheck_001, TestSize.Level1)
 
         streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
         streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
-        streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
+        streamDescs[i]->stateStartTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
         streamDescs[i]->callerUid_ = getuid();
         auto result = audioCoreService->CreateCapturerClient(streamDescs[i], flag[i], originalSessionId[i]);
         EXPECT_EQ(result, SUCCESS);

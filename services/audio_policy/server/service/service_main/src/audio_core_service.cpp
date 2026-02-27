@@ -1968,6 +1968,7 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
         return ERR_NOT_SUPPORTED;
     }
 
+    streamDesc->stateStartTimeStamp_ = ClockTime::GetCurNano();
     auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
     if (!WriteCapturerConcurrentMsg(streamDesc, dfxResult)) {
         return ERR_INVALID_HANDLE;

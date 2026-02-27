@@ -116,6 +116,8 @@ private:
         const std::unordered_set<uint32_t> &originalStreamSessionIds);
     void AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
         std::shared_ptr<AudioStreamDescriptor> incomingStream, ConcurrencyAction &action);
+    bool GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+        const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     
     AudioPolicyConfigManager& configManager_;
 };
