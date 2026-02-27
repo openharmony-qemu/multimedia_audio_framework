@@ -29,12 +29,12 @@ namespace AudioStandard {
 NapiAudioVolumeKeyEvent::NapiAudioVolumeKeyEvent(napi_env env)
     :env_(env)
 {
-    AUDIO_INFO_LOG("Constructor");
+    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Constructor");
 }
 
 NapiAudioVolumeKeyEvent::~NapiAudioVolumeKeyEvent()
 {
-    AUDIO_INFO_LOG("Destructor");
+    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Destructor");
     napi_remove_env_cleanup_hook(env_, NapiAudioVolumeKeyEvent::Cleanup, this);
 }
 
@@ -108,6 +108,7 @@ void NapiAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(napi_env env, napi_v
         static_cast<AudioVolumeKeyEventJsCallback*>(event),
         [](AudioVolumeKeyEventJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -334,6 +335,7 @@ void NapiAudioVolumeKeyEventEx::SafeJsCallbackVolumeEventWork(napi_env env, napi
         static_cast<AudioVolumeKeyEventJsCallback*>(event),
         [](AudioVolumeKeyEventJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

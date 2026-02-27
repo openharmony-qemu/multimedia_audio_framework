@@ -111,6 +111,8 @@ enum DeviceType: i32 {
   REMOTE_DAUDIO = 29,
   HEARING_AID = 30,
   NEARLINK = 31,
+  BLUETOOTH_SPP = 33,
+  NEARLINK_PORT = 34,
   SYSTEM_PRIVATE = 200,
   DEFAULT = 1000,
 }
@@ -938,6 +940,7 @@ struct AudioCapturerInfo {
 struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
+  preferredInputDevice: Optional<AudioDeviceDescriptor>;
 }
 
 interface AudioCapturer {

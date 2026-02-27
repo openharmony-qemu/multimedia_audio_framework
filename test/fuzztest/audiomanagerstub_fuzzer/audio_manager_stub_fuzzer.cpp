@@ -156,7 +156,6 @@ vector<AudioServerInterfaceCode> AudioServerInterfaceCodeVec = {
     AudioServerInterfaceCode::GET_STANDBY_STATUS,
     AudioServerInterfaceCode::GENERATE_SESSION_ID,
     AudioServerInterfaceCode::GET_ALL_SINK_INPUTS,
-    AudioServerInterfaceCode::SET_DEFAULT_ADAPTER_ENABLE,
     AudioServerInterfaceCode::NOTIFY_ACCOUNTS_CHANGED,
     AudioServerInterfaceCode::NOTIFY_AUDIO_POLICY_READY,
     AudioServerInterfaceCode::SET_CAPTURE_LIMIT,

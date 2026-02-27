@@ -2742,6 +2742,16 @@ int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> 
     return audioPolicyService_.SetQueryClientTypeCallback(object);
 }
 
+int32_t AudioPolicyServer::SetAncoSourceOutputStreamMute(int32_t uid, bool setMute)
+{
+    if (!PermissionUtil::VerifyIsAudioBroker()) {
+        AUDIO_ERR_LOG("not audio broker calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    audioPolicyService_.SetAncoSourceOutputStreamMute(uid, setMute);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
 {
     if (object == nullptr) {

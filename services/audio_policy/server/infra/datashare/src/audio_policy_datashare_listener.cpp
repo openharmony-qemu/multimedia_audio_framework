@@ -73,7 +73,7 @@ void AudioPolicyDataShareListener::RegisterAccessiblilityMono()
     if (ret != ERR_OK) {
         AUDIO_ERR_LOG("RegisterObserver mono failed");
     } else {
-        AUDIO_INFO_LOG("RRegisterObserver mono successfully");
+        AUDIO_INFO_LOG("RegisterObserver mono successfully");
     }
     updateFuncMono(CONFIG_AUDIO_MONO_KEY);
 }

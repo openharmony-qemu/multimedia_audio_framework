@@ -24,7 +24,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AUDIO_SCENE_CHANGE_CALLBACK_NAME = "audioSceneChange";
+inline const std::string AUDIO_SCENE_CHANGE_CALLBACK_NAME = "audioSceneChange";
 
 class NapiAudioSceneChangedCallback : public AudioManagerAudioSceneChangedCallback {
 public:

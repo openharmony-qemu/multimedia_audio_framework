@@ -91,7 +91,6 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
-    SetDefaultAdapterEnable(audioConfigManager_.GetDefaultAdapterEnable());
     return ret;
 }
 
@@ -220,6 +219,12 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
         streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
     }
     return status;
+}
+
+int32_t AudioPolicyService::SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) const
+{
+    streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
+    return SUCCESS;
 }
 
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
@@ -1097,11 +1102,6 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
         return audioA2dpOffloadManager_->GetA2dpOffloadFlag();
     }
     return NO_A2DP_DEVICE;
-}
-
-void AudioPolicyService::SetDefaultAdapterEnable(bool isEnable)
-{
-    return AudioServerProxy::GetInstance().SetDefaultAdapterEnableProxy(isEnable);
 }
 
 int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)

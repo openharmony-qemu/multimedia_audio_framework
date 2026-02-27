@@ -30,6 +30,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -288,7 +289,7 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
     string macAddress = GetDeviceAddr(device.cardNum_);
     AudioStreamInfo streamInfo{};
     string deviceName = device.name_ + "-" + to_string(device.cardNum_);
-    if (device.isPlayer_) {
+    if (device.isPlayer_ && IsAvailableUsbDevice(device)) {
         AUDIO_INFO_LOG("Usb out, devType=%{public}d, isConnected=%{public}d, "
             "addr=%{public}s, name=%{public}s, role=%{public}d", devType, isConnected,
             EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
@@ -304,6 +305,43 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
         observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
             deviceName, streamInfo, INPUT_DEVICE, device.isPlayer_);
     }
+}
+
+bool AudioUsbManager::IsAvailableUsbDevice(const UsbAudioDevice &device)
+{
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;
+    AudioPolicyConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
+    auto it = deviceClassInfo.find(ClassType::TYPE_USB);
+    if (it == deviceClassInfo.end() || it->second.empty()) {
+        return true;
+    }
+    AudioModuleInfo &audioModuleInfo = *it->second.begin();
+    if (audioModuleInfo.allUsbDeviceDisable_ == true) {
+        return false;
+    }
+
+    vector<USB::UsbDevice> deviceList;
+    auto ret = UsbSrvClient::GetInstance().GetDevices(deviceList);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "GetDevices failed. ret=%{public}d. size=%{public}zu", ret, deviceList.size());
+    int32_t productId = -1;
+    int32_t vendorId = -1;
+    for (auto &usbDevice : deviceList) {
+        UsbAddr usbAddr = {usbDevice.GetBusNum(), usbDevice.GetDevAddr()};
+        if (device.usbAddr_ == usbAddr) {
+            productId = usbDevice.GetProductId();
+            vendorId = usbDevice.GetVendorId();
+            AUDIO_INFO_LOG("the usb device vendorId: %{public}d, productId: %{public}d", vendorId, productId);
+            break;
+        }
+    }
+
+    auto disableUsbDeviceSet = audioModuleInfo.disableUsbDeviceSet_;
+    auto itDisable = find_if (disableUsbDeviceSet.begin(), disableUsbDeviceSet.end(),
+        [productId, vendorId](auto &item) {
+            return item.first == vendorId && item.second == productId;
+        });
+    return itDisable == disableUsbDeviceSet.end();
 }
 
 map<UsbAddr, SoundCard> AudioUsbManager::GetUsbSoundCardMap()

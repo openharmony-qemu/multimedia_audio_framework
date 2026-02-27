@@ -150,6 +150,7 @@ void NapiAudioStreamVolumeChangeCallback::SafeJsCallbackStreamVolumeChangeWork(
         static_cast<AudioStreamVolumeChangeJsCallback*>(event),
         [](AudioStreamVolumeChangeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

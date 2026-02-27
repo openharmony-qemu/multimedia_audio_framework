@@ -126,9 +126,9 @@ public:
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
-
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
     
@@ -148,7 +148,7 @@ public:
 
     virtual void JoinCallbackLoop() = 0;
 
-    virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) = 0;
+    virtual void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) = 0;
 
     virtual void SetRebuildFlag() = 0;
 
@@ -156,7 +156,7 @@ public:
 
     virtual void GetKeepRunning(bool &keepRunning) = 0;
 
-    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
+    virtual int32_t GetStaticPlayPosition(StaticBufferInfo &staticBufferInfo) = 0;
 
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 

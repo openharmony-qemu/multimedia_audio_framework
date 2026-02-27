@@ -114,7 +114,7 @@ void AudioStreamMonitor::OnMuteCallback(const int32_t &pid, const int32_t &callb
     if (audioServer_ == nullptr) {
         return;
     }
-    AUDIO_INFO_LOG("pid = %{public}d, uid = %{public}d, sessionId = %{public}d, isMuted = %{public}d",
+    AUDIO_INFO_LOG("pid = %{public}d, uid = %{public}d, sessionId = %{public}u, isMuted = %{public}d",
         pid, uid, sessionId, isMuted);
     audioServer_->OnMuteStateChange(pid, callbackId, uid, sessionId, isMuted);
 }
@@ -193,7 +193,6 @@ void AudioStreamMonitor::NotifyAppStateChange(const int32_t uid, bool isBackgrou
 
 void AudioStreamMonitor::UpdateMonitorVolume(const uint32_t &sessionId, const float &volume)
 {
-    Trace trace("AudioStreamMonitor::UpdateMonitorVolume");
     std::lock_guard<std::mutex> lock(regStatusMutex_);
     auto iter = audioStreamCheckers_.find(sessionId);
     if (iter != audioStreamCheckers_.end()) {

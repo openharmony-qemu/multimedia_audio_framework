@@ -60,16 +60,16 @@ AudioStreamDescriptor::AudioStreamDescriptor(
 {
 }
 
-AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> &streamDescriptor)
+AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> streamDescriptor)
 {
     CHECK_AND_RETURN_LOG(streamDescriptor != nullptr, "Error input parameter");
     for (auto &deviceDesc : streamDescriptor->newDeviceDescs_) {
         CHECK_AND_CONTINUE(deviceDesc != nullptr);
-        newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
+        newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(*deviceDesc));
     }
     for (auto &deviceDesc : streamDescriptor->oldDeviceDescs_) {
         CHECK_AND_CONTINUE(deviceDesc != nullptr);
-        oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
+        oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>(*deviceDesc));
     }
 
     streamInfo_ = streamDescriptor->streamInfo_;
@@ -253,7 +253,7 @@ void AudioStreamDescriptor::DumpRendererStreamAttrs(std::string &dumpString)
         rendererInfo_.originalFlag, rendererInfo_.rendererFlags);
     AppendFormat(dumpString, "    - OffloadAllowed: %d\n", rendererInfo_.isOffloadAllowed);
     if (routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) {
-        AppendFormat(dumpString, "    - UltralFastFlag: %u\n", ultraFastFlag_);
+        AppendFormat(dumpString, "    - UltraFastFlag: %u\n", ultraFastFlag_);
     }
 }
 
@@ -312,7 +312,7 @@ std::string AudioStreamDescriptor::GetDeviceInfo(std::shared_ptr<AudioDeviceDesc
     out.append(":" + std::to_string(static_cast<uint32_t>(desc->deviceId_)));
     return out + "]";
 }
-
+ 
 std::string AudioStreamDescriptor::GetNewDevicesInfo()
 {
     std::string out = "";

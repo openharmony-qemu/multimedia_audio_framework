@@ -49,7 +49,6 @@
     *CleanAppUseNumMap*;
     *GetSharedVolume*;
     *GetAllSinkInputs*;
-    *SetDefaultAdapterEnable*;
     *HasBluetoothEndpoint*;
     *GetOfflineStream*;
     *GetOfflineAudioEffectChains*;
@@ -77,13 +76,15 @@
     *StartGroup*;
     *StopGroup*;
     *AudioWorkgroupCallback*;
-    *ImproveAudioWorkgroupPrio*;
-    *RestoreAudioWorkgroupPrio*;
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
     *HpaeCapturerStreamImpl*;
+    *ImproveAudioWorkgroupPrio*;
+    *RestoreAudioWorkgroupPrio*;
     *GetPrivacyType*;
     *GetEndPointByType*;
+    *SetSinkPortIdx*;
+    *GetModuleInfo*;
     *SetEndpointMuteForSwitchDevice*;
     *RequestUserPrivacyAuthority*;
   local:

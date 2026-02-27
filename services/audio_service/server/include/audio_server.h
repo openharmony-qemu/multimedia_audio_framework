@@ -240,8 +240,6 @@ public:
 
     int32_t GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
 
-    int32_t SetDefaultAdapterEnable(bool isEnable) override;
-
     int32_t NotifyAudioPolicyReady() override;
 
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;

@@ -33,6 +33,8 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     bool ret = CheckStreamUsage(perDev_, streamUsage);
     CHECK_AND_RETURN_RET(ret, make_shared<AudioDeviceDescriptor>());
+    ret = CheckDpStreamUsage(perDev_, streamUsage);
+    CHECK_AND_RETURN_RET(!ret, make_shared<AudioDeviceDescriptor>());
     vector<shared_ptr<AudioDeviceDescriptor>> mediaDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(MEDIA_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(MEDIA_OUTPUT_DEVICES, perDev_)) {
@@ -49,7 +51,6 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUs
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
-    CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(CALL_OUTPUT_DEVICES, perDev_)) {
@@ -67,7 +68,6 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice();
-    CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_INPUT_DEVICES);
     if (perDev_->deviceId_ == 0 || !RouterBase::IsDeviceUsageSupported(CALL_INPUT_DEVICES, perDev_)) {
@@ -94,7 +94,7 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
         return descs;
     }
     if (selectedDesc->getType() == DEVICE_TYPE_BLUETOOTH_A2DP && selectedDesc->GetDeviceCategory() == BT_SOUNDBOX) {
-        AUDIO_INFO_LOG("Exclude BT soundbox device for alarm stream.");
+        AUDIO_INFO_LOG("Exclude BT soundbox device for ring.");
         descs.push_back(make_shared<AudioDeviceDescriptor>());
         return descs;
     }
@@ -119,6 +119,8 @@ vector<std::shared_ptr<AudioDeviceDescriptor>> UserSelectRouter::GetRingRenderDe
                 break;
         }
     } else if (selectedDesc->getType() != DEVICE_TYPE_NONE) {
+        bool ret = CheckDpStreamUsage(selectedDesc, streamUsage);
+        CHECK_AND_RETURN_RET(!ret, descs);
         descs.push_back(move(selectedDesc));
     } else {
         descs.push_back(make_shared<AudioDeviceDescriptor>());
@@ -131,7 +133,6 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice();
-    CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     shared_ptr<AudioDeviceDescriptor> perRecognitionDev_ =
         AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
     if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION && perRecognitionDev_ && perRecognitionDev_->deviceId_ != 0) {

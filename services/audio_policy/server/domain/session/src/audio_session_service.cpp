@@ -470,7 +470,8 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
     dumpString += "\n";
 }
 
-int32_t AudioSessionService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+int32_t AudioSessionService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType,
+    bool forceFetch)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     AUDIO_INFO_LOG("SetSessionDefaultOutputDevice: callerPid %{public}d, deviceType %{public}d",
@@ -482,7 +483,7 @@ int32_t AudioSessionService::SetSessionDefaultOutputDevice(const int32_t callerP
         return ERROR;
     }
 
-    return audioSession->SetSessionDefaultOutputDevice(deviceType);
+    return audioSession->SetSessionDefaultOutputDevice(deviceType, forceFetch);
 }
 
 DeviceType AudioSessionService::GetSessionDefaultOutputDevice(const int32_t callerPid)

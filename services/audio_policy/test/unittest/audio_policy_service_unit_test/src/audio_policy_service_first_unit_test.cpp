@@ -824,26 +824,14 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_003, TestSize.Level1)
     InternalDeviceType deviceType = DEVICE_TYPE_NONE;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     string retPortName = "";
-    bool isEnable = false;
 
     // case 13 InternalDeviceType::DEVICE_TYPE_HDMI
     deviceType = DEVICE_TYPE_HDMI;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 
-    isEnable = true;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
-    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
-    EXPECT_EQ(DP_SINK, retPortName);
-
     // case 14 InternalDeviceType::DEVICE_TYPE_LINE_DIGITAL
     deviceType = DEVICE_TYPE_LINE_DIGITAL;
-    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
-    EXPECT_EQ(DP_SINK, retPortName);
-
-    isEnable = false;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
@@ -2326,51 +2314,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, IsFastFromA2dpToA2dp_002, TestSize.Level1)
     bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsFastFromA2dpToA2dp(audioDeviceDescriptor,
         rendererChangeInfo, reason);
     EXPECT_TRUE(ret);
-}
-
-/**
- * @tc.name  : Test GetDefaultAdapterEnable.
- * @tc.number: GetDefaultAdapterEnable_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceUnitTest, GetDefaultAdapterEnable_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    bool isEnable = true;
-    server->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
-    bool ret = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
-    EXPECT_EQ(ret, true);
-
-    isEnable = false;
-    server->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
-    ret = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test GetDeviceClassInfo.
- * @tc.number: GetDeviceClassInfo_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceUnitTest, GetDeviceClassInfo_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    bool ret = server->audioPolicyService_.audioConfigManager_.Init();
-    EXPECT_EQ(ret, false);
-
-    std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
-    server->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
-    bool isEnable = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
-    for (auto [classType, moduleInfo] : deviceClassInfo) {
-        for (auto module : moduleInfo) {
-            std::string defaultAdapterEnable = module.defaultAdapterEnable;
-            if (isEnable) {
-                EXPECT_EQ(defaultAdapterEnable, "1");
-            } else {
-                EXPECT_EQ(defaultAdapterEnable, "");
-            }
-        }
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

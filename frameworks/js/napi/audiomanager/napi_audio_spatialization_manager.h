@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME = "AudioSpatializationManager";
+inline const std::string AUDIO_SPATIALIZATION_MANAGER_NAPI_CLASS_NAME = "AudioSpatializationManager";
 class NapiAudioSpatializationManager {
 public:
     NapiAudioSpatializationManager();

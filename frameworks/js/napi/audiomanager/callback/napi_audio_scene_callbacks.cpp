@@ -142,6 +142,7 @@ void NapiAudioSceneChangedCallback::SafeJsCallbackAudioSceneChangeWork(napi_env 
         static_cast<AudioSceneJsCallback*>(data),
         [](AudioSceneJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

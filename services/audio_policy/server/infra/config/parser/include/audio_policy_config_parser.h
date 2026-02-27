@@ -16,9 +16,13 @@
 #define AUDIO_POLICY_CONFIG_PARSER_H
 
 #include <list>
+#include <set>
 #include <unordered_map>
 #include <string>
 #include <regex>
+#include <cstdlib>
+#include <cerrno>
+#include <climits>
 
 #include "audio_device_info.h"
 #include "audio_stream_info.h"
@@ -75,7 +79,6 @@ private:
     AudioSampleFormat ConvertToFormat(std::string value);
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
-    void HandleDefaultAdapterSupportParsed(std::string &value);
     void HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo, const std::string &value);
     
     void ConvertAdapterInfoToGroupInfo(std::unordered_map<std::string, std::string> &volumeGroupMap,
@@ -88,13 +91,12 @@ private:
 
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     AudioPolicyConfigManager *configManager_ = nullptr;
-    
+
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
     std::unordered_map<std::string, std::string> volumeGroupMap_;
     std::unordered_map<std::string, std::string> interruptGroupMap_;
     PolicyGlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
-    bool shouldSetDefaultAdapter_ = false;
     bool supportUltraFast_ = false;
 };
 } // namespace AudioStandard

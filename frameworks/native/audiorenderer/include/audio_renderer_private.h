@@ -134,11 +134,12 @@ public:
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
     void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
 
+    bool IsFastRenderer() override;
+
     bool IsOffloadEnable() override;
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
-    bool IsFastRenderer() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
@@ -157,22 +158,24 @@ public:
 
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
-    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
-    void ResetFirstFrameState() override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     bool ResetStaticPlayPosition() override;
 
-    bool IsVirtualKeyboard(const int32_t flags);
+    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
+    void ResetFirstFrameState() override;
+
     void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
     int32_t SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback);
     bool IsRendererFlagsSupportStatic(const int32_t rendererFlags);
 
+    bool IsVirtualKeyboard(const int32_t flags);
+
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;
-        
+
         audioStreamParams.format = params.sampleFormat;
         audioStreamParams.samplingRate = params.sampleRate;
         audioStreamParams.customSampleRate = params.customSampleRate;
@@ -231,11 +234,11 @@ private:
     bool ContinueAfterSplit(RestoreInfo restoreInfo);
     bool InitTargetStream(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> &audioStream);
     void HandleAudioInterruptWhenServerDied();
-    void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
     void WriteUnderrunEvent() const;
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
+    void WriteSwitchStreamLogMsg();
     void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
     bool IsAllowedStartBackground(uint32_t sessionId, StreamUsage streamUsage, bool &silentControl);
     bool GetStartStreamResult(StateChangeCmdType cmdType);
@@ -249,20 +252,21 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
     int32_t SetPitch(float pitch);
+    int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
-    int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
     int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
         std::string callingFunc);
     bool GetFinalOffloadAllowed(bool originalAllowed);
     void SetReleaseFlagWithLock(bool releaseFlag);
     void SetReleaseFlagNoLock(bool releaseFlag);
     bool IsRestoreOrStopNeeded();
+    void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
+    int32_t GetCurrentBackMuteStatus(bool &backMute);
     void SetInSwitchingFlag(bool inSwitchingFlag);
     void UpdateAudioStreamParamsByStreamDescriptor(AudioStreamParams &audioStreamParams,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
-    void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
-    int32_t GetCurrentBackMuteStatus(bool &backMute);
+    void SetSwitchInfoCallbacks(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;

@@ -76,24 +76,24 @@ interface IAudioPolicyClient {
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnAudioSessionDeactive([in] int deactiveEvent); // AudioSessionDeactiveEvent deactiveEvent
     [oneway] void OnMicrophoneBlocked([in] MicrophoneBlockedInfo microphoneBlockedInfo);
-    [oneway] void OnAudioSceneChange([in] int audioScene); // const AudioScene &audioScene
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnSpatializationEnabledChangeForCurrentDevice([in] boolean enabled);
+    [oneway] void OnAudioSceneChange([in] int audioScene); // const AudioScene &audioScene
     [oneway] void OnFormatUnsupportedError([in] int errorCode); // const AudioErrors &errorCode
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnStreamVolumeChange([in]StreamVolumeEvent streamVolumeEvent);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnSystemVolumeChange([in] VolumeEvent volumeEvent);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
-    void OnAudioSessionStateChanged([in] int stateChangeHint /* AudioSessionStateChangedEvent */);
+    void OnAudioSessionStateChanged([in] int stateChangeHint);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnAudioSessionCurrentDeviceChanged([in] CurrentOutputDeviceChangedEvent deviceChangedEvent);
+    void OnDeviceInfoUpdate([in] DeviceChangeAction deviceChangeAction);
+    void OnCollaborationEnabledChangeForCurrentDevice([in] boolean enabled);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnAudioSessionCurrentInputDeviceChanged([in] CurrentInputDeviceChangedEvent deviceChangedEvent);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnVolumeDegreeEvent([in] VolumeEvent volumeEvent);
-    void OnDeviceInfoUpdate([in] DeviceChangeAction deviceChangeAction);
-    void OnCollaborationEnabledChangeForCurrentDevice([in] boolean enabled);
     void OnPreferredDeviceSet([in] int preferredType, [in] sharedptr<AudioDeviceDescriptor> deviceDesc,
         [in] int uid, [in] String caller);
 }

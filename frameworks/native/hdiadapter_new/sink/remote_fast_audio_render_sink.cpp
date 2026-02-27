@@ -203,7 +203,7 @@ int32_t RemoteFastAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_
 int32_t RemoteFastAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
-    return 0;
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteFastAudioRenderSink::SetVolume(float left, float right)

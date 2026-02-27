@@ -66,7 +66,7 @@ sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig
 
 void AudioProcessInServer::UpdateStreamInfo()
 {
-    CHECK_AND_RETURN_LOG(checkCount_ <= audioCheckFreq_, "the stream had been already checked");
+    CHECK_AND_RETURN(checkCount_ <= audioCheckFreq_);
 
     if ((audioCheckFreq_ == checkCount_) || (checkCount_ == 0)) {
         AudioStreamConcurrencyDetector::GetInstance().UpdateWriteTime(processConfig_, sessionId_);
@@ -257,7 +257,7 @@ uint32_t AudioProcessInServer::GetSessionId()
 int32_t AudioProcessInServer::GetStandbyStatus(bool &isStandby, int64_t &enterStandbyTime)
 {
     if (processBuffer_ == nullptr || processBuffer_->GetStreamStatus() == nullptr) {
-        AUDIO_ERR_LOG("GetStandbyStatus failed, buffer is nullptr!");
+        AUDIO_ERR_LOG("GetStandbyStatus failed, buffer is nullptr.");
         return ERR_OPERATION_FAILED;
     }
     isStandby = processBuffer_->GetStreamStatus()->load() == STREAM_STAND_BY;
@@ -272,7 +272,7 @@ int32_t AudioProcessInServer::GetStandbyStatus(bool &isStandby, int64_t &enterSt
 
 void AudioProcessInServer::EnableStandby()
 {
-    CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr!");
+    CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
     processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     enterStandbyTime_ = ClockTime::GetCurNano();
     audioStreamChecker_->RecordStandbyTime(true);
@@ -284,14 +284,14 @@ int32_t AudioProcessInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_
 {
     AUDIO_INFO_LOG("ResolveBuffer start");
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_, ERR_ILLEGAL_STATE,
-        "ResolveBuffer failed, buffer is not configed!");
+        "ResolveBuffer failed, buffer is not configed.");
 
     if (processBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("ResolveBuffer failed, buffer is nullptr!");
+        AUDIO_ERR_LOG("ResolveBuffer failed, buffer is nullptr.");
     }
     buffer = processBuffer_;
     spanSizeInFrame = spanSizeInframe_;
-    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is null.");
 
     return SUCCESS;
 }
@@ -471,7 +471,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     (void)isFlush;
 
     {
-        std::lock_guard lockSch(scheduleGuardsMutex_);
+        std::lock_guard lock(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -540,12 +540,12 @@ int32_t AudioProcessInServer::Resume()
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::Stop(int32_t stage)
+int32_t AudioProcessInServer::Stop(int32_t stageIn)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
-
+    AudioProcessStage stage = static_cast<AudioProcessStage>(stageIn);
     {
-        std::lock_guard lockSch(scheduleGuardsMutex_);
+        std::lock_guard lock(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_START] = nullptr;
     }
 
@@ -595,7 +595,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     ReleaseCallbackHandler();
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited or already released");
     {
-        std::lock_guard lockSch(scheduleGuardsMutex_);
+        std::lock_guard lock(scheduleGuardsMutex_);
         scheduleGuards_[METHOD_WRITE_OR_READ] = nullptr;
         scheduleGuards_[METHOD_START] = nullptr;
     }
@@ -748,24 +748,6 @@ AudioProcessConfig AudioProcessInServer::GetAudioProcessConfig()
     return processConfig_;
 }
 
-inline uint32_t PcmFormatToBits(AudioSampleFormat format)
-{
-    switch (format) {
-        case SAMPLE_U8:
-            return 1; // 1 byte
-        case SAMPLE_S16LE:
-            return 2; // 2 byte
-        case SAMPLE_S24LE:
-            return 3; // 3 byte
-        case SAMPLE_S32LE:
-            return 4; // 4 byte
-        case SAMPLE_F32LE:
-            return 4; // 4 byte
-        default:
-            return 2; // 2 byte
-    }
-}
-
 int32_t AudioProcessInServer::InitBufferStatus()
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE,
@@ -813,7 +795,7 @@ void AudioProcessInServer::InitRendererStream(float spanTime,
                 resampleStreamInfo.format);
             AllocateBufferDesc(f32SpanSize, f32Buffer_, f32BufferNew_);
         }
-        clientToResampleKey_.srcChn =  clientStreamInfo.channels;
+        clientToResampleKey_.srcChn = clientStreamInfo.channels;
         clientToResampleKey_.srcFormat = clientStreamInfo.format;
         clientToResampleKey_.dstChn = clientStreamInfo.channels;
         clientToResampleKey_.dstFormat = resampleStreamInfo.format;
@@ -823,6 +805,8 @@ void AudioProcessInServer::InitRendererStream(float spanTime,
         auto resampleSpanSize = CalcSpanSize(spanTime, serverStreamInfo.samplingRate,
             clientStreamInfo.channels, resampleStreamInfo.format);
         AllocateBufferDesc(resampleSpanSize, resampleBuffer_, resampleBufferNew_);
+        AUDIO_INFO_LOG("client samplingRate: %{public}d  server samplingRate: %{public}d",
+            resampleStreamInfo.samplingRate, serverStreamInfo.samplingRate);
     }
 
     if (!AudioStreamCommon::CompareFormatAndChannel(resampleStreamInfo, serverStreamInfo)) {
@@ -835,6 +819,8 @@ void AudioProcessInServer::InitRendererStream(float spanTime,
         auto convertBufferSpanSize = CalcSpanSize(spanTime, serverStreamInfo.samplingRate,
             serverStreamInfo.channels, serverStreamInfo.format);
         AllocateBufferDesc(convertBufferSpanSize, convertedBuffer_, convertedBufferNew_);
+        AUDIO_INFO_LOG("client format: %{public}d  server format: %{public}d",
+            resampleStreamInfo.format, serverStreamInfo.format);
     }
 }
 
@@ -1034,7 +1020,6 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
 
 int32_t AudioProcessInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce)
 {
-    CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERROR, "streamStatus_ is nullptr");
     return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice),
         sessionId_, processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING, skipForce);
 }
@@ -1065,6 +1050,7 @@ void AudioProcessInServer::SetSilentState(bool state)
 {
     isInSilentState_ = state;
 }
+
 int32_t AudioProcessInServer::SetSourceDuration(int64_t duration)
 {
     sourceDuration_ = duration;
@@ -1146,7 +1132,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 }
 
 int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
-    const std::string& adjustTime, uint32_t code)
+    const std::string &adjustTime, uint32_t code)
 {
     AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
     return SUCCESS;
@@ -1169,17 +1155,17 @@ uint32_t AudioProcessInServer::GetByteSizePerFrame()
     return byteSizePerFrame_;
 }
 
+StreamStatus AudioProcessInServer::GetStreamInServerStatus()
+{
+    return streamStatusInServer_;
+}
+
 void AudioProcessInServer::NotifyXperfOnPlayback(AudioMode audioMode, XperfEventId eventId)
 {
     CHECK_AND_RETURN(audioMode == AUDIO_MODE_PLAYBACK);
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(eventId,
         processConfig_.rendererInfo.streamUsage, sessionId_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
-}
-
-StreamStatus AudioProcessInServer::GetStreamInServerStatus()
-{
-    return streamStatusInServer_;
 }
 
 int32_t AudioProcessInServer::WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer)
@@ -1305,6 +1291,7 @@ int32_t AudioProcessInServer::HandleCapturerDataParams(RingBufferWrapper &writeB
 
 int32_t AudioProcessInServer::SetRebuildFlag()
 {
+    AUDIO_INFO_LOG("rebuild::AudioProcessInServer::SetRebuildFlag");
     rebuildFlag_ = true;
     return SUCCESS;
 }
@@ -1338,10 +1325,8 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
     processBuffer_->GetSizeParameter(totalSizeInFrame, byteSizePerFrame);
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame > 0, ERR_OPERATION_FAILED, "byteSizePerFrame is 0");
     uint32_t writeableSizeInFrame = ringBuffer.dataLength / byteSizePerFrame;
-    if (writeableSizeInFrame > dstSpanSizeInframe) {
-        ringBuffer.dataLength = dstSpanSizeInframe * byteSizePerFrame;
-    }
-
+    ringBuffer.dataLength = writeableSizeInFrame > dstSpanSizeInframe ?
+        dstSpanSizeInframe * byteSizePerFrame : ringBuffer.dataLength;
     if (GetMuteState()) {
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     } else {
@@ -1376,12 +1361,6 @@ int32_t AudioProcessInServer::SetLoopTimes(int64_t bufferLoopTimes)
     CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_NULL_POINTER, "bufferProvider_ is nullptr!");
     staticBufferProvider_->SetLoopTimes(bufferLoopTimes);
     return SUCCESS;
-}
-
-int32_t AudioProcessInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    CHECK_AND_RETURN_RET_LOG(staticBufferProvider_ != nullptr, ERR_OPERATION_FAILED, "bufferProvider_ is nullptr!");
-    return staticBufferProvider_->GetStaticBufferInfo(staticBufferInfo);
 }
 
 int32_t AudioProcessInServer::SetStaticRenderRate(uint32_t renderRate)

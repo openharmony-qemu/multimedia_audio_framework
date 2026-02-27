@@ -45,6 +45,8 @@ public:
         AudioRendererOptions const &options);
     static int32_t GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
         AudioCapturerInfo const &in);
+    static int32_t GetPreferredInputDevice(OHOS::AudioStandard::AudioCapturerOptions *opts,
+        AudioCapturerOptions const &options);
     static int32_t GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
         AudioCapturerOptions const &options);
     static int32_t GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,

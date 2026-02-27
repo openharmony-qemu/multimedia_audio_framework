@@ -153,7 +153,7 @@ public:
 
     void JoinCallbackLoop() override;
 
-    void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
     void SetRebuildFlag() override;
 
@@ -167,7 +167,7 @@ public:
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
+    int32_t GetStaticPlayPosition(StaticBufferInfo &staticBufferInfo) override;
 
     int32_t SetStaticRenderRate(AudioRendererRate renderRate) override;
 
@@ -1794,10 +1794,11 @@ void AudioProcessInClientInner::GetKeepRunning(bool &keepRunning)
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Get keepRunning failed");
 }
 
-void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+void AudioProcessInClientInner::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetAudioHapticsSyncId processProxy_ is nullptr");
-    processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    int32_t ret = processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
 }
 
 void AudioProcessInClientInner::CheckOperations()
@@ -1870,12 +1871,13 @@ bool AudioProcessInClientInner::CheckStaticAndOperate()
     return false;
 }
 
-int32_t AudioProcessInClientInner::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
+int32_t AudioProcessInClientInner::GetStaticPlayPosition(StaticBufferInfo &staticBufferInfo)
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.rendererInfo.isStatic, ERROR_UNSUPPORTED, "not support!");
-    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr,
-        ERR_NULL_POINTER, "GetStaticBufferInfo processProxy_ is nullptr");
-    return processProxy_->GetStaticBufferInfo(staticBufferInfo);
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, ERROR_INVALID_PARAM, "audioBuffer is nullptr");
+    audioBuffer_->GetStaticPlayPosition(
+        staticBufferInfo.currentLoopTimes_, staticBufferInfo.curStaticDataPos_);
+    return SUCCESS;
 }
 
 int32_t AudioProcessInClientInner::SetStaticRenderRate(AudioRendererRate renderRate)

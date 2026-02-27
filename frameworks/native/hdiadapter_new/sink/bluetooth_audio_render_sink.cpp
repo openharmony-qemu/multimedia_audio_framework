@@ -77,12 +77,8 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     }
     int32_t ret = InitRender();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    SetA2dpCacheParam();
     InitLatencyMeasurement();
-    if (!a2dpParam_.empty()) {
-        SetAudioParameterInner(a2dpParam_.value);
-        AUDIO_INFO_LOG("Set a2dpParam %{public}s SUCCESS", a2dpParam_.value.c_str());
-        a2dpParam_ = {};
-    }
     sinkInited_ = true;
     ++sinkInitCount_;
     started_ = false;
@@ -174,10 +170,10 @@ int32_t BluetoothAudioRenderSink::Start(void)
     int32_t tryCount = 3;
     while (tryCount-- > 0) {
         AUDIO_INFO_LOG("try to start bluetooth render");
-        CHECK_AND_BREAK_LOG(audioRender_ != nullptr && IsValidState(), "Bluetooth renderer is nullptr");
+        CHECK_AND_BREAK_LOG(audioRender_ != nullptr, "render is nullptr");
         int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
-            HILOG_COMM_ERROR("[BluetoothAudioRenderSink::Start]start fail, remain %{public}d attempt(s)", tryCount);
+            HILOG_COMM_ERROR("[Start]start fail, remain %{public}d attempt(s)", tryCount);
             HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp start "
                 "failed:" + std::string(isBluetoothLowLatency_ ? "fast" : "normal"));
             usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
@@ -187,7 +183,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
         ChangePipeStatus(PIPE_STATUS_RUNNING);
         return CheckBluetoothScenario();
     }
-    HILOG_COMM_ERROR("[BluetoothAudioRenderSink::Start]start fail for three times, return");
+    HILOG_COMM_ERROR("[Start]start fail for three times, return");
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ != nullptr) {
         AUDIO_INFO_LOG("running lock unlock");
@@ -390,9 +386,7 @@ void BluetoothAudioRenderSink::SetAudioParameterInner(const std::string &value)
     CHECK_AND_CALL_FUNC_RETURN(audioRender_ != nullptr && IsValidState(),
         HILOG_COMM_ERROR("[SetAudioParameterInner]render is nullptr"));
     int32_t ret = audioRender_->attr.SetExtraParams(reinterpret_cast<AudioHandle>(audioRender_), value.c_str());
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
-    }
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set parameter fail, error code: %{public}d", ret);
 }
 
 int32_t BluetoothAudioRenderSink::SetVolume(float left, float right)
@@ -676,13 +670,11 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    std::string adapterNameCase = "";
+    std::string adapterNameCase;
     if (halName_ == HDI_ID_INFO_HEARING_AID) {
         adapterNameCase = "bt_hearing_aid";
-    } else if (attr_.adapterName == "dp") {
-        adapterNameCase = attr_.adapterName;
     } else {
-        adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation
+        adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp";
     }
     void *render = deviceManager->CreateRender(adapterNameCase, &param, &deviceDesc, hdiRenderId_);
     audioRender_ = static_cast<struct AudioRender *>(render);
@@ -933,6 +925,15 @@ void BluetoothAudioRenderSink::SetBluetoothSinkParam(AudioParamKey key, std::str
     a2dpParam_.value = value;
     AUDIO_INFO_LOG("SetBluetoothSinkParam key %{public}u, condition %{public}s, value %{public}s",
         a2dpParam_.key, a2dpParam_.condition.c_str(), a2dpParam_.value.c_str());
+}
+
+void BluetoothAudioRenderSink::SetA2dpCacheParam()
+{
+    if (!a2dpParam_.empty()) {
+        SetAudioParameterInner(a2dpParam_.value);
+        AUDIO_INFO_LOG("Set a2dpParam %{public}s SUCCESS", a2dpParam_.value.c_str());
+        a2dpParam_ = {};
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

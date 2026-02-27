@@ -561,7 +561,7 @@ napi_status NapiParamUtils::ToJsAudioStreamInfo(const napi_env &env,
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set channels failed");
 
     // channelLayout
-    status = napi_create_int32(env, static_cast<int32_t>(info.channelLayout), &value);
+    status = napi_create_int32(env, static_cast<int64_t>(info.channelLayout), &value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create channelLayout failed");
     status = napi_set_named_property(env, result, "channelLayout", value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set channelLayout failed");

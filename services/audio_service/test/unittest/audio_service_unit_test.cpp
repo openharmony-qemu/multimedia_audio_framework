@@ -2048,22 +2048,6 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
     audioService->allRendererMap_.clear();
 }
 
-/**
- * @tc.name  : Test SetDefaultAdapterEnable API
- * @tc.type  : FUNC
- * @tc.number: SetDefaultAdapterEnable_001
- * @tc.desc  : Test SetDefaultAdapterEnable interface.
- */
-HWTEST(AudioServiceUnitTest, SetDefaultAdapterEnable_001, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    EXPECT_NE(audioService, nullptr);
-    bool isEnable = false;
-    audioService->SetDefaultAdapterEnable(isEnable);
-    bool result = audioService->GetDefaultAdapterEnable();
-    EXPECT_EQ(result, isEnable);
-}
-
 /*
  * @tc.name  : Test SetSessionMuteState API
  * @tc.type  : FUNC
@@ -2212,15 +2196,15 @@ HWTEST(AudioServiceUnitTest, InForegroundList_001, TestSize.Level1)
 
 #ifdef SUPPORT_LOW_LATENCY
 /**
- * @tc.name  : Test CheckBeforeRecordEndpointCreate API
+ * @tc.name  : Test CheckBeforeVoipEndpointCreate API
  * @tc.type  : FUNC
- * @tc.number: CheckBeforeRecordEndpointCreate_001,
- * @tc.desc  : Test CheckBeforeRecordEndpointCreate interface.
+ * @tc.number: CheckBeforeVoipEndpointCreate_001,
+ * @tc.desc  : Test CheckBeforeVoipEndpointCreate interface.
  */
-HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, CheckBeforeVoipEndpointCreate_001, TestSize.Level1)
 {
     bool isRecord = false;
-    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(true, isRecord);
 
     isRecord = true;
     std::string endpointName = "test";
@@ -2230,16 +2214,16 @@ HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_001, TestSize.Level
     EXPECT_NE(endpoint, nullptr);
     endpoint->audioMode_ = AudioMode::AUDIO_MODE_RECORD;
     AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
-    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(true, isRecord);
 }
 
 /**
- * @tc.name  : Test CheckBeforeRecordEndpointCreate API
+ * @tc.name  : Test CheckBeforeVoipEndpointCreate API
  * @tc.type  : FUNC
- * @tc.number: CheckBeforeRecordEndpointCreate_002,
- * @tc.desc  : Test CheckBeforeRecordEndpointCreate interface.
+ * @tc.number: CheckBeforeVoipEndpointCreate_002,
+ * @tc.desc  : Test CheckBeforeVoipEndpointCreate interface.
  */
-HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_002, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, CheckBeforeVoipEndpointCreate_002, TestSize.Level1)
 {
     bool isRecord = true;
     std::string endpointName = "test";
@@ -2249,7 +2233,7 @@ HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_002, TestSize.Level
     EXPECT_NE(endpoint, nullptr);
     endpoint->audioMode_ = AudioMode::AUDIO_MODE_PLAYBACK;
     AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
-    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(true, isRecord);
 }
 
 /**

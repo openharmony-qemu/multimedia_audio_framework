@@ -95,6 +95,7 @@ bool AudioAdapterManager::Init()
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
     auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
+    lowerVolumeInfos_ = audiovolumeParser->GetLowerVolumeInfoCfg();
     AudioVolumeUtils::GetInstance().Init();
     defaultVolumeTypeList_ = (VolumeUtils::IsPCVolumeEnable()) ? PC_VOLUME_TYPE_LIST : BASE_VOLUME_TYPE_LIST;
     volumeDataMaintainer_.SetVolumeList(defaultVolumeTypeList_);
@@ -1298,7 +1299,39 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
         SetVolumeLimit(MAX_STREAM_VOLUME);
     }
 
-    volume = std::min(volume, volumeLimit_.load());
+    float volumeReduction = streamInCall ? GetVolumeReductionRatio(streamType) : 0;
+    float expect = volumeLimit_.load();
+    if (volumeType != voiceCallType &&
+        volumeReduction > std::numeric_limits<float>::epsilon() &&
+        volumeReduction < MAX_STREAM_VOLUME + std::numeric_limits<float>::epsilon()) {
+        expect *= volumeReduction;
+        AUDIO_INFO_LOG("expect:%{public}f volume:%{public}f, volumeReduction:%{public}f",
+            expect, volume, volumeReduction);
+        expect = expect > std::numeric_limits<float>::epsilon() ? expect : volumeLimit_.load();
+    }
+
+    volume = std::min(volume, expect);
+}
+
+float AudioAdapterManager::GetVolumeReductionRatio(AudioStreamType streamType)
+{
+    float volumeReduction = 0;
+    auto iter = lowerVolumeInfos_.find(streamType);
+    CHECK_AND_RETURN_RET_LOG(iter != lowerVolumeInfos_.end(), volumeReduction,
+        "streamType:%{public}d is not supported", streamType);
+    auto info = iter->second;
+    CHECK_AND_RETURN_RET_LOG(info != nullptr, volumeReduction, "info is null");
+
+    float duckedDb = info->duckedDb;
+    CHECK_AND_RETURN_RET_LOG(duckedDb <= std::numeric_limits<float>::epsilon(), volumeReduction,
+        "duckedDb:%{public}f should be negative", duckedDb);
+
+    const int base = 10;
+    const int divider = 20;
+    volumeReduction = pow(base, duckedDb / divider);
+    AUDIO_INFO_LOG("volumeReduction:%{public}f", volumeReduction);
+
+    return volumeReduction;
 }
 
 void AudioAdapterManager::UpdateOtherStreamVolume(AudioStreamType streamType)
@@ -1851,11 +1884,6 @@ void UpdateCommonArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
     if (!audioModuleInfo.offloadEnable.empty()) {
         args.append(" offload_enable=");
         args.append(audioModuleInfo.offloadEnable);
-    }
-
-    if (!audioModuleInfo.defaultAdapterEnable.empty()) {
-        args.append(" default_adapter_enable=");
-        args.append(audioModuleInfo.defaultAdapterEnable);
     }
     AUDIO_INFO_LOG("[Adapter load-module] [PolicyManager] common args:%{public}s", args.c_str());
 }

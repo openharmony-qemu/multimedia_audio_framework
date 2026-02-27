@@ -29,7 +29,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME = "AudioVolumeManager";
+inline const std::string AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME = "AudioVolumeManager";
 class NapiAudioVolumeManager {
 public:
     static napi_value Init(napi_env env, napi_value exports);
@@ -132,7 +132,6 @@ private:
     static napi_value GetMinSystemVolumePercentage(napi_env env, napi_callback_info info);
 
     AudioSystemManager *audioSystemMngr_;
-
     int32_t cachedClientId_ = -1;
     std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallbackNapi_ = nullptr;
     std::shared_ptr<VolumeKeyEventCallback> volumeDegreeCallbackNapi_ = nullptr;

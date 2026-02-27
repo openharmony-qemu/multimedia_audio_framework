@@ -90,19 +90,21 @@ OH_AudioCommon_Result OH_AudioStreamManager_GetDirectPlaybackSupport(
     OH_AudioStream_Usage usage, OH_AudioStream_DirectPlaybackMode *directPlaybackMode);
 
 /**
- * @brief Query whether Acoustic Echo Canceler is supported on input SourceType.
+ * @brief Query whether acoustic echo canceler is supported by input source.
  *
- * @param streamManager the {@link OH_AudioStreamManager} handle returned by
- * {@link OH_GetAudioManager}.
- * @param supported query result.
- * @param sourceType SourceType to be queried.
+ * @param streamManager The {@link OH_AudioStreamManager} handle provided
+ * by {@link OH_AudioManager_GetAudioStreamManager}.
+ * @param sourceType Related source type.
+ * @param supported Pointer to get the result.
  * @return Function result code:
  *     {@link AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
  *     {@link AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM}:
- *                                                    1.The param of streamManager is nullptr;
- *                                                    2.The param of supported is nullptr.
+ *                                                    1.The input param streamManager is nullptr;
+ *                                                    2.Source type is invalid
+ *                                                    3.The input param supported is nullptr.
  * @since 20
  */
+
 OH_AudioCommon_Result OH_AudioStreamManager_IsAcousticEchoCancelerSupported(
     OH_AudioStreamManager *streamManager,
     OH_AudioStream_SourceType sourceType,
