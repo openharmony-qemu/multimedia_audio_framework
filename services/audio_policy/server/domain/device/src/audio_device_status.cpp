@@ -1062,7 +1062,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
                 return SUCCESS_BUT_NOT_CONTINUE;
             }
             
-            UpdateDeviceDescriptorByCapability(deviceDesc);
+            UpdateDeviceDescriptorByCapability(*connDevDesc);
             return SUCCESS_BUT_NOT_CONTINUE;
         }
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
@@ -1793,6 +1793,7 @@ void AudioDeviceStatus::UpdateDeviceDescriptorByCapability(AudioDeviceDescriptor
         device.SetDeviceCapability(capability.streamInfoList_, 0);
         AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
             capability.streamInfoList_, supportDevices);
+        device.BuildCapabilitiesFromDeviceStreamInfo();
         AUDIO_INFO_LOG("Update audioStreamInfo success");
     }
 
