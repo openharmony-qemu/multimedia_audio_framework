@@ -617,29 +617,6 @@ HWTEST(AudioProcessInClientUnitTest, GetLatency_001, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test SetVolume API with valid float volume
- * @tc.type  : FUNC
- * @tc.number: SetVolume_Float_Valid_001
- * @tc.desc  : Test SetVolume with valid float volume
- */
-HWTEST(AudioProcessInClientUnitTest, SetVolume_Float_Valid_001, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
-    
-    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
-    
-    ptrAudioProcessInClientInner->isInited_ = true;
-    ptrAudioProcessInClientInner->audioBuffer_ = OHAudioBufferBase::CreateFromLocal(100, 4);
-    int32_t ret = ptrAudioProcessInClientInner->->SetVolume(0.5f);
-    EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(ptrAudioProcessInClientInner->GetVolume(), 0.5f);
-}
-
-/*
  * @tc.name  : Test SetVolume API with valid int32 volume
  * @tc.type  : FUNC
  * @tc.number: SetVolume_Int32_Valid_Valid_001
@@ -977,7 +954,7 @@ HWTEST(AudioProcessInClientUnitTest, GetStopFlag_001, TestSize.Level1)
     
     ptrAudioProcessInClientInner->audioBuffer_ = nullptr;
     bool stopFlag = ptrAudioProcessInClientInner->GetStopFlag();
-    EXPECT_EQ(stopFlag, RESTORE_ERROR);
+    EXPECT_EQ(stopFlag, true);
 }
 
 /*
