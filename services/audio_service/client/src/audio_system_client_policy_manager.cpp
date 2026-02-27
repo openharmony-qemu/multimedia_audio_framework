@@ -22,6 +22,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const std::string BUNDLE_NAME_SCENE_BOARD = "com.ohos.sceneboard";
+
 class AudioDistributedRoutingRoleCallbackImpl : public AudioDistributedRoutingRoleCallback {
 public:
     explicit AudioDistributedRoutingRoleCallbackImpl()
@@ -447,6 +449,10 @@ int32_t AudioSystemClientPolicyManager::SetAudioScene(const AudioScene &scene)
 AudioScene AudioSystemClientPolicyManager::GetAudioScene() const
 {
     auto audioScene = AudioPolicyManager::GetInstance().GetAudioScene();
+    std::string bundleName = AppBundleManager::GetBundleNameFromUid(static_cast<int32_t>(getuid()));
+    if (bundleName == BUNDLE_NAME_SCENE_BOARD) {
+        audioScene = AudioPolicyManager::GetInstance().GetAudioSceneFromAllZones();
+    }
     AUDIO_DEBUG_LOG("origin audioScene: %{public}d", audioScene);
     switch (audioScene) {
         case AUDIO_SCENE_CALL_START:

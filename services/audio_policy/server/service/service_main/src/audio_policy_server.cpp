@@ -139,7 +139,6 @@ const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_AAM_CONN_SVC
 };
 const std::string NEARLINK_LIST = "audio_nearlink_list";
-const std::string BUNDLE_NAME_SCENE_BOARD = "com.ohos.sceneboard";
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -2656,12 +2655,7 @@ int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene, const in
 int32_t AudioPolicyServer::GetAudioScene(int32_t &scene)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    std::string bundleName = AudioBundleManager::GetBundleName();
-    if (bundleName == BUNDLE_NAME_SCENE_BOARD) {
-        scene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
-    } else {
-        scene = static_cast<int32_t>(audioSceneManager_.GetAudioScene(hasSystemPermission));
-    }
+    scene = static_cast<int32_t>(audioSceneManager_.GetAudioScene(hasSystemPermission));
     return SUCCESS;
 }
 
@@ -5849,6 +5843,12 @@ bool AudioPolicyServer::IsPublishCalled() const
 int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
     return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
+}
+
+int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
+{
+    audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)
