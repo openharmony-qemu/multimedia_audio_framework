@@ -74,8 +74,6 @@ int32_t AudioInputNode::Flush()
     AUDIO_INFO_LOG("AudioInputNode::Flush");
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
-    // Reset converters from base class
-    formatConverters_.clear();
     return SUCCESS;
 }
 
