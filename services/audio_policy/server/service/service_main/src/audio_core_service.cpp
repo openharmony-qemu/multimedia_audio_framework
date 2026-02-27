@@ -29,6 +29,7 @@
 #include "hisysevent.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
+#include "dfx_msg_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -320,6 +321,7 @@ void AudioCoreService::WriteDesignateAudioCaptureDeviceEvent(
 {
     std::string appName = AudioBundleManager::GetBundleName();
 
+    CHECK_AND_RETURN(DfxMsgManager::IsHiviewUeEnable());
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "DESIGNATE_AUDIO_CAPTURE_DEVICE", HiviewDFX::HiSysEvent::EventType::STATISTIC,
         "APP_NAME", appName.c_str(),

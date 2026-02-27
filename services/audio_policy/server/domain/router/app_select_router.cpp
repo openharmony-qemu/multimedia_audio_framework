@@ -23,6 +23,8 @@
 #include "audio_bundle_manager.h"
 #include "hisysevent.h"
 #include "media_monitor_manager.h"
+#include "parameters.h"
+#include "dfx_msg_manager.h"
 
 using namespace std;
 
@@ -144,6 +146,7 @@ void AppSelectRouter::WriteModifyCaptureDeviceSpecially(
     AUDIO_INFO_LOG("WriteModifyCaptureDeviceSpecially appName = %{public}s, sourceType = %{public}d, deviceBefore = "
         "%{public}d, deviceAfter = %{public}d", appName.c_str(), sourceType, deviceBefore, deviceAfter);
 
+    CHECK_AND_RETURN(DfxMsgManager::IsHiviewUeEnable());
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
         "MODIFY_CAPTURE_DEVICE_SPECIALLY", HiviewDFX::HiSysEvent::EventType::STATISTIC,
         "APP_NAME", appName.c_str(),

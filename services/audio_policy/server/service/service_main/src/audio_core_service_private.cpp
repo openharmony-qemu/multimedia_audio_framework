@@ -34,6 +34,9 @@
 #include "ipc_skeleton.h"
 #include "audio_volume.h"
 #include "audio_bundle_manager.h"
+#include "parameters.h"
+#include "media_monitor_manager.h"
+#include "dfx_msg_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -3472,6 +3475,7 @@ void AudioCoreService::LogCapturerConcurrentResult(const std::unique_ptr<Concurr
 void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
 {
     CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
+    CHECK_AND_RETURN(DfxMsgManager::IsHiviewUeEnable());
     auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "CONCURRENT_CAPTURE",
         HiviewDFX::HiSysEvent::EventType::STATISTIC,
         "EXISTING_APP_NAME", result->existingAppName,

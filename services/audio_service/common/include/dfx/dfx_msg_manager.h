@@ -87,7 +87,7 @@ public:
     void Init();
     void SaveAppInfo(const DfxRunningAppInfo info);
     void UpdateAppState(int32_t appUid, DfxAppState appstate, bool forceUpdate = false);
-    
+
     static bool IsHiviewUeEnable();
 private:
     DfxMsgManager();

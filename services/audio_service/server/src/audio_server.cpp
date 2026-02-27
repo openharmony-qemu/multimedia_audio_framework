@@ -37,6 +37,7 @@
 #include "parameters.h"
 #include "media_monitor_manager.h"
 #include "app_bundle_manager.h"
+#include "dfx_msg_manager.h"
 
 #include "audio_errors.h"
 #include "audio_common_log.h"
@@ -996,6 +997,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
 {
     if (key == "AUDIO_EXT_PARAM_KEY_LOWPOWER") {
         parmKey = AudioParamKey::PARAM_KEY_LOWPOWER;
+        CHECK_AND_RETURN_RET(DfxMsgManager::IsHiviewUeEnable(), true);
         HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "SMARTPA_LOWPOWER",
             HiviewDFX::HiSysEvent::EventType::BEHAVIOR, "STATE", valueNew == "SmartPA_lowpower=on" ? 1 : 0);
     } else if (key == "bt_headset_nrec") {
