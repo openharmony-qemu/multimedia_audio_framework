@@ -170,8 +170,7 @@ int32_t HWDecodingRendererStream::Drain(bool stopFlag)
     AUDIO_INFO_LOG("in %{public}d", streamIndex_);
     std::unique_lock<std::mutex> lock(sinkMutex_);
     CHECK_AND_RETURN_RET_LOG(sink_ != nullptr, ERR_INVALID_HANDLE, "sink is not inited!");
-    int32_t ret = sink_->Drain(AUDIO_DRAIN_ALL);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain falied");
+    sink_->Drain(AUDIO_DRAIN_ALL);
     lock.unlock();
 
     NotifyOperation(OPERATION_DRAINED);
