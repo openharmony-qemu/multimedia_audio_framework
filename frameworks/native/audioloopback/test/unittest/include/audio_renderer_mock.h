@@ -135,12 +135,12 @@ public:
     MOCK_METHOD(int32_t, PauseImpl, (StateChangeCmdType cmdType), (override));
     MOCK_METHOD(int32_t, StopImpl, (), (override));
     MOCK_METHOD(int32_t, ReleaseImpl, (), (override));
-    MOCK_METHOD(int32_t, StartApi, (StateChangeCmdType cmdType), (override));
-    MOCK_METHOD(int32_t, DrainApi, (), (const, override));
-    MOCK_METHOD(int32_t, FlushApi, (), (const, override));
-    MOCK_METHOD(int32_t, PauseApi, (StateChangeCmdType cmdType), (override));
-    MOCK_METHOD(int32_t, StopApi, (), (override));
-    MOCK_METHOD(int32_t, ReleaseApi, (), (override));
+    MOCK_METHOD(int32_t, StartWithError, (StateChangeCmdType cmdType), (override));
+    MOCK_METHOD(int32_t, DrainWithError, (), (const, override));
+    MOCK_METHOD(int32_t, FlushWithError, (), (const, override));
+    MOCK_METHOD(int32_t, PauseWithError, (StateChangeCmdType cmdType), (override));
+    MOCK_METHOD(int32_t, StopWithError, (), (override));
+    MOCK_METHOD(int32_t, ReleaseWithError, (), (override));
 };
 
 } // namespace AudioStandard

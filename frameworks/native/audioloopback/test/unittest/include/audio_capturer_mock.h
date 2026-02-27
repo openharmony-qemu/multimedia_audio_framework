@@ -86,9 +86,9 @@ public:
     MOCK_METHOD(int32_t, StartImpl, (), (override));
     MOCK_METHOD(int32_t, StopImpl, (), (const, override));
     MOCK_METHOD(int32_t, ReleaseImpl, (), (override));
-    MOCK_METHOD(int32_t, StartApi, (), (override));
-    MOCK_METHOD(int32_t, StopApi, (), (const, override));
-    MOCK_METHOD(int32_t, ReleaseApi, (), (override));
+    MOCK_METHOD(int32_t, StartWithError, (), (override));
+    MOCK_METHOD(int32_t, StopWithError, (), (const, override));
+    MOCK_METHOD(int32_t, ReleaseWithError, (), (override));
 };
 
 } // namespace AudioStandard
