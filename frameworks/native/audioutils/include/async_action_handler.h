@@ -47,7 +47,7 @@ public:
 
 public:
     AsyncActionHandler(std::string name);
-    ~AsyncActionHandler();
+    virtual ~AsyncActionHandler();
     bool PostAsyncAction(const AsyncActionDesc &desc);
 
 private:

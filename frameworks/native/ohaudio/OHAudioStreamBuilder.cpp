@@ -91,14 +91,14 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetPlaybackCaptureMode(OH_AudioStrea
 {
     OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
     CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
-
+ 
     if (mode != AUDIOSTREAM_PLAYBACKCAPTURE_MODE_DEFAULT && mode != AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA &&
         mode != AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF &&
         mode != (AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF | AUDIOSTREAM_PLAYBACKCAPTURE_MODE_MEDIA)) {
         AUDIO_WARNING_LOG("Invalid param: playbackCapture mode:%{public}d", mode);
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
-
+ 
     return audioStreamBuilder->SetPlaybackCaptureMode(mode);
 }
 
@@ -234,7 +234,7 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererPrivacy(OH_AudioStreamBui
 
     if (privacy != AUDIO_STREAM_PRIVACY_TYPE_PUBLIC && privacy != AUDIO_STREAM_PRIVACY_TYPE_PRIVATE &&
         privacy != AUDIO_STREAM_PRIVACY_TYPE_SHARED) {
-        AUDIO_WARNING_LOG("Invalid param: privacy type");
+        AUDIO_ERR_LOG("Invalid param: privacy type");
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
 
@@ -508,8 +508,8 @@ void OHAudioStreamBuilder::ConfigureRenderer(OHAudioRenderer *audioRenderer)
 OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer)
 {
     AUDIO_INFO_LOG("Generate OHAudioRenderer");
-    CHECK_AND_RETURN_RET_LOG(streamType_ == RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM, "StreamType invalid");
-    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "Error, renderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(streamType_ == RENDERER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "Error, invalid type input");
 
     AudioStreamInfo streamInfo = {
         (AudioSamplingRate)samplingRate_,
@@ -536,12 +536,13 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
     };
 
     OHAudioRenderer *audioRenderer = new OHAudioRenderer();
-    if (audioRenderer != nullptr && audioRenderer->Initialize(options)) {
+    if (audioRenderer->Initialize(options)) {
         ConfigureRenderer(audioRenderer);
         if (nullptr == renderer) {
+            AUDIO_ERR_LOG("render is nullptr");
             delete audioRenderer;
             audioRenderer = nullptr;
-            CHECK_AND_RETURN_RET_LOG(renderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "renderer is nullptr");
+            return AUDIOSTREAM_ERROR_INVALID_PARAM;
         }
         *renderer = (OH_AudioRenderer*)audioRenderer;
         if (preferredFrameSize_ != UNDEFINED_SIZE) {
@@ -595,7 +596,7 @@ void OHAudioStreamBuilder::InitPlaybackCaptureConfig(AudioPlaybackCaptureConfig 
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_NOTIFICATION);
         usages.push_back(AudioStandard::StreamUsage::STREAM_USAGE_VOICE_ASSISTANT);
     }
-
+ 
     if (mode & AUDIOSTREAM_PLAYBACKCAPTURE_MODE_EXCLUDING_SELF) {
         config.filterOptions.pids.push_back(getpid());
         config.filterOptions.pidFilterMode = FilterMode::EXCLUDE;
@@ -607,8 +608,6 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
     AUDIO_INFO_LOG("Generate OHAudioCapturer");
     CHECK_AND_RETURN_RET_LOG(streamType_ == CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "Error, invalid type input");
-    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM,
-        "Error, capturer is nullptr");
     AudioStreamInfo streamInfo = {
         (AudioSamplingRate)samplingRate_,
         encodingType_,
@@ -632,7 +631,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioCapturer **capturer
     }
 
     OHAudioCapturer *audioCapturer = new OHAudioCapturer();
-    if (audioCapturer != nullptr && audioCapturer->Initialize(options)) {
+    if (audioCapturer->Initialize(options)) {
         ConfigureCapturer(audioCapturer);
         if (nullptr == capturer) {
             AUDIO_ERR_LOG("capturer is nullptr");
