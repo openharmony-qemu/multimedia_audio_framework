@@ -787,10 +787,10 @@ public:
         return 0;
     }
 
-    virtual void SetInMainThreadState(bool isInMainThread)
+    virtual int32_t SetInMainThreadState(bool isInMainThread)
     {
         (void)isInMainThread;
-        return;
+        return 0;
     }
 
 protected:
