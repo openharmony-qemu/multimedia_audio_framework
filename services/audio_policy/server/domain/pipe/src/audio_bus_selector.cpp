@@ -63,7 +63,7 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
 
     std::vector<std::string> busAddresses;
     for (const auto &audioMix : iter->second) {
-        if (audioMix.encodingType == streamDesc->rendererInfo_.encodingType &&
+        if (audioMix.encodingType == streamDesc->streamInfo_.encoding &&
             std::any_of(
                 audioMix.streamUsages.begin(), audioMix.streamUsages.end(),
                 [&streamDesc](const StreamUsage &usage) { return usage == streamDesc->rendererInfo_.streamUsage; })) {

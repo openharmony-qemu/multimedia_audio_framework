@@ -450,11 +450,15 @@ bool AudioDeviceManager::IsVirtualDevicesExist(const std::shared_ptr<AudioDevice
 void AudioDeviceManager::AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     DeviceType devType = devDesc->deviceType_;
+    bool defaultMicCondition = devType == DEVICE_TYPE_MIC;
+#ifdef MULTI_BUS_ENABLE
+    defaultMicCondition = defaultMicCondition && devDesc->macAddress_.empty();
+#endif
     if (devType == DEVICE_TYPE_EARPIECE) {
         earpiece_ = devDesc;
     } else if (devType == DEVICE_TYPE_SPEAKER) {
         speaker_ = devDesc;
-    } else if (devType == DEVICE_TYPE_MIC) {
+    } else if (defaultMicCondition) {
         defalutMic_ = devDesc;
     }
 }
@@ -525,6 +529,9 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
             switch (descriptor->deviceType_) {
+#ifdef MULTI_BUS_ENABLE
+                case DEVICE_TYPE_MIC:
+#endif
                 case DEVICE_TYPE_USB_HEADSET:
                 case DEVICE_TYPE_USB_ARM_HEADSET:
                 case DEVICE_TYPE_BLUETOOTH_A2DP:

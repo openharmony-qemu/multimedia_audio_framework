@@ -130,6 +130,9 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
         info.c_str());
 
     if (deviceClass == "primary") {
+#ifdef MULTI_BUS_ENABLE
+        return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
+#endif
         if (sourceType == SOURCE_TYPE_WAKEUP) {
             return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_WAKEUP, info);
         }

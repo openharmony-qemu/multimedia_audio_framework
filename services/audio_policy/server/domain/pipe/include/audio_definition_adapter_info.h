@@ -172,6 +172,7 @@ public:
     DeviceType type_ = DEVICE_TYPE_NONE;
     AudioPin pin_ = AUDIO_PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;
+    std::string address_ = STR_INITED;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::string> supportPipes_ {};
@@ -225,7 +226,7 @@ public:
 
     std::string GetVersion();
     std::shared_ptr<AdapterDeviceInfo> GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
-        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0);
+        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0, std::string macAddress = "");
 
     void UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
         const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps);

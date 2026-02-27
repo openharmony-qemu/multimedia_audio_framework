@@ -370,6 +370,11 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             std::string supportPipeInStr;
             curNode->GetProp("supportPipes", supportPipeInStr);
             SplitStringToList(supportPipeInStr, deviceInfo.supportPipes_, ",");
+            std::string address;
+            if (curNode->GetProp("address", address) == SUCCESS) {
+                deviceInfo.address_ = address;
+            }
+
             deviceInfos.push_back(std::make_shared<AdapterDeviceInfo>(deviceInfo));
         }
         curNode->MoveToNext();

@@ -706,7 +706,12 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
                                                  const std::vector<std::string> &busAddresses)
 {
     // Vehicle system scenario enter
-    CHECK_AND_RETURN_LOG(desc != nullptr && !busAddresses.empty(), "StreamDesc is null, none streamDrop");
+    CHECK_AND_RETURN_LOG(desc != nullptr, "StreamDesc is null, none streamProp");
+    if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+        GetStreamPropInfo(desc, info);
+        return;
+    }
+    CHECK_AND_RETURN_LOG(!busAddresses.empty(), "BusAddresses is empty, config abnormal for vehicle.");
 
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     CHECK_AND_RETURN_LOG(newDeviceDesc != nullptr, "DeviceDesc is null, none streamDrop");
@@ -768,7 +773,8 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
 {
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
-        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_,
+        newDeviceDesc->a2dpOffloadFlag_, newDeviceDesc->macAddress_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
