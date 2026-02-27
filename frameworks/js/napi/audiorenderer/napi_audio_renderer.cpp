@@ -682,7 +682,7 @@ napi_value NapiAudioRenderer::Start(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->intValue = napiAudioRenderer->audioRenderer_->StartApi();
+        context->intValue = napiAudioRenderer->audioRenderer_->StartWithError();
         context->status = context->intValue == SUCCESS ? napi_ok : napi_generic_failure;
         if (context->status != napi_ok) {
             context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
@@ -945,7 +945,7 @@ napi_value NapiAudioRenderer::Drain(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->intValue = napiAudioRenderer->audioRenderer_->DrainApi();
+        context->intValue = napiAudioRenderer->audioRenderer_->DrainWithError();
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
@@ -974,7 +974,7 @@ napi_value NapiAudioRenderer::Flush(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->intValue = napiAudioRenderer->audioRenderer_->FlushApi();
+        context->intValue = napiAudioRenderer->audioRenderer_->FlushWithError();
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE, AudioStandard::ErrMessage(context->intValue));
         }
@@ -1003,7 +1003,7 @@ napi_value NapiAudioRenderer::Pause(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->intValue = napiAudioRenderer->audioRenderer_->PauseApi();
+        context->intValue = napiAudioRenderer->audioRenderer_->PauseWithError();
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
@@ -1032,7 +1032,7 @@ napi_value NapiAudioRenderer::Stop(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->intValue = napiAudioRenderer->audioRenderer_->StopApi();
+        context->intValue = napiAudioRenderer->audioRenderer_->StopWithError();
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
@@ -1061,7 +1061,7 @@ napi_value NapiAudioRenderer::Release(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->intValue = napiAudioRenderer->audioRenderer_->ReleaseApi();
+        context->intValue = napiAudioRenderer->audioRenderer_->ReleaseWithError();
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }

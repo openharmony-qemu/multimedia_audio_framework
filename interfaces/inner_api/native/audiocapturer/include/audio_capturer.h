@@ -394,7 +394,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StartApi() = 0;
+    virtual int32_t StartWithError() = 0;
 
     /**
      * @brief capture audio data.
@@ -466,7 +466,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StopApi() const = 0;
+    virtual int32_t StopWithError() const = 0;
 
     /**
      * @brief flush capture stream.
@@ -491,7 +491,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t ReleaseApi() = 0;
+    virtual int32_t ReleaseWithError() = 0;
 
     /**
      * @brief Obtains a reasonable minimum buffer size for capturer, however, the capturer can

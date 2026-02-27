@@ -347,7 +347,7 @@ void AudioCapturerImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
-    int32_t ret = audioCapturer_->StartApi();
+    int32_t ret = audioCapturer_->StartWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
@@ -360,7 +360,7 @@ void AudioCapturerImpl::StopSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
-    int32_t ret = audioCapturer_->StopApi();
+    int32_t ret = audioCapturer_->StopWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
@@ -373,7 +373,7 @@ void AudioCapturerImpl::ReleaseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
-    int32_t ret = audioCapturer_->ReleaseApi();
+    int32_t ret = audioCapturer_->ReleaseWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;

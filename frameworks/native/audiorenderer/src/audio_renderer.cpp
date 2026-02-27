@@ -1197,7 +1197,7 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     AUDIO_INFO_LOG("isVKB: %{public}s", rendererInfo_.isVirtualKeyboard ? "T" : "F");
     bool silentControl = false;
     CHECK_AND_CALL_FUNC_RETURN_RET(IsAllowedStartBackground(sessionID_, audioInterrupt_.streamUsage, silentControl),
-        ERR_PERMISSION_DENIED, HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
+        ERROR, HILOG_COMM_ERROR("[Start]Start failed. IsAllowedStartBackground is false"));
     RendererState state = GetStatusInner();
     CHECK_AND_CALL_FUNC_RETURN_RET(state == RENDERER_PREPARED || state == RENDERER_STOPPED || state == RENDERER_PAUSED,
         ERR_ILLEGAL_STATE, HILOG_COMM_ERROR("[Start]Start failed. Illegal state:%{public}u", state));

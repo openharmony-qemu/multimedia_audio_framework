@@ -64,9 +64,9 @@ public:
         return sharedAudioRenderer_->Start(cmdType);
     }
 
-    int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    int32_t StartWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
     {
-        return sharedAudioRenderer_->StartApi(cmdType);
+        return sharedAudioRenderer_->StartWithError(cmdType);
     }
 
     int32_t Write(uint8_t *buffer, size_t bufferSize) override
@@ -109,9 +109,9 @@ public:
         return sharedAudioRenderer_->Drain();
     }
 
-    int32_t DrainApi() const override
+    int32_t DrainWithError() const override
     {
-        return sharedAudioRenderer_->DrainApi();
+        return sharedAudioRenderer_->DrainWithError();
     }
 
     bool Flush() const override
@@ -119,9 +119,9 @@ public:
         return sharedAudioRenderer_->Flush();
     }
 
-    int32_t FlushApi() const override
+    int32_t FlushWithError() const override
     {
-        return sharedAudioRenderer_->FlushApi();
+        return sharedAudioRenderer_->FlushWithError();
     }
 
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
@@ -134,9 +134,9 @@ public:
         return sharedAudioRenderer_->Pause(cmdType);
     }
 
-    int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    int32_t PauseWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
     {
-        return sharedAudioRenderer_->PauseApi(cmdType);
+        return sharedAudioRenderer_->PauseWithError(cmdType);
     }
 
     bool Stop() override
@@ -144,9 +144,9 @@ public:
         return sharedAudioRenderer_->Stop();
     }
 
-    int32_t StopApi() override
+    int32_t StopWithError() override
     {
-        return sharedAudioRenderer_->StopApi();
+        return sharedAudioRenderer_->StopWithError();
     }
 
     bool Release() override
@@ -154,9 +154,9 @@ public:
         return sharedAudioRenderer_->Release();
     }
 
-    int32_t ReleaseApi() override
+    int32_t ReleaseWithError() override
     {
-        return sharedAudioRenderer_->ReleaseApi();
+        return sharedAudioRenderer_->ReleaseWithError();
     }
 
     int32_t GetBufferSize(size_t &bufferSize) const override

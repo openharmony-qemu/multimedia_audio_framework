@@ -390,7 +390,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    virtual int32_t StartApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+    virtual int32_t StartWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Writes audio data.
@@ -485,7 +485,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t DrainApi() const = 0;
+    virtual int32_t DrainWithError() const = 0;
 
     /**
      * @brief flush renderer stream.
@@ -502,7 +502,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t FlushApi() const = 0;
+    virtual int32_t FlushWithError() const = 0;
 
     /**
      * @brief Pauses audio rendering transitent.
@@ -527,7 +527,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 10
      */
-    virtual int32_t PauseApi(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
+    virtual int32_t PauseWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
      * @brief Stops audio rendering.
@@ -544,7 +544,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StopApi() = 0;
+    virtual int32_t StopWithError() = 0;
 
     /**
      * @brief Releases a local <b>AudioRenderer</b> object.
@@ -561,7 +561,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t ReleaseApi() = 0;
+    virtual int32_t ReleaseWithError() = 0;
 
     /**
      * @brief Obtains a reasonable minimum buffer size for rendering, however, the renderer can

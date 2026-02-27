@@ -155,7 +155,7 @@ void AudioRendererImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    int32_t ret = audioRenderer_->StartApi();
+    int32_t ret = audioRenderer_->StartWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
@@ -208,7 +208,7 @@ void AudioRendererImpl::DrainSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    int32_t ret = audioRenderer_->DrainApi();
+    int32_t ret = audioRenderer_->DrainWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
@@ -221,7 +221,7 @@ void AudioRendererImpl::FlushSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    int32_t ret = audioRenderer_->FlushApi();
+    int32_t ret = audioRenderer_->FlushWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
@@ -234,7 +234,7 @@ void AudioRendererImpl::PauseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    int32_t ret = audioRenderer_->PauseApi();
+    int32_t ret = audioRenderer_->PauseWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
@@ -247,7 +247,7 @@ void AudioRendererImpl::StopSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    int32_t ret = audioRenderer_->StopApi();
+    int32_t ret = audioRenderer_->StopWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
@@ -260,7 +260,7 @@ void AudioRendererImpl::ReleaseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
         return;
     }
-    int32_t ret = audioRenderer_->ReleaseApi();
+    int32_t ret = audioRenderer_->ReleaseWithError();
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
