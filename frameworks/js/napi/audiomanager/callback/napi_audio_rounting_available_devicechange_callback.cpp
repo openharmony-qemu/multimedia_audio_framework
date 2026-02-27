@@ -86,7 +86,9 @@ void NapiAudioRountingAvailableDeviceChangeCallback::RemoveRoutingAvailbleDevice
     for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); ++it) {
         bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, callback, (*it).first->cb_);
         if (isSameCallback) {
-            AUDIO_INFO_LOG("RemoveRoutingAvailbleDeviceChangeCbRef: find js callback, erase it");
+            AUDIO_INFO_LOG("RemoveRoutingAvailbleDeviceChangeCbRef: find js callback, delete it");
+            napi_delete_reference(env, (*it).first->cb_);
+            (*it).first->cb_ = nullptr;
             availableDeviceChangeCbList_.erase(it);
             return;
         }
@@ -97,6 +99,10 @@ void NapiAudioRountingAvailableDeviceChangeCallback::RemoveRoutingAvailbleDevice
 void NapiAudioRountingAvailableDeviceChangeCallback::RemoveAllRoutinAvailbleDeviceChangeCb()
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = availableDeviceChangeCbList_.begin(); it != availableDeviceChangeCbList_.end(); ++it) {
+        napi_delete_reference(env_, (*it).first->cb_);
+        (*it).first->cb_ = nullptr;
+    }
     availableDeviceChangeCbList_.clear();
     AUDIO_INFO_LOG("RemoveAllCallbacks: remove all js callbacks success");
 }
