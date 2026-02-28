@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include "audio_info.h"
+#include "audio_device_status.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
 using namespace testing::ext;
@@ -6481,5 +6482,80 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadNormalSource_007, TestSize.Level4)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+* @tc.name  : Test CheckNeedExclude.
+* @tc.number: CheckNeedExclude_001
+* @tc.desc  : Test CheckNeedExclude usage.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CheckNeedExclude_001, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    // Test with disconnected device
+    AudioDeviceDescriptor disconnectedDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(disconnectedDesc, false));
+
+    // Test with connected but non-wireless device
+    AudioDeviceDescriptor wiredDesc(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(wiredDesc, true));
+
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    auto clearDevice = std::make_shared<AudioDeviceDescriptor>();
+
+    // Test bluetooth A2DP device - not preferred for both
+    AudioDeviceDescriptor a2dpDesc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_TRUE(audioDeviceStatus.CheckNeedExclude(a2dpDesc, true));
+
+    // Test bluetooth A2DP device - preferred for media only
+    auto preferredMediaDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(preferredMediaDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(a2dpDesc, true));
+
+    // Test bluetooth A2DP device - preferred for call only
+    auto preferredCallDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(preferredCallDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(a2dpDesc, true));
+
+    // Test bluetooth SCO device - not preferred for both
+    AudioDeviceDescriptor scoDesc(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_TRUE(audioDeviceStatus.CheckNeedExclude(scoDesc, true));
+
+    // Test bluetooth SCO device - preferred for media only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(preferredMediaDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(scoDesc, true));
+
+    // Test bluetooth SCO device - preferred for call only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(preferredCallDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(scoDesc, true));
+
+    // Test nearlink device - not preferred for both
+    AudioDeviceDescriptor nearlinkDesc(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_TRUE(audioDeviceStatus.CheckNeedExclude(nearlinkDesc, true));
+
+    // Test nearlink device - preferred for media only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE));
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(nearlinkDesc, true));
+
+    // Test nearlink device - preferred for call only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE));
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(nearlinkDesc, true));
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

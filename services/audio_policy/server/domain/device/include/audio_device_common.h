@@ -154,6 +154,7 @@ private:
     bool NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
         const std::shared_ptr<AudioDeviceDescriptor> &updated,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const;
+    bool NeedUpdatePreferredDevice(const AudioDeviceDescriptor &desc);
 
     // fetchOutput
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
