@@ -24,6 +24,7 @@
 #include "audio_stream_descriptor.h"
 #include "audio_capturer_proxy_obj.h"
 #include "audio_task_loop.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,12 @@ class InputDeviceChangeWithInfoCallbackImpl;
 
 class AudioCapturerPrivate : public AudioCapturer, public std::enable_shared_from_this<AudioCapturerPrivate> {
 public:
+    bool Start() override { return StartImpl() == SUCCESS; }
+    int32_t StartWithError() override { return StartImpl(); }
+    bool Stop() const override { return StopImpl() == SUCCESS; }
+    int32_t StopWithError() const override { return StopImpl(); }
+    bool Release() override { return ReleaseImpl() == SUCCESS; }
+    int32_t ReleaseWithError() override { return ReleaseImpl(); }
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t SetParams(const AudioCapturerParams params) override;
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
@@ -41,14 +48,11 @@ public:
     int32_t GetParams(AudioCapturerParams &params) const override;
     int32_t GetCapturerInfo(AudioCapturerInfo &capturerInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
-    bool Start() override;
-    int32_t  Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
+    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
     CapturerState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool Pause() const override;
-    bool Stop() const override;
     bool Flush() const override;
-    bool Release() override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
     int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetCapturerPositionCallback(int64_t markPosition,
@@ -142,6 +146,9 @@ public:
     }
 
 private:
+    int32_t StartImpl() override;
+    int32_t StopImpl() const override;
+    int32_t ReleaseImpl() override;
     int32_t CheckAndRestoreAudioCapturer(std::string callingFunc);
     int32_t AsyncCheckAudioCapturer(std::string callingFunc);
     int32_t CheckAudioCapturer(std::string callingFunc);

@@ -28,6 +28,7 @@
 #endif
 #include "audio_utils.h"
 #include "audio_system_manager.h"
+#include "audio_errors.h"
 #include "napi_param_utils.h"
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
@@ -681,10 +682,10 @@ napi_value NapiAudioRenderer::Start(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->isTrue = napiAudioRenderer->audioRenderer_->Start();
-        context->status = context->isTrue ? napi_ok : napi_generic_failure;
+        context->intValue = napiAudioRenderer->audioRenderer_->StartWithError();
+        context->status = context->intValue == SUCCESS ? napi_ok : napi_generic_failure;
         if (context->status != napi_ok) {
-            context->SignError(NAPI_ERR_SYSTEM);
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
 
@@ -944,9 +945,9 @@ napi_value NapiAudioRenderer::Drain(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->isTrue = napiAudioRenderer->audioRenderer_->Drain();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+        context->intValue = napiAudioRenderer->audioRenderer_->DrainWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
     auto complete = [env](napi_value &output) {
@@ -973,9 +974,9 @@ napi_value NapiAudioRenderer::Flush(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->isTrue = napiAudioRenderer->audioRenderer_->Flush();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+        context->intValue = napiAudioRenderer->audioRenderer_->FlushWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE, AudioStandard::ErrMessage(context->intValue));
         }
     };
     auto complete = [env](napi_value &output) {
@@ -1002,9 +1003,9 @@ napi_value NapiAudioRenderer::Pause(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->isTrue = napiAudioRenderer->audioRenderer_->Pause();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+        context->intValue = napiAudioRenderer->audioRenderer_->PauseWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
     auto complete = [env](napi_value &output) {
@@ -1031,9 +1032,9 @@ napi_value NapiAudioRenderer::Stop(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->isTrue = napiAudioRenderer->audioRenderer_->Stop();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+        context->intValue = napiAudioRenderer->audioRenderer_->StopWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
     auto complete = [env](napi_value &output) {
@@ -1060,9 +1061,9 @@ napi_value NapiAudioRenderer::Release(napi_env env, napi_callback_info info)
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        context->isTrue = napiAudioRenderer->audioRenderer_->Release();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+        context->intValue = napiAudioRenderer->audioRenderer_->ReleaseWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
     auto complete = [env](napi_value &output) {

@@ -532,9 +532,9 @@ napi_value NapiAudioCapturer::Start(napi_env env, napi_callback_info info)
         auto *napiAudioCapturer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
             "context object state is error.");
-        context->isTrue = napiAudioCapturer->audioCapturer_->Start();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+        context->intValue = napiAudioCapturer->audioCapturer_->StartWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
 
@@ -739,9 +739,9 @@ napi_value NapiAudioCapturer::Stop(napi_env env, napi_callback_info info)
         auto *napiAudioCapturer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
             "context object state is error.");
-        context->isTrue = napiAudioCapturer->audioCapturer_->Stop();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+        context->intValue = napiAudioCapturer->audioCapturer_->StopWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
 
@@ -768,9 +768,9 @@ napi_value NapiAudioCapturer::Release(napi_env env, napi_callback_info info)
         auto *napiAudioCapturer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
             "context object state is error.");
-        context->isTrue = napiAudioCapturer->audioCapturer_->Release();
-        if (!context->isTrue) {
-            context->SignError(NAPI_ERR_SYSTEM);
+        context->intValue = napiAudioCapturer->audioCapturer_->ReleaseWithError();
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM, AudioStandard::ErrMessage(context->intValue));
         }
     };
 

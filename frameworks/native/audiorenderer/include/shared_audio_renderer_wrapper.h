@@ -64,6 +64,11 @@ public:
         return sharedAudioRenderer_->Start(cmdType);
     }
 
+    int32_t StartWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return sharedAudioRenderer_->StartWithError(cmdType);
+    }
+
     int32_t Write(uint8_t *buffer, size_t bufferSize) override
     {
         return sharedAudioRenderer_->Write(buffer, bufferSize);
@@ -104,9 +109,19 @@ public:
         return sharedAudioRenderer_->Drain();
     }
 
+    int32_t DrainWithError() const override
+    {
+        return sharedAudioRenderer_->DrainWithError();
+    }
+
     bool Flush() const override
     {
         return sharedAudioRenderer_->Flush();
+    }
+
+    int32_t FlushWithError() const override
+    {
+        return sharedAudioRenderer_->FlushWithError();
     }
 
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
@@ -119,14 +134,29 @@ public:
         return sharedAudioRenderer_->Pause(cmdType);
     }
 
+    int32_t PauseWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return sharedAudioRenderer_->PauseWithError(cmdType);
+    }
+
     bool Stop() override
     {
         return sharedAudioRenderer_->Stop();
     }
 
+    int32_t StopWithError() override
+    {
+        return sharedAudioRenderer_->StopWithError();
+    }
+
     bool Release() override
     {
         return sharedAudioRenderer_->Release();
+    }
+
+    int32_t ReleaseWithError() override
+    {
+        return sharedAudioRenderer_->ReleaseWithError();
     }
 
     int32_t GetBufferSize(size_t &bufferSize) const override
@@ -517,6 +547,38 @@ public:
     SharedAudioRendererWrapper &operator=(const SharedAudioRendererWrapper &) = delete;
     SharedAudioRendererWrapper(SharedAudioRendererWrapper &&) = delete;
     SharedAudioRendererWrapper &operator=(SharedAudioRendererWrapper &&) = delete;
+
+private:
+    int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return SUCCESS;
+    }
+    
+    int32_t DrainImpl() const override
+    {
+        return SUCCESS;
+    }
+
+    int32_t FlushImpl() const override
+    {
+        return SUCCESS;
+    }
+
+    int32_t PauseImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t StopImpl() override
+    {
+        return SUCCESS;
+    }
+
+    int32_t ReleaseImpl() override
+    {
+        return SUCCESS;
+    }
+
 private:
     std::shared_ptr<AudioRenderer> sharedAudioRenderer_ = nullptr;
 };
