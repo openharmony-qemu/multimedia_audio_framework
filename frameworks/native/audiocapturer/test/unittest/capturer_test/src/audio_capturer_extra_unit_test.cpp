@@ -1659,7 +1659,7 @@ HWTEST(AudioCapturerUnitTest, SetInMainThreadState_002, TestSize.Level4)
     AppInfo appInfo = {};
     auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
  
-    testCapturerInner->isFirstTimeSetMainThreadState_ = flase;
+    testCapturerInner->isFirstTimeSetMainThreadState_ = false;
     int32_t res = testCapturerInner->SetInMainThreadState(true);
     EXPECT_EQ(ERROR_ILLEGAL_STATE, res);
 }
