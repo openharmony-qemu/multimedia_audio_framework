@@ -809,6 +809,13 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
     opts->preferredInputDevice = device;
 
+    if (napi_get_named_property(env, in, "micInStreamInfo", &result) == napi_ok) {
+        status = GetStreamInfo(env, &(opts->streamInfo), result);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get micInStreamInfo name failed");
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without micInStreamInfo");
+    }
+
     if (napi_get_named_property(env, in, "ecStreamInfo", &result) == napi_ok) {
         status = GetEcStreamInfo(env, &(opts->ecStreamInfo), result);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseEcStreamInfo failed");

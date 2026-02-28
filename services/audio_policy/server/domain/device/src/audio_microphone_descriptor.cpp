@@ -17,13 +17,6 @@
 #endif
 
 #include "audio_microphone_descriptor.h"
-#include <ability_manager_client.h>
-#include "iservice_registry.h"
-#include "parameter.h"
-#include "parameters.h"
-#include "audio_policy_log.h"
-#include "audio_inner_call.h"
-#include "media_monitor_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 
