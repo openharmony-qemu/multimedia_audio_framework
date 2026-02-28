@@ -219,38 +219,50 @@ HWTEST_F(AudioSuiteSpaceRenderTest, SpaceRenderGetParameterParams001, TestSize.L
 {
     std::string paramValue;
     int32_t ret;
- 
+  
     auto node = std::make_shared<AudioSuiteSpaceRenderNode>();
- 
+  
     ret = node->Init();
     EXPECT_EQ(SUCCESS, ret);
- 
+  
     ret = node->Init();
     EXPECT_EQ(ERROR, ret);
- 
+  
     node->SetOptions("AudioSpaceRenderPositionParams", "1,1,1");
     ret = node->GetOptions("AudioSpaceRenderPositionParams", paramValue);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ('1', paramValue[0]);
- 
+  
     node->SetOptions("AudioSpaceRenderRotationParams", "1,1,1,2,0");
     ret = node->GetOptions("AudioSpaceRenderRotationParams", paramValue);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ('1', paramValue[0]);
- 
+  
     node->SetOptions("AudioSpaceRenderExtensionParams", "2,90");
     ret = node->GetOptions("AudioSpaceRenderExtensionParams", paramValue);
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ('2', paramValue[0]);
- 
+  
     ret = node->GetOptions("test", paramValue);
     EXPECT_EQ(ret, ERROR);
- 
+  
     ret = node->DeInit();
     EXPECT_EQ(SUCCESS, ret);
- 
+  
     ret = node->DeInit();
     EXPECT_EQ(ERROR, ret);
 }
- 
+
+HWTEST_F(AudioSuiteSpaceRenderTest, AudioSuiteSpaceRenderNodeInitTest, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteSpaceRenderNode>();
+    node->isInit_ = true;
+    int32_t ret = node->Init();
+    EXPECT_EQ(ret, ERROR);
+
+    node->isInit_ = false;
+    ret = node->Init();
+    EXPECT_EQ(ret, SUCCESS);
+}
+  
 }  // namespace

@@ -166,6 +166,7 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
     node->Init();
 
     auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
     preNode->SetOutBuffer(buffer.get());
 
     std::string optionValue = std::to_string(speed) + "," + std::to_string(pitch);
@@ -224,6 +225,7 @@ int32_t AudioSuiteTempoPitchNodeTest::DoprocessTest(
 
     buffer->SetIsFinished(false);
     node->Flush();
+    Mock::VerifyAndClearExpectations(preNode.get());
     preNode.reset();
     return SUCCESS;
 }

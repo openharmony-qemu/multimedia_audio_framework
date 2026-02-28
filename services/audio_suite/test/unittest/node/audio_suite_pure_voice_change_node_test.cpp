@@ -275,6 +275,7 @@ HWTEST_F(AudioSuitePureVoiceChangeNodeTest, DoProcessTest_002, TestSize.Level0)
     node->SetBypassEffectNode(true);
 
     auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
     preNode->SetOutBuffer(buffer.get());
 
     // connect: node <- preNode

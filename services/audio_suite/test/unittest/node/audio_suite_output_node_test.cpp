@@ -221,6 +221,12 @@ private:
     std::vector<uint8_t> buffer_;
 };
 
+class AudioOutputNodeTestHelper : public AudioOutputNode {
+public:
+    using AudioOutputNode::AudioOutputNode;
+    int32_t GetPreNodeOutputNum() const { return preNodeOutputNum_; }
+};
+
 static void CompareOutputWithReference(const std::string &outputFilePath, const std::string &compareFilePath)
 {
     std::ifstream baseFile(compareFilePath, std::ios::binary);
@@ -514,6 +520,173 @@ HWTEST_F(AudioSuiteOutputNodeTest, SetAudioNodeFormat_001, TestSize.Level0)
     format.rate = AudioSamplingRate::SAMPLE_RATE_11025;
     outputNode->SetAudioNodeFormat(format);
     EXPECT_EQ(outputNode->needDataLength_, 40);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, Connect_AudioSeparationNode, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioSuiteProcessNode> inputNode =
+        std::make_shared<AudioSuiteProcessNode>(NODE_TYPE_AUDIO_SEPARATION, informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+
+    auto ret = outputNode->Connect(inputNode);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outputNode->preNodeOutputNum_, 2);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_NullDataInOutputs, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+
+    outputNode->Connect(inputNode);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_PreNodeResultVector, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+
+    auto data = std::make_unique<AudioSuitePcmBuffer>(
+        PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
+    inputNode->WriteOutputData(data.get());
+
+    outputNode->Connect(inputNode);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outputNode->outputs_.size(), 1);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_CacheBufferOperations, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+
+    auto data = std::make_unique<AudioSuitePcmBuffer>(
+        PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
+    inputNode->WriteOutputData(data.get());
+
+    outputNode->Connect(inputNode);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret, SUCCESS);
+
+    EXPECT_FALSE(outputNode->CacheBufferEmpty());
+    EXPECT_GT(outputNode->GetCacheBufferDataLen(), 0);
+    
+    auto bufferData = outputNode->GetCacheBufferData(0);
+    EXPECT_NE(bufferData, nullptr);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_ClearCacheBuffer, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+
+    auto data = std::make_unique<AudioSuitePcmBuffer>(
+        PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
+    inputNode->WriteOutputData(data.get());
+
+    outputNode->Connect(inputNode);
+    auto ret = outputNode->DoProcess(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret, SUCCESS);
+
+    outputNode->ClearCacheBuffer();
+    EXPECT_TRUE(outputNode->CacheBufferEmpty());
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, Connect_NonAudioSeparationNode, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+
+    auto ret = outputNode->Connect(inputNode);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(outputNode->preNodeOutputNum_, 1);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, DoProcess_MultipleCalls, TestSize.Level0)
+{
+    AudioFormat outformat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(outformat);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    AudioFormat informat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    std::shared_ptr<AudioInputNode> inputNode = std::make_shared<AudioInputNode>(informat);
+    EXPECT_NE(inputNode, nullptr);
+    inputNode->Init();
+
+    auto data = std::make_unique<AudioSuitePcmBuffer>(
+        PcmBufferFormat(SAMPLE_RATE_44100, 2, AudioChannelLayout::CH_LAYOUT_STEREO, SAMPLE_F32LE));
+    inputNode->WriteOutputData(data.get());
+
+    outputNode->Connect(inputNode);
+    
+    auto ret1 = outputNode->DoProcess(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret1, SUCCESS);
+    
+    auto ret2 = outputNode->DoProcess(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret2, ERROR);
+}
+
+HWTEST_F(AudioSuiteOutputNodeTest, SetAudioNodeFormat_DifferentRates, TestSize.Level0)
+{
+    AudioFormat format;
+    format.rate = AudioSamplingRate::SAMPLE_RATE_8000;
+    std::shared_ptr<AudioOutputNode> outputNode = std::make_shared<AudioOutputNode>(format);
+    EXPECT_NE(outputNode, nullptr);
+    outputNode->Init();
+
+    format.rate = AudioSamplingRate::SAMPLE_RATE_16000;
+    outputNode->SetAudioNodeFormat(format);
+    EXPECT_EQ(outputNode->needDataLength_, 20);
+
+    format.rate = AudioSamplingRate::SAMPLE_RATE_22050;
+    outputNode->SetAudioNodeFormat(format);
+    EXPECT_EQ(outputNode->needDataLength_, 20);
 }
 
 }  // namespace AudioSuite

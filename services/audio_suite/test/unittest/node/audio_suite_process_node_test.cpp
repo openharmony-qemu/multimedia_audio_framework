@@ -173,6 +173,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessDefaultTest, TestSize.Level0)
     auto buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
 
     auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
     preNode->SetNextOutput(buffer.get());
 
     EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
@@ -193,6 +194,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessWithEnableProcessFalseTest, TestSiz
 
     auto buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
     auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
     preNode->SetNextOutput(buffer.get());
 
     EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
@@ -214,6 +216,7 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessWithFinishedPcmBufferTest, TestSize
     buffer->SetIsFinished(true);
 
     auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
     preNode->SetNextOutput(buffer.get());
 
     EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
@@ -344,4 +347,146 @@ HWTEST_F(AudioSuiteProcessNodeTest, CheckEffectNodeOvertimeCountTest_001, TestSi
     }
 }
 
+HWTEST_F(AudioSuiteProcessNodeTest, InitFormatConverters_Default, TestSize.Level0)
+{
+    AudioFormat audioFormat = {
+        {CH_LAYOUT_STEREO, STEREO},
+        SAMPLE_S16LE,
+        SAMPLE_RATE_48000
+    };
+    std::unique_ptr<TestAudioSuiteProcessNode> node =
+        std::make_unique<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
+    auto ret = node->InitFormatConverters();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(node->formatConverters_.size(), 1);
+    EXPECT_EQ(node->formatConversionBuffers_.size(), 1);
+}
+
+HWTEST_F(AudioSuiteProcessNodeTest, InitFormatConverters_AudioSeparation, TestSize.Level0)
+{
+    AudioFormat audioFormat = {
+        {CH_LAYOUT_STEREO, STEREO},
+        SAMPLE_S16LE,
+        SAMPLE_RATE_48000
+    };
+    std::unique_ptr<TestAudioSuiteProcessNode> node =
+        std::make_unique<TestAudioSuiteProcessNode>(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
+    auto ret = node->InitFormatConverters();
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(node->formatConverters_.size(), 2);
+    EXPECT_EQ(node->formatConversionBuffers_.size(), 2);
+}
+
+HWTEST_F(AudioSuiteProcessNodeTest, ReadProcessNodePreOutputData_WithPreNode, TestSize.Level0)
+{
+    auto buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
+    auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
+    preNode->SetNextOutput(buffer.get());
+
+    EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
+        .Times(1)
+        .WillOnce([&preNode](uint32_t needLen) { return preNode->DoProcessImpl(needLen); });
+
+    node_->Connect(preNode);
+    node_->requestPreNodeDuration_ = NEED_DATA_LENGTH;
+    node_->ReadProcessNodePreOutputData();
+
+    EXPECT_FALSE(node_->preNodeResult_.empty());
+}
+
+HWTEST_F(AudioSuiteProcessNodeTest, ReadProcessNodePreOutputData_WithMultiplePreNodes, TestSize.Level0)
+{
+    auto buffer1 = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
+    auto buffer2 = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
+    auto preNode1 = std::make_shared<FakePreNode>();
+    auto preNode2 = std::make_shared<FakePreNode>();
+    preNode1->InitFormatConverters();
+    preNode2->InitFormatConverters();
+    preNode1->SetNextOutput(buffer1.get());
+    preNode2->SetNextOutput(buffer2.get());
+
+    EXPECT_CALL(*preNode1, DoProcess(NEED_DATA_LENGTH))
+        .Times(1)
+        .WillOnce([&preNode1](uint32_t needLen) { return preNode1->DoProcessImpl(needLen); });
+    EXPECT_CALL(*preNode2, DoProcess(NEED_DATA_LENGTH))
+        .Times(1)
+        .WillOnce([&preNode2](uint32_t needLen) { return preNode2->DoProcessImpl(needLen); });
+
+    node_->Connect(preNode1);
+    node_->Connect(preNode2);
+    node_->requestPreNodeDuration_ = NEED_DATA_LENGTH;
+    node_->ReadProcessNodePreOutputData();
+
+    EXPECT_EQ(node_->preNodeResult_.size(), 2);
+}
+
+HWTEST_F(AudioSuiteProcessNodeTest, ReadProcessNodePreOutputData_WithExpiredPreNode, TestSize.Level0)
+{
+    auto buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
+    auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
+    preNode->SetNextOutput(buffer.get());
+
+    EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
+        .Times(0);
+
+    node_->Connect(preNode);
+    preNode.reset();
+    node_->requestPreNodeDuration_ = NEED_DATA_LENGTH;
+    node_->ReadProcessNodePreOutputData();
+
+    EXPECT_TRUE(node_->preNodeResult_.empty());
+}
+
+HWTEST_F(AudioSuiteProcessNodeTest, ReadProcessNodePreOutputData_WithFinishedBuffer, TestSize.Level0)
+{
+    auto buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
+    buffer->SetIsFinished(true);
+    auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
+    preNode->SetNextOutput(buffer.get());
+
+    EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
+        .Times(1)
+        .WillOnce([&preNode](uint32_t needLen) { return preNode->DoProcessImpl(needLen); });
+
+    node_->Connect(preNode);
+    node_->requestPreNodeDuration_ = NEED_DATA_LENGTH;
+    node_->ReadProcessNodePreOutputData();
+
+    EXPECT_TRUE(node_->GetAudioNodeDataFinishedFlag());
+}
+
+HWTEST_F(AudioSuiteProcessNodeTest, ObtainProcessedData_EmptyPreOutputs, TestSize.Level0)
+{
+    auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
+    node_->Connect(preNode);
+
+    EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
+        .Times(1)
+        .WillOnce([&preNode](uint32_t needLen) { return preNode->DoProcessImpl(needLen); });
+
+    node_->requestPreNodeDuration_ = NEED_DATA_LENGTH;
+    auto ret = node_->ObtainProcessedData();
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(AudioSuiteProcessNodeTest, ProcessBypassMode_WithPreNode, TestSize.Level0)
+{
+    node_->SetBypassEffectNode(true);
+    auto buffer = std::make_unique<AudioSuitePcmBuffer>(outFormat_);
+    auto preNode = std::make_shared<FakePreNode>();
+    preNode->InitFormatConverters();
+    preNode->SetNextOutput(buffer.get());
+
+    EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
+        .Times(1)
+        .WillOnce([&preNode](uint32_t needLen) { return preNode->DoProcessImpl(needLen); });
+
+    node_->Connect(preNode);
+    auto ret = node_->ProcessBypassMode(NEED_DATA_LENGTH);
+    EXPECT_EQ(ret, SUCCESS);
+}
 }  // namespace

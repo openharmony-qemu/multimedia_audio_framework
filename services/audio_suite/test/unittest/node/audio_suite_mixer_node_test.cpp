@@ -315,10 +315,7 @@ HWTEST_F(AudioSuiteMixerTest, SubmitPullTasks_NullNode, TestSize.Level0)
     node->InitCacheLength(NEED_DATA_LENGTH);
 
     auto futures = node->SubmitPullTasks();
-    ASSERT_EQ(futures.size(), 1);
-
-    auto result = futures[0].get();
-    EXPECT_FALSE(result.ok);
+    EXPECT_TRUE(futures.empty());
 }
 
 HWTEST_F(AudioSuiteMixerTest, SubmitPullTasks_WithConnectedProducerNode_ShouldOk, TestSize.Level0)
@@ -331,6 +328,7 @@ HWTEST_F(AudioSuiteMixerTest, SubmitPullTasks_WithConnectedProducerNode_ShouldOk
     PcmBufferFormat fmt {SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE};
     auto preNode = std::make_shared<FakeProducerPreNode>(fmt);
     preNode->Init();
+    preNode->InitFormatConverters();
     preNode->SetPattern(0x22);
     preNode->SetFinished(false);
 
@@ -361,12 +359,14 @@ HWTEST_F(AudioSuiteMixerTest, SubmitPullTasks_MultipleConnectedProducerNodes_Sho
 
     auto preNode1 = std::make_shared<FakeProducerPreNode>(fmt);
     preNode1->Init();
+    preNode1->InitFormatConverters();
     preNode1->SetPattern(0x33);
     EXPECT_CALL(*preNode1, DoProcess(NEED_DATA_LENGTH))
         .WillRepeatedly(::testing::Invoke([&](uint32_t needLen) { return preNode1->ProduceOnce(needLen); }));
 
     auto preNode2 = std::make_shared<FakeProducerPreNode>(fmt);
     preNode2->Init();
+    preNode2->InitFormatConverters();
     preNode2->SetPattern(0x44);
     EXPECT_CALL(*preNode2, DoProcess(NEED_DATA_LENGTH))
         .WillRepeatedly(::testing::Invoke([&](uint32_t needLen) { return preNode2->ProduceOnce(needLen); }));
@@ -470,6 +470,251 @@ HWTEST_F(AudioSuiteMixerTest, CollectPullResults_FinishedPrenodeInSet, TestSize.
 
     EXPECT_TRUE(isFinished);
     EXPECT_EQ(preOutputs.size(), 0);
+}
+
+HWTEST_F(AudioSuiteMixerTest, SubmitPullTasks_WeakPtrExpired, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNodeTestHelper>(2);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    PcmBufferFormat fmt {SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE};
+    auto preNode = std::make_shared<FakeProducerPreNode>(fmt);
+    node->Connect(preNode);
+    preNode.reset();
+
+    auto futures = node->SubmitPullTasks();
+    EXPECT_TRUE(futures.empty());
+}
+
+HWTEST_F(AudioSuiteMixerTest, CollectPullResults_MultipleDataWithNull, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    std::vector<AudioSuitePcmBuffer *> preOutputs;
+    std::vector<std::future<AudioSuiteMixerNode::PullResult>> futures;
+
+    AudioSuiteMixerNode::PullResult mockResult;
+    mockResult.ok = true;
+    mockResult.isFinished = false;
+    mockResult.preNode = std::make_shared<AudioSuiteProcessNode>(AudioNodeType::NODE_TYPE_EQUALIZER);
+    
+    AudioSuitePcmBuffer *mockBuffer1 = new AudioSuitePcmBuffer(
+        PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
+    AudioSuitePcmBuffer *mockBuffer2 = nullptr;
+    mockResult.data = {mockBuffer1, mockBuffer2};
+
+    futures.push_back(std::async([mockResult]() mutable { return mockResult; }));
+
+    bool isFinished = node->CollectPullResults(preOutputs, futures);
+
+    EXPECT_FALSE(isFinished);
+    EXPECT_EQ(preOutputs.size(), 1);
+
+    delete mockBuffer1;
+}
+
+HWTEST_F(AudioSuiteMixerTest, ReadProcessNodePreOutputData_WithPreNodes, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    PcmBufferFormat fmt {SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE};
+    auto preNode = std::make_shared<FakeProducerPreNode>(fmt);
+    preNode->Init();
+    preNode->InitFormatConverters();
+    preNode->SetPattern(0x55);
+    preNode->SetFinished(false);
+
+    EXPECT_CALL(*preNode, DoProcess(NEED_DATA_LENGTH))
+        .WillRepeatedly(::testing::Invoke([&](uint32_t needLen) { return preNode->ProduceOnce(needLen); }));
+
+    node->Connect(preNode);
+    node->ReadProcessNodePreOutputData();
+
+    EXPECT_FALSE(node->preNodeResult_.empty());
+}
+
+HWTEST_F(AudioSuiteMixerTest, CollectPullResults_EmptyDataInFutures, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    std::vector<AudioSuitePcmBuffer *> preOutputs;
+    std::vector<std::future<AudioSuiteMixerNode::PullResult>> futures;
+
+    AudioSuiteMixerNode::PullResult mockResult;
+    mockResult.ok = true;
+    mockResult.isFinished = true;
+    mockResult.preNode = std::make_shared<AudioSuiteProcessNode>(AudioNodeType::NODE_TYPE_EQUALIZER);
+    mockResult.data = {};
+
+    futures.push_back(std::async([mockResult]() mutable { return mockResult; }));
+
+    bool isFinished = node->CollectPullResults(preOutputs, futures);
+
+    EXPECT_TRUE(isFinished);
+    EXPECT_EQ(preOutputs.size(), 0);
+}
+
+HWTEST_F(AudioSuiteMixerTest, CollectPullResults_MultipleBuffersWithNull, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    std::vector<AudioSuitePcmBuffer *> preOutputs;
+    std::vector<std::future<AudioSuiteMixerNode::PullResult>> futures;
+
+    AudioSuiteMixerNode::PullResult mockResult;
+    mockResult.ok = true;
+    mockResult.isFinished = false;
+    mockResult.preNode = std::make_shared<AudioSuiteProcessNode>(AudioNodeType::NODE_TYPE_EQUALIZER);
+    
+    AudioSuitePcmBuffer *mockBuffer1 = new AudioSuitePcmBuffer(
+        PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
+    AudioSuitePcmBuffer *mockBuffer2 = nullptr;
+    AudioSuitePcmBuffer *mockBuffer3 = new AudioSuitePcmBuffer(
+        PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
+    mockResult.data = {mockBuffer1, mockBuffer2, mockBuffer3};
+
+    futures.push_back(std::async([mockResult]() mutable { return mockResult; }));
+
+    bool isFinished = node->CollectPullResults(preOutputs, futures);
+
+    EXPECT_FALSE(isFinished);
+    EXPECT_EQ(preOutputs.size(), 2);
+
+    delete mockBuffer1;
+    delete mockBuffer3;
+}
+
+HWTEST_F(AudioSuiteMixerTest, CollectPullResults_FinishedNodeInSet, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNodeTestHelper>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    std::vector<AudioSuitePcmBuffer *> preOutputs;
+    std::vector<std::future<AudioSuiteMixerNode::PullResult>> futures;
+
+    auto preNode = std::make_shared<AudioSuiteProcessNode>(AudioNodeType::NODE_TYPE_EQUALIZER);
+    node->GetFinishedPrenodeSet().insert(preNode);
+
+    AudioSuiteMixerNode::PullResult mockResult;
+    mockResult.ok = true;
+    mockResult.isFinished = false;
+    mockResult.preNode = preNode;
+    
+    AudioSuitePcmBuffer *mockBuffer = new AudioSuitePcmBuffer(
+        PcmBufferFormat(SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE));
+    mockResult.data = {mockBuffer};
+
+    futures.push_back(std::async([mockResult]() mutable { return mockResult; }));
+
+    bool isFinished = node->CollectPullResults(preOutputs, futures);
+
+    EXPECT_TRUE(isFinished);
+    EXPECT_EQ(preOutputs.size(), 0);
+
+    delete mockBuffer;
+}
+
+HWTEST_F(AudioSuiteMixerTest, SubmitPullTasks_WithExpiredPreNodes, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNodeTestHelper>(2);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    PcmBufferFormat fmt {SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE};
+    auto preNode1 = std::make_shared<FakeProducerPreNode>(fmt);
+    auto preNode2 = std::make_shared<FakeProducerPreNode>(fmt);
+    
+    node->Connect(preNode1);
+    node->Connect(preNode2);
+    
+    preNode1.reset();
+    preNode2.reset();
+
+    auto futures = node->SubmitPullTasks();
+    EXPECT_TRUE(futures.empty());
+}
+
+HWTEST_F(AudioSuiteMixerTest, SubmitPullTasks_MixedValidAndExpired, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNodeTestHelper>(2);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    PcmBufferFormat fmt {SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE};
+    auto preNode1 = std::make_shared<FakeProducerPreNode>(fmt);
+    auto preNode2 = std::make_shared<FakeProducerPreNode>(fmt);
+    
+    preNode1->Init();
+    preNode1->InitFormatConverters();
+    preNode1->SetPattern(0x66);
+    EXPECT_CALL(*preNode1, DoProcess(NEED_DATA_LENGTH))
+        .WillRepeatedly(::testing::Invoke([&](uint32_t needLen) { return preNode1->ProduceOnce(needLen); }));
+
+    node->Connect(preNode1);
+    node->Connect(preNode2);
+    
+    preNode2.reset();
+
+    auto futures = node->SubmitPullTasks();
+    EXPECT_EQ(futures.size(), 1);
+
+    auto result = futures[0].get();
+    EXPECT_TRUE(result.ok);
+}
+
+HWTEST_F(AudioSuiteMixerTest, SignalProcess_MultipleInputs, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    PcmBufferFormat fmt {SAMPLE_RATE_48000, CHANNEL_COUNT, LAY_OUT, SAMPLE_F32LE};
+    
+    AudioSuitePcmBuffer buffer1(fmt);
+    AudioSuitePcmBuffer buffer2(fmt);
+    AudioSuitePcmBuffer buffer3(fmt);
+    
+    std::vector<AudioSuitePcmBuffer *> inputs = {&buffer1, &buffer2, &buffer3};
+    std::vector<AudioSuitePcmBuffer *> outPcmbuffer = node->SignalProcess(inputs);
+    
+    ASSERT_FALSE(outPcmbuffer.empty());
+    ASSERT_NE(outPcmbuffer[0], nullptr);
+}
+
+HWTEST_F(AudioSuiteMixerTest, SignalProcess_NullInput, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    std::vector<AudioSuitePcmBuffer *> inputs = {nullptr};
+    std::vector<AudioSuitePcmBuffer *> outPcmbuffer = node->SignalProcess(inputs);
+    
+    ASSERT_FALSE(outPcmbuffer.empty());
+    EXPECT_EQ(outPcmbuffer[0], nullptr);
+}
+
+HWTEST_F(AudioSuiteMixerTest, SignalProcess_EmptyInputs, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteMixerNode>(5);
+    node->Init();
+    node->InitCacheLength(NEED_DATA_LENGTH);
+
+    std::vector<AudioSuitePcmBuffer *> inputs = {};
+    std::vector<AudioSuitePcmBuffer *> outPcmbuffer = node->SignalProcess(inputs);
+    
+    ASSERT_FALSE(outPcmbuffer.empty());
+    EXPECT_EQ(outPcmbuffer[0], nullptr);
 }
 
 }  // namespace
