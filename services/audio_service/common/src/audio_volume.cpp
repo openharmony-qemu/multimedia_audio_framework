@@ -109,6 +109,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         return volumes->volume;
     }
     GetVolumeValues(sessionId, srcStreamType, deviceClass, volumes);
+    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
 }
 
@@ -138,6 +139,9 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     if (itSV != systemVolume_.end()) {
         volumes->volumeSystem = itSV->second.totalVolume_;
         volumeLevel = itSV->second.volumeLevel_;
+        if (streamType == STREAM_VOICE_COMMUNICATION && IsVgsVolumeSupported() && volumes->volumeSystem > 0.0f) {
+            volumes->volumeSystem = 1.0f;
+        }
     } else {
         AUDIO_ERR_LOG("no system volume, volumeType:%{public}d deviceClass%{public}s", volumeType, deviceClass.c_str());
     }
@@ -160,7 +164,6 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
     Trace trace("AudioVolume::GetVolume " + std::to_string(volumes->volume));
-    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
 }
 
 uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId)
