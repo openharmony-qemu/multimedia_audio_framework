@@ -366,8 +366,9 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     auto &sessionSet = startedSleStreamType_[deviceAddr][streamType].sessionIds;
-    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u sessionId %{public}d",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
+    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u with size[%{public}zu]\
+        sessionId %{public}d", AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd,
+        streamType, sessionSet.size(), sessionId);
     if (isAdd) {
         sessionSet.insert(sessionId);
     } else {
