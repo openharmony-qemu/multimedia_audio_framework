@@ -175,6 +175,7 @@ public:
     StreamStatus GetStreamInServerStatus() override;
 
     bool TurnOnMicIndicator(CapturerState capturerState);
+    void ReportNoBgPermissionEvent();
     bool TurnOffMicIndicator(CapturerState capturerState);
     int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
         const std::string &adjustTime, uint32_t code) override;

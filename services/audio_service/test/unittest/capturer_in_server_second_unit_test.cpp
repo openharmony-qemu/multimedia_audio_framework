@@ -1153,5 +1153,45 @@ HWTEST_F(CapturerInServerSecondUnitTest, RequestUserPrivacyAuthority_001, TestSi
     int32_t result = capturerInServer_->RequestUserPrivacyAuthority();
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
+
+/*
+ * @tc.name  : Test SetInMainThreadState.
+ * @tc.type  : FUNC
+ * @tc.number: SetInMainThreadState_001
+ * @tc.desc  : Test SetInMainThreadState interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, SetInMainThreadState_001, TestSize.Level4)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    auto result = capturerInServer_->SetInMainThreadState(false);
+    EXPECT_EQ(capturerInServer_->isInMainThread_, false);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: SetInMainThreadStateAndReportOverflow_001.
+ * @tc.desc  : Test SetInMainThreadState and ReportOverflowEvent combination.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, SetInMainThreadStateAndReportOverflow_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+
+    int32_t result1 = capturerInServer_->SetInMainThreadState(true);
+    EXPECT_EQ(result1, SUCCESS);
+
+    capturerInServer_->overFlowLogFlag_ = 15;
+    capturerInServer_->ReportOverflowEvent();
+
+    int32_t result2 = capturerInServer_->SetInMainThreadState(false);
+    EXPECT_EQ(result2, SUCCESS);
+
+    capturerInServer_->overFlowLogFlag_ = 30;
+    capturerInServer_->ReportOverflowEvent();
+}
 } // namespace AudioStandard
 } // namespace OHOS

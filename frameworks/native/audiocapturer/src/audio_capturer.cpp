@@ -2080,5 +2080,14 @@ int32_t AudioCapturerPrivate::StartPlaybackCapture()
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->RequestUserPrivacyAuthority(sessionID_);
 }
+
+int32_t AudioCapturerPrivate::SetInMainThreadState(bool isInMainThread)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    if (!isFirstTimeSetMainThreadState_) {
+        return ERROR_ILLEGAL_STATE;
+    }
+    return audioStream_->SetInMainThreadState(isInMainThread);
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

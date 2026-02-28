@@ -177,6 +177,12 @@ int32_t RendererInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t RendererInClientInner::SetInMainThreadState(bool isInMainThread)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;

@@ -1993,6 +1993,12 @@ bool CapturerInClientInner::ResetStaticPlayPosition()
     AUDIO_ERR_LOG("Not Support!");
     return false;
 }
+
+int32_t CapturerInClientInner::SetInMainThreadState(bool isInMainThread)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "IpcStream is nullptr");
+    return ipcStream_->SetInMainThreadState(isInMainThread);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // FAST_AUDIO_STREAM_H

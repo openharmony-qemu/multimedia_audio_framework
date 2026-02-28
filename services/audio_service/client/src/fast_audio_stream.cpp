@@ -85,6 +85,12 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
+int32_t FastAudioStream::SetInMainThreadState(bool isInMainThread)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void FastAudioStream::GetRendererInfo(AudioRendererInfo &rendererInfo)
 {
     rendererInfo = rendererInfo_;

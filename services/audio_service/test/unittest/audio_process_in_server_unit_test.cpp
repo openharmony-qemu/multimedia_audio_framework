@@ -2785,5 +2785,23 @@ HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
     audioProcessInServerRet.AddMuteFrameSize(1);
     EXPECT_TRUE(true);
 }
+
+/**
+ * @tc.name  : Test TurnOnMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOnMicIndicator_003
+ * @tc.desc  : Test TurnOnMicIndicator interface with CAPTURER_RUNNING state.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_003, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    ASSERT_NE(audioProcessInServer, nullptr);
+
+    CapturerState capturerState = CAPTURER_RUNNING;
+    bool result = audioProcessInServer->TurnOnMicIndicator(capturerState);
+    EXPECT_FALSE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS
