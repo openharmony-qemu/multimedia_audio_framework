@@ -598,16 +598,28 @@ void AudioPipeSelector::SetPipeTypeByStreamType(AudioPipeType &nowPipeType,
     }
 }
 
-void AudioPipeSelector::CheckIfConcedeExisting(ConcurrencyAction &action,
-    const std::shared_ptr<AudioStreamDescriptor> &existingStream,
-    const std::shared_ptr<AudioStreamDescriptor> &incomingStream)
+ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
+    std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    std::shared_ptr<AudioStreamDescriptor> &incomingStream)
 {
+    AudioPipeType existingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+        existingStream->routeFlag_, existingStream->audioMode_);
+    AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+        incomingStream->routeFlag_, incomingStream->audioMode_);
+    SetPipeTypeByStreamType(existingPipe, existingStream);
+    SetPipeTypeByStreamType(commingPipe, incomingStream);
+    ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
+    action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     bool isIncomingStreamIsLoopback = incomingStream->capturerInfo_.isLoopback ||
         incomingStream->rendererInfo_.isLoopback;
-    bool isConcedeExisting = action == CONCEDE_INCOMING && (existingStream->IsNoRunningOffload() ||
+    // No running offload can not concede incoming special pipe
+    // incoming is loopback, concede existing offload
+    bool isConcedeExisting = action == CONCEDE_INCOMING &&
+        (existingStream->IsNoRunningOffload() ||
         (existingStream->IsRouteOffload() && isIncomingStreamIsLoopback));
-    CHECK_AND_RETURN(isConcedeExisting);
+    CHECK_AND_RETURN_RET(isConcedeExisting, action);
     action = CONCEDE_EXISTING;
+    return action;
 }
 
 void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
@@ -639,17 +651,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
 {
-    AudioPipeType existingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
-        existingStream->routeFlag_, existingStream->audioMode_);
-    AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
-        incomingStream->routeFlag_, incomingStream->audioMode_);
-    SetPipeTypeByStreamType(existingPipe, existingStream);
-    SetPipeTypeByStreamType(commingPipe, incomingStream);
-    ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
-    action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
-    // No running offload can not concede incoming special pipe
-    // incoming is loopback, concede offload
-    CheckIfConcedeExisting(action, existingStream, incomingStream);
+    ConcurrencyAction action = DetermineConcurrencyAction(existingStream, incomingStream);
 
     JUDGE_AND_INFO_LOG(action != PLAY_BOTH, "Action: %{public}u "
         "existingStream id: %{public}u, routeFlag: %{public}u; "
