@@ -566,6 +566,24 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_005, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceManager.
+* @tc.number: GetDevicePriority_001
+* @tc.desc  : Test GetDevicePriority with different conditions.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, GetDevicePriority_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_DP,
+        DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    EXPECT_EQ(audioDeviceManager.GetDevicePriority(desc), PRIORITY_BASE);
+    desc->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    desc->networkId_ = "RemoteDevice";
+    EXPECT_EQ(audioDeviceManager.GetDevicePriority(desc), PRIORITY_DISTRIBUTED);
+    desc->deviceType_ = DeviceType::DEVICE_TYPE_REMOTE_CAST;
+    EXPECT_EQ(audioDeviceManager.GetDevicePriority(desc), PRIORITY_DISTRIBUTED);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
 * @tc.number: TriggerDeviceInfoUpdatedCallback_001
 * @tc.desc  : Test TriggerDeviceInfoUpdatedCallback with different conditions.
 */
