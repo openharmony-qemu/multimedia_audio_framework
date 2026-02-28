@@ -1120,7 +1120,7 @@ bool AudioDeviceStatus::OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &
         if (devType == DEVICE_TYPE_SPEAKER) {
             auto result = audioPolicyManager_.SetDeviceActive(devType, moduleInfo.name, true);
             CHECK_AND_RETURN_RET_LOG(result == SUCCESS, false, "[module_load]::Device failed %{public}d", devType);
-            AudioCoreService::GetCoreService->SetAudioScene(audioSceneManager_.GetAudioScene());
+            AudioCoreService::GetCoreService()->SetAudioScene(audioSceneManager_.GetAudioScene());
         }
     }
 
