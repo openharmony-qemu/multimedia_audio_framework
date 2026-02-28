@@ -462,7 +462,7 @@ int32_t AudioSuiteManager::SetEqualizerFrequencyBandGains(uint32_t nodeId, Audio
         value += std::to_string(gains.gains[idx]);
         value += ":";
     }
-    HILOG_COMM_INFO("[SetEqualizerFrequencyBandGains]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetEqualizerFrequencyBandGains]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -489,7 +489,7 @@ int32_t AudioSuiteManager::SetSpaceRenderPositionParams(uint32_t nodeId, AudioSp
     std::string name = "AudioSpaceRenderPositionParams";
     std::string value =
         std::to_string(position.x) + "," + std::to_string(position.y) + "," + std::to_string(position.z);
-    HILOG_COMM_INFO("[SetSpaceRenderPositionParams]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetSpaceRenderPositionParams]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -541,7 +541,7 @@ int32_t AudioSuiteManager::SetSpaceRenderRotationParams(uint32_t nodeId, AudioSp
     std::string value = std::to_string(rotation.x) + "," + std::to_string(rotation.y) + "," +
                         std::to_string(rotation.z) + "," + std::to_string(rotation.surroundTime) + "," +
                         std::to_string(static_cast<int32_t>(rotation.surroundDirection));
-    HILOG_COMM_INFO("[SetSpaceRenderRotationParams]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetSpaceRenderRotationParams]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -592,7 +592,7 @@ int32_t AudioSuiteManager::SetSpaceRenderExtensionParams(uint32_t nodeId, AudioS
 
     std::string name = "AudioSpaceRenderExtensionParams";
     std::string value = std::to_string(extension.extRadius) + "," + std::to_string(extension.extAngle);
-    HILOG_COMM_INFO("[SetSpaceRenderExtensionParams]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetSpaceRenderExtensionParams]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -643,7 +643,7 @@ int32_t AudioSuiteManager::SetTempoAndPitch(uint32_t nodeId, float speed, float 
 
     std::string name = "speedAndPitch";
     std::string value = std::to_string(speed) + "," + std::to_string(pitch);
-    HILOG_COMM_INFO("[SetTempoAndPitch]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetTempoAndPitch]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -695,7 +695,7 @@ int32_t AudioSuiteManager::SetPureVoiceChangeOption(uint32_t nodeId, AudioPureVo
     std::string value = std::to_string(static_cast<int32_t>(option.optionGender)) + "," +
                         std::to_string(static_cast<int32_t>(option.optionType)) + "," +
                         std::to_string(static_cast<float>(option.pitch));
-    HILOG_COMM_INFO("[SetPureVoiceChangeOption]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetPureVoiceChangeOption]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -745,7 +745,7 @@ int32_t AudioSuiteManager::SetGeneralVoiceChangeType(uint32_t nodeId, AudioGener
 
     std::string name = "AudioGeneralVoiceChangeType";
     std::string value = std::to_string(static_cast<int32_t>(type));
-    HILOG_COMM_INFO("[SetGeneralVoiceChangeType]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetGeneralVoiceChangeType]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -796,7 +796,7 @@ int32_t AudioSuiteManager::SetSoundFieldType(uint32_t nodeId, SoundFieldType sou
 
     std::string name = "SoundFieldType";
     std::string value = std::to_string(static_cast<int32_t>(soundFieldType));
-    HILOG_COMM_INFO("[SetSoundFieldType]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetSoundFieldType]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -820,7 +820,7 @@ int32_t AudioSuiteManager::SetEnvironmentType(uint32_t nodeId, EnvironmentType e
 
     std::string name = "EnvironmentType";
     std::string value = std::to_string(static_cast<int32_t>(environmentType));
-    HILOG_COMM_INFO("[SetEnvironmentType]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetEnvironmentType]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -844,7 +844,7 @@ int32_t AudioSuiteManager::SetVoiceBeautifierType(uint32_t nodeId, VoiceBeautifi
 
     std::string name = "VoiceBeautifierType";
     std::string value = std::to_string(static_cast<int32_t>(voiceBeautifierType));
-    HILOG_COMM_INFO("[SetVoiceBeautifierType]engine set name: %{public}s value: %{public}s",
+    AUDIO_DEBUG_LOG("[SetVoiceBeautifierType]engine set name: %{public}s value: %{public}s",
         name.c_str(), value.c_str());
 
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
