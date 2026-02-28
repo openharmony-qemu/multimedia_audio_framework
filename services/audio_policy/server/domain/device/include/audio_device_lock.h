@@ -78,8 +78,9 @@ public:
         const std::string &macAddress, const std::string &deviceName,
         const AudioStreamInfo &streamInfo);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-        sptr<AudioRendererFilter> filter = nullptr);
-    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "");
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "");
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
     void OnConnectFailed(AudioDeviceDescriptor &desc);
     void UpdateAppVolume(int32_t appUid, int32_t volume);
