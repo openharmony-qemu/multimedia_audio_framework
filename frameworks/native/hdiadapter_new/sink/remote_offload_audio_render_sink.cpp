@@ -102,9 +102,10 @@ void RemoteOffloadAudioRenderSink::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN(deviceManager != nullptr);
-    CHECK_AND_RETURN(IsValidState());
-    deviceManager->DestroyRender(deviceNetworkId_, hdiRenderId_);
-    deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_);
+    if (IsValidState()) {
+        deviceManager->DestroyRender(deviceNetworkId_, hdiRenderId_);
+        deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_);
+    }
     audioRender_.ForceSetRefPtr(nullptr);
     hdiCallback_ = {};
     muteCount_ = 0;
