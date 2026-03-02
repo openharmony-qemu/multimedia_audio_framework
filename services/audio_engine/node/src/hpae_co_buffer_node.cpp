@@ -52,7 +52,7 @@ HpaeCoBufferNode::HpaeCoBufferNode()
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
     waitCountThreshold_ = DEFAULT_WAIT_COUNT;
 
-    for (int i = 0; i < silenceData_.GetFrameLen() * silenceData_.GetChannelCount(); i++) {
+    for (uint32_t i = 0; i < silenceData_.GetFrameLen() * silenceData_.GetChannelCount(); i++) {
         silenceData_.GetPcmDataBuffer()[i] += COLL_SMALL_SIGNAL_NUM;
     }
 }
