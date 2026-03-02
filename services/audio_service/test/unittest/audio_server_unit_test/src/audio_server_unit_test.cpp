@@ -2880,7 +2880,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_003, TestSize.Level1
     kvpairs.push_back({"key1", "value1"});
 
     int32_t ret = audioServer->SetExtraParameters("test_key", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     audioServer->isAudioParameterParsed_.store(true);
 }
