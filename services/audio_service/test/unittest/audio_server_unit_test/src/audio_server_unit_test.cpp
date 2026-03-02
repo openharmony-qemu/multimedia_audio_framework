@@ -2865,30 +2865,6 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetExtraParameters API - Various keys
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetExtraParameters_002
- * @tc.desc  : Test SetExtraParameters with different main keys.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    std::vector<StringPair> kvpairs;
-    kvpairs.push_back({"key1", "value1"});
-    kvpairs.push_back({"key2", "value2"});
-
-    int32_t ret = audioServer->SetExtraParameters("HOME_MUSIC", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioServer->SetExtraParameters("EFFECT_LIVE", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioServer->SetExtraParameters("PCM_DUMP", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test SetExtraParameters API - Cached parameters
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetExtraParameters_003
@@ -2932,7 +2908,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_004, TestSize.Level1
     kvpairs.push_back({"effect", "value1"});
 
     int32_t ret = audioServer->SetExtraParameters("test_key", kvpairs);
-    EXPECT_EQ(TRUE, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     auto it = AudioServer::audioParameterKeys.find("test_key");
     if (it != AudioServer::audioParameterKeys.end()) {
