@@ -53,6 +53,8 @@
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
 #include "util/id_handler.h"
+#include "manager/hdi_monitor.h"
+#include "audio_bundle_manager.h"
 
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
@@ -166,6 +168,31 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_UNPROCESSED,
     SOURCE_TYPE_LIVE,
     SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
+};
+
+const std::set<std::string> ASR_FORBIDDEN_KEYS = {
+    "asr_aec_mode",
+    "ASR_AEC",
+    "asr_ns_mode",
+    "asr_wd_mode",
+    "TTS_2_DEVICE",
+    "TTS_2_MODEM",
+    "MIC_2_MODEM",
+    "MODEM_2_DEVICE",
+    "audio2voicetx",
+    "audiomix2voicetx",
+    "audio2voicetxex",
+    "audiomix2voicetxex",
+    "output_mute=true",
+    "output_mute=false",
+    "input_mute=true",
+    "input_mute=false",
+    "mute_tts=true",
+    "mute_tts=false",
+    "mute_call=true",
+    "mute_call=false",
+    "ouput_mute_ex=true",
+    "ouput_mute_ex=false"
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
@@ -952,6 +979,9 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    CHECK_AND_RETURN_RET_LOG(AudioParameterValueCheck(key, value), ERR_INVALID_PARAM,
+        "AudioParameterValueCheck fail! key: %{public}s, value: %{public}s", key.c_str(), value.c_str());
+
     if (key != "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
         bool ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MODIFY_AUDIO_SETTINGS permission denied");
@@ -3551,6 +3581,20 @@ int32_t AudioServer::RequestUserPrivacyAuthority(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->RequestUserPrivacyAuthority(sessionId);
 }
+
+bool AudioServer::AudioParameterValueCheck(const std::string &key, const std::string &value)
+{
+    for (const auto &keyWord : ASR_FORBIDDEN_KEYS) {
+        if (value.find(keyWord) != std::string::npos) {
+            std::string bundleName = AudioBundleManager::GetBundleNameByToken(IPCSkeleton::GetCallingFullTokenID());
+            HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CHECK_HDI_FAILED, -1,
+                (bundleName + " ASR parameter not allowed in SetAudioParameter! key: " + key + ", value: " + value));
+            return false;
+        }
+    }
+    return true;
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

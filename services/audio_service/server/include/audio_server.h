@@ -471,6 +471,7 @@ private:
     int32_t SetAudioBalanceStatus();
     int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
     void OnStartExpansion();
+    bool AudioParameterValueCheck(const std::string &key, const std::string &value);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

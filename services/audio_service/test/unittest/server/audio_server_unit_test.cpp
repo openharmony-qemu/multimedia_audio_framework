@@ -663,5 +663,339 @@ HWTEST(AudioServerUnitTest, AudioSystemloadListener_OnSystemloadLevel_Edge_001, 
     systemLoadListener->OnSystemloadLevel(10); // Beyond maximum level
 }
 
+/**
+ * @tc.name  : Test AudioParameterValueCheck with valid parameters
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_001
+ * @tc.desc  : Test AudioParameterValueCheck with valid parameters that should pass
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_001 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with valid parameters (no forbidden keywords)
+    std::string key = "volume_level";
+    std::string value = "50";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+
+    // Test with another valid parameter
+    key = "sample_rate";
+    value = "48000";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with forbidden keyword asr_aec_mode
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_002
+ * @tc.desc  : Test AudioParameterValueCheck with forbidden keyword asr_aec_mode
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_002 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with forbidden keyword "asr_aec_mode"
+    std::string key = "aec_config";
+    std::string value = "asr_aec_mode=1";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with forbidden keyword ASR_AEC
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_003
+ * @tc.desc  : Test AudioParameterValueCheck with forbidden keyword ASR_AEC
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_003 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with forbidden keyword "ASR_AEC"
+    std::string key = "aec_config";
+    std::string value = "ASR_AEC=enabled";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with forbidden keyword TTS_2_DEVICE
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_004
+ * @tc.desc  : Test AudioParameterValueCheck with forbidden keyword TTS_2_DEVICE
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_004 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with forbidden keyword "TTS_2_DEVICE"
+    std::string key = "routing_config";
+    (void)key;
+    std::string value = "TTS_2_DEVICE=primary";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with forbidden keyword audio2voicetx
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_005
+ * @tc.desc  : Test AudioParameterValueCheck with forbidden keyword audio2voicetx
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_005 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with forbidden keyword "audio2voicetx"
+    std::string key = "voice_config";
+    (void)key;
+    std::string value = "audio2voicetx=true";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with forbidden keyword output_mute
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_006
+ * @tc.desc  : Test AudioParameterValueCheck with forbidden keyword output_mute=true/false
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_006, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_006 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with forbidden keyword "output_mute=true"
+    std::string key = "mute_config";
+    (void)key;
+    std::string value = "output_mute=true";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+
+    // Test with forbidden keyword "output_mute=false"
+    value = "output_mute=false";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with empty strings
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_007
+ * @tc.desc  : Test AudioParameterValueCheck with empty key and value strings
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_007, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_007 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with empty key and value
+    std::string key = "";
+    std::string value = "";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+
+    // Test with empty value only
+    key = "some_key";
+    value = "";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with multiple forbidden keywords
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_008
+ * @tc.desc  : Test AudioParameterValueCheck with multiple forbidden keywords in value
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_008, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_008 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with multiple forbidden keywords
+    std::string key = "config";
+    (void)key;
+    std::string value = "asr_aec_mode=1;TTS_2_DEVICE=primary";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with partial keyword match
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_009
+ * @tc.desc  : Test AudioParameterValueCheck with partial keyword match (should fail)
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_009, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_009 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with partial match of forbidden keyword
+    std::string key = "config";
+    (void)key;
+    std::string value = "prefix_asr_aec_mode_suffix";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with similar but valid parameters
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_010
+ * @tc.desc  : Test AudioParameterValueCheck with similar but valid parameters
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_010, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_010 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with similar but valid parameters
+    std::string key = "aec_config";
+    std::string value = "aec_mode=1"; // Not "asr_aec_mode"
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+
+    value = "aec_enabled=true"; // Not "asr_aec_mode"
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with special characters
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_011
+ * @tc.desc  : Test AudioParameterValueCheck with special characters in value
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_011, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_011 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with special characters (should pass)
+    std::string key = "config";
+    std::string value = "value@#$%^&*()";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+
+    // Test with special characters including forbidden keyword
+    value = "test_asr_aec_mode_test";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with numeric values
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_012
+ * @tc.desc  : Test AudioParameterValueCheck with numeric values
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_012, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_012 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with numeric values (should pass)
+    std::string key = "volume";
+    std::string value = "100";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+
+    value = "0";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+
+    value = "-1";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with long values
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_013
+ * @tc.desc  : Test AudioParameterValueCheck with long string values
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_013, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_013 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test with long valid value
+    std::string key = "config";
+    std::string value(1000, 'a'); // 1000 'a' characters
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+
+    // Test with long value containing forbidden keyword
+    value = std::string(500, 'a') + "asr_aec_mode" + std::string(500, 'b');
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+}
+
+/**
+ * @tc.name  : Test AudioParameterValueCheck with case sensitivity
+ * @tc.type  : FUNC
+ * @tc.number: AudioParameterValueCheck_014
+ * @tc.desc  : Test AudioParameterValueCheck with case sensitivity
+ */
+HWTEST(AudioServerUnitTest, AudioParameterValueCheck_014, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest AudioParameterValueCheck_014 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+
+    // Test case sensitivity - ASR_AEC should fail
+    std::string key = "config";
+    std::string value = "ASR_AEC=1";
+    bool boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+
+    // Test case sensitivity - asr_aec_mode should fail
+    value = "asr_aec_mode=1";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_FALSE(boolResult);
+
+    // Test with different case - should pass
+    value = "Asr_Aec_Mode=1";
+    boolResult = audioServer->AudioParameterValueCheck(key, value);
+    EXPECT_TRUE(boolResult);
+}
+
 } // namespace AudioStandard
 } //
