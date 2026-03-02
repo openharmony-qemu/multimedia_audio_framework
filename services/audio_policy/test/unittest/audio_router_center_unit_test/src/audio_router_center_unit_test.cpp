@@ -17,6 +17,9 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_zone_service.h"
+#include "audio_scene_manager.h"
+#include "audio_stream_collector.h"
+#include "audio_device_manager.h"
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
@@ -27,6 +30,8 @@
 using namespace testing::ext;
 using namespace testing;
 using ::testing::_;
+using ::testing::Return;
+using ::testing::ByMove;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -361,17 +366,20 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> callRenderRet_;
     std::shared_ptr<AudioDeviceDescriptor> callCaptureRet_;
     std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet_;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringRenderRet_;
 
     MockRouter(RouterType type = ROUTER_TYPE_DEFAULT,
         std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet = nullptr,
         std::shared_ptr<AudioDeviceDescriptor> callRenderRet = nullptr,
         std::shared_ptr<AudioDeviceDescriptor> callCaptureRet = nullptr,
-        std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet = nullptr)
+        std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet = nullptr,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringRenderRet = {})
         : routerType_(type),
           mediaRenderRet_(std::move(mediaRenderRet)),
           callRenderRet_(std::move(callRenderRet)),
           callCaptureRet_(std::move(callCaptureRet)),
-          recordCaptureRet_(std::move(recordCaptureRet)) {}
+          recordCaptureRet_(std::move(recordCaptureRet)),
+          ringRenderRet_(std::move(ringRenderRet)) {}
 
     std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
     {
@@ -390,8 +398,13 @@ public:
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override
     {
-        static const std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyVector;
-        return emptyVector;
+        if (!ringRenderRet_.empty()) {
+            return ringRenderRet_;
+        }
+        if (mediaRenderRet_) {
+            return {mediaRenderRet_};
+        }
+        return {};
     }
 
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override
@@ -688,6 +701,209 @@ HWTEST(AudioRouterCenterUnitTest, GetBypassWithSco_001, TestSize.Level1)
     AudioScene audioScene = AUDIO_SCENE_DEFAULT;
     auto result = center.GetBypassWithSco(audioScene);
     EXPECT_EQ(result, TEST_RETRETURN);
+}
+
+/**
+ * @tc.name  : Test MediaFollowRingStrategy.
+ * @tc.number: AudioRouterCenter_011
+ * @tc.desc  : Test MEDIA stream follows RINGTONE device, audio scene is RINGING.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_011, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> speakerDevice = std::make_shared<AudioDeviceDescriptor>();
+    speakerDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    speakerDevice->deviceId_ = 100;
+    
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDevices;
+    ringDevices.push_back(speakerDevice);
+
+    auto mockRingRouter = std::make_unique<MockRouter>(
+        ROUTER_TYPE_DEFAULT,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        ringDevices
+    );
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.ringRenderRouters_.clear();
+    audioRouterCenter.ringRenderRouters_.emplace_back(std::move(mockRingRouter));
+
+    AudioSceneManager &audioSceneManager = AudioSceneManager::GetInstance();
+    audioSceneManager.audioScene_ = AUDIO_SCENE_RINGING;
+    audioSceneManager.lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_DEFAULT;
+    info.caller = "test_caller";
+    info.privacyType = PRIVACY_TYPE_PUBLIC;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
+        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result[0]->deviceId_, 100);
+}
+
+/**
+ * @tc.name  : Test MediaFollowRingStrategy.
+ * @tc.number: AudioRouterCenter_012
+ * @tc.desc  : Test MEDIA stream falls back to dafault media device when device is invalid.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_012, TestSize.Level1)
+{
+    auto mediaDevice = std::make_shared<AudioDeviceDescriptor>();
+    mediaDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    mediaDevice->deviceId_ = 200;
+    
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyRingDevices;
+
+    auto mockRingRouter = std::make_unique<MockRouter>(
+        ROUTER_TYPE_DEFAULT,
+        mediaDevice,
+        nullptr,
+        nullptr,
+        nullptr,
+        emptyRingDevices
+    );
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.ringRenderRouters_.clear();
+    audioRouterCenter.ringRenderRouters_.emplace_back(std::move(mockRingRouter));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager &audioSceneManager = AudioSceneManager::GetInstance();
+    audioSceneManager.audioScene_ = AUDIO_SCENE_RINGING;
+    audioSceneManager.lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_DEFAULT;
+    info.caller = "test_caller";
+    info.privacyType = PRIVACY_TYPE_PUBLIC;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
+        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result[0]->deviceId_, 200);
+}
+
+/**
+ * @tc.name  : Test MediaFollowRingStrategy.
+ * @tc.number: AudioRouterCenter_013
+ * @tc.desc  : Test MEDIA stream follows VOICE_RINGTONE device, audio scene is VOICE_RINGING.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_013, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> speakerDevice = std::make_shared<AudioDeviceDescriptor>();
+    speakerDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    speakerDevice->deviceId_ = 101;
+    
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDevices;
+    ringDevices.push_back(speakerDevice);
+
+    auto mockRingRouter = std::make_unique<MockRouter>(
+        ROUTER_TYPE_DEFAULT,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        ringDevices
+    );
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.ringRenderRouters_.clear();
+    audioRouterCenter.ringRenderRouters_.emplace_back(std::move(mockRingRouter));
+
+    AudioSceneManager &audioSceneManager = AudioSceneManager::GetInstance();
+    audioSceneManager.audioScene_ = AUDIO_SCENE_VOICE_RINGING;
+    audioSceneManager.lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_DEFAULT;
+    info.caller = "test_caller";
+    info.privacyType = PRIVACY_TYPE_PUBLIC;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
+        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result[0]->deviceId_, 101);
+}
+
+/**
+ * @tc.name  : Test MediaFollowRingStrategy.
+ * @tc.number: AudioRouterCenter_014
+ * @tc.desc  : Test MEDIA stream falls back to dafault media device when device is invalid.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_014, TestSize.Level1)
+{
+    auto mediaDevice = std::make_shared<AudioDeviceDescriptor>();
+    mediaDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    mediaDevice->deviceId_ = 300;
+    
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyRingDevices;
+
+    auto mockRingRouter = std::make_unique<MockRouter>(
+        ROUTER_TYPE_DEFAULT,
+        mediaDevice,
+        nullptr,
+        nullptr,
+        nullptr,
+        emptyRingDevices
+    );
+    AudioRouterCenter &audioRouterCenter = AudioRouterCenter::GetAudioRouterCenter();
+    audioRouterCenter.ringRenderRouters_.clear();
+    audioRouterCenter.ringRenderRouters_.emplace_back(std::move(mockRingRouter));
+    audioRouterCenter.audioDeviceRefinerCb_ = nullptr;
+
+    AudioSceneManager &audioSceneManager = AudioSceneManager::GetInstance();
+    audioSceneManager.audioScene_ = AUDIO_SCENE_VOICE_RINGING;
+    audioSceneManager.lastAudioScene_ = AUDIO_SCENE_DEFAULT;
+
+    FetchDeviceInfo info;
+    info.streamUsage = STREAM_USAGE_MEDIA;
+    info.clientUID = 1000;
+    info.routerType = ROUTER_TYPE_DEFAULT;
+    info.caller = "test_caller";
+    info.privacyType = PRIVACY_TYPE_PUBLIC;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
+        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+    EXPECT_EQ(result.size(), 1);
+    ASSERT_NE(result[0], nullptr);
+    EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result[0]->deviceId_, 300);
+}
+
+/**
+ * @tc.name  : Test MediaFollowRingStrategy.
+ * @tc.number: AudioRouterCenter_015
+ * @tc.desc  : Verify that Ringing scene not tigger media follow call strategy.
+ */
+HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_015, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_RINGING));
+    EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_VOICE_RINGING));
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CALL));
+    EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CHAT));
 }
 } // namespace AudioStandard
 } // namespace OHOS

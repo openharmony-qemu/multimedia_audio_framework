@@ -152,16 +152,44 @@ RouterType AudioRouterCenter::GetBypassWithSco(AudioScene audioScene)
     return bypassWithSco;
 }
 
+void AudioRouterCenter::PostProcessOutPutDeviceLog(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+    FetchDeviceInfo &bak, RouterType &routerType, const FetchDeviceInfo &info)
+{
+    if (descs.size() > 0 && descs[0] != nullptr) {
+        int32_t audioId_ = descs[0]->deviceId_;
+        DeviceType type = descs[0]->deviceType_;
+        descs[0]->routerType_ = routerType;
+        HILOG_COMM_INFO("[FetchOutputDevicesInner][%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], "
+            "1st type:[%{public}d], id:[%{public}d], router:%{public}d ", info.caller.c_str(), bak.streamUsage,
+            info.clientUID, descs.size(), type, audioId_, routerType);
+    }
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::MediaFollowRingStrategy(StreamUsage streamUsage,
+    int32_t clientUID, StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType)
+{
+    FetchDeviceInfo info = {
+        ringStreamUsage, ringStreamUsage, clientUID, routerType, PIPE_TYPE_OUT_NORMAL, PRIVACY_TYPE_PUBLIC
+    };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDevices;
+    DealRingRenderRouters(ringDevices, info, routerType);
+    if (!ringDevices.empty() && ringDevices[0] != nullptr &&
+        ringDevices[0]->deviceType_ != DEVICE_TYPE_NONE) {
+        AUDIO_INFO_LOG("Media follow ring strategy, replace usage %{public}d to %{public}d",
+            streamUsage, ringStreamUsage);
+        return ringDevices[0];
+    }
+    AUDIO_INFO_LOG("Media follow ring strategy fallback, replace usage %{public}d to %{public}d",
+        streamUsage, ringStreamUsage);
+    return FetchMediaRenderDevice(ringStreamUsage, clientUID, routerType, bypassType);
+}
+
 bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 {
     if (audioScene == AUDIO_SCENE_PHONE_CALL) {
         return true;
     }
     if (audioScene == AUDIO_SCENE_PHONE_CHAT) {
-        return true;
-    }
-    if ((audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) &&
-        HasScoDevice()) {
         return true;
     }
     return false;
@@ -197,7 +225,12 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
                 bak.streamUsage);
             desc = FetchCallRenderDevice(bak.streamUsage, clientUID, routerType, bypassType,
                 GetBypassWithSco(audioScene));
-        } else {
+        } else if (audioScene == AUDIO_SCENE_RINGING || audioScene == AUDIO_SCENE_VOICE_RINGING) {
+            StreamUsage ringStreamUsage = (audioScene == AUDIO_SCENE_RINGING) ?
+                STREAM_USAGE_RINGTONE : STREAM_USAGE_VOICE_RINGTONE;
+                desc = MediaFollowRingStrategy(streamUsage, clientUID, ringStreamUsage,
+                    routerType, bypassType);
+        }  else {
             desc = FetchMediaRenderDevice(streamUsage, clientUID, routerType, bypassType);
         }
         descs.push_back(move(desc));
@@ -215,14 +248,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         bak.routerType = routerType;
         audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, bak);
     }
-    if (descs.size() > 0 && descs[0] != nullptr) {
-        int32_t audioId_ = descs[0]->deviceId_;
-        DeviceType type = descs[0]->deviceType_;
-        descs[0]->routerType_ = routerType;
-        HILOG_COMM_INFO("[FetchOutputDevicesInner][%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], "
-            "1st type:[%{public}d], id:[%{public}d], router:%{public}d ", info.caller.c_str(), streamUsage,
-            clientUID, descs.size(), type, audioId_, routerType);
-    }
+    PostProcessOutPutDeviceLog(descs, bak, routerType, info);
     return descs;
 }
 
