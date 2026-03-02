@@ -622,5 +622,23 @@ HWTEST_F(AudioDeviceManagerUnitTest, TriggerDeviceInfoUpdatedCallback_001, TestS
     result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
     EXPECT_TRUE(result);
 }
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioDeviceManagerUnitTest_020.
+* @tc.desc  : Test GetActiveScoDevice.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_020, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
+    desc->macAddress_ = "00:11:22:33:44:55";
+    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
+    std::string scoMac = "00:11:22:33:44:55";
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+        DeviceRole::INPUT_DEVICE);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->macAddress_, "");
+}
 } // namespace AudioStandard
 } // namespace OHOS
