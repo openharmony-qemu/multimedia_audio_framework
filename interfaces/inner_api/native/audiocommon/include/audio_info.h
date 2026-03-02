@@ -1796,9 +1796,9 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
-class AudioStreamPolicyServiceDiedCallback {
+class RemoteDiedCallback {
 public:
-    virtual ~AudioStreamPolicyServiceDiedCallback() = default;
+    virtual ~RemoteDiedCallback() = default;
 
     /**
      * Called when audio policy service died.

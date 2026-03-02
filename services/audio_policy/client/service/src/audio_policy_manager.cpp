@@ -43,10 +43,8 @@ constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
 constexpr int32_t CREATE_RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t CREATE_MAX_RETRY_COUNT = 8;
 std::mutex g_cBMapMutex;
-std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> AudioPolicyManager::capturerCB_;
-std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 std::vector<AudioServerDiedCallBack> AudioPolicyManager::serverDiedCbks_;
 std::mutex AudioPolicyManager::serverDiedCbkMutex_;
 std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> AudioPolicyManager::clientTrackerStubMap_;
@@ -280,21 +278,6 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
         }
     }
     GetInstance().RecoverAudioPolicyCallbackClient();
-
-    {
-        std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
-        if (audioStreamCBMap_.size() != 0) {
-            for (auto it = audioStreamCBMap_.begin(); it != audioStreamCBMap_.end();) {
-                auto cb = (*it).lock();
-                if (cb == nullptr) {
-                    it = audioStreamCBMap_.erase(it);
-                    continue;
-                }
-                cb->OnAudioPolicyServiceDied();
-                ++it;
-            }
-        }
-    }
 
     {
         std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
@@ -1662,34 +1645,6 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
     std::lock_guard<std::mutex> lockCbMap(g_cBMapMutex);
     AUDIO_DEBUG_LOG("client pid: %{public}d", clientPid);
     rendererCBMap_.erase(getpid());
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::RegisterAudioStreamPolicyServerDiedCb(
-    const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
-    AUDIO_DEBUG_LOG("RegisterAudioStreamPolicyServerDiedCb");
-    audioStreamCBMap_.emplace_back(callback);
-
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::UnregisterAudioStreamPolicyServerDiedCb(
-    const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
-    AUDIO_DEBUG_LOG("UnregisterAudioStreamPolicyServerDiedCb");
-
-    audioStreamCBMap_.erase(std::remove_if(audioStreamCBMap_.begin(), audioStreamCBMap_.end(),
-        [&callback] (const weak_ptr<AudioStreamPolicyServiceDiedCallback> &cb) {
-            auto sharedCb = cb.lock();
-            if (sharedCb == callback || sharedCb == nullptr) {
-                return true;
-            }
-            return false;
-        }), audioStreamCBMap_.end());
-
     return SUCCESS;
 }
 

@@ -64,7 +64,8 @@ public:
     MOCK_METHOD(uint32_t, GetOverflowCount, (), (override));
     MOCK_METHOD(void, SetUnderflowCount, (uint32_t underflowCount), (override));
     MOCK_METHOD(void, SetOverflowCount, (uint32_t overflowCount), (override));
-
+    MOCK_METHOD(int32_t, RegisterRemoteDiedCallback, (const std::shared_ptr<RemoteDiedCallback> &callback), (override));
+    MOCK_METHOD(int32_t, UnregisterRemoteDiedCallback, (), (override));
     MOCK_METHOD(int64_t, GetFramesWritten, (), (override));
     MOCK_METHOD(int64_t, GetFramesRead, (), (override));
 

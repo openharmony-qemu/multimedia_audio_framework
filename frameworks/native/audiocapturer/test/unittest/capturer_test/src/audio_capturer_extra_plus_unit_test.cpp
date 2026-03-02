@@ -273,7 +273,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_003, TestSize.Level1)
     capturer->WriteOverflowEvent();
 
     capturer->audioPolicyServiceDiedCallback_ = std::make_shared<CapturerPolicyServiceDiedCallbackTestStub>();
-    auto status = capturer->RemoveCapturerPolicyServiceDiedCallback();
+    auto status = capturer->RemoveCapturerPolicyServiceDiedCallback(capturer->audioStream_);
     EXPECT_EQ(status, 0);
 
     IAudioStream::SwitchInfo info;

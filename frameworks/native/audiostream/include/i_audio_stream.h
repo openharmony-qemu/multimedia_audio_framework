@@ -204,6 +204,9 @@ public:
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
 
+    virtual int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) = 0;
+    virtual int32_t UnregisterRemoteDiedCallback() = 0;
+
     // callback mode api
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
     virtual AudioRenderMode GetRenderMode() = 0;

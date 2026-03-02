@@ -340,7 +340,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     }
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret, HILOG_COMM_ERROR("[SetParams]InitAudioStream failed"));
 
-    RegisterCapturerPolicyServiceDiedCallback();
+    RegisterCapturerPolicyServiceDiedCallback(audioStream_);
 
     if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
         AUDIO_ERR_LOG("GetAudioSessionID failed!");
@@ -957,7 +957,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
-    RemoveCapturerPolicyServiceDiedCallback();
+    RemoveCapturerPolicyServiceDiedCallback(audioStream_);
 
     return audioStream_->ReleaseAudioStream() ? SUCCESS : ERROR;
 }
@@ -1430,7 +1430,7 @@ int32_t AudioCapturerPrivate::RemoveAudioCapturerInfoChangeCallback(
     return SUCCESS;
 }
 
-int32_t AudioCapturerPrivate::RegisterCapturerPolicyServiceDiedCallback()
+int32_t AudioCapturerPrivate::RegisterCapturerPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream)
 {
     std::lock_guard<std::mutex> lock(capturerPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("AudioCapturerPrivate::SetCapturerPolicyServiceDiedCallback");
@@ -1440,25 +1440,21 @@ int32_t AudioCapturerPrivate::RegisterCapturerPolicyServiceDiedCallback()
             AUDIO_ERR_LOG("Memory allocation failed!!");
             return ERROR;
         }
-        AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioPolicyServiceDiedCallback_);
         audioPolicyServiceDiedCallback_->SetAudioCapturerObj(weak_from_this());
         audioPolicyServiceDiedCallback_->SetAudioInterrupt(audioInterrupt_);
     }
+    CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    ipcStream->RegisterRemoteDiedCallback(audioPolicyServiceDiedCallback_);
     return SUCCESS;
 }
 
-int32_t AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback()
+int32_t AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream)
 {
     std::lock_guard<std::mutex> lock(capturerPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("AudioCapturerPrivate::RemoveCapturerPolicyServiceDiedCallback");
     if (audioPolicyServiceDiedCallback_) {
-        int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(
-            audioPolicyServiceDiedCallback_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("RemoveCapturerPolicyServiceDiedCallback failed");
-            audioPolicyServiceDiedCallback_ = nullptr;
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+        ipcStream->UnregisterRemoteDiedCallback();
     }
     audioPolicyServiceDiedCallback_ = nullptr;
     return SUCCESS;
@@ -1544,6 +1540,7 @@ bool AudioCapturerPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         switchInfo.sessionId = 0;
     }
 
+    RemoveCapturerPolicyServiceDiedCallback(audioStream_);
     // release old stream and restart audio stream
     switchResult = audioStream_->ReleaseAudioStream(true, true);
     if (restoreInfo.restoreReason != SERVER_DIED) {
@@ -1571,7 +1568,6 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     std::shared_ptr<IAudioStream> newAudioStream = IAudioStream::GetRecordStream(targetClass, switchInfo.params,
         switchInfo.eStreamType, appInfo_.appUid);
     CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "GetRecordStream failed.");
-    AUDIO_INFO_LOG("Get new stream success!");
 
     // set new stream info
     int32_t initResult = SetSwitchInfo(switchInfo, newAudioStream);
@@ -1599,6 +1595,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     // Operation of replace audioStream_ must be performed before StartAudioStream.
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     audioStream_ = newAudioStream;
+    RegisterCapturerPolicyServiceDiedCallback(audioStream_);
     if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
         auto ret = UpdatePlaybackCaptureConfig(filterConfig_);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "UpdatePlaybackCaptureConfig Failed!");
