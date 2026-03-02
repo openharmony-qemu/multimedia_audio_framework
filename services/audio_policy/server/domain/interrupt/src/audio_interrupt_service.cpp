@@ -38,6 +38,8 @@
 #include "window_utils.h"
 #include "audio_interrupt_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t BOOTUP_MUSIC_UID = 1003;

@@ -27,6 +27,8 @@
 #include "audio_setting_provider.h"
 #include "istandard_audio_service.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;

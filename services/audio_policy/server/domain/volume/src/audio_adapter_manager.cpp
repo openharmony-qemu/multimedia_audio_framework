@@ -35,6 +35,8 @@
 #include "audio_manager_listener_stub_impl.h"
 #include "audio_format_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 using namespace std;
 
 namespace OHOS {

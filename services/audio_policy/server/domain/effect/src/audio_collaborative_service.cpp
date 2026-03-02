@@ -21,6 +21,8 @@
 #include "audio_core_service.h"
 #include "manager/hdi_adapter_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 static const std::string AUDIO_COLLABORATIVE_SERVICE_LABEL = "COLLABORATIVE";

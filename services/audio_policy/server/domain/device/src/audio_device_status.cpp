@@ -36,6 +36,8 @@
 #include "audio_zone_service.h"
 #include "audio_collaborative_service.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 const int MEDIA_RENDER_ID = 0;

@@ -28,6 +28,8 @@
 #include "audio_server_proxy.h"
 #include "audio_interrupt_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 void AudioInterruptService::AudioInterruptZoneDump(std::string &dumpString)

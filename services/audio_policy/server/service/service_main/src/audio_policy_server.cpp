@@ -47,6 +47,8 @@
 #include "standalone_mode_manager.h"
 #include "audio_injector_policy.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
 using namespace std;
