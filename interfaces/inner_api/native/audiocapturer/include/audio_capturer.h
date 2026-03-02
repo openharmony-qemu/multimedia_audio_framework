@@ -394,7 +394,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StartWithError() = 0;
+    virtual int32_t StartWithError() { return 0; }
 
     /**
      * @brief capture audio data.
@@ -466,7 +466,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t StopWithError() const = 0;
+    virtual int32_t StopWithError() const { return 0; }
 
     /**
      * @brief flush capture stream.
@@ -491,7 +491,7 @@ public:
      * in {@link audio_errors.h} otherwise.
      * @since 8
      */
-    virtual int32_t ReleaseWithError() = 0;
+    virtual int32_t ReleaseWithError() { return 0; }
 
     /**
      * @brief Obtains a reasonable minimum buffer size for capturer, however, the capturer can
@@ -825,9 +825,9 @@ protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
 
 private:
-    virtual int32_t StartImpl() = 0;
-    virtual int32_t StopImpl() const = 0;
-    virtual int32_t ReleaseImpl() = 0;
+    virtual int32_t StartImpl() { return 0; }
+    virtual int32_t StopImpl() const { return 0; }
+    virtual int32_t ReleaseImpl() { return 0; }
     static void SendCapturerCreateError(const SourceType &sourceType,
         const int32_t &errorCode);
 };
