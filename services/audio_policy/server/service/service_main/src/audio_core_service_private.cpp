@@ -2130,7 +2130,7 @@ bool AudioCoreService::RecoverFetchedDescs(const std::vector<std::shared_ptr<Aud
 {
     for (auto &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "Stream desc is nullptr");
-        streamDesc->newDeviceDescs_ = streamDesc->oldDeviceDescs_;
+        pipeManager_->UpdateNewDeviceDesc(streamDesc, streamDesc->oldDeviceDescs_);
     }
 
     return true;
@@ -3521,9 +3521,10 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
 {
     for (auto &desc : outputDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-        desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
+        auto newDescs = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
             GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
             streamDesc->rendererInfo_.privacyType);
+        pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDevicesForDescs");
 }
