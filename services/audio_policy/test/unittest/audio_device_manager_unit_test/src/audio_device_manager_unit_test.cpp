@@ -626,19 +626,20 @@ HWTEST_F(AudioDeviceManagerUnitTest, TriggerDeviceInfoUpdatedCallback_001, TestS
 /**
 * @tc.name  : Test AudioDeviceManager.
 * @tc.number: AudioDeviceManagerUnitTest_020.
-* @tc.desc  : Test GetActiveScoDevice.
+* @tc.desc  : Test GetCommRenderDefaultDevice.
 */
 HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_020, TestSize.Level1)
 {
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
-        DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE);
-    desc->macAddress_ = "00:11:22:33:44:55";
-    AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
-    std::string scoMac = "00:11:22:33:44:55";
-    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
-        DeviceRole::INPUT_DEVICE);
-    ASSERT_NE(result, nullptr);
-    EXPECT_EQ(result->macAddress_, "");
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    shared_ptr<AudioDeviceDescriptor> desc0 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_MEDIA);
+    shared_ptr<AudioDeviceDescriptor> desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_INVALID);
+    EXPECT_NE(desc0, desc1);
+    desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VOICE_RINGTONE);
+    EXPECT_NE(desc0, desc1);
+    shared_ptr<AudioDeviceDescriptor> desc2 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_ULTRASONIC);
+    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.earpiece_), desc2);
+    desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VIDEO_COMMUNICATION);
+    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc1);
 }
 } // namespace AudioStandard
 } // namespace OHOS
