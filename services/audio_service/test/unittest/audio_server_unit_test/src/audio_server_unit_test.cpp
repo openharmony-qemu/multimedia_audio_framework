@@ -2864,29 +2864,49 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_003, TestSize.Level1)
     EXPECT_TRUE(dpValue.empty() || !dpValue.empty());
 }
 
-/** 
- * @tc.name  : Test SetExtraParameters API - Cached parameters 
- * @tc.type  : FUNC 
- * @tc.number: AudioServerSetExtraParameters_003 
- * @tc.desc  : Test SetExtraParameters with cached parameters. 
- */ 
-HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_003, TestSize.Level1) 
-{ 
-    EXPECT_NE(nullptr, audioServer); 
+/**
+ * @tc.name  : Test SetExtraParameters API - Various keys
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetExtraParameters_002
+ * @tc.desc  : Test SetExtraParameters with different main keys.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
 
+    std::vector<StringPair> kvpairs;
+    kvpairs.push_back({"key1", "value1"});
+    kvpairs.push_back({"key2", "value2"});
 
-    audioServer->isAudioParameterParsed_.store(false); 
+    int32_t ret = audioServer->SetExtraParameters("HOME_MUSIC", kvpairs);
+    EXPECT_EQ(SUCCESS, ret);
 
+    ret = audioServer->SetExtraParameters("EFFECT_LIVE", kvpairs);
+    EXPECT_EQ(SUCCESS, ret);
 
-    std::vector<StringPair> kvpairs; 
-    kvpairs.push_back({"key1", "value1"}); 
+    ret = audioServer->SetExtraParameters("PCM_DUMP", kvpairs);
+    EXPECT_EQ(SUCCESS, ret);
+}
 
+/**
+ * @tc.name  : Test SetExtraParameters API - Cached parameters
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetExtraParameters_003
+ * @tc.desc  : Test SetExtraParameters with cached parameters.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
 
-    int32_t ret = audioServer->SetExtraParameters("test_key", kvpairs); 
-    EXPECT_EQ(ERROR, ret); 
+    audioServer->isAudioParameterParsed_.store(false);
 
+    std::vector<StringPair> kvpairs;
+    kvpairs.push_back({"key1", "value1"});
 
-    audioServer->isAudioParameterParsed_.store(true); 
+    int32_t ret = audioServer->SetExtraParameters("test_key", kvpairs);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioServer->isAudioParameterParsed_.store(true);
 }
 
 /**
