@@ -807,7 +807,10 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
     if (streamDesc->streamStatus_ == STREAM_STATUS_RELEASED) {
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamDesc->sessionId_);
     }
-    if (!audioSceneManager_.IsPhoneCallOrChatSceneTriggeredByUid(streamDesc->callerUid_)) {
+    // Do not trigger FetchOutputDeviceAndRoute on single call stream stop,
+    // FetchOutputDeviceAndRoute is triggered by AudioScene changes instead of a single call stream stop.
+    if (!audioSceneManager_.IsPhoneCallOrChatSceneTriggeredByUid(streamDesc->callerUid_) ||
+        streamCollector_.IsVoipStreamActive()) {
         FetchOutputDeviceAndRoute(caller);
     }
 
