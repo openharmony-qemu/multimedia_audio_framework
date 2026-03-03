@@ -924,6 +924,18 @@ void FastAudioStream::SetOverflowCount(uint32_t overflowCount)
     processClient_->SetOverflowCount(overflowCount);
 }
 
+int32_t FastAudioStream::RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "process is null.");
+    return processClient_->RegisterRemoteDiedCallback(callback);
+}
+
+int32_t FastAudioStream::UnregisterRemoteDiedCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "process is null.");
+    return processClient_->UnregisterRemoteDiedCallback();
+}
+
 void FastAudioStream::SetRendererPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPositionCallback> &callback)
 {

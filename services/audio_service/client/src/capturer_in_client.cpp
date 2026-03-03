@@ -517,17 +517,16 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     CHECK_AND_CALL_FUNC_RETURN_RET(gasp != nullptr, ERR_OPERATION_FAILED,
         HILOG_COMM_ERROR("[InitIpcStream]Create failed, can not get service."));
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = nullptr;
-    gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
+    ipcProxy_ = nullptr;
+    gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy_);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        AudioPlaybackCaptureConfig defalutConfig = {};
-        gasp->CreateAudioProcess(config, errorCode, defalutConfig, ipcProxy);
+        gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy_);
     }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
-    CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
-    ipcStream_ = iface_cast<IIpcStream>(ipcProxy);
+    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
+    ipcStream_ = iface_cast<IIpcStream>(ipcProxy_);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan: old listener_ is destoried here, will server receive dieth notify?
@@ -1602,6 +1601,29 @@ void CapturerInClientInner::SetUnderflowCount(uint32_t underflowCount)
 void CapturerInClientInner::SetOverflowCount(uint32_t overflowCount)
 {
     overflowCount_ = overflowCount;
+}
+
+int32_t CapturerInClientInner::RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(deathRecipientLock_);
+    if (deathRecipient_ == nullptr) {
+        deathRecipient_ = sptr<RemoteDeathRecipient>::MakeSptr(callback);
+    }
+    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_ILLEGAL_STATE, "ipcProxy_ is null!");
+    bool result = ipcProxy_->AddDeathRecipient(deathRecipient_);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
+    return SUCCESS;
+}
+
+int32_t CapturerInClientInner::UnregisterRemoteDiedCallback()
+{
+    std::lock_guard<std::mutex> lock(deathRecipientLock_);
+    CHECK_AND_RETURN_RET_LOG(deathRecipient_ != nullptr && ipcProxy_ != nullptr, ERR_ILLEGAL_STATE,
+        "deathRecipient or ipcProxy_ is null!");
+    bool result = ipcProxy_->RemoveDeathRecipient(deathRecipient_);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "RemoveDeathRecipient failed.");
+    deathRecipient_ = nullptr;
+    return SUCCESS;
 }
 
 void CapturerInClientInner::SetCapturerPositionCallback(int64_t markPosition, const

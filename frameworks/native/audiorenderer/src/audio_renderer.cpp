@@ -150,7 +150,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
         AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionID_);
     }
 
-    RemoveRendererPolicyServiceDiedCallback();
+    RemoveRendererPolicyServiceDiedCallback(audioStream_);
     DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
@@ -747,7 +747,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
         HILOG_COMM_ERROR("[SetParams]SetAudioStreamInfo Failed"));
     AUDIO_INFO_LOG("SetAudioStreamInfo Succeeded");
 
-    RegisterRendererPolicyServiceDiedCallback();
+    RegisterRendererPolicyServiceDiedCallback(audioStream_);
     // eg: 100005_44100_2_1_client_in.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" +
         std::to_string(params.customSampleRate == 0 ? params.sampleRate : params.customSampleRate) + "_" +
@@ -1502,7 +1502,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
     }
     SetReleaseFlagNoLock(false);
     lock.unlock();
-    RemoveRendererPolicyServiceDiedCallback();
+    RemoveRendererPolicyServiceDiedCallback(audioStream_);
 
     return result ? SUCCESS : ERROR;
 }
@@ -2241,6 +2241,7 @@ void AudioRendererPrivate::UpdateRendererAudioStream(const std::shared_ptr<IAudi
 {
     audioStream_ = newAudioStream;
     audioStream_->GetRendererInfo(rendererInfo_);
+    RegisterRendererPolicyServiceDiedCallback(audioStream_);
     if (audioInterruptCallback_ != nullptr) {
         std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl =
             std::static_pointer_cast<AudioRendererInterruptCallbackImpl>(audioInterruptCallback_);
@@ -2375,6 +2376,7 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
             switchInfo.unprocessSamples;
     }
     UpdateFramesWritten();
+    RemoveRendererPolicyServiceDiedCallback(audioStream_);
     switchResult = audioStream_->ReleaseAudioStream(true, true);
     if (restoreInfo.restoreReason != SERVER_DIED) {
         CHECK_AND_RETURN_RET_LOG(switchResult, false, "release old stream failed.");
@@ -2683,7 +2685,7 @@ void AudioRendererPrivate::WriteUnderrunEvent() const
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
+int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream)
 {
     std::lock_guard<std::mutex> lock(rendererPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("RegisterRendererPolicyServiceDiedCallback");
@@ -2693,27 +2695,23 @@ int32_t AudioRendererPrivate::RegisterRendererPolicyServiceDiedCallback()
             AUDIO_ERR_LOG("Memory allocation failed!!");
             return ERROR;
         }
-        AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioPolicyServiceDiedCallback_);
         audioPolicyServiceDiedCallback_->SetAudioRendererObj(weak_from_this());
         audioPolicyServiceDiedCallback_->SetAudioInterrupt(audioInterrupt_);
     }
+    CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    ipcStream->RegisterRemoteDiedCallback(audioPolicyServiceDiedCallback_);
     return SUCCESS;
 }
 
-int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback()
+int32_t AudioRendererPrivate::RemoveRendererPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream)
 {
     std::lock_guard<std::mutex> lock(rendererPolicyServiceDiedCbMutex_);
     AUDIO_DEBUG_LOG("RemoveRendererPolicyServiceDiedCallback");
     if (audioPolicyServiceDiedCallback_) {
-        int32_t ret = AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(
-            audioPolicyServiceDiedCallback_);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("RemoveRendererPolicyServiceDiedCallback failed");
-            audioPolicyServiceDiedCallback_ = nullptr;
-            return ERROR;
-        }
+        CHECK_AND_RETURN_RET_LOG(ipcStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+        ipcStream->UnregisterRemoteDiedCallback();
+        audioPolicyServiceDiedCallback_ = nullptr;
     }
-    audioPolicyServiceDiedCallback_ = nullptr;
     return SUCCESS;
 }
 

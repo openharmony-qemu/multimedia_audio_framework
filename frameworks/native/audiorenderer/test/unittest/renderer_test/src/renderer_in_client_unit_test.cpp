@@ -179,6 +179,12 @@ public:
     virtual void OnReadData(size_t length) {}
 };
 
+class TestRemoteDiedCallback : public RemoteDiedCallback {
+public:
+    virtual ~TestRemoteDiedCallback() = default;
+    void OnAudioPolicyServiceDied() override {}
+};
+
 class AudioRendererFirstFrameWritingCallbackTest : public AudioRendererFirstFrameWritingCallback {
 public:
     virtual ~AudioRendererFirstFrameWritingCallbackTest() = default;
@@ -809,6 +815,27 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_024, TestSize.Level1
 
     uint32_t overflowCount = 0;
     ptrRendererInClientInner->SetOverflowCount(overflowCount);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_RemoteDied_001
+ * @tc.desc  : Test RendererInClientInner::RegisterRemoteDiedCallback
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_RemoteDied_001, TestSize.Level1)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, 0);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    ptrRendererInClientInner->ipcProxy_ = nullptr;
+    std::shared_ptr<TestRemoteDiedCallback> callback = std::make_shared<TestRemoteDiedCallback>();
+    int32_t ret = ptrRendererInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
+    ret = ptrRendererInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 /**

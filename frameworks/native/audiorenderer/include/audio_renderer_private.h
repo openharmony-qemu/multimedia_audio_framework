@@ -133,8 +133,8 @@ public:
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
-    int32_t RegisterRendererPolicyServiceDiedCallback();
-    int32_t RemoveRendererPolicyServiceDiedCallback();
+    int32_t RegisterRendererPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream);
+    int32_t RemoveRendererPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream);
 
     void SetFastStatusChangeCallback(const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) override;
 
@@ -417,7 +417,7 @@ private:
     std::mutex callbackMutex_;
 };
 
-class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback,
+class RendererPolicyServiceDiedCallback : public RemoteDiedCallback,
     public std::enable_shared_from_this<RendererPolicyServiceDiedCallback> {
 public:
     RendererPolicyServiceDiedCallback();

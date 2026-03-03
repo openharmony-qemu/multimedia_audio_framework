@@ -399,11 +399,6 @@ public:
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 
-    int32_t RegisterAudioStreamPolicyServerDiedCb(
-        const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback);
-    int32_t UnregisterAudioStreamPolicyServerDiedCb(
-        const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback);
-
     bool IsVolumeUnadjustable();
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
@@ -772,7 +767,7 @@ private:
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> capturerCB_;
-    static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
+    static std::vector<std::weak_ptr<RemoteDiedCallback>> audioStreamCBMap_;
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
 
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};

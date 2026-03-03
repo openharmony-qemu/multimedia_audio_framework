@@ -322,7 +322,6 @@ void AudioPolicyManagerFiveFuzzTest(FuzzedDataProvider& fdp)
     int32_t clientPid = GetData<int32_t>();
     std::shared_ptr<AudioRendererPolicyServiceDiedCallback> audioRendererPolicyServiceDiedCallback;
     std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> audioCapturerPolicyServiceDiedCallback;
-    std::shared_ptr<AudioStreamPolicyServiceDiedCallback> audioStreamPolicyServiceDiedCallback;
     VolumeAdjustType adjustType = GetData<VolumeAdjustType>();
     AudioVolumeType volumeType = GetData<AudioVolumeType>();
     int32_t volumeLevel = GetData<int32_t>();
@@ -343,8 +342,6 @@ void AudioPolicyManagerFiveFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid,
         audioCapturerPolicyServiceDiedCallback);
     AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientPid);
-    AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCallback);
-    AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCallback);
     AudioPolicyManager::GetInstance().GetMaxRendererInstances();
     AudioPolicyManager::GetInstance().IsVolumeUnadjustable();
     AudioPolicyManager::GetInstance().AdjustVolumeByStep(adjustType);

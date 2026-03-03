@@ -213,6 +213,12 @@ public:
     virtual int32_t ResetStaticPlayPosition() override { return SUCCESS; }
 };
 
+class TestRemoteDiedCallback : public RemoteDiedCallback {
+public:
+    virtual ~TestRemoteDiedCallback() = default;
+    void OnAudioPolicyServiceDied() override {}
+};
+
 class AudioClientTrackerTest : public AudioClientTracker {
 public:
     virtual ~AudioClientTrackerTest() = default;
@@ -1051,6 +1057,26 @@ HWTEST(CapturerInClientUnitTest, GetBufferDesc_001, TestSize.Level1)
     capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
     ret = capturerInClientInner->GetBufferDesc(bufferDesc);
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+}
+
+/**
+ * @tc.name  : Test CapturerInClient API
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInClient_RemoteDied_001
+ * @tc.desc  : Test CapturerInClientInner::RegisterRemoteDiedCallback
+ */
+HWTEST(CapturerInClientUnitTest, CapturerInClient_RemoteDied_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+
+    capturerInClientInner->ipcProxy_ = nullptr;
+    std::shared_ptr<TestRemoteDiedCallback> callback = std::make_shared<TestRemoteDiedCallback>();
+    int32_t ret = capturerInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
+    ret = capturerInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 /**

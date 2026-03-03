@@ -45,6 +45,7 @@
 #include "iaudio_process.h"
 #include "process_cb_stub.h"
 #include "istandard_audio_service.h"
+#include "remote_death_recipient.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -121,6 +122,10 @@ public:
     void SetUnderflowCount(uint32_t underflowCount) override;
 
     void SetOverflowCount(uint32_t overflowCount) override;
+
+    int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) override;
+
+    int32_t UnregisterRemoteDiedCallback() override;
 
     int64_t GetFramesWritten() override;
 
@@ -259,6 +264,9 @@ private:
     size_t clientSpanSizeInByte_ = 0;
     size_t clientSpanSizeInFrame_ = 240;
     sptr<IAudioProcess> processProxy_ = nullptr;
+    sptr<IRemoteObject> ipcProxy_ = nullptr;
+    std::mutex deathRecipientLock_;
+    sptr<RemoteDeathRecipient> deathRecipient_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> audioBuffer_ = nullptr;
     uint32_t sessionId_ = 0;
     bool isVoipMmap_ = false;
@@ -357,6 +365,7 @@ AudioProcessInClientInner::AudioProcessInClientInner(const sptr<IAudioProcess> &
 {
     processProxy_->GetSessionId(sessionId_);
     AUDIO_INFO_LOG("Construct with sessionId: %{public}d", sessionId_);
+    ipcProxy_ = processProxy_->AsObject();
 }
 
 const sptr<IStandardAudioService> AudioProcessInClientInner::GetAudioServerProxy()
@@ -582,6 +591,28 @@ void AudioProcessInClientInner::SetOverflowCount(uint32_t overflowCount)
     overflowCount_ += overflowCount;
 }
 
+int32_t AudioProcessInClientInner::RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(deathRecipientLock_);
+    if (deathRecipient_ == nullptr) {
+        deathRecipient_ = sptr<RemoteDeathRecipient>::MakeSptr(callback);
+    }
+    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_ILLEGAL_STATE, "ipcProxy_ is null!");
+    bool result = ipcProxy_->AddDeathRecipient(deathRecipient_);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
+    return SUCCESS;
+}
+
+int32_t AudioProcessInClientInner::UnregisterRemoteDiedCallback()
+{
+    std::lock_guard<std::mutex> lock(deathRecipientLock_);
+    CHECK_AND_RETURN_RET_LOG(deathRecipient_ != nullptr && ipcProxy_ != nullptr, ERR_ILLEGAL_STATE,
+        "deathRecipient or ipcProxy_ is null!");
+    bool result = ipcProxy_->RemoveDeathRecipient(deathRecipient_);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "RemoveDeathRecipient failed.");
+    deathRecipient_ = nullptr;
+    return SUCCESS;
+}
 int64_t AudioProcessInClientInner::GetFramesWritten()
 {
     CHECK_AND_RETURN_RET_LOG(processConfig_.audioMode == AUDIO_MODE_PLAYBACK, -1, "Playback not support.");

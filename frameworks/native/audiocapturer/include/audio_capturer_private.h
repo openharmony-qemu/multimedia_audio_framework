@@ -92,8 +92,8 @@ public:
 
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetTimeStampInfo(Timestamp &timestampNs, Timestamp::Timestampbase base) const override;
-    int32_t RegisterCapturerPolicyServiceDiedCallback();
-    int32_t RemoveCapturerPolicyServiceDiedCallback();
+    int32_t RegisterCapturerPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream);
+    int32_t RemoveCapturerPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream);
 
     bool IsDeviceChanged(AudioDeviceDescriptor &newDeviceInfo);
     std::vector<sptr<MicrophoneDescriptor>> GetCurrentMicrophones() const override;
@@ -316,7 +316,7 @@ private:
     std::mutex mutex_;
 };
 
-class CapturerPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback,
+class CapturerPolicyServiceDiedCallback : public RemoteDiedCallback,
     public std::enable_shared_from_this<CapturerPolicyServiceDiedCallback> {
 public:
     CapturerPolicyServiceDiedCallback();

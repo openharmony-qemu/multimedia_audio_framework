@@ -3207,7 +3207,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_OnAudioPolicyServiceDied_001, TestS
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->RegisterRendererPolicyServiceDiedCallback();
+    audioRendererPrivate->RegisterRendererPolicyServiceDiedCallback(audioRendererPrivate->audioStream_);
     audioRendererPrivate->RegisterOutputDeviceChangeWithInfoCallback(nullptr);
     audioRendererPrivate->audioPolicyServiceDiedCallback_->OnAudioPolicyServiceDied();
     ASSERT_NE(nullptr, audioRendererPrivate);
