@@ -42,6 +42,7 @@ namespace OHOS {
 namespace AudioStandard {
 const char* CAPTURE_SERVER_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
 namespace {
+    static constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
     static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
@@ -61,6 +62,7 @@ CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_p
     streamListener_ = streamListener;
     innerCapId_ = processConfig.innerCapId;
     audioStreamChecker_ = std::make_shared<AudioStreamChecker>(processConfig);
+    deviceId_ = processConfig.appInfo.deviceId;
     AudioStreamMonitor::GetInstance().AddCheckForMonitor(processConfig.originalSessionId, audioStreamChecker_);
 }
 
@@ -73,6 +75,7 @@ CapturerInServer::~CapturerInServer()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
+    TurnOffRemoteMicIndicator();
 }
 
 int32_t CapturerInServer::ConfigServerBuffer()
@@ -585,6 +588,7 @@ int32_t CapturerInServer::StartInner()
         CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
+    TurnOnRemoteMicIndicator();
     NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
@@ -632,7 +636,7 @@ int32_t CapturerInServer::Pause()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
-
+    TurnOffRemoteMicIndicator();
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -646,6 +650,25 @@ int32_t CapturerInServer::Pause()
     return SUCCESS;
 }
 // LCOV_EXCL_STOP
+
+void CapturerInServer::TurnOnRemoteMicIndicator()
+{
+    CHECK_AND_RETURN(processConfig_.callerUid == UID_DISTRIBUTED_AUDIO_SA && !isRemoteMicIndicatorOn_);
+    std::string deviceName = "";
+    AudioService::GetInstance()->GetRemoteDeviceName(deviceId_, deviceName);
+    PermissionUtil::StartRemoteUsingPermission(deviceId_, deviceName, MICROPHONE_PERMISSION);
+    PermissionUtil::AddRemotePermissionUsedRecord(deviceId_, deviceName, MICROPHONE_PERMISSION, 1, 0);
+    isRemoteMicIndicatorOn_ = true;
+}
+
+void CapturerInServer::TurnOffRemoteMicIndicator()
+{
+    CHECK_AND_RETURN(processConfig_.callerUid == UID_DISTRIBUTED_AUDIO_SA && isRemoteMicIndicatorOn_);
+    std::string deviceName = "";
+    AudioService::GetInstance()->GetRemoteDeviceName(deviceId_, deviceName);
+    PermissionUtil::StopRemoteUsingPermission(deviceId_, deviceName, MICROPHONE_PERMISSION);
+    isRemoteMicIndicatorOn_ = false;
+}
 
 int32_t CapturerInServer::Flush()
 {
@@ -710,7 +733,7 @@ int32_t CapturerInServer::Stop()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
-
+    TurnOffRemoteMicIndicator();
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
@@ -778,6 +801,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
+    TurnOffRemoteMicIndicator();
     return SUCCESS;
 }
 

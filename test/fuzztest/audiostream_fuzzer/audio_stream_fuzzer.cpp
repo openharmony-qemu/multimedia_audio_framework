@@ -80,6 +80,8 @@ public:
 
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo) override;
+    
+    int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName) override;
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
 
@@ -132,6 +134,12 @@ int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &confi
     deviceInfo.deviceName_ = "testname";
 
     deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
+{
+    deviceName = "NewDevice";
     return SUCCESS;
 }
 

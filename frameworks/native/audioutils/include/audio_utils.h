@@ -179,6 +179,12 @@ public:
     static int32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
     static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
     static bool CheckCallingUidPermission(const std::vector<uid_t> &allowedUids);
+    static int32_t StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
+        const char* permission);
+    static int32_t StopRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
+        const char* permission);
+    static int32_t AddRemotePermissionUsedRecord(const std::string &deviceId, const std::string &deviceName,
+        const char* permission, int32_t successCount, int32_t failCount);
 };
 
 class SwitchStreamUtil {

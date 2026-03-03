@@ -39,6 +39,8 @@ public:
 
     bool GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
 
+    bool GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName);
+
     bool InitVolumeMap();
 
     bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);

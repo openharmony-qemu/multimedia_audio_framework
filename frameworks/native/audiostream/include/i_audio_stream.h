@@ -159,6 +159,7 @@ public:
         AudioChannelLayout channelLayout);
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) = 0;
+    virtual void SetClientDeviceId(const std::string &deviceId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void GetRendererInfo(AudioRendererInfo &rendererInfo) = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;

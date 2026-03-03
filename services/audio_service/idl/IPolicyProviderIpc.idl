@@ -23,6 +23,7 @@ sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioCapturerInfo;
 
 interface IPolicyProviderIpc {
     [ipccode 0] void GetProcessDeviceInfo([in] AudioProcessConfig config, [in] boolean lockFlag, [out] AudioDeviceDescriptor deviceInfo);
+    void GetRemoteDeviceName([in] String deviceId, [out] String deviceName);
     void InitSharedVolume([out] sharedptr<AudioSharedMemory> buffer);
     void NotifyCapturerAdded([in] AudioCapturerInfo capturerInfo, [in] AudioStreamInfo streamInfo, [in] unsigned int sessionId);
     void NotifyWakeUpCapturerRemoved();

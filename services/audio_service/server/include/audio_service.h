@@ -80,6 +80,7 @@ public:
     bool InRenderWhitelist(const std::string bundleName);
 
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
+    bool GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 

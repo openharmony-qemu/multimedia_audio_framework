@@ -61,6 +61,11 @@ void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t
     fullTokenId_ = fullTokenId;
 }
 
+void FastAudioStream::SetClientDeviceId(const std::string &deviceId)
+{
+    deviceId_ = deviceId;
+}
+
 int32_t FastAudioStream::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
     AUDIO_ERR_LOG("%{public}s: not supported", logTag_.c_str());

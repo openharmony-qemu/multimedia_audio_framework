@@ -78,6 +78,7 @@ public:
     virtual ~FastAudioStream();
 
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
+    void SetClientDeviceId(const std::string &deviceId) override;
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
@@ -254,6 +255,7 @@ private:
 
     AudioStreamType eStreamType_;
     AudioMode eMode_;
+    std::string deviceId_ = "";
     std::shared_ptr<AudioProcessInClient> processClient_ = nullptr;
     std::shared_ptr<FastAudioStreamRenderCallback> spkProcClientCb_ = nullptr;
     std::shared_ptr<FastAudioStreamCaptureCallback> micProcClientCb_ = nullptr;

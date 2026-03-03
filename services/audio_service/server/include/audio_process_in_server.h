@@ -176,6 +176,8 @@ public:
 
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
+    void TurnOnRemoteMicIndicator();
+    void TurnOffRemoteMicIndicator();
     int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
         const std::string &adjustTime, uint32_t code) override;
     uint32_t GetSpanSizeInFrame() override;
@@ -245,6 +247,7 @@ private:
 
     bool needCheckBackground_ = false;
     bool isMicIndicatorOn_ = false;
+    bool isRemoteMicIndicatorOn_ = false;
 
     uint32_t sessionId_ = 0;
     std::atomic<bool> isInited_ = false;
@@ -252,6 +255,7 @@ private:
     std::mutex statusLock_;
 
     std::string clientBundleName_;
+    std::string deviceId_;
 
     uint32_t totalSizeInframe_ = 0;
     uint32_t spanSizeInframe_ = 0;

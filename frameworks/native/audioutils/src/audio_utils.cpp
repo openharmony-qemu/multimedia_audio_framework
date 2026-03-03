@@ -804,6 +804,43 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
     return res;
 }
 
+int32_t PermissionUtil::StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
+    const char* permission)
+{
+    Trace trace("PrivacyKit::StartRemoteUsingPermission");
+    AUDIO_WARNING_LOG("PrivacyKit::StartRemoteUsingPermission deviceId: %{public}s, permission: %{public}s",
+        GetEncryptStr(deviceId).c_str(), permission);
+    Security::AccessToken::RemoteCallerInfo remoteCallerInfo = {deviceId, deviceName};
+    WatchTimeout guard("PrivacyKit::StartRemoteUsingPermission:PermissionUtil::StartUsingPermission");
+    int32_t res = Security::AccessToken::PrivacyKit::StartRemoteUsingPermission(remoteCallerInfo, permission);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
+int32_t PermissionUtil::StopRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
+    const char* permission)
+{
+    Trace trace("PrivacyKit::StopRemoteUsingPermission");
+    AUDIO_WARNING_LOG("PrivacyKit::StopRemoteUsingPermission deviceId: %{public}s, permission: %{public}s",
+        GetEncryptStr(deviceId).c_str(), permission);
+    Security::AccessToken::RemoteCallerInfo remoteCallerInfo = {deviceId, deviceName};
+    WatchTimeout guard("PrivacyKit::StopRemoteUsingPermission:PermissionUtil::StopRemoteUsingPermission");
+    int32_t res = Security::AccessToken::PrivacyKit::StopRemoteUsingPermission(remoteCallerInfo, permission);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
+int32_t PermissionUtil::AddRemotePermissionUsedRecord(const std::string &deviceId, const std::string &deviceName,
+    const char* permission, int32_t successCount, int32_t failCount)
+{
+    Security::AccessToken::RemoteCallerInfo remoteCallerInfo = {deviceId, deviceName};
+    WatchTimeout guard("Security::AccessToken::PrivacyKit::AddRemotePermissionUsedRecord");
+    int32_t res = Security::AccessToken::PrivacyKit::AddRemotePermissionUsedRecord(remoteCallerInfo, permission,
+        successCount, failCount);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
 bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS,
