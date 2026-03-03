@@ -948,9 +948,9 @@ bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, cons
     CHECK_AND_RETURN_RET(volumeEvent.deviceType != DEVICE_TYPE_NONE, true);
 
     int32_t uid = pidUidMap_.count(pid) > 0 ? pidUidMap_[pid] : -1;
-    bool isByVolumeType = IsForceGetDevByVolumeType(uid);
-    auto deviceDesc = isByVolumeType ? AudioActiveDevice::GetInstance().GetDeviceForVolume(volumeEvent.volumeType) :
-        AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(uid);
+    bool isForceVerify = IsForceGetDevByVolumeType(uid);
+    CHECK_AND_RETURN_RET(!isForceVerify, true);
+    auto deviceDesc = AudioActiveDevice::GetInstance().GetActiveDeviceForVolume(uid);
     CHECK_AND_RETURN_RET(deviceDesc != nullptr, true);
     bool ret = volumeEvent.deviceType == deviceDesc->deviceType_ && volumeEvent.networkId == deviceDesc->networkId_;
     AUDIO_INFO_LOG("uid: %{public}d, [%{public}d, %{public}s] is target device [%{public}d, %{public}s]: %{public}s",
