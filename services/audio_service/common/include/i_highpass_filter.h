@@ -27,6 +27,7 @@ class IHighPassFilter {
  * 输出数据格式：采样率48000，stereo，双通道交错，16位PCM
  */
 public:
+    virtual ~IHighPassFilter() = default;
     virtual int32_t Init(const int32_t channels) = 0;
     virtual int32_t Apply(const std::vector<float> &samples, std::vector<float> &result) = 0;
 };
