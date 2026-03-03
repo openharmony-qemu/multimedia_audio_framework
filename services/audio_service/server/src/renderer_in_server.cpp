@@ -46,6 +46,7 @@
 #include "stream_dfx_manager.h"
 #include "audio_stream_enum.h"
 #include "audio_stream_concurrency_detector.h"
+#include "audio_effect_chain_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -3003,6 +3004,36 @@ int32_t RendererInServer::ResetStaticPlayPosition()
     staticBufferProvider_->NeedProcessFadeOut();
     staticBufferProvider_->ResetStaticPlayPosition();
     staticBufferProvider_->NeedProcessFadeIn();
+    return SUCCESS;
+}
+
+int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount)
+{
+    if (!isBufferConfiged_) {
+        AUDIO_ERR_LOG("CalculateCacheSize failed: buffer not configured");
+        return ERR_OPERATION_FAILED;
+    }
+    if (spanSizeInFrame_ == 0) {
+        AUDIO_ERR_LOG("CalculateCacheCount failed: spanSizeInFrame is 0");
+        return ERR_INVALID_PARAM;
+    }
+    if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
+        cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
+    }
+    uint64_t numerator = static_cast<uint64_t>(cacheSizeInFrame) + spanSizeInFrame_ - 1;
+    cacheCount = static_cast<uint32_t>(numerator / spanSizeInFrame_) + 1;
+    if (cacheCount == 0) {
+        AUDIO_ERR_LOG("CalculateCacheSize failed: calculated count = 0");
+        return ERR_INVALID_PARAM;
+    }
+    if (!AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
+        cacheCount += 1;
+    }
+    if (cacheCount > MAX_CAHCED_COUNT) {
+        cacheCount = MAX_CAHCED_COUNT;
+    }
+    AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, cacheCount=%{public}u",
+        cacheSizeInFrame, spanSizeInFrame_, cacheCount);
     return SUCCESS;
 }
 } // namespace AudioStandard

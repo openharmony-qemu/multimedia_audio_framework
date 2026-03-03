@@ -41,6 +41,7 @@ namespace {
     constexpr int64_t AUDIO_NS_PER_US = 1000;
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
+    constexpr int64_t UNDERRUN_BYPASS_DURATION_OFFLOAD_NS = 40 * 1000 * 1000; // 40ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
     const std::string BT_SINK_NAME = "a2dp";
     const std::string USB_SINK_NAME = "usb";
@@ -1696,7 +1697,9 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
     }
     if (underrunFlag) {
         lastOnUnderrunTime_ = lastOnUnderrunTime_ == 0 ? ClockTime::GetCurNano() : lastOnUnderrunTime_;
-        int64_t sleepTimeInNs = lastOnUnderrunTime_ + UNDERRUN_BYPASS_DURATION_NS - ClockTime::GetCurNano();
+         int64_t underrunBypassDurationNs = AudioEffectChainManager::GetInstance()->GetOffloadEnabled()
+            ? UNDERRUN_BYPASS_DURATION_NS : UNDERRUN_BYPASS_DURATION_OFFLOAD_NS;
+        int64_t sleepTimeInNs = lastOnUnderrunTime_ + underrunBypassDurationNs - ClockTime::GetCurNano();
         Trace trace("HpaeRendererManager::sleep " + std::to_string(sleepTimeInNs) + "ns underrun");
         CHECK_AND_RETURN_RET(sleepTimeInNs > 0, false);
         // sleep atmost 10ms

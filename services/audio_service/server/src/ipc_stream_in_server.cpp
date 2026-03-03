@@ -623,5 +623,11 @@ int32_t IpcStreamInServer::SetInMainThreadState(bool isInMainThread)
     return capturerInServer_->SetInMainThreadState(isInMainThread);
 }
 
+int32_t IpcStreamInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "CalculateCacheCount failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+}
 } // namespace AudioStandard
 } // namespace OHOS

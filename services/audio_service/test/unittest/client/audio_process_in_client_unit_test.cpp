@@ -68,6 +68,7 @@ public:
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
     MOCK_METHOD(int32_t, SetStaticRenderRate, (uint32_t renderRate), (override));
     MOCK_METHOD(int32_t, ResetStaticPlayPosition, (), (override));
+    MOCK_METHOD(int32_t, CalculateCacheCount, (uint32_t cacheSizeInFrame, uint32_t &cacheCount), (override));
 };
 
 class AudioProcessInClientUnitTest : public testing::Test {
