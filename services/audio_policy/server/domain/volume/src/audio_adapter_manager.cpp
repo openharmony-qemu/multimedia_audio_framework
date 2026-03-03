@@ -3694,6 +3694,9 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         SetVolumeDb(desc, streamType);
     }
+    int32_t volumeLevel =
+        GetStreamVolumeInternal(desc, streamType) * (GetStreamMuteInternal(desc, streamType) ? 0 : 1);
+    SaveRingtoneVolumeToLocal(desc, streamType, volumeLevel);
     return SUCCESS;
 }
 
