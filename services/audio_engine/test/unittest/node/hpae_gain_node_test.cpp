@@ -146,7 +146,7 @@ HWTEST_F(HpaeGainNodeTest, SetCollFadeState, TestSize.Level0)
     EXPECT_EQ(hpaeGainNode->collFadeOutState_, FadeOutState::DO_FADEOUT);
 }
 
-HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
+HWTEST_F(HpaeGainNodeTest, testDoCollFade, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -172,7 +172,7 @@ HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
     hpaeGainNode->SetCollFadeState(OPERATION_STARTED);
     hpaeSinkOutputNode->DoProcess();
     hpaeGainNode->SetCollFadeState(OPERATION_STARTED);
-    hpaeSinkOutputNode_->inputAudioBuffer_.SetBufferValid(false);
+    hpaeSinkInputNode->inputAudioBuffer_.SetBufferValid(false);
     hpaeSinkOutputNode->DoProcess();
     
     hpaeGainNode->SetCollFadeState(OPERATION_PAUSED);
