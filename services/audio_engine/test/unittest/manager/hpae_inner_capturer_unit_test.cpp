@@ -655,10 +655,10 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_001, Test
 /**
  * @tc.name  : Test MoveAllStreamToNewSinkInner with created stream
  * @tc.type  : FUNC
- * @tc.number: MoveAllStreamToNewSinkInner_002
+ * @tc.number: MoveAllStreamToNewSinkInner_003
  * @tc.desc  : Test MoveAllStreamToNewSinkInner with created streams.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_002, TestSize.Level1)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_003, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
