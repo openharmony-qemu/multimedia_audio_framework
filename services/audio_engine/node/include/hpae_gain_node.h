@@ -38,7 +38,7 @@ public:
     void SetFadeState(IOperation operation);
     void ResetVolume();
     uint64_t GetLatency(uint32_t sessionId = 0) override;
-    void SetCollFadeState(IOperation operation); 
+    void SetCollFadeState(IOperation operation);
     void DoCollFading(HpaePcmBuffer *input);
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
@@ -63,7 +63,6 @@ private:
 #endif
     bool collFadeInState_ = false;
     FadeOutState collFadeOutState_ = FadeOutState::NO_FADEOUT;
-
 };
 
 }  // namespace HPAE

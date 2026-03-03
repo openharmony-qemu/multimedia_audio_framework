@@ -1645,16 +1645,16 @@ void HpaeRendererManager::EnableCollaboration()
         if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
             AUDIO_INFO_LOG("move to coll sessionId %{public}u, state: %{public}d", key,
                 static_cast<int32_t>(node->GetState()));
-           if (node->GetState() == HPAE_SESSION_RUNNING) {
+            if (node->GetState() == HPAE_SESSION_RUNNING) {
                 HpaeProcessorType sceneType = node->connectedProcessorType_;
                 std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
                 CHECK_AND_CONTINUE_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
                     sceneClusterMap_[sceneType]->GetGainNodeById(key) != nullptr, "NULL");
                 sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(key);
                 sessionGainNode->SetCollFadeState(OPERATION_PAUSED);
-           } else {
+            } else {
                 ReConnectNodeForCollaboration(key);
-           }
+            }
         }
     }
 }
@@ -1684,16 +1684,16 @@ void HpaeRendererManager::DisableCollaboration()
         if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
             AUDIO_INFO_LOG("delete coll sessionId %{public}u, state: %{public}d", key,
                 static_cast<int32_t>(node->GetState()));
-           if (node->GetState() == HPAE_SESSION_RUNNING) {
+            if (node->GetState() == HPAE_SESSION_RUNNING) {
                 HpaeProcessorType sceneType = node->connectedProcessorType_;
                 std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
                 CHECK_AND_CONTINUE_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
                     sceneClusterMap_[sceneType]->GetGainNodeById(key) != nullptr, "NULL");
                 sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(key);
                 sessionGainNode->SetCollFadeState(OPERATION_PAUSED);
-           } else {
+            } else {
                 ReConnectNodeForCollaboration(key);
-           }
+            }
         }
     }
 }

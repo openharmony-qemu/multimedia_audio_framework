@@ -330,6 +330,7 @@ void HpaeCoBufferNode::ChangeLatencyByCollManager(int32_t &latency)
 void HpaeCoBufferNode::SetDefaultRendererManagerCallBack(std::weak_ptr<INodeCallback> defaultRendererManagerCallBack)
 {
     defaultRendererManagerCallBack_ = defaultRendererManagerCallBack;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
