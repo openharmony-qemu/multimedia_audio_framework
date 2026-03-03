@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "bluetooth_audio_render_sink.h"
 
 using namespace testing::ext;
 
@@ -223,6 +224,64 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_009, TestSize.L
     sink_->DeInit();
     EXPECT_FALSE(sink_->IsInited());
     EXPECT_FALSE(sink_->IsSinkInited());
+}
+
+/**
+ * @tc.name   : Test BluetoothSink API
+ * @tc.number : SetA2dpCacheParam_001
+ * @tc.desc   : Test ret != SUCCESS (no prestore info)
+ */
+HWTEST_F(BluetoothAudioRenderSinkUnitTest, SetA2dpCacheParam_001, TestSize.Level1)
+{
+    auto btSink = std::make_shared<BluetoothAudioRenderSink>(false, "a2dp");
+    EXPECT_TRUE(btSink);
+
+    btSink->SetA2dpCacheParam();
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> checkParam = {AudioParamKey::NONE, {"", ""}};
+    int32_t checkRet = HdiAdapterManager::GetInstance().GetSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM, checkParam);
+    EXPECT_NE(checkRet, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test BluetoothSink API
+ * @tc.number : SetA2dpCacheParam_002
+ * @tc.desc   : Test ret == SUCCESS && param.first != AudioParamKey::NONE
+ */
+HWTEST_F(BluetoothAudioRenderSinkUnitTest, SetA2dpCacheParam_002, TestSize.Level1)
+{
+    auto btSink = std::make_shared<BluetoothAudioRenderSink>(false, "a2dp");
+    EXPECT_TRUE(btSink);
+
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> param =
+        {AudioParamKey::A2DP_SUSPEND_STATE, {"", "A2dpSuspended=1"}};
+    HdiAdapterManager::GetInstance().UpdateSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM, param);
+    btSink->SetA2dpCacheParam();
+
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> checkParam = {AudioParamKey::NONE, {"", ""}};
+    int32_t checkRet = HdiAdapterManager::GetInstance().GetSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM, checkParam);
+    EXPECT_NE(checkRet, SUCCESS);
+}
+
+/**
+ * @tc.name   : Test BluetoothSink API
+ * @tc.number : SetA2dpCacheParam_003
+ * @tc.desc   : Test ret == SUCCESS && param.first == AudioParamKey::NONE
+ */
+HWTEST_F(BluetoothAudioRenderSinkUnitTest, SetA2dpCacheParam_003, TestSize.Level1)
+{
+    auto btSink = std::make_shared<BluetoothAudioRenderSink>(false, "a2dp");
+    EXPECT_TRUE(btSink);
+
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> param =
+        {AudioParamKey::NONE, {"", "A2dpSuspended=1"}};
+    HdiAdapterManager::GetInstance().UpdateSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM, param);
+    btSink->SetA2dpCacheParam();
+
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> checkParam = {AudioParamKey::NONE, {"", ""}};
+    int32_t checkRet = HdiAdapterManager::GetInstance().GetSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM, checkParam);
+    EXPECT_EQ(checkRet, SUCCESS);
+    EXPECT_EQ(checkParam.first, AudioParamKey::NONE);
+    HdiAdapterManager::GetInstance().EraseSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM);
 }
 
 } // namespace AudioStandard

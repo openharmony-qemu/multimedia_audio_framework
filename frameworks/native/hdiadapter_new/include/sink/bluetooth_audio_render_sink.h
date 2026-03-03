@@ -72,8 +72,6 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
-    void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) override;
-
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;
@@ -171,19 +169,6 @@ private:
     uint32_t bufferTotalFrameSize_ = 0;
     uint32_t eachReadFrameSize_ = 0;
     uint32_t syncInfoSize_ = 0;
-
-    struct A2dpParam {
-        AudioParamKey key = AudioParamKey::NONE;
-        std::string condition = "";
-        std::string value = "";
-
-        bool empty() const
-        {
-            return key == AudioParamKey::NONE && condition.empty() && value.empty();
-        }
-    };
-
-    A2dpParam a2dpParam_;
 };
 
 } // namespace AudioStandard

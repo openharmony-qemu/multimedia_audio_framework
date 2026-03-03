@@ -952,18 +952,25 @@ bool AudioServer::CacheExtraParameters(const std::string &key,
     return false;
 }
 
+bool AudioServer::CheckAndPreStoreA2dpParam(std::shared_ptr<IAudioRenderSink> btSink,
+    AudioParamKey parmKey, const std::string &renderValue)
+{
+    if (btSink == nullptr || !btSink->IsInited()) {
+        AUDIO_WARNING_LOG("has no valid sink, need preStore %{public}s.", renderValue.c_str());
+        HdiAdapterManager::GetInstance().
+            UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
+            PRESTORE_INFO_AUDIO_BT_PARAM, {parmKey, {"", renderValue}});
+        return false;
+    }
+    return true;
+}
+
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 {
     std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
     auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
     std::shared_ptr<IAudioRenderSink> btSink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    if (btSink == nullptr || !btSink->IsInited()) {
-        AUDIO_WARNING_LOG("has no valid sink, need preStore a2dpParam.");
-        HdiAdapterManager::GetInstance().
-            UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
-            PRESTORE_INFO_AUDIO_BT_PARAM, {parmKey, {"", renderValue}});
-        return;
-    }
+    CHECK_AND_RETURN(CheckAndPreStoreA2dpParam(btSink, parmKey, renderValue));
     btSink->SetAudioParameter(parmKey, "", renderValue);
 
     if (AudioService::GetInstance()->HasBluetoothEndpoint()) {

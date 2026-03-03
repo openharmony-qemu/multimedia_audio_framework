@@ -373,6 +373,8 @@ private:
         const DeviceType& deviceType);
 
     void SetA2dpAudioParameter(const std::string &renderValue);
+    bool CheckAndPreStoreA2dpParam(std::shared_ptr<IAudioRenderSink> btSink,
+        AudioParamKey parmKey, const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
