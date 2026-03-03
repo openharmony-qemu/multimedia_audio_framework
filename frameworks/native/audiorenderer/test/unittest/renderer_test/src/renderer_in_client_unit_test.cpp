@@ -164,6 +164,8 @@ public:
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
 
     virtual int32_t ResetStaticPlayPosition() override { return SUCCESS; }
+
+    virtual int32_t CalculateCacheCount(uint32_t cacheSizeSizeInFrame, uint32_t &cacheCount) override { return SUCCESS; }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
