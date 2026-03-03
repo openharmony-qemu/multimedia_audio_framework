@@ -140,8 +140,6 @@ public:
 
     virtual void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) {}
 
-    virtual void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) {}
-
     // Implement by self (begin)
     virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback);
     virtual void RegistCallback(uint32_t type, std::shared_ptr<IAudioSinkCallback> callback);

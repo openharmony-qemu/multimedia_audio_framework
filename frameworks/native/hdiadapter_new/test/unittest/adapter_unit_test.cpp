@@ -178,11 +178,6 @@ HWTEST_F(AdapterUnitTest, DoSetSinkPrestoreInfo_001, TestSize.Level1)
     std::pair<AudioParamKey, std::pair<std::string, std::string>> param = {AudioParamKey::NONE, {"", ""}};
     int32_t ret = HdiAdapterManager::GetInstance().sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
     EXPECT_EQ(param.second.second, "test");
-
-    HdiAdapterManager::GetInstance().DoSetSinkPrestoreInfo(sink, HDI_ID_TYPE_BLUETOOTH);
-    param = {AudioParamKey::NONE, {"", ""}};
-    ret = HdiAdapterManager::GetInstance().sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
-    EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 
 /**
