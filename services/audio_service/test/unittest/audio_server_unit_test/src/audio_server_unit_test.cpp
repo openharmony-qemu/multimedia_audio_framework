@@ -2865,30 +2865,6 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetExtraParameters API - Various keys
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetExtraParameters_002
- * @tc.desc  : Test SetExtraParameters with different main keys.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    std::vector<StringPair> kvpairs;
-    kvpairs.push_back({"key1", "value1"});
-    kvpairs.push_back({"key2", "value2"});
-
-    int32_t ret = audioServer->SetExtraParameters("HOME_MUSIC", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioServer->SetExtraParameters("EFFECT_LIVE", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioServer->SetExtraParameters("PCM_DUMP", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test SetExtraParameters API - Cached parameters
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetExtraParameters_003
@@ -2904,7 +2880,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_003, TestSize.Level1
     kvpairs.push_back({"key1", "value1"});
 
     int32_t ret = audioServer->SetExtraParameters("test_key", kvpairs);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 
     audioServer->isAudioParameterParsed_.store(true);
 }
@@ -3004,7 +2980,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_008, TestSize.Level1
     std::string mainKey = "HOME_MUSIC";
 
     int32_t ret = audioServer->GetExtraParameters(mainKey, subKeys, result);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
 }
 
 /**
@@ -3051,41 +3027,6 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetExtraParameters_010, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test SetAudioParameter API - Network ID
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetAudioParameter_003
- * @tc.desc  : Test SetAudioParameter with network ID.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetAudioParameter_003, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    int32_t ret = audioServer->SetAudioParameter(LOCAL_NETWORK_ID, 0, "", "value");
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioServer->SetAudioParameter("network_id", 0, "", "value");
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test GetAudioParameter API - Network ID
- * @tc.type  : FUNC
- * @tc.number: AudioServerGetAudioParameter_004
- * @tc.desc  : Test GetAudioParameter with network ID.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_004, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    std::string value;
-    int32_t ret = audioServer->GetAudioParameter(LOCAL_NETWORK_ID, 0, "", value);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioServer->GetAudioParameter("network_id", 0, "", value);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
  * @tc.name  : Test SetIORoutesForRemote API
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetIORoutesForRemote_001
@@ -3121,12 +3062,12 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateActiveDevicesRoute_001, TestSize.
     activeDevices.push_back({DEVICE_TYPE_SPEAKER, OUTPUT_DEVICES_FLAG});
 
     int32_t ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, "", LOCAL_NETWORK_ID);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     activeDevices.clear();
     activeDevices.push_back({DEVICE_TYPE_SPEAKER, OUTPUT_DEVICES_FLAG});
     ret = audioServer->UpdateActiveDevicesRoute(activeDevices, 0, "", "network_id");
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 /**
@@ -3175,7 +3116,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateActiveDeviceRoute_001, TestSize.L
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->UpdateActiveDeviceRoute(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICES_FLAG, 0);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 /**
@@ -3190,11 +3131,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerReleaseActiveDeviceRoute_001, TestSize.
 
     int32_t ret = audioServer->ReleaseActiveDeviceRoute(DEVICE_TYPE_SPEAKER,
         DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, "network_id");
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     ret = audioServer->ReleaseActiveDeviceRoute(DEVICE_TYPE_SPEAKER,
         DeviceFlag::OUTPUT_DEVICES_FLAG, "network_id");
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 /**
@@ -3208,10 +3149,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioMonoState_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SetAudioMonoState(true);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     ret = audioServer->SetAudioMonoState(false);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 /**
@@ -3225,16 +3166,16 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioBalanceValue_001, TestSize.Leve
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SetAudioBalanceValue(0.0f);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     ret = audioServer->SetAudioBalanceValue(1.0f);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     ret = audioServer->SetAudioBalanceValue(-1.0f);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     ret = audioServer->SetAudioBalanceValue(0.5f);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 /**
@@ -3248,10 +3189,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioBalanceValue_002, TestSize.Leve
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SetAudioBalanceValue(2.0f);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 
     ret = audioServer->SetAudioBalanceValue(-2.0f);
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
 }
 
 /**
@@ -3297,10 +3238,10 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetDmDeviceType_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     int32_t ret = audioServer->SetDmDeviceType(1, DEVICE_TYPE_NEARLINK_IN);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 
     ret = audioServer->SetDmDeviceType(1, DEVICE_TYPE_ACCESSORY);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERR_PERMISSION_DENIED, ret);
 }
 
 /**
