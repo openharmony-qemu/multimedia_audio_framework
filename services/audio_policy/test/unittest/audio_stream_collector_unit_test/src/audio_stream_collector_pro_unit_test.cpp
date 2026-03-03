@@ -506,6 +506,50 @@ HWTEST_F(AudioStreamCollectorUnitTest, RegisteredRendererTrackerClientDied_001, 
 
 /**
 * @tc.name  : Test AudioStreamCollector.
+* @tc.number: RegisteredRendererTrackerClientDied_002
+* @tc.desc  : Test RegisteredRendererTrackerClientDied.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RegisteredRendererTrackerClientDied_002, TestSize.Level4)
+{
+    AudioStreamCollector collector;
+    int32_t uid = 1001;
+    int32_t pid = 2001;
+    auto rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->sessionId = 1001;
+    rendererChangeInfo->clientUID = uid;
+    rendererChangeInfo->clientPid = pid;
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    collector.clientTracker_.insert(std::make_pair(1001, nullptr));
+    collector.audioPolicyServerHandler_.reset();
+    
+    EXPECT_NO_THROW(collector.RegisteredRendererTrackerClientDied(uid, pid));
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: RegisteredRendererTrackerClientDied_003
+* @tc.desc  : Test RegisteredRendererTrackerClientDied.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RegisteredRendererTrackerClientDied_003, TestSize.Level4)
+{
+    AudioStreamCollector collector;
+    int32_t uid = 1001;
+    int32_t pid = 2001;
+    auto rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->sessionId = 1001;
+    rendererChangeInfo->clientUID = uid;
+    rendererChangeInfo->clientPid = pid;
+    rendererChangeInfo->rendererState = RENDERER_STOPPED;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    collector.clientTracker_.insert(std::make_pair(1001, nullptr));
+    collector.audioPolicyServerHandler_.reset();
+    
+    EXPECT_NO_THROW(collector.RegisteredRendererTrackerClientDied(uid, pid));
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
 * @tc.number: RegisteredCapturerTrackerClientDied_001
 * @tc.desc  : Test RegisteredCapturerTrackerClientDied.
 */
