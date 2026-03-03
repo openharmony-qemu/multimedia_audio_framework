@@ -1917,6 +1917,12 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateDeviceInfo_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_SPEAKER;
     int32_t result = AudioEffectChainManager::GetInstance()->UpdateDeviceInfo(device, sinkName);
     EXPECT_EQ(ERROR, result);
+
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_EARPIECE;
+    result = AudioEffectChainManager::GetInstance()->UpdateDeviceInfo(device, sinkName);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_EARPIECE;
+    AudioEffectChainManager::GetInstance()->SetOutputDeviceSink(device, sinkName);
+    EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
@@ -3051,6 +3057,10 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdateInner_001, TestSize.Le
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = std::make_shared<AudioEffectVolume>();
     int32_t result = AudioEffectChainManager::GetInstance()->EffectVolumeUpdateInner(audioEffectVolume);
     EXPECT_EQ(SUCCESS, result);
+
+    AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_NEARLINK;
+    result = AudioEffectChainManager::GetInstance()->EffectVolumeUpdateInner(audioEffectVolume);
+    EXPECT_EQ(SUCCESS, result);
 }
 
 /**
@@ -4175,6 +4185,60 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateEarphoneProduct_001, TestSize.Leve
     earphoneProduct = EARPHONE_PRODUCT_ROBIN;
     AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct);
     EXPECT_EQ(audioEffectChain->earphoneProduct_, earphoneProduct);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test GetOutputChannelInfo API
+* @tc.number : GetOutputChannelInfo_001
+* @tc.desc   : Test GetOutputChannelInfo interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, GetOutputChannelInfo_001, TestSize.Level1)
+{
+    std::string scene = "SCENE_MUSIC";
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+
+    uint32_t channels = 1;
+    uint64_t channelLayout = 1;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->GetOutputChannelInfo(scene, channels, channelLayout);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test DeleteAllChains API
+* @tc.number : DeleteAllChains_001
+* @tc.desc   : Test DeleteAllChains interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, DeleteAllChains_001, TestSize.Level1)
+{
+    std::string scene = "SCENE_MUSIC";
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->DeleteAllChains();
+    ASSERT_TRUE(audioEffectChain != nullptr);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
+* @tc.name   : Test IsDeviceTypeSupportingSpatialization API
+* @tc.number : IsDeviceTypeSupportingSpatialization_001
+* @tc.desc   : Test IsDeviceTypeSupportingSpatialization interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, IsDeviceTypeSupportingSpatialization_001, TestSize.Level1)
+{
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), true);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), true);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_NEARLINK;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), true);
+    AudioEffectChainManager::GetInstance()->deviceType_ = DEVICE_TYPE_MIC;
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), false);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 } // namespace AudioStandard

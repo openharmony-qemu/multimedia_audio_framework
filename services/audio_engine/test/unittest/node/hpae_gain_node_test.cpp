@@ -129,4 +129,58 @@ HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
     hpaeSinkOutputNode->DisConnect(hpaeGainNode);
     hpaeGainNode->DisConnect(hpaeSinkInputNode);
 }
+
+HWTEST_F(HpaeGainNodeTest, SetCollFadeState, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    hpaeGainNode->SetCollFadeState(OPERATION_STARTED);
+    EXPECT_EQ(hpaeGainNode->collFadeInState_, true);
+    hpaeGainNode->SetCollFadeState(OPERATION_PAUSED);
+    EXPECT_EQ(hpaeGainNode->collFadeOutState_, FadeOutState::DO_FADEOUT);
+}
+
+HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.streamType = STREAM_MUSIC;
+    std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
+    hpaeGainNode->Connect(hpaeSinkInputNode);
+    hpaeSinkOutputNode->Connect(hpaeGainNode);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
+    g_testValue = 0;
+    int32_t testValue = 100;
+    std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =
+        std::make_shared<WriteFixedValueCb>(SAMPLE_F32LE, testValue);
+    g_testValue = testValue;
+    hpaeSinkInputNode->RegisterWriteCallback(writeFixedValueCb0);
+    hpaeGainNode->SetCollFadeState(OPERATION_STARTED);
+    hpaeSinkOutputNode->DoProcess();
+    hpaeGainNode->SetCollFadeState(OPERATION_STARTED);
+    hpaeSinkOutputNode_->inputAudioBuffer_.SetBufferValid(false);
+    hpaeSinkOutputNode->DoProcess();
+    
+    hpaeGainNode->SetCollFadeState(OPERATION_PAUSED);
+    hpaeSinkOutputNode->DoProcess();
+    hpaeSinkOutputNode->DoProcess();
+    EXPECT_EQ(hpaeGainNode->collFadeInState_, false);
+    EXPECT_EQ(hpaeGainNode->collFadeOutState_, FadeOutState::DONE_FADEOUT);
+    hpaeSinkOutputNode->DisConnect(hpaeGainNode);
+    hpaeGainNode->DisConnect(hpaeSinkInputNode);
+}
 }  // namespace

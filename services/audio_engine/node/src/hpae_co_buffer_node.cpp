@@ -31,6 +31,7 @@ static constexpr int32_t DEFAULT_CO_LATENCY = 260;
 static constexpr int32_t DEFAULT_WAIT_COUNT = 10;
 static constexpr int32_t COLLABORATION_CHANNELS = 2;
 static constexpr float COLL_SMALL_SIGNAL_NUM = 1e-6;
+static constexpr int32_t DEFAULT_COLL_FRAME_LEN = 20; // 20 ms
 
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
@@ -91,7 +92,7 @@ void HpaeCoBufferNode::DoProcess()
     std::unique_lock<std::mutex> lock(mutex_);
     
     // return if enqueue is not running
-    if (enqueueRunning_ == false) {
+    if (enqueueRunning_ == false && isOutputClusterConnected_ == true) {
         outputStream_.WriteDataToOutput(&silenceData_);
         AUDIO_INFO_LOG("Dequeue failed, Enqueue is not running");
         return;
@@ -244,6 +245,13 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
     if (result.size < requestDataLen) {
         AUDIO_WARNING_LOG("Insufficient data: %{public}zu < %{public}zu, outputting silence",
             result.size, requestDataLen);
+        if (isOutputClusterConnected_ == false) {
+            auto defaultRendererManagerCallBackTemp = defaultRendererManagerCallBack_.lock();
+            if (defaultRendererManagerCallBackTemp != nullptr) {
+                defaultRendererManagerCallBackTemp->OnDisConnectCoBufferWaitFadeOutDone();
+                AUDIO_INFO_LOG("finish write, OnDisConnectCoBufferWaitFadeOutDone");
+            }
+        }
         outputStream_.WriteDataToOutput(&silenceData_);
     } else {
         // read buffer
@@ -261,6 +269,9 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
 void HpaeCoBufferNode::SetOutputClusterConnected(bool isConnect)
 {
     isOutputClusterConnected_ = isConnect;
+    if (isOutputClusterConnected_ == false) {
+        FillSilenceFramesInner(DEFAULT_COLL_FRAME_LEN);
+    }
     HILOG_COMM_INFO("[SetOutputClusterConnected]HpaeCoBufferNode output cluster connected status: %{public}d",
         isConnect);
 }
@@ -273,8 +284,6 @@ bool HpaeCoBufferNode::IsOutputClusterConnected()
 void HpaeCoBufferNode::SetDelayCount(int32_t delayCount)
 {
     AUDIO_INFO_LOG("SetDelayCount: %{public}d", delayCount);
-    CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
-    ringCache_->ResetBuffer();
     // reset status flag
     enqueueCount_ = 0;
     waitCountThreshold_ = delayCount;
@@ -317,6 +326,10 @@ void HpaeCoBufferNode::ChangeLatencyByCollManager(int32_t &latency)
     CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
     latency = audioCollaborationManager->GetCollaborationLatency();
 }
+
+void HpaeCoBufferNode::SetDefaultRendererManagerCallBack(std::weak_ptr<INodeCallback> defaultRendererManagerCallBack)
+{
+    defaultRendererManagerCallBack_ = defaultRendererManagerCallBack;
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

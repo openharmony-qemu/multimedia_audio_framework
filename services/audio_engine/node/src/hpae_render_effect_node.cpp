@@ -466,6 +466,7 @@ void HpaeRenderEffectNode::InitEffectBuffer(const uint32_t sessionId)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    CHECK_AND_RETURN_LOG(sceneType_ != "SCENE_COLLABORATIVE", "COLLABORATIVE, no need InitEffectBuffer");
     audioEffectChainManager->InitEffectBuffer(std::to_string(sessionId));
 }
 
