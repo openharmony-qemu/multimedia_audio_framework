@@ -3034,8 +3034,8 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     if (cacheCount > MAX_CAHCED_COUNT) {
         cacheCount = MAX_CAHCED_COUNT;
     }
-    AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, cacheCount=%{public}u",
-        cacheSizeInFrame, spanSizeInFrame_, cacheCount);
+    AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
+        "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
     return SUCCESS;
 }
 } // namespace AudioStandard
