@@ -182,11 +182,11 @@ void AudioInterruptDfx::RecordMediaInterruptEvent(const InterruptEventInternal &
 {
     AudioStreamType activeStreamType = activeInterrupt.audioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
-    if (activeInterrupt.audioFocusType.streamType < 0 || incomingInterrupt.audioFocusType.streamType < 0) {
-        return;
-    }
     if (!IsCheckDfxStream(activeStreamType) || !IsCheckDfxStream(incomingStreamType)) {
         return;
+    }
+    if (interruptEvent.hintType != INTERRUPT_HINT_PAUSE && interruptEvent.hintType != INTERRUPT_HINT_STOP) {
+        return;	 
     }
     if (activeInterrupt.pid == incomingInterrupt.pid) {
         return;
