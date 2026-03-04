@@ -43,7 +43,6 @@ public:
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
     void SetMute(bool isMute);
-    bool GetMute();
 private:
     uint64_t GetTimestamp();
 private:

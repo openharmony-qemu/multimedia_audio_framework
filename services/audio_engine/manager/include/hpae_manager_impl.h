@@ -61,7 +61,6 @@ public:
     int32_t StopAudioPort(const std::string &audioPortName) override;
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
-    int32_t SetSourceOutputMuteByStreamId(int32_t sessionId, bool setMute) override;
     int32_t GetAllSinks() override;
 
     // play and record stream interface
