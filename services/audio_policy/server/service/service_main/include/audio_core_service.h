@@ -292,7 +292,7 @@ private:
     int32_t PauseClient(uint32_t sessionId);
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
-        bool isSwitchStream = false);
+        bool isSwitchStream = true);
 
     // ICoreServiceProvider from EventEntry
     int32_t SetDefaultOutputDevice(

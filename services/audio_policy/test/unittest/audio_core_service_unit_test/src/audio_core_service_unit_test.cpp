@@ -6557,5 +6557,79 @@ HWTEST_F(AudioCoreServiceUnitTest, CheckNeedExclude_001, TestSize.Level1)
     EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(nearlinkDesc, true));
 #endif
 }
+
+/**
+* @tc.name  : Test ReleaseClient.
+* @tc.number: ReleaseClient_001
+* @tc.desc  : Test ReleaseClient - When isSwitchStream is false, RemoveSwitchStream should be called.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::MONO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+
+    auto pipeManager = GetServerPtr()->coreService_->pipeManager_;
+    pipeManager->AddSwitchStream(originalSessionId);
+    EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
+
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_FALSE(pipeManager->IsSwitchStreamExist(originalSessionId));
+}
+
+/**
+* @tc.name  : Test ReleaseClient.
+* @tc.number: ReleaseClient_002
+* @tc.desc  : Test ReleaseClient - When isSwitchStream is true, RemoveSwitchStream should be called.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::MONO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+
+    auto pipeManager = GetServerPtr()->coreService_->pipeManager_;
+    pipeManager->AddSwitchStream(originalSessionId);
+    EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
+
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, true);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
+
+    pipeManager->RemoveSwitchStream(originalSessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
