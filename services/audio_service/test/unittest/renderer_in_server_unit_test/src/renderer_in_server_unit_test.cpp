@@ -3590,6 +3590,11 @@ HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_006, TestSize.Level1)
     ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(cacheCount, 6);
+    cacheCount = 0;
+    rendererInServer->isBufferConfiged_ = false;
+    ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(cacheCount, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
