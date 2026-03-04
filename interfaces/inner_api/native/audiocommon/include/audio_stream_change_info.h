@@ -76,7 +76,8 @@ public:
             && parcel.WriteInt32(rendererInfo.format)
             && rendererInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(rendererStateTemp))
-            && outputDeviceInfo.Marshalling(parcel);
+            && outputDeviceInfo.Marshalling(parcel)
+            && parcel.WriteInt32(appVolume);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
