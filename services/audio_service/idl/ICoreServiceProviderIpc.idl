@@ -24,7 +24,8 @@ interface ICoreServiceProviderIpc {
     [ipccode 0] void UpdateSessionOperation(
         [in] unsigned int sessionId,
         [in] unsigned int operation, /* SessionOperation */
-        [in] unsigned int operationMsg /* SessionOperationMsg */);
+        [in] unsigned int operationMsg, /* SessionOperationMsg */
+        [in] boolean isSwitchStream);
     void SetDefaultOutputDevice(
         [in] int defaultOutputDevice, /* DeviceType */
         [in] unsigned int sessionID,

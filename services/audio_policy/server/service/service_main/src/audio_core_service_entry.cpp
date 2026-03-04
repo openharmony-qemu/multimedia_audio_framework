@@ -123,7 +123,7 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
 }
 
 int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
-    SessionOperationMsg opMsg)
+    SessionOperationMsg opMsg, bool isSwitchStream)
 {
     // This function is called frequently, add xcollie here to avoid freezing for a very long time
     AudioXCollie audioXCollie("EventEntry::UpdateSessionOperation", TIMEOUT_CORE_ENTRY_S,
@@ -140,7 +140,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         case SESSION_OPERATION_STOP:
             return coreService_->StopClient(sessionId);
         case SESSION_OPERATION_RELEASE:
-            return coreService_->ReleaseClient(sessionId, opMsg);
+            return coreService_->ReleaseClient(sessionId, opMsg, isSwitchStream);
         default:
             return SUCCESS;
     }

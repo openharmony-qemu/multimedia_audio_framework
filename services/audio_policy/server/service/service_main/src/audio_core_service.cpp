@@ -385,9 +385,6 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
         AUDIO_INFO_LOG("Generate session id %{public}u for stream", sessionId);
     }
 
-    pipeManager_->RemoveSwitchStream(sessionId);
-    streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
-
     ClientTypeManager::GetInstance()->GetAndSaveClientType(GetRealUid(streamDesc),
         AudioBundleManager::GetBundleNameFromUid(GetRealUid(streamDesc)));
 
@@ -421,6 +418,10 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
+
+    pipeManager_->RemoveSwitchStream(sessionId);
+    streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
+
     return SUCCESS;
 }
 
@@ -1004,7 +1005,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg)
+int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isSwitchStream)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
@@ -1035,6 +1036,11 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         }
         ReloadCaptureSession(sessionId, SESSION_OPERATION_RELEASE);
     }
+
+    if (!isSwitchStream) {
+        pipeManager_->RemoveSwitchStream(sessionId);
+    }
+    
     return SUCCESS;
 }
 
