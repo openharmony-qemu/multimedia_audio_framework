@@ -1366,6 +1366,9 @@ void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
     AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::SELECTED_DEVICE_CONNECT_FAILED};
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnConnectFailed", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnConnectFailed", reason);
+
+    CHECK_AND_RETURN(audioPolicyServerHandler_ != nullptr);
+    audioPolicyServerHandler_->SendPreferredOutputDeviceUpdated();
 }
 
 void AudioDeviceStatus::UpdateDeviceList(AudioDeviceDescriptor &updatedDesc,  bool isConnected,
