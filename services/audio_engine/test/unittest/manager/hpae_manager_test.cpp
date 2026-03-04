@@ -805,6 +805,15 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
 
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMuteByStreamId(streamInfo.sessionId, true), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMuteByStreamId(streamInfo.sessionId, true), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMuteByStreamId(streamInfo.sessionId, false), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
+
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);

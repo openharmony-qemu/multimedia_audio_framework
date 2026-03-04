@@ -70,6 +70,8 @@ public:
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
+    // when audio process mute change.
+    int32_t OnStreamMute(IAudioProcessStream *processStream, bool mute) override;
 
     /**
      * Call LinkProcessStream when first create process or link other process with this endpoint.
@@ -248,7 +250,7 @@ private:
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase>& processBuffer);
     void NotifyStreamChange(StreamChangeType change,
-        IAudioProcessStream *processStream, RendererState state);
+        IAudioProcessStream *processStream, RendererState state, bool mute = false);
     AudioEndpointInner::VolumeResult ConstructEnforcedToneVolume();
 
 private:

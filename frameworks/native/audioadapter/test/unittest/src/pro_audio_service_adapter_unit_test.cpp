@@ -238,6 +238,30 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_SetSourceMute_002, TestSize.L
 }
 
 /**
+ * @tc.name: Pro_Audio_SetSourceOutputStreamMuteByStreamId_001
+ * @tc.desc: test set source mute
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_SetSourceOutputStreamMuteByStreamId_001, TestSize.Level1)
+{
+    int32_t sessionId = 100001;
+    int32_t ret = impl_->SetSourceOutputStreamMuteByStreamId(sessionId, true);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name: Pro_Audio_SetSourceOutputStreamMuteByStreamId_002
+ * @tc.desc: test set source unmute
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_SetSourceOutputStreamMuteByStreamId_002, TestSize.Level1)
+{
+    int32_t sessionId = 100002;
+    int32_t ret = impl_->SetSourceOutputStreamMuteByStreamId(sessionId, false);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
  * @tc.name: Pro_Audio_SuspendedSink_001
  * @tc.desc: test suspended sink
  * @tc.type: FUNC
