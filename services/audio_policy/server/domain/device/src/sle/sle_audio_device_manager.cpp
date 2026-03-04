@@ -545,5 +545,19 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
     }
     return 0;
 }
+
+bool SleAudioDeviceManager::GetMuteStatusByVolumeType(AudioVolumeType volumeType,
+    const std::string &nearLinkDevice)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(nearLinkDevice) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (volumeType == STREAM_MUSIC) {
+        return deviceVolumeConfigInfo_[nearLinkDevice].first.isMute;
+    } else if (volumeType == STREAM_VOICE_CALL) {
+        return false;
+    }
+    return false;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -202,6 +202,8 @@ private:
         int32_t volumeLevel, int32_t zoneId, bool syncVolDegree, std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
     int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
+    int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
+        const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
