@@ -108,6 +108,7 @@ void AudioEndpointInner::CheckRecordSignal(uint8_t *buffer, size_t bufferSize)
 
 void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
 {
+    CHECK_AND_RETURN(needCheckZeroVolume_);
     if (fastSinkType_ == FAST_SINK_TYPE_BLUETOOTH) {
         return;
     }

@@ -1256,6 +1256,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
 {
     bool isAllReady = true;
     bool needCheckStandby = false;
+    needCheckZeroVolume_ = false;
     {
         // lock list without sleep
         std::lock_guard<std::mutex> lock(listLock_);
@@ -1281,6 +1282,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 HILOG_COMM_INFO("[CheckAllBufferReady]change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
                 needCheckStandby = true;
+                needCheckZeroVolume_ = true;
                 continue;
             }
             // StaticMode do not refresh Time here, skip;
