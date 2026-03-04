@@ -546,9 +546,9 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
 
     bool isInMuteCheckList = false;
     auto bundleName = AudioInterruptUtils::GetAudioInterruptBundleName(incomingInterrupt);
-    string muteCheckAppName = bundleName + "_check";
+    string muteCheckAppName = bundleName;
     if (queryBundleNameListCallback_ != nullptr) {
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_param",
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(muteCheckAppName, "audio_mute_check",
             isInMuteCheckList);
     }
     if (isInMuteCheckList) {
