@@ -46,6 +46,10 @@ class IpcStreamTest : public IIpcStream {
 public:
     virtual ~IpcStreamTest() = default;
 
+    int32_t calculateCacheCountRet = SUCCESS;
+    uint32_t calculatedCacheCount = 0;
+    bool calculateCacheCountCalled = false;
+
     virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return 0; }
 
     virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override { return 0; }
@@ -164,6 +168,13 @@ public:
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
 
     virtual int32_t ResetStaticPlayPosition() override { return SUCCESS; }
+
+    virtual int32_t CalculateCacheCount(uint32_t cacheSizeSizeInFrame, uint32_t &cacheCount) override
+    {
+        calculateCacheCountCalled = true;
+        cacheCount = calculatedCacheCount;
+        return calculateCacheCountRet;
+    }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
@@ -2295,6 +2306,124 @@ HWTEST(RendererInClientInnerUnitTest, SetCacheSize_003, TestSize.Level1)
     uint32_t expectValue = 120;
     ptrRendererInClientInner->SetCacheSize(testValue);
     EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, expectValue);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_004
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize with ipcStream_ null
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_004, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 20;
+    ptrRendererInClientInner->ipcStream_ = nullptr;
+    uint32_t testValue = 100;
+    uint32_t originalCacheSize = ptrRendererInClientInner->cacheSizeInFrame_;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, originalCacheSize);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_005
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize with valid ipcStream_
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_005, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 20;
+    sptr<IpcStreamTest> ipcStreamTest = new(std::nothrow) IpcStreamTest();
+    ipcStreamTest->calculateCacheCountRet = SUCCESS;
+    ipcStreamTest->calculatedCacheCount = 5;
+    ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
+    uint32_t testValue = 100;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_TRUE(ipcStreamTest->calculateCacheCountCalled);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, 100);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_006
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize with CalculateCacheCount failure
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_006, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 20;
+    sptr<IpcStreamTest> ipcStreamTest = new(std::nothrow) IpcStreamTest();
+    ipcStreamTest->calculateCacheCountRet = ERR_INVALID_PARAM;
+    ipcStreamTest->calculatedCacheCount = 5;
+    ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
+    uint32_t originalCacheSize = ptrRendererInClientInner->cacheSizeInFrame_;
+    uint32_t testValue = 100;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_TRUE(ipcStreamTest->calculateCacheCountCalled);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, originalCacheSize);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_007
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize with zero cacheCount
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_007, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 20;
+    sptr<IpcStreamTest> ipcStreamTest = new(std::nothrow) IpcStreamTest();
+    ipcStreamTest->calculateCacheCountRet = SUCCESS;
+    ipcStreamTest->calculatedCacheCount = 0;
+    ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
+    uint32_t testValue = 10;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_TRUE(ipcStreamTest->calculateCacheCountCalled);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, 0);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_008
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize with large cacheCount
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_008, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 20;
+    sptr<IpcStreamTest> ipcStreamTest = new(std::nothrow) IpcStreamTest();
+    ipcStreamTest->calculateCacheCountRet = SUCCESS;
+    ipcStreamTest->calculatedCacheCount = 1000;
+    ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
+    uint32_t testValue = 20000;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_TRUE(ipcStreamTest->calculateCacheCountCalled);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, 20000);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetCacheSize_009
+ * @tc.desc  : Test RendererInClientInner::SetCacheSize with minimum cacheSize
+ */
+HWTEST(RendererInClientInnerUnitTest, SetCacheSize_009, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->spanSizeInFrame_ = 10;
+    sptr<IpcStreamTest> ipcStreamTest = new(std::nothrow) IpcStreamTest();
+    ipcStreamTest->calculateCacheCountRet = SUCCESS;
+    ipcStreamTest->calculatedCacheCount = 1;
+    ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
+    uint32_t testValue = 1;
+    ptrRendererInClientInner->SetCacheSize(testValue);
+    EXPECT_TRUE(ipcStreamTest->calculateCacheCountCalled);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, 10);
 }
 
 /**

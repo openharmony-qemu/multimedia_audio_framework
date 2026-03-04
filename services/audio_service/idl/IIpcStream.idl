@@ -74,4 +74,5 @@ interface IIpcStream {
     void GetLatencyWithFlag([out] unsigned long latency, [in] unsigned int flag);
     void ResetStaticPlayPosition();
     void SetInMainThreadState([in] boolean isInMainThread);
+    void CalculateCacheCount([in] unsigned int cacheSizeInFrame, [out] unsigned int cacheCount);
 }

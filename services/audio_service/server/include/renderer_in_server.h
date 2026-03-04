@@ -176,6 +176,7 @@ public:
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
     bool IsWriteFirst() const noexcept;
+    int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
 public:
     const AudioProcessConfig processConfig_;
 private:

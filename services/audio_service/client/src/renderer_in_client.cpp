@@ -326,8 +326,17 @@ void RendererInClientInner::SetCacheSize(uint32_t cacheSizeInFrame)
         AUDIO_ERR_LOG("failed: spanSizeInFrame is invalid");
         return;
     }
+    if (ipcStream_ == nullptr) {
+        AUDIO_ERR_LOG("failed: ipcStream_ is null");
+        return;
+    }
     // 20 -> 40, 93 -> 120
-    uint32_t cacheCount = (cacheSizeInFrame + spanSizeInFrame_ - 1) / spanSizeInFrame_ + 1;
+    uint32_t cacheCount = 0;
+    int32_t ret = ipcStream_->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("CalculateCacheCount failed: %{public}d", ret);
+        return;
+    }
     cacheSizeInFrame_ = cacheCount * spanSizeInFrame_;
     AUDIO_INFO_LOG("cacheCount:%{public}d cacheSizeInFrame:%{public}d", cacheCount, cacheSizeInFrame_.load());
 }

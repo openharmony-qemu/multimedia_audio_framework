@@ -152,6 +152,7 @@ public:
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();
+    int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount) override;
 
 private:
     int32_t ConfigRenderer();

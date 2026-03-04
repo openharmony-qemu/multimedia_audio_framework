@@ -46,6 +46,7 @@
 #include "stream_dfx_manager.h"
 #include "audio_stream_enum.h"
 #include "audio_stream_concurrency_detector.h"
+#include "audio_effect_chain_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -76,6 +77,8 @@ namespace {
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
     static const size_t MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
     static constexpr int32_t AVS3METADATA_SIZE = 19824;
+    constexpr int32_t MAX_CACHED_BUFFER_COUNT = 5;
+    constexpr int32_t MAX_CAHCED_COUNT = 6;
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -3003,6 +3006,38 @@ int32_t RendererInServer::ResetStaticPlayPosition()
     staticBufferProvider_->NeedProcessFadeOut();
     staticBufferProvider_->ResetStaticPlayPosition();
     staticBufferProvider_->NeedProcessFadeIn();
+    return SUCCESS;
+}
+
+int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount)
+{
+    if (!isBufferConfiged_) {
+        AUDIO_ERR_LOG("CalculateCacheSize failed: buffer not configured");
+        return ERR_OPERATION_FAILED;
+    }
+    if (spanSizeInFrame_ == 0) {
+        AUDIO_ERR_LOG("CalculateCacheCount failed: spanSizeInFrame is 0");
+        return ERR_INVALID_PARAM;
+    }
+    if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
+        cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
+    }
+    // 20 -> 40, 93 -> 120
+    uint64_t numerator = static_cast<uint64_t>(cacheSizeInFrame) + spanSizeInFrame_ - 1;
+    cacheCount = static_cast<uint32_t>(numerator / spanSizeInFrame_) + 1;
+    if (cacheCount == 0) {
+        AUDIO_ERR_LOG("CalculateCacheSize failed: calculated count = 0");
+        return ERR_INVALID_PARAM;
+    }
+    // 音效上移情况下缓存+1，因为底层缓存不足
+    if (!AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
+        cacheCount += 1;
+    }
+    if (cacheCount > MAX_CAHCED_COUNT) {
+        cacheCount = MAX_CAHCED_COUNT;
+    }
+    AUDIO_INFO_LOG("CalculateCacheCount: cacheSizeInFrame=%{public}u, spanSizeInFrame_=%{public}zu, "
+        "cacheCount=%{public}u", cacheSizeInFrame, spanSizeInFrame_, cacheCount);
     return SUCCESS;
 }
 } // namespace AudioStandard
