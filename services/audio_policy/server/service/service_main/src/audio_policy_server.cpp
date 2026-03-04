@@ -2753,7 +2753,7 @@ int32_t AudioPolicyServer::SetAncoSourceOutputStreamMute(int32_t uid, bool setMu
     return SUCCESS;
 }
 
-void AudioPolicyServer::SetLatestMuteStateForUid(init32_t uid, bool setMute)
+void AudioPolicyServer::SetLatestMuteStateForUid(int32_t uid, bool setMute)
 {
     std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
     for (const auto &sessionID : sessionIDSet) {
