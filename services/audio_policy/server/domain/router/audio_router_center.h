@@ -148,6 +148,10 @@ private:
     unordered_map<SourceType, string> capturerConfigMap_;
 
     sptr<IStandardAudioRoutingManagerListener> audioDeviceRefinerCb_;
+    void PostProcessOutPutDeviceLog(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+        FetchDeviceInfo &bak, RouterType &routerType, const FetchDeviceInfo &info);
+    std::shared_ptr<AudioDeviceDescriptor> MediaFollowRingStrategy(StreamUsage streamUsage, int32_t clientUID,
+        StreamUsage ringStreamUsage, RouterType &routerType, const RouterType &bypassType);
 };
 } // namespace AudioStandard
 } // namespace OHOS
