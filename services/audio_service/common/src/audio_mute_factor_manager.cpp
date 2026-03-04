@@ -37,7 +37,7 @@ AudioMuteFactorManager::~AudioMuteFactorManager()
 
 bool AudioMuteFactorManager::GetMdmMuteStatus() const
 {
-    return isMdmMute_;
+    return isMdmMute_ ? 0.0f : 1.0f;
 }
 
 void AudioMuteFactorManager::SetMdmMuteStatus(const bool mdmMute)

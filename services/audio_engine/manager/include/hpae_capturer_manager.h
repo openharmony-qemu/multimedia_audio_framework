@@ -86,7 +86,7 @@ private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
     void CreateSceneCluster(HpaeProcessorType sceneType, AudioEnhanceScene enhanceScene);
-    int32_t DeleteOutputSession(uint32_t sessionId);
+    int32_t DeleteOutputSession(uint32_t sessionId, bool keepSessionMaps = false);
     void ConnectProcessClusterWithEc(HpaeProcessorType &sceneType);
     void ConnectProcessClusterWithMicRef(HpaeProcessorType &sceneType);
     int32_t ConnectOutputSession(uint32_t sessionId);

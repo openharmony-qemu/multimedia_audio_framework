@@ -161,14 +161,16 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
     return;
 }
 
-int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
+int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId, bool keepSessionMaps)
 {
     AUDIO_INFO_LOG("delete output node:%{public}d, source name:%{public}s", sessionId, sourceInfo_.deviceClass.c_str());
     auto sourceOutputNode = SafeGetMap(sourceOutputNodeMap_, sessionId);
     if (!sourceOutputNode) {
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, CAPTURER_INVALID);
-        sourceOutputNodeMap_.erase(sessionId);
-        sessionNodeMap_.erase(sessionId);
+        if (!keepSessionMaps) {
+            sourceOutputNodeMap_.erase(sessionId);
+            sessionNodeMap_.erase(sessionId);
+        }
         return SUCCESS;
     }
 #ifdef ENABLE_HIDUMP_DFX
@@ -197,8 +199,10 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
     HpaeSessionState outputState = sourceOutputNodeMap_[sessionId]->GetState();
     CapturerState state = outputState == HPAE_SESSION_RELEASED ? CAPTURER_INVALID : CAPTURER_RELEASED;
     NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_REMOVE, sessionId, state);
-    sourceOutputNodeMap_.erase(sessionId);
-    sessionNodeMap_.erase(sessionId);
+    if (!keepSessionMaps) {
+        sourceOutputNodeMap_.erase(sessionId);
+        sessionNodeMap_.erase(sessionId);
+    }
     return SUCCESS;
 }
 
@@ -690,7 +694,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
             }
         }
         for (const auto &it : moveInfos) {
-            DeleteOutputSession(it.sessionId);
+            DeleteOutputSession(it.sessionId, true);
         }
         sourceInfo_ = sourceInfo;
         int32_t ret = InitCapturerManager();
