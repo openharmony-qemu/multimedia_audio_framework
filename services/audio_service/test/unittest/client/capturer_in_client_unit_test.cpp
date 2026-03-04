@@ -212,7 +212,10 @@ public:
 
     virtual int32_t ResetStaticPlayPosition() override { return SUCCESS; }
 
-    virtual int32_t CalculateCacheCount(uint32_t cacheSizeSizeInFrame, uint32_t &cacheCount) override { return SUCCESS; }
+    virtual int32_t CalculateCacheCount(uint32_t cacheSizeSizeInFrame, uint32_t &cacheCount) override
+    {
+        return SUCCESS;
+    }
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {
