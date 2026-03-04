@@ -1830,6 +1830,78 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_010, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolume API
  * @tc.type  : FUNC
+ * @tc.number: GetVolumeValues_001
+ * @tc.desc  : Test GetVolumeValues interface with invalid fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_001, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = -1.0f;
+    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioVolume::GetInstance()->isVgsVolumeSupported_ = true;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, deviceClass, &volumes);
+    EXPECT_NE(volume, -1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeValues_002
+ * @tc.desc  : Test GetVolumeValues interface with invalid fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_002, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = -1.0f;
+    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioVolume::GetInstance()->isVgsVolumeSupported_ = false;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, deviceClass, &volumes);
+    EXPECT_NE(volume, -1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeValues_003
+ * @tc.desc  : Test GetVolumeValues interface with invalid fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_003, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = -1.0f;
+    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioVolume::GetInstance()->isVgsVolumeSupported_ = false;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_COMMUNICATION, deviceClass, &volumes);
+    EXPECT_NE(volume, -1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeValues_004
+ * @tc.desc  : Test GetVolumeValues interface with invalid fixed system enforced tone volume
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolumeValues_004, TestSize.Level1)
+{
+    uint32_t sessionId = 123;
+    std::string deviceClass = "test";
+    struct VolumeValues volumes = {0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+    VolumeUtils::enforcedToneVolume_ = -1.0f;
+    AudioVolume::GetInstance()->currentActiveDevice_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioVolume::GetInstance()->isVgsVolumeSupported_ = true;
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, STREAM_VOICE_RING, deviceClass, &volumes);
+    EXPECT_NE(volume, -1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
  * @tc.number: GetStreamVolume_002
  * @tc.desc  : Test AudioVolume interface.
  */
