@@ -380,7 +380,7 @@ void HpaeGainNode::DoCollFading(HpaePcmBuffer *input)
         return;
     }
     // do fade in
-    if (collFadeInState_ == false) {
+    if (collFadeInState_ == true) {
         if (!input->IsValid() || IsSilentData(input)) {
             AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
             SilenceData(input);
