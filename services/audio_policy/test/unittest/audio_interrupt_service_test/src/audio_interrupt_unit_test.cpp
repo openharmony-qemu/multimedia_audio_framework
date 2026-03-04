@@ -1501,6 +1501,31 @@ HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSessio
 }
 
 /**
+* @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptServiceAddActiveInterruptToSession_007
+* @tc.desc  : Test AddActiveInterruptToSession. About itZone.
+*/
+HWTEST_F(AudioInterruptUnitTest, AudioInterruptServiceAddActiveInterruptToSession_007, TestSize.Level1)
+{
+    auto interruptService = GetTnterruptServiceTest();
+    auto server = GetPolicyServerTest();
+    interruptService->Init(server);
+    int32_t pid = CALLER_PID;
+    auto ret = interruptService->ActivateAudioSession(0, pid, strategyTest);
+    EXPECT_EQ(SUCCESS, ret.retCode);
+
+    interruptService->zoneManager_.service_ = GetTnterruptServiceTest().get();
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.streamId = CALLER_PID;
+    audioInterrupt.pid = CALLER_PID;
+    interruptService->zoneManager_.service_->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
+    interruptService->zoneManager_.service_->zonesMap_[1]->audioFocusInfoList.push_back(
+        std::make_pair(audioInterrupt, ACTIVE));
+    interruptService->AddActiveInterruptToSession(pid);
+    EXPECT_FALSE(interruptService->zonesMap_.empty());
+}
+
+/**
  * @tc.name  : Test GetAudioServerProxy API.
  * @tc.number: AudioInterruptServiceGetAudioServerProxy_001
  * @tc.desc  : Test OnSessionTimeout when g_adProxy is nullptr.
