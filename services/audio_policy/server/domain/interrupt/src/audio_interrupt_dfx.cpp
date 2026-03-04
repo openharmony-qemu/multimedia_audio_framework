@@ -186,7 +186,7 @@ void AudioInterruptDfx::RecordMediaInterruptEvent(const InterruptEventInternal &
         return;
     }
     if (interruptEvent.hintType != INTERRUPT_HINT_PAUSE && interruptEvent.hintType != INTERRUPT_HINT_STOP) {
-        return;	 
+        return;
     }
     if (activeInterrupt.pid == incomingInterrupt.pid) {
         return;
