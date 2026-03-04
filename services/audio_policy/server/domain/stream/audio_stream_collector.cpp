@@ -27,6 +27,8 @@
 #include "parameters.h"
 #include <fstream>
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
