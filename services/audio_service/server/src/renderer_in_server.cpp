@@ -3022,12 +3022,14 @@ int32_t RendererInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_
     if (cacheSizeInFrame > spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT) {
         cacheSizeInFrame = spanSizeInFrame_ * MAX_CACHED_BUFFER_COUNT;
     }
+    // 20 -> 40, 93 -> 120
     uint64_t numerator = static_cast<uint64_t>(cacheSizeInFrame) + spanSizeInFrame_ - 1;
     cacheCount = static_cast<uint32_t>(numerator / spanSizeInFrame_) + 1;
     if (cacheCount == 0) {
         AUDIO_ERR_LOG("CalculateCacheSize failed: calculated count = 0");
         return ERR_INVALID_PARAM;
     }
+    // 音效上移情况下缓存+1，因为底层缓存不足
     if (!AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
         cacheCount += 1;
     }
