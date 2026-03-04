@@ -1542,9 +1542,11 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
                 UpdateNearlinkDeviceVolume(desc);
             }
+#ifndef WIRELESS_DEFAULT_EXCLUDE
             std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
                 make_shared<AudioDeviceDescriptor>(desc)};
             AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
+#endif
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             ClearPreferredWhenCategoryUpdated(desc);
         }
