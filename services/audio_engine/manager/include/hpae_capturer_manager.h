@@ -86,7 +86,7 @@ private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
     void CreateSceneCluster(HpaeProcessorType sceneType, AudioEnhanceScene enhanceScene);
-    int32_t DeleteOutputSession(uint32_t sessionId);
+    int32_t DeleteOutputSession(uint32_t sessionId, bool keepSessionMaps = false);
     void ConnectProcessClusterWithEc(HpaeProcessorType &sceneType);
     void ConnectProcessClusterWithMicRef(HpaeProcessorType &sceneType);
     int32_t ConnectOutputSession(uint32_t sessionId);
@@ -113,7 +113,7 @@ private:
     bool CheckMicRefCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &micRefNodeInfo);
     void StopOuputNode();
     void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, CapturerState state,
-        uint32_t appUid = INVALID_UID);
+        uint32_t appUid = INVALID_UID, bool mute = false);
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;
