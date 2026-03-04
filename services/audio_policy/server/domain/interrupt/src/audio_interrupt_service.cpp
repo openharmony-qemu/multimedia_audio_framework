@@ -2609,6 +2609,7 @@ void AudioInterruptService::DeactivateAudioInterruptInternalContinue(const int32
 bool AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audioScene,
     AudioInterruptChangeType changeType, int32_t zoneId, bool notFromInterrupt)
 {
+    Trace trace("AudioInterruptService::UpdateAudioSceneFromInterrupt");
     CHECK_AND_RETURN_RET_LOG(policyServer_ != nullptr, false, "policyServer nullptr");
     CHECK_AND_RETURN_RET_LOG(zoneId == ZONEID_DEFAULT, false, "zoneId %{public}d is not default", zoneId);
     int32_t scene = AUDIO_SCENE_INVALID;
