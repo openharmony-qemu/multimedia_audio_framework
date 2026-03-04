@@ -146,6 +146,7 @@ struct OffloadCallbackData {
 
 class INodeCallback {
 public:
+    virtual ~INodeCallback() = default;
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
     virtual void OnFadeDone(uint32_t sessionId){};
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
@@ -161,6 +162,8 @@ public:
         return data;
     }
     virtual void SetCollDelayCount(){};
+    virtual void OnCollborationFadeDone(uint32_t sessionId){};
+    virtual void OnDisConnectCoBufferWaitFadeOutDone(){};
 };
 
 class IOffloadCallback {

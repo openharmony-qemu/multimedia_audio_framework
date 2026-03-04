@@ -141,11 +141,24 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, Process_001, TestSize.Level0)
     sinkOutputNode->DoProcess();
     EXPECT_EQ(coBufferNode->Reset(), true);
     coBufferNode->enqueueRunning_ = false;
+    coBufferNode->isOutputClusterConnected_ = false;
+    sinkOutputNode->DoProcess();
+
+    coBufferNode->enqueueRunning_ = false;
+    coBufferNode->isOutputClusterConnected_ = true;
     sinkOutputNode->DoProcess();
     EXPECT_EQ(coBufferNode->ResetAll(), true);
+    coBufferNode->ringCache_->ResetBuffer();
+    coBufferNode->isOutputClusterConnected_ = false;
+    coBufferNode->ProcessOutputFrameInner();
+    std::shared_ptr<INodeCallback> defaultRendererManagerCallBackTemp = std::make_shared<INodeCallback>();
+    coBufferNode->defaultRendererManagerCallBack_ = defaultRendererManagerCallBackTemp;
     coBufferNode->ProcessOutputFrameInner();
     TestRendererRenderFrame(sinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+    coBufferNode->SetDelayCount(TEST_COLLABORATION_ALIGN_COUNT);
+    sinkOutputNode->DoProcess();
+    EXPECT_EQ(coBufferNode->ResetAll(), true);
 }
 
 /**
@@ -179,6 +192,24 @@ HWTEST_F(HpaeCoBufferNodeUnitTest, FillSilenceFramesInner_001, TestSize.Level0)
     coBufferNode->FillSilenceFramesInner(TEST_MAX_LATENCY_MS);
 
     EXPECT_EQ(coBufferNode->ringCache_->GetWritableSize().size != 0, true);
+}
+
+/**
+ * @tc.name  : Test SetOutputClusterConnected
+ * @tc.type  : FUNC
+ * @tc.number: SetOutputClusterConnected_001
+ * @tc.desc  : Test SetOutputClusterConnected when config in vaild.
+ */
+HWTEST_F(HpaeCoBufferNodeUnitTest, SetOutputClusterConnected_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
+    coBufferNode->ringCache_->ResetBuffer();
+
+    bool isOutputClusterConnectedTemp = false;
+    EXPECT_EQ(coBufferNode->ringCache_->GetReadableSize().size == 0, true);
+    coBufferNode->SetOutputClusterConnected(isOutputClusterConnectedTemp);
+    EXPECT_EQ(coBufferNode->ringCache_->GetReadableSize().size != 0, true);
 }
 }
 }

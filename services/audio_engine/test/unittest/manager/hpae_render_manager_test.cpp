@@ -1218,7 +1218,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level1)
 HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo = GetSinkInfo();
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     HpaeNodeInfo nodeInfo;
@@ -1230,7 +1230,17 @@ HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level1)
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     EXPECT_NE(coBufferNode, nullptr);
     coBufferNode->SetNodeInfo(nodeInfo);
+    coBufferNode->SetOutputClusterConnected(true);
+    hpaeRendererManager->outputCluster_->Start();
     int32_t ret = hpaeRendererManager->ConnectCoBufferNode(coBufferNode);
+    EXPECT_EQ(ret, SUCCESS);
+    hpaeRendererManager->outputCluster_->DeInit();
+    hpaeRendererManager->isSuspend_ = true;
+    ret = hpaeRendererManager->ConnectCoBufferNode(coBufferNode);
+    EXPECT_EQ(ret, SUCCESS);
+    coBufferNode->SetOutputClusterConnected(false);
+    hpaeRendererManager->isSuspend_ = false;
+    ret = hpaeRendererManager->ConnectCoBufferNode(coBufferNode);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
@@ -2724,5 +2734,85 @@ HWTEST_F(HpaeRendererManagerTest, OffloadDeactivateThread_002, TestSize.Level1)
     offloadManager->DeactivateThread();
 
     EXPECT_TRUE(requestHandled);
+}
+
+/**
+ * @tc.name  : Test EnableCollaboration
+ * @tc.type  : FUNC
+ * @tc.number: EnableCollaboration_001
+ * @tc.desc  : Test EnableCollaboration.
+ */
+HWTEST_F(HpaeRendererManagerTest, EnableCollaboration_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    HpaeNodeInfo nodeInfo1;
+    uint32_t sessionIdTemp1 = TEST_STREAM_SESSION_ID;
+    nodeInfo1.sessionId = sessionIdTemp1;
+    nodeInfo1.effectInfo.effectScene = SCENE_MOVIE;
+    auto sinkInputNode1 = std::make_shared<HpaeSinkInputNode>(nodeInfo1);
+    sinkInputNode1->SetState(HPAE_SESSION_RUNNING);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp1] = sinkInputNode1;
+    EXPECT_EQ(hpaeRendererManager->hpaeCoBufferNode_ == nullptr, true);
+    hpaeRendererManager->EnableCollaboration();
+    EXPECT_EQ(hpaeRendererManager->hpaeCoBufferNode_ != nullptr, true);
+
+    HpaeNodeInfo nodeInfo2;
+    uint32_t sessionIdTemp2 = sessionIdTemp1 + 1;
+    nodeInfo2.sessionId = sessionIdTemp2;
+    nodeInfo2.effectInfo.effectScene = SCENE_MOVIE;
+    auto sinkInputNode2 = std::make_shared<HpaeSinkInputNode>(nodeInfo2);
+    sinkInputNode2->SetState(HPAE_SESSION_RELEASED);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp2] = sinkInputNode2;
+    hpaeRendererManager->EnableCollaboration();
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test DisableCollaboration
+ * @tc.type  : FUNC
+ * @tc.number: DisableCollaboration_001
+ * @tc.desc  : Test DisableCollaboration.
+ */
+HWTEST_F(HpaeRendererManagerTest, DisableCollaboration_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    
+    hpaeRendererManager->EnableCollaboration();
+    HpaeNodeInfo nodeInfo1;
+    uint32_t sessionIdTemp1 = TEST_STREAM_SESSION_ID;
+    nodeInfo1.sessionId = sessionIdTemp1;
+    nodeInfo1.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto sinkInputNode1 = std::make_shared<HpaeSinkInputNode>(nodeInfo1);
+    sinkInputNode1->SetState(HPAE_SESSION_RUNNING);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp1] = sinkInputNode1;
+    hpaeRendererManager->DisableCollaboration();
+    EXPECT_EQ(hpaeRendererManager->hpaeCoBufferNode_ != nullptr, true);
+
+    HpaeNodeInfo nodeInfo2;
+    uint32_t sessionIdTemp2 = sessionIdTemp1 + 1;
+    nodeInfo2.sessionId = sessionIdTemp2;
+    nodeInfo2.effectInfo.effectScene = SCENE_COLLABORATIVE;
+    auto sinkInputNode2 = std::make_shared<HpaeSinkInputNode>(nodeInfo2);
+    sinkInputNode2->SetState(HPAE_SESSION_RELEASED);
+    hpaeRendererManager->sinkInputNodeMap_[sessionIdTemp2] = sinkInputNode2;
+    hpaeRendererManager->DisableCollaboration();
+
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 }  // namespace
