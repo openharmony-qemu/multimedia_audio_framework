@@ -6561,7 +6561,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CheckNeedExclude_001, TestSize.Level1)
 /**
 * @tc.name  : Test ReleaseClient.
 * @tc.number: ReleaseClient_001
-* @tc.desc  : Test ReleaseClient - When isSwitchStream is false, RemoveSwitchStream should be called.
+* @tc.desc  : Test ReleaseClient - When needRemoveFromMap is true, RemoveSwitchStream should be called.
 */
 HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 {
@@ -6588,7 +6588,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
     pipeManager->AddSwitchStream(originalSessionId);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
 
-    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, true);
 
     EXPECT_EQ(result, SUCCESS);
     EXPECT_FALSE(pipeManager->IsSwitchStreamExist(originalSessionId));
@@ -6597,7 +6597,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 /**
 * @tc.name  : Test ReleaseClient.
 * @tc.number: ReleaseClient_002
-* @tc.desc  : Test ReleaseClient - When isSwitchStream is true, RemoveSwitchStream should be called.
+* @tc.desc  : Test ReleaseClient - When needRemoveFromMap is false, RemoveSwitchStream should not be called.
 */
 HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
 {
@@ -6624,7 +6624,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
     pipeManager->AddSwitchStream(originalSessionId);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
 
-    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, true);
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
 
     EXPECT_EQ(result, SUCCESS);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));

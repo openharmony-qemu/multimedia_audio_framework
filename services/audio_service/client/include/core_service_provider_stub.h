@@ -27,7 +27,7 @@ public:
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
 
     int32_t UpdateSessionOperation(uint32_t sessionId, uint32_t operation, uint32_t opMsg,
-        bool isSwitchStream) override;
+        bool needRemoveFromMap) override;
     int32_t ReloadCaptureSession(uint32_t sessionId, uint32_t operation) override;
     int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, uint32_t sessionID, int32_t streamUsage,
         bool isRunning, bool skipForce = false) override;

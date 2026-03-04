@@ -33,11 +33,11 @@ CoreServiceProviderWrapper::CoreServiceProviderWrapper(ICoreServiceProvider *cor
 }
 
 int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, uint32_t operation, uint32_t opMsg,
-    bool isSwitchStream)
+    bool needRemoveFromMap)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->UpdateSessionOperation(sessionId, static_cast<SessionOperation>(operation),
-        static_cast<SessionOperationMsg>(opMsg), isSwitchStream);
+        static_cast<SessionOperationMsg>(opMsg), needRemoveFromMap);
 }
 
 int32_t CoreServiceProviderWrapper::ReloadCaptureSession(uint32_t sessionId, uint32_t operation)

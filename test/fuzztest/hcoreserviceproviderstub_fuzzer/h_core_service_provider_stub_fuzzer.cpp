@@ -36,8 +36,8 @@ void UpdateSessionOperation(FuzzedDataProvider &provider)
     uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
     uint32_t operation = provider.ConsumeIntegral<uint32_t>();
     uint32_t opMsg = provider.ConsumeIntegralInRange<uint32_t>(0, 1);
-    bool isSwitchStream = provider.ConsumeBool();
-    coreServiceProviderWrapper.UpdateSessionOperation(sessionId, operation, opMsg, isSwitchStream);
+    bool needRemoveFromMap = provider.ConsumeBool();
+    coreServiceProviderWrapper.UpdateSessionOperation(sessionId, operation, opMsg, needRemoveFromMap);
 }
 
 void ReloadCaptureSession(FuzzedDataProvider &provider)

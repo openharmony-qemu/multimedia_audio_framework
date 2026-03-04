@@ -25,7 +25,7 @@ interface ICoreServiceProviderIpc {
         [in] unsigned int sessionId,
         [in] unsigned int operation, /* SessionOperation */
         [in] unsigned int operationMsg, /* SessionOperationMsg */
-        [in] boolean isSwitchStream);
+        [in] boolean needRemoveFromMap);
     void SetDefaultOutputDevice(
         [in] int defaultOutputDevice, /* DeviceType */
         [in] unsigned int sessionID,
