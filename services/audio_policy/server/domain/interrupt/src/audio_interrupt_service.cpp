@@ -2245,6 +2245,8 @@ int32_t AudioInterruptService::ProcessFocusEntryForAudioSession(
 int32_t AudioInterruptService::HandleExistStreamsForSession(
     const int32_t zoneId, const int32_t callerPid, bool &updateScene)
 {
+    HandleOtherZoneExistStreams(zoneId, callerPid, updateScene);
+    
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR, "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
@@ -2272,6 +2274,43 @@ int32_t AudioInterruptService::HandleExistStreamsForSession(
     }
 
     return SUCCESS;
+}
+
+void AudioInterruptService::HandleOtherZoneExistStreams(
+    const int32_t targetZoneId, const int32_t callerPid, bool &updateScene)
+{
+    auto isStreamFocusPresent = [&](const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+        return pair.first.pid == callerPid &&
+            !pair.first.isAudioSessionInterrupt &&
+            !sessionService_.ShouldExcludeStreamType(pair.first);
+    };
+
+    for (const auto &itZone : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(itZone.second != nullptr, "audioInterruptZone is nullptr");
+        CHECK_AND_CONTINUE(targetZoneId != itZone.first);
+        bool updateFocus = false;
+        bool tempUpdateScene = false;
+        bool isExistActiveStream = false;
+        auto audioFocusInfoList = itZone.second->audioFocusInfoList;
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
+            if (iter->second == ACTIVE || iter->second == DUCK) {
+                isExistActiveStream = true;
+            }
+            if (isStreamFocusPresent(*iter)) {
+                updateFocus = true;
+                updateScene = true;
+                ActivateAudioInterruptInternal(targetZoneId, iter->first, false, tempUpdateScene);
+                iter = audioFocusInfoList.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+        CHECK_AND_CONTINUE(updateFocus == true);
+        zonesMap_[itZone.first]->audioFocusInfoList = audioFocusInfoList;
+        if (audioFocusInfoList.size() > 0 && isExistActiveStream) {
+            ResumeAudioFocusList(itZone.first, false);
+        }
+    }
 }
 
 void AudioInterruptService::ReactivateAudioInterrupts(
@@ -3304,6 +3343,24 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAllZones()
     }
     lock.unlock();
     return finalAudioScene;
+}
+
+int32_t AudioInterruptService::FindAudioZoneByStreamId(const uint32_t streamId)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto &[zoneId, audioInterruptZone] : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+        auto audioFocusInfoList = audioInterruptZone->audioFocusInfoList;
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+            CHECK_AND_RETURN_RET(iter->first.streamId != streamId, zoneId);
+            CHECK_AND_CONTINUE(iter->first.isAudioSessionInterrupt == true);
+            std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(iter->first.pid);
+            for (auto &stream : sessionStreams) {
+                CHECK_AND_RETURN_RET(stream.streamId != streamId, zoneId);
+            }
+        }
+    }
+    return ZONEID_DEFAULT;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
