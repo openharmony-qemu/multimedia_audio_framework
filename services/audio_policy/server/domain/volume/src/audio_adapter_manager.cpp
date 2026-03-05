@@ -1218,6 +1218,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     AudioVolume::GetInstance()->SetScoActive(isScoActive);
 
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
+    std::set<std::pair<std::string, AudioStreamType>> setedVolume;
     for (auto &streamDesc : streamDescs) {
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
         auto desc = streamDesc->newDeviceDescs_.front();
@@ -1226,6 +1227,10 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != HILINK_MODE);
         RedirectVolumeType(streamDesc, volumeType);
         for (auto &tempDesc : streamDesc->newDeviceDescs_) {
+            CHECK_AND_CONTINUE(tempDesc != nullptr);
+            auto target = std::make_pair(tempDesc->GetName(), volumeType);
+            CHECK_AND_CONTINUE(setedVolume.find(target) == setedVolume.end());
+            setedVolume.insert(target);
             int32_t volumeLevel = GetStreamVolumeInternal(tempDesc, volumeType);
             SaveSystemVolumeForSwitchDevice(tempDesc, volumeType, volumeLevel);
             SetVolumeDb(tempDesc, volumeType);
@@ -3682,6 +3687,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
+    std::set<std::pair<std::string, AudioStreamType>> setedVolume;
     for (auto &streamDesc : streamDescs) {
         AudioStreamType newStreamType = streamType;
         auto device = streamDesc->newDeviceDescs_.front();
@@ -3690,6 +3696,10 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != HILINK_MODE);
         RedirectVolumeType(streamDesc, newStreamType);
         for (auto &tempDesc : streamDesc->newDeviceDescs_) {
+            CHECK_AND_CONTINUE(tempDesc != nullptr);
+            auto target = std::make_pair(tempDesc->GetName(), newStreamType);
+            CHECK_AND_CONTINUE(setedVolume.find(target) == setedVolume.end());
+            setedVolume.insert(target);
             SetVolumeDb(tempDesc, newStreamType);
         }
     }
