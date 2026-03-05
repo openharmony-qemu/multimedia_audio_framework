@@ -57,6 +57,7 @@ namespace {
     static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS = 1000000000; // 1s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 1500; // 1.5s
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
+    static constexpr int64_t DURATION = 5000000; // 5ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     static const int32_t START_DEVICE_TIMEOUT = 10; // 10s
     static const int32_t ONE_MINUTE = 60;
@@ -1268,8 +1269,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             if (tempBuffer->GetStreamStatus() &&
                 tempBuffer->GetStreamStatus()->load() != StreamStatus::STREAM_RUNNING) {
                 // Process is not running, server will continue to check the same location in the next cycle.
-                int64_t duration = 5000000; // 5ms
-                processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_ + duration);
+                processBufferList_[i]->SetHandleInfo(eachCurReadPos, lastHandleProcessTime_ + DURATION);
                 continue; // process not running
             }
             // Status is RUNNING
@@ -1277,7 +1277,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
             uint32_t sessionId = processList_[i]->GetAudioSessionId();
             bool keepRunning = processList_[i]->GetKeepRunning();
-            needCheckZeroVolume_ = keepRunning ? false : needCheckZeroVolume_; 
+            needCheckZeroVolume_ = keepRunning ? false : needCheckZeroVolume_;
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS && !keepRunning) {
                 Trace trace("AudioEndpoint::MarkClientStandby:" + std::to_string(sessionId));
                 HILOG_COMM_INFO("[CheckAllBufferReady]change the status to stand-by, session %{public}u", sessionId);
@@ -1295,10 +1295,9 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_OUT_LOWLATENCY,
                     processList_[i]->GetAppInfo().appUid);
                 continue;
-            } else {
-                AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_LOWLATENCY,
-                    processList_[i]->GetAppInfo().appUid);
             }
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_OUT_LOWLATENCY,
+                processList_[i]->GetAppInfo().appUid);
             // process Status is RUNNING && buffer status is WRITE_DONE
             tempBuffer->SetLastWrittenTime(current);
         }
