@@ -139,7 +139,7 @@ public:
     void SetFastStatusChangeCallback(const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) override;
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
-    void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    void UpdateInterruptState(int32_t state);
 
     bool IsOffloadEnable() override;
 
@@ -327,6 +327,7 @@ private:
     bool isSwitchStreamSt_ = false;
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
+    std::atomic<int32_t> audioInterruptState_ = INVALID;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
