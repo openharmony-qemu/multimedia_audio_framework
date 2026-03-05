@@ -1005,7 +1005,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg, bool isSwitchStream)
+int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg, bool needRemoveFromMap)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
@@ -1037,10 +1037,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         ReloadCaptureSession(sessionId, SESSION_OPERATION_RELEASE);
     }
 
-    if (!isSwitchStream) {
+    if (needRemoveFromMap) {
         pipeManager_->RemoveSwitchStream(sessionId);
     }
-    
+
     return SUCCESS;
 }
 
