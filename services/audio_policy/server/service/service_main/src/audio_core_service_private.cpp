@@ -3166,6 +3166,33 @@ void AudioCoreService::DeactivateBluetoothDevice(bool isRunning)
     }
 }
 
+bool AudioCoreService::DeactivateA2dpAfterExclude(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs)
+{
+    bool excludeA2dp = std::any_of(excludeDeviceDescs.begin(), excludeDeviceDescs.end(), [](const auto &deviceDesc) {
+        return deviceDesc && deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    });
+    if (!excludeA2dp) {
+        return false;
+    }
+
+    bool willUseA2dp = std::any_of(outputStreamDescs.begin(), outputStreamDescs.end(), [](const auto &streamDesc) {
+        return streamDesc && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !streamDesc->newDeviceDescs_.empty() && streamDesc->newDeviceDescs_.front() &&
+            streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    });
+    if (willUseA2dp) {
+        return false;
+    }
+
+    audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
+    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() != EMPTY_ADDRESS) {
+        Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(NULL_ADDRESS);
+    }
+    return true;
+}
+
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {

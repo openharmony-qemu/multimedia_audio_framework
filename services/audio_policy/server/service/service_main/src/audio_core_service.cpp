@@ -1410,7 +1410,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetExclude
 int32_t AudioCoreService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    return audioRecoveryDevice_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = audioRecoveryDevice_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    DeactivateA2dpAfterExclude(audioDeviceDescriptors, pipeManager_->GetAllOutputStreamDescs());
+    return result;
 }
 
 int32_t AudioCoreService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,

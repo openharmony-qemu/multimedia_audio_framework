@@ -4305,5 +4305,137 @@ HWTEST_F(AudioCoreServicePrivateTest, UpdateOutputRoute_001, TestSize.Level1)
     audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.clear();
     audioCoreService->pipeManager_->RemoveAudioPipeInfo(pipeInfo);
 }
+
+/**
+ * @tc.name   : Test AudioCoreService::DeactivateA2dpAfterExclude
+ * @tc.number : DeactivateA2dpAfterExclude_001
+ * @tc.desc   : Test DeactivateA2dpAfterExclude when no A2DP device in exclude list
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DeactivateA2dpAfterExclude_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    // Create exclude device list without A2DP device
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludeDeviceDescs;
+    auto speakerDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    excludeDeviceDescs.push_back(speakerDevice);
+
+    // Create output stream list
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    outputStreamDescs.push_back(streamDesc);
+
+    // Method should return false as there's no A2DP device in exclude list
+    bool result = audioCoreService->DeactivateA2dpAfterExclude(excludeDeviceDescs, outputStreamDescs);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::DeactivateA2dpAfterExclude
+ * @tc.number : DeactivateA2dpAfterExclude_002
+ * @tc.desc   : Test DeactivateA2dpAfterExclude when A2DP device in exclude list but stream will use A2DP
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DeactivateA2dpAfterExclude_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    // Create exclude device list with A2DP device
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludeDeviceDescs;
+    auto a2dpDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    excludeDeviceDescs.push_back(a2dpDevice);
+
+    // Create output stream that will use A2DP
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    auto newA2dpDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newA2dpDevice);
+    outputStreamDescs.push_back(streamDesc);
+
+    // Method should return false as stream will use A2DP
+    bool result = audioCoreService->DeactivateA2dpAfterExclude(excludeDeviceDescs, outputStreamDescs);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::DeactivateA2dpAfterExclude
+ * @tc.number : DeactivateA2dpAfterExclude_003
+ * @tc.desc   : Test DeactivateA2dpAfterExclude when A2DP device in exclude list and no stream will use A2DP
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DeactivateA2dpAfterExclude_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    // Create exclude device list with A2DP device
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludeDeviceDescs;
+    auto a2dpDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    excludeDeviceDescs.push_back(a2dpDevice);
+
+    // Create output stream that will not use A2DP
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    auto speakerDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(speakerDevice);
+    outputStreamDescs.push_back(streamDesc);
+    
+    // Method should return true and deactivate A2DP
+    bool result = audioCoreService->DeactivateA2dpAfterExclude(excludeDeviceDescs, outputStreamDescs);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::DeactivateA2dpAfterExclude
+ * @tc.number : DeactivateA2dpAfterExclude_004
+ * @tc.desc   : Test DeactivateA2dpAfterExclude with empty exclude list
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DeactivateA2dpAfterExclude_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    // Create empty exclude device list
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludeDeviceDescs;
+
+    // Create output stream list
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    outputStreamDescs.push_back(streamDesc);
+
+    // Method should return false as there's no A2DP device in exclude list
+    bool result = audioCoreService->DeactivateA2dpAfterExclude(excludeDeviceDescs, outputStreamDescs);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService::DeactivateA2dpAfterExclude
+ * @tc.number : DeactivateA2dpAfterExclude_005
+ * @tc.desc   : Test DeactivateA2dpAfterExclude with empty output stream list
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DeactivateA2dpAfterExclude_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->Init();
+
+    // Create exclude device list with A2DP device
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> excludeDeviceDescs;
+    auto a2dpDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    excludeDeviceDescs.push_back(a2dpDevice);
+
+    // Create empty output stream list
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs;
+
+    // Method should return true as no stream will use A2DP
+    bool result = audioCoreService->DeactivateA2dpAfterExclude(excludeDeviceDescs, outputStreamDescs);
+    EXPECT_TRUE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS

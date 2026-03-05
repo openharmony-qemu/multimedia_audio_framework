@@ -679,6 +679,8 @@ private:
     void FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputDescs);
     void DeactivateBluetoothDevice(bool isRunning);
+    bool DeactivateA2dpAfterExclude(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
+        const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs);
 
     // For offload
     void CheckAndUpdateOffloadEnableForStream(
