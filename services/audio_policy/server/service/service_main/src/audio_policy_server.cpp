@@ -2749,7 +2749,16 @@ int32_t AudioPolicyServer::SetAncoSourceOutputStreamMute(int32_t uid, bool setMu
         return ERR_OPERATION_FAILED;
     }
     audioPolicyService_.SetAncoSourceOutputStreamMute(uid, setMute);
+    SetLatestMuteStateForUid(uid, setMute);
     return SUCCESS;
+}
+
+void AudioPolicyServer::SetLatestMuteStateForUid(int32_t uid, bool setMute)
+{
+    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
+    for (const auto &sessionID : sessionIDSet) {
+        AudioServerProxy::GetInstance().SetLatestMuteState(sessionID, setMute);
+    }
 }
 
 int32_t AudioPolicyServer::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
@@ -3687,6 +3696,10 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::PermStateChangeCallba
         int32_t streamSet = server_->audioPolicyService_.SetSourceOutputStreamMute(appUid, targetMuteState);
         if (streamSet > 0) {
             UpdateMicPrivacyByCapturerState(targetMuteState, result.tokenID, appUid);
+        }
+        std::vector<uint32_t> sessionIDSet = server_->streamCollector_.GetAllCapturerSessionIDForUID(appUid);
+        for (const auto &sessionID : sessionIDSet) {
+            AudioServerProxy::GetInstance().SetLatestMuteState(sessionID, targetMuteState);
         }
     }
 }
@@ -5527,6 +5540,16 @@ int32_t AudioPolicyServer::ForceVolumeKeyControlType(int32_t volumeType, int32_t
         ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
     ret = audioVolumeManager_.ForceVolumeKeyControlType(static_cast<AudioVolumeType>(volumeType), duration);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool mute)
+{
+    return audioPolicyService_.SetSourceOutputStreamMuteByStreamId(sessionId, mute);
+}
+
+int32_t AudioPolicyServer::SetSourceOutputStreamMute(int32_t uid, bool mute)
+{
+    return audioPolicyService_.SetSourceOutputStreamMute(uid, mute);
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)

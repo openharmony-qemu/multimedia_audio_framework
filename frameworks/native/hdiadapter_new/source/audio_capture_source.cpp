@@ -130,7 +130,8 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
         audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
     }
 
-    InitPipeInfo(hdiCaptureId_, AudioTypeUtils::HalNameToType(halName_), AUDIO_INPUT_FLAG_NORMAL,
+    int32_t routeFlag = static_cast<int32_t>(ConvertToAudioInputRouteFlag(attr.sourceType));
+    InitPipeInfo(hdiCaptureId_, AudioTypeUtils::HalNameToType(halName_), routeFlag,
         { currentActiveDevice_ });
 
     return SUCCESS;
@@ -1414,6 +1415,45 @@ int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
     int32_t ret = 0;
     StringConverter(status, ret);
     return ret;
+}
+
+enum AudioFlag AudioCaptureSource::ConvertToAudioInputRouteFlag(int32_t sourceType)
+{
+    enum AudioFlag audioInputRouteFlag;
+    switch (sourceType) {
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_AI;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_UNPROCESS;
+            break;
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_CAMCORDER:
+        case SOURCE_TYPE_VOICE_MESSAGE:
+        case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_LIVE:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_NORMAL;
+            break;
+        case SOURCE_TYPE_ULTRASONIC:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_ULTRASONIC;
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
+            break;
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_RAW_AI;
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_WAKEUP;
+            break;
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_OFFLOAD;
+            break;
+        default:
+            audioInputRouteFlag = AUDIO_FLAG_NONE;
+            break;
+    }
+    return audioInputRouteFlag;
 }
 } // namespace AudioStandard
 } // namespace OHOS

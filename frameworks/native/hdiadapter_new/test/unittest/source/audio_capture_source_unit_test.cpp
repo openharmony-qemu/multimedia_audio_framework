@@ -873,12 +873,12 @@ HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_001, TestSize.Level2)
     primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
 
     primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
-        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED, MUTE_INVALID);
     auto pipeInfo = primarySource_->GetInputPipeInfo();
     EXPECT_EQ(1, pipeInfo->GetStreams().size());
 
     primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_STATE_CHANGE,
-        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING);
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING, MUTE_INVALID);
     pipeInfo = primarySource_->GetInputPipeInfo();
     auto streams = pipeInfo->GetStreams();
     if (streams.find(TEST_STREAM_ID) == streams.end()) {
@@ -888,7 +888,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_001, TestSize.Level2)
     EXPECT_EQ(CAPTURER_RUNNING, streams[TEST_STREAM_ID].state_);
 
     primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE,
-        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED, MUTE_INVALID);
     pipeInfo = primarySource_->GetInputPipeInfo();
     EXPECT_EQ(0, pipeInfo->GetStreams().size());
 
@@ -908,12 +908,12 @@ HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_002, TestSize.Level2)
     primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
 
     primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_ADD,
-        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED, MUTE_INVALID);
     auto pipeInfo = primarySource_->GetInputPipeInfo();
     EXPECT_EQ(1, pipeInfo->GetStreams().size());
 
     primarySource_->ChangePipeStream(STREAM_CHANGE_TYPE_REMOVE_ALL,
-        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING);
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_RUNNING, MUTE_INVALID);
     pipeInfo = primarySource_->GetInputPipeInfo();
     EXPECT_EQ(0, pipeInfo->GetStreams().size());
 
@@ -933,11 +933,37 @@ HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_003, TestSize.Level4)
     primarySource_->InitPipeInfo(TEST_CAPUTRE_ID, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_INPUT_FLAG_NORMAL);
 
     primarySource_->ChangePipeStream(static_cast<StreamChangeType>(STREAM_CHANGE_TYPE_STATE_CHANGE + 1),
-        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED);
+        TEST_STREAM_ID, SOURCE_TYPE_MIC, CAPTURER_PREPARED, MUTE_INVALID);
     auto pipeInfo = primarySource_->GetInputPipeInfo();
     EXPECT_EQ(0, pipeInfo->GetStreams().size());
 
     DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test audioSource API
+ * @tc.number : ConvertToAudioInputRouteFlag_001
+ * @tc.desc   : Test audioSource convert
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    AudioFlag result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_TRANSCRIPTION);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_AI);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_UNPROCESS);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_NORMAL);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_ULTRASONIC);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_RECOGNITION);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_VOICE_RECOGNITION);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_RAW_AI);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_WAKEUP);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_WAKEUP);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_OFFLOAD_CAPTURE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_OFFLOAD);
 }
 } // namespace AudioStandard
 } // namespace OHOS

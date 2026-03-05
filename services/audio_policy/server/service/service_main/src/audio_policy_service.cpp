@@ -227,6 +227,12 @@ int32_t AudioPolicyService::SetAncoSourceOutputStreamMute(int32_t uid, bool setM
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute)
+{
+    int32_t status = audioPolicyManager_.SetSourceOutputStreamMuteByStreamId(sessionId, setMute);
+    return status;
+}
+
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
 {
     (void)streamType;
