@@ -6585,7 +6585,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 
     auto pipeManager = GetServerPtr()->coreService_->pipeManager_;
-    pipeManager->AddSwitchStream(originalSessionId);
+    pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
 
     result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, true);
@@ -6621,7 +6621,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 
     auto pipeManager = GetServerPtr()->coreService_->pipeManager_;
-    pipeManager->AddSwitchStream(originalSessionId);
+    pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
 
     result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
