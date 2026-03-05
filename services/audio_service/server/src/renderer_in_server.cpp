@@ -77,12 +77,9 @@ namespace {
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
     static const size_t MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
     static constexpr int32_t AVS3METADATA_SIZE = 19824;
-<<<<<<< Updated upstream
     constexpr int32_t MAX_CACHED_BUFFER_COUNT = 5;
     constexpr int32_t MAX_CAHCED_COUNT = 6;
-=======
     static const int32_t THREE_DA_BYTES_PER_FRAME = 1;
->>>>>>> Stashed changes
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -784,7 +781,7 @@ int32_t RendererInServer::Write3DAModeData(uint64_t currentReadFrame, uint64_t c
 
     stream_->EnqueueBuffer(bufferDesc);
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
-        DumpFileUtil::WriteDumpFile(dump3DAC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
             static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
     }
