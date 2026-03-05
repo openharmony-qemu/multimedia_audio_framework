@@ -220,8 +220,7 @@ int32_t HpaeManagerImpl::SetSourceOutputMute(int32_t uid, bool setMute)
 
 int32_t HpaeManagerImpl::SetSourceOutputMuteByStreamId(int32_t sessionId, bool setMute)
 {
-    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE,
-        "manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->SetSourceOutputMuteByStreamId(sessionId, setMute);
 }
 

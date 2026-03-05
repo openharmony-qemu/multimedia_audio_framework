@@ -696,6 +696,32 @@ HWTEST_F(AudioCaptureSourceUnitTest, convertUnitTest_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test audioSource API
+ * @tc.number : ConvertToAudioInputRouteFlag_001
+ * @tc.desc   : Test audioSource convert
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    AudioFlag result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_TRANSCRIPTION);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_AI);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_UNPROCESS);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_NORMAL);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_ULTRASONIC);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_RECOGNITION);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_VOICE_RECOGNITION);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_RAW_AI);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_WAKEUP);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_WAKEUP);
+    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_OFFLOAD_CAPTURE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_OFFLOAD);
+}
+
+/**
 * @tc.name   : Test audioSource API
 * @tc.number : GetUniqueIdBySourceType_001
 * @tc.desc   : Test audioSource convert
@@ -938,32 +964,6 @@ HWTEST_F(AudioCaptureSourceUnitTest, ChangePipeStream_003, TestSize.Level4)
     EXPECT_EQ(0, pipeInfo->GetStreams().size());
 
     DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test audioSource API
- * @tc.number : ConvertToAudioInputRouteFlag_001
- * @tc.desc   : Test audioSource convert
- */
-HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_001, TestSize.Level1)
-{
-    auto captureSource = std::make_shared<AudioCaptureSource>(1);
-    AudioFlag result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_TRANSCRIPTION);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_AI);
-    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_UNPROCESS);
-    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_MESSAGE);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_NORMAL);
-    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_ULTRASONIC);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_ULTRASONIC);
-    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_VOICE_RECOGNITION);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_VOICE_RECOGNITION);
-    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_RAW_AI);
-    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_WAKEUP);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_WAKEUP);
-    result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_OFFLOAD_CAPTURE);
-    EXPECT_EQ(result, AUDIO_INPUT_FLAG_OFFLOAD);
 }
 } // namespace AudioStandard
 } // namespace OHOS
