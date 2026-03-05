@@ -88,7 +88,7 @@ AudioEnhanceChain::AudioEnhanceChain(uint64_t chainId, const std::string &scene,
 
 void AudioEnhanceChain::InitAudioEnhanceChain()
 {
-    if ((algoParam_.preDevice == DEFAULT_DEVICE_TYPE) && (deviceAttr_.micChannels != DEFAULT_DEVICE_TYPE_CH)) {
+    if ((algoParam_.preDevice == DEFAULT_DEVICE_TYPE) && (deviceAttr_.micChannels < DEFAULT_DEVICE_TYPE_CH)) {
         AUDIO_WARNING_LOG("mic channel[%{public}d] is set to 4", deviceAttr_.micChannels);
         deviceAttr_.micChannels = DEFAULT_DEVICE_TYPE_CH;
     }
