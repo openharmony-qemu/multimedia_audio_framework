@@ -6565,6 +6565,9 @@ HWTEST_F(AudioCoreServiceUnitTest, CheckNeedExclude_001, TestSize.Level1)
 */
 HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 {
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    pipeManager->curPipeList_.clear();
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
     streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
@@ -6581,10 +6584,17 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
     uint32_t originalSessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
 
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
     auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 
-    auto pipeManager = GetServerPtr()->coreService_->pipeManager_;
     pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
 
@@ -6601,6 +6611,9 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 */
 HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
 {
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    pipeManager->curPipeList_.clear();
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
     streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
@@ -6617,10 +6630,17 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
     uint32_t originalSessionId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
 
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
     auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 
-    auto pipeManager = GetServerPtr()->coreService_->pipeManager_;
     pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
 
