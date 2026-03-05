@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
-static int32_t PC_ENABLE_STATE = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
+int32_t PC_ENABLE_STATE = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
 
 HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
@@ -264,6 +264,16 @@ void HpaeSourceOutputNode::SetMute(bool isMute)
 bool HpaeSourceOutputNode::GetMute()
 {
     return isMute_;
+}
+
+int32_t HpaeSourceOutputNode::GetPcEnableState()
+{
+    return PC_ENABLE_STATE;
+}
+
+void HpaeSourceOutputNode::SetPcEnableState(int32_t val)
+{
+    PC_ENABLE_STATE = val;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
