@@ -257,7 +257,7 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_SetSourceOutputStreamMuteBySt
 HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_SetSourceOutputStreamMuteByStreamId_002, TestSize.Level1)
 {
     int32_t sessionId = 100002;
-    int32_t ret = impl_->SetSourceOutputStreamMuteByStreamId(sessionId, false);
+    int32_t ret = impl_->SetSourceOutputMute(sessionId, false);
     EXPECT_EQ(SUCCESS, ret);
 }
 
