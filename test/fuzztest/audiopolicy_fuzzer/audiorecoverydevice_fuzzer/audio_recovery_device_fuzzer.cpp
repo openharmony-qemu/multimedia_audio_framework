@@ -253,8 +253,6 @@ void AudioRecoveryDeviceSelectOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
     audioRecoveryDevice->SelectOutputDevice(audioRendererFilter, selectedDesc);
     OnStop();
-    delete audioRendererFilter;
-    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceHandleFetchDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
@@ -298,8 +296,6 @@ void AudioRecoveryDeviceSelectOutputDeviceForFastInnerFuzzTest(FuzzedDataProvide
     audioRecoveryDevice->SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     OnStop();
     selectedDesc.clear();
-    delete audioRendererFilter;
-    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceSetRenderDeviceForUsageFuzzTest(FuzzedDataProvider& fdp)
@@ -360,8 +356,6 @@ void AudioRecoveryDeviceSelectFastOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 
     audioRecoveryDevice->SelectFastOutputDevice(audioRendererFilter, deviceDescriptor);
     OnStop();
-    delete audioRendererFilter;
-    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceSelectOutputDeviceByFilterInnerFuzzTest(FuzzedDataProvider& fdp)
@@ -383,8 +377,6 @@ void AudioRecoveryDeviceSelectOutputDeviceByFilterInnerFuzzTest(FuzzedDataProvid
 
     audioRecoveryDevice->SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
     OnStop();
-    delete audioRendererFilter;
-    audioRendererFilter = nullptr;
 }
 
 void AudioRecoveryDeviceSelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -408,8 +400,6 @@ void AudioRecoveryDeviceSelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 
     audioRecoveryDevice->SelectInputDevice(audioCapturerFilter, selectedDesc);
     OnStop();
-    delete audioCapturerFilter;
-    audioCapturerFilter = nullptr;
 }
 
 void AudioRecoveryDeviceExcludeOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
@@ -498,8 +488,6 @@ void AudioRecoveryDeviceSelectFastInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 
     audioRecoveryDevice->SelectFastInputDevice(audioCapturerFilter, deviceDescriptor);
     OnStop();
-    delete audioCapturerFilter;
-    audioCapturerFilter = nullptr;
 }
 
 void AudioRecoveryDeviceWriteSelectInputSysEventsFuzzTest(FuzzedDataProvider& fdp)
