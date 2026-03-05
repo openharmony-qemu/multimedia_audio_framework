@@ -3397,32 +3397,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_094, TestSize.Level4
 }
 
 /**
- * @tc.name  : Test RendererInClientInner_AudioVivid_Direct3DA_001
- * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_AudioVivid_Direct3DA_001
- * @tc.desc  : Test RendererInClientInner::WriteAudioVividDirect
- */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_AudioVivid_Direct3DA_001, TestSize.Level4)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
-    size_t pcmSize = 1024;
-    size_t metaSize = 512;
-    uint8_t *pcmBuf = new uint8_t[pcmSize];
-    uint8_t *metaBuf = new uint8_t[metaSize];
-    memset_s(pcmBuf, pcmSize, 0xAA, pcmSize);
-    memset_s(metaBuf, metaSize, 0xBB, metaSize);
-
-    ptrRendererInClientInner->WriteAudioVividDirect(pcmBuf, pcmSize, metaBuf, metaSize);
-    EXPECT_EQ(ptrRendererInClientInner->outPackedLen_, pcmSize + metaSize);
-    ASSERT_EQ(ptrRendererInClientInner->outPackedBuf_.size(), pcmSize + metaSize);
-    EXPECT_EQ(static_cast<uint8_t>(ptrRendererInClientInner->outPackedBuf_[0]), 0xAA);
-    EXPECT_EQ(static_cast<uint8_t>(ptrRendererInClientInner->outPackedBuf_[pcmSize]), 0xBB);
-
-    delete[] pcmBuf;
-    delete[] metaBuf;
-}
-
-/**
  * @tc.name  : Test RendererInClientInner_WriteMuteDataSysEvent_001
  * @tc.type  : FUNC
  * @tc.number: RendererInClientInner_WriteMuteDataSysEvent_001

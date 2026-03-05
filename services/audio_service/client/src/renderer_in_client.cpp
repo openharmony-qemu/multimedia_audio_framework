@@ -438,12 +438,71 @@ int32_t RendererInClientInner::WriteRawBuffer(BufferDesc &bufferDesc)
     return ret;
 }
 
+int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
+{
+    Trace trace("RendererInClient::Write3DADirectBuffer PCM:" +
+        std::to_string(bufferDesc.bufLength) + " Meta:" +
+        std::to_string(bufferDesc.metaLength));
+
+    CHECK_AND_RETURN_RET_LOG(bufferDesc.dataLength != 0 &&
+        bufferDesc.metaBuffer != nullptr, ERR_INVALID_PARAM,
+        "3DA: Invalid buffer, dataLength=%{public}zu, metaBuffer=%{public}p",
+        bufferDesc.dataLength, bufferDesc.metaBuffer);
+
+    CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
+    FirstFrameProcess();
+
+    uint64_t writePos = clientBuffer_->GetCurWriteFrame();
+
+    if (gServerProxy_ == nullptr) {
+        cbThreadReleased_ = true;
+        Trace waitTrace("RendererInClient::WaitServerRestart");
+        usleep(WAIT_FOR_NEXT_CB);
+        return ERR_WRITE_BUFFER;
+    }
+
+    size_t blockSize = bufferDesc.bufLength + bufferDesc.metaLength;
+    uint8_t *dataBase = clientBuffer_->GetDataBase();
+    CHECK_AND_RETURN_RET_LOG(dataBase != nullptr, ERR_OPERATION_FAILED,
+        "3DA: GetDataBase returned NULL! writePos=%{public}" PRIu64, writePos);
+
+    // Calculate offset in circular buffer
+    size_t pcmOffset = writePos % clientBuffer_->GetDataSize();
+    size_t metaOffset = pcmOffset + bufferDesc.bufLength;
+    CHECK_AND_RETURN_RET_LOG(pcmOffset + bufferDesc.bufLength <= clientBuffer_->GetDataSize(),
+        ERR_OPERATION_FAILED, "3DA: PCM out of bounds! offset=%{public}zu, size=%{public}zu, total=%{public}zu",
+        pcmOffset, bufferDesc.bufLength, clientBuffer_->GetDataSize());
+
+    memcpy_s(dataBase + pcmOffset, bufferDesc.bufLength, bufferDesc.buffer, bufferDesc.bufLength);
+    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+
+    CHECK_AND_RETURN_RET_LOG(metaOffset + bufferDesc.metaLength <= clientBuffer_->GetDataSize(),
+        ERR_OPERATION_FAILED, "3DA: Metadata out of bounds! metaOffset=%{public}zu,"
+        "size=%{public}zu, total=%{public}zu",
+        metaOffset, bufferDesc.metaLength, clientBuffer_->GetDataSize());
+
+    memcpy_s(dataBase + metaOffset, bufferDesc.metaLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
+    uint64_t newWriteFrame = writePos + blockSize;
+    clientBuffer_->SetCurWriteFrame(newWriteFrame, false);
+
+    return SUCCESS;
+}
+
 int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
     if (isHWDecodingType_) {
         result = WriteRawBuffer(bufferDesc);
         return result;
+    }
+    if ((rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+        (curStreamParams_.encoding == ENCODING_AUDIOVIVID)) {
+        if (bufferDesc.dataLength != 0) {
+            result = Write3DADirectBuffer(bufferDesc);
+        } else {
+            AUDIO_WARNING_LOG("INVALID 3DA buffer");
+            usleep(WAIT_FOR_NEXT_CB);
+        }
     }
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         if (bufferDesc.dataLength != 0) {
@@ -647,30 +706,6 @@ void RendererInClientInner::DfxWriteInterval()
     }
 }
 
-void RendererInClientInner::WriteAudioVividDirect(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
-    size_t metaBufferSize)
-{
-    size_t totalLen = pcmBufferSize + metaBufferSize;
-    if (outPackedBuf_.size() < totalLen) {
-        outPackedBuf_.resize(totalLen);
-    }
-    auto error = memcpy_s(outPackedBuf_.data(), outPackedBuf_.size(), pcmBuffer, pcmBufferSize);
-    if (error != EOK) {
-        AUDIO_ERR_LOG("memcpy_s pcm failed");
-        return;
-    }
-    if (metaBuffer != nullptr  && metaBufferSize > 0) {
-        error = memcpy_s(outPackedBuf_.data() + pcmBufferSize, outPackedBuf_.size() - pcmBufferSize,
-            metaBuffer, metaBufferSize);
-        if (error != EOK) {
-            AUDIO_ERR_LOG("memcpy_s meta failed");
-            return;
-        }
-    }
-
-    outPackedLen_ = totalLen;
-}
-
 int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer,
     size_t metaBufferSize)
 {
@@ -682,15 +717,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSi
     CHECK_AND_RETURN_RET_LOG(converter_->CheckInputValid(bufDesc), ERR_INVALID_PARAM, "Write: Invalid input.");
 
     WriteMuteDataSysEvent(pcmBuffer, pcmBufferSize);
-
-    AUDIO_DEBUG_LOG("WriteInner with meta: pcmBuffer size: %{public}zu, metaBuffer size: %{public}zu",
-        pcmBufferSize, metaBufferSize);
-
-    AUDIO_INFO_LOG("renderer rendererFlags: %{public}u", rendererInfo_.rendererFlags);
-    if (rendererInfo_.rendererFlags == AUDIO_FLAG_3DA_DIRECT) {
-        WriteAudioVividDirect(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
-        return WriteInner(outPackedBuf_.data(), outPackedLen_);
-    }
 
     converter_->Process(bufDesc);
     uint8_t *buffer;

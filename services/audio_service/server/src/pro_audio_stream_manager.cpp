@@ -28,7 +28,9 @@
 #include "audio_utils.h"
 #include "core_service_handler.h"
 #include "pro_audio_stream_manager.h"
+#ifdef SUPPORT_3DA
 #include "cabin_playback_engine.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,8 +41,10 @@ ProAudioStreamManager::ProAudioStreamManager(ManagerType type)
 {
     if (type == EAC3_PLAYBACK) {
         playbackEngine_ = std::make_unique<DirectPlayBackEngine>();
+#ifdef SUPPORT_3DA
     } else if (type == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) {
         playbackEngine_ = std::make_unique<CabinPlayBackEngine>();
+#endif
     } else {
         playbackEngine_ = std::make_unique<NoneMixEngine>();
     }

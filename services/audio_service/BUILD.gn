@@ -153,6 +153,10 @@ ohos_shared_library("audio_common") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (audio_framework_feature_3da_direct) {
+    defines += [ "SUPPORT_3DA" ]
+  }
+
   public_configs = [
     "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config",
     "${audio_framework_root}/services/audio_service/idl:audio_policy_sa_idl_config",
@@ -227,6 +231,10 @@ config("audio_client_public_config") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (audio_framework_feature_3da_direct) {
+    defines += [ "SUPPORT_3DA" ]
   }
 
   if (factory == true) {
@@ -549,6 +557,10 @@ config("audio_service_config") {
 
   if (audio_framework_feature_distributed_audio == true) {
     cflags += [ "-DDAUDIO_ENABLE" ]
+  }
+
+  if (audio_framework_feature_3da_direct) {
+    cflags += [ "-DSUPPORT_3DA" ]
   }
 
   cflags_cc = cflags

@@ -77,8 +77,12 @@ namespace {
     const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 800; // ms
     static const size_t MAX_INNERCAP_BUFFER_SIZE = 16 * 1024 * 1024;
     static constexpr int32_t AVS3METADATA_SIZE = 19824;
+<<<<<<< Updated upstream
     constexpr int32_t MAX_CACHED_BUFFER_COUNT = 5;
     constexpr int32_t MAX_CAHCED_COUNT = 6;
+=======
+    static const int32_t THREE_DA_BYTES_PER_FRAME = 1;
+>>>>>>> Stashed changes
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -160,10 +164,9 @@ int32_t RendererInServer::ConfigServerBuffer()
 
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        size_t metadataSize = AVS3METADATA_SIZE;
-        size_t combinedSpanInByte = spanSizeInByte_ + metadataSize;
-        size_t totalCombinedByte = combinedSpanInByte * DEFAULT_SPAN_SIZE;
-        bufferTotalSizeInFrame_ = totalCombinedByte / byteSizePerFrame_;
+        // 3DA: Include metadata in buffer size
+        bufferTotalSizeInFrame_ = (spanSizeInByte_ + AVS3METADATA_SIZE) * DEFAULT_SPAN_SIZE;
+        byteSizePerFrame_ = THREE_DA_BYTES_PER_FRAME;
     } else {
         // 100 * 2 + 20 = 220ms, buffer total size.
         bufferTotalSizeInFrame_ = (MAX_CBBUF_IN_USEC * DEFAULT_SPAN_SIZE + MIN_CBBUF_IN_USEC) *
@@ -747,6 +750,56 @@ BufferDesc RendererInServer::PrepareOutputBuffer(const RingBufferWrapper& ringBu
     return bufferDesc;
 }
 
+int32_t RendererInServer::Write3DAModeData(uint64_t currentReadFrame, uint64_t currentWriteFrame)
+{
+    // 3DA: Each block = PCM + Metadata = 36208 bytes
+    size_t blockSize = spanSizeInByte_ + AVS3METADATA_SIZE;
+    uint8_t *dataBase = audioServerBuffer_->GetDataBase();
+    CHECK_AND_RETURN_RET_LOG(dataBase != nullptr, ERR_OPERATION_FAILED,
+        "3DA: GetDataBase returned NULL! currentReadFrame=%{public}" PRIu64, currentReadFrame);
+
+    // Calculate offset in circular buffer
+    size_t pcmOffset = currentReadFrame % audioServerBuffer_->GetDataSize();
+
+    // Check boundaries
+    CHECK_AND_RETURN_RET_LOG(pcmOffset + spanSizeInByte_ <= audioServerBuffer_->GetDataSize(),
+        ERR_OPERATION_FAILED, "3DA: PCM out of bounds! offset=%{public}zu, size=%{public}zu, total=%{public}zu",
+        pcmOffset, spanSizeInByte_, audioServerBuffer_->GetDataSize());
+
+    // Prepare buffer descriptor with PCM data
+    BufferDesc bufferDesc;
+    bufferDesc.buffer = dataBase + pcmOffset;
+    bufferDesc.bufLength = spanSizeInByte_;
+    bufferDesc.dataLength = 0;
+    bufferDesc.syncFramePts = 0;
+
+    // Fill metadata (after PCM data)
+    size_t metaOffset = pcmOffset + spanSizeInByte_;
+    CHECK_AND_RETURN_RET_LOG(metaOffset + AVS3METADATA_SIZE <= audioServerBuffer_->GetDataSize(),
+        ERR_OPERATION_FAILED, "3DA: Metadata out of bounds! metaOffset=%{public}zu, total=%{public}zu",
+        metaOffset, audioServerBuffer_->GetDataSize());
+
+    bufferDesc.metaBuffer = dataBase + metaOffset;
+    bufferDesc.metaLength = AVS3METADATA_SIZE;
+
+    stream_->EnqueueBuffer(bufferDesc);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        DumpFileUtil::WriteDumpFile(dump3DAC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
+            static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
+    }
+    OtherStreamEnqueue(bufferDesc);
+
+    // Clear PCM data in buffer (not metadata)
+    memset_s(dataBase + pcmOffset, spanSizeInByte_, 0, spanSizeInByte_);
+
+    // Update read position: advance by one block (in "frames" = bytes)
+    uint64_t nextReadFrame = currentReadFrame + blockSize;
+    audioServerBuffer_->SetCurReadFrame(nextReadFrame);
+
+    return SUCCESS;
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -764,14 +817,18 @@ int32_t RendererInServer::WriteData()
         return ERR_OPERATION_FAILED;
     }
 
+    if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
+            (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
+        int32_t ret = Write3DAModeData(currentReadFrame, currentWriteFrame);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "3DA: Write3DAModeData failed");
+        standByCounter_ = 0;
+        lastWriteTime_ = ClockTime::GetCurNano();
+        return SUCCESS;
+    }
+
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
     if (audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc) == SUCCESS) {
-        if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
-            (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-            ringBufferDesc.dataLength = std::min(ringBufferDesc.dataLength, spanSizeInByte_ + AVS3METADATA_SIZE);
-        } else {
-            ringBufferDesc.dataLength = std::min(ringBufferDesc.dataLength, spanSizeInByte_);
-        }
+        ringBufferDesc.dataLength = std::min(ringBufferDesc.dataLength, spanSizeInByte_);
         if (ringBufferDesc.dataLength == 0) {
             AUDIO_ERR_LOG("not enough data!");
             return ERR_INVALID_PARAM;
@@ -784,7 +841,6 @@ int32_t RendererInServer::WriteData()
                 DoFadingOut(ringBufferDesc);
             }
         }
-
         BufferDesc bufferDesc = PrepareOutputBuffer(ringBufferDesc);
         stream_->EnqueueBuffer(bufferDesc);
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
@@ -792,8 +848,8 @@ int32_t RendererInServer::WriteData()
             AudioCacheMgr::GetInstance().CacheData(dumpFileName_,
                 static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
         }
-        OtherStreamEnqueue(bufferDesc);
 
+        OtherStreamEnqueue(bufferDesc);
         WriteMuteDataSysEvent(bufferDesc);
         ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
