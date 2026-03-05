@@ -56,10 +56,10 @@ int32_t CoreServiceHandler::ConfigCoreServiceProvider(const sptr<ICoreServicePro
 }
 
 int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
-    SessionOperationMsg opMsg)
+    SessionOperationMsg opMsg, bool needRemoveFromMap)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation, opMsg);
+    return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation, opMsg, needRemoveFromMap);
 }
 
 int32_t CoreServiceHandler::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)

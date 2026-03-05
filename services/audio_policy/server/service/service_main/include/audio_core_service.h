@@ -111,7 +111,7 @@ public:
 
         // ICoreServiceProvider
         int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
-            SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT) override;
+            SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT, bool needRemoveFromMap = false) override;
         int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning, bool skipForce = false) override;
@@ -291,7 +291,8 @@ private:
     int32_t StartClient(uint32_t sessionId);
     int32_t PauseClient(uint32_t sessionId);
     int32_t StopClient(uint32_t sessionId);
-    int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
+    int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
+        bool needRemoveFromMap = false);
 
     // ICoreServiceProvider from EventEntry
     int32_t SetDefaultOutputDevice(

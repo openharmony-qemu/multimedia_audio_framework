@@ -81,7 +81,8 @@ void UpdateSessionOperationFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t operation = GetData<uint32_t>();
     uint32_t opMsg = GetData<uint32_t>();
-    coreServiceProviderWrapper.UpdateSessionOperation(sessionId, operation, opMsg);
+    bool needRemoveFromMap = GetData<bool>();
+    coreServiceProviderWrapper.UpdateSessionOperation(sessionId, operation, opMsg, needRemoveFromMap);
 }
 
 void ReloadCaptureSessionFuzzTest()
