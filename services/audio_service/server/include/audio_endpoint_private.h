@@ -399,6 +399,7 @@ private:
     std::string dupMixName_ = "";
 
     std::mutex startStatusLock_;
+    bool needCheckZeroVolume_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS
