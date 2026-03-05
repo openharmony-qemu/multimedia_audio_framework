@@ -1669,22 +1669,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSwitchInfo_static_004, TestSize.
 
 /**
  * @tc.name  : Test AudioRendererPrivate
- * @tc.number: SetAudioInterrupt
- * @tc.desc  : Test SetAudioInterrupt API
- */
-HWTEST(AudioRendererUnitTest, SetAudioInterrupt_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    AudioInterrupt audioInterrupt;
-
-    audioRendererPrivate->SetAudioInterrupt(audioInterrupt);
-    EXPECT_EQ(audioRendererPrivate->audioInterrupt_.streamId, 0);
-}
-
-/**
- * @tc.name  : Test AudioRendererPrivate
  * @tc.number: SetSourceDuration
  * @tc.desc  : Test SetSourceDuration API
  */

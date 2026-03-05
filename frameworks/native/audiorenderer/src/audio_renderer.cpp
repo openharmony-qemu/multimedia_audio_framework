@@ -554,6 +554,7 @@ int32_t AudioRendererPrivate::InitAudioInterruptCallback(bool isRestoreAudio)
 
     if (audioInterrupt_.streamId != 0 && !isRestoreAudio) {
         AUDIO_INFO_LOG("old session already has interrupt, need to reset");
+        audioInterrupt_.state = audioInterruptState_.load();
         (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
         (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(audioInterrupt_.streamId);
     }
@@ -1008,11 +1009,18 @@ bool AudioRendererPrivate::IsAllowedStartBackground(uint32_t sessionId, StreamUs
 // Must be called with rendererMutex_ or streamMutex_ held.
 bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
 {
+    if (IsNoStreamRenderer()) {
+        // no stream renderer only need to activate audio interrupt
+        state_ = RENDERER_RUNNING;
+        return true;
+    }
+
     bool result = audioStream_->StartAudioStream(cmdType);
     if (!result) {
         HILOG_COMM_ERROR("[GetStartStreamResult]Start audio stream failed");
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
         if (!audioStream_->GetSilentModeAndMixWithOthers()) {
+            audioInterrupt_.state = audioInterruptState_.load();
             int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
             if (ret != 0) {
                 AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
@@ -1058,6 +1066,7 @@ int32_t AudioRendererPrivate::StartSwitchProcess(RestoreInfo &restoreInfo, IAudi
             audioRendererErrorCallback_->OnError(ERROR_SYSTEM); // Notify app if switch failed.
         }
         AUDIO_INFO_LOG("Deactivate audio interrupt after switch to target stream");
+        audioInterrupt_.state = audioInterruptState_.load();
         AudioInterrupt audioInterrupt = audioInterrupt_;
         int32_t ret = AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt);
         if (ret != SUCCESS) {
@@ -1228,14 +1237,9 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
         if (audioStream_->GetSilentModeAndMixWithOthers()) {
             audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
+        audioInterrupt_.state = audioInterruptState_.load();
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
-    }
-
-    if (IsNoStreamRenderer()) {
-        // no stream renderer only need to activate audio interrupt
-        state_ = RENDERER_RUNNING;
-        return SUCCESS;
     }
 
     return GetStartStreamResult(cmdType) ? SUCCESS : ERROR;
@@ -1393,6 +1397,7 @@ int32_t AudioRendererPrivate::PauseImpl(StateChangeCmdType cmdType)
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE, "Pause failed. Switching state: %{public}d",
         isSwitching_);
 
+    audioInterrupt_.state = audioInterruptState_.load();
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is pausing, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -1430,6 +1435,7 @@ int32_t AudioRendererPrivate::StopImpl()
     }
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE,
         "AudioRenderer::Stop failed. Switching state: %{public}d", isSwitching_);
+    audioInterrupt_.state = audioInterruptState_.load();
     if (IsNoStreamRenderer()) {
         // When the cellular call stream is stopping, only need to deactivate audio interrupt.
         if (AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_) != 0) {
@@ -1488,6 +1494,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
     bool result = audioStream_->ReleaseAudioStream();
 
     // If Stop call was skipped, Release to take care of Deactivation
+    audioInterrupt_.state = audioInterruptState_.load();
     (void)AudioPolicyManager::GetInstance().DeactivateAudioInterrupt(audioInterrupt_);
 
     // Unregister the callaback in policy server
@@ -1882,10 +1889,7 @@ void AudioStreamCallbackRenderer::OnStateChange(const State state, const StateCh
     auto renderState = static_cast<RendererState>(state);
     cb->OnStateChange(renderState, cmdType);
 
-    AudioInterrupt audioInterrupt;
-    rendererObj->GetAudioInterrupt(audioInterrupt);
-    audioInterrupt.state = state;
-    rendererObj->SetAudioInterrupt(audioInterrupt);
+    rendererObj->UpdateInterruptState(state);
 }
 
 std::vector<AudioSampleFormat> AudioRenderer::GetSupportedFormats()
@@ -2000,6 +2004,7 @@ void AudioRendererPrivate::SetSilentModeAndMixWithOthers(bool on)
         sharedLockSwitch = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
     std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
+    audioInterrupt_.state = audioInterruptState_.load();
     if (audioStream_->GetSilentModeAndMixWithOthers() && !on) {
         audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
         if (static_cast<RendererState>(audioStream_->GetState()) == RENDERER_RUNNING) {
@@ -2560,6 +2565,7 @@ void AudioRendererPrivate::HandleAudioInterruptWhenServerDied()
 {
     InitAudioInterruptCallback(true); // Register audio interrupt callback again.
     if (GetStatusInner() == RENDERER_RUNNING) {
+        audioInterrupt_.state = audioInterruptState_.load();
         int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("active audio interrupt failed");
@@ -2654,9 +2660,9 @@ void AudioRendererPrivate::GetAudioInterrupt(AudioInterrupt &audioInterrupt)
     audioInterrupt = audioInterrupt_;
 }
 
-void AudioRendererPrivate::SetAudioInterrupt(const AudioInterrupt &audioInterrupt)
+void AudioRendererPrivate::UpdateInterruptState(int32_t state)
 {
-    audioInterrupt_ = audioInterrupt;
+    audioInterruptState_.store(state);
 }
 
 // Only called AudioRendererPrivate::Stop(), with AudioRendererPrivate::rendererMutex_ held.
