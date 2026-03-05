@@ -83,6 +83,8 @@ private:
     static napi_value IsAcousticEchoCancelerSupported(napi_env env, napi_callback_info info);
     static napi_value IsRecordingAvailable(napi_env env, napi_callback_info info);
     static napi_value IsAudioLoopbackSupported(napi_env env, napi_callback_info info);
+    static napi_value IsFastPlaybackSupported(napi_env env, napi_callback_info info);
+    static napi_value IsFastRecordingSupported(napi_env env, napi_callback_info info);
     static napi_value IsIntelligentNoiseReductionEnabledForCurrentDevice(napi_env env, napi_callback_info info);
     static void RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *args, const std::string &cbName);

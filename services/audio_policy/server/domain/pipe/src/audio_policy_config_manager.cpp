@@ -1136,5 +1136,56 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1;
     return tempStreamProp;
 }
+
+bool AudioPolicyConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo,
+    std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+
+    // Check if device supports multichannel output
+    // Multichannel support means the device can output more than 2 channels
+    // This is determined by checking the device capabilities and channel layout
+    auto tempStreamProp = GetStreamPropInfoForMultiChannel(desc, deviceInfo->adapterPipeInfo_, streamInfo);
+
+    if (tempStreamProp != nullptr) {
+        return true;
+    }
+
+    return false;
+}
+
+bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
+    std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+
+    DirectPlaybackMode mode = GetDirectPlaybackSupport(desc, streamInfo);
+    return (mode != DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
+
+bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
+    std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+
+    // Offload playback means the device can handle decoding independently
+    // This is determined by checking if the device supports hardware decoding
+    auto tempStreamProp = info->streamPropInfos_.front();
+
+    // Check if device supports offload for the given stream info
+    // This typically requires specific encoding and sample format support
+    if (tempStreamProp != nullptr && tempStreamProp->format_ == streamInfo.format &&
+        tempStreamProp->sampleRate_ == static_cast<uint32_t>(streamInfo.samplingRate)) {
+        return true;
+    }
+
+    return false;
+}
 }
 }

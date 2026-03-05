@@ -214,5 +214,23 @@ bool OHAudioStreamManager::IsIntelligentNoiseReductionEnabledForCurrentDevice(So
     CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
     return audioStreamManager_->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
 }
+
+bool OHAudioStreamManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
+    return audioStreamManager_->IsMultichannelPlaybackSupported(streamInfo, streamUsage);
+}
+
+bool OHAudioStreamManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
+    return audioStreamManager_->IsDirectPlaybackSupported(streamInfo, streamUsage);
+}
+
+bool OHAudioStreamManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStreamManager_ != nullptr, false, "failed, audioStreamManager_ is null");
+    return audioStreamManager_->IsOffloadPlaybackSupported(streamInfo, streamUsage);
+}
 } // namespace AudioStandard
 } // namespace OHOS
