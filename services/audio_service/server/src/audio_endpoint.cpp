@@ -1256,7 +1256,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
 {
     bool isAllReady = true;
     bool needCheckStandby = false;
-    needCheckZeroVolume_ = false;
+    needCheckZeroVolume_ = true;
     {
         // lock list without sleep
         std::lock_guard<std::mutex> lock(listLock_);
@@ -1277,12 +1277,12 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
             int64_t lastWrittenTime = tempBuffer->GetLastWrittenTime();
             uint32_t sessionId = processList_[i]->GetAudioSessionId();
             bool keepRunning = processList_[i]->GetKeepRunning();
+            needCheckZeroVolume_ = keepRunning ? false : needCheckZeroVolume_; 
             if (current - lastWrittenTime > WAIT_CLIENT_STANDBY_TIME_NS && !keepRunning) {
                 Trace trace("AudioEndpoint::MarkClientStandby:" + std::to_string(sessionId));
                 HILOG_COMM_INFO("[CheckAllBufferReady]change the status to stand-by, session %{public}u", sessionId);
                 processList_[i]->EnableStandby();
                 needCheckStandby = true;
-                needCheckZeroVolume_ = true;
                 continue;
             }
             // StaticMode do not refresh Time here, skip;

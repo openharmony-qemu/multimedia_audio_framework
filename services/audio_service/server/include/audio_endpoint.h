@@ -123,7 +123,7 @@ protected:
 
 private:
     virtual bool Config(const AudioEndpointConfig &endpointConfig) = 0;
-    bool needCheckZeroVolume = false;
+    bool needCheckZeroVolume_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS
