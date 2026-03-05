@@ -75,7 +75,7 @@ enum class AsrNoiseSuppressionMode {
      * TSE_DENOISE_MODE
      * @syscap SystemCapability.Multimedia.Audio.Capturer
      * @systemapi
-     * @since 19
+     * @since 24
      */
     TSE_DENOISE_MODE = 7,
 };
