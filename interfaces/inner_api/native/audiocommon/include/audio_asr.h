@@ -71,6 +71,13 @@ enum class AsrNoiseSuppressionMode {
      * @since 19
      */
     ASR_WHISPER_MODE = 6,
+    /**
+     * TSE_DENOISE_MODE
+     * @syscap SystemCapability.Multimedia.Audio.Capturer
+     * @systemapi
+     * @since 24
+     */
+    TSE_DENOISE_MODE = 7,
 };
 
 /**
