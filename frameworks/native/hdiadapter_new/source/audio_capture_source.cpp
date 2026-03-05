@@ -993,7 +993,8 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     }
     param.stopThreshold = INT_MAX;
-    param.silenceThreshold = AUDIO_BUFFER_SIZE;
+    int silenceThreTest = 4096;
+    param.silenceThreshold = silenceThreTest;
     param.sourceType = SOURCE_TYPE_MIC;
 
     param.sampleRate = attr_.sampleRate;
@@ -1005,7 +1006,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
         AUDIO_WARNING_LOG("channelLayout is ot suitable for channelCount, convert channel to channelLayout");
         param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
     }
-    param.silenceThreshold = attr_.bufferSize;
+    param.silenceThreshold = silenceThreTest;
     param.frameSize = param.format * param.channelCount;
     if (param.frameSize != 0) {
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
