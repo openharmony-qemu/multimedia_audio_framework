@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string AUDIO_EFFECT_MGR_NAPI_CLASS_NAME = "AudioEffectManager";
+inline const std::string AUDIO_EFFECT_MGR_NAPI_CLASS_NAME = "AudioEffectManager";
 
 class NapiAudioEffectMgr {
 public:

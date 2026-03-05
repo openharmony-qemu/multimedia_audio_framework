@@ -96,6 +96,7 @@ void TaiheAudioPreferredInputDeviceChangeCallback::SafeJsCallbackActiveInputDevi
         [](AudioActiveInputDeviceChangeJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;
@@ -186,6 +187,7 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::SafeJsCallbackActiveOutputDe
         [](AudioActiveOutputDeviceChangeJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;

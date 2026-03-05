@@ -113,9 +113,9 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
 #endif
 
     // pass valid tag to next node
-    if (!inputs[0]->IsValid()) {
-        return &silenceData_;
-    }
+    bool retCond = !inputs[0]->IsValid() && (GetDeviceClass() == "offload" || GetDeviceClass() == "remote_offload");
+    CHECK_AND_RETURN_RET(!retCond, &silenceData_);
+
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
     converterOutput_.Reset();
     tmpOutBuf_.Reset();

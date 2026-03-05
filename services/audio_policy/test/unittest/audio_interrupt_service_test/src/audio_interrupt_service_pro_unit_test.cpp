@@ -488,7 +488,7 @@ HWTEST_F(AudioInterruptServiceUnitTest, DeactivateAudioInterrupt_001, TestSize.L
     zone->audioFocusInfoList.push_back(
         std::make_pair(audioInterrupt, AudioFocuState::ACTIVE));
     audioInterruptService_->zonesMap_[zoneId] = zone;
-    EXPECT_EQ(audioInterruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt), SUCCESS);
+    EXPECT_EQ(audioInterruptService_->DeactivateAudioInterrupt(zoneId, audioInterrupt).retCode, SUCCESS);
 }
 
 /**
@@ -615,8 +615,8 @@ HWTEST_F(AudioInterruptServiceUnitTest, GetAppState_001, TestSize.Level4)
     pids.push_back (appPid);
     appManager.KillProcessesByPids(pids);
 
-    audioInterruptService_->GetAppState(appPid);
-    EXPECT_TRUE(audioInterruptService_->GetAppState(appPid) != 0);
+    AudioInterruptUtils::GetAppState(appPid);
+    EXPECT_TRUE(AudioInterruptUtils::GetAppState(appPid) != 0);
 }
 
 /**

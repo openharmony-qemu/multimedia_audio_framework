@@ -46,9 +46,9 @@
 #include "audio_scene_manager.h"
 #include "audio_offload_stream.h"
 #include "audio_volume_manager.h"
-#include "audio_ec_manager.h"
 #include "audio_adapter_manager.h"
-
+#include "audio_pipe_manager.h"
+#include "audio_usr_select_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -81,6 +81,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descForCb);
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume = true);
+    void ClearPreferredDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     DeviceType GetSpatialDeviceType(const std::string& macAddress);
 
     bool IsRendererStreamRunning(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
@@ -113,10 +114,11 @@ private:
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
-        audioEcManager_(AudioEcManager::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-        audioA2dpDevice_(AudioA2dpDevice::GetInstance()) {}
+        audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
+        pipeManager_(AudioPipeManager::GetPipeManager()),
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
     ~AudioDeviceCommon() {}
 
     void UpdateConnectedDevicesWhenConnectingForOutputDevice(const AudioDeviceDescriptor &updatedDesc,
@@ -152,6 +154,7 @@ private:
     bool NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,
         const std::shared_ptr<AudioDeviceDescriptor> &updated,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &fetched, const DeviceUsage usage) const;
+    bool NeedUpdatePreferredDevice(const AudioDeviceDescriptor &desc);
 
     // fetchOutput
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
@@ -187,12 +190,12 @@ private:
     AudioRouteMap& audioRouteMap_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
-    AudioEcManager& audioEcManager_;
     AudioOffloadStream& audioOffloadStream_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioA2dpDevice& audioA2dpDevice_;
-
+    std::shared_ptr<AudioPipeManager> pipeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
+    AudioUsrSelectManager& audioUsrSelectManager_;
 };
 
 }

@@ -295,7 +295,7 @@ int32_t AudioSession::EnableVoipStreamsDefaultOutputDevice()
     return success ? SUCCESS : ret;
 }
 
-int32_t AudioSession::EnableDefaultDevice()
+int32_t AudioSession::EnableDefaultDevice(bool forceFetch)
 {
     if (!IsSessionDefaultDeviceEnabled()) {
         return SUCCESS;
@@ -304,7 +304,7 @@ int32_t AudioSession::EnableDefaultDevice()
     int32_t ret = deviceManager_.SetDefaultOutputDevice(defaultDeviceType_, fakeStreamId_,
         GetStreamUsageInner(), true);
     AUDIO_INFO_LOG("enable default output device for session %d, ret is %d", fakeStreamId_, ret);
-    if (ret == NEED_TO_FETCH) {
+    if (ret == NEED_TO_FETCH || forceFetch) {
         needToFetch_ = true;
         ret = SUCCESS;
     }
@@ -368,7 +368,7 @@ bool AudioSession::IsLegalDevice(const DeviceType deviceType)
             (deviceType == DEVICE_TYPE_DEFAULT);
 }
 
-int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType)
+int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType, bool forceFetch)
 {
     AUDIO_INFO_LOG("The session default output device is set to %{public}d", deviceType);
     if (!IsLegalDevice(deviceType)) {
@@ -378,7 +378,7 @@ int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType
 
     defaultDeviceType_ = deviceType;
 
-    return EnableDefaultDevice();
+    return EnableDefaultDevice(forceFetch);
 }
 
 void AudioSession::GetSessionDefaultOutputDevice(DeviceType &deviceType)
@@ -400,20 +400,7 @@ bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
 bool AudioSession::IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
     const std::shared_ptr<AudioDeviceDescriptor> desc)
 {
-    bool ret = false;
-
-    if ((changeReason == AudioStreamDeviceChangeReason::OVERRODE) || (desc == nullptr)) {
-        return ret;
-    }
-
-    if ((deviceManager_.GetDevicePrivacyType(std::make_shared<AudioDeviceDescriptor>(deviceDescriptor_)) ==
-        AudioDevicePrivacyType::TYPE_PRIVACY) && (deviceManager_.GetDevicePrivacyType(desc) !=
-        AudioDevicePrivacyType::TYPE_PRIVACY)) {
-        ret = true;
-    }
-
-    deviceDescriptor_ = AudioDeviceDescriptor(desc);
-    return ret;
+    return changeReason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
 }
 
 bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc)

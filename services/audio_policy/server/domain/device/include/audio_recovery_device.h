@@ -35,7 +35,6 @@
 #include "audio_active_device.h"
 #include "audio_scene_manager.h"
 #include "audio_a2dp_offload_manager.h"
-#include "audio_capturer_session.h"
 #include "audio_state_manager.h"
 
 namespace OHOS {
@@ -77,7 +76,6 @@ private:
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
-        audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()) {}
     ~AudioRecoveryDevice() {}
     int32_t HandleRecoveryPreferredDevices(int32_t preferredType, int32_t deviceType,
@@ -124,7 +122,6 @@ private:
     AudioRouteMap& audioRouteMap_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioDeviceCommon& audioDeviceCommon_;
-    AudioCapturerSession& audioCapturerSession_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 };

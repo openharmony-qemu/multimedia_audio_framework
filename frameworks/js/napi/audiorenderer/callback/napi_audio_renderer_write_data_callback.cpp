@@ -202,7 +202,7 @@ void NapiRendererWriteDataCallback::SafeJsCallbackWriteDataWork(
 
 void NapiRendererWriteDataCallback::WriteDataTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    AUDIO_DEBUG_LOG("WriteDataTsfnFinalize: safe thread resource release.");
+    AUDIO_INFO_LOG("WriteDataTsfnFinalize: safe thread resource release.");
 }
 
 void NapiRendererWriteDataCallback::WorkCallbackRendererWriteDataInner(RendererWriteDataJsCallback *event)

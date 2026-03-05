@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string AUDIO_SESSION_CALLBACK_NAME = "audioSessionDeactivated";
+inline const std::string AUDIO_SESSION_CALLBACK_NAME = "audioSessionDeactivated";
 
 class NapiAudioSessionCallback : public AudioSessionCallback {
 public:

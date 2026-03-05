@@ -20,11 +20,10 @@
             <device name="Wired Headphones" type="DEVICE_TYPE_WIRED_HEADPHONES" role="output" Category="" usage="media,voice"/>
             <device name="Usb Headset Hifi" type="DEVICE_TYPE_USB_HEADSET" role="output,input" Category="" usage="media,voice"/>
             <device name="Usb Arm Headset" type="DEVICE_TYPE_USB_ARM_HEADSET" role="output,input" Category="" usage="media,voice"/>
-            <device name="Bt A2dp In" type="DEVICE_TYPE_BLUETOOTH_A2DP_IN" role="input" Category="HEADPHONE,GLASSES" usage="media"/>
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="HEADPHONE,GLASSES" usage="media"/>
             <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="HEADPHONE,GLASSES," usage="voice,recongnition"/>
             <device name="Nearlink" type="DEVICE_TYPE_NEARLINK" role="output" Category="HEADPHONE,GLASSES" usage="media,voice"/>
-            <device name="Nearlink In" type="DEVICE_TYPE_NEARLINK_IN" role="input" Category="HEADPHONE,GLASSES" usage="media,voice,recongnition"/>
+            <device name="Nearlink In" type="DEVICE_TYPE_NEARLINK_IN" role="input" Category="HEADPHONE,GLASSES" usage="voice,recongnition"/>
             <device name="Hearing Aid" type="DEVICE_TYPE_HEARING_AID" role="output" Category="HEARAID" usage="media,voice"/>
         </devices>
     </adapter>
@@ -41,12 +40,14 @@
     <adapter name="negative">
         <devices>
             <device name="Bt A2dp" type="DEVICE_TYPE_BLUETOOTH_A2DP" role="output" Category="HEADPHONE_UNWEAR" usage="media"/>
+            <device name="Bt A2dp In" type="DEVICE_TYPE_BLUETOOTH_A2DP_IN" role="input" Category="HEADPHONE,GLASSES" usage="media"/>
             <device name="Bt Sco" type="DEVICE_TYPE_BLUETOOTH_SCO" role="output,input" Category="WATCH,HEADPHONE_UNWEAR" usage="media,voice"/>
             <device name="Hdmi" type="DEVICE_TYPE_HDMI" role="output" Category="" usage="media"/>
             <device name="Line Digital" type="DEVICE_TYPE_LINE_DIGITAL" role="output" Category="" usage="media"/>
             <device name="Accessory" type="DEVICE_TYPE_ACCESSORY" role="input" Category="" usage="media"/>
             <device name="Nearlink" type="DEVICE_TYPE_NEARLINK" role="output" Category="HEADPHONE_UNWEAR" usage="media,voice"/>
             <device name="Nearlink In" type="DEVICE_TYPE_NEARLINK_IN" role="input" Category="WATCH,HEADPHONE_UNWEAR" usage="media,voice"/>
+            <device name="Nearlink In" type="DEVICE_TYPE_NEARLINK_IN" role="input" Category="HEADPHONE,GLASSES" usage="media"/>
         </devices>
     </adapter>
 </audiodeviceprivacy>

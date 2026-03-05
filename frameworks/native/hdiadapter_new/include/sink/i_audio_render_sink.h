@@ -49,7 +49,7 @@ public:
     virtual int32_t Flush(void) = 0;
     virtual int32_t Reset(void) = 0;
     virtual int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) = 0;
-    virtual int64_t GetVolumeDataCount() = 0;
+    virtual int32_t GetVolumeDataCount(int64_t &volumeData) = 0;
 
     virtual int32_t SuspendRenderSink(void) SUCCESS_RET
     virtual int32_t RestoreRenderSink(void) SUCCESS_RET
@@ -59,6 +59,7 @@ public:
     virtual std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) { return ""; }
 
     virtual int32_t SetVolume(float left, float right) = 0;
+    virtual int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) = 0;
     virtual int32_t GetVolume(float &left, float &right) = 0;
 
     virtual int32_t GetLatency(uint32_t &latency) = 0;
@@ -122,8 +123,6 @@ public:
 
     // primary extend function
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
-    // for a2dp_offload connection state
-    virtual int32_t UpdatePrimaryConnectionState(uint32_t operation) NOT_SUPPORT_RET;
 
     virtual bool IsInA2dpOffload() {return false;}
 
@@ -140,8 +139,6 @@ public:
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
 
     virtual void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) {}
-
-    virtual void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) {}
 
     // Implement by self (begin)
     virtual void RegistCallback(uint32_t type, IAudioSinkCallback *callback);

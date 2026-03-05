@@ -238,7 +238,7 @@ EXCLUDE_OUTPUT_DEVICE:
   AUDIO_DEVICE_USAGE: {type: UINT8, desc: audio device usage}
   DEVICE_TYPE: {type: UINT8, desc: audio device type which is excluded}
 
-PLAY_AUDIO_STATS:
+PLAY_AUDIO_STAT:
   __BASE: {type: STATISTIC, level: CRITICAL, desc: Audio stream statistics}
   APP_NAME: {type: STRING, desc: application name}
   APP_VERSION: {type: STRING, desc: application version}
@@ -309,14 +309,6 @@ ADD_REMOVE_CUSTOMIZED_TONE:
   MIME_TYPE: {type: STRING, arrsize: 100, desc: mime type}
   TIMESTAMP: {type: UINT64, arrsize: 100, desc: time stamp}
   RESULT: {type: INT8, arrsize: 100, desc: result}
-
-DEVICE_CHANGE_EXCEPTION:
-  __BASE: {type: FAULT, level: CRITICAL, desc: device change exception event}
-  CHANGE_REASON: {type: UINT8, desc: reason for triggering device changes}
-  DEVICE_TYPE: {type: INT32, desc: device type}
-  ERROR_CASE: {type: UINT32, desc: error case}
-  ERROR_MSG: {type: INT32, desc: error message}
-  ERROR_DESCRIPTION: {type: STRING, desc: error description}
 
 HPAE_MESSAGE_QUEUE_EXCEPTION:
   __BASE: {type: FAULT, level: CRITICAL, desc: message queue execute exception}
@@ -394,3 +386,4 @@ LOOPBACK_EXCEPTION:
   CAPTURE_DEVICE_TYPE: {type: INT32, desc: capture device type}
   ERROR_SCOPE: {type: INT32, desc: error scope}
   ERROR_TYPE: {type: INT32, desc: error type}
+  

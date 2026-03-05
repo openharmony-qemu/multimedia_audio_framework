@@ -49,6 +49,13 @@ class ClientUnderrunCallBack {
     virtual void OnUnderrun(size_t posInFrames) = 0;
 };
 
+class AudioFirstFrameCallback {
+public:
+    virtual ~AudioFirstFrameCallback() = default;
+
+    virtual void OnFirstFrameWriting() = 0;
+};
+
 class AudioProcessInClient {
 public:
     static constexpr int32_t PROCESS_VOLUME_MAX = 1 << 16; // 0 ~ 65536
@@ -62,7 +69,7 @@ public:
 
     virtual int32_t SaveUnderrunCallback(const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback) = 0;
 
-    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) const = 0;
+    virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
 
     virtual int32_t Enqueue(const BufferDesc &bufDesc) = 0;
 
@@ -111,6 +118,10 @@ public:
 
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
 
+    virtual int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) = 0;
+
+    virtual int32_t UnregisterRemoteDiedCallback() = 0;
+
     virtual int64_t GetFramesWritten() = 0;
 
     virtual int64_t GetFramesRead() = 0;
@@ -119,9 +130,9 @@ public:
 
     virtual void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
-
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
     
@@ -149,7 +160,7 @@ public:
 
     virtual void GetKeepRunning(bool &keepRunning) = 0;
 
-    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) = 0;
+    virtual int32_t GetStaticPlayPosition(StaticBufferInfo &staticBufferInfo) = 0;
 
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 
@@ -158,6 +169,13 @@ public:
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 
     virtual int32_t SetStaticRenderRate(AudioRendererRate renderRate) = 0;
+
+    virtual int32_t SetFirstFrameWritingCallback(
+        const std::shared_ptr<AudioFirstFrameCallback> &callback) = 0;
+
+    virtual void SetIsFirstFrame(bool value) = 0;
+
+    virtual int32_t ResetStaticPlayPosition() = 0; // Only can be used in static mode.
 };
 } // namespace AudioStandard
 } // namespace OHOS

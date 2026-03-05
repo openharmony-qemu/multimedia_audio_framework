@@ -206,7 +206,7 @@ int32_t HpaeSoftLink::SetVolumeDuckFactor(float duckFactor)
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE,
         "softlink already release");
-    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(rendererStreamInfo_.sessionId, duckFactor, 0);
+    AudioVolume::GetInstance()->SetStreamVolumeDuckFactor(rendererStreamInfo_.sessionId, duckFactor);
     return SUCCESS;
 }
 

@@ -262,6 +262,33 @@ void AudioRoutingManagerImpl::SelectOutputDeviceByFilterSync(AudioRendererFilter
     }
 }
 
+void AudioRoutingManagerImpl::SelectOutputDeviceByFilterWithStrategySync(AudioRendererFilter const &filter,
+    array_view<AudioDeviceDescriptor> outputAudioDevices, AudioDevcieSelectStrategy strategy)
+{
+    bool bArgTransFlag = true;
+    int32_t audioDeviceSelectMode = strategy.get_value();
+
+    OHOS::sptr<OHOS::AudioStandard::AudioRendererFilter> audioRendererFilter;
+    TaiheParamUtils::GetAudioRendererFilter(audioRendererFilter, bArgTransFlag, filter);
+
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
+    TaiheParamUtils::GetAudioDeviceDescriptorVector(deviceDescriptors, bArgTransFlag, outputAudioDevices);
+
+    if (!bArgTransFlag) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED);
+        return;
+    }
+
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioMngr_->SelectOutputDevice(audioRendererFilter, deviceDescriptors, audioDeviceSelectMode) !=
+        OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDeviceByFilterWithStrategySync failed");
+    }
+}
+
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter)
 {
     std::vector<AudioDeviceDescriptor> emptyResult;
@@ -489,6 +516,57 @@ void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
     UnregisterPreferredInputDeviceChangeCallback(cacheCallback, this);
+}
+
+void AudioRoutingManagerImpl::OnPreferredOutputDeviceChangeByFilter(
+    AudioRendererFilter const &filters,
+    callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
+{
+    auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
+    RegisterPreferredOutputDeviceChangeByFilterCallback(filters, cacheCallback,
+        PREFER_OUTPUT_DEVICE_BY_FILTER_CALLBACK_NAME, this);
+}
+
+void AudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeByFilterCallback(AudioRendererFilter const &filters,
+    std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
+{
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
+    CHECK_AND_RETURN_LOG(GetTaihePrefOutputDeviceChangeCb(callback, audioRoutingManagerImpl) == nullptr,
+        "Do not allow duplicate registration of the same callback");
+
+    OHOS::sptr<OHOS::AudioStandard::AudioRendererFilter> audioRendererFilter;
+    bool bArgTransFlag = false;
+    int32_t status = TaiheParamUtils::GetAudioRendererFilter(audioRendererFilter, bArgTransFlag, filters);
+    CHECK_AND_RETURN_LOG(status == AUDIO_OK, "Parameter verification failed.");
+    CHECK_AND_RETURN_LOG(audioRendererFilter != nullptr,
+        "Parameter verification failed. The audioRendererFilter obj is NULL.");
+
+    std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb =
+        std::make_shared<TaiheAudioPreferredOutputDeviceChangeCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
+
+    cb->SaveCallbackReference(callback);
+
+    int32_t ret = audioRoutingManagerImpl->audioRoutingMngr_->SetPreferredOutputDeviceChangeCallback(
+        audioRendererFilter->rendererInfo, cb, audioRendererFilter->uid);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS, TaiheAudioError::ThrowError(ret),
+        "Registering Preferred Output Device Change By Filter Callback Failed %{public}d", ret);
+
+    AddPreferredOutputDeviceChangeCallback(audioRoutingManagerImpl, cb);
+}
+
+void AudioRoutingManagerImpl::OffPreferredOutputDeviceChangeByFilter(
+    optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
+{
+    std::shared_ptr<uintptr_t> cacheCallback = nullptr;
+    if (callback.has_value()) {
+        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
+    }
+    UnregisterPreferredOutputDeviceChangeCallback(cacheCallback, this);
 }
 
 void AudioRoutingManagerImpl::OffPreferOutputDeviceChangeForRendererInfo(

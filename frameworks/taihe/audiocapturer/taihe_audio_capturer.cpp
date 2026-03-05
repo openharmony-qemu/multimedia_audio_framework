@@ -347,10 +347,9 @@ void AudioCapturerImpl::StartSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
-    bool ret = audioCapturer_->Start();
-    if (!ret) {
-        AUDIO_ERR_LOG("StartSync failure!");
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    int32_t ret = audioCapturer_->StartWithError();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -361,10 +360,9 @@ void AudioCapturerImpl::StopSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
-    bool ret = audioCapturer_->Stop();
-    if (!ret) {
-        AUDIO_ERR_LOG("StopSync failure!");
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    int32_t ret = audioCapturer_->StopWithError();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -375,10 +373,9 @@ void AudioCapturerImpl::ReleaseSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
-    bool ret = audioCapturer_->Release();
-    if (!ret) {
-        AUDIO_ERR_LOG("ReleaseSync failure!");
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    int32_t ret = audioCapturer_->ReleaseWithError();
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, OHOS::AudioStandard::ErrMessage(ret));
         return;
     }
 }
@@ -796,12 +793,9 @@ void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>>
     UnregisterCapturerCallback(cacheCallback, STATE_CHANGE_CALLBACK_NAME, this);
 }
 
-void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback)
+void AudioCapturerImpl::OffAudioInterrupt()
 {
     std::shared_ptr<uintptr_t> cacheCallback = nullptr;
-    if (callback.has_value()) {
-        cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
-    }
     UnregisterCapturerCallback(cacheCallback, AUDIO_INTERRUPT_CALLBACK_NAME, this);
 }
 

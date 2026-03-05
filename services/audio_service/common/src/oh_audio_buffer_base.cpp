@@ -50,6 +50,19 @@ constexpr int32_t MS_PER_S = 1000;
 constexpr int32_t NS_PER_MS = 1000000;
 static constexpr float AUDIO_VOLUME_EPSILON = 0.0001;
 
+class ScopedFd {
+public:
+    explicit ScopedFd(int fd) : fd_(fd) {}
+    ~ScopedFd()
+    {
+        if (fd_ > MINFD) {
+            CloseFd(fd_);
+        }
+    }
+private:
+    int fd_ = -1;
+};
+
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
     uint8_t *GetBase() override;
@@ -66,7 +79,6 @@ public:
     int32_t Init();
 
     bool Marshalling(Parcel &parcel) const override;
-
 private:
     void Close();
 
@@ -74,19 +86,6 @@ private:
     int fd_;
     size_t size_;
     std::string name_;
-};
-
-class ScopedFd {
-public:
-    explicit ScopedFd(int fd) : fd_(fd) {}
-    ~ScopedFd()
-    {
-        if (fd_ > MINFD) {
-            CloseFd(fd_);
-        }
-    }
-private:
-    int fd_ = -1;
 };
 
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(size_t size, const std::string &name)
@@ -207,7 +206,7 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::CreateFromRemote(int fd, s
 
 bool AudioSharedMemory::Marshalling(Parcel &parcel) const
 {
-    return true;
+    return false;
 }
 
 AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
@@ -242,6 +241,71 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
         return nullptr;
     }
     return memory;
+}
+
+bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
+{
+    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
+    AudioBufferHolder bufferHolder = bufferHolder_;
+    CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
+        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT ||
+        bufferHolder == AudioBufferHolder::AUDIO_APP_SHARED,
+        false, "buffer holder error:%{public}d", bufferHolder);
+    CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, false, "dataMem_ is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, false, "statusInfoMem_ is nullptr.");
+
+    return messageParcel.WriteUint32(bufferHolder) &&
+        messageParcel.WriteUint32(totalSizeInFrame_) &&
+        messageParcel.WriteUint32(byteSizePerFrame_) &&
+        messageParcel.WriteFileDescriptor(dataMem_->GetFd()) &&
+        messageParcel.WriteFileDescriptor(statusInfoMem_->GetFd());
+}
+
+OHAudioBufferBase *OHAudioBufferBase::Unmarshalling(Parcel &parcel)
+{
+    AUDIO_DEBUG_LOG("ReadFromParcel start.");
+    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
+    uint32_t holder = messageParcel.ReadUint32();
+    AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
+    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
+        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT &&
+        bufferHolder != AudioBufferHolder::AUDIO_APP_SHARED) {
+        AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
+        return nullptr;
+    }
+    bufferHolder = bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ?
+         AudioBufferHolder::AUDIO_CLIENT : bufferHolder;
+    uint32_t totalSizeInFrame = messageParcel.ReadUint32();
+    uint32_t byteSizePerFrame = messageParcel.ReadUint32();
+
+    int dataFd = messageParcel.ReadFileDescriptor();
+    int infoFd = messageParcel.ReadFileDescriptor();
+
+    int minfd = 2; // ignore stdout, stdin and stderr.
+    CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "invalid dataFd: %{public}d", dataFd);
+
+    if (infoFd != INVALID_FD) {
+        CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
+    }
+    auto buffer = new(std::nothrow) OHAudioBufferBase(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (buffer == nullptr || buffer->Init(dataFd, infoFd, 0) != SUCCESS || buffer->basicBufferInfo_ == nullptr) {
+        AUDIO_ERR_LOG("failed to init.");
+        if (buffer != nullptr) delete buffer;
+        CloseFd(dataFd);
+        CloseFd(infoFd);
+        return nullptr;
+    }
+
+    if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||
+        byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
+        AUDIO_WARNING_LOG("data in shared memory diff.");
+    } else {
+        AUDIO_DEBUG_LOG("Read some data done.");
+    }
+    CloseFd(dataFd);
+    CloseFd(infoFd);
+    AUDIO_DEBUG_LOG("ReadFromParcel done.");
+    return buffer;
 }
 
 OHAudioBufferBase::OHAudioBufferBase(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame,
@@ -356,71 +420,6 @@ std::shared_ptr<OHAudioBufferBase> OHAudioBufferBase::CreateFromRemote(uint32_t 
         AUDIO_ERR_LOG("failed to init.");
         return nullptr;
     }
-    return buffer;
-}
-
-bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
-{
-    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
-    AudioBufferHolder bufferHolder = bufferHolder_;
-    CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
-        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT ||
-        bufferHolder == AudioBufferHolder::AUDIO_APP_SHARED,
-        false, "buffer holder error:%{public}d", bufferHolder);
-    CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, false, "dataMem_ is nullptr.");
-    CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, false, "statusInfoMem_ is nullptr.");
-
-    return messageParcel.WriteUint32(bufferHolder) &&
-        messageParcel.WriteUint32(totalSizeInFrame_) &&
-        messageParcel.WriteUint32(byteSizePerFrame_) &&
-        messageParcel.WriteFileDescriptor(dataMem_->GetFd()) &&
-        messageParcel.WriteFileDescriptor(statusInfoMem_->GetFd());
-}
-
-OHAudioBufferBase *OHAudioBufferBase::Unmarshalling(Parcel &parcel)
-{
-    AUDIO_DEBUG_LOG("ReadFromParcel start.");
-    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
-    uint32_t holder = messageParcel.ReadUint32();
-    AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
-    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
-        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT &&
-        bufferHolder != AudioBufferHolder::AUDIO_APP_SHARED) {
-        AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
-        return nullptr;
-    }
-    bufferHolder = bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ?
-         AudioBufferHolder::AUDIO_CLIENT : bufferHolder;
-    uint32_t totalSizeInFrame = messageParcel.ReadUint32();
-    uint32_t byteSizePerFrame = messageParcel.ReadUint32();
-
-    int dataFd = messageParcel.ReadFileDescriptor();
-    int infoFd = messageParcel.ReadFileDescriptor();
-
-    int minfd = 2; // ignore stdout, stdin and stderr.
-    CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "invalid dataFd: %{public}d", dataFd);
-
-    if (infoFd != INVALID_FD) {
-        CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
-    }
-    auto buffer = new(std::nothrow) OHAudioBufferBase(bufferHolder, totalSizeInFrame, byteSizePerFrame);
-    if (buffer == nullptr || buffer->Init(dataFd, infoFd, 0) != SUCCESS || buffer->basicBufferInfo_ == nullptr) {
-        AUDIO_ERR_LOG("failed to init.");
-        if (buffer != nullptr) delete buffer;
-        CloseFd(dataFd);
-        CloseFd(infoFd);
-        return nullptr;
-    }
-
-    if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||
-        byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
-        AUDIO_WARNING_LOG("data in shared memory diff.");
-    } else {
-        AUDIO_DEBUG_LOG("Read some data done.");
-    }
-    CloseFd(dataFd);
-    CloseFd(infoFd);
-    AUDIO_DEBUG_LOG("ReadFromParcel done.");
     return buffer;
 }
 
@@ -582,7 +581,6 @@ float OHAudioBufferBase::GetFactorFromRamp()
     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, MAX_FLOAT_VOLUME, "buffer is not inited!");
     uint32_t durationMs = std::min(MAX_DURATION_MS, basicBufferInfo_->durationMs.load());
     uint32_t beginDurationMs = std::min(MAX_TIME_MS, basicBufferInfo_->beginDurationMs.load());
-
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
@@ -597,7 +595,6 @@ float OHAudioBufferBase::GetFactorFromRamp()
     float lastEventFactor = std::max(MIN_DUCK_FLOAT_VOLUME,
         std::min(MAX_FLOAT_VOLUME, basicBufferInfo_->lastEventFactor.load()));
     float factor = duckFactor;
- 
     if ((currentTime - beginDurationMs) < durationMs &&
         !IsVolumeSame(duckFactor, oldDuckFactor, AUDIO_VOLUME_EPSILON) && durationMs > 0) {
         float delta = duckFactor - oldDuckFactor;
@@ -611,10 +608,9 @@ float OHAudioBufferBase::GetFactorFromRamp()
     } else {
         basicBufferInfo_->lastEventFactor.store(duckFactor);
     }
-
     return factor;
 }
- 
+
 bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, false, "buffer is not inited!");
@@ -625,7 +621,7 @@ bool OHAudioBufferBase::SetDuckFactor(float duckFactor, uint32_t durationMs)
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     uint32_t currentTime = static_cast<uint32_t>(tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS));
- 
+
     float oldDuckFactor = basicBufferInfo_->duckFactor.load();
     basicBufferInfo_->oldDuckFactor.store(oldDuckFactor);
     basicBufferInfo_->duckFactor.store(duckFactor);
@@ -981,7 +977,7 @@ bool OHAudioBufferBase::SetSyncReadFrame(uint32_t readFrame)
 std::atomic<uint32_t> *OHAudioBufferBase::GetFutex()
 {
     if (basicBufferInfo_ == nullptr) {
-        HILOG_COMM_WARN("[GetFutex]basicBufferInfo_ is nullptr");
+        AUDIO_WARNING_LOG("basicBufferInfo_ is nullptr");
         return nullptr;
     }
     return &basicBufferInfo_->futexObj;
@@ -1104,14 +1100,17 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->oldDuckFactor.store(MAX_FLOAT_VOLUME);
     basicBufferInfo_->lastEventFactor.store(MAX_FLOAT_VOLUME);
     basicBufferInfo_->lastEventTime.store(0);
-    
+
     basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
 
     // for static audio renderer
     basicBufferInfo_->bufferEndCallbackSendTimes.store(0);
     basicBufferInfo_->needSendLoopEndCallback.store(false);
-    basicBufferInfo_->isStatic_.store(false);
-    basicBufferInfo_->clientLastProcessTime_.store(ClockTime::GetCurNano());
+    basicBufferInfo_->isStatic.store(false);
+    basicBufferInfo_->clientLastProcessTime.store(ClockTime::GetCurNano());
+    basicBufferInfo_->isFirstFrame.store(true);
+    basicBufferInfo_->currentLoopTimes.store(0);
+    basicBufferInfo_->curStaticDataPos.store(0);
 }
 
 void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
@@ -1130,19 +1129,14 @@ void OHAudioBufferBase::SetStaticMode(bool state)
 {
     CHECK_AND_CALL_FUNC_RETURN(basicBufferInfo_ != nullptr,
         HILOG_COMM_ERROR("[SetStaticMode]basicBufferInfo_ is null"));
-    basicBufferInfo_->isStatic_.store(state);
+    basicBufferInfo_->isStatic.store(state);
 }
 
 bool OHAudioBufferBase::GetStaticMode()
 {
     CHECK_AND_CALL_FUNC_RETURN_RET(basicBufferInfo_ != nullptr, false,
         HILOG_COMM_ERROR("[GetStaticMode]basicBufferInfo_ is null"));
-    return basicBufferInfo_->isStatic_.load();
-}
-
-std::shared_ptr<AudioSharedMemory> OHAudioBufferBase::GetSharedMem()
-{
-    return dataMem_;
+    return basicBufferInfo_->isStatic.load();
 }
 
 void OHAudioBufferBase::IncreaseBufferEndCallbackSendTimes()
@@ -1189,6 +1183,32 @@ void OHAudioBufferBase::SetIsNeedSendLoopEndCallback(bool value)
     basicBufferInfo_->needSendLoopEndCallback.store(value);
 }
 
+void OHAudioBufferBase::SetIsFirstFrame(bool value)
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    basicBufferInfo_->isFirstFrame.store(value);
+}
+
+bool OHAudioBufferBase::IsFirstFrame()
+{
+    CHECK_AND_RETURN_RET_LOG(GetStaticMode(), false, "Not in static mode");
+    return basicBufferInfo_->isFirstFrame;
+}
+
+void OHAudioBufferBase::SetStaticPlayPosition(int64_t curLoopTimes, size_t curStaticDataPos)
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    basicBufferInfo_->currentLoopTimes.store(curLoopTimes);
+    basicBufferInfo_->curStaticDataPos.store(curStaticDataPos);
+}
+
+void OHAudioBufferBase::GetStaticPlayPosition(int64_t &curLoopTimes, size_t &curStaticDataPos)
+{
+    CHECK_AND_RETURN_LOG(GetStaticMode(), "Not in static mode");
+    curLoopTimes = basicBufferInfo_->currentLoopTimes.load();
+    curStaticDataPos = basicBufferInfo_->curStaticDataPos.load();
+}
+
 // In Static mode, we cannot perceive the frozen state of the client. When the client is not frozen,
 // clientProcessTime is refreshed every STATIC_HEARTBEAT_INTERVAL or when an operation is performed.
 bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition)
@@ -1198,7 +1218,7 @@ bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPo
     int64_t curTimestamp = ClockTime::GetCurNano();
 
     bool ret = false;
-    if (curTimestamp - basicBufferInfo_->clientLastProcessTime_.load() >
+    if (curTimestamp - basicBufferInfo_->clientLastProcessTime.load() >
         STATIC_CLIENT_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND) {
         if (bufferPosition == BUFFER_IN_CLIENT) {
             ret = GetStreamStatus()->load() == STREAM_STAND_BY;
@@ -1209,7 +1229,7 @@ bool OHAudioBufferBase::CheckFrozenAndSetLastProcessTime(BufferPosition bufferPo
     }
 
     if (bufferPosition == BUFFER_IN_CLIENT) {
-        basicBufferInfo_->clientLastProcessTime_.store(curTimestamp);
+        basicBufferInfo_->clientLastProcessTime.store(curTimestamp);
     }
     return ret;
 }

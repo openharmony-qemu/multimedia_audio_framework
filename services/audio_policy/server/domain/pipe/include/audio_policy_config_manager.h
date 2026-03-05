@@ -49,11 +49,13 @@ public:
     void OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs);
     void OnVoipConfigParsed(bool enableFastVoip);
     void OnUpdateRouteSupport(bool isSupported);
-    void OnUpdateDefaultAdapter(bool isEnable);
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
+    void OnMultSupMode(bool supportMultSupMode);
     void OnSupportUltraFast(bool supportUltraFast);
+
+    void SetEcEnableState(bool ecEnableState);
     
     // update
     void SetNormalVoipFlag(const bool &normalVoipFlag);
@@ -82,7 +84,6 @@ public:
     void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
     bool GetVoipConfig();
     bool GetUpdateRouteSupport();
-    bool GetDefaultAdapterEnable();
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
@@ -94,6 +95,10 @@ public:
 
     uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
     void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
+#ifdef MULTI_BUS_ENABLE
+    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info,
+                           const std::vector<std::string> &busAddresses);
+#endif
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoFromPipe(std::shared_ptr<AdapterPipeInfo> &info,
         const AudioStreamInfo &streamInfo);
     bool MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
@@ -103,6 +108,7 @@ public:
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
+    bool GetSupportMultSupMode();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
     std::shared_ptr<PipeStreamPropInfo> GetStreamPropInfoForMultiChannel(
         std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
@@ -140,12 +146,12 @@ private:
         std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo);
 
     bool xmlHasLoaded_ = false;
+    bool ecEnableState_ = false;
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo_ = {};
     std::unordered_map<ClassType, AudioModuleInfo> dynamicCapturerConfig_ = {};
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
-    bool isDefaultAdapterEnable_ = false;
     bool isSupportEac3_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;
@@ -155,6 +161,7 @@ private:
     uint32_t sinkLatencyInMsec_ {0};
     AudioSampleFormat fastFormat_ = SAMPLE_S16LE;
     bool normalVoipFlag_ = false;
+    bool supportMultSupMode_ = false;
     bool supportUltraFast_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;

@@ -62,7 +62,7 @@ AudioCollaborationManager *AudioCollaborationManager::GetInstance()
     return &audioCollaborationManager;
 }
 
-void AudioCollaborationManager::updateCollaborativeProductId(const std::string &productId)
+void AudioCollaborationManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     auto pos = productId.find('_');
@@ -171,5 +171,10 @@ void AudioCollaborationManager::updateLatencyInner()
         productId_.c_str(), twsMode_, latencyMs_);
 }
 
+int32_t AudioCollaborationManager::GetCollaborationLatency()
+{
+    std::lock_guard<std::mutex> lock(collaborationMutex_);
+    return latencyMs_;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

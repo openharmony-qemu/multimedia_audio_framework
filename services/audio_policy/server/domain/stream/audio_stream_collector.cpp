@@ -27,6 +27,8 @@
 #include "parameters.h"
 #include <fstream>
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -107,8 +109,13 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
+#ifdef MULTI_ALARM_LEVEL
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+#else
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ALARM;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_ALARM;
+#endif
 
     return streamMap;
 }
@@ -1008,6 +1015,9 @@ void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid
             continue;
         }
         sessionID = audioRendererChangeInfo->sessionId;
+        if (audioRendererChangeInfo->rendererState == RENDERER_RUNNING) {
+            ResetRingerModeMute(RENDERER_RELEASED, audioRendererChangeInfo->rendererInfo.streamUsage);
+        }
         audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
         WriteRenderStreamReleaseSysEvent(audioRendererChangeInfo);
         if (audioPolicyServerHandler_ != nullptr) {

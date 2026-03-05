@@ -63,6 +63,7 @@ const size_t TIME_TEXT_LENGTH = 32;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 constexpr int32_t UID_AUDIO = 1041;
+constexpr int32_t UID_AUDIO_BROKER = 5557;
 constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
 constexpr int32_t UID_CAAS_SA = 5527;
@@ -149,8 +150,10 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_COMMUNICATION, "VOICE_COMMUNICATION"},
     {STREAM_VOICE_RING, "VOICE_RING"},
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, "ANNOUNCEMENT"},
     {STREAM_EMERGENCY, "EMERGENCY"},
+#endif
 };
 
 static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
@@ -481,6 +484,15 @@ bool PermissionUtil::VerifyIsAudio()
         return true;
     }
 #endif
+    return false;
+}
+
+bool PermissionUtil::VerifyIsAudioBroker()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (UID_AUDIO_BROKER == callingUid) {
+        return true;
+    }
     return false;
 }
 
@@ -1047,9 +1059,9 @@ void ConvertFrom32BitToFloat(unsigned n, const int32_t *a, float *b)
 float CapMax(float v)
 {
     float value = v;
-    if (v > 1.0f) {
+    if (v >= 1.0f) {
         value = 1.0f - FLOAT_EPS;
-    } else if (v < -1.0f) {
+    } else if (v <= -1.0f) {
         value = -1.0f + FLOAT_EPS;
     }
     return value;
@@ -1827,8 +1839,10 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
     {STREAM_ALL, STREAM_ALL},
     {STREAM_APP, STREAM_APP},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, STREAM_ANNOUNCEMENT},
     {STREAM_EMERGENCY, STREAM_EMERGENCY},
+#endif
 };
 
 std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeMap_ = {
@@ -1859,8 +1873,10 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::audioPCVolumeM
     {STREAM_ULTRASONIC, STREAM_ULTRASONIC},
     {STREAM_APP, STREAM_APP},
 
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, STREAM_ANNOUNCEMENT},
     {STREAM_EMERGENCY, STREAM_EMERGENCY}
+#endif
 };
 
 std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultVolumeToStreamUsageMap_ = {
@@ -1893,10 +1909,12 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_ACCESSIBILITY}},
     {STREAM_ULTRASONIC, {
         STREAM_USAGE_ULTRASONIC}},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, {
         STREAM_USAGE_ANNOUNCEMENT}},
     {STREAM_EMERGENCY, {
         STREAM_USAGE_EMERGENCY}}
+#endif
 };
 
 std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolumeToStreamUsageMap_ = {
@@ -1926,10 +1944,12 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolume
     {STREAM_VOICE_CALL_ASSISTANT, {
         STREAM_USAGE_VOICE_CALL_ASSISTANT
     }},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, {
         STREAM_USAGE_ANNOUNCEMENT}},
     {STREAM_EMERGENCY, {
         STREAM_USAGE_EMERGENCY}}
+#endif
 };
 
 std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = {
@@ -1954,8 +1974,10 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_VOICE_RINGTONE, STREAM_RING},
     {STREAM_USAGE_VOICE_CALL_ASSISTANT, STREAM_VOICE_CALL_ASSISTANT},
     {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_USAGE_ANNOUNCEMENT, STREAM_ANNOUNCEMENT},
     {STREAM_USAGE_EMERGENCY, STREAM_EMERGENCY},
+#endif
 };
 
 std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
@@ -1969,8 +1991,10 @@ std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
     STREAM_ULTRASONIC,
     STREAM_NOTIFICATION,
     STREAM_NAVIGATION,
+#ifdef MULTI_ALARM_LEVEL
     STREAM_ANNOUNCEMENT,
     STREAM_EMERGENCY,
+#endif
     STREAM_ALL,
 };
 
@@ -1993,8 +2017,10 @@ static const std::map<AudioStreamType, StreamUsage> STREAMTYPE_TO_USAGE_MAP = {
     {STREAM_SYSTEM_ENFORCED, STREAM_USAGE_ENFORCED_TONE},
     {STREAM_ULTRASONIC, STREAM_USAGE_ULTRASONIC},
     {STREAM_VOICE_RING, STREAM_USAGE_VOICE_RINGTONE},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, STREAM_USAGE_ANNOUNCEMENT},
     {STREAM_EMERGENCY, STREAM_USAGE_EMERGENCY},
+#endif
 };
 
 static const std::map<std::string, HdiAdapterType> HALNAME_TO_TYPE_MAP = {
@@ -2066,8 +2092,10 @@ std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamU
     {STREAM_SYSTEM, {STREAM_USAGE_SYSTEM}},
     {STREAM_ULTRASONIC, {STREAM_USAGE_ULTRASONIC}},
     {STREAM_MUSIC, {STREAM_USAGE_MUSIC}},
+#ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, {STREAM_USAGE_ANNOUNCEMENT}},
     {STREAM_EMERGENCY, {STREAM_USAGE_EMERGENCY}},
+#endif
 };
 
 std::vector<StreamUsage> VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(AudioVolumeType volumeType)
@@ -2262,7 +2290,8 @@ const std::unordered_map<AudioEncodingType, std::string> g_EncodingTypeToStringM
     {ENCODING_TRUE_HD, "TRUE_HD"},
     {ENCODING_DTS_HD, "DTS_HD"},
     {ENCODING_DTS_X, "DTS_X"},
-    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"}
+    {ENCODING_AUDIOVIVID_DIRECT, "AUDIOVIVID_DIRECT"},
+    {ENCODING_AUDIOVIVID_3DA_DIRECT, "AUDIOVIVID_3DA_DIRECT"}
 };
 
 std::string EncodingTypeStr(AudioEncodingType type)

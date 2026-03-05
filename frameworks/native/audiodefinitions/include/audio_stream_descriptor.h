@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include "parcel.h"
 #include "audio_device_descriptor.h"
 #include "audio_stream_enum.h"
@@ -39,6 +40,7 @@ public:
     AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
     uint32_t routeFlag_ = AUDIO_FLAG_NONE;
     uint32_t oldRouteFlag_ = AUDIO_FLAG_NONE;
+    uint32_t futureRouteFlag_ = AUDIO_FLAG_NONE;
     int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
     AudioRendererInfo rendererInfo_ = {};
@@ -63,7 +65,7 @@ public:
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioCapturerInfo rendererInfo, AppInfo appInfo);
-    AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> &streamDescriptor);
+    AudioStreamDescriptor(const std::shared_ptr<AudioStreamDescriptor> streamDescriptor);
     virtual ~AudioStreamDescriptor() = default;
 
     // Need to delete later
@@ -125,7 +127,7 @@ public:
         streamAction_ = action;
     }
 
-    void SetBundleName(std::string &bundleName);
+    void SetBundleName(const std::string &bundleName);
 
     std::string GetBundleName()
     {
@@ -189,6 +191,25 @@ public:
         } else {
             return (routeFlag_ == AUDIO_INPUT_FLAG_NORMAL);
         }
+    }
+
+    bool IsFutureRouteNormal() const
+    {
+        if (IsPlayback()) {
+            return (futureRouteFlag_ == AUDIO_OUTPUT_FLAG_NORMAL);
+        } else {
+            return (futureRouteFlag_ == AUDIO_INPUT_FLAG_NORMAL);
+        }
+    }
+
+    void SetFutureRoute(uint32_t route)
+    {
+        futureRouteFlag_ = route;
+    }
+
+    uint32_t GetFutureRoute() const
+    {
+        return futureRouteFlag_;
     }
 
     bool IsRouteOffload() const
@@ -314,14 +335,48 @@ public:
         return false;
     }
 
-    void SetUltraFastFlag(const bool ultraFastFlag)
+    uint32_t GetUltraFastFlag()
     {
-        ultraFastStream_ = ultraFastFlag;
+        std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
+        return ultraFastFlag_;
     }
 
-    bool GetUltraFastFlag() const
+    void ResetUltraFastFlag()
     {
-        return ultraFastStream_;
+        std::lock_guard<std::shared_mutex> lock(ultraFastFlagLock_);
+        ultraFastFlag_ = ULTRA_NONE;
+    }
+
+    void SetUltraFastRequested(bool fastRequested)
+    {
+        std::lock_guard<std::shared_mutex> lock(ultraFastFlagLock_);
+        if (fastRequested) {
+            ultraFastFlag_ |= ULTRA_REQUESTED;
+        } else {
+            ultraFastFlag_ &= ~ULTRA_REQUESTED;
+        }
+    }
+
+    bool IsUltraFastRequested()
+    {
+        std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
+        return (ultraFastFlag_ & ULTRA_REQUESTED);
+    }
+
+    void SetUltraFastImplemented(bool fastImplemented)
+    {
+        std::lock_guard<std::shared_mutex> lock(ultraFastFlagLock_);
+        if (fastImplemented) {
+            ultraFastFlag_ |= ULTRA_IMPLEMENTED;
+        } else {
+            ultraFastFlag_ &= ~ULTRA_IMPLEMENTED;
+        }
+    }
+
+    bool IsUltraFastImplemented()
+    {
+        std::shared_lock<std::shared_mutex> lock(ultraFastFlagLock_);
+        return (ultraFastFlag_ & ULTRA_IMPLEMENTED);
     }
 
     int32_t GetRealUid() const;
@@ -337,7 +392,8 @@ private:
     void DumpDeviceAttrs(std::string &dumpString);
 
     std::mutex lock_;
-    bool ultraFastStream_ = false;
+    std::shared_mutex ultraFastFlagLock_;
+    uint32_t ultraFastFlag_ = ULTRA_NONE;
 };
 } // namespace AudioStandard
 } // namespace OHOS

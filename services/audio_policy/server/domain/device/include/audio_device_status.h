@@ -38,17 +38,15 @@
 #include "audio_microphone_descriptor.h"
 #include "audio_offload_stream.h"
 #include "audio_device_common.h"
-#include "audio_capturer_session.h"
 #include "audio_iohandle_map.h"
 #include "audio_a2dp_device.h"
-#include "audio_ec_manager.h"
 #include "audio_a2dp_offload_flag.h"
 #include "audio_policy_config_manager.h"
 #include "audio_router_map.h"
 #include "audio_a2dp_offload_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_device_capability.h"
-
+#include "audio_usr_select_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -75,12 +73,16 @@ public:
     void OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop = false);
     int32_t OnServiceConnected(AudioServiceIndex serviceIndex);
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-        sptr<AudioRendererFilter> filter = nullptr);
-    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "");
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "");
     void OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc, DeviceType devType,
         std::string macAddress, std::string deviceName, bool isActualConnection, AudioStreamInfo streamInfo,
         bool isConnected);
+    void HandTaskIdStatus(DStatusInfo &statusInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
+    void OnConnectFailed(AudioDeviceDescriptor &desc);
     uint16_t GetDmDeviceType();
     void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
     void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
@@ -103,13 +105,12 @@ private:
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
-        audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-        audioEcManager_(AudioEcManager::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
         audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
-        audioRouteMap_(AudioRouteMap::GetInstance()) {}
+        audioRouteMap_(AudioRouteMap::GetInstance()),
+        audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
     ~AudioDeviceStatus() {}
 
     void UpdateLocalGroupInfo(bool isConnected, const std::string& macAddress,
@@ -133,6 +134,9 @@ private:
     int32_t HandleDistributedDeviceUpdate(DStatusInfo &statusInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, AudioStreamDeviceChangeReasonExt &reason);
     void OnPreferredDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor, DeviceType activeInputDevice);
+    void ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor &desc);
+    bool NeedClearPreferredWhenCategoryUpdated(const AudioDeviceDescriptor &updated,
+        const AudioDeviceDescriptor &fetched, const AudioDeviceDescriptor &preferred);
     void UpdateDeviceList(AudioDeviceDescriptor &updatedDesc, bool isConnected,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb,
         AudioStreamDeviceChangeReasonExt &reason);
@@ -153,6 +157,10 @@ private:
     void ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, const std::string &macAddress,
         const std::string &deviceName, const AudioStreamInfo &streamInfo);
     void AddAudioDevice(AudioModuleInfo& moduleInfo, DeviceType devType);
+#ifdef MULTI_BUS_ENABLE
+    void AddDevice(const PolicyAdapterInfo &adapterInfo, const AdapterDeviceInfo &deviceInfo);
+    void AddPreloadDevices();
+#endif
     bool OpenPortAndAddDeviceOnServiceConnected(AudioModuleInfo &moduleInfo);
     int32_t GetModuleInfo(ClassType classType, std::string &moduleInfoStr);
     int32_t LoadDpModule(std::string deviceInfo);
@@ -177,6 +185,9 @@ private:
         AudioStreamDeviceChangeReasonExt &reason, AudioDeviceDescriptor &deviceDesc);
     bool CheckIsIndexValidAndHandleErr(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort);
+    void UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
+        AudioStreamDeviceChangeReasonExt &reason);
+    bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;
@@ -190,13 +201,12 @@ private:
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
     AudioOffloadStream& audioOffloadStream_;
     AudioDeviceCommon& audioDeviceCommon_;
-    AudioCapturerSession& audioCapturerSession_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioEcManager& audioEcManager_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
     AudioPolicyConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;
+    AudioUsrSelectManager& audioUsrSelectManager_;
 
     bool remoteCapturerSwitch_ = false;
     std::vector<std::pair<AudioDeviceDescriptor, bool>> pnpDeviceList_;

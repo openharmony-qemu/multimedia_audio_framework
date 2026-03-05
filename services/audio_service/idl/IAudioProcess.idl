@@ -25,7 +25,7 @@ interface IAudioProcess {
     void Start();
     void Pause([in] boolean isFlush);
     void Resume();
-    void Stop([in] int stage); // AudioProcessStage stage = AUDIO_PROC_STAGE_STOP
+    void Stop([in] int stage);
     void RequestHandleInfo();
     [oneway] void RequestHandleInfoAsync(); // default
     void Release([in] boolean isSwitchStream); // isSwitchStream = false
@@ -42,6 +42,6 @@ interface IAudioProcess {
     void GetServerKeepRunning([out] boolean keepRunning);
     void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
     void SetLoopTimes([in] long bufferLoopTimes);
-    void GetStaticBufferInfo([out] StaticBufferInfo staticBufferInfo);
     void SetStaticRenderRate([in] unsigned int renderRate);
+    void ResetStaticPlayPosition();
 }

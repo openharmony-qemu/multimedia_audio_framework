@@ -189,6 +189,11 @@ std::unordered_map<std::string, uint32_t> AudioDefinitionPolicyUtils::usageStrTo
     {"AUDIO_USAGE_VOIP", AUDIO_USAGE_VOIP},
 };
 
+std::unordered_map<std::string, bool> AudioDefinitionPolicyUtils::supModeStrToBool = {
+    {"false", false},
+    {"true", true},
+};
+
 uint32_t AudioDefinitionPolicyUtils::PcmFormatToBytes(AudioSampleFormat format)
 {
     // AudioSampleFormat / PCM_8_BIT
@@ -216,6 +221,14 @@ AudioChannel AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(AudioChanne
 
     int32_t order = (layout & CH_HOA_ORDNUM_MASK) >> CH_HOA_ORDNUM_OFFSET;
     return static_cast<AudioChannel>((order + 1) * (order + 1));
+}
+
+DeviceType AudioDefinitionPolicyUtils::GetDeviceTypeFromStr(const std::string &deviceTypeStr)
+{
+    if (deviceTypeStrToEnum.contains(deviceTypeStr)) {
+        return deviceTypeStrToEnum.at(deviceTypeStr);
+    }
+    return DEVICE_TYPE_NONE;
 }
 }
 }

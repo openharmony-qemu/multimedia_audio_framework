@@ -26,15 +26,15 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "audio_schedule.h"
-#include "util/id_handler.h"
 #include "util/hdi_dfx_utils.h"
+#include "util/id_handler.h"
 #include "media_monitor_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "manager/hdi_monitor.h"
-#include "capturer_clock_manager.h"
 #include "audio_setting_provider.h"
+#include "capturer_clock_manager.h"
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
 
@@ -130,7 +130,8 @@ int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
         audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
     }
 
-    InitPipeInfo(hdiCaptureId_, AudioTypeUtils::HalNameToType(halName_), AUDIO_INPUT_FLAG_NORMAL,
+    int32_t routeFlag = static_cast<int32_t>(ConvertToAudioInputRouteFlag(attr.sourceType));
+    InitPipeInfo(hdiCaptureId_, AudioTypeUtils::HalNameToType(halName_), routeFlag,
         { currentActiveDevice_ });
 
     return SUCCESS;
@@ -218,9 +219,14 @@ int32_t AudioCaptureSource::Start(void)
 
     InitLatencyMeasurement();
     InitRunningLock();
-
+    std::string dumpFilePrefix = halName_;
+#ifdef MULTI_BUS_ENABLE
+    if (!address_.empty()) {
+        dumpFilePrefix = address_;
+    }
+#endif
     // eg: primary_source_0_20240527202236189_44100_2_1.pcm
-    dumpFileName_ = halName_ + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
+    dumpFileName_ = dumpFilePrefix + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
         std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
         std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
@@ -608,7 +614,7 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExclude
     AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, scoExcludeFlag: %{public}d",
         audioScene, currentAudioScene_, scoExcludeFlag);
 
-    if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
+    if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
 
@@ -616,6 +622,7 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExclude
         int32_t ret = audioCapture_->SelectScene(audioCapture_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     }
+    currentScoExcludeFlag_ = scoExcludeFlag;
     if (audioScene != currentAudioScene_) {
         currentAudioScene_ = audioScene;
     }
@@ -714,10 +721,9 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
     return channelLayout;
 }
 
-
 uint64_t AudioCaptureSource::GetChannelCountByChannelLayout(uint64_t channelLayout)
 {
-    AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
+    AudioChannel channel = AudioChannel::STEREO;
     AudioChannelLayout layout = static_cast<AudioChannelLayout>(channelLayout);
     if (MAP_LAYOUT_TO_CHANNEL.find(layout) != MAP_LAYOUT_TO_CHANNEL.end()) {
         return static_cast<uint64_t>(MAP_LAYOUT_TO_CHANNEL.at(layout));
@@ -1103,8 +1109,8 @@ int32_t AudioCaptureSource::CreateCapture(void)
     InitDeviceDesc(deviceDesc);
 
     HILOG_COMM_INFO("[CreateCapture]halName: %{public}s, hdiSourceType: %{public}d, rate: %{public}u, "
-        "channel: %{public}u, format: %{public}u, devicePin: %{public}u, desc: %{public}s", halName_.c_str(),
-        param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins, deviceDesc.desc);
+        "channel: %{public}u, format: %{public}u, devicePin: %{public}u", halName_.c_str(),
+        param.sourceType, param.sampleRate, param.channelCount, param.format, deviceDesc.pins);
     if (attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) {
         AUDIO_INFO_LOG("config ec, rate: %{public}d, channel: %{public}u, format: %{public}u",
             param.ecSampleAttributes.ecSampleRate, param.ecSampleAttributes.ecChannelCount,
@@ -1117,8 +1123,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     audioCapture_ = static_cast<struct IAudioCapture *>(capture);
     CHECK_AND_RETURN_RET(IsCaptureInvalid(), ERR_NOT_STARTED);
 
-    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId_,
-        deviceDesc.desc);
+    AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u", hdiCaptureId_);
     return SUCCESS;
 }
 
@@ -1142,7 +1147,6 @@ int32_t AudioCaptureSource::InitCapture(void)
         AUDIO_INFO_LOG("capture already inited");
         return SUCCESS;
     }
-    AUDIO_INFO_LOG("In, openMicL %{public}u, halName: %{public}s", openMic_, halName_.c_str());
     int32_t ret = CreateCapture();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "create capture fail");
     if (openMic_) {
@@ -1326,10 +1330,14 @@ void AudioCaptureSource::CaptureThreadLoop(void)
 
 int32_t AudioCaptureSource::UpdateActiveDeviceWithoutLock(DeviceType inputDevice)
 {
-    AUDIO_INFO_LOG("current active device: %{public}d, inputDevice: %{public}d", currentActiveDevice_, inputDevice);
+    AUDIO_INFO_LOG("device: %{public}d, currentActiveDevice: %{public}d", inputDevice, currentActiveDevice_);
     if (currentActiveDevice_ == inputDevice) {
         AUDIO_INFO_LOG("input device not change, device: %{public}d, sourceType: %{public}d", inputDevice,
             attr_.sourceType);
+        return SUCCESS;
+    }
+    if (currentScoExcludeFlag_) {
+        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
         return SUCCESS;
     }
 
@@ -1417,6 +1425,45 @@ int32_t AudioCaptureSource::GetArmUsbDeviceStatus()
     int32_t ret = 0;
     StringConverter(status, ret);
     return ret;
+}
+
+enum AudioFlag AudioCaptureSource::ConvertToAudioInputRouteFlag(int32_t sourceType)
+{
+    enum AudioFlag audioInputRouteFlag;
+    switch (sourceType) {
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_AI;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_UNPROCESS;
+            break;
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_CAMCORDER:
+        case SOURCE_TYPE_VOICE_MESSAGE:
+        case SOURCE_TYPE_VOICE_CALL:
+        case SOURCE_TYPE_LIVE:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_NORMAL;
+            break;
+        case SOURCE_TYPE_ULTRASONIC:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_ULTRASONIC;
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
+            break;
+        case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_RAW_AI;
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_WAKEUP;
+            break;
+        case SOURCE_TYPE_OFFLOAD_CAPTURE:
+            audioInputRouteFlag = AUDIO_INPUT_FLAG_OFFLOAD;
+            break;
+        default:
+            audioInputRouteFlag = AUDIO_FLAG_NONE;
+            break;
+    }
+    return audioInputRouteFlag;
 }
 } // namespace AudioStandard
 } // namespace OHOS

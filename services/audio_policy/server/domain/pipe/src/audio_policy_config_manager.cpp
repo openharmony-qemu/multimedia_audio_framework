@@ -21,7 +21,6 @@
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
 #include "audio_core_service.h"
-#include "audio_ec_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
@@ -95,6 +94,11 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
     return ret;
 }
 
+void AudioPolicyConfigManager::SetEcEnableState(bool ecEnableState)
+{
+    ecEnableState_ = ecEnableState;
+}
+
 void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
 {
     AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", audioPolicyConfig_.adapterInfoMap.size());
@@ -159,16 +163,6 @@ void AudioPolicyConfigManager::OnUpdateRouteSupport(bool isSupported)
     isUpdateRouteSupported_ = isSupported;
 }
 
-void AudioPolicyConfigManager::OnUpdateDefaultAdapter(bool isEnable)
-{
-    isDefaultAdapterEnable_ = isEnable;
-}
-
-bool AudioPolicyConfigManager::GetDefaultAdapterEnable()
-{
-    return isDefaultAdapterEnable_;
-}
-
 void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs_ = globalConfigs;
@@ -177,6 +171,11 @@ void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &global
 void AudioPolicyConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 {
     enableFastVoip_ = enableFastVoip;
+}
+
+void AudioPolicyConfigManager::OnMultSupMode(bool supportMultSupMode)
+{
+    supportMultSupMode_ = supportMultSupMode;
 }
 
 void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
@@ -560,14 +559,14 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
             break;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
         case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-            useMatchingPropInfo = AudioEcManager::GetInstance().GetEcFeatureEnable() ? false : true;
+            useMatchingPropInfo = ecEnableState_ ? false : true;
             break;
         case SOURCE_TYPE_VOICE_CALL:
             break;
         case SOURCE_TYPE_CAMCORDER:
             break;
         case SOURCE_TYPE_UNPROCESSED:
-            useMatchingPropInfo = AudioEcManager::GetInstance().GetEcFeatureEnable() ? false : true;
+            useMatchingPropInfo = ecEnableState_ ? false : true;
             break;
         default:
             break;
@@ -640,7 +639,7 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
 
     CheckDynamicCapturerConfig(desc, info);
 
-    if (AudioEcManager::GetInstance().GetEcFeatureEnable()) {
+    if (ecEnableState_) {
         if (desc->newDeviceDescs_.front() != nullptr &&
             desc->newDeviceDescs_.front()->deviceType_ != DEVICE_TYPE_MIC &&
             info->channels_ == PC_MIC_CHANNEL_NUM) {
@@ -692,7 +691,7 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
     }
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(AUDIO_OUTPUT_FLAG_MULTICHANNEL);
-    if (pipeIt->second != nullptr) {
+    if (pipeIt != deviceInfo->supportPipeMap_.end() && pipeIt->second != nullptr) {
         AUDIO_INFO_LOG("adapterType:%{public}d", pipeIt->second->GetAdapterType());
         if (pipeIt->second->GetAdapterType() != OHOS::AudioStandard::AudioAdapterType::TYPE_PRIMARY) {
             return true;
@@ -701,12 +700,81 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
     return false;
 }
 
+#ifdef MULTI_BUS_ENABLE
+void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+                                                 std::shared_ptr<PipeStreamPropInfo> &info,
+                                                 const std::vector<std::string> &busAddresses)
+{
+    // Vehicle system scenario enter
+    CHECK_AND_RETURN_LOG(desc != nullptr, "StreamDesc is null, none streamProp");
+    if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+        GetStreamPropInfo(desc, info);
+        return;
+    }
+    CHECK_AND_RETURN_LOG(!busAddresses.empty(), "BusAddresses is empty, config abnormal for vehicle.");
+
+    auto newDeviceDesc = desc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_LOG(newDeviceDesc != nullptr, "DeviceDesc is null, none streamDrop");
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+    CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
+    AUDIO_INFO_LOG("DeviceType: %{public}d, DeviceRole: %{public}d", deviceInfo->type_, deviceInfo->role_);
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = deviceInfo->adapterInfo_.lock();
+    CHECK_AND_RETURN_LOG(adapterInfoPtr != nullptr, "Find adapter info failed, none streamProp");
+
+    std::unordered_map<std::string, std::shared_ptr<AdapterPipeInfo>> pipeInfoMap;
+    for (const auto &pipeName : deviceInfo->supportPipes_) {
+        std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfoPtr->GetPipeInfoByName(pipeName);
+        if (pipeInfo != nullptr) {
+            pipeInfoMap[pipeInfo->paProp_.busAddress_] = pipeInfo;
+        }
+    }
+
+    auto findPipe = [&pipeInfoMap](const std::string &busAddress) -> std::shared_ptr<AdapterPipeInfo> {
+        auto it = pipeInfoMap.find(busAddress);
+        if (it != pipeInfoMap.end()) {
+            return it->second;
+        }
+        return nullptr;
+    };
+
+    for (const auto &busAddress : busAddresses) {
+        // First, locate the pipe based on the busAddress name,
+        // then check whether the stream information matches the PipeStreamPropInfo under the pipe.
+        std::shared_ptr<AdapterPipeInfo> pipeInfo = findPipe(busAddress);
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+
+        AudioStreamInfo temp = desc->streamInfo_;
+        UpdateBasicStreamInfo(desc, pipeInfo, temp);
+
+        AUDIO_INFO_LOG(
+            "Bus: %{public}s, AudioStreamInfo: samplingRate[%{public}d], format[%{public}d], channels[%{public}d].",
+            busAddress.c_str(), temp.samplingRate, temp.format, temp.channels);
+        if (MatchStreamPropInfo(info, pipeInfo, temp)) {
+            AUDIO_INFO_LOG("Pipe stream prop info match success: %{public}s.", busAddress.c_str());
+            return;
+        }
+    }
+
+    AUDIO_INFO_LOG("Find streamPropInfo failed, choose first pipe.");
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = findPipe(busAddresses[0]);
+    if (!pipeInfo || pipeInfo->streamPropInfos_.empty()) {
+        AUDIO_ERR_LOG("Failed to find pipe with bus: %{public}s.", busAddresses[0].c_str());
+        return;
+    }
+    info = pipeInfo->streamPropInfos_.front();
+}
+#endif
+
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
-        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_,
+        newDeviceDesc->a2dpOffloadFlag_, newDeviceDesc->macAddress_);
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
@@ -760,6 +828,11 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         !pipeIt->second->streamPropInfos_.empty()) {
         info = pipeIt->second->streamPropInfos_.front();
     } // if not match, choose first?
+}
+
+bool AudioPolicyConfigManager::GetSupportMultSupMode()
+{
+    return supportMultSupMode_;
 }
 
 void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,

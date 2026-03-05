@@ -372,7 +372,6 @@ typedef void (*OH_AudioCapturer_OnFastStatusChange)(
  *     {@link #AUDIOSTREAM_ERROR_SYSTEM} System internal error, like audio service error.
  * @since 23
  */
- 
 OH_AudioStream_Result OH_AudioCapturer_RequestPlaybackCaptureStart(OH_AudioCapturer* capturer,
     OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
 

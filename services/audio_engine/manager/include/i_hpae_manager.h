@@ -64,6 +64,7 @@ public:
     virtual int32_t StopAudioPort(const std::string &audioPortName) = 0;
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
     virtual int32_t SetSourceOutputMute(int32_t uid, bool setMute) = 0;
+    virtual int32_t SetSourceOutputMuteByStreamId(int32_t sessionId, bool setMute) = 0;
     virtual int32_t GetAllSinks() = 0;
 
     virtual int32_t CreateStream(const HpaeStreamInfo &streamInfo) = 0;
@@ -117,6 +118,7 @@ public:
     virtual void InitHdiState() = 0;
     virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
     virtual void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value) = 0;
+    virtual void HandleBypassSpatializationForStereo(bool bypass) = 0;
     // interfaces for capture effect
     virtual void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
@@ -144,6 +146,7 @@ public:
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
     virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
     virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
+    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
 
     // interfaces for injector
     virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;
@@ -154,10 +157,10 @@ public:
     virtual int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
 
-    virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
-    virtual void updateCollaborativeProductId(const std::string &productId) = 0;
+    virtual void UpdateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
+    virtual void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -22,7 +22,7 @@
 #include "rtg_interface.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "audio_workgroup_callback_proxy.h"
+#include "iaudio_workgroup_callback.h"
 #include "audio_workgroup_callback.h"
 #include "audio_schedule.h"
 
@@ -72,9 +72,8 @@ int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemo
 {
     CHECK_AND_RETURN_RET_LOG(pid > 0, ERR_INVALID_PARAM, "[WorkgroupInServer]"
         "CreateAudioWorkgroup failed, err pid:%{public}d", pid);
-
     if (!object) {
-        AUDIO_ERR_LOG("[AudioResourceService] object is nullptr!");
+        AUDIO_ERR_LOG("[AudioResourceService] object is nullptr");
         return ERR_OPERATION_FAILED;
     }
 
@@ -305,7 +304,6 @@ bool AudioResourceService::IsProcessHasSystemPermission(int32_t pid)
     return audioWorkgroupMap_[pid].hasSystemPermission;
 }
 
-
 int32_t AudioResourceService::RegisterAudioWorkgroupMonitor(int32_t pid, int32_t groupId,
     const sptr<IRemoteObject> &object)
 {
@@ -409,7 +407,7 @@ int32_t AudioResourceService::ImproveAudioWorkgroupPrio(int32_t pid,
     }
     return AUDIO_OK;
 }
- 
+
 int32_t AudioResourceService::RestoreAudioWorkgroupPrio(int32_t pid,
     const std::unordered_map<int32_t, int32_t> &threads)
 {

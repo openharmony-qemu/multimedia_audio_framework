@@ -880,6 +880,7 @@ void AudioEffectChainCheckAndReleaseCommonEffectChainFuzzTest()
 
     std::string sceneType = "test";
     std::string  scene = "SCENE_DEFAULT";
+    std::string defaultSceneTypeAndDeviceKey = "SCENE_DEFAULT_&_DEVICE_TYPE_SPEAKER";
     audioEffectChainManager->isDefaultEffectChainExisted_ = GetData<bool>();
 
     std::string deviceTypeName = audioEffectChainManager->GetDeviceTypeName();
@@ -890,7 +891,7 @@ void AudioEffectChainCheckAndReleaseCommonEffectChainFuzzTest()
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({effectChain0, audioEffectChain});
     audioEffectChainManager->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
 
-    audioEffectChainManager->defaultEffectChainCount_ = GetData<int32_t>();
+    audioEffectChainManager->sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = GetData<int32_t>();
     audioEffectChainManager->CheckAndReleaseCommonEffectChain(sceneType);
     audioEffectChainManager->ResetInfo();
 }
@@ -1168,6 +1169,43 @@ void EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest()
     audioEnhanceChainManagerImpl.UpdatePropertyAndSendToAlgo(deviceType);
 }
 
+void EffectChainManagerSetEffectSystemVolumeFuzzTest()
+{
+    int32_t systemVolumeType = GetData<int32_t>();
+    float systemVolume = GetData<float>();
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    audioEffectChainManager->SetEffectSystemVolume(systemVolumeType, systemVolume);
+}
+
+void IsChannelLayoutSupportedForDspEffectFuzzTest()
+{
+    AudioChannelLayout channelLayout = CH_LAYOUT_STEREO;
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
+}
+
+void UpdateEarphoneProductFuzzTest()
+{
+    AudioEarphoneProduct earphoneProduct = EARPHONE_PRODUCT_NONE;
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    audioEffectChainManager->UpdateEarphoneProduct(earphoneProduct);
+}
+
 TestFuncs g_testFuncs[] = {
     EffectChainManagerInitCbFuzzTest,
     EffectChainManagerCreateCbFuzzTest,
@@ -1225,6 +1263,9 @@ TestFuncs g_testFuncs[] = {
     EffectChainManagerExistAudioEffectChainInnerFuzzTest2,
     EffectChainManagerExistAudioEffectChainInnerFuzzTest3,
     EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest,
+    EffectChainManagerSetEffectSystemVolumeFuzzTest,
+    IsChannelLayoutSupportedForDspEffectFuzzTest,
+    UpdateEarphoneProductFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

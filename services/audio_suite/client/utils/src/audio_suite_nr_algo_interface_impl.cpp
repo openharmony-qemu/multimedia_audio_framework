@@ -30,8 +30,8 @@ namespace AudioSuite {
 
 AudioSuiteNrAlgoInterfaceImpl::AudioSuiteNrAlgoInterfaceImpl(NodeParameter &nc)
     : algoDefaultConfig_{AUDIO_AINR_PCM_SAMPLERATE_16K,
-          AUDIO_AINR_PCM_CHANNEL_NUM,
-          AUDIO_AINR_PCM_16K_FRAME_LEN,
+          nc.inChannels,
+          nc.frameLen,
           AUDIO_AINR_PCM_16_BIT}
 {
     nodeParameter_ = nc;
@@ -121,7 +121,8 @@ int32_t AudioSuiteNrAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &audioInputs
     audioData.dataOut = reinterpret_cast<int16_t *>(audioOutputs[0]);
 
     int32_t ret = algoApi_.applyAlgo(algoHandle_.get(), &audioData);
-    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_AINR_EOK, ret, "Apply ainr algorithm fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == AUDIO_AINR_EOK, ret,
+        HILOG_COMM_ERROR("[Apply]NoiseReduction algo apply failed, return error is %{public}d", ret));
 
     return SUCCESS;
 }

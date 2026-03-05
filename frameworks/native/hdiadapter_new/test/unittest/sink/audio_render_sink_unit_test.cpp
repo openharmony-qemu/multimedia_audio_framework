@@ -298,6 +298,26 @@ HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : PrimarySinkUnitTest_007
+ * @tc.desc   : Test primary sink mute for switch device
+ */
+HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_007, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    int32_t ret = primarySink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
+
+/**
  * @tc.name   : Test SetDmDeviceType API
  * @tc.number : SetDmDeviceType_001
  * @tc.desc   : Test SetDmDeviceType
@@ -688,6 +708,26 @@ HWTEST_F(AudioRenderSinkUnitTest, VoipSinkUnitTest_005, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test VoipSink API
+ * @tc.number : VoipSinkUnitTest_006
+ * @tc.desc   : Test voip sink mute for switch device
+ */
+HWTEST_F(AudioRenderSinkUnitTest, VoipSinkUnitTest_006, TestSize.Level1)
+{
+    InitVoipSink();
+    EXPECT_TRUE(voipSink_ && voipSink_->IsInited());
+    int32_t ret = voipSink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = voipSink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = voipSink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = voipSink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitVoipSink();
+}
+
+/**
  * @tc.name   : Test PrimarySink API
  * @tc.number : ChangePipeStream_001
  * @tc.desc   : Test ChangePipeStream() add, change and remove cases
@@ -767,5 +807,42 @@ HWTEST_F(AudioRenderSinkUnitTest, ChangePipeStream_003, TestSize.Level4)
     DeInitPrimarySink();
 }
 
+/**
+ * @tc.name   : Test SetAudioScene API
+ * @tc.number : SetAudioScene_001
+ * @tc.desc   : Test SetAudioScene
+ */
+HWTEST_F(AudioRenderSinkUnitTest, SetAudioScene_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    int32_t ret = primarySink_->SetAudioScene(AUDIO_SCENE_DEFAULT, true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetAudioScene(AUDIO_SCENE_DEFAULT, false);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = primarySink_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test UpdateActiveDevice API
+ * @tc.number : UpdateActiveDevice_001
+ * @tc.desc   : Test UpdateActiveDevice
+ */
+HWTEST_F(AudioRenderSinkUnitTest, UpdateActiveDevice_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    std::vector<DeviceType> outputDevices;
+    outputDevices.push_back(DEVICE_TYPE_SPEAKER);
+    primarySink_->SetAudioScene(AUDIO_SCENE_PHONE_CALL, false);
+    primarySink_->UpdateActiveDevice(outputDevices);
+    primarySink_->SetAudioScene(AUDIO_SCENE_DEFAULT, true);
+    int32_t ret = primarySink_->UpdateActiveDevice(outputDevices);
+    outputDevices.clear();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySink();
+}
 } // namespace AudioStandard
 } // namespace OHOS

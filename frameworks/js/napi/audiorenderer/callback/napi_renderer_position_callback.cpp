@@ -115,6 +115,7 @@ void NapiRendererPositionCallback::SafeJsCallbackPositionWork(napi_env env, napi
         static_cast<RendererPositionJsCallback*>(data),
         [](RendererPositionJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -151,7 +152,7 @@ void NapiRendererPositionCallback::PositionTsfnFinalize(napi_env env, void *data
 void NapiRendererPositionCallback::OnJsRendererPositionCallback(std::unique_ptr<RendererPositionJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsRendererPositionCallback: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
         return;
     }
 

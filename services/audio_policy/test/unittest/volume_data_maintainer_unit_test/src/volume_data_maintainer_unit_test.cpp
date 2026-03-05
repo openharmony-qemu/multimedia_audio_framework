@@ -124,6 +124,9 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     volumeDataMaintainer->SaveVolumeDegreeToMap(device, streamType, volumeDegree);
     EXPECT_GT(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
 
+    volumeDataMaintainer->SaveVolumeDegreeToMap(device, STREAM_RING, volumeDegree);
+    EXPECT_EQ(volumeDataMaintainer->LoadVolumeDegreeFromMap(device, STREAM_RING), volumeDegree);
+
     volumeDataMaintainer->SaveVolumeDegreeToMap(device, STREAM_MUSIC, volumeDegree);
     retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, streamType);
     EXPECT_EQ(retVolumeDegree, volumeDegree);
@@ -762,6 +765,10 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceVolumeMapFromDb, TestSize.Level4)
     desc->volumeBehavior_.isReady = false;
     vd->LoadDeviceVolumeMapFromDb(desc);
     EXPECT_EQ(vd->volumeList_.size(), 0);
+
+    vd->SetVolumeList({STREAM_MUSIC});
+    vd->LoadDeviceVolumeMapFromDb(desc);
+    EXPECT_NE(vd->volumeDegreeMap_.size(), 0);
 }
 
 /**

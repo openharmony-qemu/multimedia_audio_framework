@@ -30,20 +30,11 @@ class AudioSuiteAissNode : public AudioSuiteProcessNode {
 public:
     explicit AudioSuiteAissNode();
     ~AudioSuiteAissNode();
-    int32_t DoProcess() override;
     int32_t Init() override;
     int32_t DeInit() override;
 
-protected:
-    AudioSuitePcmBuffer* SignalProcess(const std::vector<AudioSuitePcmBuffer*>& inputs) override;
 private:
-    std::shared_ptr<AudioSuiteAlgoInterface> aissAlgo_{ nullptr };
     bool isInit_ = false;
-    AudioSuitePcmBuffer tmpOutput_;
-    AudioSuitePcmBuffer tmpHumanSoundOutput_;
-    AudioSuitePcmBuffer tmpBkgSoundOutput_;
-    std::vector<uint8_t *> tmpin_{nullptr};
-    std::vector<uint8_t *> tmpout_{nullptr, nullptr, nullptr};
 };
  
 }  // namespace AudioSuite

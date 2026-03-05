@@ -17,12 +17,12 @@
 #define LOG_TAG "HdiMonitor"
 #endif
 
+#include "media_monitor_manager.h"
+
 #include "manager/hdi_monitor.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "audio_common_log.h"
-
-#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

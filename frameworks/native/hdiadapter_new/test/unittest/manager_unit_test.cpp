@@ -125,10 +125,10 @@ HWTEST_F(ManagerUnitTest, ManagerUnitTest_001, TestSize.Level1)
 
 /**
  * @tc.name   : Test Manager API
- * @tc.number : ManagerUnitTest_002
+ * @tc.number : ManagerUnitTest_003
  * @tc.desc   : Test manager action
  */
-HWTEST_F(ManagerUnitTest, ManagerUnitTest_002, TestSize.Level1)
+HWTEST_F(ManagerUnitTest, ManagerUnitTest_003, TestSize.Level1)
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     uint32_t id = manager.GetRenderIdByDeviceClass("remote", "info", true);

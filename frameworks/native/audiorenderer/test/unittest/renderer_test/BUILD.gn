@@ -47,6 +47,9 @@ ohos_unittest("audio_renderer_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../../../services/audio_service:audio_common",
     "../../../../audiodefinitions:audio_definitions",
     "../../../../audiorenderer:audio_renderer",
@@ -91,6 +94,9 @@ ohos_unittest("audio_fast_renderer_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioschedule:audio_schedule",
@@ -140,6 +146,9 @@ ohos_unittest("renderer_capture_interrupt_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioschedule:audio_schedule",
@@ -186,6 +195,9 @@ ohos_unittest("capture_renderer_interrupt_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../audiocapturer:audio_capturer",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioschedule:audio_schedule",
@@ -224,6 +236,9 @@ ohos_unittest("audio_renderer_proxy_obj_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioschedule:audio_schedule",
   ]
@@ -265,6 +280,9 @@ ohos_unittest("renderer_in_client_unit_test") {
   deps = [
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service:audio_engine_manager",
+    "../../../../../../services/audio_service:audio_policy_manager",
+    "../../../../../../services/audio_service:audio_stream_client",
     "../../../../../../services/audio_service:audio_common",
     "../../../../audiorenderer:audio_renderer",
     "../../../../audioutils:audio_utils",
@@ -279,6 +297,7 @@ ohos_unittest("renderer_in_client_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_foundation",
     "samgr:samgr_proxy",
+    "init:libbegetutil",
   ]
 
   resource_config_file =

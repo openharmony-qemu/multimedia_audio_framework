@@ -215,6 +215,24 @@ void UpdateDeviceInfoFuzzTest()
     OnStop();
 }
 
+void ClearPreferredDevicesFuzzTest()
+{
+    AudioDeviceCommon &comm = AudioDeviceCommon::GetInstance();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = GetData<int32_t>();
+    dev->deviceType_ = GetData<DeviceType>();
+    dev->deviceRole_ = GetData<DeviceRole>();
+    dev->deviceName_ = "--";
+    dev->macAddress_ = "card=2;device=0";
+    comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
+    comm.audioStateManager_.SetPreferredCallRenderDevice(dev);
+    comm.audioStateManager_.SetPreferredMediaRenderDevice(dev);
+    comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
+    comm.ClearPreferredDevices(descForCb);
+    OnStop();
+}
+
 void GetDeviceDescriptorInnerFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -517,6 +535,18 @@ void AudioDeviceCommonIsSameDeviceFuzzTest()
     OnStop();
 }
 
+void NeedClearPreferredMediaRendererFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    std::shared_ptr<AudioDeviceDescriptor> preferred = std::make_shared<AudioDeviceDescriptor>();
+    preferred->deviceType_ = GetData<DeviceType>();
+    std::shared_ptr<AudioDeviceDescriptor> updated = std::make_shared<AudioDeviceDescriptor>();
+    updated->networkId_ = LOCAL_NETWORK_ID;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> fetched = {preferred, updated};
+    DeviceUsage usage = GetData<DeviceUsage>();
+    audioDeviceCommon.NeedClearPreferredMediaRenderer(preferred, updated, fetched, usage);
+}
+
 TestFuncs g_testFuncs[] = {
     FilterSourceOutputsFuzzTest,
     IsRingerOrAlarmerDualDevicesRangeFuzzTest,
@@ -525,6 +555,7 @@ TestFuncs g_testFuncs[] = {
     GetPreferredInputStreamTypeInnerFuzzTest,
     UpdateDeviceInfoFuzzTest,
     UpdateConnectedDevicesWhenDisconnectingFuzzTest,
+    ClearPreferredDevicesFuzzTest,
     IsFastFromA2dpToA2dpFuzzTest,
     GetDeviceDescriptorInnerFuzzTest,
     IsRendererStreamRunningFuzzTest,
@@ -544,6 +575,7 @@ TestFuncs g_testFuncs[] = {
     AudioDeviceCommonOpenRemoteAudioDeviceFuzzTest,
     AudioDeviceCommonIsSameDeviceFuzzTest,
     AudioDeviceCommonDeviceParamsCheckFuzzTest,
+    NeedClearPreferredMediaRendererFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

@@ -38,6 +38,8 @@
 #define AUDIO_ERRORS_H
 
 #include <cstdint>
+#include <string>
+#include <unordered_map>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -60,7 +62,7 @@ constexpr int32_t BASE_AUDIO_ERR_OFFSET = -ErrCodeOffset(SUBSYS_AUDIO, MODULE_AU
 const int32_t  SUCCESS = 0;
 
 /** Fail */
-const int32_t  ERROR = BASE_AUDIO_ERR_OFFSET; // base is 62980096
+const int32_t  ERROR = BASE_AUDIO_ERR_OFFSET; // base is -62980096
 
 /** Status error */
 const int32_t  ERR_ILLEGAL_STATE = BASE_AUDIO_ERR_OFFSET - 1;
@@ -218,6 +220,21 @@ const int32_t ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 
 /** success but not continue */
 const int32_t SUCCESS_BUT_NOT_CONTINUE = BASE_AUDIO_ERR_OFFSET - 300;
+
+const std::unordered_map<int32_t, std::string> ErrCode2ErrMessage = {
+    {SUCCESS, "success"},
+    {ERROR, "system error"},
+    {ERR_ILLEGAL_STATE, "illegal state"},
+    {ERR_INVALID_PARAM, "invalid parameter"},
+    {ERR_PERMISSION_DENIED, "permission denied"},
+};
+
+inline std::string ErrMessage(int32_t ec)
+{
+    auto it = ErrCode2ErrMessage.find(ec);
+    return it != ErrCode2ErrMessage.end() ? it->second : "unknown error";
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_ERRORS_H

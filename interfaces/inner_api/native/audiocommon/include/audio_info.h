@@ -55,6 +55,7 @@ constexpr int32_t AUDIO_FLAG_VOIP_FAST = 2;
 constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
+constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
@@ -108,6 +109,8 @@ constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;
 
 // For common stream
 constexpr uint32_t STREAM_ID_INVALID = 0;
+constexpr uint32_t UID_INVALID = 0;
+constexpr bool MUTE_INVALID = false;
 
 //#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
 // Maximun number of sine waves in a tone segment
@@ -366,6 +369,7 @@ enum CallbackChange : int32_t {
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
+    CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -428,6 +432,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
+    CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -543,6 +548,7 @@ struct A2dpDeviceConfigInfo {
     DeviceStreamInfo streamInfo;
     bool absVolumeSupport = false;
     int32_t volumeLevel = -1;
+    int32_t volumeDegree = -1;
     bool mute = false;
 };
 
@@ -632,6 +638,21 @@ enum AudioLoopbackEqualizerPreset {
     EQUALIZER_PRESET_BRIGHT = 3,
 };
 
+enum UltraFastFlags : uint32_t {
+    /**
+     * Client has not set the ultra fast flag, and the current stream is not using the server's ultra fast route(pipe).
+     */
+    ULTRA_NONE = 0,
+    /**
+     * Client has set the ultra fast flag
+     */
+    ULTRA_REQUESTED = 1 << 0,
+    /**
+     * Current stream is using the server's ultra fast route(pipe)
+     */
+    ULTRA_IMPLEMENTED = 1 << 1,
+};
+
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -664,7 +685,7 @@ struct AudioRendererInfo : public Parcelable {
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
-    bool isUltraFast = false;
+    uint8_t ultraFastFlag = ULTRA_NONE;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -1294,7 +1315,6 @@ struct AudioRegisterTrackerInfo {
     AudioCapturerInfo capturerInfo;
     int32_t channelCount;
     uint32_t appTokenId;
-    AudioStreamInfo streamInfo;
     // callback for backMute status to renderChangeinfo
     bool backMute = false;
 };
@@ -1318,6 +1338,19 @@ enum StopAudioType {
 enum RecordErrorCode {
     RECORD_ERROR_GET_FOCUS_FAIL = 0,
     RECORD_ERROR_NO_FOCUS_CFG = 1,
+    RECORD_ERROR_NO_BG_PERMISSION = 2,
+};
+
+enum RecordUnderflowReason {
+    REASON_RECORDING_DEFAULT = 1 << 0,
+    REASON_RECORDING_IN_ARTTS_MAINTHREAD = 1 << 1,
+    REASON_RECORDING_BACKGROUND = 1 << 2,
+};
+
+enum RecordErrorType {
+    RECORD_ERROR_TYPE_INTERRUPT,
+    RECORD_ERROR_TYPE_START_FAIL,
+    RECORD_ERROR_TYPE_OVERFLOW,
 };
 
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
@@ -1375,7 +1408,7 @@ struct AudioProcessConfig : public Parcelable {
 
     DeviceType deviceType = DEVICE_TYPE_INVALID;
 
-    bool isUltraFast = false;
+    uint32_t ultraFastFlag = false;
 
     bool isInnerCapturer = false;
 
@@ -1433,7 +1466,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(deviceType);
 
         // Renderer only
-        parcel.WriteBool(isUltraFast);
+        parcel.WriteUint32(ultraFastFlag);
 
         // Recorder only
         parcel.WriteBool(isInnerCapturer);
@@ -1496,7 +1529,7 @@ struct AudioProcessConfig : public Parcelable {
         config->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
 
         // Renderer only
-        config->isUltraFast = parcel.ReadBool();
+        config->ultraFastFlag = parcel.ReadUint32();
 
         // Recorder only
         config->isInnerCapturer = parcel.ReadBool();
@@ -1567,7 +1600,6 @@ struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
-    uint32_t volumeDegree = 0;
 };
 
 enum AppIsBackState {
@@ -1764,9 +1796,9 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
-class AudioStreamPolicyServiceDiedCallback {
+class RemoteDiedCallback {
 public:
-    virtual ~AudioStreamPolicyServiceDiedCallback() = default;
+    virtual ~RemoteDiedCallback() = default;
 
     /**
      * Called when audio policy service died.
@@ -1854,7 +1886,7 @@ enum DeviceGroup {
     DEVICE_GROUP_DP,
 };
 
-static const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
+static inline const std::map<DeviceType, DeviceGroup> DEVICE_GROUP_FOR_VOLUME = {
     {DEVICE_TYPE_EARPIECE, DEVICE_GROUP_EARPIECE}, {DEVICE_TYPE_SPEAKER, DEVICE_GROUP_BUILT_IN},
     {DEVICE_TYPE_WIRED_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_USB_HEADSET, DEVICE_GROUP_WIRED},
     {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
@@ -2199,7 +2231,7 @@ struct RendererStreamInfo {
 
     RendererState state_ = RENDERER_INVALID;
 
-    uint32_t appUid_ = INVALID_UID;
+    std::string bundleName_ = "";
 };
 
 struct CapturerStreamInfo {
@@ -2209,7 +2241,11 @@ struct CapturerStreamInfo {
 
     CapturerState state_ = CAPTURER_INVALID;
 
-    uint32_t appUid_ = INVALID_UID;
+    std::string bundleName_ = "";
+
+    bool mute_ = MUTE_INVALID;
+
+    int32_t uid_ = UID_INVALID;
 };
 
 /**
@@ -2243,6 +2279,22 @@ enum LatencyFlag : uint32_t {
     LATENCY_FLAG_SOFTWARE = 0X0FFFFFFF,
     LATENCY_FLAG_HARDWARE = 1U << 31,
     LATENCY_FLAG_ALL = 0XFFFFFFFF
+};
+
+struct AudioInterruptResult {
+    bool needSetAudioScene;
+    AudioScene targetAudioScene;
+    int32_t ownerUid;
+    int32_t ownerPid;
+    int32_t retCode;
+    AudioInterruptResult()
+        : needSetAudioScene(false),
+          targetAudioScene(AUDIO_SCENE_INVALID),
+          ownerUid(-1),
+          ownerPid(-1),
+          retCode(0)
+    {
+    }
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -210,7 +210,7 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled)
 {
     if (isCollaborationEnabled) {
-        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
             nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
             nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
             nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
@@ -364,6 +364,7 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     }
     sourceInfo.deviceNetId = audioModuleInfo.networkId;
     sourceInfo.deviceClass = audioModuleInfo.className;
+    sourceInfo.busAddress = audioModuleInfo.busAddress;
     sourceInfo.adapterName = audioModuleInfo.adapterName;
     sourceInfo.sourceName = audioModuleInfo.name;  // built_in_mic
     sourceInfo.deviceName = audioModuleInfo.name;
@@ -535,6 +536,21 @@ int32_t CheckSourceInfoFramelen(const HpaeSourceInfo &sourceInfo)
     return SUCCESS;
 }
 
+void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
+{
+    nodeInfo.channels = streamInfo.channels;
+    nodeInfo.format = streamInfo.format;
+    nodeInfo.frameLen = streamInfo.frameLen;
+    nodeInfo.streamType = streamInfo.streamType;
+    nodeInfo.sessionId = streamInfo.sessionId;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
+    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(streamInfo.channelLayout);
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
+    nodeInfo.effectInfo = streamInfo.effectInfo;
+    nodeInfo.fadeType = streamInfo.fadeType;
+    nodeInfo.sourceType = streamInfo.sourceType;
+}
+
 void TransSinkInfoToNodeInfo(const HpaeSinkInfo &sinkInfo, const std::weak_ptr<INodeCallback> &statusCallback,
     HpaeNodeInfo &nodeInfo)
 {
@@ -565,22 +581,6 @@ size_t CalculateFrameLenBySampleRate(const uint32_t sampleRate)
 size_t CalculateFrameLenBySampleRate(const AudioSamplingRate sampleRate)
 {
     return CalculateFrameLenBySampleRate(static_cast<uint32_t>(sampleRate));
-}
-
-void ConfigNodeInfo(HpaeNodeInfo &nodeInfo, const HpaeStreamInfo &streamInfo)
-{
-    nodeInfo.channels = streamInfo.channels;
-    nodeInfo.format = streamInfo.format;
-    nodeInfo.frameLen = streamInfo.frameLen;
-    nodeInfo.streamType = streamInfo.streamType;
-    nodeInfo.sessionId = streamInfo.sessionId;
-    nodeInfo.customSampleRate = streamInfo.customSampleRate;
-    nodeInfo.channelLayout = static_cast<AudioChannelLayout>(streamInfo.channelLayout);
-    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.effectInfo = streamInfo.effectInfo;
-    nodeInfo.fadeType = streamInfo.fadeType;
-    nodeInfo.sourceType = streamInfo.sourceType;
-    nodeInfo.encoding = streamInfo.encoding;
 }
 
 RendererState ConvertHpaeToRendererState(HpaeSessionState state)

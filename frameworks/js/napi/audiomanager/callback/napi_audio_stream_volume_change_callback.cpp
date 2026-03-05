@@ -150,6 +150,7 @@ void NapiAudioStreamVolumeChangeCallback::SafeJsCallbackStreamVolumeChangeWork(
         static_cast<AudioStreamVolumeChangeJsCallback*>(event),
         [](AudioStreamVolumeChangeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -221,7 +222,10 @@ bool NapiAudioStreamVolumeChangeCallback::IsSameCallback(napi_env env, napi_valu
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
-    napi_get_reference_value(env, refCallback, &copyValue);
+    if (napi_get_reference_value(env, refCallback, &copyValue) != napi_ok) {
+        AUDIO_ERR_LOG("Get napi_reference_value failed");
+        return false;
+    }
     if (napi_strict_equals(env, copyValue, callback, &isEquals) != napi_ok) {
         AUDIO_ERR_LOG("Get napi_strict_equals failed");
         return false;

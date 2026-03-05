@@ -70,6 +70,8 @@ public:
     int32_t OnStart(IAudioProcessStream *processStream) override;
     // when audio process pause.
     int32_t OnPause(IAudioProcessStream *processStream) override;
+    // when audio process mute change.
+    int32_t OnStreamMute(IAudioProcessStream *processStream, bool mute) override;
 
     /**
      * Call LinkProcessStream when first create process or link other process with this endpoint.
@@ -121,12 +123,10 @@ public:
     void BindCore();
     
     void CheckWakeUpTime(int64_t &wakeUpTime);
+    void UpdateEndpointStatus(AudioEndpoint::EndpointStatus newStatus);
 
     int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
     int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
-
-    void UpdateEndpointStatus(AudioEndpoint::EndpointStatus newStatus);
-
     void StopByRestore(const RestoreInfo &restoreInfo) override;
     
     // This func is a virtual sync func, we can continully calculate frame rate and time even sink stoped
@@ -186,16 +186,16 @@ private:
     void GetAllReadyProcessDataSub(size_t i,
         std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex);
     std::string GetStatusStr(EndpointStatus status);
+    void ResetRingBuffer(RingBufferWrapper &ringBuffer, bool mute);
 
     bool IsNearlinkAbsVolSupportStream(DeviceType deviceType, AudioVolumeType volumeType);
-
     void WriteToProcessBuffers(const BufferDesc &readBuf);
-
     int32_t ReadFromEndpoint(uint64_t curReadPos);
     bool KeepWorkloopRunning();
 
     void EndpointWorkLoopFuc();
     void RecordEndpointWorkLoopFuc();
+    void ProcessPriorityResult(bool setPriorityResult);
 
     // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
     void AsyncGetPosTime();
@@ -229,7 +229,6 @@ private:
         const std::shared_ptr<OHAudioBufferBase> &processBuffer);
     void CheckAudioHapticsSync(uint64_t curWritePos);
     bool IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame);
-
     int32_t WriteDupBufferInnerForWriteModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     int32_t WriteDupBufferInnerForCallbackModeInner(const BufferDesc &bufferDesc, int32_t innerCapId);
 
@@ -251,7 +250,7 @@ private:
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase>& processBuffer);
     void NotifyStreamChange(StreamChangeType change,
-        IAudioProcessStream *processStream, RendererState state);
+        IAudioProcessStream *processStream, RendererState state, bool mute = false);
     AudioEndpointInner::VolumeResult ConstructEnforcedToneVolume();
 
 private:
@@ -340,7 +339,7 @@ private:
 
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
     bool isStarted_ = false;
-    int64_t delayStopTime_ = INT64_MAX;
+    std::atomic<int64_t> delayStopTime_ = INT64_MAX;
     int64_t zeroVolumeStartTime_ = INT64_MAX;
     ZeroVolumeState zeroVolumeState_ = INACTIVE;
 
@@ -361,9 +360,14 @@ private:
     bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
     bool needReSyncPosition_ = true;
     FILE *dumpHdi_ = nullptr;
-    std::string dumpHdiName_ = "";
     mutable int64_t volumeDataCount_ = 0;
     std::string logUtilsTag_ = "";
+    std::string dumpHdiName_ = "";
+
+    bool signalDetected_ = false;
+    bool latencyMeasEnabled_ = false;
+    size_t detectedTime_ = 0;
+    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
 
     // for get amplitude
     float maxAmplitude_ = 0;
@@ -372,14 +376,10 @@ private:
     bool startUpdate_ = false;
     int renderFrameNum_ = 0;
 
-    bool signalDetected_ = false;
-    bool latencyMeasEnabled_ = false;
-    size_t detectedTime_ = 0;
-    std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
     bool coreBinded_ = false;
     bool isExistLoopback_ = false;
-    int32_t audioHapticsSyncId_ = false;
+    int32_t audioHapticsSyncId_ = 0;
 
     std::mutex injectLock_; // protect isNeedInject_、injectSinkPortIdx_
     bool isNeedInject_ = false;
@@ -392,7 +392,7 @@ private:
     std::vector<uint8_t> captureConvBuffer_;  // reuse for limit proc, 7.5k, need consider free
     std::shared_ptr<AudioLimiter> limiter_ = nullptr;
 
-    //for inject dump pcm
+    // for inject dump pcm
     FILE *dumpPeekDup_ = nullptr; // client to inject peek dump file
     FILE *dumpMixDup_ = nullptr; // client to inject mix dump file
     std::string dupPeekName_ = "";

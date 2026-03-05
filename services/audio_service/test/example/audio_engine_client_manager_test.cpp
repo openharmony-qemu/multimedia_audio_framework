@@ -53,7 +53,7 @@ static void PrintOutputPipeInfo(const std::shared_ptr<AudioOutputPipeInfo> &chan
         cout << "    - id: " << streamIter.second.streamId_ <<
             " usage: " << streamIter.second.usage_ <<
             " state: " << streamIter.second.state_ <<
-            " uid: " << streamIter.second.appUid_ << endl;
+            " bundleName: " << streamIter.second.bundleName_ << endl;
     }
 }
 
@@ -74,7 +74,9 @@ static void PrintInputPipeInfo(const std::shared_ptr<AudioInputPipeInfo> &change
         cout << "    - id: " << streamIter.second.streamId_ <<
             " source: " << streamIter.second.source_ <<
             " state: " << streamIter.second.state_ <<
-            " uid: " << streamIter.second.appUid_ << endl;
+            " bundleName: " << streamIter.second.bundleName_<<
+            " uid: " << streamIter.second.uid_<<
+            " mute: " << streamIter.second.mute_<< endl;
     }
 }
 

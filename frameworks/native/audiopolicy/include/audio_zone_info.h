@@ -53,17 +53,24 @@ enum class MediaBackStrategy {
     KEEP = 1,
 };
 
+enum class InitMode {
+    NONE = 0,
+    APP = 1,
+};
+
 class AudioZoneContext : public Parcelable {
 public:
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
     MediaBackStrategy backStrategy_ = MediaBackStrategy::STOP;
+    InitMode initMode_ = InitMode::NONE;
 
     AudioZoneContext() = default;
 
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_))
-            && parcel.WriteInt32(static_cast<int32_t>(backStrategy_));
+            && parcel.WriteInt32(static_cast<int32_t>(backStrategy_))
+            && parcel.WriteInt32(static_cast<int32_t>(initMode_));
     }
 
     static AudioZoneContext *Unmarshalling(Parcel &parcel)
@@ -75,6 +82,7 @@ public:
 
         info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
         info->backStrategy_ = static_cast<MediaBackStrategy>(parcel.ReadInt32());
+        info->initMode_ = static_cast<InitMode>(parcel.ReadInt32());
         return info;
     }
 };
@@ -85,6 +93,7 @@ public:
     std::string name_;
     std::set<int32_t> uids_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices_;
+    int32_t initMode_;
 
     AudioZoneDescriptor() = default;
 
@@ -92,6 +101,7 @@ public:
     {
         bool result = parcel.WriteInt32(zoneId_);
         result &= parcel.WriteString(name_);
+        result &= parcel.WriteInt32(initMode_);
         result &= MarshallingSetInt32(uids_, parcel);
         if (!result) {
             return false;
@@ -113,6 +123,7 @@ public:
     {
         zoneId_ = parcel.ReadInt32();
         name_ = parcel.ReadString();
+        initMode_ = parcel.ReadInt32();
         uids_ = UnmarshallingSetInt32<int32_t>(parcel);
 
         size_t size = parcel.ReadUint64();
@@ -179,6 +190,51 @@ struct AudioZoneStream : public Parcelable {
         stream->sourceType = static_cast<SourceType>(parcel.ReadInt32());
         stream->isPlay = parcel.ReadBool();
         return stream;
+    }
+};
+
+struct AudioZoneMix : public Parcelable {
+    std::vector<StreamUsage> streamUsages{};
+    AudioEncodingType encodingType = ENCODING_INVALID;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    DeviceRole deviceRole = DEVICE_ROLE_NONE;
+    std::string busAddress;
+    
+    AudioZoneMix() = default;
+    ~AudioZoneMix() = default;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(encodingType));
+        parcel.WriteInt32(static_cast<int32_t>(deviceType));
+        parcel.WriteInt32(static_cast<int32_t>(deviceRole));
+        parcel.WriteString(busAddress);
+        std::vector<int32_t> streamUsagesInt;
+        for (const auto &usage : streamUsages) {
+            streamUsagesInt.push_back(static_cast<int32_t>(usage));
+        }
+        parcel.WriteInt32Vector(streamUsagesInt);
+        return true;
+    }
+
+    static AudioZoneMix *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new (std::nothrow) AudioZoneMix();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->encodingType = static_cast<AudioEncodingType>(parcel.ReadInt32());
+        info->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+        info->deviceRole = static_cast<DeviceRole>(parcel.ReadInt32());
+        info->busAddress = parcel.ReadString();
+        std::vector<int32_t> streamUsagesInt;
+        if (parcel.ReadInt32Vector(&streamUsagesInt)) {
+            for (const auto &usage : streamUsagesInt) {
+                info->streamUsages.push_back(static_cast<StreamUsage>(usage));
+            }
+        }
+        return info;
     }
 };
 } // namespace AudioStandard

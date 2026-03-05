@@ -242,6 +242,44 @@ HWTEST_F(ChannelConverterTest, ChannelConverterNormalizationTest_001, TestSize.L
     EXPECT_EQ(channelConverter.downmixNormalizing_, true);
     EXPECT_EQ(channelConverter.downMixer_.normalizing_, true);
 }
+
+/**
+ * @tc.name  : SetParam_FormatSize_Indirect_Test_001
+ * @tc.desc  :  GetFormatSize
+ */
+HWTEST_F(ChannelConverterTest, SetParam_FormatSize_Indirect_Test_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo in = { CH_LAYOUT_STEREO, 2 };
+    AudioChannelInfo out = { CH_LAYOUT_STEREO, 2 };
+
+    EXPECT_EQ(converter.SetParam(in, out, SAMPLE_S16LE, false), MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.SetParam(in, out, SAMPLE_F32LE, false), MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.SetParam(in, out, SAMPLE_S24LE, false), MIX_ERR_SUCCESS);
+}
+
+
+/**
+ * @tc.name  : ChannelConverter_Reset_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Reset
+ */
+HWTEST_F(ChannelConverterTest, ChannelConverter_Reset_001, TestSize.Level1)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_MONO, 1};
+
+    converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, true);
+    ASSERT_EQ(converter.isInitialized_, true);
+
+    converter.Reset();
+    EXPECT_EQ(converter.isInitialized_, false);
+    std::vector<float> in(10, 1.0f);
+    std::vector<float> out(10, 0.0f);
+    int32_t ret = converter.Process(5, in.data(), in.size()*4, out.data(), out.size()*4);
+    EXPECT_NE(ret, MIX_ERR_SUCCESS);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

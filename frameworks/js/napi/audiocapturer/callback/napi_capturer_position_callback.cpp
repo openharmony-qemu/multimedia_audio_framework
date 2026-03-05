@@ -99,6 +99,7 @@ void NapiCapturerPositionCallback::SafeJsCallbackCapturerPositionWork(
         static_cast<CapturerPositionJsCallback*>(data),
         [](CapturerPositionJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

@@ -75,7 +75,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_002, TestSize.Level1)
     zone->RemoveKey(AudioZoneBindKey(2, "", "temp"));
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "temp")), false);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), true);
-    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "", "test")), false);
+    EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(2, "d1", "test")), false);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1)), true);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1, "")), true);
 }
@@ -222,5 +222,364 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_DegreeTest_001, TestSize.Level1)
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_001
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_001, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = desc->deviceType_;
+    device.networkId_ = desc->networkId_;
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_002
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_002, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = desc->deviceType_;
+    device.networkId_ = "networkId";
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_003
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_003, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = DEVICE_TYPE_SPEAKER;
+    device.networkId_ = desc->networkId_;
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_004
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_004, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = desc->deviceType_;
+    device.networkId_ = desc->networkId_;
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_005
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_005, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = DEVICE_TYPE_SPEAKER;
+    device.networkId_ = desc->networkId_;
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_006
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_006, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = DEVICE_TYPE_SPEAKER;
+    device.networkId_ = "networkId";
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_007
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_007, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = desc->deviceType_;
+    device.networkId_ = "networkId";
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test CheckDeviceInZone.
+ * @tc.number: CheckDeviceInZone_008
+ * @tc.desc  : Test CheckDeviceInZone interface.
+ */
+HWTEST_F(AudioZoneUnitTest, CheckDeviceInZone_008, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+    AudioDeviceDescriptor device;
+    device.deviceType_ = DEVICE_TYPE_SPEAKER;
+    device.networkId_ = "networkId";
+    auto ret = zone->CheckDeviceInZone(device);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_001
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_001, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+
+    DeviceType type = desc->deviceType_;
+    std::string networkId = desc->networkId_;
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_NE(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_002
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_002, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+
+    DeviceType type = desc->deviceType_;
+    std::string networkId = desc->networkId_;
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_003
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_003, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+
+    DeviceType type = DEVICE_TYPE_SPEAKER;
+    std::string networkId = desc->networkId_;
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_004
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_004, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+
+    DeviceType type = desc->deviceType_;
+    std::string networkId = "networkId";
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_005
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_005, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+
+    DeviceType type = DEVICE_TYPE_SPEAKER;
+    std::string networkId = desc->networkId_;
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_006
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_006, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, true));
+
+    DeviceType type = DEVICE_TYPE_SPEAKER;
+    std::string networkId = "networkId";
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_007
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_007, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+
+    DeviceType type = desc->deviceType_;
+    std::string networkId = "networkId";
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetDeviceDescriptor.
+ * @tc.number: GetDeviceDescriptor_008
+ * @tc.desc  : Test GetDeviceDescriptor interface.
+ */
+HWTEST_F(AudioZoneUnitTest, GetDeviceDescriptor_008, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+    desc->networkId_ = "test";
+
+    zone->devices_.clear();
+    zone->devices_.push_back(std::make_pair(desc, false));
+
+    DeviceType type = DEVICE_TYPE_SPEAKER;
+    std::string networkId = "networkId";
+    auto ret = zone->GetDeviceDescriptor(type, networkId);
+    EXPECT_EQ(ret, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

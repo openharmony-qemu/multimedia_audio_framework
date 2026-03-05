@@ -24,6 +24,8 @@
 
 #include "client_type_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -366,8 +368,9 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     auto &sessionSet = startedSleStreamType_[deviceAddr][streamType].sessionIds;
-    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u sessionId %{public}d",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
+    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u with size[%{public}zu]\
+        sessionId %{public}d", AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd,
+        streamType, sessionSet.size(), sessionId);
     if (isAdd) {
         sessionSet.insert(sessionId);
     } else {
@@ -497,6 +500,39 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel(const std::string &d
     return SUCCESS;
 }
 
+int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeDegree(const std::string &device, AudioStreamType streamType,
+    int32_t volumeDegree)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(device) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (streamType == STREAM_MUSIC) {
+        deviceVolumeConfigInfo_[device].first.volumeDegree = volumeDegree;
+    } else if (streamType == STREAM_VOICE_CALL) {
+        if (volumeDegree > 0) {
+            deviceVolumeConfigInfo_[device].second.volumeDegree = volumeDegree;
+        } else {
+            return ERR_INVALID_PARAM;
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t SleAudioDeviceManager::GetVolumeDegreeByVolumeType(AudioVolumeType volumeType,
+    const AudioDeviceDescriptor &deviceDesc)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(deviceDesc.macAddress_) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (volumeType == STREAM_MUSIC) {
+        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.isMute ? 0 :
+            deviceVolumeConfigInfo_[deviceDesc.macAddress_].first.volumeDegree;
+    } else if (volumeType == STREAM_VOICE_CALL) {
+        return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeDegree;
+    }
+    return 0;
+}
+
 int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volumeType,
     const AudioDeviceDescriptor &deviceDesc)
 {
@@ -510,6 +546,20 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
     }
     return 0;
+}
+
+bool SleAudioDeviceManager::GetMuteStatusByVolumeType(AudioVolumeType volumeType,
+    const std::string &nearLinkDevice)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(nearLinkDevice) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (volumeType == STREAM_MUSIC) {
+        return deviceVolumeConfigInfo_[nearLinkDevice].first.isMute;
+    } else if (volumeType == STREAM_VOICE_CALL) {
+        return false;
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -52,6 +52,7 @@ ohos_unittest("pro_renderer_stream_impl_unit_test") {
   }
 
   external_deps = [
+    "init:libbegetutil",
     "c_utils:utils",
     "googletest:gtest",
     "hicollie:libhicollie",

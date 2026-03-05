@@ -38,7 +38,6 @@ enum HpaeMsgCode {
     CONNECT_CO_BUFFER_NODE,
     DISCONNECT_CO_BUFFER_NODE,
     INIT_SOURCE_RESULT,
-    UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO,
 };
 
 enum NodeOperation { UNDERFLOW, FADED, DRAINED };
@@ -138,7 +137,6 @@ struct HpaeDfxNodeInfo {
     std::string deviceName;
     std::string nodeName;
     SourceType sourceType;
-    AudioEncodingType encoding;
 };
 
 struct OffloadCallbackData {
@@ -148,6 +146,7 @@ struct OffloadCallbackData {
 
 class INodeCallback {
 public:
+    virtual ~INodeCallback() = default;
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
     virtual void OnFadeDone(uint32_t sessionId){};
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
@@ -162,6 +161,9 @@ public:
         OffloadCallbackData data {false, 0};
         return data;
     }
+    virtual void SetCollDelayCount(){};
+    virtual void OnCollborationFadeDone(uint32_t sessionId){};
+    virtual void OnDisConnectCoBufferWaitFadeOutDone(){};
 };
 
 class IOffloadCallback {

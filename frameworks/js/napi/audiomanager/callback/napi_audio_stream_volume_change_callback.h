@@ -25,7 +25,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const std::string AUDIO_STREAM_VOLUME_CHANGE_CALLBACK_NAME = "streamVolumeChange";
+inline const std::string AUDIO_STREAM_VOLUME_CHANGE_CALLBACK_NAME = "streamVolumeChange";
 
 class NapiAudioStreamVolumeChangeCallback : public StreamVolumeChangeCallback {
 public:

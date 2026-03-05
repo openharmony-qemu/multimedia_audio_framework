@@ -53,13 +53,9 @@ const uint32_t DSP_MAX_NUM_CHANNEL = CHANNEL_16;
 const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
 const uint64_t DEFAULT_MCH_NUM_CHANNELLAYOUT = CH_LAYOUT_5POINT1;
 const uint32_t BASE_TEN = 10;
-const std::string DEFAULT_DEVICE_SINK = "Speaker";
-const std::string BLUETOOTH_DEVICE_SINK = "Bt_Speaker";
 const uint32_t SIZE_OF_SPATIALIZATION_STATE = 2;
 const uint32_t MAX_UINT_VOLUME_NUM = 10000;
 const uint32_t MAX_UINT_DSP_VOLUME = 65535;
-const std::string DEFAULT_SCENE_TYPE = "SCENE_DEFAULT";
-const std::string DEFAULT_PRESET_SCENE = "SCENE_MUSIC";
 
 struct SessionEffectInfo {
     std::string sceneMode;
@@ -68,16 +64,6 @@ struct SessionEffectInfo {
     uint64_t channelLayout;
     int32_t streamUsage;
     int32_t systemVolumeType;
-};
-
-const std::vector<AudioChannelLayout> AUDIO_EFFECT_SUPPORTED_CHANNELLAYOUTS {
-    CH_LAYOUT_STEREO,
-    CH_LAYOUT_5POINT1,
-    CH_LAYOUT_5POINT1POINT2,
-    CH_LAYOUT_7POINT1,
-    CH_LAYOUT_5POINT1POINT4,
-    CH_LAYOUT_7POINT1POINT2,
-    CH_LAYOUT_7POINT1POINT4
 };
 
 struct EffectBufferAttr {
@@ -162,7 +148,7 @@ public:
     void UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct);
     void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
-    bool IsEffectChainFading(const std::string &sceneType);
+    bool IsDownSamplingForSpatialization(const std::string &sceneType);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -236,7 +222,7 @@ private:
     std::unordered_map<std::string, std::string> defaultPropertyMap_;
     std::vector<std::pair<std::string, int32_t>> sceneTypeCountList_;
     DeviceType deviceType_ = DEVICE_TYPE_SPEAKER;
-    std::string deviceSink_ = DEFAULT_DEVICE_SINK;
+    std::string deviceSink_ = "Speaker";
     std::string deviceClass_ = "";
     std::string extraSceneType_ = "0";
     std::string foldState_ = "0";
@@ -244,7 +230,7 @@ private:
     std::string systemLoadState_ = "0";
     std::string maxSessionIDToSceneType_ = "";
     std::string maxDefaultSessionIDToSceneType_ = "";
-    std::string outdoorModle_ = "0";
+    std::string outdoorMode_ = "0";
     std::string superLoudnessMode_ = "music_off";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
@@ -256,7 +242,6 @@ private:
     bool btOffloadSupported_ = true;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     bool isDefaultEffectChainExisted_ = false;
-    int32_t defaultEffectChainCount_ = 0;
     int32_t maxEffectChainCount_ = 1;
     uint32_t maxSessionID_ = 0;
     AudioSpatialDeviceType spatialDeviceType_{ EARPHONE_TYPE_OTHERS };

@@ -188,7 +188,8 @@ AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
     : zoneId_(GenerateZoneId()),
       name_(name),
       clientManager_(manager),
-      zoneClientPid_(clientPid)
+      zoneClientPid_(clientPid),
+      context_(context)
 {
 }
 
@@ -239,6 +240,9 @@ const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptorNoLock()
 
     descriptor->zoneId_ = zoneId_;
     descriptor->name_ = name_;
+    descriptor->initMode_ = static_cast<int32_t>(context_.initMode_);
+    AUDIO_INFO_LOG("zone %{public}d init mode %{public}d", zoneId_, descriptor->initMode_);
+
     for (const auto &key : keys_) {
         descriptor->uids_.insert(key.GetUid());
     }
@@ -533,13 +537,12 @@ bool AudioZone::CheckDeviceInZone(AudioDeviceDescriptor device)
     return false;
 }
 
-bool AudioZone::CheckExistUidInZone()
+bool AudioZone::HasVolumeControllableDeviceInZone()
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    for (const auto &it : keys_) {
-        if (it.GetUid() > 0) {
-            return true;
-        }
+    for (const auto &it : devices_) {
+        CHECK_AND_RETURN_RET(it.first == nullptr || !it.second ||
+            it.first->volumeBehavior_.isVolumeControlDisabled, true);
     }
     return false;
 }

@@ -824,26 +824,14 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_003, TestSize.Level1)
     InternalDeviceType deviceType = DEVICE_TYPE_NONE;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     string retPortName = "";
-    bool isEnable = false;
 
     // case 13 InternalDeviceType::DEVICE_TYPE_HDMI
     deviceType = DEVICE_TYPE_HDMI;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 
-    isEnable = true;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
-    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
-    EXPECT_EQ(DP_SINK, retPortName);
-
     // case 14 InternalDeviceType::DEVICE_TYPE_LINE_DIGITAL
     deviceType = DEVICE_TYPE_LINE_DIGITAL;
-    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
-    EXPECT_EQ(DP_SINK, retPortName);
-
-    isEnable = false;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
@@ -976,12 +964,12 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
 
     GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(false);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(false);
-    int32_t ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.SetWakeUpAudioCapturer(capturerOptions);
+    int32_t ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
     EXPECT_EQ(ERROR, ret);
 
     GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
     GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(true);
-    ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.SetWakeUpAudioCapturer(capturerOptions);
+    ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
     EXPECT_EQ(SUCCESS, ret);
 }
 
@@ -1351,7 +1339,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_002, TestSize.Le
 
     updatedDesc.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
-    EXPECT_EQ(ERROR, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     updatedDesc.deviceType_ = DEVICE_TYPE_MAX;
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
@@ -1582,7 +1570,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     sessionInfo.rate = RATE;
     sessionInfo.channels = CHANNELS;
 
-    GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
+    AudioCoreService::GetCoreService()->normalSourceOpened_ = SOURCE_TYPE_INVALID;
 
     // dummy data
     AudioAdapterInfo adapterInfo = {};
@@ -1597,24 +1585,24 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     adapterInfo.pipeInfos_ = pipeInfos_;
 
     int32_t ret = SUCCESS;
-    GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
-    ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->normalSourceOpened_ = SOURCE_TYPE_VOICE_CALL;
+    ret = AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
     sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 
     sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionIdisRemovedSet_.insert(TEST_SESSIONID);
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionAdded(TEST_SESSIONID,
+    AudioCoreService::GetCoreService()->capturerSessionIdisRemovedSet_.insert(TEST_SESSIONID);
+    AudioCoreService::GetCoreService()->OnCapturerSessionAdded(TEST_SESSIONID,
         sessionInfo, streamInfo);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -1628,49 +1616,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionRemoved_001, TestSize.Leve
 {
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest OnCapturerSessionRemoved_001 start");
     ASSERT_NE(nullptr, GetServerPtr());
-
-    // clear sessionWithSpecialSourceType_ and sessionWithNormalSourceType_
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_.clear();
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_.clear();
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    // dummy sessionWithSpecialSourceType_
-    SessionInfo sessionInfo;
-    sessionInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
-    sessionInfo.rate = RATE;
-    sessionInfo.channels = CHANNELS;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithSpecialSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    // dummy sessionWithNormalSourceType_
-    sessionInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
-
-    sessionInfo.sourceType = SOURCE_TYPE_WAKEUP;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID] =
-        sessionInfo;
-    sessionInfo.sourceType = SOURCE_TYPE_MIC;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.sessionWithNormalSourceType_[TEST_SESSIONID + 1] =
-        sessionInfo;
-    GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(TEST_SESSIONID);
+    AudioCoreService::GetCoreService()->OnCapturerSessionRemoved(TEST_SESSIONID);
 }
 
 /**
@@ -1690,8 +1636,8 @@ HWTEST_F(AudioPolicyServiceUnitTest, LoadInnerCapturerSink_001, TestSize.Level1)
     std::string moduleName = INNER_CAPTURER_SINK_LEGACY;
     for (const auto& audioSampleFormat : audioSampleFormats) {
         streamInfo.format = audioSampleFormat;
-        GetServerPtr()->audioPolicyService_.audioCapturerSession_.LoadInnerCapturerSink(moduleName, streamInfo);
-        GetServerPtr()->audioPolicyService_.audioCapturerSession_.UnloadInnerCapturerSink(moduleName);
+        AudioCoreService::GetCoreService()->LoadInnerCapturerSink(moduleName, streamInfo);
+        AudioCoreService::GetCoreService()->UnloadInnerCapturerSink(moduleName);
     }
 }
 
@@ -2324,51 +2270,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, IsFastFromA2dpToA2dp_002, TestSize.Level1)
     bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsFastFromA2dpToA2dp(audioDeviceDescriptor,
         rendererChangeInfo, reason);
     EXPECT_TRUE(ret);
-}
-
-/**
- * @tc.name  : Test GetDefaultAdapterEnable.
- * @tc.number: GetDefaultAdapterEnable_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceUnitTest, GetDefaultAdapterEnable_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    bool isEnable = true;
-    server->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
-    bool ret = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
-    EXPECT_EQ(ret, true);
-
-    isEnable = false;
-    server->audioPolicyService_.audioConfigManager_.OnUpdateDefaultAdapter(isEnable);
-    ret = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test GetDeviceClassInfo.
- * @tc.number: GetDeviceClassInfo_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceUnitTest, GetDeviceClassInfo_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    bool ret = server->audioPolicyService_.audioConfigManager_.Init();
-    EXPECT_EQ(ret, false);
-
-    std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
-    server->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
-    bool isEnable = server->audioPolicyService_.audioConfigManager_.GetDefaultAdapterEnable();
-    for (auto [classType, moduleInfo] : deviceClassInfo) {
-        for (auto module : moduleInfo) {
-            std::string defaultAdapterEnable = module.defaultAdapterEnable;
-            if (isEnable) {
-                EXPECT_EQ(defaultAdapterEnable, "1");
-            } else {
-                EXPECT_EQ(defaultAdapterEnable, "");
-            }
-        }
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

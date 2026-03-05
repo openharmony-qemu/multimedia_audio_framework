@@ -346,6 +346,66 @@ void AudioServerProxyForceStopAudioStreamProxyFuzzTest()
     audioServerProxy.ForceStopAudioStreamProxy(audioType);
 }
 
+void AudioServerProxyGetVolumeDataCountFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    std::string sinkName = "testName";
+    int64_t volumeData = GetData<int64_t>();
+    audioServerProxy.GetVolumeDataCount(sinkName, volumeData);
+}
+
+void AudioServerProxyReleaseActiveDeviceRouteProxyFuzzTest()
+{
+    if (g_testDeviceTypes.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    DeviceFlag deviceFlag = GetData<DeviceFlag>();
+    std::string networkId = "testNetworkId";
+    audioServerProxy.ReleaseActiveDeviceRouteProxy(deviceType, deviceFlag, networkId);
+}
+
+void AudioServerProxyGetPrivacyTypeFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    uint32_t sessionId = GetData<uint32_t>();
+    AudioPrivacyType privacyType = GetData<AudioPrivacyType>();
+    audioServerProxy.GetPrivacyType(sessionId, privacyType);
+}
+
+void AudioServerProxySetNonInterruptMuteProxyFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    uint32_t sessionId = GetData<uint32_t>();
+    bool muteFlag = GetData<bool>();
+    audioServerProxy.SetNonInterruptMuteProxy(sessionId, muteFlag);
+}
+
+void AudioServerProxySetRemoteAudioParameterProxyFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    std::string networkId = "testId";
+    bool isVol = GetData<bool>();
+    int32_t val = GetData<int32_t>();
+    audioServerProxy.SetRemoteAudioParameterProxy(networkId, isVol, val);
+}
+
+void AudioServerProxyRegistAdapterManagerCallbackFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    sptr<IRemoteObject> object = nullptr;
+    std::string neowtrokId = "testId";
+    audioServerProxy.RegistAdapterManagerCallback(object, neowtrokId);
+}
+
+void AudioServerProxyUnRegistAdapterManagerCallbackFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    std::string neowtrokId = "testId";
+    audioServerProxy.UnRegistAdapterManagerCallback(neowtrokId);
+}
+
 TestPtr g_testPtrs[] = {
     AudioServerProxyGetEffectOffloadEnabledProxyFuzzTest,
     AudioServerProxyUpdateDualToneStateProxyFuzzTest,
@@ -378,6 +438,12 @@ TestPtr g_testPtrs[] = {
     AudioServerProxySetSessionMuteStateFuzzTest,
     AudioServerProxySetActiveOutputDeviceProxyFuzzTest,
     AudioServerProxyForceStopAudioStreamProxyFuzzTest,
+    AudioServerProxyGetVolumeDataCountFuzzTest,
+    AudioServerProxyReleaseActiveDeviceRouteProxyFuzzTest,
+    AudioServerProxyGetPrivacyTypeFuzzTest,
+    AudioServerProxySetNonInterruptMuteProxyFuzzTest,
+    AudioServerProxySetRemoteAudioParameterProxyFuzzTest,
+    AudioServerProxyRegistAdapterManagerCallbackFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

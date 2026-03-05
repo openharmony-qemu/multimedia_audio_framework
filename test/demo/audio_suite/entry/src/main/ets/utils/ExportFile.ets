@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2026. ALL rights reserved.
  */
 
 import audioNapi from 'libentry.so';
@@ -11,6 +11,7 @@ const TAG: string = 'AudioEditTestApp_AudioEdit';
 
 @Concurrent
 export async function saveFileBuffer(): Promise<ArrayBuffer> {
+    audioNapi.setCurrentTime(0);
     let pcmBuffer = audioNapi.saveFileBuffer();
     return pcmBuffer;
 }
@@ -50,6 +51,9 @@ export async function multiPipelineRealTimeSaveFileBuffer(pipelineId: string, ou
 @Concurrent
 export async function RealTimeSaveFileBuffer(): Promise<ArrayBuffer> {
     let pcmBuffer = audioNapi.realTimeSaveFileBuffer();
+    audioNapi.setCurrentTime(0);
+    // Set totalWriteAudioDataSize in the buffer map to 0.
+    audioNapi.resetTotalWriteAudioDataSize();
     return pcmBuffer;
 }
 

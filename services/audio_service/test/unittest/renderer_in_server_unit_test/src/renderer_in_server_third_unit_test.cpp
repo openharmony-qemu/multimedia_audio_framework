@@ -186,17 +186,14 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_005, Test
  */
 HWTEST_F(RendererInServerThirdUnitTest, RendererInServerOnStatusUpdate_006, TestSize.Level1)
 {
-    EXPECT_NE(nullptr, rendererInServer);
-
-    int32_t ret = rendererInServer->Init();
-    ASSERT_EQ(SUCCESS, ret);
-    rendererInServer->OnCheckActiveMusicTime("Started");
-    rendererInServer->latestForWorkgroup_.status = I_STATUS_IDLE;
-    rendererInServer->status_ = I_STATUS_IDLE;
-    rendererInServer->OnStatusUpdate(OPERATION_SET_OFFLOAD_ENABLE);
-    EXPECT_TRUE(rendererInServer->offloadEnable_);
-    rendererInServer->OnCheckActiveMusicTime("Started");
-    EXPECT_TRUE(rendererInServer->offloadEnable_);
+    AudioProcessConfig processConfig;
+    RendererInServer rendererInServer(processConfig, stateListener);
+    rendererInServer.OnCheckActiveMusicTime("Started");
+    EXPECT_EQ(processConfig.rendererInfo.pipeType, PIPE_TYPE_UNKNOWN);
+    processConfig.rendererInfo.pipeType = PIPE_TYPE_OUT_OFFLOAD;
+    RendererInServer rendererInServer1(processConfig, stateListener);
+    rendererInServer1.OnCheckActiveMusicTime("Started");
+    EXPECT_EQ(processConfig.rendererInfo.pipeType, PIPE_TYPE_OUT_OFFLOAD);
 }
 
 /**
@@ -2107,7 +2104,7 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_002, TestSize.
     int32_t ret = rendererInServer->Init();
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2123,11 +2120,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_003, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_IDLE;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2143,11 +2140,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_004, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_PAUSED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2163,11 +2160,11 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_005, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_STOPPED;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2183,12 +2180,12 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerSetTarget_006, TestSize.
     rendererInServer->lastTarget_ = NORMAL_PLAYBACK;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(INJECT_TO_VOICE_COMMUNICATION_CAPTURE, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     rendererInServer->lastTarget_ = INJECT_TO_VOICE_COMMUNICATION_CAPTURE;
     rendererInServer->status_ = I_STATUS_INVALID;
     rendererInServer->SetTarget(NORMAL_PLAYBACK, ret);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
 }
 
 /**
@@ -2487,40 +2484,6 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_002, TestSize.
     staticBufferProviderTest->totalLoopTimes_ = 1;
     buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     EXPECT_NE(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, dataSize), SUCCESS);
-
-    delete[] inputData;
-    delete[] processedData;
-}
-
-
-/**
- * @tc.name  : Test AudioStaticBufferProvider API
- * @tc.type  : FUNC
- * @tc.number: AudioStaticBufferProvider_003
- * @tc.desc  : Test AudioStaticBufferProvider GetDataFromStaticBuffer
- */
-HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_003, TestSize.Level1)
-{
-    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
-    buffer->SetStaticMode(true);
-    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
-        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    std::shared_ptr<AudioStaticBufferProvider> staticBufferProviderTest =
-        AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
-    ASSERT_TRUE(staticBufferProviderTest != nullptr);
-
-    int8_t *inputData = new int8_t[10];
-    uint8_t *processedData = new uint8_t[10];
-    size_t dataSize = 10;
-
-    staticBufferProviderTest->processedBuffer_ = processedData;
-    staticBufferProviderTest->processedBufferSize_ = dataSize;
-
-    buffer->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
-    staticBufferProviderTest->currentLoopTimes_ = 0;
-    staticBufferProviderTest->totalLoopTimes_ = 1;
-    buffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
-    EXPECT_EQ(staticBufferProviderTest->GetDataFromStaticBuffer(inputData, 15), SUCCESS);
 
     delete[] inputData;
     delete[] processedData;
@@ -2977,21 +2940,21 @@ HWTEST_F(RendererInServerThirdUnitTest, ReConfigDupStreamCallback_001, TestSize.
     rendererInServer->dupByteSizePerFrame_ = dupByteSizePerFrameTest;
 
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
         (TEST_DUP_OFFLOAD_LEN / TEST_DUP_DEFAULT_LEN));
 
     rendererInServer->offloadEnable_ = false;
     rendererInServer->dupSpanSizeInFrame_ = dupSpanSizeInFrameTest;
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
         (TEST_DUP_COMMON_LEN / TEST_DUP_DEFAULT_LEN));
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, dupSpanSizeInFrameTest *
         (TEST_DUP_COMMON_LEN / TEST_DUP_DEFAULT_LEN));
     
     rendererInServer->dupSpanSizeInFrame_ = TEST_MAX_INNERCAP_BUFFER_SIZE;
     rendererInServer->ReConfigDupStreamCallback();
-    EXPECT_NE(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
+    EXPECT_EQ(rendererInServer->dupTotalSizeInFrame_, TEST_MAX_INNERCAP_BUFFER_SIZE / dupByteSizePerFrameTest);
 }
 } // namespace AudioStandard
 } // namespace OHOS

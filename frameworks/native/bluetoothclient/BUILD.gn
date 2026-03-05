@@ -28,6 +28,7 @@ audio_ohos_library("audio_bluetooth_client") {
   install_enable = true
   sources = [
     "audio_bluetooth_manager.cpp",
+    "bluetooth_a2dp_interface.cpp",
     "bluetooth_device_manager.cpp",
     "bluetooth_sco_manager.cpp",
     "bluetooth_hfp_interface.cpp",

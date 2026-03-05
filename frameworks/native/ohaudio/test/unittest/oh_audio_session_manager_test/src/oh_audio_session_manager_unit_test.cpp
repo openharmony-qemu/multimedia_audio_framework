@@ -42,6 +42,18 @@ void MyDeviceCallback(OH_AudioDeviceDescriptorArray *devices,
     return;
 }
 
+void MyAvailableCallback(OH_AudioDevice_ChangeType type,
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
+{
+    return;
+}
+
+void MyInputDeviceCallBack(OH_AudioDeviceDescriptorArray *devices,
+    OH_AudioStream_DeviceChangeReason changeReason)
+{
+    return;
+}
+
 /**
  * @tc.name  : Test OH_AudioManager_GetAudioSessionManager.
  * @tc.number: OH_AudioManager_GetAudioSessionManager_001
@@ -156,40 +168,6 @@ HWTEST(OHAudioSessionManagerUnitTest, OnAudioSessionStateChanged_001, TestSize.L
     AudioSessionStateChangedEvent stateChangedEvent;
     stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::INVALID;
     cb->OnAudioSessionStateChanged(stateChangedEvent);
-}
-
-/**
- * @tc.name  : Test OH_AudioSessionManager_SetDefaultOutputDevice.
- * @tc.number: OH_AudioSessionManager_deviceType_001
- * @tc.desc  : Test OH_AudioSessionManager_SetDefaultOutputDevice with valid parameter.
- */
-HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_deviceType_001, TestSize.Level0)
-{
-    OH_AudioSessionManager *audioManager = nullptr;
-    OH_AudioCommon_Result result = OH_AudioManager_GetAudioSessionManager(&audioManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_TRUE(audioManager != nullptr);
-
-    OH_AudioDevice_Type deviceTypeGet = AUDIO_DEVICE_TYPE_EARPIECE;
-    result = OH_AudioSessionManager_GetDefaultOutputDevice(audioManager, &deviceTypeGet);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_EQ(deviceTypeGet, AUDIO_DEVICE_TYPE_INVALID);
-
-    OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_EARPIECE;
-    result = OH_AudioSessionManager_SetDefaultOutputDevice(audioManager, deviceType);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
-    deviceType = AUDIO_DEVICE_TYPE_DEFAULT;
-    result = OH_AudioSessionManager_SetDefaultOutputDevice(audioManager, deviceType);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
-    deviceType = AUDIO_DEVICE_TYPE_SPEAKER;
-    result = OH_AudioSessionManager_SetDefaultOutputDevice(audioManager, deviceType);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
-    result = OH_AudioSessionManager_GetDefaultOutputDevice(audioManager, &deviceTypeGet);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_EQ(deviceTypeGet, AUDIO_DEVICE_TYPE_SPEAKER);
 }
 
 /**

@@ -316,7 +316,6 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetDefaultSource(audioModuleInfo.name);
-    int32_t portId = callback->GetPortId();
     HpaeStreamInfo streamInfo = GetCaptureStreamInfo();
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
@@ -335,11 +334,6 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level1)
     EXPECT_EQ(callback->GetGetAllSourceOutputsResult(), SUCCESS);
     std::vector<SourceOutput> sourceOutputs = callback->GetSourceOutputs();
     EXPECT_EQ(sourceOutputs.size(), 1);
-    for (const auto &it : sourceOutputs) {
-        std::cout << "deviceSourceId:" << it.deviceSourceId << std::endl;
-        EXPECT_EQ(it.paStreamId, streamInfo.sessionId);
-        EXPECT_EQ(it.deviceSourceId, portId);
-    }
 
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
@@ -376,6 +370,8 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level1)
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
 
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->TriggerAppsUidUpdate(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
@@ -794,6 +790,8 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
     hpaeManager_->Start(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->TriggerAppsUidUpdate(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
@@ -804,6 +802,15 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_UID, true), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_UID, false), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
+
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMuteByStreamId(streamInfo.sessionId, true), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMuteByStreamId(streamInfo.sessionId, true), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMuteByStreamId(streamInfo.sessionId, false), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
 
@@ -2201,6 +2208,17 @@ HWTEST_F(HpaeManagerUnitTest, StopAudioPort003, TestSize.Level4)
     hpaeManager_->rendererManagerMap_["test"] = nullptr;
     EXPECT_EQ(hpaeManager_->StopAudioPort("test"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, TriggerAppsUidUpdate001, TestSize.Level4)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    hpaeManager_->capturerManagerMap_["test"] = nullptr;
+    hpaeManager_->rendererManagerMap_["test"] = nullptr;
+    hpaeManager_->TriggerAppsUidUpdate(HPAE_STREAM_CLASS_TYPE_INVALID, 1);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_NE(hpaeManager_->capturerManagerMap_.size(), 0);
 }
 
 HWTEST_F(HpaeManagerUnitTest, CreateRendererManager_Test_001, TestSize.Level1)

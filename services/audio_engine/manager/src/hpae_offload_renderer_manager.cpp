@@ -30,6 +30,7 @@ namespace AudioStandard {
 namespace HPAE {
 namespace {
 constexpr uint32_t HISTORY_INTERVAL_S = 7;  // 7s buffer for rewind
+const std::string REMOTE_OFFLOAD_DEVICE_CLASS = "remote_offload";
 }
 
 HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
@@ -60,6 +61,9 @@ std::shared_ptr<HpaeSinkInputNode> HpaeOffloadRendererManager::CreateInputSessio
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.effectInfo = streamInfo.effectInfo;
+    AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u,channels:%{public}u,rate:%{public}u",
+        nodeInfo.streamType, nodeInfo.sessionId, nodeInfo.channels,
+        nodeInfo.customSampleRate == 0 ? nodeInfo.samplingRate : nodeInfo.customSampleRate);
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNode->SetAppUid(streamInfo.uid);
     AddNodeToMap(sinkInputNode);
@@ -106,7 +110,7 @@ void HpaeOffloadRendererManager::RemoveNodeFromMap(uint32_t sessionId)
 void HpaeOffloadRendererManager::SetCurrentNode()
 {
     if (curNode_ != nullptr) {
-        AUDIO_WARNING_LOG("curNode_ is exist, no need to set");
+        AUDIO_WARNING_LOG("curNode_ in exist, no need to set");
         return;
     }
     // pick one node from sinkInputNodeMap_ and set to curNode_
@@ -148,9 +152,9 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:offload", sessionId);
         ConnectInputSession();
     }
-    node->OnStreamInfoChange(false);
     NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, sessionId, ConvertHpaeToRendererState(node->GetState()),
         node->GetAppUid());
+    node->OnStreamInfoChange(false);
 }
 
 int32_t HpaeOffloadRendererManager::AddAllNodesToSink(
@@ -266,6 +270,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     converterForLoudness_->RegisterCallback(this);
     renderNoneEffectNode_->AudioOffloadRendererStart(curNode_->GetNodeInfo(), sinkInfo_);
     if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
+        UpdateAppsUid();
         sinkOutputNode_->RenderSinkStart();
     }
     return SUCCESS;
@@ -282,7 +287,6 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
         if (sessionId == curNode_->GetSessionId()) {
             ConnectInputSession();
         }
-        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_RUNNING);
     };
     SendRequest(request, __func__);
@@ -318,7 +322,6 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
                 sinkOutputNode_->StopStream();
             }
         }
-        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_PAUSED);
     };
     SendRequest(request, __func__);
@@ -376,7 +379,6 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
                 sinkOutputNode_->StopStream();
             }
         }
-        TriggerCallback(UPDATE_BYPASS_SPATIALIZATION_FOR_STEREO);
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, RENDERER_STOPPED);
     };
     SendRequest(request, __func__);
@@ -485,6 +487,7 @@ int32_t HpaeOffloadRendererManager::SuspendStreamManager(bool isSuspend)
             sinkOutputNode_->RenderSinkStop();
         } else if (sinkOutputNode_->GetSinkState() != STREAM_MANAGER_RUNNING && curNode_ &&
             curNode_->GetState() == HPAE_SESSION_RUNNING) {
+            UpdateAppsUid();
             sinkOutputNode_->RenderSinkStart();
         }
     };
@@ -549,7 +552,7 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
             ConnectInputSession();
         }
         NotifyStreamChangeToSink(STREAM_CHANGE_TYPE_ADD, curNode_->GetSessionId(),
-            ConvertHpaeToRendererState(curNode_->GetState()), curNode_->GetAppUid());
+            ConvertHpaeToRendererState(curNode_->GetState()));
     };
     SendRequest(request, __func__, true);
     if (!IsInit()) {
@@ -572,7 +575,8 @@ int32_t HpaeOffloadRendererManager::Init(bool isReload)
 
 int32_t HpaeOffloadRendererManager::InitSinkInner(bool isReload)
 {
-    AUDIO_INFO_LOG("init");
+    AUDIO_INFO_LOG("init devicename:%{public}s,channel:%{public}u,rate:%{public}u",
+        GetEncryptStr(sinkInfo_.deviceName).c_str(), sinkInfo_.channels, sinkInfo_.samplingRate);
     HpaeNodeInfo nodeInfo;
     int32_t checkRet = CheckFramelen(sinkInfo_);
     if (checkRet != SUCCESS) {
@@ -889,6 +893,13 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t 
     curNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 
+void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
+{
+    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnNotifyHdiData curNode_ is null");
+    curNode_->NotifyOffloadHdiPos(hdiPos);
+}
+
 OffloadCallbackData HpaeOffloadRendererManager::GetOffloadCallbackData() noexcept
 {
     OffloadCallbackData data;
@@ -896,13 +907,6 @@ OffloadCallbackData HpaeOffloadRendererManager::GetOffloadCallbackData() noexcep
         data = sinkOutputNode_->GetOffloadCallbackData();
     }
     return data;
-}
-
-void HpaeOffloadRendererManager::OnNotifyHdiData(const std::pair<uint64_t, TimePoint> &hdiPos)
-{
-    CHECK_AND_RETURN_LOG(curNode_ != nullptr,
-        "HpaeOffloadRendererManager::OnNotifyHdiData curNode_ is null");
-    curNode_->NotifyOffloadHdiPos(hdiPos);
 }
 
 void HpaeOffloadRendererManager::OnNotifyQueue()
@@ -966,20 +970,20 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
     return SUCCESS;
 }
 
-bool HpaeOffloadRendererManager::IsBypassSpatializationForStereo()
+void HpaeOffloadRendererManager::TriggerAppsUidUpdate(uint32_t sessionId)
 {
-    bool bypass = true;
-    for (auto it = sinkInputNodeMap_.begin(); it != sinkInputNodeMap_.end(); ++it) {
-        HpaeProcessorType sceneType = it->second->GetSceneType();
-        AudioChannel channels = it->second->GetNodeInfo().channels;
-        AudioEncodingType encoding = it->second->GetNodeInfo().encoding;
-        CHECK_AND_CONTINUE(it->second->GetState() == HPAE_SESSION_RUNNING &&
-            (sceneType == HPAE_SCENE_MUSIC || sceneType == HPAE_SCENE_MOVIE || sceneType == HPAE_SCENE_SPEECH) &&
-            (channels > STEREO || encoding == ENCODING_AUDIOVIVID));
-        bypass = false;
-        break;
-    }
-    return bypass;
+    auto request = [this, sessionId]() {
+        AUDIO_INFO_LOG("deviceClass: %{public}s", sinkInfo_.deviceClass.c_str());
+        CHECK_AND_RETURN(sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS);
+        appsUid_.clear();
+        if (curNode_ != nullptr &&
+            (curNode_->GetState() == HPAE_SESSION_RUNNING ||
+            curNode_->GetSessionId() == sessionId)) {
+            appsUid_.emplace_back(curNode_->GetAppUid());
+        }
+        sinkOutputNode_->UpdateAppsUid(appsUid_);
+    };
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

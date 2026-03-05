@@ -14,6 +14,7 @@
  */
 
 #include "renderer_in_server_unit_test.h"
+#include "parameter.h"
 
 using namespace testing::ext;
 
@@ -245,6 +246,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerConfigServerBuffer_002, TestS
         testStreamInfo.customSampleRate / AUDIO_US_PER_S);
     EXPECT_EQ(SUCCESS, ret);
 }
+
 
 /**
  * @tc.name  : Test InitBufferStatus API
@@ -932,6 +934,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_007, TestSize.Level
     EXPECT_EQ(SUCCESS, ret);
 }
 
+
 /**
  * @tc.name  : Test ResolveBuffer API
  * @tc.type  : FUNC
@@ -1195,6 +1198,29 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerStart_009, TestSize.Level1)
     int32_t ret = rendererInServer->Init();
     rendererInServer->standByEnable_ = true;
     rendererInServer->OnStatusUpdate(OPERATION_PAUSED);
+
+    ret = rendererInServer->Start();
+    EXPECT_NE(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test Start API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerStart_010
+ * @tc.desc  : Test Start and OnStatusUpdate in OPERATION_PAUSED when standByEnable_ true with managerType is
+ * AUDIO_VIVID_3DA_DIRECT_PLAYBACK.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerStart_010, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_SPEAKER, AUDIO_FLAG_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    rendererInServer->standByEnable_ = false;
+    rendererInServer->managerType_ = AUDIO_VIVID_3DA_DIRECT_PLAYBACK;
 
     ret = rendererInServer->Start();
     EXPECT_NE(SUCCESS, ret);
@@ -3408,6 +3434,167 @@ HWTEST_F(RendererInServerUnitTest, SetSourceDuration_001, TestSize.Level1)
 
     int32_t ret = rendererInServer->SetSourceDuration(duration);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CalculateCacheCount_001
+ * @tc.desc  : Test CalculateCacheCount with normal input
+ */
+HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t cacheSizeInFrame = 20;
+    uint32_t cacheCount = 0;
+    ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GT(cacheCount, 0);
+    EXPECT_LE(cacheCount, 6);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CalculateCacheCount_002
+ * @tc.desc  : Test CalculateCacheCount when cacheSizeInFrame > spanSizeInFrame_ * 6
+ */
+HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t cacheSizeInFrame = 1000;
+    uint32_t cacheCount = 0;
+    ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(cacheCount, 6);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CalculateCacheCount_003
+ * @tc.desc  : Test CalculateCacheCount when buffer not configured
+ */
+HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    uint32_t cacheSizeInFrame = 20;
+    uint32_t cacheCount = 0;
+    int32_t ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CalculateCacheCount_004
+ * @tc.desc  : Test CalculateCacheCount when spanSizeInFrame is 0
+ */
+HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_004, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    rendererInServer->spanSizeInFrame_ = 0;
+    rendererInServer->isBufferConfiged_ = true;
+
+    uint32_t cacheSizeInFrame = 20;
+    uint32_t cacheCount = 0;
+    ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CalculateCacheCount_005
+ * @tc.desc  : Test CalculateCacheCount with normal input
+ */
+HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_005, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t cacheSizeInFrame = 20;
+    uint32_t cacheCount = 0;
+    ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GT(cacheCount, 0);
+    EXPECT_LE(cacheCount, 5);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: CalculateCacheCount_006
+ * @tc.desc  : Test CalculateCacheCount when cacheSizeInFrame > spanSizeInFrame_ * 5
+ */
+HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_006, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_USAGE_NORMAL);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    uint32_t cacheSizeInFrame = 1000;
+    uint32_t cacheCount = 0;
+    ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(cacheCount, 6);
+    cacheCount = 0;
+    rendererInServer->isBufferConfiged_ = false;
+    ret = rendererInServer->CalculateCacheCount(cacheSizeInFrame, cacheCount);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    EXPECT_EQ(cacheCount, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

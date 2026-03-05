@@ -72,10 +72,11 @@ public:
         isFinishStopPipeline_ = true;
         stopPipelineResult_ = result;
     }
-    void OnGetPipelineState(AudioSuitePipelineState state) override
+    void OnGetPipelineState(AudioSuitePipelineState state, int32_t result) override
     {
         isFinishGetPipelineState_ = true;
         getPipelineState_ = state;
+        getPipelineResult_ = result;
     }
     void OnCreateNode(int32_t result, uint32_t nodeId) override
     {
@@ -96,7 +97,8 @@ public:
     void OnGetNodeBypass(int32_t result, bool bypassStatus) override
     {
         isFinishGetNodeBypassStatus_ = true;
-        getNodeBypassResult_ = bypassStatus;
+        getNodeBypassResult_ = result;
+        getNodeBypassState_ = bypassStatus;
     }
     void OnSetAudioFormat(int32_t result) override
     {
@@ -151,6 +153,7 @@ private:
     int32_t stopPipelineResult_ = 0;
     bool isFinishGetPipelineState_ = false;
     AudioSuitePipelineState getPipelineState_ = PIPELINE_STOPPED;
+    int32_t getPipelineResult_ = 0;
     bool isFinishCreateNode_ = false;
     int32_t engineCreateNodeResult_ = 0;
     uint32_t engineCreateNodeId_ = INVALID_NODE_ID;
@@ -159,7 +162,8 @@ private:
     bool isFinishBypassEffectNode_ = false;
     int32_t bypassEffectNodeResult_ = 0;
     bool isFinishGetNodeBypassStatus_ = false;
-    bool getNodeBypassResult_ = false;
+    bool getNodeBypassState_ = false;
+    int32_t getNodeBypassResult_ = 0;
     bool isFinishSetFormat_ = false;
     int32_t setFormatResult_ = 0;
     bool isFinishSetWriteData_ = false;
@@ -196,7 +200,7 @@ public:
     {
     }
     virtual ~AudioNodeTestImpl() = default;
-    int32_t DoProcess() override
+    int32_t DoProcess(uint32_t needDataLength) override
     {
         return 0;
     }
@@ -236,6 +240,16 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, createPipelineTest, TestSize.Level0)
     EXPECT_EQ(engineManger.IsInit(), true);
 
     int32_t result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_REALTIME_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_EDIT_MODE);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = engineManger.CreatePipeline(PIPELINE_REALTIME_MODE);
+    EXPECT_EQ(result, SUCCESS);
     for (size_t i = 1;i < engineManger.engineCfg_.maxPipelineNum_ + 3; ++i)
     {
         engineManger.pipelineMap_[i]=std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
@@ -304,11 +318,16 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getPipelineTest, TestSize.Level0)
     AudioSuiteEngine engineManger(callback);
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
-    
-    engineManger.pipelineMap_[1] = nullptr;
-    int32_t result = engineManger.GetPipelineState(1);
-    result = engineManger.GetPipelineState(2);
-
+    AudioSuiteManager manager;
+    EXPECT_EQ(manager.Init(), SUCCESS);
+ 
+    AudioSuitePipelineState state;
+    int32_t result = manager.GetPipelineState(1, state);
+    EXPECT_EQ(result, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+ 
+    result = manager.GetPipelineState(2, state);
+    EXPECT_EQ(result, ERR_AUDIO_SUITE_PIPELINE_NOT_EXIST);
+ 
     engineManger.pipelineMap_[3] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.GetPipelineState(3);
     EXPECT_EQ(result, SUCCESS);
@@ -370,13 +389,20 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, getNodeEnableStatusTest, TestSize.Leve
 {
     AudioSuiteManagerCallbackTestImpl callback;
     AudioSuiteEngine engineManger(callback);
+    AudioSuiteManager manager;
+    EXPECT_EQ(manager.Init(), SUCCESS);
     engineManger.Init();
     EXPECT_EQ(engineManger.IsInit(), true);
     
+    bool bypass;
     engineManger.nodeMap_[1] = 3;
-    int32_t result = engineManger.GetNodeBypassStatus(1);
-    result = engineManger.GetNodeBypassStatus(2);
-
+ 
+    int32_t result = manager.GetNodeBypassStatus(1, bypass);
+    EXPECT_EQ(result, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+ 
+    result = manager.GetNodeBypassStatus(2, bypass);
+    EXPECT_EQ(result, ERR_AUDIO_SUITE_NODE_NOT_EXIST);
+ 
     engineManger.nodeMap_[5] = 6;
     engineManger.pipelineMap_[6] = std::make_shared<AudioSuitePipeline>(AudioSuite::PIPELINE_EDIT_MODE);
     result = engineManger.GetNodeBypassStatus(5);

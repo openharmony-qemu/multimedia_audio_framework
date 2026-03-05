@@ -108,6 +108,7 @@ void NapiAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(napi_env env, napi_v
         static_cast<AudioVolumeKeyEventJsCallback*>(event),
         [](AudioVolumeKeyEventJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;
@@ -334,6 +335,7 @@ void NapiAudioVolumeKeyEventEx::SafeJsCallbackVolumeEventWork(napi_env env, napi
         static_cast<AudioVolumeKeyEventJsCallback*>(event),
         [](AudioVolumeKeyEventJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

@@ -23,7 +23,6 @@
 #include "audio_manager_util.h"
 #include "audio_policy_manager.h"
 #include "audio_utils.h"
-#include "i_audio_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -180,12 +179,15 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_NAVIGATION:
             break;
         case STREAM_ULTRASONIC:
+#ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:
-        case STREAM_EMERGENCY:{
-            bool ret = PermissionUtil::VerifySelfPermission();
-            CHECK_AND_RETURN_RET_LOG(ret, false, "volumeType=%{public}d. No system permission", volumeType);
-            break;
-        }
+        case STREAM_EMERGENCY:
+#endif
+            {
+                bool ret = PermissionUtil::VerifySelfPermission();
+                CHECK_AND_RETURN_RET_LOG(ret, false, "volumeType=%{public}d. No system permission", volumeType);
+                break;
+            }
         case STREAM_ALL:
         default:
             AUDIO_ERR_LOG("IsStreamActive: volumeType=%{public}d not supported", volumeType);
@@ -220,12 +222,15 @@ bool AudioStreamManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) co
         case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_VOICE_CALL_ASSISTANT:
         case STREAM_USAGE_ULTRASONIC:
+#ifdef MULTI_ALARM_LEVEL
         case STREAM_USAGE_ANNOUNCEMENT:
-        case STREAM_USAGE_EMERGENCY:{
-            bool ret = PermissionUtil::VerifySelfPermission();
-            CHECK_AND_RETURN_RET_LOG(ret, false, "streamUsage=%{public}d. No system permission", streamUsage);
-            break;
-        }
+        case STREAM_USAGE_EMERGENCY:
+#endif
+            {
+                bool ret = PermissionUtil::VerifySelfPermission();
+                CHECK_AND_RETURN_RET_LOG(ret, false, "streamUsage=%{public}d. No system permission", streamUsage);
+                break;
+            }
         default:
             AUDIO_ERR_LOG("IsStreamActiveByStreamUsage: streamUsage=%{public}d not supported", streamUsage);
             return false;

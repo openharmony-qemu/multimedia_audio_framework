@@ -19,5 +19,5 @@
 #include "audio_log.h"
 
 #undef LOG_DOMAIN
-#define LOG_DOMAIN 0xD002B88
+#define LOG_DOMAIN 0xD002B8C
 #endif // OHOS_AUDIO_SUITE_LOG_H

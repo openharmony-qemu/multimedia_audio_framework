@@ -66,8 +66,8 @@ public:
     MOCK_METHOD(int32_t, GetServerKeepRunning, (bool &keepRunning), (override));
 
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
-    MOCK_METHOD(int32_t, GetStaticBufferInfo, (StaticBufferInfo &staticBufferInfo), (override));
     MOCK_METHOD(int32_t, SetStaticRenderRate, (uint32_t renderRate), (override));
+    MOCK_METHOD(int32_t, ResetStaticPlayPosition, (), (override));
 };
 
 class AudioProcessInClientUnitTest : public testing::Test {
@@ -76,6 +76,12 @@ public:
     static void TearDownTestCase(void);
     void SetUp();
     void TearDown();
+};
+
+class TestRemoteDiedCallback : public RemoteDiedCallback {
+public:
+    virtual ~TestRemoteDiedCallback() = default;
+    void OnAudioPolicyServiceDied() override {}
 };
 
 constexpr int32_t DEFAULT_STREAM_ID = 10;
@@ -2520,6 +2526,30 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_GetAudioTime_002,
     EXPECT_EQ(nanoSec, 1);
 
     delete ptrBufferInfo;
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_RemoteDied_001
+ * @tc.desc  : Test AudioProcessInClientInner::RegisterRemoteDiedCallback
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_RemoteDied_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    ptrAudioProcessInClientInner->ipcProxy_ = nullptr;
+    std::shared_ptr<TestRemoteDiedCallback> callback = std::make_shared<TestRemoteDiedCallback>();
+    int32_t ret = ptrAudioProcessInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
+    ret = ptrAudioProcessInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
 /**

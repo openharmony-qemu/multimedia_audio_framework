@@ -98,7 +98,7 @@ struct BasicBufferInfo {
     std::atomic<uint64_t> timeStamp;
 
     std::atomic<float> streamVolume;
-     
+
     std::atomic<uint32_t> beginDurationMs;
     std::atomic<uint32_t> durationMs;
     std::atomic<float> duckFactor;
@@ -113,11 +113,15 @@ struct BasicBufferInfo {
     RestoreInfo restoreInfo;
 
     // only for static renderer
-    std::atomic<bool> isStatic_;
-    std::atomic<int64_t> clientLastProcessTime_;
+    std::atomic<bool> isStatic;
+    std::atomic<int64_t> clientLastProcessTime;
+    std::atomic<bool> isFirstFrame;
 
     std::atomic<uint64_t> bufferEndCallbackSendTimes;
     std::atomic<bool> needSendLoopEndCallback;
+
+    std::atomic<size_t> curStaticDataPos;
+    std::atomic<int64_t> currentLoopTimes;
 };
 static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
 static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
@@ -168,7 +172,6 @@ public:
     static std::shared_ptr<OHAudioBufferBase> CreateFromRemote(uint32_t totalSizeInFrame,
         uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
 
-    // idl
     bool Marshalling(Parcel &parcel) const override;
     static OHAudioBufferBase *Unmarshalling(Parcel &parcel);
 
@@ -262,13 +265,16 @@ public:
     void DecreaseBufferEndCallbackSendTimes();
     void ResetBufferEndCallbackSendTimes();
     void SetIsNeedSendLoopEndCallback(bool value);
+    void SetIsFirstFrame(bool value);
+    void SetStaticPlayPosition(int64_t curLoopTimes, size_t curStaticDataPos);
+    void GetStaticPlayPosition(int64_t &curLoopTimes, size_t &curStaticDataPos);
 
     bool IsNeedSendBufferEndCallback();
     bool IsNeedSendLoopEndCallback();
+    bool IsFirstFrame();
 
     void SetStaticMode(bool state);
     bool GetStaticMode();
-    std::shared_ptr<AudioSharedMemory> GetSharedMem();
 
     bool CheckFrozenAndSetLastProcessTime(BufferPosition bufferPosition);
 
@@ -304,11 +310,11 @@ private:
     AudioMode audioMode_;
 
      // for StatusInfo buffer
-    mutable std::shared_ptr<AudioSharedMemory> statusInfoMem_ = nullptr;
+    std::shared_ptr<AudioSharedMemory> statusInfoMem_ = nullptr;
     BasicBufferInfo *basicBufferInfo_ = nullptr;
 
     // for audio data buffer
-    mutable std::shared_ptr<AudioSharedMemory> dataMem_ = nullptr;
+    std::shared_ptr<AudioSharedMemory> dataMem_ = nullptr;
     uint8_t *dataBase_ = nullptr;
     volatile uint32_t *syncReadFrame_ = nullptr;
     volatile uint32_t *syncWriteFrame_ = nullptr;
@@ -427,6 +433,7 @@ private:
 
     SpanInfo *spanInfoList_ = nullptr;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // OH_AUDIO_BUFFER_H

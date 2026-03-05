@@ -110,6 +110,7 @@ struct PaPropInfo {
     std::string moduleName_ = STR_INITED;
     std::string fixedLatency_ = STR_INITED;
     std::string renderInIdleState_ = STR_INITED;
+    std::string busAddress_ = STR_INITED;
 };
 
 class PipeStreamPropInfo;
@@ -147,6 +148,9 @@ public:
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
     uint32_t suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
     bool supportEncodingEac3_ = false;
+    bool supportMultSupMode_ = false;
+    bool allUsbDeviceDisable_ = false;
+    std::set<std::pair<int32_t, int32_t>> disableUsbDeviceSet_ {};
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};
@@ -164,9 +168,11 @@ public:
     void SelfCheck();
 
     std::string name_ = STR_INITED;
+    bool preload_ = false;
     DeviceType type_ = DEVICE_TYPE_NONE;
     AudioPin pin_ = AUDIO_PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;
+    std::string address_ = STR_INITED;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::string> supportPipes_ {};
@@ -220,7 +226,7 @@ public:
 
     std::string GetVersion();
     std::shared_ptr<AdapterDeviceInfo> GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
-        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0);
+        const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0, std::string macAddress = "");
 
     void UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
         const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps);

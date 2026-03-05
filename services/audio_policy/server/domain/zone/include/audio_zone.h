@@ -104,7 +104,7 @@ public:
 
     bool CheckDeviceInZone(AudioDeviceDescriptor device);
 
-    bool CheckExistUidInZone();
+    bool HasVolumeControllableDeviceInZone();
 
 private:
     int32_t zoneId_ = -1;
@@ -117,6 +117,7 @@ private:
     pid_t volumeProxyClientPid_ = 0;
     pid_t zoneClientPid_ = 0;
     bool isVolumeProxyEnabled_ = false;
+    AudioZoneContext context_;
 
     int32_t SetDeviceDescriptorState(const std::shared_ptr<AudioDeviceDescriptor> device, const bool enable);
     void SendZoneChangeEvent(AudioZoneChangeReason reason);

@@ -73,6 +73,7 @@ void TaiheAudioSessionDeviceCallback::SafeJsCallbackAudioSessionDeviceWork(Audio
         [](AudioSessionDeviceJsCallback *ptr) {
             if (ptr != nullptr) {
                 delete ptr;
+                ptr = nullptr;
             }
     });
     std::string request = event->callbackName;

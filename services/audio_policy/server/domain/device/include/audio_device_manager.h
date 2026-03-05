@@ -118,6 +118,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetExistedDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
     AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    bool IsDeviceAvailable(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
 private:
     AudioDeviceManager();
@@ -182,6 +183,9 @@ private:
     bool IsDescMatchedInVector(const shared_ptr<AudioDeviceDescriptor> &devDesc, list<DevicePrivacyInfo> &deviceList);
 
     void RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc);
+    void UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc);
+    bool TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
 
     list<DevicePrivacyInfo> privacyDeviceList_;
     list<DevicePrivacyInfo> publicDeviceList_;

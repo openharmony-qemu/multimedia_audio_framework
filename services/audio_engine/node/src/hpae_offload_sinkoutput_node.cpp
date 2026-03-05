@@ -310,6 +310,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
+
     return SUCCESS;
 }
 
@@ -454,6 +455,10 @@ void HpaeOffloadSinkOutputNode::SetBufferSize()
             OFFLOAD_HDI_CACHE_BACKGROUND_IN_MS : OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS;
     }
     needUnLock_ = bufferSize > OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS;
+    // Hold RunningLock when buffer is small and state is running to prevent stuttering from slow wake-up
+    if (bufferSize <= OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS && state_ == STREAM_MANAGER_RUNNING) {
+        RunningLock(true);
+    }
     audioRendererSink_->SetBufferSize(bufferSize);
 }
 

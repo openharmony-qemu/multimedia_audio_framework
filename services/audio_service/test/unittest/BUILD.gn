@@ -17,6 +17,8 @@ import("../../../../config.gni")
 import("../../../../ressche_part.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_balance"
+audio_engine_module_output_path = "audio_framework/audio_framework_engine/audio_balance"
+audio_policy_module_output_path = "audio_framework/audio_framework_policy/audio_volume"
 audio_framework_root = "../../../.."
 
 config("module_private_config") {
@@ -34,7 +36,7 @@ config("module_private_config") {
 
 ohos_unittest("audio_balance_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_balance"
   cflags = [ "-fno-access-control" ]
 
   include_dirs = [
@@ -80,6 +82,9 @@ ohos_unittest("audio_balance_unit_test") {
     "../../../../services/audio_service:audio_process_service_static",
     "../../../../services/audio_service:audio_service",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../audio_service:audio_common",
   ]
 
@@ -149,6 +154,44 @@ ohos_unittest("none_mix_engine_unit_test") {
   ]
 }
 
+ohos_unittest("cabin_playback_engine_unit_test") {
+  module_out_path = audio_engine_module_output_path
+
+  install_enable = false
+
+  include_dirs = [
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../frameworks/native/hdiadapter_new/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+    "../../../../services/audio_engine/manager/include",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  sources = [ "cabin_playback_engine_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_common",
+    "../../../../services/audio_service:audio_process_service_static",
+  ]
+
+  external_deps = [
+    "init:libbegetutil",
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+}
+
 ohos_unittest("direct_playback_engine_unit_test") {
   module_out_path = module_output_path
 
@@ -210,6 +253,9 @@ ohos_unittest("audio_thread_task_unit_test") {
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
   ]
 
@@ -243,6 +289,9 @@ ohos_unittest("audio_ring_cache_unit_test") {
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
   ]
 
@@ -274,6 +323,9 @@ ohos_unittest("audio_stream_checker_unit_test") {
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
   ]
 
@@ -305,6 +357,9 @@ ohos_unittest("audio_stream_monitor_unit_test") {
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
   ]
 
@@ -341,6 +396,7 @@ ohos_unittest("audio_service_unit_test") {
   sources = [
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
+    "./client/audio_volume_client_manager_unit_test.cpp",
     "./client/audio_wakeup_manager_unit_test.cpp",
     "./client/audio_workgroup_manager_unit_test.cpp",
     "./client/audio_session_manager_unit_test.cpp",
@@ -367,6 +423,9 @@ ohos_unittest("audio_service_unit_test") {
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_policy:audio_foundation",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service_static",
@@ -378,6 +437,13 @@ ohos_unittest("audio_service_unit_test") {
   ]
 
   cflags_cc = [ "-std=c++20" ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -423,7 +489,7 @@ ohos_unittest("audio_service_unit_test") {
 
 ohos_unittest("pa_renderer_stream_impl_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_engine_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
@@ -439,6 +505,9 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
   ]
@@ -468,7 +537,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
 
 ohos_unittest("hpae_renderer_stream_impl_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_engine_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
@@ -485,6 +554,9 @@ ohos_unittest("hpae_renderer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
     "../../../../frameworks/native/audioschedule:audio_schedule",
@@ -519,7 +591,7 @@ ohos_unittest("hpae_renderer_stream_impl_unit_test") {
 
 ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_engine_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../interfaces/inner_api/native/audiomanager/include",
@@ -535,6 +607,9 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
   ]
@@ -602,7 +677,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
 
 ohos_unittest("volume_tools_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_policy_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../interfaces/inner_api/native/audiocommon/include",
@@ -616,6 +691,9 @@ ohos_unittest("volume_tools_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service",
     "../../../../frameworks/native/audioschedule:audio_schedule",
@@ -632,7 +710,7 @@ ohos_unittest("volume_tools_unit_test") {
 }
 
 ohos_unittest("audio_process_in_server_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_route_lowLatency/audio_process_in_server"
 
   install_enable = false
 
@@ -661,6 +739,9 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service_static",
     "../../../../services/audio_service:audio_service",
@@ -720,6 +801,9 @@ ohos_unittest("capturer_in_client_unit_test") {
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
@@ -755,7 +839,7 @@ ohos_unittest("capturer_in_client_unit_test") {
 
 ohos_unittest("hpae_capturer_stream_impl_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_engine_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../frameworks/native/audiocapturer:audio_capturer",
@@ -772,6 +856,9 @@ ohos_unittest("hpae_capturer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
   ]
@@ -803,7 +890,7 @@ ohos_unittest("hpae_capturer_stream_impl_unit_test") {
 
 ohos_unittest("pa_capturer_stream_impl_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_engine_module_output_path
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
     "../../../../frameworks/native/audiocapturer:audio_capturer",
@@ -820,6 +907,9 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../audio_service:audio_common",
     "../../../audio_service:audio_process_service_static",
   ]
@@ -849,7 +939,7 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
 
 ohos_unittest("audio_process_in_client_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_route_lowLatency/audio_process_in_client"
 
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
@@ -881,6 +971,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/hw_decoding_adapter_manager.cpp",
     "../../../../services/audio_service/server/src/hw_decoding_renderer_impl.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
+     "../../../../services/audio_service/server/src/cabin_playback_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/policy_handler.cpp",
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
@@ -911,6 +1002,9 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
@@ -918,6 +1012,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
   ]
 
   external_deps = [
+    "ability_runtime:app_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libprivacy_sdk",
@@ -978,11 +1073,14 @@ ohos_unittest("audio_process_in_client_unit_test") {
         [ "../../../../frameworks/native/playbackcapturer:playback_capturer" ]
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
 }
 
 ohos_unittest("audio_process_in_client_second_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_route_lowLatency/audio_process_in_client"
 
   include_dirs = [
     "../../../../frameworks/native/audiocapturer/include",
@@ -1020,6 +1118,7 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "../../../../services/audio_service/server/src/i_stream_manager.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
+    "../../../../services/audio_service/server/src/cabin_playback_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
     "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
@@ -1052,12 +1151,15 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../../services/audio_engine:audio_engine_manager",
+    "../../../../services/audio_engine:hpae_engine_manager",
     "../../../../services/audio_engine:audio_engine_plugins",
     "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
@@ -1068,6 +1170,7 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
   ]
 
   external_deps = [
+    "ability_runtime:app_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libprivacy_sdk",
@@ -1122,6 +1225,9 @@ ohos_unittest("audio_process_in_client_second_unit_test") {
   if (audio_framework_feature_offline_effect) {
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
   }
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
+  }
 }
 
 ohos_unittest("capturer_in_server_unit_test") {
@@ -1164,6 +1270,7 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/i_stream_manager.cpp",
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
+    "../../../../services/audio_service/server/src/cabin_playback_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/policy_handler.cpp",
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
@@ -1192,12 +1299,15 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../../services/audio_engine:audio_engine_manager",
+    "../../../../services/audio_engine:hpae_engine_manager",
     "../../../../services/audio_engine:audio_engine_plugins",
     "../../../../services/audio_engine:audio_engine_utils",
     "../../../../services/audio_policy:audio_policy_client",
     "../../../../services/audio_policy:audio_policy_service",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
     "../../../../services/audio_service:audio_process_service",
     "../../../../services/audio_service:audio_service",
@@ -1205,6 +1315,7 @@ ohos_unittest("capturer_in_server_unit_test") {
   ]
 
   external_deps = [
+    "ability_runtime:app_manager",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libprivacy_sdk",
@@ -1224,6 +1335,8 @@ ohos_unittest("capturer_in_server_unit_test") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
   ]
 
   defines = []
@@ -1268,6 +1381,9 @@ ohos_unittest("capturer_in_server_unit_test") {
   }
   if (audio_framework_feature_offline_effect) {
     defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+  if (audio_framework_feature_multi_alarm_level) {
+    defines += [ "MULTI_ALARM_LEVEL" ]
   }
 }
 
@@ -1418,7 +1534,12 @@ ohos_unittest("audio_spatial_channel_converter_unit_test") {
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
 
-  deps = [ "../../../audio_service:audio_client" ]
+  deps = [
+    "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
+  ]
 
   external_deps = [
     "c_utils:utils",
@@ -1461,7 +1582,7 @@ ohos_unittest("policy_handler_unit_test") {
 
 ohos_unittest("audio_engine_manager_unit_test") {
   testonly = true
-  module_out_path = module_output_path
+  module_out_path = audio_engine_module_output_path
 
   include_dirs = [
     "../../../../services/audio_service/server/include",
@@ -1561,6 +1682,9 @@ ohos_unittest("audio_resource_service_unit_test") {
     "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../audio_service:audio_engine_manager",
+    "../../../audio_service:audio_policy_manager",
+    "../../../audio_service:audio_stream_client",
     "../../../../frameworks/native/audioschedule:audio_schedule",
     ]
   external_deps = [
@@ -1597,6 +1721,9 @@ ohos_unittest("audio_tool_calculate_unit_test") {
   deps = [
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_engine_manager",
+    "../../../../services/audio_service:audio_policy_manager",
+    "../../../../services/audio_service:audio_stream_client",
     "../../../../services/audio_service:audio_common",
     ]
 
@@ -1604,4 +1731,34 @@ ohos_unittest("audio_tool_calculate_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
   ]
+}
+
+ohos_unittest("audio_highpass_filter_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "../../server/include",
+    "../../common/include",
+    "../../../../frameworks/native/audioschedule/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+  ]
+
+  sources = [ "audio_highpass_filter_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+  cflags = [ "-fno-access-control" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "eventhandler:libeventhandler",
+  ]
+
+  defines = [ "TEST_COVERAGE=1" ]
 }

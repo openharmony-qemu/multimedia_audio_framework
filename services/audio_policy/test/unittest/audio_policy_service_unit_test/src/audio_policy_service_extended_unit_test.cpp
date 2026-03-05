@@ -258,19 +258,6 @@ static const std::vector<AudioRingerMode>audioRingerModes = {
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: SetDefaultAdapterEnable
-* @tc.desc  : Test SetDefaultAdapterEnable.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, SetDefaultAdapterEnable, TestSize.Level1)
-{
-    bool isEnable = false;
-    EXPECT_NO_THROW(
-        AudioPolicyService::GetAudioPolicyService().SetDefaultAdapterEnable(isEnable);
-    );
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: UnregisterBluetoothListener
 * @tc.desc  : Test UnregisterBluetoothListener.
 */

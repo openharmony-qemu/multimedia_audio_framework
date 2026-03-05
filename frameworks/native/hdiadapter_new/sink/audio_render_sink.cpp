@@ -40,7 +40,7 @@ const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
 }
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
-    : renderId_(renderId), halName_(halName)
+    : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP)
 {
     if (halName_ == HDI_ID_INFO_DIRECT || halName_ == HDI_ID_INFO_VOIP) {
         sinkType_ = ADAPTER_TYPE_DIRECT;
@@ -127,7 +127,12 @@ int32_t AudioRenderSink::Start(void)
     }
     audioXCollie.CancelXCollieTimer();
 #endif
-    dumpFileName_ = halName_ + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
+
+    std::string dumpFilePrefix = halName_;
+#ifdef MULTI_BUS_ENABLE
+    dumpFilePrefix = attr_.address;
+#endif
+    dumpFileName_ = dumpFilePrefix + "_sink_" + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" +
         std::to_string(attr_.channel) + "_" + std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
     logUtilsTag_ = "AudioSink" + halName_;
@@ -146,7 +151,6 @@ int32_t AudioRenderSink::Start(void)
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     started_ = true;
-    isDataLinkConnected_ = false;
     return SUCCESS;
 }
 
@@ -294,14 +298,15 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
 
 void AudioRenderSink::CheckJank()
 {
-    int64_t stamp = paStatus_ == 1 ? ClockTime::GetCurNano() : INIT_LASTWRITTEN_TIME;
+    int64_t stamp = paStatus_ == 1 && volumeDataCount_ > 0 ? ClockTime::GetCurNano() : INIT_LASTWRITTEN_TIME;
     Trace trace("AudioRenderSink::CheckJank:" + std::to_string(stamp));
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, stamp);
 }
 
-int64_t AudioRenderSink::GetVolumeDataCount()
+int32_t AudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value)
@@ -349,6 +354,12 @@ int32_t AudioRenderSink::SetVolume(float left, float right)
     }
 
     return ret;
+}
+
+int32_t AudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("AudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
 }
 
 int32_t AudioRenderSink::GetVolume(float &left, float &right)
@@ -430,8 +441,34 @@ int32_t AudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
 {
     std::lock_guard<std::mutex> lock(switchDeviceMutex_);
     AUDIO_INFO_LOG("set %{public}s mute %{public}d", halName_.c_str(), mute);
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
+    return needSetHdiVolume_ ? SetSinkMuteForSwitchDeviceWithHdiVolume(mute)
+                             : SetSinkMuteForSwitchDeviceWithoutHdiVolume(mute);
+}
+
+int32_t AudioRenderSink::SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    bool applyVolume = false;
+    int32_t ret = HandleSwitchDeviceMuteState(mute, applyVolume);
+    CHECK_AND_RETURN_RET(ret == SUCCESS && applyVolume, ret);
+    if (mute) {
+        audioRender_->SetVolume(audioRender_, 0.0f);
+        return SUCCESS;
+    }
+    SetVolume(leftVolume_, rightVolume_);
+    return SUCCESS;
+}
+
+int32_t AudioRenderSink::SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute)
+{
+    bool applyVolume = false;
+    return HandleSwitchDeviceMuteState(mute, applyVolume);
+}
+
+int32_t AudioRenderSink::HandleSwitchDeviceMuteState(bool mute, bool &applyVolume)
+{
+    applyVolume = false;
     if (mute) {
         muteCount_++;
         if (switchDeviceMute_) {
@@ -439,22 +476,18 @@ int32_t AudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
             return SUCCESS;
         }
         switchDeviceMute_ = true;
-        if (halName_ == HDI_ID_INFO_VOIP) {
-            audioRender_->SetVolume(audioRender_, 0.0f);
-        }
-    } else {
-        muteCount_--;
-        if (muteCount_ > 0) {
-            AUDIO_WARNING_LOG("%{public}s not all unmuted", halName_.c_str());
-            return SUCCESS;
-        }
-        switchDeviceMute_ = false;
-        muteCount_ = 0;
-        if (halName_ == HDI_ID_INFO_VOIP) {
-            SetVolume(leftVolume_, rightVolume_);
-        }
+        applyVolume = true;
+        return SUCCESS;
     }
 
+    muteCount_--;
+    if (muteCount_ > 0) {
+        AUDIO_WARNING_LOG("%{public}s not all unmuted", halName_.c_str());
+        return SUCCESS;
+    }
+    switchDeviceMute_ = false;
+    muteCount_ = 0;
+    applyVolume = true;
     return SUCCESS;
 }
 
@@ -473,7 +506,8 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         return SUCCESS;
     }
 
-    if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
+    if (!scoExcludeFlag && (audioScene != currentAudioScene_ || currentScoExcludeFlag_)) {
+        forceSetRouteFlag_ = currentScoExcludeFlag_;
         struct AudioSceneDescriptor sceneDesc;
         InitSceneDesc(sceneDesc, audioScene);
 
@@ -481,6 +515,7 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFla
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
     }
+    currentScoExcludeFlag_ = scoExcludeFlag;
     bool isRingingToDefaultScene = false;
     bool isChangeScene = false;
     if (audioScene != currentAudioScene_) {
@@ -534,6 +569,10 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     if (currentActiveDevice_ == outputDevices[0] && outputDevices.size() ==
         static_cast<uint32_t>(currentDevicesSize_) && !forceSetRouteFlag_) {
         AUDIO_INFO_LOG("output device not change, device: %{public}d", outputDevices[0]);
+        return SUCCESS;
+    }
+    if (currentScoExcludeFlag_) {
+        AUDIO_INFO_LOG("currentScoExcludeFlag is true.");
         return SUCCESS;
     }
     forceSetRouteFlag_ = false;
@@ -818,6 +857,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
 
     param.sampleRate = attr_.sampleRate;
     param.channelCount = attr_.channel;
+    param.channelLayout = attr_.channelLayout;
     if (param.channelCount == MONO) {
         param.channelLayout = CH_LAYOUT_MONO;
     } else if (param.channelCount == STEREO) {
@@ -1197,20 +1237,6 @@ void AudioRenderSink::UpdateSinkState(bool started)
     callback_.OnRenderSinkStateChange(GetUniqueId(), started);
 }
 
-int32_t AudioRenderSink::UpdatePrimaryConnectionState(uint32_t operation)
-{
-    if (operation == DATA_LINK_CONNECTING) {
-        AUDIO_INFO_LOG("Primary sink is connecting");
-        isDataLinkConnected_ = false;
-    }
-    if (operation == DATA_LINK_CONNECTED) {
-        AUDIO_INFO_LOG("Primary sink is connected");
-        isDataLinkConnected_ = true;
-        dataConnectionCV_.notify_all();
-    }
-    return SUCCESS;
-}
-
 void AudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
@@ -1228,25 +1254,6 @@ void AudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceTy
     AUDIO_INFO_LOG("dm deviceType update, need update output port pin");
     int32_t ret = DoSetOutputRoute(outputDevices);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "DoSetOutputRoute fails");
-}
-
-void AudioRenderSink::WaitForDataLinkConnected()
-{
-    std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);
-    if (!isDataLinkConnected_ && (halName_ == "primary") && (sinkType_ == ADAPTER_TYPE_PRIMARY)) {
-        AUDIO_INFO_LOG("data-connection blocking starts");
-        bool stopWaiting = dataConnectionCV_.wait_for(
-            dataConnectionWaitLock, std::chrono::milliseconds(DATA_CONNECTION_TIMEOUT_IN_MS), [this] {
-                return isDataLinkConnected_;
-            });
-        if (stopWaiting) {
-            AUDIO_INFO_LOG("data-connection blocking ends");
-        } else {
-            AUDIO_WARNING_LOG("data-connection time out, start RenderFrame anyway.");
-        }
-        isDataLinkConnected_ = true;
-    }
-    dataConnectionWaitLock.unlock();
 }
 
 bool AudioRenderSink::IsInA2dpOffload()

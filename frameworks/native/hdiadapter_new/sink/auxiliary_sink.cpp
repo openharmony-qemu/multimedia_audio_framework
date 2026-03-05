@@ -307,13 +307,19 @@ void AuxiliarySink::DumpInfo(std::string &dumpString)
         std::to_string(attr_.format) + "]";
 }
 
-int64_t AuxiliarySink::GetVolumeDataCount()
+int32_t AuxiliarySink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
     return 0;
 }
 
 int32_t AuxiliarySink::SetVolume(float left, float right)
+{
+    AUDIO_WARNING_LOG("not supported");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t AuxiliarySink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
 {
     AUDIO_WARNING_LOG("not supported");
     return ERR_NOT_SUPPORTED;

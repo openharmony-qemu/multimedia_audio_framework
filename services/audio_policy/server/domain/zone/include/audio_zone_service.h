@@ -68,6 +68,7 @@ public:
     bool IsZoneDeviceVisible();
     int32_t FindAudioZoneByUid(int32_t uid);
     int32_t FindAudioZone(int32_t uid, StreamUsage usage);
+    virtual std::string FindAudioZoneNameByUid(int32_t uid);
 
     int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
     bool IsSystemVolumeProxyEnable(int32_t zoneId);
@@ -83,9 +84,9 @@ public:
     int32_t EnableAudioZoneInterruptReport(pid_t clientPid, int32_t zoneId,
         const std::string &deviceTag, bool enable);
 
-    int32_t ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
+    AudioInterruptResult ActivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy = false);
-    int32_t DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    AudioInterruptResult DeactivateAudioInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
@@ -102,8 +103,9 @@ public:
 
     void ReleaseAudioZoneByClientPid(pid_t clientPid);
     bool CheckDeviceInAudioZone(AudioDeviceDescriptor device);
-    bool CheckExistUidInAudioZone();
-
+    bool HasVolumeControllableDeviceInAudioZone();
+    void NotifyStreamSilentChange(uint32_t streamId);
+    int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     AudioScene GetAudioSceneFromAllZones();
 
 private:

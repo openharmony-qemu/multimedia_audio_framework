@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,6 @@
 #include "iremote_broker.h"
 #include "audio_policy_manager.h"
 #include "system_ability_definition.h"
-#include "audio_service_types.h"
 #include "capturer_in_client_inner.h"
 
 using namespace testing::ext;
@@ -36,9 +35,9 @@ const int32_t VALUE_TEN = 10;
 const int32_t VALUE_FIF = 15;
 const int32_t VALUE_INVALID = -1;
 const int32_t MAX_TIMES = 21;
-const size_t SHORT_SLEEP_TIME = 200000; // us 200ms
 const uint64_t TEST_POSITION = 20000;
 const uint64_t TEST_TIMESTAMP_NS = 20000;
+const size_t SHORT_SLEEP_TIME = 200000; // us 200ms
 
 enum {
     STATE_CHANGE_EVENT = 0,
@@ -105,19 +104,19 @@ public:
 
     virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return 0; }
 
-    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override { return 0; }
+    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)  override { return 0; }
 
-    virtual int32_t UpdatePosition() override { return 0; }
+    virtual int32_t UpdatePosition()  override { return 0; }
 
-    virtual int32_t GetAudioSessionID(uint32_t &sessionId) override { return 0; }
+    virtual int32_t GetAudioSessionID(uint32_t &sessionId)  override { return 0; }
 
     virtual int32_t Start() override { return 0; }
 
-    virtual int32_t Pause() override { return 0; }
+    virtual int32_t Pause()  override { return 0; }
 
-    virtual int32_t Stop() override { return 0; }
+    virtual int32_t Stop()  override { return 0; }
 
-    virtual int32_t Release(bool isSwitchStream) override { return 0; }
+    virtual int32_t Release(bool isSwitchStream)  override { return 0; }
 
     virtual int32_t Flush() override { return 0; }
 
@@ -127,9 +126,12 @@ public:
 
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
+    virtual int32_t SetInMainThreadState(bool isInMainThread) override { return 0; }
+
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
 
-    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override
+    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency,
+        int32_t base) override
     {
         return 0;
     }
@@ -168,10 +170,8 @@ public:
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override { return 0; } // renderer only
 
-    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override
-    {
-        return 0;
-    }
+    virtual int32_t UpdateSpatializationState(bool spatializationEnabled,
+        bool headTrackingEnabled) override { return 0; }
 
     virtual int32_t GetStreamManagerType() override { return 0; }
 
@@ -201,7 +201,7 @@ public:
 
     virtual int32_t SetSpeed(float speed) override { return 0; }
 
-    sptr<IRemoteObject> AsObject() override { return nullptr; }
+    virtual sptr<IRemoteObject> AsObject() override { return nullptr; }
 
     virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
@@ -210,7 +210,18 @@ public:
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) override { return SUCCESS; }
 
-    virtual int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override { return SUCCESS; }
+    virtual int32_t ResetStaticPlayPosition() override { return SUCCESS; }
+
+    virtual int32_t CalculateCacheCount(uint32_t cacheSizeSizeInFrame, uint32_t &cacheCount) override
+    {
+        return SUCCESS;
+    }
+};
+
+class TestRemoteDiedCallback : public RemoteDiedCallback {
+public:
+    virtual ~TestRemoteDiedCallback() = default;
+    void OnAudioPolicyServiceDied() override {}
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {
@@ -418,7 +429,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_001, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = NEW;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(capturerInClientInner->state_, PREPARED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -486,7 +497,7 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
     info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     capturerInClientInner->state_ = INVALID;
     int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
-    EXPECT_EQ(capturerInClientInner->state_, PREPARED);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1054,6 +1065,26 @@ HWTEST(CapturerInClientUnitTest, GetBufferDesc_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test CapturerInClient API
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInClient_RemoteDied_001
+ * @tc.desc  : Test CapturerInClientInner::RegisterRemoteDiedCallback
+ */
+HWTEST(CapturerInClientUnitTest, CapturerInClient_RemoteDied_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+
+    capturerInClientInner->ipcProxy_ = nullptr;
+    std::shared_ptr<TestRemoteDiedCallback> callback = std::make_shared<TestRemoteDiedCallback>();
+    int32_t ret = capturerInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
+    ret = capturerInClientInner->RegisterRemoteDiedCallback(callback);
+    ASSERT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
  * @tc.name  : Test GetBufQueueState API
  * @tc.type  : FUNC
  * @tc.number: GetBufQueueState_001
@@ -1512,6 +1543,29 @@ HWTEST(CapturerInClientUnitTest, RestoreAudioStream_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test CapturerInClient  API
+ * @tc.type  : FUNC
+ * @tc.number: SetSwitchInfoTimestamp_001
+ * @tc.desc  : Test CapturerInClient SetSwitchInfoTimestamp function
+ */
+HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
+{
+    // prepare object
+    std::shared_ptr<CapturerInClientInner> testCapturerInClientObj =
+        std::make_shared<CapturerInClientInner>(STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(testCapturerInClientObj != nullptr);
+
+    // start test
+    std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
+        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
+    };
+    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair, testLastFramePosAndTimePair);
+    Timestamp testTimestamp;
+    testCapturerInClientObj->GetAudioPosition(testTimestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_NE(testTimestamp.framePosition, TEST_POSITION);
+}
+
+/**
  * @tc.name  : Test PauseAudioStream API
  * @tc.type  : FUNC
  * @tc.number: PauseAudioStream_001
@@ -1718,29 +1772,6 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test CapturerInClient  API
- * @tc.type  : FUNC
- * @tc.number: SetSwitchInfoTimestamp_001
- * @tc.desc  : Test CapturerInClient SetSwitchInfoTimestamp function
- */
-HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
-{
-    // prepare object
-    std::shared_ptr<CapturerInClientInner> testCapturerInClientObj =
-        std::make_shared<CapturerInClientInner>(STREAM_DEFAULT, getpid());
-    Init(testCapturerInClientObj);
- 
-    // start test
-    std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
-        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
-    };
-    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair, testLastFramePosAndTimePair);
-    Timestamp testTimestamp;
-    testCapturerInClientObj->GetAudioPosition(testTimestamp, Timestamp::Timestampbase::MONOTONIC);
-    EXPECT_NE(testTimestamp.framePosition, TEST_POSITION);
-}
-
-/**
  * @tc.name  : Test GetFrameCount API
  * @tc.type  : FUNC
  * @tc.number: GetFrameCount_001
@@ -1752,8 +1783,8 @@ HWTEST(CapturerInClientUnitTest, GetFrameCount_001, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     Init(capturerInClientInner);
     uint32_t frameCount = -111;
-
     int32_t result = capturerInClientInner->GetFrameCount(frameCount);
+    EXPECT_EQ(result, 0);
 
     frameCount = 10;
     result = capturerInClientInner->GetFrameCount(frameCount);

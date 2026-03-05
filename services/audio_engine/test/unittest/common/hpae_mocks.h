@@ -48,7 +48,7 @@ public:
     MOCK_METHOD(int32_t, Flush, (), (override));
     MOCK_METHOD(int32_t, Reset, (), (override));
     MOCK_METHOD(int32_t, RenderFrame, (char &data, uint64_t len, uint64_t &writeLen), (override));
-    MOCK_METHOD(int64_t, GetVolumeDataCount, (), (override));
+    MOCK_METHOD(int32_t, GetVolumeDataCount, (int64_t &volumeData), (override));
 
     MOCK_METHOD(int32_t, SuspendRenderSink, (), (override));
     MOCK_METHOD(int32_t, RestoreRenderSink, (), (override));
@@ -59,6 +59,7 @@ public:
         (const AudioParamKey key, const std::string &condition), (override));
 
     MOCK_METHOD(int32_t, SetVolume, (float left, float right), (override));
+    MOCK_METHOD(int32_t, SetVolumeWithRamp, (float left, float right, uint32_t durationMs), (override));
     MOCK_METHOD(int32_t, GetVolume, (float &left, float &right), (override));
 
     MOCK_METHOD(int32_t, GetLatency, (uint32_t &latency), (override));
@@ -111,7 +112,6 @@ public:
 
     MOCK_METHOD(int32_t, SplitRenderFrame,
         (char &data, uint64_t len, uint64_t &writeLen, SplitStreamType splitStreamType), (override));
-    MOCK_METHOD(int32_t, UpdatePrimaryConnectionState, (uint32_t operation), (override));
     MOCK_METHOD(void, SetDmDeviceType, (uint16_t dmDeviceType, DeviceType deviceType), (override));
 
     MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));

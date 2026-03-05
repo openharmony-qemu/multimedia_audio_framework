@@ -47,6 +47,8 @@ idl_gen_interface("audio_policy_idl_callback") {
     "${audio_policy_idl_location}/IStandardClientTracker.idl",
     "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
     "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
+    "${audio_policy_idl_location}/IVADeviceController.idl",
+    "${audio_policy_idl_location}/IVAInputStream.idl",
   ]
 
   sources_cpp = [ "${audio_framework_root}/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp" ]
@@ -71,12 +73,11 @@ idl_gen_interface("audio_service_idl_interface") {
     "IStandardAudioService.idl",
   ]
   if (audio_framework_feature_offline_effect) {
-    sources += [ "IIpcOfflineStream.idl" ]
+    sources += [ "IIpcOfflineStream.idl"]
   }
   sources_callback = []
   sources_common = [ "AudioServiceTypes.idl" ]
 
-  # client_enable = true
   log_tag = "AudioServiceIdl"
   hitrace = "HITRACE_TAG_ZAUDIO"
 
@@ -90,8 +91,6 @@ idl_gen_interface("audio_policy_idl_interface") {
   sources = [
     "${audio_policy_idl_location}/IAudioPolicy.idl",
     "${audio_policy_idl_location}/IVADeviceBroker.idl",
-    "${audio_policy_idl_location}/IVADeviceController.idl",
-    "${audio_policy_idl_location}/IVAInputStream.idl",
     "${audio_policy_idl_location}/IVAStream.idl",
   ]
   sources_callback = []
@@ -163,14 +162,14 @@ ohos_shared_library("audio_framework_interface") {
   output_values += get_target_outputs(":audio_policy_idl_callback")
 
   sources = [
-    "${audio_framework_root}/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp",
-    "${audio_framework_root}/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
-    "${audio_framework_root}/services/audio_policy/server/domain/volume/src/audio_volume_group_info.cpp",
-    "${audio_framework_root}/services/audio_service/client/src/audio_filter.cpp",
-    "${audio_framework_root}/services/audio_service/client/src/microphone_descriptor.cpp",
     "${audio_framework_root}/services/audio_service/common/src/futex_tool.cpp",
-    "${audio_framework_root}/services/audio_service/common/src/oh_audio_buffer.cpp",
     "${audio_framework_root}/services/audio_service/common/src/oh_audio_buffer_base.cpp",
+    "${audio_framework_root}/services/audio_service/common/src/oh_audio_buffer.cpp",
+    "${audio_framework_root}/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
+    "${audio_framework_root}/services/audio_service/client/src/microphone_descriptor.cpp",
+    "${audio_framework_root}/services/audio_policy/server/domain/volume/src/audio_volume_group_info.cpp",
+    "${audio_framework_root}/frameworks/native/audiodefinitions/src/audio_stream_descriptor.cpp",
+    "${audio_framework_root}/services/audio_service/client/src/audio_filter.cpp",
   ]
   sources += filter_include(output_values, [ "*_proxy.cpp" ])
   sources += filter_include(output_values, [ "*stub.cpp" ])
@@ -186,8 +185,8 @@ ohos_shared_library("audio_framework_interface") {
 
   external_deps = [
     "c_utils:utils",
-    "hilog:libhilog",
     "hitrace:hitrace_meter",
+    "hilog:libhilog",
     "ipc:ipc_core",
     "ipc:ipc_single",
     "samgr:samgr_proxy",

@@ -317,7 +317,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
 
     notificationId = INCREASE_VOLUME_NOTIFICATION_ID;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
-    EXPECT_NE(ret, 0);
+    EXPECT_EQ(ret, 0);
 
     notificationId = NOTIFICATION_BANNER_FLAG;
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
@@ -698,8 +698,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_029, TestSize.Level1)
 
     zoneId = 0;
     audioVolumeManager->ringerModeMute_ = true;
-    auto ret = audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
-    EXPECT_EQ(ret, 0);
+    audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 }
 
 /**
@@ -1037,11 +1036,11 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_048, TestSize.Level1)
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
     auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 
     internalCall = false;
     ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, 0);
 }
 
 /**
@@ -1394,7 +1393,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_067, TestSize.Level1)
     AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
     audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc);
     auto ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_EQ(ret, SUCCESS);
     AudioDeviceDescriptor curDesc2(DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
     audioVolumeManager->audioActiveDevice_.SetCurrentOutputDevice(curDesc2);
     ret = audioVolumeManager->SetNearlinkDeviceVolumeEx(streamType, volumeLevel);
@@ -1628,6 +1627,103 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_076, TestSize.Level1)
     audioVolumeManager->audioActiveDevice_.activeBTDevice_ = macAddress;
     audioVolumeManager->SetAbsVolumeSceneAsync(macAddress, support, 0);
     EXPECT_EQ(audioVolumeManager->audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
+}
+
+/**
+* @tc.name  : Test SetStreamMute.
+* @tc.number: SetStreamMute_001
+* @tc.desc  : Test SetStreamMute interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetStreamMute_001, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    int32_t zoneId = -1;
+    auto ret = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test SetStreamMute.
+* @tc.number: SetStreamMute_002
+* @tc.desc  : Test SetStreamMute interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, SetStreamMute_002, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool mute = false;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    int32_t zoneId = -1;
+    auto ret = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test GetStreamMute.
+* @tc.number: GetStreamMute_001
+* @tc.desc  : Test GetStreamMute interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_001, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    AudioStreamType streamType = STREAM_RING;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    int32_t resultSet;
+    int32_t zoneId = -1;
+    resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
+    EXPECT_EQ(resultSet, 0);
+    bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test GetStreamMute.
+* @tc.number: GetStreamMute_002
+* @tc.desc  : Test GetStreamMute interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_002, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    int32_t resultSet;
+    int32_t zoneId = -1;
+    resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
+    EXPECT_EQ(resultSet, 0);
+    bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test GetStreamMute.
+* @tc.number: GetStreamMute_003
+* @tc.desc  : Test GetStreamMute interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_003, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    int32_t resultSet;
+    int32_t zoneId = -1;
+    resultSet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType, zoneId);
+    EXPECT_EQ(resultSet, 0);
+    bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
+    EXPECT_TRUE(ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

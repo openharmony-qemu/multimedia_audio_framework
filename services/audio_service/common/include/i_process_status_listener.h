@@ -28,6 +28,8 @@ public:
 
     virtual int32_t OnPause(IAudioProcessStream *processStream) = 0;
 
+    virtual int32_t OnStreamMute(IAudioProcessStream *processStream, bool mute) = 0;
+
     virtual ~IProcessStatusListener() = default;
 
     virtual void StopByRestore(const RestoreInfo &restoreInfo) = 0;

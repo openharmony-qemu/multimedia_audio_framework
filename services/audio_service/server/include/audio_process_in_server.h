@@ -31,6 +31,7 @@
 #include "format_converter.h"
 #include "audio_static_buffer_processor.h"
 #include "audio_static_buffer_provider.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,7 +54,16 @@ private:
     int64_t createTime_ = 0;
 };
 
-class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream {
+class AudioProcessInServerHandler : public IHandler {
+public:
+    AudioProcessInServerHandler(IHandler* handler);
+    void OnHandle(uint32_t code, int64_t data) override;
+private:
+    IHandler* handler_ = nullptr;
+};
+
+class AudioProcessInServer : public AudioProcessStub, public IAudioProcessStream,
+    public IHandler {
 public:
 
     enum HandleRendererDataType : uint32_t {
@@ -79,7 +89,7 @@ public:
 
     int32_t Resume() override;
 
-    int32_t Stop(int32_t stage) override;
+    int32_t Stop(int32_t stage = AUDIO_PROC_STAGE_STOP) override;
 
     int32_t RequestHandleInfo() override;
 
@@ -94,9 +104,6 @@ public:
     int32_t SetSourceDuration(int64_t duration) override;
 
     int32_t SetUnderrunCount(uint32_t underrunCnt) override;
-
-    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, const std::string& adjustTime,
-        uint32_t code) override;
 
     int32_t RegisterProcessCb(const sptr<IRemoteObject>& object) override;
 
@@ -148,6 +155,8 @@ public:
     virtual void PrepareStreamDataBuffer(size_t spanSizeInByte,
         RingBufferWrapper &ringBuffer, AudioStreamData &streamData) override;
 
+    void NotifyMuteStateChange(bool muteFlag);
+
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
 
     std::time_t GetStartMuteTime() override;
@@ -166,8 +175,10 @@ public:
     StreamStatus GetStreamInServerStatus() override;
 
     bool TurnOnMicIndicator(CapturerState capturerState);
+    void ReportNoBgPermissionEvent();
     bool TurnOffMicIndicator(CapturerState capturerState);
-
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
+        const std::string &adjustTime, uint32_t code) override;
     uint32_t GetSpanSizeInFrame() override;
     uint32_t GetByteSizePerFrame() override;
 
@@ -177,8 +188,9 @@ public:
     void DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc) override;
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override;
     int32_t SetStaticRenderRate(uint32_t renderRate) override;
+
+    int32_t ResetStaticPlayPosition() override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -200,6 +212,7 @@ private:
     void WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby);
     void ReportDataToResSched(std::unordered_map<std::string, std::string> payload, uint32_t type);
     void NotifyXperfOnPlayback(AudioMode audioMode, XperfEventId eventId);
+    void RemoveStreamInfo();
 
     int32_t HandleCapturerDataParams(RingBufferWrapper &writeBuf, AudioCaptureDataProcParams &procParams);
     void SetCaptureStreamInfo(AudioStreamInfo &srcInfo, AudioCaptureDataProcParams &procParams);
@@ -208,7 +221,7 @@ private:
     int32_t CapturerDataFormatAndChnConv(RingBufferWrapper &writeBuf, BufferDesc &resampleOutBuf,
                                          const AudioStreamInfo &srcInfo, const AudioStreamInfo &dstInfo);
     int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
-    void RemoveStreamInfo();
+
     void ReleaseCaptureInjector();
     void RebuildCaptureInjector();
     bool IsNeedRecordResampleConv(AudioSamplingRate srcSamplingRate);
@@ -217,6 +230,10 @@ private:
     int32_t ProcessAndSetStaticBuffer();
     void MarkStaticFadeOut(bool isRefresh);
     void MarkStaticFadeIn();
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+    void ReleaseCallbackHandler();
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
@@ -282,7 +299,6 @@ private:
     std::atomic<uint32_t> checkCount_ = 0;
 
     StreamStatus streamStatusInServer_ = STREAM_INVALID;
-
     std::unique_ptr<HPAE::ProResampler> resampler_ = nullptr;
 
     std::atomic<bool> rebuildFlag_ = false;
@@ -294,6 +310,10 @@ private:
     AudioRendererRate audioRenderRate_ = RENDER_RATE_NORMAL;
     std::shared_ptr<AudioStaticBufferProcessor> staticBufferProcessor_ = nullptr;
     std::shared_ptr<AudioStaticBufferProvider> staticBufferProvider_ = nullptr;
+
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+    std::shared_ptr<AudioProcessInServerHandler> handler_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

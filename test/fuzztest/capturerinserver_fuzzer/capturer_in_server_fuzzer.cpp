@@ -28,7 +28,7 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 const uint32_t APPID_LENGTH = 10;
 const int64_t STOP_TIME = 100;
-std::shared_ptr<CapturerInServer> capturerInServer_ = nullptr;
+const uint32_t NUM_10 = 10;
 
 typedef void (*TestFuncs)();
 
@@ -121,6 +121,7 @@ public:
         return bufferDesc;
     }
     int32_t EnqueueBuffer(const BufferDesc &bufferDesc) override { return 0; }
+    void AbortCallback(int32_t abortTimes) override { return; }
 };
 
 class ConcreteIStreamListener : public IStreamListener {
@@ -142,16 +143,16 @@ static AudioProcessConfig GetInnerCapConfig()
     return config;
 }
 
-void Init()
+std::shared_ptr<CapturerInServer> GetCapturerInServer()
 {
     AudioProcessConfig config = GetInnerCapConfig();
     std::weak_ptr<IStreamListener> innerListener = std::weak_ptr<IStreamListener>();
-    capturerInServer_ = std::make_shared<CapturerInServer>(config, innerListener);
+    return std::make_shared<CapturerInServer>(config, innerListener);
 }
 
 void OnStatusUpdateFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -175,7 +176,7 @@ void OnStatusUpdateFuzzTest()
 
 void HandleOperationFlushedFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -187,7 +188,7 @@ void HandleOperationFlushedFuzzTest()
 
 void DequeueBufferFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -201,15 +202,15 @@ void DequeueBufferFuzzTest()
 
 void IsReadDataOverFlowFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
     size_t length = g_fuzzUtils.GetData<size_t>();
     uint64_t currentWriteFrame = g_fuzzUtils.GetData<uint64_t>();
-    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t spanSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
     std::shared_ptr<IStreamListener> stateListener = std::make_shared<ConcreteIStreamListener>();
     if (stateListener == nullptr) {
         return;
@@ -231,24 +232,26 @@ void IsReadDataOverFlowFuzzTest()
     if (capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ == nullptr) {
         return;
     }
+    size_t frame = 100;
+    capturerInServer_->spanSizeInFrame_ = frame;
     capturerInServer_->IsReadDataOverFlow(length, currentWriteFrame, stateListener);
 }
 
 void UpdateBufferTimeStampFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
     uint32_t capturerSampleRate = g_fuzzUtils.GetData<uint32_t>();
-    size_t readLen = g_fuzzUtils.GetData<size_t>();
+    size_t readLen = NUM_10;
     capturerInServer_->capturerClock_ = std::make_shared<CapturerClock>(capturerSampleRate);
     if (capturerInServer_->capturerClock_ == nullptr) {
         return;
     }
-    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t spanSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     if (capturerInServer_->audioServerBuffer_ == nullptr) {
@@ -263,25 +266,77 @@ void UpdateBufferTimeStampFuzzTest()
 
 void ReadDataFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
+    }
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
+    if (streamListenerHolder == nullptr) {
+        return;
+    }
+    capturerInServer_->streamListener_ = std::weak_ptr<IStreamListener>();
+    if (capturerInServer_->streamListener_.lock() == nullptr) {
+        capturerInServer_->streamListener_ = streamListenerHolder;
     }
     size_t cacheSize = g_fuzzUtils.GetData<size_t>();
     capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
     if (capturerInServer_->ringCache_ == nullptr) {
         return;
     }
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest>();
+    if (capturerInServer_->stream_ == nullptr) {
+        return;
+    }
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+    totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    if (capturerInServer_->audioServerBuffer_ == nullptr) {
+        return;
+    }
+    auto bufferInfo = std::make_shared<BasicBufferInfo>();
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
+    capturerInServer_->muteFlag_ = true;
     size_t length = g_fuzzUtils.GetData<size_t>();
     capturerInServer_->ReadData(length);
+    capturerInServer_->UpdateReadIndex();
+    capturerInServer_->ResolveBuffer(capturerInServer_->audioServerBuffer_);
 }
 
 void OnReadDataFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
+    if (streamListenerHolder == nullptr) {
+        return;
+    }
+    capturerInServer_->streamListener_ = std::weak_ptr<IStreamListener>();
+    if (capturerInServer_->streamListener_.lock() == nullptr) {
+        capturerInServer_->streamListener_ = streamListenerHolder;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest>();
+    if (capturerInServer_->stream_ == nullptr) {
+        return;
+    }
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+    totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    if (capturerInServer_->audioServerBuffer_ == nullptr) {
+        return;
+    }
+    auto bufferInfo = std::make_shared<BasicBufferInfo>();
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
     size_t length = g_fuzzUtils.GetData<size_t>();
     capturerInServer_->OnReadData(length);
     int8_t outputData = g_fuzzUtils.GetData<int8_t>();
@@ -291,7 +346,7 @@ void OnReadDataFuzzTest()
 
 void StopSessionFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -300,7 +355,7 @@ void StopSessionFuzzTest()
 
 void GetLastAudioDurationFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -311,14 +366,14 @@ void GetLastAudioDurationFuzzTest()
 
 void RestoreSessionFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
     RestoreInfo restoreInfo;
-    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t spanSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     if (capturerInServer_->audioServerBuffer_ == nullptr) {
@@ -329,7 +384,7 @@ void RestoreSessionFuzzTest()
 
 void GetLatencyFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -343,7 +398,7 @@ void GetLatencyFuzzTest()
 
 void GetAudioTimeFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -361,7 +416,7 @@ void GetAudioTimeFuzzTest()
 
 void UpdatePlaybackCaptureConfigFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -375,7 +430,7 @@ void UpdatePlaybackCaptureConfigFuzzTest()
 
 void UpdatePlaybackCaptureConfigInLegacyFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -387,7 +442,7 @@ void UpdatePlaybackCaptureConfigInLegacyFuzzTest()
 
 void PauseFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -403,7 +458,7 @@ void PauseFuzzTest()
 
 void FlushFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -413,20 +468,28 @@ void FlushFuzzTest()
     if (capturerInServer_->stream_ == nullptr) {
         return;
     }
-    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t spanSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     if (capturerInServer_->audioServerBuffer_ == nullptr) {
         return;
     }
-    capturerInServer_->Flush();
+    auto bufferInfo = std::make_shared<BasicBufferInfo>();
+    bufferInfo->curReadFrame = NUM_10;
+    bufferInfo->curWriteFrame = NUM_10 + 1;
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
+    for (size_t i = 0; i < IStatusVec.size(); i++) {
+        capturerInServer_->status_ = IStatusVec[i];
+        capturerInServer_->Flush();
+    }
+    capturerInServer_->DrainAudioBuffer();
 }
 
 void StopFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -447,7 +510,7 @@ void StopFuzzTest()
 
 void ReleaseFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -460,7 +523,7 @@ void ReleaseFuzzTest()
 
 void InitCacheBufferFuzzTest()
 {
-    Init();
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
     if (capturerInServer_ == nullptr) {
         return;
     }
@@ -470,8 +533,154 @@ void InitCacheBufferFuzzTest()
     if (capturerInServer_->ringCache_ == nullptr) {
         return;
     }
-    capturerInServer_->spanSizeInBytes_ = 0;
+    capturerInServer_->spanSizeInBytes_ = 1 + g_fuzzUtils.GetData<size_t>();
     capturerInServer_->InitCacheBuffer(targetSize);
+    capturerInServer_->InitCacheBuffer(targetSize);
+    capturerInServer_->SetNonInterruptMute(true);
+}
+
+void RecordOverflowStatusTest()
+{
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    bool currentStatus = g_fuzzUtils.GetData<bool>();
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->RecordOverflowStatus(currentStatus);
+    capturerInServer_->RecordOverflowStatus(!currentStatus);
+}
+
+void RebuildCaptureInjectorTest()
+{
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->rebuildFlag_ = true;
+    capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    capturerInServer_->RebuildCaptureInjector();
+}
+
+void RequestUserPrivacyAuthorityTest()
+{
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
+    if (streamListenerHolder == nullptr) {
+        return;
+    }
+    capturerInServer_->streamListener_ = std::weak_ptr<IStreamListener>();
+    if (capturerInServer_->streamListener_.lock() == nullptr) {
+        capturerInServer_->streamListener_ = streamListenerHolder;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest>();
+    if (capturerInServer_->stream_ == nullptr) {
+        return;
+    }
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+    totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    if (capturerInServer_->audioServerBuffer_ == nullptr) {
+        return;
+    }
+    auto bufferInfo = std::make_shared<BasicBufferInfo>();
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
+    capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    capturerInServer_->status_ = I_STATUS_STARTING;
+    capturerInServer_->RequestUserPrivacyAuthority();
+    capturerInServer_->status_ = I_STATUS_PAUSING;
+    capturerInServer_->RequestUserPrivacyAuthority();
+}
+
+void SetRebuildFlagTest()
+{
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->SetRebuildFlag();
+}
+
+void GetLastAudioDurationTest()
+{
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->GetLastAudioDuration();
+}
+
+
+void Start()
+{
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
+    if (streamListenerHolder == nullptr) {
+        return;
+    }
+    capturerInServer_->streamListener_ = std::weak_ptr<IStreamListener>();
+    if (capturerInServer_->streamListener_.lock() == nullptr) {
+        capturerInServer_->streamListener_ = streamListenerHolder;
+    }
+    size_t cacheSize = g_fuzzUtils.GetData<size_t>();
+    capturerInServer_->ringCache_ = AudioRingCache::Create(cacheSize);
+    if (capturerInServer_->ringCache_ == nullptr) {
+        return;
+    }
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest>();
+    if (capturerInServer_->stream_ == nullptr) {
+        return;
+    }
+    uint32_t totalSizeInFrame = NUM_10;
+    uint32_t spanSizeInFrame = NUM_10;
+    uint32_t byteSizePerFrame = NUM_10;
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+    totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    if (capturerInServer_->audioServerBuffer_ == nullptr) {
+        return;
+    }
+    auto bufferInfo = std::make_shared<BasicBufferInfo>();
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
+    capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
+    AppInfo appInfo;
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>();
+    capturerInServer_->recorderDfx_ = std::make_unique<RecorderDfxWriter>(appInfo, index);
+    capturerInServer_->Start();
+    capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    capturerInServer_->needCheckBackground_ = false;
+    capturerInServer_->StartInner();
 }
 
 vector<TestFuncs> g_testFuncs = {
@@ -494,6 +703,12 @@ vector<TestFuncs> g_testFuncs = {
     StopFuzzTest,
     ReleaseFuzzTest,
     InitCacheBufferFuzzTest,
+    RecordOverflowStatusTest,
+    RebuildCaptureInjectorTest,
+    RequestUserPrivacyAuthorityTest,
+    SetRebuildFlagTest,
+    GetLastAudioDurationTest,
+    Start,
 };
 
 } // namespace AudioStandard

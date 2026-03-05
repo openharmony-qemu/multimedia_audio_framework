@@ -45,12 +45,13 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
-    int64_t GetVolumeDataCount() override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
     std::string GetAudioParameter(const AudioParamKey key, const std::string &condition) override;
 
     int32_t SetVolume(float left, float right) override;
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override;
     int32_t GetVolume(float &left, float &right) override;
 
     int32_t GetLatency(uint32_t &latency) override;
@@ -75,9 +76,6 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void DumpInfo(std::string &dumpString) override;
-
-    // for a2dp_offload connection state
-    int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
@@ -113,8 +111,10 @@ private:
     std::string GetRouting(void) const;
     void WriteSmartPAStatusSysEvent(int32_t status);
     void UpdateSinkState(bool started);
-    void WaitForDataLinkConnected();
     void UpdateNearlinkOutputRoute();
+    int32_t HandleSwitchDeviceMuteState(bool mute, bool &applyVolume);
+    int32_t SetSinkMuteForSwitchDeviceWithHdiVolume(bool mute);
+    int32_t SetSinkMuteForSwitchDeviceWithoutHdiVolume(bool mute);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
@@ -135,9 +135,6 @@ private:
     static constexpr const char *RUNNING_LOCK_NAME_BASE = "AudioPrimaryBackgroundPlay";
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
-    static constexpr uint32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000;
-    static constexpr uint32_t DATA_LINK_CONNECTING = 10; // DATA_LINK_CONNECTING in audio_a2dp_offload_manager.cpp
-    static constexpr uint32_t DATA_LINK_CONNECTED = 11; // DATA_LINK_CONNECTED in audio_a2dp_offload_manager.cpp
     uint32_t renderId_ = HDI_INVALID_ID;
     const std::string halName_ = "";
     IAudioSinkAttr attr_ = {};
@@ -179,7 +176,8 @@ private:
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_NONE;
-    AudioScene currentAudioScene_ = AUDIO_SCENE_DEFAULT;
+    AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
+    bool currentScoExcludeFlag_ = false;
     int32_t currentDevicesSize_ = 0;
     bool forceSetRouteFlag_ = false;
     std::atomic<int32_t> paStatus_ = 1;
@@ -190,11 +188,9 @@ private:
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;
 
-    // for a2dp_offload datalink connection
-    std::mutex dataConnectionMutex_;
-    bool isDataLinkConnected_ = false;
-    std::condition_variable dataConnectionCV_;
     std::function<void(bool)> deviceCallback_ = nullptr;
+
+    const bool needSetHdiVolume_ = false;
 };
 
 } // namespace AudioStandard

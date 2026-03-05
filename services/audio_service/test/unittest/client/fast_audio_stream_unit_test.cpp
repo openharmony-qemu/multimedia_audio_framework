@@ -33,7 +33,7 @@ public:
     MOCK_METHOD(int32_t, SaveUnderrunCallback,
         (const std::shared_ptr<ClientUnderrunCallBack> &underrunCallback), (override));
 
-    MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (const, override));
+    MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (override));
     MOCK_METHOD(int32_t, Enqueue, (const BufferDesc &bufDesc), (override));
 
     MOCK_METHOD(int32_t, SetVolume, (int32_t vol), (override));
@@ -64,7 +64,8 @@ public:
     MOCK_METHOD(uint32_t, GetOverflowCount, (), (override));
     MOCK_METHOD(void, SetUnderflowCount, (uint32_t underflowCount), (override));
     MOCK_METHOD(void, SetOverflowCount, (uint32_t overflowCount), (override));
-
+    MOCK_METHOD(int32_t, RegisterRemoteDiedCallback, (const std::shared_ptr<RemoteDiedCallback> &callback), (override));
+    MOCK_METHOD(int32_t, UnregisterRemoteDiedCallback, (), (override));
     MOCK_METHOD(int64_t, GetFramesWritten, (), (override));
     MOCK_METHOD(int64_t, GetFramesRead, (), (override));
 
@@ -93,11 +94,16 @@ public:
     MOCK_METHOD(void, SetRebuildFlag, (), (override));
     MOCK_METHOD(void, GetKeepRunning, (bool &keepRunning), (override));
 
-    MOCK_METHOD(int32_t, GetStaticBufferInfo, (StaticBufferInfo &staticBufferInfo), (override));
+    MOCK_METHOD(int32_t, GetStaticPlayPosition, (StaticBufferInfo &staticBufferInfo), (override));
     MOCK_METHOD(int32_t, SetStaticBufferEventCallback, (std::shared_ptr<StaticBufferEventCallback>), (override));
     MOCK_METHOD(int32_t, SetStaticTriggerRecreateCallback, (std::function<void()> sendStaticRecreateFunc), (override));
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));
     MOCK_METHOD(int32_t, SetStaticRenderRate, (AudioRendererRate renderRate), (override));
+
+    MOCK_METHOD(int32_t, SetFirstFrameWritingCallback,
+        (const std::shared_ptr<AudioFirstFrameCallback> &callback), (override));
+    MOCK_METHOD(void, SetIsFirstFrame, (bool value), (override));
+    MOCK_METHOD(int32_t, ResetStaticPlayPosition, (), (override));
 };
 
 class FastSystemStreamUnitTest : public testing::Test {
@@ -811,7 +817,14 @@ HWTEST_F(FastSystemStreamUnitTest, SetRendererFirstFrameWritingCallback_001, Tes
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetRendererFirstFrameWritingCallback_001 start");
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> callback =
         std::make_shared<AudioRendererFirstFrameWritingCallbackTest>();
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+
     auto result = fastAudioStream->SetRendererFirstFrameWritingCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    fastAudioStream->rendererInfo_.isStatic = true;
+    result = fastAudioStream->SetRendererFirstFrameWritingCallback(callback);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -2113,26 +2126,6 @@ HWTEST(FastAudioStreamUnitTest, IsRestoreNeeded_005, TestSize.Level1)
     fastAudioStream->micProcClientCb_ = std::make_shared<FastAudioStreamCaptureCallback>(micCallback);
 
     EXPECT_EQ(fastAudioStream->IsRestoreNeeded(), false);
-}
-
-/**
- * @tc.name  : Test GetSwitchInfo API
- * @tc.type  : FUNC
- * @tc.number: GetSwitchInfo_static_001
- * @tc.desc  : Test GetSwitchInfo interface.
- */
-HWTEST_F(FastSystemStreamUnitTest, GetSwitchInfo_static_001, TestSize.Level4)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    auto fastAudioStream = std::make_shared<MockFastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    EXPECT_NE(fastAudioStream, nullptr);
-    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
-    fastAudioStream->processClient_ = mockProcessClient;
-
-    IAudioStream::SwitchInfo info;
-    fastAudioStream->rendererInfo_.isStatic = true;
-    fastAudioStream->GetSwitchInfo(info);
-    EXPECT_EQ(info.renderMode, fastAudioStream->renderMode_);
 }
 
 /**

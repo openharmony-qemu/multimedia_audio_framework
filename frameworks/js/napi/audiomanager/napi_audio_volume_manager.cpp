@@ -27,6 +27,8 @@
 #include "audio_manager_log.h"
 #include "napi_dfx_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 static __thread napi_ref g_volumeManagerConstructor = nullptr;

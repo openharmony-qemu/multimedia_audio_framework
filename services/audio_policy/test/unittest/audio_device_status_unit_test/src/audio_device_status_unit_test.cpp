@@ -1637,26 +1637,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, WriteInputDeviceChangedSysEvents_001, TestSi
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
-* @tc.number: AddDeviceBackToGlobalOnly_001
-* @tc.desc  : Test AddDeviceBackToGlobalOnly interface.
-*/
-HWTEST_F(AudioDeviceStatusUnitTest, AddDeviceBackToGlobalOnly_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    deviceDescriptor->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    deviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceDescriptor->networkId_ = "123456";
-    deviceDescriptor->deviceName_ = "usb_headset";
-    deviceDescriptor->deviceCategory_ = BT_UNWEAR_HEADPHONE;
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-
-    audioDeviceStatus.AddDeviceBackToGlobalOnly(deviceDescriptor);
-    EXPECT_EQ(deviceDescriptor->deviceId_, 0);
-}
-
-/**
-* @tc.name  : Test AudioDeviceStatus.
 * @tc.number: GetDmDeviceType_001
 * @tc.desc  : Test GetDmDeviceType interface.
 */
@@ -1805,6 +1785,62 @@ HWTEST_F(AudioDeviceStatusUnitTest, CheckIsIndexValidAndHandleErr_001, TestSize.
     paIndex = 1280;
     ioHandle = 1280;
     EXPECT_TRUE(audioDeviceStatus.CheckIsIndexValidAndHandleErr(streamDescs, paIndex, ioHandle, currentActivePort));
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: ClearPreferredWhenCategoryUpdated_001
+* @tc.desc  : Test ClearPreferredWhenCategoryUpdated
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, ClearPreferredWhenCategoryUpdated_001, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    auto &deviceManager = audioDeviceStatus.audioDeviceManager_;
+
+    auto backup = deviceManager.connectedDevices_;
+    deviceManager.connectedDevices_ = {
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE),
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE)
+    };
+
+    AudioDeviceDescriptor desc{DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE};
+    audioDeviceStatus.ClearPreferredWhenCategoryUpdated(desc);
+    EXPECT_NE(deviceManager.GetExistedDevice(std::make_shared<AudioDeviceDescriptor>(desc))->deviceType_,
+        DEVICE_TYPE_NONE);
+
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioDeviceStatus.ClearPreferredWhenCategoryUpdated(desc);
+    EXPECT_NE(deviceManager.GetExistedDevice(std::make_shared<AudioDeviceDescriptor>(desc))->deviceType_,
+        DEVICE_TYPE_NONE);
+
+    deviceManager.connectedDevices_ = backup;
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: NeedClearPreferredWhenCategoryUpdated_001
+* @tc.desc  : Test NeedClearPreferredWhenCategoryUpdated
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, NeedClearPreferredWhenCategoryUpdated_001, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    AudioDeviceDescriptor updated{DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE};
+    AudioDeviceDescriptor fetched{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
+    AudioDeviceDescriptor preferred{DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE};
+
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+
+    fetched.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    updated.glassesWearCount_ = 2;
+    EXPECT_FALSE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+
+    updated.glassesWearCount_ = 0;
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
+
+    updated.glassesWearCount_ = 2;
+    preferred.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_TRUE(audioDeviceStatus.NeedClearPreferredWhenCategoryUpdated(updated, fetched, preferred));
 }
 } // namespace AudioStandard
 } // namespace OHOS

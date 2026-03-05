@@ -250,9 +250,10 @@ int32_t MultichannelAudioRenderSink::RenderFrame(char &data, uint64_t len, uint6
     return SUCCESS;
 }
 
-int64_t MultichannelAudioRenderSink::GetVolumeDataCount()
+int32_t MultichannelAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
-    return volumeDataCount_;
+    volumeData = volumeDataCount_;
+    return SUCCESS;
 }
 
 std::string MultichannelAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -289,6 +290,12 @@ int32_t MultichannelAudioRenderSink::SetVolume(float left, float right)
     }
 
     return ret;
+}
+
+int32_t MultichannelAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("AudioRenderSink::SetVolumeWithRamp in");
+    return SUCCESS;
 }
 
 int32_t MultichannelAudioRenderSink::GetVolume(float &left, float &right)
@@ -533,6 +540,8 @@ void MultichannelAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &d
     deviceDesc.pins = PIN_OUT_SPEAKER;
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_OUT_USB_HEADSET;
+    } else if (halName_ == HDI_ID_INFO_DP) {
+        deviceDesc.pins = PIN_OUT_DP;
     }
 }
 
@@ -556,9 +565,11 @@ int32_t MultichannelAudioRenderSink::CreateRender(void)
     InitAudioSampleAttr(param);
     InitDeviceDesc(deviceDesc);
 
-    AUDIO_INFO_LOG("create render, halName: %{public}s, rate: %{public}u, channel: %{public}u, format: %{public}u"
-        "channelLayout: %{public}" PRIu64,
-        halName_.c_str(), param.sampleRate, param.channelCount, param.format, param.channelLayout);
+    AUDIO_INFO_LOG("create render, halName: %{public}s, rate: %{public}u, channel: %{public}u,"
+        " format: %{public}u type: %{public}d interleaved: %{public}d period: %{public}u frameSize: %{public}u"
+        " channelLayout: %{public}" PRIu64,
+        halName_.c_str(), param.sampleRate, param.channelCount, param.format,
+        param.type, param.interleaved, param.period, param.frameSize, param.channelLayout);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);

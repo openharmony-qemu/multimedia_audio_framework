@@ -36,6 +36,7 @@
 #include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
+#include "remote_death_recipient.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,6 +59,7 @@ public:
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+    int32_t SetInMainThreadState(bool isInMainThread) override;
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
@@ -145,6 +147,9 @@ public:
     uint32_t GetOverflowCount() override;
     void SetUnderflowCount(uint32_t underflowCount) override;
     void SetOverflowCount(uint32_t overflowCount) override;
+
+    int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) override;
+    int32_t UnregisterRemoteDiedCallback() override;
 
     void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
         override;
@@ -234,6 +239,7 @@ public:
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
 
+    bool ResetStaticPlayPosition() override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -267,6 +273,7 @@ private:
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
+    void WriteAudioVividDirect(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     bool IsMutePlaying();
     void MonitorMutePlay(bool isPlayEnd);
@@ -323,8 +330,6 @@ private:
 
     void CheckOperations();
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
-
     void CheckFrozenStateInStaticMode();
 
     int32_t CallStartWhenInStandby();
@@ -332,6 +337,8 @@ private:
     void NotifyStopWaiting();
 
     void UpdateStopState();
+
+    void NotifyStreamSilentChange();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -341,6 +348,8 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
+    std::vector<uint8_t> outPackedBuf_;
+    size_t outPackedLen_ = 0;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
     AudioRendererInfo rendererInfo_ = {};
@@ -424,6 +433,9 @@ private:
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
     sptr<IIpcStream> ipcStream_ = nullptr;
+    sptr<IRemoteObject> ipcProxy_ = nullptr;
+    std::mutex deathRecipientLock_;
+    sptr<RemoteDeathRecipient> deathRecipient_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // for static audio renderer
@@ -562,6 +574,8 @@ private:
     std::function<uid_t()> uidGetter_ = [] { return getuid(); };
 
     std::string bundleName = "";
+
+    std::atomic<bool> needNotifyStreamSilentChange_ = true;
 };
 
 class SpatializationStateChangeCallbackImpl : public AudioSpatializationStateChangeCallback {

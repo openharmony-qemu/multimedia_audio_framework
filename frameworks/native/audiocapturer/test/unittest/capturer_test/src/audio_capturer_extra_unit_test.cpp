@@ -619,6 +619,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetStatus_002, TestSize.Level1)
     ASSERT_NE(nullptr, audioCapturer);
 
     std::shared_ptr<AudioCapturer> pCapturer = audioCapturer->CreateCapturer(capturerOptions, appInfo);
+    ASSERT_NE(nullptr, pCapturer);
     bool isStarted = pCapturer->Start();
     EXPECT_EQ(true, isStarted);
     state = audioCapturer->GetStatus();
@@ -1633,5 +1634,34 @@ HWTEST(AudioCapturerUnitTest, AsyncCheckAudioCapturer_001, TestSize.Level4)
     EXPECT_EQ(SUCCESS, res);
 }
 
+/**
+ * @tc.name  : AudioCapturer_SetInMainThreadState_001
+ * @tc.number: SetInMainThreadState_001
+ * @tc.desc  : Test SetInMainThreadState() for different cases
+ */
+HWTEST(AudioCapturerUnitTest, SetInMainThreadState_001, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+ 
+    testCapturerInner->isFirstTimeSetMainThreadState_ = true;
+    int32_t res = testCapturerInner->SetInMainThreadState(true);
+    EXPECT_EQ(SUCCESS, res);
+}
+ 
+/**
+ * @tc.name  : AudioCapturer_SetInMainThreadState_002
+ * @tc.number: SetInMainThreadState_002
+ * @tc.desc  : Test SetInMainThreadState() for different cases
+ */
+HWTEST(AudioCapturerUnitTest, SetInMainThreadState_002, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+ 
+    testCapturerInner->isFirstTimeSetMainThreadState_ = false;
+    int32_t res = testCapturerInner->SetInMainThreadState(true);
+    EXPECT_EQ(ERROR_ILLEGAL_STATE, res);
+}
 } // namespace AudioStandard
 } // namespace OHOS

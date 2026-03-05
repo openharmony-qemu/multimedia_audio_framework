@@ -5,11 +5,13 @@
 #ifndef AUDIOEDITTESTAPP_INPUT_H
 #define AUDIOEDITTESTAPP_INPUT_H
 
+#include <cstdint>
 #include <string>
 #include <map>
 #include "./EffectNode.h"
 #include "napi/native_api.h"
-#include "ohaudio/native_audio_suite_base.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include "utils/Utils.h"
 
 #include <multimedia/player_framework/native_avformat.h>
 #include <multimedia/player_framework/native_avdemuxer.h>
@@ -35,6 +37,7 @@ struct UserData {
     int32_t bufferSize;                    // Total audio data size
     int32_t totalWriteAudioDataSize;       // Size of audio data already written
     bool isResetTotalWriteAudioDataSize;   // If the audio written from the beginning
+    bool render = true;
 };
 
 // Map for storing UserData
@@ -49,6 +52,7 @@ struct AudioParams {
     std::string mixerId;
     unsigned int fd;
     unsigned int fileLength;
+    long startTime;
 };
 
 class UpdateInputNodeParams {
@@ -78,9 +82,9 @@ napi_status ParseArguments(napi_env env, napi_callback_info info, AudioParams &p
 
 void ResetAllIsResetTotalWriteAudioDataSize();
 
-bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t &sampleRate, int32_t &channels, int32_t &bitsPerSample);
+bool GetAudioProperties(OH_AVFormat *trackFormat, int32_t* sampleRate, int32_t* channels, int32_t* bitsPerSample);
 
-void RunAudioThread(OH_AVDemuxer *demuxer, int32_t fileLength);
+void RunAudioThread(OH_AVDemuxer *demuxer, int32_t fileLength, std::string inputId, AudioFormat& format);
 
 void StoreTotalBuffToMap(const char *totalBuff, int32_t size, const std::string &key);
 
@@ -93,10 +97,13 @@ bool CheckParameters(OH_AudioNode *audioNode, void *audioData, bool *finished);
 int32_t WriteDataCallBack(OH_AudioNode *audioNode, void *userData, void *audioData,
     int32_t audioDataSize, bool *finished);
 
-void UpdateInputNode(napi_value &napiValue, OH_AudioSuite_Result &result, const UpdateInputNodeParams &params);
+void UpdateInputNode(OH_AudioSuite_Result &result, const UpdateInputNodeParams &params);
 
 void ManageOutputNodes(napi_env env, const std::string &inputId, const std::string &outputId,
     const std::string &mixerId, OH_AudioSuite_Result &result);
+
+napi_value ManageInputNodes(napi_env env, AudioParamsByCascad params, OH_AudioSuite_Result &result,
+                            napi_value napiValue);
 
 void ManageExistingOutputNodes(const std::string &inputId, const std::string &mixerId,
     OH_AudioSuite_Result &result, std::vector<Node> outPutNodes);
@@ -104,5 +111,7 @@ void ManageExistingOutputNodes(const std::string &inputId, const std::string &mi
 void CreateAndConnectOutputNodes(const std::string &inputId, const std::string &outputId, OH_AudioSuite_Result &result);
 
 napi_status ParseArgumentsByCascad(napi_env env, napi_value *argv, AudioParamsByCascad &params);
+
+void runAudioWaveThread(const AudioFormat& format, const std::shared_ptr<char>& totalBuffer);
 
 #endif //AUDIOEDITTESTAPP_INPUT_H

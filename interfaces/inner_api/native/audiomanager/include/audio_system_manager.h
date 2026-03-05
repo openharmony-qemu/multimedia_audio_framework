@@ -1199,6 +1199,7 @@ public:
     std::string GetSelfBundleName();
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
+    int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
     int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
     int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
@@ -1548,6 +1549,13 @@ public:
      * @since 21
      */
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
+
+    /**
+     * @brief update safe volume by str mode.
+     *
+     * @return Returns {@link SUCCESS} if the operation is successfully.
+     */
+    int32_t UpdateSafeVolumeByStrMode();
 
     std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
     int32_t ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,

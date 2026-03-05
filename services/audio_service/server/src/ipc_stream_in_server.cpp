@@ -80,10 +80,10 @@ IpcStreamInServer::~IpcStreamInServer()
     // 2. Avoid RendererInServer/CapturerInServer destructor from AudioService weak_ptr,
     // may cause deadlock in UpdateSessionOperation
     if (rendererInServer_) {
-        rendererInServer_->Release();
+        rendererInServer_->Release(false);
     }
     if (capturerInServer_) {
-        capturerInServer_->Release();
+        capturerInServer_->Release(false);
     }
 }
 
@@ -602,21 +602,32 @@ int32_t IpcStreamInServer::SetLoopTimes(int64_t bufferLoopTimes)
     return rendererInServer_->SetLoopTimes(bufferLoopTimes);
 }
 
-int32_t IpcStreamInServer::GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo)
-{
-    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
-        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
-            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
-        return ERR_OPERATION_FAILED;
-    }
-    return rendererInServer_->GetStaticBufferInfo(staticBufferInfo);
-}
-
 int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)
 {
     CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
         "GetLatencyWithFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return rendererInServer_->GetLatencyWithFlag(latency, static_cast<LatencyFlag>(flag));
+}
+
+int32_t IpcStreamInServer::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "ResetStaticPlayPosition failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->ResetStaticPlayPosition();
+}
+
+int32_t IpcStreamInServer::SetInMainThreadState(bool isInMainThread)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_RECORD && capturerInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "Failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return capturerInServer_->SetInMainThreadState(isInMainThread);
+}
+
+int32_t IpcStreamInServer::CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "CalculateCacheCount failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return rendererInServer_->CalculateCacheCount(cacheSizeInFrame, cacheCount);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -59,6 +59,18 @@ private:
     std::shared_ptr<AudioCapturerReadCallback> captureCallback_ = nullptr;
 };
 
+class FastStaticFirstFrameCallbackImpl : public AudioFirstFrameCallback {
+public:
+    FastStaticFirstFrameCallbackImpl(const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback,
+        IAudioStream &audioStream) : staticFirstFrameCallback_(callback), audioStreamImpl_(audioStream) {};
+    virtual ~FastStaticFirstFrameCallbackImpl() = default;
+
+    void OnFirstFrameWriting() override;
+private:
+    std::shared_ptr<AudioRendererFirstFrameWritingCallback> staticFirstFrameCallback_ = nullptr;
+    IAudioStream &audioStreamImpl_;
+};
+
 class FastAudioStream : public IAudioStream,  public IHandler,
     public std::enable_shared_from_this<FastAudioStream>{
 public:
@@ -71,6 +83,7 @@ public:
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
+    int32_t SetInMainThreadState(bool isInMainThread) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
@@ -163,6 +176,9 @@ public:
     void SetUnderflowCount(uint32_t underflowCount) override;
     void SetOverflowCount(uint32_t overflowCount) override;
 
+    int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) override;
+    int32_t UnregisterRemoteDiedCallback() override;
+
     void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
         override;
     void UnsetRendererPositionCallback() override;
@@ -231,6 +247,8 @@ public:
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
 
+    bool ResetStaticPlayPosition() override;
+
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);
@@ -291,6 +309,7 @@ private:
     // for static audio renderer
     StaticBufferInfo staticBufferInfo_;
     std::shared_ptr<StaticBufferEventCallback> audioStaticBufferEventCallback_ = nullptr;
+    std::shared_ptr<AudioFirstFrameCallback> procFirstFrameClientCb_ = nullptr;
 
     std::string bundleName = "";
 

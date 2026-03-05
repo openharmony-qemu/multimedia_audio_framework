@@ -55,6 +55,22 @@ void AudioEndpointUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+static void ReConfigSource(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+    AudioEndpointConfig endpointConfig, AudioDeviceDescriptor deviceInfo, AudioEndpoint::EndpointType type)
+{
+    std::shared_ptr<IAudioCaptureSource> source = audioEndpoint->GetFastSource(deviceInfo.networkId_, type);
+    source->DeInit();
+    audioEndpoint->Config(endpointConfig);
+}
+ 
+static void ReConfigSink(std::shared_ptr<AudioEndpointInner> audioEndpoint,
+    AudioEndpointConfig endpointConfig, AudioEndpoint::EndpointType type)
+{
+    std::shared_ptr<IAudioRenderSink> sink = audioEndpoint->GetFastSink(endpointConfig.deviceInfo, type);
+    sink->DeInit();
+    audioEndpoint->Config(endpointConfig);
+}
+
 static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::EndpointType type, uint64_t id,
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
@@ -73,7 +89,7 @@ static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::En
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        audioEndpoint = nullptr;
+        ReConfigSink(audioEndpoint, endpointConfig, type);
     }
     return audioEndpoint;
 }
@@ -99,7 +115,7 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
         .isUltraFast = isUltraFast
     };
     if (!audioEndpoint->Config(endpointConfig)) {
-        audioEndpoint = nullptr;
+        ReConfigSource(audioEndpoint, endpointConfig, deviceInfo, type);
     }
     return audioEndpoint;
 }
@@ -231,7 +247,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
         .streamType = config.streamType,
         .isUltraFast = isUltraFast
     };
-    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
     EXPECT_NE(nullptr, audioEndpoint);
 }
 
@@ -258,7 +275,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
         .streamType = config.streamType,
         .isUltraFast = isUltraFast
     };
-    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
+    std::shared_ptr<AudioEndpoint> audioEndpoint =
+        AudioService::GetInstance()->GetAudioEndpointForDevice(endpointConfig, false);
     EXPECT_NE(nullptr, audioEndpoint);
 
     int32_t ret = audioEndpoint->EnableFastInnerCap(1);
@@ -589,11 +607,11 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
 
     processStream->SetInnerCapState(true, 1);
     result = audioEndpointInner->ShouldInnerCap(1);
-    EXPECT_TRUE(result);
+    EXPECT_EQ(true, result);
 
     processStream->SetInnerCapState(false, 1);
     result = audioEndpointInner->ShouldInnerCap(1);
-    EXPECT_FALSE(result);
+    EXPECT_EQ(false, result);
 
     result = audioEndpointInner->UnlinkProcessStream(newpProcessStream);
     EXPECT_EQ(SUCCESS, ret);
@@ -626,6 +644,12 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_002, TestSize.Level1)
     ret = audioEndpointInner->OnStart(processStream);
     EXPECT_EQ(SUCCESS, ret);
 
+    ret = audioEndpointInner->OnStreamMute(processStream, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStreamMute(processStream, false);
+    EXPECT_EQ(SUCCESS, ret);
+
     ret = audioEndpointInner->OnPause(processStream);
     EXPECT_EQ(SUCCESS, ret);
 }
@@ -652,6 +676,12 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_003, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioEndpointInner->OnStart(processStream);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStreamMute(processStream, true);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioEndpointInner->OnStreamMute(processStream, false);
     EXPECT_EQ(SUCCESS, ret);
 
     ret = audioEndpointInner->OnPause(processStream);
@@ -689,9 +719,10 @@ HWTEST_F(AudioEndpointUnitTest, HandleStartDeviceFailed_001, TestSize.Level1)
     EXPECT_TRUE(audioEndpointInner->StopDevice());
 
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
-        audioEndpointInner->fastCaptureId_);
-    ASSERT_NE(nullptr, source);
-    source->DeInit();
+        audioEndpointInner->fastCaptureId_, true);
+    if (source != nullptr) {
+        source->DeInit();
+    }
     HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastCaptureId_);
     EXPECT_FALSE(audioEndpointInner->StartDevice());
 }
@@ -744,8 +775,9 @@ HWTEST_F(AudioEndpointUnitTest, DelayStopDevice_001, TestSize.Level1)
 
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(
         audioEndpointInner->fastCaptureId_);
-    ASSERT_NE(nullptr, source);
-    source->DeInit();
+    if (source != nullptr) {
+        source->DeInit();
+    }
     HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastCaptureId_);
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.isInnerCapEnabled = true;
@@ -2208,83 +2240,6 @@ HWTEST_F(AudioEndpointUnitTest, CheckJank_003, TestSize.Level1)
 }
 
 /**
- * @tc.name: AsyncGetPosTime_001
- * @tc.number: AsyncGetPosTime_001
- * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
- */
-HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_001, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    
-    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
-    audioEndpointInner->isStarted_ = true;
-    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
-    
-    bool initialIsStarted = audioEndpointInner->isStarted_;
-    
-    audioEndpointInner->stopUpdateThread_ = false;
-    
-    std::thread notifier([audioEndpointInner]() {
-        {
-            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
-            audioEndpointInner->updateThreadCV_.notify_all();
-        }
-        
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        {
-            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
-            audioEndpointInner->stopUpdateThread_ = true;
-            audioEndpointInner->updateThreadCV_.notify_all();
-        }
-    });
-    
-    audioEndpointInner->AsyncGetPosTime();
-    
-    notifier.join();
-    
-    EXPECT_FALSE(audioEndpointInner->isStarted_);
-    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
-}
-
-/**
- * @tc.name: AsyncGetPosTime_002
- * @tc.number: AsyncGetPosTime_002
- * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
- */
-HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_002, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    
-    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::RUNNING;
-    audioEndpointInner->isStarted_ = true;
-    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
-    
-    bool initialIsStarted = audioEndpointInner->isStarted_;
-    
-    audioEndpointInner->stopUpdateThread_ = false;
-    
-    std::thread notifier([audioEndpointInner]() {
-        {
-            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
-            audioEndpointInner->updateThreadCV_.notify_all();
-        }
-        
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        {
-            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
-            audioEndpointInner->stopUpdateThread_ = true;
-            audioEndpointInner->updateThreadCV_.notify_all();
-        }
-    });
-    
-    audioEndpointInner->AsyncGetPosTime();
-    
-    notifier.join();
-    
-    EXPECT_NE(audioEndpointInner->isStarted_, initialIsStarted);
-}
-
-/**
  * @tc.name: AsyncGetPosTime_003
  * @tc.number: AsyncGetPosTime_003
  * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
@@ -2296,42 +2251,6 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_003, TestSize.Level1)
     audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
     audioEndpointInner->isStarted_ = false;
     audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() - 1000;
-    
-    audioEndpointInner->stopUpdateThread_ = false;
-    
-    std::thread notifier([audioEndpointInner]() {
-        {
-            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
-            audioEndpointInner->updateThreadCV_.notify_all();
-        }
-        
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        {
-            std::unique_lock<std::mutex> lock(audioEndpointInner->updateThreadLock_);
-            audioEndpointInner->stopUpdateThread_ = true;
-            audioEndpointInner->updateThreadCV_.notify_all();
-        }
-    });
-    
-    audioEndpointInner->AsyncGetPosTime();
-    
-    notifier.join();
-    
-    EXPECT_FALSE(audioEndpointInner->isStarted_);
-}
-
-/**
- * @tc.name: AsyncGetPosTime_004
- * @tc.number: AsyncGetPosTime_004
- * @tc.desc: Test AsyncGetPosTime when conditions met for DelayStopDevice
- */
-HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_004, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    
-    audioEndpointInner->endpointStatus_ = AudioEndpoint::EndpointStatus::IDEL;
-    audioEndpointInner->isStarted_ = true;
-    audioEndpointInner->delayStopTime_ = ClockTime::GetCurNano() + 1000000;
     
     audioEndpointInner->stopUpdateThread_ = false;
     

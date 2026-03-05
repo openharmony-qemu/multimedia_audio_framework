@@ -66,11 +66,9 @@
 #include "audio_scene_manager.h"
 #include "audio_offload_stream.h"
 #include "audio_volume_manager.h"
-#include "audio_ec_manager.h"
 #include "audio_device_common.h"
 #include "audio_recovery_device.h"
 #include "audio_device_lock.h"
-#include "audio_capturer_session.h"
 #include "audio_device_status.h"
 #include "audio_background_manager.h"
 #include "audio_global_config_manager.h"
@@ -98,6 +96,8 @@ public:
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
+
+    int32_t SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
 
@@ -135,9 +135,12 @@ public:
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-        sptr<AudioRendererFilter> filter = nullptr);
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "");
 
-    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress);
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "");
+
+    void OnConnectFailed(AudioDeviceDescriptor &desc);
 
     void LoadEffectLibrary();
 
@@ -250,7 +253,10 @@ public:
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
+    int32_t GetEcEnableState();
     AudioScene GetAudioSceneFromAllZones();
+
+    int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -277,10 +283,8 @@ private:
         audioBackgroundManager_(AudioBackgroundManager::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioVolumeManager_(AudioVolumeManager::GetInstance()),
-        audioEcManager_(AudioEcManager::GetInstance()),
         audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
         audioRecoveryDevice_(AudioRecoveryDevice::GetInstance()),
-        audioCapturerSession_(AudioCapturerSession::GetInstance()),
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
         sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
@@ -323,7 +327,6 @@ private:
     void UnregisterBluetoothListener();
 
     BluetoothOffloadState GetA2dpOffloadFlag();
-    void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);
     bool CheckVoipAnrOn(std::vector<AudioEffectPropertyV3> &property);
 private:
@@ -338,6 +341,7 @@ private:
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
+    int32_t ecEnableState_ = 0;
 
     IAudioPolicyInterface& audioPolicyManager_;
 
@@ -410,11 +414,9 @@ private:
     AudioBackgroundManager& audioBackgroundManager_;
     AudioOffloadStream& audioOffloadStream_;
     AudioVolumeManager& audioVolumeManager_;
-    AudioEcManager& audioEcManager_;
     AudioDeviceCommon& audioDeviceCommon_;
     AudioRecoveryDevice& audioRecoveryDevice_;
 
-    AudioCapturerSession& audioCapturerSession_;
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
     SleAudioDeviceManager& sleAudioDeviceManager_;

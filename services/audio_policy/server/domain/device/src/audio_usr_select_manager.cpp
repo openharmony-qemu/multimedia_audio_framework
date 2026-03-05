@@ -22,6 +22,8 @@
 #include "audio_recovery_device.h"
 #include "audio_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 static const int32_t MEDIA_SERVICE_UID = 1013;
@@ -58,7 +60,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetSelectedInputDe
     std::lock_guard<std::mutex> lock(mutex_);
     auto invalidDesc = std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t index = GetIdFromRecordDeviceInfoList(uid);
-    return index > -1 ? recordDeviceInfoList_[index].selectedDevice_ : invalidDesc;
+    CHECK_AND_RETURN_RET(index > -1, invalidDesc);
+    return recordDeviceInfoList_[index].selectedDevice_->deviceType_ != DEVICE_TYPE_NONE ?
+        recordDeviceInfoList_[index].selectedDevice_ : invalidDesc;
 }
 
 BluetoothAndNearlinkPreferredRecordCategory AudioUsrSelectManager::GetPreferBluetoothAndNearlinkRecordByUid(
@@ -83,6 +87,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetCapturerDevice(
     std::shared_ptr<AudioDeviceDescriptor> appPreferredDevice = GetPreferDevice(index);
     capturerDevice = recordDeviceInfoList_[index].activeSelectedDevice_->deviceType_ == DEVICE_TYPE_NONE ?
         appPreferredDevice : recordDeviceInfoList_[index].activeSelectedDevice_;
+    sourceType = recordDeviceInfoList_[0].sourceType_;
     return JudgeFinalSelectDevice(capturerDevice, sourceType, recordDeviceInfoList_[index].appPreferredCategory_);
 }
 
@@ -97,15 +102,26 @@ std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::JudgeFinalSelectDe
         return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
     }
 
-    // 如果是直播或录像且设备为sco，需要判断是否存在可用的高清设备
-    if (sourceType == SOURCE_TYPE_CAMCORDER || sourceType == SOURCE_TYPE_LIVE || category == PREFERRED_HIGH_QUALITY) {
+    if (IsSourcePreferHighQuality(sourceType) || category == PREFERRED_HIGH_QUALITY) {
         auto a2dpin = std::make_shared<AudioDeviceDescriptor>(desc);
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
         bool isA2dpinConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dpin);
-        CHECK_AND_RETURN_RET(!isA2dpinConnected, a2dpin);
+        CHECK_AND_RETURN_RET(!isA2dpinConnected, AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dpin));
     }
 
     return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
+}
+
+bool AudioUsrSelectManager::IsSourcePreferHighQuality(SourceType type)
+{
+    switch (type) {
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_CAMCORDER:
+        case SOURCE_TYPE_LIVE:
+            return true;
+        default:
+            return false;
+    }
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioUsrSelectManager::GetPreferDevice(int32_t index)
@@ -165,7 +181,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfo(UpdateType updateType, Record
             }
             CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
             for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-                CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
                 recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
             }
             break;
@@ -289,7 +304,6 @@ void AudioUsrSelectManager::UpdateRecordDeviceInfoForStopInner(int32_t index)
         }
         CHECK_AND_RETURN(mcSelectedFlag_ && !HasMCSourceTypeStreamRunning());
         for (auto &recordDeviceInfo : recordDeviceInfoList_) {
-            CHECK_AND_CONTINUE(!(IsSourceTypeSupportedByMC(recordDeviceInfo.sourceType_)));
             recordDeviceInfo.activeSelectedDevice_ = recordDeviceInfo.selectedDevice_;
         }
     }
@@ -308,6 +322,14 @@ void AudioUsrSelectManager::UpdateAppIsBackState(int32_t uid, AppIsBackState app
         default:
             return;
     }
+}
+
+void AudioUsrSelectManager::RestoreMediaControllerPreferredInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN(mcSelectedFlag_ && desc->IsSameDeviceDesc(*mcInputPreferred_));
+    RecordDeviceInfo recordDeviceInfo;
+    UpdateRecordDeviceInfoForSystemSelectInner(-1, recordDeviceInfo, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

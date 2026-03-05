@@ -142,8 +142,7 @@ void AudioMicrophoneDescriptorAddAudioCapturerMicrophoneDescriptorFuzzTest()
     sptr<MicrophoneDescriptor> microphoneDescriptor = new MicrophoneDescriptor();
     audioMicrophoneDescriptor.connectedMicrophones_.push_back(microphoneDescriptor);
     audioMicrophoneDescriptor.AddAudioCapturerMicrophoneDescriptor(sessionId, devType);
-    delete microphoneDescriptor;
-    microphoneDescriptor = nullptr;
+    audioMicrophoneDescriptor.connectedMicrophones_.clear();
 }
 
 void AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest()
@@ -154,8 +153,7 @@ void AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest()
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.clear();
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionId, microphoneDescriptor});
     audioMicrophoneDescriptor.GetAudioCapturerMicrophoneDescriptors(sessionId);
-    delete microphoneDescriptor;
-    microphoneDescriptor = nullptr;
+    audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.clear();
 }
 
 void AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest()
@@ -173,8 +171,7 @@ void AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest()
     audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionId, microphoneDescriptor});
     audioMicrophoneDescriptor.UpdateAudioCapturerMicrophoneDescriptor(devType);
     audioMicrophoneDescriptor.GetAvailableMicrophones();
-    delete microphoneDescriptor;
-    microphoneDescriptor = nullptr;
+    audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.clear();
 }
 
 void AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorFuzzTest()
@@ -182,6 +179,14 @@ void AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorFuzzTest()
     AudioMicrophoneDescriptor &audioMicrophoneDescriptor = AudioMicrophoneDescriptor::GetInstance();
     int32_t uid = GetData<int32_t>();
     audioMicrophoneDescriptor.RemoveAudioCapturerMicrophoneDescriptor(uid);
+}
+
+void AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorBySessionIDFuzzTest()
+{
+    AudioMicrophoneDescriptor &audioMicrophoneDescriptor = AudioMicrophoneDescriptor::GetInstance();
+    int32_t sessionID = GetData<int32_t>() % NUM_3;
+    audioMicrophoneDescriptor.audioCaptureMicrophoneDescriptor_.insert({sessionID, nullptr});
+    audioMicrophoneDescriptor.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionID);
 }
 
 void AudioRouteMapGetDeviceInfoByUidAndPidFuzzTest()
@@ -287,6 +292,7 @@ TestPtr g_testPtrs[] = {
     AudioMicrophoneDescriptorGetAudioCapturerMicrophoneDescriptorsFuzzTest,
     AudioMicrophoneDescriptorUpdateAudioCapturerMicrophoneDescriptorFuzzTest,
     AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorFuzzTest,
+    AudioMicrophoneDescriptorRemoveAudioCapturerMicrophoneDescriptorBySessionIDFuzzTest,
     AudioRouteMapGetDeviceInfoByUidAndPidFuzzTest,
     AudioRouteMapDelRouteMapInfoByKeyFuzzTest,
     AudioRouteMapAddRouteMapInfoFuzzTest,

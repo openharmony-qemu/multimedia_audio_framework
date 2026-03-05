@@ -34,6 +34,7 @@ class AudioDefinitionPolicyUtils {
 public:
     static uint32_t PcmFormatToBytes(AudioSampleFormat format);
     static AudioChannel ConvertLayoutToAudioChannel(AudioChannelLayout layout);
+    static DeviceType GetDeviceTypeFromStr(const std::string &deviceTypeStr);
 private:
     AudioDefinitionPolicyUtils() {}
     ~AudioDefinitionPolicyUtils() {}
@@ -49,6 +50,7 @@ public:
     static std::unordered_map<std::string, AudioFlag> flagStrToEnum;
     static std::unordered_map<std::string, uint32_t> usageStrToEnum;
     static std::unordered_map<std::string, AudioPreloadType> preloadStrToEnum;
+    static std::unordered_map<std::string, bool> supModeStrToBool;
 };
 
 } // namespace AudioStandard

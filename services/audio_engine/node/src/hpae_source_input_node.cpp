@@ -206,7 +206,8 @@ void HpaeSourceInputNode::DoProcessMicInner(const HpaeSourceBufferType &bufferTy
     auto &historyData = historyDataMap_.at(bufferType);
     uint32_t byteSize = nodeInfoMap_.at(bufferType).channels * nodeInfoMap_.at(bufferType).frameLen *
         static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(bufferType).format));
-    if (historyRemainSizeMap_.at(bufferType) == 0) {
+    if ((bufferType == HPAE_SOURCE_BUFFER_TYPE_MIC || bufferType == HPAE_SOURCE_BUFFER_TYPE_DEFAULT) &&
+        historyRemainSizeMap_.at(bufferType) == 0) {
         return;
     } else if (historyRemainSizeMap_.at(bufferType) < byteSize) {
         historyData.insert(historyData.end(), byteSize - historyRemainSizeMap_.at(bufferType), 0);
@@ -273,9 +274,9 @@ void HpaeSourceInputNode::ConCatMicEcAndPushData(const uint64_t &replyBytes, con
     uint32_t ecFormatSize = static_cast<uint32_t>(GetSizeFromFormat(nodeInfoMap_.at(ecType).format));
 
     for (uint32_t i = 0; i < framelen; i++) {
-        size_t frameStart = i * totalChannel * micFormatSize;
-        size_t micFrameStart = i * micChannel * micFormatSize;
-        size_t ecFrameStart = i * ecChannel * micFormatSize;
+        size_t frameStart = static_cast<size_t>(i) * totalChannel * micFormatSize;
+        size_t micFrameStart = static_cast<size_t>(i) * micChannel * micFormatSize;
+        size_t ecFrameStart = static_cast<size_t>(i) * ecChannel * micFormatSize;
 
         for (uint32_t j = 0; j < micChannel; j++) {
             size_t destOffset = frameStart + j * micFormatSize;
@@ -340,15 +341,17 @@ void HpaeSourceInputNode::DoProcess()
             uint64_t replyBytesUnused = 0;
             audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_DEFAULT), replyBytesUnused,
                                                      &fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_EC), replyBytes);
+            CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
+                "ec request != reply");
+            DoProcessInner(sourceBufferType, replyBytes);
+        } else if (sourceInputNodeType_ == HPAE_SOURCE_MICREF) {
+            audioCapturerSource_->CaptureFrame(capturerFrameDataMap_.at(sourceBufferType).data(),
+                (uint64_t)frameByteSizeMap_.at(sourceBufferType), replyBytes);
+            CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
+                "micref request != reply");
+            DoProcessInner(sourceBufferType, replyBytes);
         } else {
             ReadDataFromSource(sourceBufferType, replyBytes);
-        }
-        
-        if (sourceInputNodeType_ == HPAE_SOURCE_MIC) {
-            DoProcessMicInner(sourceBufferType, replyBytes);
-        } else {
-            CHECK_AND_RETURN_LOG(CheckEcAndMicRefReplyValid(frameByteSizeMap_.at(sourceBufferType), replyBytes),
-                "request != reply");
             DoProcessMicInner(sourceBufferType, replyBytes);
         }
     }
@@ -429,8 +432,11 @@ int32_t HpaeSourceInputNode::GetCapturerSourceAdapter(
 }
 
 int32_t HpaeSourceInputNode::GetCapturerSourceInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const SourceType &sourceType, const std::string &sourceName)
+    const SourceType &sourceType, const std::string &sourceName, const std::string &busAddress)
 {
+    if (!busAddress.empty()) {
+        return GetCapturerSourceAdapter(deviceClass, sourceType, busAddress);
+    }
     if (sourceType == SOURCE_TYPE_WAKEUP || sourceName == HDI_ID_INFO_EC || sourceName == HDI_ID_INFO_MIC_REF) {
         return GetCapturerSourceAdapter(deviceClass, sourceType, sourceName);
     }
@@ -637,12 +643,12 @@ void HpaeSourceInputNode::SetInjectState(bool isInjecting)
 }
 
 void HpaeSourceInputNode::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid)
+    uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid, bool mute)
 {
     CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
         "audioCapturerSource_ is nullptr");
     CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "invalid source state");
-    audioCapturerSource_->NotifyStreamChangeToSource(change, sessionId, source, state, appUid);
+    audioCapturerSource_->NotifyStreamChangeToSource(change, sessionId, source, state, appUid, mute);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -55,6 +55,14 @@ struct StreamVolumeInfo {
 };
 
 typedef std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> StreamVolumeInfoMap;
+
+struct LowerVolumeInfo {
+    AudioStreamType streamType;
+    float duckedDb = 0;
+};
+
+typedef std::map<AudioStreamType, std::shared_ptr<LowerVolumeInfo>> LowerVolumeInfoMap;
+
 } // namespace AudioStandard
 } // namespace OHOS
 

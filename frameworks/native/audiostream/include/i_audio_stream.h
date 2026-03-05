@@ -136,7 +136,7 @@ public:
     static int32_t CheckRendererAudioStreamInfo(const AudioStreamParams info);
     static int32_t CheckCapturerAudioStreamInfo(const AudioStreamParams info);
     static bool IsFormatValid(uint8_t format);
-    static bool IsRendererChannelValid(uint8_t channel);
+    static bool IsRendererChannelValid(uint8_t channel, uint8_t encodingType);
     static bool IsCapturerChannelValid(uint8_t channel);
     static bool IsEncodingTypeValid(uint8_t encodingType);
     static bool IsSamplingRateValid(uint32_t samplingRate);
@@ -158,6 +158,7 @@ public:
     static AudioChannelLayout ConvertChannelsToDefaultChannelLayout(AudioChannel channels,
         AudioChannelLayout channelLayout);
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
+    virtual int32_t SetInMainThreadState(bool isInMainThread) = 0;
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void GetRendererInfo(AudioRendererInfo &rendererInfo) = 0;
@@ -191,6 +192,7 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
+
     virtual int32_t SetRebuildFlag() { return 0; }
     virtual int32_t RequestUserPrivacyAuthority(uint32_t sessionId) = 0;
     virtual void SetPlaybackCaptureStartStateCallback(
@@ -201,6 +203,9 @@ public:
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
+
+    virtual int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) = 0;
+    virtual int32_t UnregisterRemoteDiedCallback() = 0;
 
     // callback mode api
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;
@@ -323,7 +328,6 @@ public:
     }
 
     virtual void SetSwitchingStatus(bool isSwitching) = 0;
-    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
 
     virtual void GetRestoreInfo(RestoreInfo &restoreInfo) = 0;
 
@@ -337,6 +341,8 @@ public:
         std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) = 0;
 
     virtual void FetchDeviceForSplitStream() = 0;
+
+    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
 
     virtual void SetCallStartByUserTid(pid_t tid) = 0;
 
@@ -363,6 +369,9 @@ public:
     virtual int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) = 0;
 
     virtual int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) = 0;
+
+    // Only can be used in static mode
+    virtual bool ResetStaticPlayPosition() = 0;
 
     virtual const std::string GetBundleName() = 0;
     virtual void SetBundleName(std::string &name) = 0;

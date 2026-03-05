@@ -34,10 +34,12 @@ public:
     virtual void OnServiceConnected(AudioServiceIndex serviceIndex) = 0;
     virtual void OnServiceDisconnected(AudioServiceIndex serviceIndex) = 0;
     virtual void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-        sptr<AudioRendererFilter> filter = nullptr) = 0;
-    virtual void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress) = 0;
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "") = 0;
+    virtual void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "") = 0;
     virtual void OnDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected) = 0;
     virtual void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand) = 0;
+    virtual void OnConnectFailed(AudioDeviceDescriptor &desc) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

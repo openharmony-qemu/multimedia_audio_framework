@@ -22,6 +22,8 @@
 #include "hibernate/sync_hibernate_callback_ipc_interface_code.h"
 #include "audio_policy_server.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 using namespace std::chrono_literals;
@@ -124,11 +126,11 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
         result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt, zoneID);
         if (result == SUCCESS) {
             isAudioFocusApplied_ = false;
-            thread switchThread(&AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration, audioPolicyServer_);
-            switchThread.detach();
         } else {
             AUDIO_WARNING_LOG("Deactivate audio interrupt failed, err = %{public}d", result);
         }
+        thread switchThread(&AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration, audioPolicyServer_);
+        switchThread.detach();
     }
 }
 

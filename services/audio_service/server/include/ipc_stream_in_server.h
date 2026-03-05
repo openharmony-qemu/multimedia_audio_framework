@@ -52,7 +52,7 @@ public:
 
     int32_t Config();
 
-    int32_t RegisterStreamListener(const sptr<IRemoteObject>& object) override;
+    int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
 
@@ -73,6 +73,8 @@ public:
     int32_t Drain(bool stopFlag) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
+
+    int32_t SetInMainThreadState(bool isInMainThread) override;
 
     int32_t RequestHandleData(uint64_t syncFramePts, uint32_t size) override;
 
@@ -143,13 +145,14 @@ public:
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
 
-    int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo) override; // for static renderer only
-
     int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override;
+
+    int32_t ResetStaticPlayPosition() override; // for static renderer only
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();
     std::shared_ptr<CapturerInServer> GetCapturer();
+    int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount) override;
 
 private:
     int32_t ConfigRenderer();

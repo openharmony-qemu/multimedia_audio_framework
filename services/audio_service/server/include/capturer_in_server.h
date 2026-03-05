@@ -25,10 +25,11 @@
 #include "capturer_clock_manager.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
+#include "callback_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CapturerInServer : public IStatusCallback, public IReadCallback,
+class CapturerInServer : public IStatusCallback, public IReadCallback, public IHandler,
     public std::enable_shared_from_this<CapturerInServer> {
 public:
     CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener);
@@ -50,6 +51,8 @@ public:
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetLatency(uint64_t &latency);
     int32_t RequestUserPrivacyAuthority();
+    int32_t SetInMainThreadState(bool isInMainThread);
+    bool IsAppStateBackground(int32_t appPid);
 
     int32_t Init();
 
@@ -72,8 +75,6 @@ public:
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
 
-    void ReleaseCaptureInjector();
-
 private:
     bool CheckBGCapture();
     int32_t InitCacheBuffer(size_t targetSize);
@@ -82,11 +83,18 @@ private:
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     void HandleOperationFlushed();
-    void HandleOperationStopped(CapturerStage stage);
     void UpdateBufferTimeStamp(size_t readLen);
     void RebuildCaptureInjector();
     inline void CaptureConcurrentCheck(uint32_t streamIndex);
+    void HandleOperationStopped(CapturerStage stage);
+    void OnHandle(uint32_t code, int64_t data) override;
+    void InitCallbackHandler();
+    void ReleaseCallbackHandler();
+    void NotifyVoIPStart(SourceType sourceType, int32_t uid);
+    void ResetAsrFlag();
     void RecordOverflowStatus(bool currentStatus);
+    void ReportNoBgPermissionEvent();
+    void ReportOverflowEvent();
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -111,6 +119,8 @@ private:
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
     int32_t needStart = 0;
     int32_t underflowCount = 0;
+    int32_t lastOverflowCount_ = 0;
+    int64_t lastOverflowTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
     uint32_t overFlowLogFlag_ = 0;
@@ -123,6 +133,7 @@ private:
     std::string traceTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
     int32_t innerCapId_ = 0;
+    std::string asrBundleName_ = "";
     std::atomic<bool> rebuildFlag_ = false;
 
     int64_t lastStartTime_{};
@@ -137,6 +148,10 @@ private:
     std::atomic<bool> lastOverflowStatus_ = false;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
     bool hasRequestUserPrivacyAuthority_ = false;
+
+    std::mutex runnerMutex_;
+    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+    bool isInMainThread_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

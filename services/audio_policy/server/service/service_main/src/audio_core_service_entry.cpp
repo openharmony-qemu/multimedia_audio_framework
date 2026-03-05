@@ -149,7 +149,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
 int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return AudioCapturerSession::GetInstance().ReloadCaptureSession(sessionId, operation);
+    return coreService_->ReloadCaptureSession(sessionId, operation);
 }
 
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
@@ -276,17 +276,24 @@ void AudioCoreService::EventEntry::OnServiceDisconnected(AudioServiceIndex servi
 }
 
 void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-    sptr<AudioRendererFilter> filter)
+    sptr<AudioRendererFilter> filter, const std::string &caller)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock");
-    coreService_->OnForcedDeviceSelected(devType, macAddress, filter);
+    coreService_->OnForcedDeviceSelected(devType, macAddress, filter, caller);
 }
 
-void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioCoreService::EventEntry::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+    const std::string &caller)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->OnPrivacyDeviceSelected(devType, macAddress);
+    coreService_->OnPrivacyDeviceSelected(devType, macAddress, caller);
+}
+
+void AudioCoreService::EventEntry::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->OnConnectFailed(desc);
 }
 
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
@@ -696,5 +703,22 @@ void AudioCoreService::EventEntry::NotifyRemoteRouteStateChange(const std::strin
     CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
     coreService_->NotifyRemoteRouteStateChange(networkId, deviceType, enable);
 }
+
+void AudioCoreService::EventEntry::ReloadSourceForEffect(
+    AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->ReloadSourceForEffect(oldPropertyArray, propertyArray);
+}
+
+void AudioCoreService::EventEntry::ReloadSourceForEffectV3(
+    AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    coreService_->ReloadSourceForEffect(oldPropertyArray, propertyArray);
+}
+
 }
 }

@@ -47,29 +47,26 @@ int32_t AudioSuiteSpaceRenderNode::Init()
         AUDIO_ERR_LOG("AudioSuiteSpaceRenderNode::Init failed, already inited");
         return ERROR;
     }
-    
+
     if (!isOutputPortInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
         isOutputPortInit_ = true;
     }
 
     algoInterface_ = AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_SPACE_RENDER,
-        nodeParameter);
+        nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ CreateAlgoInterface failed");
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
-    SetAudioNodeFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
-        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
-        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
+    SetAudioNodeFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
 
-    outPcmBuffer_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
-        nodeParameter.outChannels,
-        SPACE_RENDER_ALGO_CHANNEL_LAYOUT,
-        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
-    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
 
+    nodeNeedDataDuration_ =
+        static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;
     isInit_ = true;
     AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::Init end");
     return SUCCESS;
@@ -89,50 +86,6 @@ int32_t AudioSuiteSpaceRenderNode::DeInit()
     }
  
     return ERROR;
-}
-
-AudioSuitePcmBuffer *AudioSuiteSpaceRenderNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
-{
-    int32_t ret;
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "AudioSuiteSpaceRenderNode SignalProcess inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr, nullptr,
-        "AudioSuiteSpaceRenderNode SignalProcess inputs[0] is nullptr");
-    CHECK_AND_RETURN_RET_LOG(outPcmBuffer_.GetPcmData() != nullptr, nullptr, "outPcmBuffer_ GetPcmData is nullptr");
-
-    std::vector<uint8_t *> dataInPcm = {inputs[0]->GetPcmData()};
-    std::vector<uint8_t *> dataOutPcm = {outPcmBuffer_.GetPcmData()};
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterface_ is nullptr");
-
-    ret = algoInterface_->Apply(dataInPcm, dataOutPcm);
-
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteSpaceRenderNode SignalProcess Apply failed");
-
-    return &outPcmBuffer_;
-}
-
-int32_t AudioSuiteSpaceRenderNode::SetOptions(std::string name, std::string value)
-{
-    AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::SetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ is nullptr");
-
-    paraName_ = name;
-    paraValue_ = value;
-
-    int32_t ret = algoInterface_->SetParameter(name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed ret: %{public}d", ret);
-    AUDIO_INFO_LOG("SetOptions SUCCESS");
-    return SUCCESS;
-}
-
-int32_t AudioSuiteSpaceRenderNode::GetOptions(std::string name, std::string &value)
-{
-    AUDIO_INFO_LOG("AudioSuiteSpaceRenderNode::GetOptions Enter");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterface_ is nullptr");
-    
-    int32_t ret = algoInterface_->GetParameter(name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetParameter failed");
-    AUDIO_INFO_LOG("GetOptions SUCCESS");
-    return SUCCESS;
 }
 
 }  // namespace AudioSuite

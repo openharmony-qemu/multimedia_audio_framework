@@ -23,6 +23,8 @@
 #include "taihe_audio_session_callback.h"
 #include "taihe_audio_session_state_callback.h"
 #include "taihe_audio_session_device_callback.h"
+#include "taihe_audio_session_input_device_callback.h"
+#include "taihe_audio_session_available_devicechange_callback.h"
 
 namespace ANI::Audio {
 using namespace taihe;
@@ -33,7 +35,7 @@ const std::string AUDIOSESSION_CALLBACK_NAME = "audioSessionDeactivated";
 class AudioSessionManagerImpl {
 public:
     AudioSessionManagerImpl();
-    explicit AudioSessionManagerImpl(OHOS::AudioStandard::AudioSessionManager *audioSessionMngr);
+    explicit AudioSessionManagerImpl(std::shared_ptr<AudioSessionManagerImpl> obj);
     ~AudioSessionManagerImpl();
 
     static AudioSessionManager CreateSessionManagerWrapper();
@@ -52,6 +54,17 @@ public:
     void OffAudioSessionDeactivated(optional_view<callback<void(AudioSessionDeactivatedEvent const&)>> callback);
     void OffAudioSessionStateChanged(optional_view<callback<void(AudioSessionStateChangedEvent const&)>> callback);
     void OffCurrentOutputDeviceChanged(optional_view<callback<void(CurrentOutputDeviceChangedEvent const&)>> callback);
+    void SelectMediaInputDeviceSync(AudioDeviceDescriptor const& inputAudioDevice);
+    array<AudioDeviceDescriptor> GetAvailableDevices(DeviceUsage deviceUsage);
+    AudioDeviceDescriptor GetSelectedMediaInputDevice();
+    void ClearSelectedMediaInputDeviceSync();
+    void SetBluetoothAndNearlinkPreferredRecordCategorySync(BluetoothAndNearlinkPreferredRecordCategory category);
+    BluetoothAndNearlinkPreferredRecordCategory GetBluetoothAndNearlinkPreferredRecordCategory();
+    void OnCurrentInputDeviceChanged(callback_view<void(CurrentInputDeviceChangedEvent const& data)> callback);
+    void OffCurrentInputDeviceChanged(
+        optional_view<callback<void(CurrentInputDeviceChangedEvent const& data)>> callback);
+    void OnAvailableDeviceChange(DeviceUsage deviceUsage, callback_view<void(DeviceChangeAction const& data)> callback);
+    void OffAvailableDeviceChange(optional_view<callback<void(DeviceChangeAction const& data)>> callback);
 
 private:
     static void RegisterAudioSessionCallback(std::shared_ptr<uintptr_t> &callback,
@@ -59,6 +72,10 @@ private:
     static void RegisterAudioSessionStateCallback(std::shared_ptr<uintptr_t> &callback,
         AudioSessionManagerImpl *taiheSessionManager);
     static void RegisterAudioSessionDeviceCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioSessionManagerImpl *taiheSessionManager);
+    static void RegisterAudioSessionInputDeviceCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioSessionManagerImpl *taiheSessionManager);
+    static void RegisterAvaiableDeviceChangeCallback(DeviceUsage deviceUsage, std::shared_ptr<uintptr_t> &callback,
         AudioSessionManagerImpl *taiheSessionManager);
     static void UnregisterCallbackCarryParam(std::shared_ptr<uintptr_t> &callback,
         AudioSessionManagerImpl *taiheSessionManager);
@@ -69,18 +86,30 @@ private:
     static void UnregisterSessionDeviceCallbackCarryParam(std::shared_ptr<uintptr_t> &callback,
         AudioSessionManagerImpl *taiheSessionManager);
     static void UnregisterSessionDeviceCallback(AudioSessionManagerImpl *taiheSessionManager);
+    static void UnregisterSessionInputDeviceCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioSessionManagerImpl *taiheSessionManager);
+    static void UnregisterAvailableDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioSessionManagerImpl *taiheSessionManager);
     static std::shared_ptr<TaiheAudioSessionStateCallback> GetAudioSessionStateCallback(
         std::shared_ptr<uintptr_t> &callback, AudioSessionManagerImpl *taiheSessionManager);
     static std::shared_ptr<TaiheAudioSessionDeviceCallback> GetAudioSessionDeviceCallback(
         std::shared_ptr<uintptr_t> &callback, AudioSessionManagerImpl *taiheSessionManager);
+    static std::shared_ptr<TaiheAudioSessionInputDeviceCallback> GetAudioSessionInputDeviceCallback(
+        std::shared_ptr<uintptr_t> &callback, AudioSessionManagerImpl *taiheSessionManager);
 
+    OHOS::AudioStandard::AudioSystemManager *audioMngr_;
     OHOS::AudioStandard::AudioSessionManager *audioSessionMngr_;
     std::shared_ptr<OHOS::AudioStandard::AudioSessionCallback> audioSessionCallbackTaihe_ = nullptr;
+    std::shared_ptr<OHOS::AudioStandard::AudioManagerAvailableDeviceChangeCallback>
+        availableDeviceChangeCallbackTaihe_ = nullptr;
     std::list<std::shared_ptr<TaiheAudioSessionStateCallback>> sessionStateCallbackList_;
     std::list<std::shared_ptr<TaiheAudioSessionDeviceCallback>> sessionDeviceCallbackList_;
+    std::list<std::shared_ptr<TaiheAudioSessionInputDeviceCallback>> sessionInputDeviceCallbackList_;
+
     std::mutex mutex_;
     std::mutex sessionStateCbMutex_;
     std::mutex sessionDeviceCbMutex_;
+    std::mutex sessionInputDeviceCbMutex_;
 };
 }  // namespace ANI::Audio
 #endif // TAIHE_AUDIO_SESSION_MANAGER_H

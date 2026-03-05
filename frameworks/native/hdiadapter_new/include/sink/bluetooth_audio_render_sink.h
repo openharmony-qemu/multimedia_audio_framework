@@ -47,7 +47,7 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
-    int64_t GetVolumeDataCount() override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     int32_t SuspendRenderSink(void) override;
     int32_t RestoreRenderSink(void) override;
@@ -55,8 +55,8 @@ public:
     void SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value) override;
 
     int32_t SetVolume(float left, float right) override;
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override;
     int32_t GetVolume(float &left, float &right) override;
-
     int32_t GetLatency(uint32_t &latency) override;
     int32_t GetTransactionId(uint64_t &transactionId) override;
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
@@ -71,8 +71,6 @@ public:
     void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
-
-    void SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -95,6 +93,7 @@ private:
     bool IsValidState(void);
     bool IsSinkInited(void) override;
     void SetAudioParameterInner(const std::string &value);
+    void SetA2dpCacheParam();
 
     // low latency
     int32_t PrepareMmapBuffer(void);
@@ -170,19 +169,6 @@ private:
     uint32_t bufferTotalFrameSize_ = 0;
     uint32_t eachReadFrameSize_ = 0;
     uint32_t syncInfoSize_ = 0;
-
-    struct A2dpParam {
-        AudioParamKey key = AudioParamKey::NONE;
-        std::string condition = "";
-        std::string value = "";
-    
-        bool empty() const
-        {
-            return key == AudioParamKey::NONE && condition.empty() && value.empty();
-        }
-    };
-
-    A2dpParam a2dpParam_;
 };
 
 } // namespace AudioStandard

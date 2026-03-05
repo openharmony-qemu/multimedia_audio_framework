@@ -185,6 +185,7 @@ int32_t HdiAdapterManager::LoadAdapter(HdiDeviceManagerType type, const std::str
 
 void HdiAdapterManager::UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force)
 {
+    SetRemoteHdiInvalidState(type, adapterName, force);
     std::shared_ptr<IDeviceManager> deviceManager = GetDeviceManager(type);
     CHECK_AND_RETURN(deviceManager != nullptr);
     deviceManager->UnloadAdapter(adapterName, force);
@@ -419,16 +420,6 @@ void HdiAdapterManager::DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> 
     } else {
         AUDIO_WARNING_LOG("get %{public}s fail", PRESTORE_INFO_AUDIO_MONO);
     }
-
-    std::pair<AudioParamKey, std::pair<std::string, std::string>> param = {AudioParamKey::NONE, {"", ""}};
-    ret = sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
-    if (ret == SUCCESS && type == HDI_ID_TYPE_BLUETOOTH) {
-        sink->SetBluetoothSinkParam(param.first, param.second.first, param.second.second);
-        AUDIO_INFO_LOG("Set AudioParamKey %{public}u, condition %{public}s, value %{public}s",
-            param.first, param.second.first.c_str(), param.second.second.c_str());
-        sinkPrestoreInfo_.Erase(PRESTORE_INFO_AUDIO_BT_PARAM);
-        AUDIO_INFO_LOG("SetBluetoothSinkParam SUCCESS");
-    }
 }
 
 void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool tryCreate)
@@ -447,6 +438,36 @@ void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool try
         return;
     }
     IncRefCount(id);
+}
+
+void HdiAdapterManager::SetRemoteHdiInvalidState(HdiDeviceManagerType type, const std::string &networkId, bool force)
+{
+    CHECK_AND_RETURN(type == HDI_DEVICE_MANAGER_TYPE_REMOTE && force);
+    auto limitFunc = [networkId](uint32_t id) -> bool {
+        std::string info = IdHandler::GetInstance().ParseInfo(id);
+        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE ||
+            IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_FAST ||
+            IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_REMOTE_OFFLOAD) {
+            return info == networkId;
+        }
+        return false;
+    };
+    auto sinkProcessFunc = [limitFunc](uint32_t renderId, std::shared_ptr<IAudioRenderSink> sink) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(renderId), SUCCESS);
+        CHECK_AND_RETURN_RET(sink != nullptr, SUCCESS);
+
+        sink->SetInvalidState();
+        return SUCCESS;
+    };
+    ProcessSink(sinkProcessFunc);
+    auto sourceProcessFunc = [limitFunc](uint32_t captureId, std::shared_ptr<IAudioCaptureSource> source) -> int32_t {
+        CHECK_AND_RETURN_RET(limitFunc(captureId), SUCCESS);
+        CHECK_AND_RETURN_RET(source != nullptr, SUCCESS);
+
+        source->SetInvalidState();
+        return SUCCESS;
+    };
+    ProcessSource(sourceProcessFunc);
 }
 
 int32_t HdiAdapterManager::GetCurrentOutputPipeChangeInfos(

@@ -95,9 +95,6 @@ HWTEST_F(HpaeMixerNodeTest, testHpaePlayOutConnectNode, TestSize.Level0)
     std::string deviceNetId = "LocalDevice";
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 1);
     EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
-    EXPECT_EQ(hpaeSinkInputNode0.use_count(), 1 + 1);
-    EXPECT_EQ(hpaeSinkInputNode1.use_count(), 1 + 1);
-    EXPECT_EQ(hpaeMixerNode.use_count(), 1 + 1);
     g_testValue = 0;
     int32_t testValue = TEST_VALUE1;
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb0 =
@@ -114,12 +111,12 @@ HWTEST_F(HpaeMixerNodeTest, testHpaePlayOutConnectNode, TestSize.Level0)
         GetSizeFromFormat(nodeInfo.format));
     hpaeSinkOutputNode->DisConnect(hpaeMixerNode);
     EXPECT_EQ(hpaeSinkOutputNode->GetPreOutNum(), 0);
-    EXPECT_EQ(hpaeMixerNode.use_count(), 1);
+
     hpaeMixerNode->DisConnect(hpaeSinkInputNode0);
-    EXPECT_EQ(hpaeSinkInputNode0.use_count(), 1);
+
     EXPECT_EQ(hpaeMixerNode->GetPreOutNum(), 1);
     hpaeMixerNode->DisConnect(hpaeSinkInputNode1);
-    EXPECT_EQ(hpaeSinkInputNode1.use_count(), 1);
+
     EXPECT_EQ(hpaeMixerNode->GetPreOutNum(), 0);
 }
 

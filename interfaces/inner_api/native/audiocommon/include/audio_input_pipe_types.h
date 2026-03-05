@@ -96,13 +96,23 @@ public:
         devices_ = devices;
     }
 
-    void AddStream(uint32_t streamId, SourceType source, CapturerState state, uint32_t appUid)
+    void SetStreamMute(uint32_t streamId, bool mute)
+    {
+        if (streams_.find(streamId) != streams_.end()) {
+            streams_[streamId].mute_ = mute;
+        }
+    }
+
+    void AddStream(uint32_t streamId, SourceType source, CapturerState state, int32_t uid,
+        std::string bundleName = "", bool mute = false)
     {
         CapturerStreamInfo info;
         info.streamId_ = streamId;
         info.source_ = source;
         info.state_ = state;
-        info.appUid_ = appUid;
+        info.uid_ = uid;
+        info.bundleName_ = bundleName;
+        info.mute_ = mute;
         streams_[streamId] = info;
     }
 
@@ -116,10 +126,11 @@ public:
         streams_.clear();
     }
 
-    void UpdateStream(uint32_t streamId, CapturerState state)
+    void UpdateStream(uint32_t streamId, CapturerState state, bool mute)
     {
         if (streams_.find(streamId) != streams_.end()) {
             streams_[streamId].state_ = state;
+            streams_[streamId].mute_ = mute;
         }
     }
 
@@ -173,7 +184,9 @@ private:
             ret = parcel.WriteUint32(stream.second.streamId_) &&
                 parcel.WriteInt32(stream.second.state_) &&
                 parcel.WriteInt32(stream.second.source_) &&
-                parcel.WriteInt32(stream.second.appUid_);
+                parcel.WriteString(stream.second.bundleName_) &&
+                parcel.WriteBool(stream.second.mute_) &&
+                parcel.WriteInt32(stream.second.uid_);
             AUDIO_CHECK_AND_RETURN_RET(ret, false);
         }
         return true;
@@ -198,7 +211,9 @@ private:
             stream.streamId_ = parcel.ReadUint32();
             stream.state_ = static_cast<CapturerState>(parcel.ReadInt32());
             stream.source_ = static_cast<SourceType>(parcel.ReadInt32());
-            stream.appUid_ = parcel.ReadUint32();
+            stream.bundleName_ = parcel.ReadString();
+            stream.mute_ = parcel.ReadBool();
+            stream.uid_ = parcel.ReadInt32();
             streams_[stream.streamId_] = stream;
         }
     }

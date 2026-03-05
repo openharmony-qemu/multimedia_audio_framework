@@ -13,7 +13,7 @@
 extern std::shared_ptr<NodeManager> g_nodeManager;
 extern std::shared_ptr<NodeManager> g_singlePipelineNodeManager;
 
-int32_t AddEffectNodeToNodeManager(std::string &inputNodeId, std::string &effectNodeId);
+int32_t AddEffectNodeToNodeManager(const std::string &inputNodeId, const std::string &effectNodeId);
 
 Node CreateNodeByType(std::string uuid, OH_AudioNode_Type nodeType);
 

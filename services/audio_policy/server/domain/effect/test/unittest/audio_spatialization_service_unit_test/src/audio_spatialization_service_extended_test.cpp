@@ -184,10 +184,9 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_006, Tes
 */
 HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_007, TestSize.Level4)
 {
-    auto selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
-    selectedAudioDevice->macAddress_ = TEST_MAC_ADDRESS;
+    std::string macAddress = TEST_MAC_ADDRESS;
     sSpatializationService_->currSpatialDeviceType_ = EARPHONE_TYPE_OTHERS;
-    sSpatializationService_->UpdateCurrentDevice(selectedAudioDevice);
+    sSpatializationService_->UpdateCurrentDevice(macAddress);
     EXPECT_EQ(sSpatializationService_->currSpatialDeviceType_, EARPHONE_TYPE_NONE);
 }
 

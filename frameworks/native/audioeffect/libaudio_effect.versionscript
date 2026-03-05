@@ -98,11 +98,12 @@
     *DeleteStreamVolume*;
     *ExistAudioEffectChainArm*;
     *IsChannelLayoutSupportedForDspEffect*;
-    *updateCollaborativeProductId*;
+    *UpdateCollaborativeProductId*;
     *LoadCollaborationConfig*;
+    *GetCollaborationLatency*;
     *SetBypassSpatializationForStereo*;
     *IsSpatializationEnabledForChains*;
-    *IsEffectChainFading*;
+    *IsDownSamplingForSpatialization*;
   local:
     *;
 };

@@ -70,14 +70,19 @@ protected:
 private:
     bool CheckAudioInterruptZonePermission();
     int32_t FindZoneByPid(int32_t pid);
+    std::vector<int32_t> FindAudioZonesByPid(int32_t pid);
     void RemoveAudioZoneInterrupts(int32_t zoneId, const AudioFocusIterator &focus);
     void TryActiveAudioFocusForZone(int32_t zoneId, AudioFocusList &activeFocusList);
     void TryResumeAudioFocusForZone(int32_t zoneId);
     AudioFocusIterator QueryAudioFocusFromZone(int32_t zoneId, const std::string &deviceTag);
     void ForceStopAudioFocusInZone(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     void ForceStopAllAudioFocusInZone(std::shared_ptr<AudioInterruptZone> &zone);
+    void UpdateFocusListForInject(const std::string &deviceTag, AudioFocusList &newFocusList,
+        AudioFocusList &activeFocusList, AudioFocusIterator &oldDeviceList);
     void SendInterruptEventForMigration(const std::pair<AudioInterrupt, AudioFocuState> &audioInterrupt,
         const int32_t toZoneId);
+    void MoveAudioInterruptToZone(const AudioInterrupt &interrupt, const AudioFocuState state,
+        const int32_t zoneId);
 
     AudioInterruptService *service_ = nullptr;
 };

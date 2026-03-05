@@ -36,6 +36,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
+enum class VolumeKeyType : int32_t {
+    VOLUME_KEY_TYPE_LEVEL,
+    VOLUME_KEY_TYPE_DEGREE,
+};
+
 class VolumeDataMaintainer {
 public:
     enum VolumeDataMaintainerStreamType {  // define with Dual framework
@@ -128,7 +133,8 @@ public:
     void SaveSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel);
     int32_t GetSystemVolumeForEffect(DeviceType deviceType, AudioStreamType streamType);
 
-    std::string GetVolumeKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
+    std::string GetVolumeKey(const std::shared_ptr<AudioDeviceDescriptor> &device,
+        AudioStreamType streamType, VolumeKeyType keyType = VolumeKeyType::VOLUME_KEY_TYPE_LEVEL);
     std::string GetMuteKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
     void SetVolumeList(std::vector<AudioStreamType> volumeList);
 
@@ -208,6 +214,7 @@ private:
     bool isSettingsCloneHaveStarted_ = false;
     std::unordered_map<DeviceType, std::unordered_map<AudioStreamType, int32_t>> deviceTypeToSystemVolumeForEffectMap_;
     bool isDataShareReady_ = false;
+    bool hasRegisterCloned_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

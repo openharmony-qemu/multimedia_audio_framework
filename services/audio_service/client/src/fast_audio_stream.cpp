@@ -85,6 +85,12 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
+int32_t FastAudioStream::SetInMainThreadState(bool isInMainThread)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void FastAudioStream::GetRendererInfo(AudioRendererInfo &rendererInfo)
 {
     rendererInfo = rendererInfo_;
@@ -109,7 +115,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.streamInfo.samplingRate = static_cast<AudioSamplingRate>(info.samplingRate);
     config.streamType = eStreamType_;
     config.originalSessionId = info.originalSessionId;
-    config.isUltraFast = info.isUltraFast;
+    config.ultraFastFlag = info.ultraFastFlag;
     AUDIO_DEBUG_LOG("%{public}s: originalSessionId:%{public}u",
         logTag_.c_str(), config.originalSessionId);
     if (eMode_ == AUDIO_MODE_PLAYBACK) {
@@ -534,9 +540,15 @@ int32_t FastAudioStream::SetRendererFirstFrameWritingCallback(
     const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
 {
     AUDIO_INFO_LOG("%{public}s: in.", logTag_.c_str());
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
-        "%{public}s: callback is nullptr", logTag_.c_str());
+    CHECK_AND_RETURN_RET_LOG(callback && processClient_ != nullptr,
+        ERR_INVALID_PARAM, "%{public}s: callback is nullptr", logTag_.c_str());
     firstFrameWritingCb_ = callback;
+    if (rendererInfo_.isStatic) {
+        procFirstFrameClientCb_ = std::make_shared<FastStaticFirstFrameCallbackImpl>(callback, *this);
+        int32_t ret = processClient_->SetFirstFrameWritingCallback(procFirstFrameClientCb_);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "%{public}s: save firstFrame data callback fail, ret %{public}d.", logTag_.c_str(), ret);
+    }
     return SUCCESS;
 }
 
@@ -741,6 +753,7 @@ bool FastAudioStream::StartAudioStream(StateChangeCmdType cmdType,
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state before starting", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
+    processClient_->SetIsFirstFrame(true);
     int32_t ret = ERROR;
     if (state_ == PAUSED || state_ == STOPPED) {
         ret = processClient_->Resume();
@@ -911,6 +924,18 @@ void FastAudioStream::SetOverflowCount(uint32_t overflowCount)
     processClient_->SetOverflowCount(overflowCount);
 }
 
+int32_t FastAudioStream::RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "process is null.");
+    return processClient_->RegisterRemoteDiedCallback(callback);
+}
+
+int32_t FastAudioStream::UnregisterRemoteDiedCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "process is null.");
+    return processClient_->UnregisterRemoteDiedCallback();
+}
+
 void FastAudioStream::SetRendererPositionCallback(int64_t markPosition,
     const std::shared_ptr<RendererPositionCallback> &callback)
 {
@@ -1033,7 +1058,10 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.defaultOutputDevice = defaultOutputDevice_;
 
     if (rendererInfo_.isStatic) {
-        processClient_->GetStaticBufferInfo(info.staticBufferInfo);
+        CHECK_AND_RETURN_LOG(processClient_ != nullptr, "processClient is nullptr");
+        processClient_->GetStaticPlayPosition(info.staticBufferInfo);
+        info.staticBufferInfo.sharedMemory_ = staticBufferInfo_.sharedMemory_;
+        info.staticBufferInfo.totalLoopTimes_ = staticBufferInfo_.totalLoopTimes_;
         info.staticBufferEventCallback = audioStaticBufferEventCallback_;
     }
 
@@ -1072,6 +1100,8 @@ void FastAudioStream::ResetFirstFrameState()
         AUDIO_DEBUG_LOG("%{public}s: reset the first frame state", logTag_.c_str());
         spkProcClientCb_->ResetFirstFrameState();
     }
+    CHECK_AND_RETURN(processClient_ != nullptr && rendererInfo_.isStatic);
+    processClient_->SetIsFirstFrame(true);
 }
 
 void FastAudioStream::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
@@ -1111,6 +1141,11 @@ void FastAudioStreamCaptureCallback::OnHandleData(size_t length)
 {
     CHECK_AND_RETURN_LOG(captureCallback_!= nullptr, "OnHandleData failed: captureCallback_ is null.");
     captureCallback_->OnReadData(length);
+}
+
+void FastStaticFirstFrameCallbackImpl::OnFirstFrameWriting()
+{
+    audioStreamImpl_.OnFirstFrameWriting();
 }
 
 int32_t FastAudioStream::SetChannelBlendMode(ChannelBlendMode blendMode)
@@ -1390,6 +1425,7 @@ int32_t FastAudioStream::SetLoopTimes(int64_t bufferLoopTimes)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_NULL_POINTER, "processClient_ is null");
     CHECK_AND_RETURN_RET_LOG(renderMode_ == RENDER_MODE_STATIC, ERR_INCORRECT_MODE, "incorrect render mode");
+    staticBufferInfo_.totalLoopTimes_ = bufferLoopTimes;
     return processClient_->SetLoopTimes(bufferLoopTimes);
 }
 
@@ -1401,6 +1437,16 @@ const std::string FastAudioStream::GetBundleName()
 void FastAudioStream::SetBundleName(std::string &name)
 {
     bundleName = name;
+}
+
+bool FastAudioStream::ResetStaticPlayPosition()
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, false, "Not in Static Mode");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, false, "processClient_ is null!");
+
+    int32_t ret = processClient_->ResetStaticPlayPosition();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "ResetStaticPlayPosition fail!");
+    return true;
 }
 
 } // namespace AudioStandard

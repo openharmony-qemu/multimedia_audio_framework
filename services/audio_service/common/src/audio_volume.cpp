@@ -28,6 +28,8 @@
 #include "audio_mute_factor_manager.h"
 #include "volume_tools.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING_ENUM_MAP = {
@@ -54,8 +56,10 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
     {"wakeup", STREAM_WAKEUP},
     {"voice_message", STREAM_VOICE_MESSAGE},
     {"navigation", STREAM_NAVIGATION},
+#ifdef MULTI_ALARM_LEVEL
     {"announcement", STREAM_ANNOUNCEMENT},
     {"emergency", STREAM_EMERGENCY},
+#endif
 };
 
 uint64_t DURATION_TIME_DEFAULT = 40;
@@ -107,6 +111,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         return volumes->volume;
     }
     GetVolumeValues(sessionId, srcStreamType, deviceClass, volumes);
+    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
 }
 
@@ -136,6 +141,9 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     if (itSV != systemVolume_.end()) {
         volumes->volumeSystem = itSV->second.totalVolume_;
         volumeLevel = itSV->second.volumeLevel_;
+        if (streamType == STREAM_VOICE_COMMUNICATION && IsVgsVolumeSupported() && volumes->volumeSystem > 0.0f) {
+            volumes->volumeSystem = 1.0f;
+        }
     } else {
         AUDIO_ERR_LOG("no system volume, volumeType:%{public}d deviceClass%{public}s", volumeType, deviceClass.c_str());
     }
@@ -145,7 +153,7 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
     }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolumeInternal(streamType,
         appUid, sessionId));
-    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume * mdmMuteFactor;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
@@ -158,7 +166,6 @@ void AudioVolume::GetVolumeValues(uint32_t sessionId, AudioStreamType streamType
             doNotDisturbStatusVolume, mdmMuteFactor);
     }
     Trace trace("AudioVolume::GetVolume " + std::to_string(volumes->volume));
-    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
 }
 
 uint32_t AudioVolume::GetDoNotDisturbStatusVolume(int32_t volumeType, int32_t appUid, uint32_t sessionId)
@@ -275,6 +282,16 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
                 streamVolumeParams.isVKB));
     } else {
         HILOG_COMM_ERROR("[AddStreamVolume] stream volume already exist, sessionId:%{public}u",
+            streamVolumeParams.sessionId);
+    }
+    it = streamVolume_.find(streamVolumeParams.sessionId);
+    if (it != streamVolume_.end()) {
+        it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
+        it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
+            it->second.isDualMuted_) ? 0.0f :
+            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+    } else {
+        HILOG_COMM_ERROR("[AddStreamVolume] stream volume not exist, sessionId:%{public}u",
             streamVolumeParams.sessionId);
     }
 }

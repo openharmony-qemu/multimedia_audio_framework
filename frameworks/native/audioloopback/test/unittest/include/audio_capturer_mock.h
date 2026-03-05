@@ -36,7 +36,6 @@ public:
     MOCK_METHOD(CapturerState, GetStatus, (), (const, override));
     MOCK_METHOD(bool, GetTimeStampInfo, (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
     MOCK_METHOD(bool, GetAudioTime, (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
-    MOCK_METHOD(bool, GetFirstPkgTimeStampInfo, (int64_t &firstTs), (const, override));
     MOCK_METHOD(bool, Pause, (), (const, override));
     MOCK_METHOD(bool, Stop, (), (const, override));
     MOCK_METHOD(bool, Flush, (), (const, override));
@@ -84,6 +83,12 @@ public:
     MOCK_METHOD(int32_t, SetAudioSourceConcurrency, (const std::vector<SourceType> &targetSources), (override));
     MOCK_METHOD(int32_t, SetInterruptStrategy, (InterruptStrategy strategy), (override));
     MOCK_METHOD(void, SetInterruptEventCallbackType, (InterruptEventCallbackType callbackType), (override));
+    MOCK_METHOD(int32_t, StartImpl, (), (override));
+    MOCK_METHOD(int32_t, StopImpl, (), (const, override));
+    MOCK_METHOD(int32_t, ReleaseImpl, (), (override));
+    MOCK_METHOD(int32_t, StartWithError, (), (override));
+    MOCK_METHOD(int32_t, StopWithError, (), (const, override));
+    MOCK_METHOD(int32_t, ReleaseWithError, (), (override));
 };
 
 } // namespace AudioStandard

@@ -30,6 +30,13 @@ namespace AudioStandard {
 namespace AudioSuite {
 namespace {
 static constexpr uint32_t SAMPLE_SHIFT_AMOUNT = 16;
+
+static const std::unordered_map<SoundFieldType, iMedia_Surround_PARA> soundFieldParaMap = {
+    {AUDIO_SUITE_SOUND_FIELD_FRONT_FACING, IMEDIA_SWS_SOUROUND_FRONT},
+    {AUDIO_SUITE_SOUND_FIELD_GRAND, IMEDIA_SWS_SOUROUND_GRAND},
+    {AUDIO_SUITE_SOUND_FIELD_NEAR, IMEDIA_SWS_SOUROUND_DEFAULT},
+    {AUDIO_SUITE_SOUND_FIELD_WIDE, IMEDIA_SWS_SOUROUND_BROAD}
+};
 }  // namespace
 
 AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(NodeParameter &nc)
@@ -37,10 +44,10 @@ AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl(Nod
     AUDIO_INFO_LOG("AudioSuiteSoundFieldAlgoInterfaceImpl::AudioSuiteSoundFieldAlgoInterfaceImpl()");
     stData_.piDataIn = dataIn_.data();
     stData_.piDataOut = dataOut_.data();
-    stData_.iSize = AUDIO_SURROUND_PCM_48K_FRAME_LEN;
+    stData_.iSize = static_cast<int32_t>(nc.frameLen);
     stData_.iEnable_SWS = AUDIO_SURROUND_ENABLE_SWS;
     stData_.iData_Format16 = AUDIO_SURROUND_PCM_16_BIT;
-    stData_.iData_Channel = AUDIO_SURROUND_PCM_CHANNEL_NUM;
+    stData_.iData_Channel = static_cast<int32_t>(nc.inChannels);
     stData_.iMasterVolume = AUDIO_SURROUND_MASTER_VOLUME;
     nodeParameter_ = nc;
 }
@@ -122,15 +129,26 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::SetParameter(const std::string &p
     CHECK_AND_RETURN_RET_LOG(
         algoRunBuf_ != nullptr && algoScratchBuf_ != nullptr, ERROR, "Invalid run buffer, need init first");
 
-    // set SoundField mode
-    iMedia_Surround_PARA surroundType = IMEDIA_SWS_SOUROUND_BROAD;
-    int32_t value = 0;
-    CHECK_AND_RETURN_RET_LOG(
-        StringConverter(paramValue, value), ERROR, "convert invalid string: %{public}s", paramValue.c_str());
-    surroundType = static_cast<iMedia_Surround_PARA>(value);
-
-    int32_t ret = algoApi_.setPara(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, surroundType);
-    CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ERROR, "set parameter fail, ret: %{public}d", ret);
+    // convert from SoundFieldType to iMedia_Surround_PARA
+    int32_t valueInt = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(paramValue, valueInt), ERROR, "convert invalid string");
+    auto it = soundFieldParaMap.find(static_cast<SoundFieldType>(valueInt));
+    if (it != soundFieldParaMap.end()) {
+        // set SoundField mode
+        iMedia_Surround_PARA surroundType = IMEDIA_SWS_SOUROUND_BROAD;
+        int32_t value = 0;
+        std::string algoParam = std::to_string(static_cast<int32_t>(it->second));
+        CHECK_AND_RETURN_RET_LOG(
+            StringConverter(algoParam, value), ERROR, "convert invalid string: %{public}s", algoParam.c_str());
+        surroundType = static_cast<iMedia_Surround_PARA>(value);
+ 
+        int32_t ret = algoApi_.setPara(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, surroundType);
+        CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ERROR, "set parameter fail, ret: %{public}d", ret);
+        return SUCCESS;
+    } else {
+        AUDIO_ERR_LOG("SetParameter Unknown value %{public}s", paramValue.c_str());
+        return ERROR;
+    }
 
     return SUCCESS;
 }
@@ -140,12 +158,27 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::GetParameter(const std::string &p
     CHECK_AND_RETURN_RET_LOG(algoRunBuf_ != nullptr, ERROR, "Invalid run buffer, need init first");
 
     iMedia_Surround_PARA param;
+    std::string algoOutputParam = "";
     int32_t ret = algoApi_.getPara(algoRunBuf_.get(), &param);
     CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ERROR, "get parameter fail, ret: %{public}d", ret);
-    paramValue = std::to_string(static_cast<int32_t>(param));
+    algoOutputParam = std::to_string(static_cast<int32_t>(param));
+ 
+    // convert from iMedia_Surround_PARA to SoundFieldType
+    int32_t valueInt = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(algoOutputParam, valueInt), ERROR, "convert invalid string");
+    iMedia_Surround_PARA paraValue = static_cast<iMedia_Surround_PARA>(valueInt);
+ 
+    for (const auto& pair : soundFieldParaMap) {
+        if (pair.second == paraValue) {
+            paramValue = std::to_string(static_cast<int32_t>(pair.first));
+            AUDIO_INFO_LOG(
+                "SoundField node get parameter [%{public}s]: %{public}s", paramType.c_str(), paramValue.c_str());
+            return SUCCESS;
+        }
+    }
     
-    AUDIO_INFO_LOG("SoundField get parameter success, [iMedia_Surround_PARA]: %{public}s", paramValue.c_str());
-    return SUCCESS;
+    AUDIO_ERR_LOG("get parameter Unknown value %{public}s", algoOutputParam.c_str());
+    return ERROR;
 }
 
 int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Apply(
@@ -172,7 +205,8 @@ int32_t AudioSuiteSoundFieldAlgoInterfaceImpl::Apply(
 
     // apply SoundField algorithm
     int32_t ret = algoApi_.applyAlgo(algoRunBuf_.get(), algoScratchBuf_.get(), stSize_.iScracthSize, &stData_);
-    CHECK_AND_RETURN_RET_LOG(ret == IMEDIA_SWS_EOK, ret, "Apply SoundField algorithm fail, ret: %{public}d", ret);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == IMEDIA_SWS_EOK, ret,
+        HILOG_COMM_ERROR("[Apply]SoundField algo apply failed, return error is %{public}d", ret));
 
     // sample data convert from IMEDIA_INT32 to int16_t
     for (size_t i = 0; i < SOUNDFIELD_ALGO_FRAME_LEN; i++) {

@@ -61,6 +61,7 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetCapturerDevice(int32_t uid, SourceType sourceType);
     void UpdateRecordDeviceInfo(UpdateType updateType, RecordDeviceInfo info, bool mcFlag = false);
     void UpdateAppIsBackState(int32_t uid, AppIsBackState appState);
+    void RestoreMediaControllerPreferredInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
 private:
     AudioUsrSelectManager() {};
@@ -77,6 +78,7 @@ private:
     void UpdateRecordDeviceInfoForStopInner(int32_t index);
     bool IsSourceTypeSupportedByMC(SourceType type);
     bool HasMCSourceTypeStreamRunning();
+    bool IsSourcePreferHighQuality(SourceType type);
 
     std::mutex mutex_;
     std::vector<RecordDeviceInfo> recordDeviceInfoList_;

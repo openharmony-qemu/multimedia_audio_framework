@@ -47,11 +47,25 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED,
         HILOG_COMM_ERROR("[Init]prepare mmap buffer fail"));
-
+    std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
+    // Only set device route for loopback stream to ensure low latency creation succeeds
+    if (attr.isLoopback) {
+        DoSetOutputRoute(devices);
+    }
     sinkInited_ = true;
     InitPipeInfo(hdiRenderId_, HDI_ADAPTER_TYPE_PRIMARY, AUDIO_OUTPUT_FLAG_FAST);
 
     return SUCCESS;
+}
+
+void FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN(deviceManager != nullptr);
+    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
+        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "update route fail, ret: %{public}d", ret);
 }
 
 void FastAudioRenderSink::DeInit(void)
@@ -96,7 +110,7 @@ int32_t FastAudioRenderSink::Start(void)
     }
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
-    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ERR_NOT_STARTED, HILOG_COMM_ERROR("[Start]start fail"));
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     UpdateSinkState(true);
     ChangePipeStatus(PIPE_STATUS_RUNNING);
     ret = CheckPositionTime();
@@ -111,7 +125,7 @@ int32_t FastAudioRenderSink::Start(void)
     if (runningLock_ != nullptr) {
         runningLock_->Lock(RUNNING_LOCK_TIMEOUTMS_LASTING);
     } else {
-        HILOG_COMM_ERROR("[FastAudioRenderSink::Start]running lock is null, playback can not work well");
+        HILOG_COMM_ERROR("[Start]running lock is null, playback can not work well");
     }
 #endif
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_FAST, INIT_LASTWRITTEN_TIME);
@@ -168,7 +182,8 @@ int32_t FastAudioRenderSink::Resume(void)
 
 int32_t FastAudioRenderSink::Pause(void)
 {
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        HILOG_COMM_ERROR("[Pause]render is nullptr"));
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     if (paused_) {
@@ -184,7 +199,8 @@ int32_t FastAudioRenderSink::Pause(void)
 int32_t FastAudioRenderSink::Flush(void)
 {
     Trace trace("FastAudioRenderSink::Flush");
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioRender_ != nullptr, ERR_INVALID_HANDLE,
+        HILOG_COMM_ERROR("[Flush]render is nullptr"));
     CHECK_AND_RETURN_RET_LOG(started_, ERR_OPERATION_FAILED, "not start, invalid state");
 
     int32_t ret = audioRender_->Flush(audioRender_);
@@ -249,20 +265,20 @@ int32_t FastAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wri
 #endif
 }
 
-int64_t FastAudioRenderSink::GetVolumeDataCount()
+int32_t FastAudioRenderSink::GetVolumeDataCount(int64_t &volumeData)
 {
     AUDIO_WARNING_LOG("not supported");
-    return 0;
+    return ERR_NOT_SUPPORTED;
 }
 
 void FastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition,
     const std::string &value)
 {
     HILOG_COMM_INFO("[SetAudioParameter]key: %{public}d, condition: %{public}s, "
-        "value: %{public}s", key, condition.c_str(), value.c_str());
+    "value: %{public}s", key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
-    AUDIO_INFO_LOG("SetExtraParams ret: %{public}d", ret);
+    AUDIO_INFO_LOG("FastAudioRenderSink::SetAudioParameter SetExtraParams ret: %{public}d", ret);
 }
 
 int32_t FastAudioRenderSink::SetVolume(float left, float right)
@@ -284,6 +300,12 @@ int32_t FastAudioRenderSink::SetVolume(float left, float right)
 
     int32_t ret = audioRender_->SetVolume(audioRender_, volume);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "set volume fail, ret: %{public}d", ret);
+    return SUCCESS;
+}
+
+int32_t FastAudioRenderSink::SetVolumeWithRamp(float left, float right, uint32_t durationMs)
+{
+    AUDIO_INFO_LOG("FastAudioRenderSink::SetVolumeWithRamp in");
     return SUCCESS;
 }
 

@@ -31,7 +31,7 @@ namespace AudioStandard {
  */
 struct AudioCapturerParams {
     /** Audio source type */
-    SourceType inputSource = SOURCE_TYPE_MIC;
+    AudioSourceType inputSource = AUDIO_MIC;
     /** Audio codec format */
     AudioEncodingType audioEncoding = ENCODING_PCM;
     /** Sampling rate */
@@ -175,7 +175,7 @@ public:
 class AudioCapturerOnPlaybackCaptureStartCallback {
 public:
     virtual ~AudioCapturerOnPlaybackCaptureStartCallback() = default;
- 
+
     /**
      * Called to notify internal recording started result.
      *
@@ -388,6 +388,15 @@ public:
     virtual bool Start() = 0;
 
     /**
+     * @brief Starts audio capturing.
+     *
+     * @return Returns {@link SUCCESS} if the capturing is successfully started; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t StartWithError() { return 0; }
+
+    /**
      * @brief capture audio data.
      *
      * @param buffer Indicates the pointer to the buffer into which the audio data is to be written.
@@ -435,15 +444,6 @@ public:
     virtual bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
     /**
-     * @brief Obtains the first pkg ts in capturer path.
-     *
-     * @param latencyInNanoSeconds the nanosecond latency in the capturing path.
-     * @return Returns <b>true</b> if the timestamp is successfully obtained; returns <b>false</b> otherwise.
-     * @since 16
-     */
-    virtual bool GetFirstPkgTimeStampInfo(int64_t &firstTs) const = 0;
-
-    /**
      * @brief Pause audio capturing.
      *
      * @return Returns <b>true</b> if the capturing is successfully Paused; returns <b>false</b> otherwise.
@@ -458,6 +458,16 @@ public:
      * @since 8
      */
     virtual bool Stop() const = 0;
+
+    /**
+     * @brief Stops audio capturing.
+     *
+     * @return Returns {@link SUCCESS} if the capturing is successfully stopped; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t StopWithError() const { return 0; }
+
     /**
      * @brief flush capture stream.
      *
@@ -473,6 +483,15 @@ public:
      * @since 8
      */
     virtual bool Release() = 0;
+
+    /**
+     * @brief Releases a local <b>AudioCapturer</b> object.
+     *
+     * @return Returns {@link SUCCESS} if the object is successfully released; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t ReleaseWithError() { return 0; }
 
     /**
      * @brief Obtains a reasonable minimum buffer size for capturer, however, the capturer can
@@ -796,10 +815,19 @@ public:
         return 0;
     }
 
+    virtual int32_t SetInMainThreadState(bool isInMainThread)
+    {
+        (void)isInMainThread;
+        return 0;
+    }
+
 protected:
     static AudioStreamType FindStreamTypeBySourceType(SourceType sourceType);
 
 private:
+    virtual int32_t StartImpl() { return 0; }
+    virtual int32_t StopImpl() const { return 0; }
+    virtual int32_t ReleaseImpl() { return 0; }
     static void SendCapturerCreateError(const SourceType &sourceType,
         const int32_t &errorCode);
 };

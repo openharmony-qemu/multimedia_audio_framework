@@ -53,6 +53,7 @@ bool AudioA2dpDevice::GetA2dpDeviceInfo(const std::string& device, A2dpDeviceCon
         info.streamInfo = configInfoPos->second.streamInfo;
         info.absVolumeSupport = configInfoPos->second.absVolumeSupport;
         info.volumeLevel = configInfoPos->second.volumeLevel;
+        info.volumeDegree = configInfoPos->second.volumeDegree;
         info.mute = configInfoPos->second.mute;
         return true;
     }
@@ -174,6 +175,18 @@ bool AudioA2dpDevice::SetA2dpDeviceVolumeLevel(const std::string& device, const 
         return false;
     }
     configInfoPos->second.volumeLevel = volumeLevel;
+    return true;
+}
+
+bool AudioA2dpDevice::SetA2dpDeviceVolumeDegree(const std::string& device, int32_t volumeDegree)
+{
+    std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
+    auto configInfoPos = connectedA2dpDeviceMap_.find(device);
+    if (configInfoPos == connectedA2dpDeviceMap_.end() || !configInfoPos->second.absVolumeSupport) {
+        AUDIO_WARNING_LOG("Set VolumeDegree failed for macAddress:[%{public}s]", GetEncryptAddr(device).c_str());
+        return false;
+    }
+    configInfoPos->second.volumeDegree = volumeDegree;
     return true;
 }
 

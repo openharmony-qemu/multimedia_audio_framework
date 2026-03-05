@@ -96,8 +96,13 @@ std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> IAudioStream::Cre
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_UNKNOWN)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_MEDIA)] = STREAM_RING;
     streamMap[std::make_pair(CONTENT_TYPE_RINGTONE, STREAM_USAGE_NOTIFICATION_RINGTONE)] = STREAM_RING;
+#ifdef MULTI_ALARM_LEVEL
     streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
     streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+#else
+    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ALARM;
+    streamMap[std::make_pair(CONTENT_TYPE_MUSIC, STREAM_USAGE_EMERGENCY)] = STREAM_ALARM;
+#endif
 
     IAudioStream::CreateStreamMap(streamMap);
     return streamMap;
@@ -128,8 +133,13 @@ void IAudioStream::CreateStreamMap(std::map<std::pair<ContentType, StreamUsage>,
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ULTRASONIC)] = STREAM_ULTRASONIC;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_RINGTONE)] = STREAM_VOICE_RING;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_CALL_ASSISTANT)] = STREAM_VOICE_CALL_ASSISTANT;
+#ifdef MULTI_ALARM_LEVEL
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ANNOUNCEMENT;
     streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_EMERGENCY;
+#else
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ANNOUNCEMENT)] = STREAM_ALARM;
+    streamMap[std::make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_EMERGENCY)] = STREAM_ALARM;
+#endif
 }
 
 int32_t IAudioStream::CheckRendererAudioStreamInfo(const AudioStreamParams info)
@@ -195,7 +205,7 @@ int32_t IAudioStream::GetByteSizePerFrame(const AudioStreamParams &params, size_
             return ERR_INVALID_PARAM;
             break;
     }
-
+ 
     if (params.channels < 1 || params.channels > 16) { // 1 is min channel size, 16 is max channel size
         return ERR_INVALID_PARAM;
     }
@@ -324,8 +334,10 @@ bool IAudioStream::IsFormatValid(uint8_t format)
     return isValidFormat;
 }
 
-bool IAudioStream::IsRendererChannelValid(uint8_t channel)
+bool IAudioStream::IsRendererChannelValid(uint8_t channel, uint8_t encodingType)
 {
+    // for audio vivid, no need to check channel
+    CHECK_AND_RETURN_RET(encodingType != ENCODING_AUDIOVIVID, true);
     bool isValidChannel = (find(RENDERER_SUPPORTED_CHANNELS.begin(), RENDERER_SUPPORTED_CHANNELS.end(), channel)
                            != RENDERER_SUPPORTED_CHANNELS.end());
     AUDIO_DEBUG_LOG("AudioStream: IsChannelValid: %{public}s", isValidChannel ? "true" : "false");
@@ -400,7 +412,7 @@ bool IAudioStream::IsChannelLayoutMatchedWithChannel(uint8_t channel, uint64_t c
 
 bool IAudioStream::IsPlaybackChannelRelatedInfoValid(uint8_t encodingType, uint8_t channels, uint64_t channelLayout)
 {
-    if (!IsRendererChannelValid(channels)) {
+    if (!IsRendererChannelValid(channels, encodingType)) {
         AUDIO_ERR_LOG("AudioStream: Invalid sink channel %{public}d", channels);
         return false;
     }

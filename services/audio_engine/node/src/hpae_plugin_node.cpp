@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "HpaePluginNode"
+#endif
+
 #include "hpae_plugin_node.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -24,6 +28,8 @@ HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
     outputStream_(this), enableProcess_(true), silenceData_(pcmBufferInfo_)
       
 {
+    AUDIO_INFO_LOG("NodeId:%{public}u,rate:%{public}u,channle:%{public}u", nodeInfo.nodeId,
+        nodeInfo.samplingRate, nodeInfo.channels);
     silenceData_.Reset();
     silenceData_.SetBufferValid(false);
     silenceData_.SetBufferSilence(true);
@@ -126,6 +132,7 @@ void HpaePluginNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
 #ifdef ENABLE_HIDUMP_DFX
+    CHECK_AND_RETURN_LOG(preNode->GetOutputPort() != nullptr, "port is nullptr");
     if (auto callback = GetNodeStatusCallback().lock()) {
         if (isSourceNode_) {
             callback->OnNotifyDfxNodeInfo(false, preNode->GetOutputPort()->GetNodeId(), GetNodeId());

@@ -25,13 +25,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
-const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
-const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
+inline const std::string SPATIALIZATION_ENABLED_CHANGE_CALLBACK_NAME = "spatializationEnabledChange";
+inline const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "spatializationEnabledChangeForAnyDevice";
-const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME =
+inline const std::string SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE_CALLBACK_NAME =
     "spatializationEnabledChangeForCurrentDevice";
-const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
-const std::string HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
+inline const std::string HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME = "headTrackingEnabledChange";
+inline const std::string HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "headTrackingEnabledChangeForAnyDevice";
 const std::string ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME =
     "adaptiveSpatialRenderingEnabledChangeForAnyDevice";
@@ -176,6 +176,41 @@ private:
     static bool onAdaptiveSpatialRenderingEnabledChangeFlag_;
     bool regAmAdaptiveSpatialRenderingTsfn_ = false;
     napi_threadsafe_function amAdaptiveSpatialRenderingTsfn_ = nullptr;
+};
+
+class NapiSpatialAudioSourceTypeCallback :
+    public AudioSpatialAudioSourceTypeChangeCallback {
+public:
+    explicit NapiSpatialAudioSourceTypeCallback(napi_env env);
+    virtual ~NapiSpatialAudioSourceTypeCallback();
+    void SaveSpatialAudioSourceTypeChangeCallbackReference(napi_value args);
+    void RemoveSpatialAudioSourceTypeChangeCallbackReference(
+        napi_env env, napi_value args);
+    void RemoveAllSpatialAudioSourceTypeChangeCallbackReference();
+    int32_t GetCurrentSpatialAudioSourceTypeChangeCbListSize();
+    void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode) override;
+    void CreateSpatialAudioSourceTypeTsfn(napi_env env);
+    bool GetCurrentSpatialAudioSourceTypeTsfnFlag();
+
+private:
+    struct AudioSpatialAudioSourceTypeJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::string callbackName = "unknown";
+        SpatialAudioSourceType mode;
+    };
+
+    void OnJsCallbackSpatialAudioSourceType(
+        std::unique_ptr<AudioSpatialAudioSourceTypeJsCallback> &jsCb);
+    static void SafeJsCallbackSpatialAudioSourceTypeWork(
+        napi_env env, napi_value js_cb, void *context, void *data);
+    static void SpatialAudioSourceTypeTsfnFinalize(
+        napi_env env, void *data, void *hint);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> spatialAudioSourceTypeChangeCbList_;
+    bool regAmSpatialAudioSourceTypeTsfn_ = false;
+    napi_threadsafe_function amSpatialAudioSourceTypeTsfn_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

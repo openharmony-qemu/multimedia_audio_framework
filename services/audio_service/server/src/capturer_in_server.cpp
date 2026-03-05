@@ -21,6 +21,7 @@
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_info.h"
 #include "audio_capturer_log.h"
 #include "audio_service.h"
 #include "audio_process_config.h"
@@ -34,6 +35,10 @@
 #include "volume_tools.h"
 #include "core_service_handler.h"
 #include "stream_dfx_manager.h"
+#ifdef FEATURE_CALL_MANAGER
+#include "call_manager_client.h"
+#endif
+#include "app_mgr_client.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +49,13 @@ namespace {
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
     constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
+    static const uint32_t OVERFLOW_REPORT_INTERVAL_MS = 60000;
+#ifdef FEATURE_CALL_MANAGER
+static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
+#endif
+enum CallbackHandlerEvent : uint32_t {
+    NOTIFY_VOIP_START = 0,
+};
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -69,7 +81,7 @@ CapturerInServer::~CapturerInServer()
 int32_t CapturerInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
-        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed.");
+        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
         return SUCCESS;
     }
     CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null!");
@@ -107,7 +119,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
 int32_t CapturerInServer::InitBufferStatus()
 {
     if (audioServerBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer!");
+        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer.");
         return ERR_ILLEGAL_STATE;
     }
 
@@ -234,6 +246,52 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
     return stream_->DequeueBuffer(length);
 }
 
+int32_t CapturerInServer::SetInMainThreadState(bool isInMainThread)
+{
+    isInMainThread_ = isInMainThread;
+    return SUCCESS;
+}
+
+bool CapturerInServer::IsAppStateBackground(int32_t appPid)
+{
+    AppExecFwk::AppMgrClient appManager;
+    AppExecFwk::RunningProcessInfo infos;
+    uint8_t state = 0;
+    appManager.GetRunningProcessInfoByPid(appPid, infos);
+    state = static_cast<uint8_t>(infos.state_);
+    return state == static_cast<uint8_t>(AppExecFwk::AppProcessState::APP_STATE_BACKGROUND);
+}
+
+void CapturerInServer::ReportOverflowEvent()
+{
+    auto now = std::chrono::system_clock::now();
+    auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    int32_t reportCount = overFlowLogFlag_ - lastOverflowCount_;
+    CHECK_AND_RETURN((nowMs - lastOverflowTime_ >= OVERFLOW_REPORT_INTERVAL_MS && reportCount > 0));
+    lastOverflowCount_ = overFlowLogFlag_;
+    lastOverflowTime_ = nowMs;
+    bool isBackground = IsAppStateBackground(processConfig_.appInfo.appPid);
+    AUDIO_INFO_LOG("isInMainThread_: %{public}d, isBackground: %{public}d, Underflow timestamp: %{public}" PRIu64,
+        isInMainThread_, isBackground, static_cast<uint64_t>(nowMs));
+    int32_t reason = REASON_RECORDING_DEFAULT |
+        (isInMainThread_ ? REASON_RECORDING_IN_ARTTS_MAINTHREAD : 0) |
+        (isBackground ? REASON_RECORDING_BACKGROUND : 0);
+
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("INCOMING_SOURCE", processConfig_.capturerInfo.sourceType);
+    bean->Add("INCOMING_PID", processConfig_.appInfo.appPid);
+    bean->Add("INCOMING_UID", processConfig_.appInfo.appUid);
+    bean->Add("TYPE", RECORD_ERROR_TYPE_OVERFLOW);
+    bean->Add("REASON", reason);
+    bean->Add("COUNT", reportCount);
+    bean->Add("START_TIME", static_cast<uint64_t>(nowMs));
+    bean->Add("PIPE_TYPE", processConfig_.capturerInfo.pipeType);
+    bean->Add("HDI_ADAPTER", static_cast<int32_t>(HDI_ADAPTER_TYPE_PRIMARY));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 // LCOV_EXCL_START
 bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
     std::shared_ptr<IStreamListener> stateListener)
@@ -243,8 +301,10 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
             AUDIO_INFO_LOG("OverFlow!!!");
         } else if (overFlowLogFlag_ == OVERFLOW_LOG_LOOP_COUNT) {
             overFlowLogFlag_ = 0;
+            lastOverflowCount_ = 0;
         }
         overFlowLogFlag_++;
+        ReportOverflowEvent();
         int32_t engineFlag = GetEngineFlag();
         if (engineFlag != 1) {
             BufferDesc dstBuffer = stream_->DequeueBuffer(length);
@@ -321,8 +381,8 @@ void CapturerInServer::ReadData(size_t length)
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr!");
-    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null!");
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null");
 
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
@@ -389,7 +449,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(requestDataLen);
@@ -483,6 +543,19 @@ bool CapturerInServer::CheckBGCapture()
     return res;
 }
 
+void CapturerInServer::ReportNoBgPermissionEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("INCOMING_SOURCE", processConfig_.capturerInfo.sourceType);
+    bean->Add("INCOMING_PID", processConfig_.appInfo.appPid);
+    bean->Add("INCOMING_UID", processConfig_.appInfo.appUid);
+    bean->Add("REASON", RECORD_ERROR_NO_BG_PERMISSION);
+    bean->Add("TYPE", RECORD_ERROR_TYPE_START_FAIL);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
@@ -494,8 +567,11 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED) && !CheckBGCapture()) {
+        AUDIO_ERR_LOG("Verify failed, incoming: sourceType %{public}d pid %{public}d uid %{public}d",
+            processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
+        ReportNoBgPermissionEvent();
+        return false;
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
@@ -537,6 +613,9 @@ int32_t CapturerInServer::Start()
     CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE ||
         filterConfig_.isModernInnerCapturer == false || hasRequestUserPrivacyAuthority_ == true,
         ERR_INVALID_OPERATION, "New Innercapturer mode and not requestUserPrivacyAuthority");
+    if (stream_ != nullptr) {
+        stream_->TriggerAppsUidUpdate();
+    }
     AudioXCollie audioXCollie(
         "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
             AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -573,14 +652,10 @@ int32_t CapturerInServer::StartInner()
         CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
-    AudioService::GetInstance()->NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
+    NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
 
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
-    }
-
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_START) == SUCCESS) {
-        AUDIO_ERR_LOG("ReloadCaptureSession success!");
     }
 
     status_ = I_STATUS_STARTING;
@@ -623,9 +698,6 @@ int32_t CapturerInServer::Pause()
     }
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
-    }
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_PAUSE) == SUCCESS) {
-        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
 
     status_ = I_STATUS_PAUSING;
@@ -705,9 +777,6 @@ int32_t CapturerInServer::Stop()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_STOP) == SUCCESS) {
-        AUDIO_INFO_LOG("ReloadCaptureSession success!");
-    }
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -724,6 +793,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AudioService::GetInstance()->RemoveCapturer(streamIndex_, isSwitchStream);
+    ReleaseCallbackHandler();
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_RELEASED) {
         AUDIO_INFO_LOG("Already released");
@@ -733,12 +803,6 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     AUDIO_INFO_LOG("Start release capturer");
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 
-    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        int32_t result =
-            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
-        CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
-            HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
-    }
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
@@ -746,14 +810,16 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
+    if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        int32_t result =
+            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
+            HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
+    }
 
-    ReleaseCaptureInjector();
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
-    }
-    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_RELEASE) == SUCCESS) {
-        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
     status_ = I_STATUS_RELEASED;
 
@@ -780,13 +846,6 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     return SUCCESS;
-}
-
-void CapturerInServer::ReleaseCaptureInjector()
-{
-    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        CoreServiceHandler::GetInstance().ReleaseCaptureInjector();
-    }
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -977,6 +1036,52 @@ inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
     std::atomic_store(&lastStatus_, status_);
     int32_t ret = CoreServiceHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
+}
+
+void CapturerInServer::InitCallbackHandler()
+{
+    CHECK_AND_RETURN(status_ != I_STATUS_RELEASED);
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ == nullptr);
+    callbackHandler_ = CallbackHandler::GetInstance(shared_from_this(),
+        "OS_AudioCallbackHandler", false);
+}
+
+void CapturerInServer::ReleaseCallbackHandler()
+{
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->ReleaseEventRunner();
+    callbackHandler_ = nullptr;
+}
+
+void CapturerInServer::OnHandle(uint32_t code, int64_t data)
+{
+    AUDIO_DEBUG_LOG("On handle event, event code: %{public}d, data: %{public}" PRIu64 "", code, data);
+    switch (code) {
+        case NOTIFY_VOIP_START : {
+#ifdef FEATURE_CALL_MANAGER
+            std::shared_ptr<Telephony::CallManagerClient> callManager =
+                DelayedSingleton<Telephony::CallManagerClient>::GetInstance();
+            CHECK_AND_RETURN_LOG(callManager != nullptr, "get callmanager failed");
+            callManager->Init(TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID);
+            int32_t ret = callManager->NotifyVoIPAudioStreamStart(data);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "NotifyVoIPAudioStreamStart failed, ret:%{public}d", ret);
+#endif
+            break;
+        }
+        default :
+            break;
+    }
+}
+
+void CapturerInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
+{
+    CHECK_AND_RETURN(sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+    InitCallbackHandler();
+    std::lock_guard<std::mutex> lock(runnerMutex_);
+    CHECK_AND_RETURN(callbackHandler_ != nullptr);
+    callbackHandler_->SendCallbackEvent(NOTIFY_VOIP_START, uid);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

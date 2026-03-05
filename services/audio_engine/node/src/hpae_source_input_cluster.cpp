@@ -131,10 +131,11 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetOutputPort(HpaeNodeInfo 
 }
 
 int32_t HpaeSourceInputCluster::GetCapturerSourceInstance(const std::string &deviceClass,
-    const std::string &deviceNetId, const SourceType &sourceType, const std::string &sourceName)
+    const std::string &deviceNetId, const SourceType &sourceType, const std::string &sourceName,
+    const std::string &busAddress)
 {
     CHECK_AND_RETURN_RET_LOG(sourceInputNode_, ERR_ILLEGAL_STATE, "sourceInputNode_ is nullptr");
-    return sourceInputNode_->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName);
+    return sourceInputNode_->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName, busAddress);
 }
 
 int32_t HpaeSourceInputCluster::CapturerSourceInit(IAudioSourceAttr &attr)
@@ -247,10 +248,10 @@ void HpaeSourceInputCluster::SetInjectState(bool isInjecting)
 }
 
 void HpaeSourceInputCluster::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid)
+    uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid, bool mute)
 {
     CHECK_AND_RETURN(sourceInputNode_ != nullptr);
-    sourceInputNode_->NotifyStreamChangeToSource(change, sessionId, source, state, appUid);
+    sourceInputNode_->NotifyStreamChangeToSource(change, sessionId, source, state, appUid, mute);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

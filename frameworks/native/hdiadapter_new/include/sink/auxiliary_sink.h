@@ -44,9 +44,10 @@ public:
 
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
 
-    int64_t GetVolumeDataCount() override;
+    int32_t GetVolumeDataCount(int64_t &volumeData) override;
 
     int32_t SetVolume(float left, float right) override;
+    int32_t SetVolumeWithRamp(float left, float right, uint32_t durationMs) override;
     int32_t GetVolume(float &left, float &right) override;
 
     int32_t GetLatency(uint32_t &latency) override;

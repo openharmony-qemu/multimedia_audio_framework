@@ -20,6 +20,8 @@
 #include "app_state_listener.h"
 #include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
+#include "iremote_object.h"
+
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -28,6 +30,17 @@ FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 
 typedef void (*TestFuncs)();
 
+class RemoteObjectFuzzTestStub : public IRemoteObject {
+public:
+    RemoteObjectFuzzTestStub() : IRemoteObject(u"IRemoteObject") {}
+    int32_t GetObjectRefCount() { return 0; };
+    int SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) { return 0; };
+    bool AddDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
+    bool RemoveDeathRecipient(const sptr<DeathRecipient> &recipient) { return true; };
+    int Dump(int fd, const std::vector<std::u16string> &args) { return 0; };
+
+    DECLARE_INTERFACE_DESCRIPTOR(u"RemoteObjectFuzzTestStub");
+};
 void AudioBackgroundManagerNotifySessionStateChangeFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
@@ -153,6 +166,63 @@ void AppStateListenerHandleBackgroundAppStateChangeFuzzTest(FuzzedDataProvider& 
     appStateListener.HandleBackgroundAppStateChange(pid, uid, state);
 }
 
+void AudioBackgroundManagerSetQueryAllowedPlaybackCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
+    sptr<IRemoteObject> object = nullptr;
+    bool useNullObject = g_fuzzUtils.GetData<bool>();
+    if (!useNullObject) {
+        object = new (std::nothrow) RemoteObjectFuzzTestStub();
+    }
+    audioBackgroundManagerTest.SetQueryAllowedPlaybackCallback(object);
+}
+
+void AudioBackgroundManagerSetBackgroundMuteCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
+    sptr<IRemoteObject> object = nullptr;
+    bool useNullObject = g_fuzzUtils.GetData<bool>();
+    if (!useNullObject) {
+        object = new (std::nothrow) RemoteObjectFuzzTestStub();
+    }
+    audioBackgroundManagerTest.SetBackgroundMuteCallback(object);
+}
+
+void AudioBackgroundManagerIsAppInBackStateFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioBackgroundManager &audioBackgroundManagerTest = AudioBackgroundManager::GetInstance();
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+
+    audioBackgroundManagerTest.appStatesMap_.clear();
+    bool resultNotFound = audioBackgroundManagerTest.IsAppInBackState(pid);
+
+    AppState appStateBackTrue;
+    appStateBackTrue.isBack = true;
+    appStateBackTrue.isSystem = g_fuzzUtils.GetData<bool>();
+    audioBackgroundManagerTest.appStatesMap_.clear();
+    audioBackgroundManagerTest.appStatesMap_.insert({pid, appStateBackTrue});
+    bool resultBackTrue = audioBackgroundManagerTest.IsAppInBackState(pid);
+
+    AppState appStateBackFalse;
+    appStateBackFalse.isBack = false;
+    appStateBackFalse.isSystem = g_fuzzUtils.GetData<bool>();
+    audioBackgroundManagerTest.appStatesMap_.clear();
+    audioBackgroundManagerTest.appStatesMap_.insert({pid, appStateBackFalse});
+    bool resultBackFalse = audioBackgroundManagerTest.IsAppInBackState(pid);
+
+    int32_t pid2 = g_fuzzUtils.GetData<int32_t>();
+    if (pid2 != pid) {
+        AppState appState2;
+        appState2.isBack = g_fuzzUtils.GetData<bool>();
+        audioBackgroundManagerTest.appStatesMap_.insert({pid2, appState2});
+        audioBackgroundManagerTest.IsAppInBackState(pid);
+        audioBackgroundManagerTest.IsAppInBackState(pid2);
+    }
+
+    int32_t edgePid = fdp.PickValueInArray<int32_t>({0, -1, INT32_MIN, INT32_MAX});
+    audioBackgroundManagerTest.IsAppInBackState(edgePid);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -166,6 +236,9 @@ void Test(FuzzedDataProvider& fdp)
     AppStateListenerOnAppStateChangedFuzzTest,
     AppStateListenerHandleAppStateChangeFuzzTest,
     AppStateListenerHandleBackgroundAppStateChangeFuzzTest,
+    AudioBackgroundManagerSetQueryAllowedPlaybackCallbackFuzzTest,
+    AudioBackgroundManagerSetBackgroundMuteCallbackFuzzTest,
+    AudioBackgroundManagerIsAppInBackStateFuzzTest,
     });
     func(fdp);
 }

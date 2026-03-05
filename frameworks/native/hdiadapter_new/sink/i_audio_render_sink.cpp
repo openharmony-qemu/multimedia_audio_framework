@@ -17,6 +17,7 @@
 
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -85,9 +86,11 @@ void IAudioRenderSink::ChangePipeStream(StreamChangeType change,
     std::lock_guard<std::mutex> lock(pipeLock_);
     CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
 
+    std::string bundleName = "";
     switch (change) {
         case STREAM_CHANGE_TYPE_ADD:
-            pipeInfo_->AddStream(streamId, usage, state, appUid);
+            bundleName = AudioBundleManager::GetBundleNameFromUid(appUid);
+            pipeInfo_->AddStream(streamId, usage, state, bundleName);
             break;
         case STREAM_CHANGE_TYPE_REMOVE:
             pipeInfo_->RemoveStream(streamId);

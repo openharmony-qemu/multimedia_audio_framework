@@ -82,16 +82,15 @@ bool AudioPolicyService::LoadAudioPolicyConfig()
     bool ret = audioConfigManager_.Init();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
-        audioCapturerSession_.SetConfigParserFlag();
+        AudioCoreService::GetCoreService()->SetConfigParserFlag();
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Policy Config Load Configuration failed");
-    audioCapturerSession_.SetConfigParserFlag();
+    AudioCoreService::GetCoreService()->SetConfigParserFlag();
     isFastControlled_ = getFastControlParam();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
     }
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
-    SetDefaultAdapterEnable(audioConfigManager_.GetDefaultAdapterEnable());
     return ret;
 }
 
@@ -120,14 +119,18 @@ bool AudioPolicyService::Init(void)
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
     AudioDump::GetInstance().SetVersionType(versionType);
 
-    int32_t ecEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
-    int32_t micRefEnableState = system::GetBoolParameter("const.multimedia.audio.fwk_pnr.enable", 0);
+    ecEnableState_ = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
+    audioConfigManager_.SetEcEnableState(ecEnableState_);
 
-    audioEcManager_.Init(ecEnableState, micRefEnableState);
 #ifdef HAS_FEATURE_INNERCAPTURER
     AudioServerProxy::GetInstance().SetInnerCapLimitProxy(audioGlobalConfigManager_.GetCapLimit());
 #endif
     return true;
+}
+
+int32_t AudioPolicyService::GetEcEnableState()
+{
+    return ecEnableState_;
 }
 
 void AudioPolicyService::CreateRecoveryThread()
@@ -138,7 +141,7 @@ void AudioPolicyService::CreateRecoveryThread()
     RecoveryDevicesThread_ = std::make_unique<std::thread>([this] {
         audioRecoveryDevice_.RecoverExcludedOutputDevices();
         audioRecoveryDevice_.RecoveryPreferredDevices();
-        audioBackgroundManager_.RecoryAppState();
+        audioBackgroundManager_.RecoveryAppState();
     });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
 }
@@ -172,7 +175,6 @@ void AudioPolicyService::Deinit(void)
     audioRecoveryDevice_.DeInit();
     audioDeviceStatus_.DeInit();
     audioDeviceLock_.DeInit();
-    audioCapturerSession_.DeInit();
     return;
 }
 
@@ -220,6 +222,18 @@ int32_t AudioPolicyService::SetSourceOutputStreamMute(int32_t uid, bool setMute)
         streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
     }
     return status;
+}
+
+int32_t AudioPolicyService::SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute)
+{
+    int32_t status = audioPolicyManager_.SetSourceOutputStreamMuteByStreamId(sessionId, setMute);
+    return status;
+}
+
+int32_t AudioPolicyService::SetAncoSourceOutputStreamMute(int32_t uid, bool setMute) const
+{
+    streamCollector_.UpdateCapturerInfoMuteStatus(uid, setMute);
+    return SUCCESS;
 }
 
 std::string AudioPolicyService::GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType)
@@ -419,14 +433,20 @@ void AudioPolicyService::OnServiceDisconnected(AudioServiceIndex serviceIndex)
 }
 
 void AudioPolicyService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
-    sptr<AudioRendererFilter> filter)
+    sptr<AudioRendererFilter> filter, const std::string &caller)
 {
     audioDeviceLock_.OnForcedDeviceSelected(devType, macAddress, filter);
 }
 
-void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress)
+void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+    const std::string &caller)
 {
     audioDeviceLock_.OnPrivacyDeviceSelected(devType, macAddress);
+}
+
+void AudioPolicyService::OnConnectFailed(AudioDeviceDescriptor &desc)
+{
+    audioDeviceLock_.OnConnectFailed(desc);
 }
 
 void AudioPolicyService::LoadEffectLibrary()
@@ -962,7 +982,8 @@ int32_t AudioPolicyService::SetAudioEffectProperty(const AudioEffectPropertyArra
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(enhancePropertyArray,
             audioActiveDevice_.GetCurrentInputDeviceType());
         CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
-        audioCapturerSession_.ReloadSourceForEffect(oldPropertyArray, enhancePropertyArray);
+        AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffectV3(
+            oldPropertyArray, enhancePropertyArray);
     }
     if (effectPropertyArray.property.size() > 0) {
         ret = AudioServerProxy::GetInstance().SetAudioEffectPropertyProxy(effectPropertyArray);
@@ -1077,7 +1098,7 @@ int32_t AudioPolicyService::SetAudioEnhanceProperty(const AudioEnhancePropertyAr
         audioActiveDevice_.GetCurrentInputDeviceType());
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ret, "set audio enhance property fail");
 
-    audioCapturerSession_.ReloadSourceForEffect(oldPropertyArray, propertyArray);
+    AudioCoreService::GetCoreService()->GetEventEntry()->ReloadSourceForEffect(oldPropertyArray, propertyArray);
     return ret;
 }
 
@@ -1092,11 +1113,6 @@ BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()
         return audioA2dpOffloadManager_->GetA2dpOffloadFlag();
     }
     return NO_A2DP_DEVICE;
-}
-
-void AudioPolicyService::SetDefaultAdapterEnable(bool isEnable)
-{
-    return AudioServerProxy::GetInstance().SetDefaultAdapterEnableProxy(isEnable);
 }
 
 int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObject> &object)
@@ -1234,9 +1250,8 @@ bool AudioPolicyService::IsIntelligentNoiseReductionEnabledForCurrentDevice(Sour
             sourceType, ret);
         return ret;
     }
- 
-    bool isEcFeatureEnable = audioEcManager_.GetEcFeatureEnable();
-    if (isEcFeatureEnable) { // is configed according to the product
+
+    if (ecEnableState_) { // is configed according to the product
         AudioEffectPropertyArrayV3 propertyArray = {};
         int32_t getPropRet = GetAudioEnhanceProperty(propertyArray);
         CHECK_AND_RETURN_RET_LOG(getPropRet == SUCCESS, false, "get audio enhance property failed, return false");

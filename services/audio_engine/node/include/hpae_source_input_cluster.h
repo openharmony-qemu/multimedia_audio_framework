@@ -34,7 +34,7 @@ public:
     OutputPort<HpaePcmBuffer*> *GetOutputPort() final;
     OutputPort<HpaePcmBuffer*> *GetOutputPort(HpaeNodeInfo &nodeInfo, bool isDisConnect = false) final;
     int32_t GetCapturerSourceInstance(const std::string &deviceClass, const std::string &deviceNetId,
-        const SourceType &sourceType, const std::string &sourceName);
+        const SourceType &sourceType, const std::string &sourceName, const std::string &busAddress = "");
     int32_t CapturerSourceInit(IAudioSourceAttr &attr);
     int32_t CapturerSourceDeInit();
     int32_t CapturerSourceFlush(void);
@@ -52,7 +52,7 @@ public:
     uint32_t GetCaptureId();
     void SetInjectState(bool isInjecting);
     void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID);
+        uint32_t sessionId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID, bool mute = false);
 
     // for test
     uint32_t GetConverterNodeCount();

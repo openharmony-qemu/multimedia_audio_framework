@@ -61,7 +61,7 @@ static bool LoadLibrary(const std::string &relativePath, std::shared_ptr<AudioEf
 
     void* handle = dlopen(absolutePath.c_str(), 1);
     if (!handle) {
-        AUDIO_ERR_LOG("<log error> dlopen lib %{public}s fail", relativePath.c_str());
+        AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", relativePath.c_str());
         return false;
     } else {
         AUDIO_INFO_LOG("<log info> dlopen lib %{public}s successful", relativePath.c_str());

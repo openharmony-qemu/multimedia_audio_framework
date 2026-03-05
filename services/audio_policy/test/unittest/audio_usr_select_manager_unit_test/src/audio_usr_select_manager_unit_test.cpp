@@ -140,5 +140,38 @@ HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_JudgeFinalSelectDe
     auto judge = audioUsrSelectManager.JudgeFinalSelectDevice(desc, SOURCE_TYPE_CAMCORDER, PREFERRED_DEFAULT);
     EXPECT_NE(judge, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioUsrSelectManager.
+* @tc.number: AudioUsrSelectManager_IsSourcePreferHighQuality_001
+* @tc.desc  : Test IsSourcePreferHighQuality interface.
+*/
+HWTEST_F(AudioUsrSelectManagerUnitTest, AudioUsrSelectManager_IsSourcePreferHighQuality_001, TestSize.Level1)
+{
+    AudioUsrSelectManager &audioUsrSelectManager = AudioUsrSelectManager::GetAudioUsrSelectManager();
+    
+    // Test high quality source types - should return true
+    EXPECT_TRUE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_MIC));
+    EXPECT_TRUE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_CAMCORDER));
+    EXPECT_TRUE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_LIVE));
+    
+    // Test non-high quality source types - should return false
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_INVALID));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_RECOGNITION));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_WAKEUP));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_CALL));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_COMMUNICATION));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_ULTRASONIC));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VIRTUAL_CAPTURE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_MESSAGE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_REMOTE_CAST));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_UNPROCESSED));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_EC));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_MIC_REF));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_OFFLOAD_CAPTURE));
+    EXPECT_FALSE(audioUsrSelectManager.IsSourcePreferHighQuality(SourceType::SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT));
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -239,7 +239,15 @@ void GetCurMemoryConditionFuzzTest()
 void PrintCurMemoryConditionFuzzTest()
 {
     AudioCacheMgrInner audioCacheMgrInner;
+    audioCacheMgrInner.isInited_ = GetData<bool>();
     audioCacheMgrInner.PrintCurMemoryCondition();
+}
+
+void ReleaseOverTimeMemBlockFuzzTest()
+{
+    AudioCacheMgrInner audioCacheMgrInner;
+    audioCacheMgrInner.isInited_ = GetData<bool>();
+    audioCacheMgrInner.ReleaseOverTimeMemBlock();
 }
 
 TestFuncs g_testFuncs[] = {
@@ -257,6 +265,7 @@ TestFuncs g_testFuncs[] = {
     ResetFuzzTest,
     GetCurMemoryConditionFuzzTest,
     PrintCurMemoryConditionFuzzTest,
+    ReleaseOverTimeMemBlockFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

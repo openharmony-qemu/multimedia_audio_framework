@@ -2117,7 +2117,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsIntelligentNoiseReductionEnabledFor
     EXPECT_NE(nullptr, server);
 
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
-    server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = 1;
+    server->audioPolicyService_.ecEnableState_ = 1;
     bool ret = server->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
     EXPECT_EQ(ret, false);
 }
@@ -2133,7 +2133,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsIntelligentNoiseReductionEnabledFor
     EXPECT_NE(nullptr, server);
 
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_COMMUNICATION;
-    server->audioPolicyService_.audioEcManager_.isEcFeatureEnable_ = 0;
+    server->audioPolicyService_.ecEnableState_ = 0;
     bool ret = server->audioPolicyService_.IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
     EXPECT_EQ(ret, false);
 }

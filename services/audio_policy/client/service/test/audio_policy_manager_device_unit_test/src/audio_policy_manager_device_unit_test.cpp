@@ -233,7 +233,7 @@ HWTEST(AudioPolicyManagerDevice, RegisterPreferredDeviceSetCallback_001, TestSiz
     int32_t ret = 0;
     auto cb = std::make_shared<PreferredDeviceSetCallbackTest>();
     ret = policyManager.RegisterPreferredDeviceSetCallback(cb);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
     ret = policyManager.UnregisterPreferredDeviceSetCallback(cb);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -317,6 +317,8 @@ HWTEST(AudioPolicyManagerDevice, UnsetPreferredInputDeviceChangeCallback_003, Te
  */
 HWTEST(AudioPolicyManagerDevice, SetDeviceInfoUpdateCallback_001, TestSize.Level1)
 {
+    MockNative::GenerateNativeTokenID("audio_server");
+    MockNative::Mock();
     auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
     ASSERT_TRUE(audioPolicyManager != nullptr);
 
@@ -328,6 +330,7 @@ HWTEST(AudioPolicyManagerDevice, SetDeviceInfoUpdateCallback_001, TestSize.Level
         std::make_shared<ConcreteAudioManagerDeviceInfoUpdateCallback>();
     int32_t ret = audioPolicyManager->SetDeviceInfoUpdateCallback(clientId, cb);
     EXPECT_EQ(ret, SUCCESS);
+    MockNative::Resume();
 }
 
 /**

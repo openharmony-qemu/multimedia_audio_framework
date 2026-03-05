@@ -31,7 +31,6 @@
 #include "media_monitor_manager.h"
 #include "volume_tools.h"
 #include "audio_dump_pcm.h"
-#include "audio_service.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -193,7 +192,7 @@ int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
             result.size, requestDataLen);
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupRingBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed!");\
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
@@ -276,11 +275,11 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId, const std::optiona
 
     AUDIO_INFO_LOG("Dup Renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex,
         GetStatusStr(endpointStatus_).c_str());
-    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid!");
+    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid");
 
     // buffer init
     dupBufferSize_ = dstSpanSizeInframe_ * dstByteSizePerFrame_; // each
-    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr");
     CHECK_AND_RETURN_RET_LOG(dupBufferSize_ < dstAudioBuffer_->GetDataSize(), ERR_OPERATION_FAILED, "Init buffer fail");
     dupBuffer_ = std::make_unique<uint8_t []>(dupBufferSize_);
     ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
@@ -326,7 +325,7 @@ int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId, const std::op
 {
     CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
     int32_t ret = InitDupStream(innerCapId, dualDeviceName);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed!");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
     return SUCCESS;
 }
 
@@ -367,7 +366,7 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     }
     if (captureInfo.dupStream == nullptr) {
         captureInfo.isInnerCapEnabled = false;
-        AUDIO_INFO_LOG("dupStream is nullptr.");
+        AUDIO_INFO_LOG("dupStream is nullptr");
         return SUCCESS;
     }
     captureInfo.isInnerCapEnabled = false;
@@ -680,6 +679,7 @@ IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioEndpointConfig &endpo
     }
     attr.audioStreamFlag = endpointType_ == TYPE_VOIP_MMAP ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     attr.address = endpointConfig.deviceInfo.GetMacAddress();
+    attr.isLoopback = endpointConfig.isLoopback;
     return attr;
 }
 
@@ -947,7 +947,8 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState, int64_t dela
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
-    delayStopTime_ = delayStopTime == INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS ? delayStopTime_ : delayStopTime;
+    delayStopTime_.store(delayStopTime == INVALID_DELAY_STOP_HDI_TIME_NO_RUNNING_NS
+        ? delayStopTime_.load() : delayStopTime);
     listLock.unlock();
     return true;
 }
@@ -1076,7 +1077,7 @@ int32_t AudioEndpointInner::OnStart(IAudioProcessStream *processStream)
 
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(adapterType_, INIT_LASTWRITTEN_TIME);
     UpdateEndpointStatus(RUNNING);
-    delayStopTime_ = INT64_MAX;
+    delayStopTime_.store(INT64_MAX);
     return SUCCESS;
 }
 
@@ -1096,8 +1097,16 @@ int32_t AudioEndpointInner::OnPause(IAudioProcessStream *processStream)
         AUDIO_PRERELEASE_LOGI("OnPause status is IDEL, need delay call stop");
         CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_NULL_POINTER, "processStream is nullptr.");
         AudioMode audioMode = processStream->GetAudioProcessConfig().audioMode;
-        delayStopTime_ = ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
-            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS);
+        delayStopTime_.store(ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
+            ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : RECORDER_DELAY_STOP_HDI_TIME_NS));
+    }
+    return SUCCESS;
+}
+
+int32_t AudioEndpointInner::OnStreamMute(IAudioProcessStream *processStream, bool mute)
+{
+    if (processStream != nullptr) {
+        NotifyStreamChange(STREAM_CHANGE_TYPE_STATE_CHANGE, processStream, RENDERER_RUNNING, mute);
     }
     return SUCCESS;
 }
@@ -1140,12 +1149,12 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     if (endpointStatus_ == UNLINKED) {
         UpdateEndpointStatus(IDEL); // handle push_back in IDEL
         if (isDeviceRunningInIdel_) {
-            delayStopTime_ = INT64_MAX;
+            delayStopTime_.store(INT64_MAX);
             CHECK_AND_CALL_FUNC_RETURN_RET(StartDevice(), ERR_OPERATION_FAILED,
                 HILOG_COMM_ERROR("[LinkProcessStream]StartDevice failed"));
             AudioMode audioMode = processStream->GetAudioProcessConfig().audioMode;
-            delayStopTime_ = ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
-                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : LINK_RECORDER_DELAY_STOP_HDI_TIME_NS);
+            delayStopTime_.store(ClockTime::GetCurNano() + ((audioMode == AUDIO_MODE_PLAYBACK)
+                ? PLAYBACK_DELAY_STOP_HDI_TIME_NS : LINK_RECORDER_DELAY_STOP_HDI_TIME_NS));
         }
     }
 
@@ -1223,7 +1232,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
         UpdateEndpointStatus(UNLINKED);
     } else if (!IsAnyProcessRunningInner()) {
         UpdateEndpointStatus(IDEL);
-        delayStopTime_ = DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS;
+        delayStopTime_.store(DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS);
     }
 
     AUDIO_INFO_LOG("UnlinkProcessStream end, %{public}s the process.", (isFind ? "find and remove" : "not find"));
@@ -1379,10 +1388,10 @@ void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcData
 
     ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
-    if (!isExistLoopback_) {
-        ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart +
-            channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel);
-    }
+    int32_t val = std::accumulate(channelVolumes.volStart, channelVolumes.volStart +
+        channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel;
+    val = isExistLoopback_ ? 1 : val;
+    ZeroVolumeCheck(val);
 }
 
 // call with listLock_ hold
@@ -1392,10 +1401,10 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     isExistLoopback_ = false;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr!");
+        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
-        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is nullptr!");
+        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is null");
         auto processConfig = processList_[i]->GetAudioProcessConfig();
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
@@ -1446,7 +1455,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
 
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(
         streamType, appUid, processList_[i]->GetAudioSessionId()));
-    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteFactor();
+    float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(appUid, volumeMode);
     int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
         processBufferList_[i]->GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
@@ -1623,7 +1632,7 @@ void AudioEndpointInner::RecordCheckSyncInfo(uint64_t curReadPos)
 {
     CHECK_AND_RETURN(dstSpanSizeInframe_ != 0);
     uint32_t curReadFrame = curReadPos / dstSpanSizeInframe_;
-    dstAudioBuffer_->SetSyncWriteFrame(curReadFrame);
+    dstAudioBuffer_->SetSyncReadFrame(curReadFrame);
     uint32_t curWriteFrame = dstAudioBuffer_->GetSyncWriteFrame();
     Trace trace("Sync: writeIndex:" + std::to_string(curWriteFrame) + " readIndex:" + std::to_string(curReadFrame));
 
@@ -1832,7 +1841,7 @@ void AudioEndpointInner::AsyncGetPosTime()
         }
         {
             std::unique_lock<std::mutex> lock(startStatusLock_);
-            if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_) {
+            if (endpointStatus_ == IDEL && isStarted_ && ClockTime::GetCurNano() > delayStopTime_.load()) {
                 HILOG_COMM_INFO("[AsyncGetPosTime]IDEL for too long, let's call hdi stop");
                 DelayStopDevice();
                 continue;
@@ -1889,7 +1898,7 @@ bool AudioEndpointInner::KeepWorkloopRunning()
         case RUNNING:
             return true;
         case IDEL:
-            if (ClockTime::GetCurNano() > delayStopTime_) {
+            if (ClockTime::GetCurNano() > delayStopTime_.load()) {
                 targetStatus = RUNNING;
                 updateThreadCV_.notify_all();
                 break;
@@ -2525,7 +2534,7 @@ void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)
 }
 
 void AudioEndpointInner::NotifyStreamChange(StreamChangeType change,
-    IAudioProcessStream *processStream, RendererState state)
+    IAudioProcessStream *processStream, RendererState state, bool mute)
 {
     CHECK_AND_RETURN(processStream != nullptr);
 
@@ -2538,7 +2547,7 @@ void AudioEndpointInner::NotifyStreamChange(StreamChangeType change,
         auto source = HdiAdapterManager::GetInstance().GetCaptureSource(fastCaptureId_);
         CHECK_AND_RETURN_LOG(source, "source is invalid");
         source->NotifyStreamChangeToSource(change, processStream->GetAudioSessionId(), processStream->GetSource(),
-            static_cast<CapturerState>(state), processStream->GetAppInfo().appUid);
+            static_cast<CapturerState>(state), processStream->GetAppInfo().appUid, mute);
     }
 }
 } // namespace AudioStandard

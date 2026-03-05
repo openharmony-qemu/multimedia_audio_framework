@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -110,7 +110,131 @@ void ResourceServiceDumpAudioWorkgroupMapFuzzTest()
     if (audioResourceService == nullptr) {
         return;
     }
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    AudioWorkgroupPerProcess audioWorkgroupPerProcess;
+    audioWorkgroupPerProcess.groups.clear();
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    audioWorkgroupPerProcess.groups[workgroupId] = std::make_shared<AudioWorkgroup>(id);
+    audioResourceService->audioWorkgroupMap_[pid] = audioWorkgroupPerProcess;
     audioResourceService->DumpAudioWorkgroupMap();
+}
+
+void AudioWorkgroupGetMethodFuzzTest()
+{
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(id);
+    workgroup->GetWorkgroupId();
+    workgroup->GetThreadsNums();
+    workgroup->GetCgroupLimitId();
+}
+
+void AudioWorkgroupAddAndRemoveThreadFuzzTest()
+{
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(id);
+    int32_t tid = g_fuzzUtils.GetData<int32_t>();
+    workgroup->AddThread(tid);
+    workgroup->RemoveThread(tid);
+}
+
+void AudioWorkgroupStartAndStopFuzzTest()
+{
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(id);
+    uint64_t startTime = g_fuzzUtils.GetData<uint64_t>();
+    uint64_t deadlineTime = g_fuzzUtils.GetData<uint64_t>();
+    workgroup->Start(startTime, deadlineTime);
+    workgroup->Stop();
+}
+
+void AudioWorkgroupCheckFuzzTest()
+{
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    AudioWorkgroupPerProcess audioWorkgroupPerProcess;
+    audioWorkgroupPerProcess.groups.clear();
+    audioResourceService->audioWorkgroupMap_[pid] = audioWorkgroupPerProcess;
+    audioResourceService->AudioWorkgroupCheck(pid);
+
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    audioWorkgroupPerProcess.groups[0] = std::make_shared<AudioWorkgroup>(id);
+    audioWorkgroupPerProcess.groups[1] = std::make_shared<AudioWorkgroup>(id);
+    audioWorkgroupPerProcess.groups[TEST_RTG_ID] = std::make_shared<AudioWorkgroup>(id);
+    audioResourceService->AudioWorkgroupCheck(pid);
+
+    audioWorkgroupPerProcess.groups.clear();
+    audioWorkgroupPerProcess.hasSystemPermission = g_fuzzUtils.GetData<bool>();
+    audioResourceService->AudioWorkgroupCheck(pid);
+}
+
+void GetAudioWorkgroupFuzzTest()
+{
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    AudioWorkgroupPerProcess audioWorkgroupPerProcess;
+    audioWorkgroupPerProcess.groups.clear();
+    audioResourceService->audioWorkgroupMap_[pid] = audioWorkgroupPerProcess;
+    audioResourceService->GetAudioWorkgroup(pid, workgroupId);
+
+    audioWorkgroupPerProcess.groups[workgroupId] = nullptr;
+    audioResourceService->audioWorkgroupMap_[pid] = audioWorkgroupPerProcess;
+    audioResourceService->GetAudioWorkgroup(pid, workgroupId);
+}
+
+void ReleaseAudioWorkgroupFuzzTest()
+{
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    AudioWorkgroupPerProcess audioWorkgroupPerProcess;
+    audioWorkgroupPerProcess.groups.clear();
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    audioWorkgroupPerProcess.groups[workgroupId] = std::make_shared<AudioWorkgroup>(id);
+    audioResourceService->audioWorkgroupMap_[pid] = audioWorkgroupPerProcess;
+    audioResourceService->ReleaseAudioWorkgroup(pid, workgroupId);
+}
+
+void GetThreadsNumPerProcessFuzzTest()
+{
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    AudioWorkgroupPerProcess audioWorkgroupPerProcess;
+    audioWorkgroupPerProcess.groups.clear();
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    audioWorkgroupPerProcess.groups[workgroupId] = std::make_shared<AudioWorkgroup>(id);
+    audioResourceService->audioWorkgroupMap_[pid] = audioWorkgroupPerProcess;
+    audioResourceService->GetThreadsNumPerProcess(pid);
+}
+
+void FillAudioWorkgroupCgroupLimitFuzzTest()
+{
+    int32_t pid = g_fuzzUtils.GetData<int32_t>();
+    int32_t workgroupId = g_fuzzUtils.GetData<int32_t>();
+    auto audioResourceService = AudioResourceService::GetInstance();
+    if (audioResourceService == nullptr) {
+        return;
+    }
+    AudioWorkgroupPerProcess audioWorkgroupPerProcess;
+    audioWorkgroupPerProcess.groups.clear();
+    int32_t id = g_fuzzUtils.GetData<int32_t>();
+    audioWorkgroupPerProcess.groups[workgroupId] = std::make_shared<AudioWorkgroup>(id);
+    audioResourceService->audioWorkgroupMap_[pid] = audioWorkgroupPerProcess;
+    audioResourceService->FillAudioWorkgroupCgroupLimit(pid, audioWorkgroupPerProcess.groups[workgroupId]);
 }
 
 vector<TestFuncs> g_testFuncs = {
@@ -121,6 +245,14 @@ vector<TestFuncs> g_testFuncs = {
     ResourceServiceReleaseWorkgroupDeathRecipientFuzzTest,
     ResourceServiceWorkgroupRendererMonitorFuzzTest,
     ResourceServiceDumpAudioWorkgroupMapFuzzTest,
+    AudioWorkgroupGetMethodFuzzTest,
+    AudioWorkgroupAddAndRemoveThreadFuzzTest,
+    AudioWorkgroupStartAndStopFuzzTest,
+    AudioWorkgroupCheckFuzzTest,
+    GetAudioWorkgroupFuzzTest,
+    ReleaseAudioWorkgroupFuzzTest,
+    GetThreadsNumPerProcessFuzzTest,
+    FillAudioWorkgroupCgroupLimitFuzzTest,
 };
 
 } // namespace AudioStandard

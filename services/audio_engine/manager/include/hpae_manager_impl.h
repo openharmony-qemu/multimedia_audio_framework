@@ -61,6 +61,7 @@ public:
     int32_t StopAudioPort(const std::string &audioPortName) override;
     bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) override;
     int32_t SetSourceOutputMute(int32_t uid, bool setMute) override;
+    int32_t SetSourceOutputMuteByStreamId(int32_t sessionId, bool setMute) override;
     int32_t GetAllSinks() override;
 
     // play and record stream interface
@@ -113,6 +114,7 @@ public:
     void InitHdiState() override;
     void UpdateEffectBtOffloadSupported(const bool &isSupported) override;
     void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value) override;
+    void HandleBypassSpatializationForStereo(bool bypass) override;
     // interfaces for capture effect
     void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
@@ -140,6 +142,7 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
     void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
+    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
 
     // interfaces for injector
     void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) override;
@@ -149,13 +152,13 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
-
-    bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
-    void updateCollaborativeProductId(const std::string &productId) override;
+    void UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
     
     // interface for auxiliarySink
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
+
+    void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

@@ -16,6 +16,7 @@
 #define NAPI_AUDIO_RENDERER_DEVICE_CHANGE_CALLBACK_H
 
 #include <uv.h>
+#include <shared_mutex>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "napi_async_work.h"
@@ -48,7 +49,7 @@ private:
     static void RendererDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
     static void SafeJsCallbackRendererDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
 
-    std::mutex mutex_;
+    mutable std::shared_mutex mutex_;
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
     bool regArDevInfoTsfn_ = false;
@@ -81,7 +82,7 @@ private:
     static void SafeJsCallbackOutputDeviceInfoWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void OutputDeviceInfoTsfnFinalize(napi_env env, void *data, void *hint);
 
-    std::mutex mutex_;
+    mutable std::shared_mutex mutex_;
     napi_env env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
     bool regArOutputDevChg_ = false;

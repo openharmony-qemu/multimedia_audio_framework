@@ -63,8 +63,8 @@ int32_t TestEffectNodeSignalProcess(std::shared_ptr<T> node,
     int32_t frames = inputFileBufferSize / frameSizeInput;
     for (int32_t i = 0; i < frames; i++) {
         memcpy_s(inputData, frameSizeInput, readPtr, frameSizeInput);
-        AudioSuitePcmBuffer *out = node->SignalProcess(inputs);
-        memcpy_s(writePtr, frameSizeOutput, out->GetPcmData(), frameSizeOutput);
+        std::vector<AudioSuitePcmBuffer *> out = node->SignalProcess(inputs);
+        memcpy_s(writePtr, frameSizeOutput, out[0]->GetPcmData(), frameSizeOutput);
 
         readPtr += frameSizeInput;
         writePtr += frameSizeOutput;

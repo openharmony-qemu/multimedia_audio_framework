@@ -146,6 +146,7 @@ void NapiAudioRingerModeCallback::SafeJsCallbackRingModeWork(napi_env env, napi_
         static_cast<AudioRingerModeJsCallback*>(data),
         [](AudioRingerModeJsCallback *ptr) {
             delete ptr;
+            ptr = nullptr;
     });
     std::string request = event->callbackName;
     napi_ref callback = event->callback->cb_;

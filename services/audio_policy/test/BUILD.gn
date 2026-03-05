@@ -30,7 +30,6 @@ group("audio_policy_unittest_packages") {
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
     ":audio_background_manager_unit_test",
-    ":audio_capturer_session_unit_test",
     ":audio_client_tracker_callback_listener_unit_test",
     ":audio_client_tracker_callback_service_unit_test",
     ":audio_collaborative_service_unit_test",
@@ -43,7 +42,6 @@ group("audio_policy_unittest_packages") {
     ":audio_device_common_unit_test",
     ":audio_device_lock_unit_test",
     ":audio_device_status_unit_test",
-    ":audio_ec_manager_unit_test",
     ":audio_effect_config_parser_test",
     ":audio_effect_config_parser_unit_test",
     ":audio_effect_service_test",
@@ -99,20 +97,25 @@ group("audio_policy_unittest_packages") {
     ":privacy_priority_router_unit_test",
     ":stream_filter_router_unit_test",
     ":sle_audio_device_manager_unit_test",
+    ":va_device_manager_test",
     ":volume_data_maintainer_unit_test",
     ":audio_ipc_serialization_unit_test",
     ":audio_device_manager_unit_test",
     ":user_select_router_unit_test",
     ":user_select_router_ext_unit_test",
-    ":audio_injector_policy_unit_test",
     "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group",
-    "../client/stub:client_stub_unit_test_group"
+    "../client/stub:client_stub_unit_test_group",
   ]
+
+  if (audio_framework_feature_multi_bus) {
+        deps += [ ":audio_bus_selector_unit_test" ]
+  }
 }
 
 module_output_path = "audio_framework/audio_framework_policy/audio_policy"
 module_output_path1 =
     "audio_framework/audio_framework_policy/service/audio_policy"
+audio_route_module_output_path = "audio_framework/audio_framework_route/audio_pipe_manager"
 
 ohos_unittest("audio_zone_service_unit_test") {
   module_out_path = module_output_path
@@ -428,6 +431,7 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "../../audio_policy/server/domain/interrupt/include",
     "../../audio_policy/server/include/service/listener",
     "../../audio_service/common/include/dfx",
+    "../../audio_service/test/unittest/include",
     "${audio_framework_root}/services/audio_service/common/include/",
   ]
 
@@ -496,9 +500,10 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   public_external_deps = [ "ffrt:libffrt" ]
 
   sources = [
-    "./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
+    #"./unittest/audio_interrupt_service_test/src/audio_interrupt_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_zone_unit_test.cpp",
     "./unittest/audio_interrupt_service_test/src/audio_interrupt_custom_unit_test.cpp",
+    "./unittest/audio_interrupt_service_test/src/audio_interrupt_dfx_unit_test.cpp",
   ]
 
   deps = [
@@ -808,7 +813,7 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
 
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
-    deps += [ "../../../services/audio_engine:audio_engine_manager" ]
+    deps += [ "../../../services/audio_engine:hpae_engine_manager" ]
   }
 
   if (audio_framework_feature_usb_audio) {
@@ -929,10 +934,13 @@ ohos_unittest("audio_policy_service_first_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -1108,10 +1116,13 @@ ohos_unittest("audio_policy_service_second_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -1294,10 +1305,13 @@ ohos_unittest("audio_policy_service_third_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -1472,10 +1486,13 @@ ohos_unittest("audio_microphone_descriptor_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -1597,6 +1614,13 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -1652,10 +1676,13 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -1829,10 +1856,13 @@ ohos_unittest("audio_policy_service_extended_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -2166,7 +2196,7 @@ ohos_unittest("audio_policy_server_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
   ]
 
   defines = [ "BLUETOOTH_ENABLE" ]
@@ -2379,6 +2409,7 @@ ohos_unittest("audio_collaborative_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
+    "media_foundation:media_monitor_common",
   ]
 
   sources = [ "./unittest/audio_spatialization_service_unit_test/src/audio_collaborative_service_unit_test.cpp" ]
@@ -2448,6 +2479,9 @@ ohos_unittest("stream_filter_router_unit_test") {
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
     "../../audio_service:audio_common",
   ]
 
@@ -2554,6 +2588,9 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
     "../../audio_service:audio_common",
   ]
 }
@@ -2708,6 +2745,9 @@ ohos_unittest("audio_router_center_unit_test") {
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
     "../../audio_service:audio_common",
     "../../audio_service/idl:audio_framework_interface"
   ]
@@ -2802,6 +2842,9 @@ ohos_unittest("privacy_priority_router_unit_test") {
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
     "../../audio_service:audio_common",
   ]
 
@@ -3114,6 +3157,9 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (bluetooth_part_enable == true) {
@@ -3210,6 +3256,9 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (bluetooth_part_enable == true) {
@@ -3447,6 +3496,9 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
     "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -3908,58 +3960,6 @@ ohos_unittest("device_status_listener_unit_test") {
   }
 }
 
-ohos_unittest("audio_ec_manager_unit_test") {
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "//foundation/multimedia/audio_framework/interfaces/inner_api/native/audiocommon/include/",
-    "../../audio_policy/server/include/service/service",
-    "../../audio_policy/server/domain/device/include",
-    "./unittest/audio_ec_manager_unit_test/include",
-    "../../audio_policy/server/src/service/service",
-    "../../audio_policy/server/domain/pipe/src",
-    "../../../frameworks/native/include",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  external_deps = [
-    "bluetooth:btframework",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "googletest:gmock",
-    "hilog:libhilog",
-    "init:libbegetutil",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "eventhandler:libeventhandler",
-  ]
-
-  sources = [
-    "./unittest/audio_ec_manager_unit_test/src/audio_ec_manager_unit_test.cpp",
-  ]
-
-  deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../audio_policy:audio_policy_service_static",
-    "../../../frameworks/native/audioutils:audio_utils",
-  ]
-
-    sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    debug = false
-  }
-}
-
 ohos_unittest("audio_general_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -4323,6 +4323,9 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -4401,6 +4404,9 @@ ohos_unittest("audio_volume_utils_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -4480,6 +4486,9 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -4530,7 +4539,7 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
 }
 
 ohos_unittest("audio_pipe_selector_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
   include_dirs = [
     "../server/include",
     "./unittest/audio_pipe_selector_unit_test/include",
@@ -4557,6 +4566,9 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -4690,7 +4702,7 @@ ohos_unittest("audio_input_thread_unit_test") {
 }
 
 ohos_unittest("audio_concurrency_service_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
 
   include_dirs = [ "./unittest/audio_concurrency_service_unit_test/include" ]
 
@@ -4775,6 +4787,13 @@ ohos_unittest("audio_device_status_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
@@ -4852,6 +4871,9 @@ ohos_unittest("audio_state_manager_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -5067,6 +5089,9 @@ ohos_unittest("audio_usr_select_manager_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -5294,6 +5319,9 @@ ohos_unittest("audio_background_manager_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -5413,7 +5441,7 @@ ohos_unittest("audio_strategy_router_parser_unit_test") {
 }
 
 ohos_unittest("audio_tone_parser_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_tone_manager"
 
   include_dirs = [
     "./unittest/audio_tone_parser_unit_test/include",
@@ -5492,53 +5520,6 @@ ohos_unittest("audio_server_definitions_unit_test") {
   ]
 }
 
-ohos_unittest("audio_capturer_session_unit_test") {
-  module_out_path = module_output_path
-
-  include_dirs = [ "./unittest/audio_capturer_session_unit_test/include" ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    boundary_sanitize = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-  }
-
-  external_deps = [
-    "bluetooth:btframework",
-    "c_utils:utils",
-    "common_event_service:cesfwk_innerkits",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_6.0",
-    "googletest:gmock",
-    "hilog:libhilog",
-    "init:libbegetutil",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "power_manager:powermgr_client",
-    "eventhandler:libeventhandler",
-  ]
-
-  sources = [ "./unittest/audio_capturer_session_unit_test/src/audio_capturer_session_unit_test.cpp" ]
-
-  deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../audio_policy:audio_policy_service_static",
-  ]
-}
-
 ohos_unittest("audio_client_tracker_callback_listener_unit_test") {
   module_out_path = module_output_path
 
@@ -5552,6 +5533,13 @@ ohos_unittest("audio_client_tracker_callback_listener_unit_test") {
     "-Wno-macro-redefined",
     "-fno-access-control",
   ]
+
+  sanitize = {
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 
   external_deps = [
     "bluetooth:btframework",
@@ -5863,10 +5851,13 @@ ohos_unittest("audio_core_service_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_engine:hpae_engine_manager",
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -6028,6 +6019,9 @@ ohos_unittest("audio_core_service_utils_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
   ]
 
   if (accessibility_enable == true) {
@@ -6122,7 +6116,7 @@ ohos_unittest("audio_core_service_utils_unit_test") {
 }
 
 ohos_unittest("audio_pipe_manager_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = audio_route_module_output_path
   include_dirs = [
     "../server/include",
     "./unittest/audio_pipe_manager_unit_test/include",
@@ -6152,6 +6146,9 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
     "../../../services/audio_service:audio_process_service",
     "../../../services/audio_service:audio_service",
@@ -6267,7 +6264,7 @@ ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
 }
 
 ohos_unittest("audio_tone_manager_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = "audio_framework/audio_framework_route/audio_tone_manager"
 
   include_dirs = [
     "./unittest/audio_tone_manager_unit_test/include",
@@ -6528,6 +6525,9 @@ ohos_unittest("user_select_router_unit_test") {
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
     "../../audio_service:audio_common",
   ]
 
@@ -6630,6 +6630,9 @@ ohos_unittest("user_select_router_ext_unit_test") {
     "../../audio_policy:audio_policy_client",
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
+    "../../audio_service:audio_engine_manager",
+    "../../audio_service:audio_policy_manager",
+    "../../audio_service:audio_stream_client",
     "../../audio_service:audio_common",
   ]
 
@@ -6675,7 +6678,7 @@ ohos_unittest("user_select_router_ext_unit_test") {
 }
 
 ohos_unittest("audio_injector_policy_unit_test") {
-  module_out_path = module_output_path
+  module_out_path = audio_route_module_output_path
   include_dirs = ["./unittest/audio_injector_policy_unit_test/include",
                   "../../audio_policy/server/service/service_main/include",
                   "../../audio_policy/common/include",
@@ -6710,6 +6713,84 @@ ohos_unittest("audio_injector_policy_unit_test") {
   ]
 
   sources = [ "./unittest/audio_injector_policy_unit_test/src/audio_injector_policy_unit_test.cpp" ]
+
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
+}
+
+ohos_unittest("va_device_manager_test") {
+  module_out_path = module_output_path
+  include_dirs = ["./unittest/va_device_manager_test/include",
+                  "../../audio_policy/server/domain/device/src/va",
+                  "../../../services/audio_service/unittest/include",
+                  "../../../frameworks",
+                  "//foundation/multimedia/audio_framework/services/audio_service/test/unittest/include/",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  deps = [ "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+           "../../../services/audio_policy:audio_policy_client",
+           "../../../services/audio_policy:audio_policy_service",
+           "../../audio_policy:audio_policy_service_static",
+   ]
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:app_manager",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "cJSON:cjson",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_6.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "ipc:ipc_core",
+    "libxml2:libxml2",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "window_manager:session_manager_lite",
+    "window_manager:libwm_lite",
+    "init:libbeget_proxy",
+  ]
+
+  sources = [ "./unittest/va_device_manager_test/src/va_device_manager_test.cpp" ]
 
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]

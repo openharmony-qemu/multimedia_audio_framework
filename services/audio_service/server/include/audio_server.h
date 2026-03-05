@@ -143,6 +143,8 @@ public:
 
     int32_t NotifyDeviceInfo(const std::string &networkId, bool connected) override;
 
+    int32_t NotifyTaskIdProxy(const std::string &taskId, bool connected) override;
+
     int32_t CheckRemoteDeviceState(const std::string& networkId, int32_t deviceRole, bool isStartDevice) override;
 
     int32_t CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
@@ -189,7 +191,7 @@ public:
     int32_t GetMaxAmplitude(bool isOutputDevice, const std::string& deviceClass, int32_t sourceType,
         float& maxAmplitude) override;
 
-    int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount) override;
+    int32_t GetVolumeDataCount(const std::string &sinkName, int64_t &volumeData) override;
 
     int32_t UpdateLatencyTimestamp(const std::string &timestamp, bool isRenderer) override;
 
@@ -237,8 +239,6 @@ public:
     int32_t NotifySettingsDataReady() override;
 
     int32_t GetAllSinkInputs(std::vector<SinkInput> &sinkInputs) override;
-
-    int32_t SetDefaultAdapterEnable(bool isEnable) override;
 
     int32_t NotifyAudioPolicyReady() override;
 
@@ -373,6 +373,8 @@ private:
         const DeviceType& deviceType);
 
     void SetA2dpAudioParameter(const std::string &renderValue);
+    bool CheckAndPreStoreA2dpParam(std::shared_ptr<IAudioRenderSink> btSink,
+        AudioParamKey parmKey, const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
@@ -471,6 +473,7 @@ private:
     int32_t SetAudioBalanceStatus();
     int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
     void OnStartExpansion();
+    bool AudioParameterValueCheck(const std::string &key, const std::string &value);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
@@ -485,6 +488,7 @@ private:
 
     pthread_t m_paDaemonThread;
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
+    std::string playTaskId_ = "0"; // only use by homemusic
 
     bool isEarpiece_ = false;
     float audioBalanceValue_ = 0.0f;

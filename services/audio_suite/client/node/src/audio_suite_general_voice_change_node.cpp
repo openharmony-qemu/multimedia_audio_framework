@@ -42,8 +42,9 @@ AudioSuiteGeneralVoiceChangeNode::~AudioSuiteGeneralVoiceChangeNode()
 int32_t AudioSuiteGeneralVoiceChangeNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode Init begin");
+    
     algoInterface_ =
-        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE, nodeParameter);
+        AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create General Voice Change algoInterface");
     if (!isOutputPortInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
@@ -53,16 +54,12 @@ int32_t AudioSuiteGeneralVoiceChangeNode::Init()
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Failed to Init General Voice Change Algo");
 
-    SetAudioNodeFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeParameter.inChannels},
-        static_cast<AudioSampleFormat>(nodeParameter.inFormat),
-        static_cast<AudioSamplingRate>(nodeParameter.inSampleRate)});
+    SetAudioNodeFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
+        static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
+        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
     
-    pcmBufferOutput_.ResizePcmBuffer(PcmBufferFormat{static_cast<AudioSamplingRate>(nodeParameter.outSampleRate),
-        nodeParameter.outChannels,
-        VM_ALGO_CHANNEL_LAYOUT,
-        static_cast<AudioSampleFormat>(nodeParameter.outFormat)});
-    CHECK_AND_RETURN_RET_LOG(nodeParameter.inSampleRate != 0, ERROR, "Invalid input SampleRate");
-    pcmDurationMs_ = (nodeParameter.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter.inSampleRate;
+    CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
+    nodeNeedDataDuration_  = (nodeParameter_.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter_.inSampleRate;
 
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode Init end");
     return SUCCESS;
@@ -79,49 +76,6 @@ int32_t AudioSuiteGeneralVoiceChangeNode::DeInit()
 
     AUDIO_INFO_LOG("AudioSuiteGeneralVoiceChangeNode DeInit end");
     return SUCCESS;
-}
-
-int32_t AudioSuiteGeneralVoiceChangeNode::SetOptions(std::string name, std::string value)
-{
-    CHECK_AND_RETURN_RET_LOG(name == setVoiceChangeMode, ERROR, "SetOptions Unknow Type %{public}s", name.c_str());
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algoInterfaceImpl_ is nullptr");
-
-    paraName_ = name;
-    paraValue_ = value;
-
-    int32_t ret = algoInterface_->SetParameter(name, value);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetParameter failed %{public}d", ret);
-    AUDIO_INFO_LOG("SetOptions SUCCESS");
-    return SUCCESS;
-}
-
-int32_t AudioSuiteGeneralVoiceChangeNode::GetOptions(std::string name, std::string &value)
-{
-    CHECK_AND_RETURN_RET_LOG(name == setVoiceChangeMode, ERROR, "GetOptions Unknow Type %{public}s", name.c_str());
-    CHECK_AND_RETURN_RET_LOG(!paraValue_.empty(), ERROR, "paraValue_ is empty");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "algo interface is null, need Init first");
-    value = paraValue_;
-    AUDIO_INFO_LOG("GetOptions SUCCESS");
-    return SUCCESS;
-}
-
-AudioSuitePcmBuffer *AudioSuiteGeneralVoiceChangeNode::SignalProcess(const std::vector<AudioSuitePcmBuffer *> &inputs)
-{
-    Trace trace("AudioSuiteGeneralVoiceChangeNode::SignalProcess Start");
-    CHECK_AND_RETURN_RET_LOG(
-        !inputs.empty(), nullptr, "AudioSuiteGeneralVoiceChangeNode SignalProcess inputs is empty");
-    CHECK_AND_RETURN_RET_LOG(inputs[0] != nullptr && inputs[0]->IsSameFormat(GetAudioNodeInPcmFormat()),
-        nullptr,
-        "AudioSuiteGeneralVoiceChangeNode SignalProcess inputs[0] is nullptr");
-
-    tmpin_[0] = inputs[0]->GetPcmData();
-    tmpout_[0] = pcmBufferOutput_.GetPcmData();
-    CHECK_AND_RETURN_RET_LOG(tmpout_[0] != nullptr && tmpin_[0] != nullptr, nullptr, "tmpin or tempout is nullptr");
-    CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, nullptr, "algoInterfaceImpl_ is nullptr");
-    int32_t ret = algoInterface_->Apply(tmpin_, tmpout_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "AudioSuiteGeneralVoiceChangeNode SignalProcess Apply failed");
-    trace.End();
-    return &pcmBufferOutput_;
 }
 
 }  // namespace AudioSuite

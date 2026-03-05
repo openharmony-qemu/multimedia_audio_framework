@@ -34,6 +34,7 @@ using namespace ohos::multimedia::audio;
 const std::string PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME = "preferredOutputDeviceChangeForRendererInfo";
 const std::string PREFER_OUTPUT_DEVICE_CALLBACK_NAME = "preferOutputDeviceChangeForRendererInfo";
 const std::string PREFERRED_INPUT_DEVICE_CALLBACK_NAME  = "preferredInputDeviceChangeForCapturerInfo";
+const std::string PREFER_OUTPUT_DEVICE_BY_FILTER_CALLBACK_NAME = "preferredOutputDeviceChangeByFilter";
 
 class TaiheAudioPreferredInputDeviceChangeCallback :
     public OHOS::AudioStandard::AudioPreferredInputDeviceChangeCallback,

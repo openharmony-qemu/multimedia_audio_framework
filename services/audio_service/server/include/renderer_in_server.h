@@ -23,11 +23,11 @@
 #include "oh_audio_buffer.h"
 #include "i_stream_manager.h"
 #include "audio_effect.h"
+#include "player_dfx_writer.h"
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_stream_monitor.h"
 #include "audio_stream_checker.h"
-#include "player_dfx_writer.h"
 #include "audio_static_buffer_processor.h"
 #include "audio_static_buffer_provider.h"
 
@@ -45,7 +45,7 @@ struct RendererLatestInfoForWorkgroup {
 class RendererInServer;
 class StreamCallbacks : public IStatusCallback, public IWriteCallback {
 public:
-    explicit StreamCallbacks(uint32_t streamIndex, std::weak_ptr<RendererInServer> renderer);
+    StreamCallbacks(uint32_t streamIndex, std::weak_ptr<RendererInServer> renderer);
     virtual ~StreamCallbacks();
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
@@ -92,6 +92,7 @@ public:
     int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base);
     int32_t GetLatency(uint64_t &latency);
     int32_t SetRate(int32_t rate);
+    int32_t SetTarget(int32_t target, int32_t &ret);
     int32_t SetLowPowerVolume(float volume);
     int32_t GetLowPowerVolume(float &volume);
     int32_t SetAudioEffectMode(int32_t effectMode);
@@ -144,7 +145,7 @@ public:
 
     void OnDataLinkConnectionUpdate(IOperation operation);
     int32_t GetActualStreamManagerType() const noexcept;
-    
+
     bool Dump(std::string &dumpString);
     bool DumpNormal(std::string &dumpString);
     bool DumpVoipAndDirect(std::string &dumpString);
@@ -155,23 +156,27 @@ public:
     int32_t StopSession();
     void dualToneStreamInStart();
     bool CollectInfosForWorkgroup(float systemVolume);
+    void InitDupBuffer(int32_t innerCapId);
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
 
-    int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
-    void InitDupBuffer(int32_t innerCapId);
+    int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
+
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
     void RemoveIdForInjector();
+    int32_t CheckPermission(RenderTarget target);
     int32_t SetTarget(RenderTarget target, int32_t &ret);
-
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
     int32_t SetLoopTimes(int64_t bufferLoopTimes);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
+    int32_t ResetStaticPlayPosition();
+
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
     bool IsWriteFirst() const noexcept;
+    int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -187,30 +192,31 @@ private:
     void StandByCheck();
     bool ShouldEnableStandBy();
     int32_t OffloadSetVolumeInner();
-    void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
-    void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
     int32_t StartInner();
     int32_t StopInner();
     int64_t GetLastAudioDuration();
+    void InnerCaptureOtherStream(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
+    void InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, CaptureInfo &captureInfo, int32_t innerCapId);
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
     void WriteSilenceDupBuffer(const BufferDesc &bufferDesc, BufferWrap &bufferWrap, int32_t innerCapId);
     void ReConfigDupStreamCallback();
-    void HandleOperationStopped(RendererStage stage);
+    int32_t StandbyForStop();
     int32_t StartInnerDuringStandby();
     int32_t PauseDuringStandby();
     void StartStreamByType();
     void RecordStandbyTime(bool isStandby, bool isStart);
+    void UpdateLatestForWorkgroup(float systemVolume);
+    int32_t DisableInnerCapHandle(int32_t innerCapId);
+    int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
     int32_t FlushOhAudioBuffer();
     BufferDesc PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc);
     void CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
         const RingBufferWrapper& ringBufferDesc);
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
-    void UpdateLatestForWorkgroup(float systemVolume);
-    int32_t DisableInnerCapHandle(int32_t innerCapId);
-    int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
     void ProcessManagerType();
+    void HandleOperationStopped(RendererStage stage);
     bool IsMovieOffloadStream();
     bool IsMovieStream();
     template <typename T>
@@ -224,8 +230,9 @@ private:
     void InitLatencyMeasurement();
     void DetectLatency(uint8_t *inputData, size_t requestDataLen);
     void PauseInner();
-    void InitDupBufferInner(int32_t innerCapId);
     void ClearInnerCapBufferForInject();
+    void InitDupBufferInner(int32_t innerCapId);
+
     // only for a2dp offload
     void WaitForDataConnection();
 
@@ -241,6 +248,7 @@ private:
     void MarkStaticFadeOut(bool isRefresh);
     void MarkStaticFadeIn();
     void HandleIsWriteFirst(bool isWriteFirst);
+    void HandleStreamUnderrun();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -290,7 +298,7 @@ private:
     bool isNeedFade_ = false;
     float oldAppliedVolume_ = MAX_FLOAT_VOLUME;
     std::mutex updateIndexLock_;
-    int64_t startedTime_ = 0;
+    std::atomic<int64_t> startedTime_ = 0;
     int64_t pausedTime_ = 0;
     int64_t flushedTime_ = 0;
     int64_t drainedTime_ = 0;
@@ -304,12 +312,12 @@ private:
     FILE *dumpC2S_ = nullptr; // client to server dump file
     std::string dumpFileName_ = "";
     ManagerType managerType_;
+    std::atomic<bool> silentModeAndMixWithOthers_ = false;
     bool isHWDecodingType_ = false;
-    std::mutex fadeoutLock_;
-    int32_t fadeoutFlag_ = 0;
     std::time_t startMuteTime_ = 0;
     bool isInSilentState_ = false;
-    std::atomic<bool> silentModeAndMixWithOthers_ = false;
+    std::mutex fadeoutLock_;
+    int32_t fadeoutFlag_ = 0;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     std::map<int32_t, int32_t> renderEmptyCountForInnerCapToInnerCapIdMap_;
 
@@ -325,23 +333,22 @@ private:
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
 
-    float loudnessGain_ = 0.0f;
-    // Only use in Writedate(). Protect by writeMutex_.
-    std::vector<uint8_t> rendererTmpBuffer_;
     // audio haptics play sync param id
     std::atomic<int32_t> audioHapticsSyncId_ = 0;
 
     bool latestForWorkgroupInited_ = false;
     struct RendererLatestInfoForWorkgroup latestForWorkgroup_;
 
+    float loudnessGain_ = 0.0f;
+
+    // Only use in Writedate(). Protect by writeMutex_.
+    std::vector<uint8_t> rendererTmpBuffer_;
     std::unordered_map<int32_t, SoftLinkInfo> softLinkInfos_;
     FILE *dumpSoftLink = nullptr;
-
-    RenderTarget lastTarget_ = NORMAL_PLAYBACK;
-
     uint32_t audioCheckFreq_ = 0;
     std::atomic<uint32_t> checkCount_ = 0;
 
+    RenderTarget lastTarget_ = NORMAL_PLAYBACK;
     bool isDataLinkConnected_ = true;
     std::mutex dataConnectionMutex_;
     std::condition_variable dataConnectionCV_;

@@ -26,6 +26,7 @@
 #include "audio_adapter_manager.h"
 #include "audio_device_status.h"
 #include "audio_pipe_manager.h"
+#include "audio_zone_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -188,7 +189,7 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
     std::lock_guard<std::mutex> lock(descArrayMutex_);
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
-        descArray.push_back(devDesc);
+        descArray.push_back(make_shared<AudioDeviceDescriptor>(*devDesc));
         AUDIO_WARNING_LOG("Add to %{public}s list, and then %{public}s",
             logName.c_str(), AudioPolicyUtils::GetInstance().GetDevicesStr(descArray).c_str());
     }
@@ -450,11 +451,15 @@ bool AudioDeviceManager::IsVirtualDevicesExist(const std::shared_ptr<AudioDevice
 void AudioDeviceManager::AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     DeviceType devType = devDesc->deviceType_;
+    bool defaultMicCondition = devType == DEVICE_TYPE_MIC;
+#ifdef MULTI_BUS_ENABLE
+    defaultMicCondition = defaultMicCondition && devDesc->macAddress_.empty();
+#endif
     if (devType == DEVICE_TYPE_EARPIECE) {
         earpiece_ = devDesc;
     } else if (devType == DEVICE_TYPE_SPEAKER) {
         speaker_ = devDesc;
-    } else if (devType == DEVICE_TYPE_MIC) {
+    } else if (defaultMicCondition) {
         defalutMic_ = devDesc;
     }
 }
@@ -525,6 +530,9 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
             switch (descriptor->deviceType_) {
+#ifdef MULTI_BUS_ENABLE
+                case DEVICE_TYPE_MIC:
+#endif
                 case DEVICE_TYPE_USB_HEADSET:
                 case DEVICE_TYPE_USB_ARM_HEADSET:
                 case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -1031,7 +1039,6 @@ int32_t AudioDeviceManager::SetDeviceVolumeBehavior(const std::string &networkId
 {
     AUDIO_INFO_LOG("SetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
         networkId.c_str(), deviceType);
-    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     remoteInfoNetworkId_ = networkId;
     remoteInfoDeviceType_ = deviceType;
     for (auto &desc : connectedDevices_) {
@@ -1205,6 +1212,36 @@ AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDevicesListInfo(
     return reason;
 }
 
+void AudioDeviceManager::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc)
+{
+    if (desc.deviceCategory_ == BT_GLASSES) {
+        ++desc.glassesWearCount_;
+        AUDIO_INFO_LOG("glasses wear count: %{public}u", desc.glassesWearCount_);
+        if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+            desc.connectTimeStamp_ = GetCurrentTimeMS();
+        } else {
+            desc.connectTimeStamp_ = GetCurrentTimeMS() - AudioDeviceDescriptor::TEN_YEARS_MS;
+        }
+    } else {
+        desc.connectTimeStamp_ = GetCurrentTimeMS();
+    }
+}
+
+bool AudioDeviceManager::TriggerDeviceInfoUpdatedCallback(AudioDeviceDescriptor &desc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb)
+{
+    if (desc.glassesWearCount_ == AudioDeviceDescriptor::WEAR_FIRST && desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
+        return false;
+    }
+
+    if (desc.glassesWearCount_ < AudioDeviceDescriptor::WEAR_AGAIN) {
+        AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
+        return true;
+    }
+
+    return false;
+}
+
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     bool updateFlag = false;
@@ -1221,10 +1258,11 @@ bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceD
                 RemoveBtFromOtherList(devDesc);
             } else {
                 // Update connectTimeStamp_ when wearing headphones that support wear detection
-                desc->connectTimeStamp_ = GetCurrentTimeMS();
+                UpdateDeviceConnectTimestamp(*desc);
                 AddBtToOtherList(desc);
             }
-            AudioDeviceStatus::GetInstance().TriggerDeviceInfoUpdatedCallback(descForCb);
+
+            TriggerDeviceInfoUpdatedCallback(*desc, descForCb);
         }
         updateFlag = true;
     }
@@ -1829,6 +1867,9 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
 
 int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    if (desc->deviceType_ == DEVICE_TYPE_DP && AudioZoneService::GetInstance().CheckDeviceInAudioZone(*desc)) {
+        return PRIORITY_DISTRIBUTED;
+    }
     if (DeviceAttrMatch(desc, TYPE_PRIVACY, OUTPUT_DEVICE, ALL_USAGE)) {
         return PRIORITY_PRIVACY;
     }
@@ -1842,6 +1883,17 @@ int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceD
         return PRIORITY_DISTRIBUTED;
     }
     return PRIORITY_BASE;
+}
+
+bool AudioDeviceManager::IsDeviceAvailable(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    if (desc != nullptr && !desc->exceptionFlag_ && desc->isEnable_ &&
+        (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
+        desc->connectState_ != SUSPEND_CONNECTED) &&
+        desc->connectState_ != VIRTUAL_CONNECTED) {
+        return true;
+    }
+    return false;
 }
 }
 }

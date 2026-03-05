@@ -51,10 +51,12 @@ public:
     void SetLatency(uint32_t latency);
     void SetOutputClusterConnected(bool isConnect);
     bool IsOutputClusterConnected();
-    bool DelayAlignmentInner();
+    bool DelayAlignmentInner(HpaePcmBuffer* buffer);
     void SetDelayCount(int32_t delayCount);
+    void ChangeLatencyByCollManager(int32_t &latency);
+    void SetDefaultRendererManagerCallBack(std::weak_ptr<INodeCallback> defaultRendererManagerCallBack);
 private:
-    void FillSilenceFramesInner(uint32_t latencyMs);
+    void FillSilenceFramesInner(int32_t latencyMs);
     void ProcessInputFrameInner(HpaePcmBuffer* buffer);
     void ProcessOutputFrameInner();
     std::mutex mutex_;
@@ -74,6 +76,7 @@ private:
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
+    std::weak_ptr<INodeCallback> defaultRendererManagerCallBack_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

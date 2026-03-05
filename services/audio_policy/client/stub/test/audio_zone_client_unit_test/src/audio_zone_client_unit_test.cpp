@@ -14,7 +14,7 @@
  */
 
 #include "audio_zone_client_unit_test.h"
-#include "audio_zone_manager.h"
+#include "audio_zone_types.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 

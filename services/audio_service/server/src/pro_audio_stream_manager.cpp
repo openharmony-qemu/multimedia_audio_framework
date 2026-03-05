@@ -16,7 +16,6 @@
 #define LOG_TAG "ProAudioStreamManager"
 #endif
 
-#include "pro_audio_stream_manager.h"
 #include <sstream>
 #include <atomic>
 #include "audio_service_log.h"
@@ -28,6 +27,8 @@
 #include "none_mix_engine.h"
 #include "audio_utils.h"
 #include "core_service_handler.h"
+#include "pro_audio_stream_manager.h"
+#include "cabin_playback_engine.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +39,8 @@ ProAudioStreamManager::ProAudioStreamManager(ManagerType type)
 {
     if (type == EAC3_PLAYBACK) {
         playbackEngine_ = std::make_unique<DirectPlayBackEngine>();
+    } else if (type == AUDIO_VIVID_3DA_DIRECT_PLAYBACK) {
+        playbackEngine_ = std::make_unique<CabinPlayBackEngine>();
     } else {
         playbackEngine_ = std::make_unique<NoneMixEngine>();
     }
@@ -220,6 +223,12 @@ int32_t ProAudioStreamManager::ReleaseCapturer(uint32_t streamIndex)
 int32_t ProAudioStreamManager::AddUnprocessStream(int32_t appUid)
 {
     AUDIO_ERR_LOG("Unsupported operation");
+    return SUCCESS;
+}
+
+int32_t ProAudioStreamManager::GetSessionIdAndRemove(uint32_t paIndex, uint32_t &sessionId)
+{
+    AUDIO_ERR_LOG("Unsupported operation for proAudio");
     return SUCCESS;
 }
 

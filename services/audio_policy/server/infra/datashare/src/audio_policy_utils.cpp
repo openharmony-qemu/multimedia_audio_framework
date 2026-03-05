@@ -28,6 +28,7 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
+#include "audio_bus_selector.h"
 #include "audio_bundle_manager.h"
 
 #include "audio_server_proxy.h"
@@ -361,7 +362,7 @@ std::string AudioPolicyUtils::GetSinkPortName(DeviceType deviceType, AudioPipeTy
             break;
         case DeviceType::DEVICE_TYPE_HDMI:
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
-            portName = AudioPolicyConfigManager::GetInstance().GetDefaultAdapterEnable() ? DP_SINK : PRIMARY_SPEAKER;
+            portName = PRIMARY_SPEAKER;
             break;
         default:
             portName = GetNewSinkPortName(deviceType);
@@ -387,17 +388,16 @@ string AudioPolicyUtils::ConvertToHDIAudioFormat(AudioSampleFormat sampleFormat)
     }
 }
 
-bool AudioPolicyUtils::IsOnPrimarySink(const AudioDeviceDescriptor &desc, int32_t sessionId)
-{
-    return GetSinkName(desc, sessionId) == PRIMARY_SPEAKER;
-}
-
 std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int32_t sessionId)
 {
     if (desc.networkId_ == LOCAL_NETWORK_ID) {
+#ifdef MULTI_BUS_ENABLE
+        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
+#else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc.deviceType_, pipeType);
+#endif
     } else {
         return GetRemoteModuleName(desc.networkId_, desc.deviceRole_);
     }
@@ -406,9 +406,13 @@ std::string AudioPolicyUtils::GetSinkName(const AudioDeviceDescriptor &desc, int
 std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor> desc, int32_t sessionId)
 {
     if (desc->networkId_ == LOCAL_NETWORK_ID) {
+#ifdef MULTI_BUS_ENABLE
+        return AudioBusSelector::GetBusSelector().GetSinkNameByStreamId(sessionId);
+#else
         AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
         streamCollector_.GetPipeType(sessionId, pipeType);
         return GetSinkPortName(desc->deviceType_, pipeType);
+#endif
     } else {
         return GetRemoteModuleName(desc->networkId_, desc->deviceRole_);
     }
@@ -418,9 +422,11 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
-        case InternalDeviceType::DEVICE_TYPE_MIC:
-        case InternalDeviceType::DEVICE_TYPE_WIRED_HEADSET:
-        case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
+        case DeviceType::DEVICE_TYPE_MIC:
+        case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case DeviceType::DEVICE_TYPE_NEARLINK_IN:
             portName = ResolvePrimaryMicPort(routeFlag);
             AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
             break;
@@ -430,13 +436,13 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;
             break;
-        case InternalDeviceType::DEVICE_TYPE_WAKEUP:
+        case DeviceType::DEVICE_TYPE_WAKEUP:
             portName = PRIMARY_WAKEUP;
             break;
-        case InternalDeviceType::DEVICE_TYPE_FILE_SOURCE:
+        case DeviceType::DEVICE_TYPE_FILE_SOURCE:
             portName = FILE_SOURCE;
             break;
-        case InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
+        case DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             portName = BLUETOOTH_MIC;
             break;
         case InternalDeviceType::DEVICE_TYPE_ACCESSORY:

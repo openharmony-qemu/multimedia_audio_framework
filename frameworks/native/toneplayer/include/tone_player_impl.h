@@ -79,7 +79,7 @@ private:
     std::shared_ptr<ToneInfo> initialToneInfo_;  // pointer to new active tone Info
     std::vector<int32_t> supportedTones_;
 
-    std::atomic<ToneState> toneState_ = TONE_IDLE;
+    ToneState toneState_ = TONE_IDLE;
 
     uint32_t loopCounter_ = 0; // Current tone loopback count
     uint32_t totalSample_ = 0;  // Total no. of tone samples played

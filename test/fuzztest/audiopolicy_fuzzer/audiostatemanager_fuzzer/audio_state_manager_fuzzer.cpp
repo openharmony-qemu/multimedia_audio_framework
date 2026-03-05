@@ -209,6 +209,41 @@ void SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest(Fuzz
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc_, uid);
 }
 
+void FindExcludedDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    man.FindExcludedDevices(MEDIA_OUTPUT_DEVICES);
+    man.FindExcludedDevices(MEDIA_INPUT_DEVICES);
+    man.FindExcludedDevices(CALL_OUTPUT_DEVICES);
+    man.FindExcludedDevices(CALL_INPUT_DEVICES);
+    man.FindExcludedDevices(D_ALL_DEVICES);
+    man.FindExcludedDevices(GetData<AudioDeviceUsage>());
+}
+
+void ExcludeDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = GetData<int32_t>();
+    dev->deviceType_ = GetData<DeviceType>();
+    dev->deviceName_ = "--";
+    dev->deviceRole_ = GetData<DeviceRole>();
+    dev->macAddress_ = "card=2;device=0";
+    man.ExcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
+}
+
+void UnexcludeDevicesFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto &man = AudioStateManager::GetAudioStateManager();
+    auto dev = make_shared<AudioDeviceDescriptor>();
+    dev->deviceId_ = GetData<int32_t>();
+    dev->deviceType_ = GetData<DeviceType>();
+    dev->deviceName_ = "--";
+    dev->deviceRole_ = GetData<DeviceRole>();
+    dev->macAddress_ = "card=2;device=0";
+    man.UnexcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
+}
+
 void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest(FuzzedDataProvider& fdp)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
@@ -218,6 +253,38 @@ void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest(FuzzedDataProvi
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(uid);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 1);
     AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+}
+
+void GetPreferredCallRenderDeviceForUidFuzzTest(FuzzedDataProvider& fdp)
+{
+    int32_t clientUid = GetData<int32_t>();
+    vector<int32_t> uidList = {
+        SYSTEM_UID,
+        clientUid,
+        0,
+    };
+    uint32_t index = GetData<uint32_t>() % uidList.size();
+    int32_t testId = uidList[index];
+    std::string currentActivePort = "test";
+    AudioStateManager::GetAudioStateManager().forcedDeviceMapList_.clear();
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> forcedDeviceMap;
+    forcedDeviceMap.insert({testId, desc});
+    AudioStateManager::GetAudioStateManager().forcedDeviceMapList_.push_back(forcedDeviceMap);
+    AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(clientUid);
+}
+
+void SetAudioVKBInfoMgrCallbackFuzzTest(FuzzedDataProvider& fdp)
+{
+    sptr<IStandardAudioPolicyManagerListener> callback = sptr<IStandardAudioPolicyManagerListener>();
+    AudioStateManager::GetAudioStateManager().SetAudioVKBInfoMgrCallback(callback);
+}
+
+void CheckVKBInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::string bundleName = "testName";
+    bool isValid = GetData<bool>();
+    AudioStateManager::GetAudioStateManager().CheckVKBInfo(bundleName, isValid);
 }
 
 void Test(FuzzedDataProvider& fdp)
@@ -233,12 +300,18 @@ void Test(FuzzedDataProvider& fdp)
     UpdatePreferredCallRenderDeviceConnectStateFuzzTest,
     UpdatePreferredCallCaptureDeviceConnectStateFuzzTest,
     UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest,
+    FindExcludedDevicesFuzzTest,
+    ExcludeDevicesFuzzTest,
+    UnexcludeDevicesFuzzTest,
     SetAndGetPreferredRingRenderDeviceFuzzTest,
     SetAndGetPreferredToneRenderDeviceFuzzTest,
     SetAndGetPreferredRecognitionCaptureDeviceFuzzTest,
     SetAudioClientInfoMgrCallbackFuzzTest,
     SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest,
     SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest,
+    GetPreferredCallRenderDeviceForUidFuzzTest,
+    SetAudioVKBInfoMgrCallbackFuzzTest,
+    CheckVKBInfoFuzzTest,
     });
     func(fdp);
 }

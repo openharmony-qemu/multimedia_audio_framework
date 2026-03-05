@@ -248,5 +248,35 @@ HWTEST(DeviceStatusListenerUnitTest, DeviceStatusListener_017, TestSize.Level1)
     DeviceStatusListener::ParseModelFromProtocol(info, statusInfo);
     EXPECT_EQ(statusInfo.model, "hiplay");
 }
+
+/**
+ * @tc.name  : Test DeviceStatusListener.
+ * @tc.number: ParseTaskIdExtraInfo01
+ * @tc.desc  : Test DeviceStatusListener::ParseModelFromProtocol().
+ */
+ HWTEST(DeviceStatusListenerUnitTest, ParseTaskIdExtraInfo01, TestSize.Level1)
+{
+    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
+    DStatusInfo statusInfo;
+    std::string info = "EVENT_TYPE=1;NID=d8d;PIN=1;IID=0;CAPS={taskId=1};INFO=123456";
+    deviceStatusListenerPtr->OnDistributedServiceStatusChanged(true);
+    deviceStatusListenerPtr->SendDistributeInfo(info);
+    EXPECT_EQ(statusInfo.model, "unknown");
+}
+
+ /**
+ * @tc.name  : Test DeviceStatusListener.
+ * @tc.number: ParseTaskIdExtraInfo01
+ * @tc.desc  : Test DeviceStatusListener::ParseModelFromProtocol().
+ */
+ HWTEST(DeviceStatusListenerUnitTest, ParseTaskIdExtraInfo02, TestSize.Level1)
+{
+    auto deviceStatusListenerPtr = std::make_shared<DeviceStatusListener>(AudioPolicyService::GetAudioPolicyService());
+    DStatusInfo statusInfo;
+    std::string info = "EVENT_TYPE=1;NID=d8d;PIN=1;IID=0;CAPS=1;INFO=123456";
+    deviceStatusListenerPtr->OnDistributedServiceStatusChanged(true);
+    deviceStatusListenerPtr->SendDistributeInfo(info);
+    EXPECT_EQ(statusInfo.model, "unknown");
+}
 } // namespace AudioStandard
 } // namespace OHOS

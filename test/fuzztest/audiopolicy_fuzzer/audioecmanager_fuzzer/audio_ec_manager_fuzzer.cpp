@@ -346,6 +346,199 @@ void ReloadNormalSourceFuzzTest(FuzzedDataProvider& fdp)
     ecManager.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
 }
 
+void UpdateModuleInfoForEcFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioModuleInfo moduleInfo;
+
+    ecManager.audioEcInfo_.ecType = g_fuzzUtils.GetData<EcType>();
+    ecManager.audioEcInfo_.ecOutputAdapter = g_fuzzUtils.GetData<bool>() ? USB_CLASS : DP_CLASS;
+    ecManager.audioEcInfo_.samplingRate = std::to_string(g_fuzzUtils.GetData<uint32_t>());
+    ecManager.audioEcInfo_.format = g_fuzzUtils.GetData<bool>() ? "s16le" : "s32le";
+    ecManager.audioEcInfo_.channels = std::to_string(g_fuzzUtils.GetData<uint32_t>());
+
+    ecManager.UpdateModuleInfoForEc(moduleInfo);
+}
+
+void UpdateModuleInfoForMicRefFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioModuleInfo moduleInfo;
+
+    ecManager.Init(0, 0);
+    SourceType source1 = SOURCE_TYPE_VOICE_COMMUNICATION;
+    ecManager.UpdateModuleInfoForMicRef(moduleInfo, source1);
+
+    ecManager.Init(1, 1);
+    SourceType source2 = g_fuzzUtils.GetData<SourceType>();
+    ecManager.UpdateModuleInfoForMicRef(moduleInfo, source2);
+
+    ecManager.isMicRefVoipUpOn_ = g_fuzzUtils.GetData<bool>();
+    ecManager.UpdateModuleInfoForMicRef(moduleInfo, SOURCE_TYPE_VOICE_COMMUNICATION);
+
+    ecManager.isMicRefRecordOn_ = g_fuzzUtils.GetData<bool>();
+    ecManager.UpdateModuleInfoForMicRef(moduleInfo, SOURCE_TYPE_MIC);
+}
+
+void UpdateArmModuleInfoWithdataFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+
+    AudioModuleInfo moduleInfo1;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc1 = nullptr;
+    ecManager.UpdateArmModuleInfo(deviceDesc1, moduleInfo1);
+
+    AudioModuleInfo moduleInfo2;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc2 = std::make_shared<AudioDeviceDescriptor>();
+    ecManager.UpdateArmModuleInfo(deviceDesc2, moduleInfo2);
+
+    AudioModuleInfo moduleInfo3;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc3 = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    streamInfo.samplingRate = {g_fuzzUtils.GetData<AudioSamplingRate>()};
+    streamInfo.format = g_fuzzUtils.GetData<bool>() ? SAMPLE_S16LE : SAMPLE_S32LE;
+    deviceDesc3->audioStreamInfo_.push_back(streamInfo);
+    moduleInfo3.rate = std::to_string(g_fuzzUtils.GetData<uint32_t>());
+    moduleInfo3.format = g_fuzzUtils.GetData<bool>() ? "s16le" : "s32le";
+    moduleInfo3.channels = std::to_string(g_fuzzUtils.GetData<uint32_t>());
+    ecManager.UpdateArmModuleInfo(deviceDesc3, moduleInfo3);
+
+    AudioModuleInfo moduleInfo4;
+    moduleInfo4.rate = "";
+    moduleInfo4.format = "";
+    moduleInfo4.channels = "";
+    ecManager.UpdateArmModuleInfo(deviceDesc3, moduleInfo4);
+
+    AudioModuleInfo moduleInfo5;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc5 = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo5;
+    streamInfo5.samplingRate = {SAMPLE_RATE_48000};
+    streamInfo5.format = SAMPLE_S16LE;
+    deviceDesc5->audioStreamInfo_.push_back(streamInfo5);
+    deviceDesc5->macAddress_ = "AA:BB:CC:DD:EE:FF";
+    moduleInfo5.rate = "48000";
+    moduleInfo5.format = "s16le";
+    moduleInfo5.channels = "2";
+    ecManager.UpdateArmModuleInfo(deviceDesc5, moduleInfo5);
+}
+
+void ReloadSourceSoftLinkFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.rate = std::to_string(g_fuzzUtils.GetData<uint32_t>());
+    moduleInfo.channels = std::to_string(g_fuzzUtils.GetData<uint32_t>());
+    moduleInfo.format = g_fuzzUtils.GetData<bool>() ? "s16le" : "s32le";
+
+    ecManager.ReloadSourceSoftLink(pipeInfo, moduleInfo);
+}
+
+void GetEcFeatureEnableFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.GetEcFeatureEnable();
+}
+
+void ReloadSourceForInputPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    uint32_t targetSessionId = g_fuzzUtils.GetData<uint32_t>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.ReloadSourceForInputPipe(pipeInfo, targetSessionId);
+}
+
+void SetPrimaryMicModuleInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "primary_mic_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    moduleInfo.bufferSize = "3840";
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.SetPrimaryMicModuleInfo(moduleInfo);
+}
+
+void UpdateStreamEcAndMicRefInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+}
+
+void SetOpenedNormalSourceFuzzTest(FuzzedDataProvider& fdp)
+{
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.SetOpenedNormalSource(sourceType);
+}
+
+void SetOpenedNormalSourceSessionIdFuzzTest(FuzzedDataProvider& fdp)
+{
+    uint64_t sessionId = g_fuzzUtils.GetData<uint64_t>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.SetOpenedNormalSourceSessionId(sessionId);
+}
+
+void UpdateStreamEcInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateStreamEcInfo(moduleInfo, sourceType);
+}
+
+void UpdateStreamMicRefInfoFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.rate = "48000";
+    moduleInfo.channels = "2";
+    moduleInfo.format = "s16le";
+    SourceType sourceType = g_fuzzUtils.GetData<SourceType>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateStreamMicRefInfo(moduleInfo, sourceType);
+}
+
+void IsValidSourcePipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    pipeInfo->name_ = "primary_input";
+    bool isFromEcMicRef = g_fuzzUtils.GetData<bool>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.IsValidSourcePipe(pipeInfoInfo, isFromEcMicRef);
+}
+
+void UpdateModuleInfoForPrimaryFuzzTest(FuzzedDataProvider& fdp)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "test_module";
+    moduleInfo.adapterName = "primary";
+    PipeStreamPropInfo targetInfo;
+    targetInfo.channels_ = g_fuzzUtils.GetData<uint32_t>();
+    targetInfo.sampleRate_ = g_fuzzUtils.GetData<uint32_t>();
+    targetInfo.format_ = g_fuzzUtils.GetData<AudioSampleFormat>();
+    targetInfo.bufferSize_ = g_fuzzUtils.GetData<uint32_t>();
+    targetInfo.channelLayout_ = g_fuzzUtils.GetData<uint32_t>();
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.UpdateModuleInfoForPrimary(moduleInfo, targetInfo);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -375,6 +568,20 @@ void Test(FuzzedDataProvider& fdp)
     PrepareNormalSourceFuzzTest,
     GetOpenedNormalSourceSessionIdFuzzTest,
     ReloadNormalSourceFuzzTest,
+    UpdateModuleInfoForEcFuzzTest,
+    UpdateModuleInfoForMicRefFuzzTest,
+    UpdateArmModuleInfoWithdataFuzzTest,
+    ReloadSourceSoftLinkFuzzTest,
+    GetEcFeatureEnableFuzzTest
+    ReloadSourceForInputPipeFuzzTest,
+    SetPrimaryMicModuleInfoFuzzTest,
+    UpdateStreamEcAndMicRefInfoFuzzTest,
+    SetOpenedNormalSourceFuzzTest,
+    SetOpenedNormalSourceSessionIdFuzzTest,
+    UpdateStreamEcInfoFuzzTest,
+    UpdateStreamMicRefInfoFuzzTest,
+    IsValidSourcePipeFuzzTest,
+    UpdateModuleInfoForPrimaryFuzzTest,
 });
     func(fdp);
 }
