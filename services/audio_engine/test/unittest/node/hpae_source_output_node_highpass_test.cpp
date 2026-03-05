@@ -33,41 +33,12 @@ using namespace HPAE;
 using namespace testing::ext;
 using namespace testing;
 
-
-static int32_t g_pcEnableState = 0;
-static int32_t g_isPcDevice = 0;
-
-static int32_t MockGetBoolParameter(const char *key, int32_t defaultValue)
-{
-    if (strcmp(key, "const.multimedia.audio.fwk_ec.enable") == 0) {
-        return g_isPcDevice;
-    }
-    return defaultValue;
-}
-
-static void SetIsPcDevice(bool isPc)
-{
-    g_isPcDevice = isPc ? 1 : 0;
-    g_pcEnableState = MockGetBoolParameter("const.multimedia.audio.fwk_ec.enable", isPc ? 1 : 0);
-    std::cout << "Set IsPcDevice:" << isPc << ", g_pcEnableState:" << g_pcEnableState << std::endl;
-}
-
-static void ResetPcDeviceState()
-{
-    g_isPcDevice = 0;
-    g_pcEnableState = MockGetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
-}
-
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
-
-namespace {
-static int32_t g_testPcEnableState = 0;
-}
 
 class TestHighPassFilter : public IHighPassFilter {
 public:
@@ -135,14 +106,13 @@ public:
     void SetUp() override
     {
         TestHighPassFilter::ResetCounters();
-        ResetPcDeviceState();
-        g_testPcEnableState = 0;
+        HpaeSourceOutputNode::SetPcEnableState(0);
     }
 
     void TearDown() override
     {
         TestHighPassFilter::ResetCounters();
-        ResetPcDeviceState();
+        HpaeSourceOutputNode::SetPcEnableState(0);
     }
 
 protected:
@@ -150,7 +120,7 @@ protected:
 
     static void EnablePcFilterState(bool enable)
     {
-        g_testPcEnableState = enable ? 1 : 0;
+        HpaeSourceOutputNode::SetPcEnableState(enable ? 1 : 0);
     }
 
     static std::unique_ptr<HpaeSourceOutputNode> CreateTestNode(SourceType sourceType)
@@ -159,9 +129,9 @@ protected:
         return std::make_unique<HpaeSourceOutputNode>(nodeInfo);
     }
 
-    static void InitPcDeviceState(bool isPc)
+    static void SetPcEnableState(int32_t state)
     {
-        SetIsPcDevice(isPc);
+        HpaeSourceOutputNode::SetPcEnableState(state);
     }
 
     static std::shared_ptr<HpaePcmBuffer> CreateTestPcmBuffer(uint32_t channels = STEREO,
@@ -206,7 +176,7 @@ HpaeNodeInfo HpaeSourceOutputNodeHighpassTest::GetTestNodeInfo(SourceType source
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_Ultrasonic_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
+    SetPcEnableState(1);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
 
     auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
@@ -219,9 +189,21 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_Ultrasonic_001, 
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_NonPcDevice_Mic_001, TestSize.Level1)
 {
-    InitPcDeviceState(false);
-    EnablePcFilterState(true);
+    SetPcEnableState(0);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_MIC);
+
+    auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
+    EXPECT_NE(node, nullptr);
+
+    EXPECT_EQ(node->isSupportHighpassFilter_, false);
+    EXPECT_EQ(node->highpassFilter_, nullptr);
+    EXPECT_EQ(node->filterChannelCount_, 0);
+}
+
+HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_NonPcDevice_Ultrasonic_001, TestSize.Level1)
+{
+    SetPcEnableState(0);
+    auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
 
     auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
     EXPECT_NE(node, nullptr);
@@ -233,8 +215,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_NonPcDevice_Mic_001, Test
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_VoiceComm_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_VOICE_COMMUNICATION);
 
     auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
@@ -247,8 +228,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_VoiceComm_001, T
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_DifferentChannels_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
 
     struct TestCase {
         AudioChannel channels;
@@ -276,8 +256,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_DifferentChannel
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_DifferentFrameLengths_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
 
     std::vector<uint32_t> frameLengths = {512, 960, 1024, 2048, 4096};
 
@@ -296,8 +275,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_DifferentFrameLe
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_NullBuffer_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -307,8 +285,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_NullBuff
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_NullPcmData_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -322,8 +299,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_NullPcmD
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_ValidData_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
     nodeInfo.frameLen = 480;
 
@@ -344,8 +320,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_ValidDat
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_LargeData_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
     nodeInfo.frameLen = 960;
 
@@ -364,8 +339,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ApplyHighpassFilter_PcDevice_LargeDat
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, DoProcess_PcDevice_WithFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -375,8 +349,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, DoProcess_PcDevice_WithFilter_001, Te
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, DoProcess_NonPcDevice_NoFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(false);
-    EnablePcFilterState(true);
+    SetPcEnableState(0);
     auto node = CreateTestNode(SOURCE_TYPE_MIC);
     ASSERT_NE(node, nullptr);
 
@@ -386,8 +359,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, DoProcess_NonPcDevice_NoFilter_001, T
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, DoProcess_PcDevice_WithMute_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -400,8 +372,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, DoProcess_PcDevice_WithMute_001, Test
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, SetState_PcDevice_WithFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -414,8 +385,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SetState_PcDevice_WithFilter_001, Tes
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, SetAppUid_PcDevice_WithFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -426,8 +396,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SetAppUid_PcDevice_WithFilter_001, Te
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Destructor_PcDevice_WithFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     {
         auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
         ASSERT_NE(node, nullptr);
@@ -438,8 +407,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Destructor_PcDevice_WithFilter_001, T
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, MultipleNodes_PcDevice_WithFilters_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
 
     std::vector<std::unique_ptr<HpaeSourceOutputNode>> nodes;
 
@@ -458,8 +426,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, MultipleNodes_PcDevice_WithFilters_00
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Reset_PcDevice_WithFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -472,8 +439,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Reset_PcDevice_WithFilter_001, TestSi
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, ResetAll_PcDevice_WithFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -486,8 +452,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, ResetAll_PcDevice_WithFilter_001, Tes
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, StateTransitions_PcDevice_WithFilter_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
     ASSERT_NE(node, nullptr);
 
@@ -508,8 +473,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, StateTransitions_PcDevice_WithFilter_
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_ZeroFrameLength_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
     nodeInfo.frameLen = 0;
 
@@ -526,8 +490,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_ZeroFrameLength_001
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_OneFrame_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
     nodeInfo.frameLen = 1;
 
@@ -545,8 +508,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_OneFrame_001, TestS
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_MonoChannel_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
     auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
     nodeInfo.channels = MONO;
 
@@ -560,8 +522,6 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_MonoChannel_001, Te
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, SourceTypeCombination_001, TestSize.Level1)
 {
-    EnablePcFilterState(true);
-
     SourceType testTypes[] = {
         SOURCE_TYPE_MIC,
         SOURCE_TYPE_ULTRASONIC,
@@ -572,16 +532,16 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SourceTypeCombination_001, TestSize.L
 
     for (auto sourceType : testTypes) {
         if (sourceType == SOURCE_TYPE_ULTRASONIC) {
-            InitPcDeviceState(true);
+            SetPcEnableState(1);
         } else {
-            InitPcDeviceState(false);
+            SetPcEnableState(0);
         }
 
         auto nodeInfo = GetTestNodeInfo(sourceType);
         auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
         EXPECT_NE(node, nullptr);
 
-        bool expectedSupport = (sourceType == SOURCE_TYPE_ULTRASONIC && g_pcEnableState != 0);
+        bool expectedSupport = (sourceType == SOURCE_TYPE_ULTRASONIC && PC_ENABLE_STATE != 0);
         EXPECT_EQ(node->isSupportHighpassFilter_, expectedSupport);
 
         if (expectedSupport) {
@@ -594,8 +554,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SourceTypeCombination_001, TestSize.L
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, MemoryAllocation_PcDevice_001, TestSize.Level1)
 {
-    InitPcDeviceState(true);
-    EnablePcFilterState(true);
+    SetPcEnableState(1);
 
     for (int i = 0; i < 100; ++i) {
         auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);

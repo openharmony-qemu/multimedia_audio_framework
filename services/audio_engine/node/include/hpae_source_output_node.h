@@ -26,6 +26,8 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
+extern int32_t PC_ENABLE_STATE;
+
 class HpaeSourceOutputNode : public InputNode<HpaePcmBuffer *> {
 public:
     HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo);
@@ -45,6 +47,8 @@ public:
     int32_t GetAppUid();
     void SetMute(bool isMute);
     bool GetMute();
+    static int32_t GetPcEnableState();
+    static void SetPcEnableState(int32_t val);
 private:
     uint64_t GetTimestamp();
     void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
