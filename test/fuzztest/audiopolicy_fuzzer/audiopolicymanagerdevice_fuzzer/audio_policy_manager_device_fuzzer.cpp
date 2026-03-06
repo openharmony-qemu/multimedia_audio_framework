@@ -163,10 +163,10 @@ T GetData()
 
 void SelectOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioRendererFilter filter;
-    filter.uid = GetData<int32_t>();
-    filter.rendererInfo.contentType = static_cast<ContentType>(GetData<int32_t>() % NUM_10);
-    filter.rendererInfo.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_10);
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    audioRendererFilter->uid = GetData<int32_t>();
+    audioRendererFilter->rendererInfo.contentType = static_cast<ContentType>(GetData<int32_t>() % NUM_10);
+    audioRendererFilter->rendererInfo.streamUsage = static_cast<StreamUsage>(GetData<int32_t>() % NUM_10);
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     uint32_t deviceCount = GetData<uint32_t>() % 5 + 1;
@@ -178,7 +178,7 @@ void SelectOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
     }
     
     int32_t selectMode = GetData<int32_t>();
-    AudioPolicyManager::GetInstance().SelectOutputDevice(sptr<AudioRendererFilter>(&filter), devices, selectMode);
+    AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, devices, selectMode);
 }
 
 void SelectPrivateDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -192,9 +192,9 @@ void ForceSelectDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     DeviceType devType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     std::string macAddress = fdp.ConsumeRandomLengthString(20);
-    AudioRendererFilter filter;
-    filter.uid = GetData<int32_t>();
-    AudioPolicyManager::GetInstance().ForceSelectDevice(devType, macAddress, sptr<AudioRendererFilter>(&filter));
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    audioRendererFilter->uid = GetData<int32_t>();
+    AudioPolicyManager::GetInstance().ForceSelectDevice(devType, macAddress, audioRendererFilter);
 }
 
 void SetActiveHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -205,9 +205,9 @@ void SetActiveHfpDeviceFuzzTest(FuzzedDataProvider& fdp)
 
 void RestoreOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioRendererFilter filter;
-    filter.uid = GetData<int32_t>();
-    AudioPolicyManager::GetInstance().RestoreOutputDevice(sptr<AudioRendererFilter>(&filter));
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    audioRendererFilter->uid = GetData<int32_t>();
+    AudioPolicyManager::GetInstance().RestoreOutputDevice(audioRendererFilter);
 }
 
 void GetSelectedDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
@@ -220,8 +220,8 @@ void GetSelectedDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
 
 void SelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioCapturerFilter filter;
-    filter.uid = GetData<int32_t>();
+    sptr<AudioCapturerFilter> audioCapturerFilter = new AudioCapturerFilter();
+    audioCapturerFilter->uid = GetData<int32_t>();
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     uint32_t deviceCount = GetData<uint32_t>() % 5 + 1;
@@ -232,7 +232,7 @@ void SelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
         devices.push_back(desc);
     }
     
-    AudioPolicyManager::GetInstance().SelectInputDevice(sptr<AudioCapturerFilter>(&filter), devices);
+    AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, devices);
 }
 
 void SelectInputDeviceSingleFuzzTest(FuzzedDataProvider& fdp)
@@ -312,16 +312,16 @@ void GetPreferredInputDeviceDescriptorsFuzzTest(FuzzedDataProvider& fdp)
 
 void GetOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioRendererFilter filter;
-    filter.uid = GetData<int32_t>();
-    AudioPolicyManager::GetInstance().GetOutputDevice(sptr<AudioRendererFilter>(&filter));
+    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    audioRendererFilter->uid = GetData<int32_t>();
+    AudioPolicyManager::GetInstance().GetOutputDevice(audioRendererFilter);
 }
 
 void GetInputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
-    AudioCapturerFilter filter;
-    filter.uid = GetData<int32_t>();
-    AudioPolicyManager::GetInstance().GetInputDevice(sptr<AudioCapturerFilter>(&filter));
+    sptr<AudioCapturerFilter> audioCapturerFilter = new AudioCapturerFilter();
+    audioCapturerFilter->uid = GetData<int32_t>();
+    AudioPolicyManager::GetInstance().GetInputDevice(audioCapturerFilter);
 }
 
 void SetDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
