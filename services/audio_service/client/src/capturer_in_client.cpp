@@ -1491,7 +1491,7 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             }
             // wait for server read some data
             constexpr auto timeoutInNano = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS)).count();
+                std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS * 100)).count();
             FutexCode futexRet = clientBuffer_->WaitFor(timeoutInNano, [this] {
                 return clientBuffer_->GetCurWriteFrame() > clientBuffer_->GetCurReadFrame() || state_ != RUNNING;
             });

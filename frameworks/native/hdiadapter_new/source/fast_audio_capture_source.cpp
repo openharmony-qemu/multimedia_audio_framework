@@ -431,7 +431,8 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     param.isSignedData = true;
     param.startThreshold = 0;
     param.stopThreshold = INT_MAX;
-    param.silenceThreshold = 0;
+    int silenceThresize = 4096;
+    param.silenceThreshold = silenceThresize;
 
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ; // enable mmap!
@@ -444,7 +445,7 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     } else if (param.channelCount == STEREO) {
         param.channelLayout = CH_LAYOUT_STEREO;
     }
-    param.silenceThreshold = attr_.bufferSize;
+    param.silenceThreshold = silenceThresize;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = 0;
 }
