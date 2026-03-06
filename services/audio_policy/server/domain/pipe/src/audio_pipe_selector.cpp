@@ -598,6 +598,24 @@ void AudioPipeSelector::SetPipeTypeByStreamType(AudioPipeType &nowPipeType,
     }
 }
 
+bool AudioPipeSelector::GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    const std::shared_ptr<AudioStreamDescriptor> &incomingStream)
+{
+    // When two music streams need to be played on remote offload, select multi-channel audio source, or source with a
+ 	// higher sampling rate.
+    CHECK_AND_RETURN_RET(existingStream != nullptr && incomingStream != nullptr, false);
+    CHECK_AND_RETURN_RET(existingStream->IsRunningOffload() && incomingStream->IsRunningOffload(), false);
+    CHECK_AND_RETURN_RET(existingStream->IsDeviceRemote() && incomingStream->IsDeviceRemote(), false);
+
+    bool startTimePriority = incomingStream->startTimeStamp_ < existingStream->startTimeStamp_;
+    if (startTimePriority) {
+        return incomingStream->IsMultiChannelStream() || (!existingStream->IsMultiChannelStream() &&
+            incomingStream->GetSamplingRate() >= existingStream->GetSamplingRate());
+    }
+    return !existingStream->IsMultiChannelStream() && (incomingStream->IsMultiChannelStream() ||
+        incomingStream->GetSamplingRate() > existingStream->GetSamplingRate());
+}
+
 ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     std::shared_ptr<AudioStreamDescriptor> &existingStream,
     std::shared_ptr<AudioStreamDescriptor> &incomingStream)
@@ -614,9 +632,11 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
         incomingStream->rendererInfo_.isLoopback;
     // No running offload can not concede incoming special pipe
     // incoming is loopback, concede existing offload
+    // Two remote offload streams, concede the one with lower quality.
     bool isConcedeExisting = action == CONCEDE_INCOMING &&
         (existingStream->IsNoRunningOffload() ||
-        (existingStream->IsRouteOffload() && isIncomingStreamIsLoopback));
+        (existingStream->IsRouteOffload() && isIncomingStreamIsLoopback) ||
+        GetIncomingStreamPriority(existingStream, incomingStream));
     CHECK_AND_RETURN_RET(isConcedeExisting, action);
     action = CONCEDE_EXISTING;
     return action;

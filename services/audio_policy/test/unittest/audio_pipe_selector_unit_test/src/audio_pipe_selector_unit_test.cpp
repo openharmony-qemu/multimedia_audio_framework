@@ -2516,5 +2516,93 @@ HWTEST_F(AudioPipeSelectorUnitTest, AdjustConcedeActionByStatus_010, TestSize.Le
     // Expect action to remain CONCEDE_EXISTING
     EXPECT_EQ(action, CONCEDE_EXISTING);
 }
+
+/**
+ * @tc.name: GetIncomingStreamPriority_001
+ * @tc.desc: Test GetIncomingStreamPriority when existingStream played earlier than incomingStream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetIncomingStreamPriority_001, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    std::shared_ptr<AudioStreamDescriptor> existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    existingStream->newDeviceDescs_.front()->networkId_ = "test_networkId";
+    existingStream->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    existingStream->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    existingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    existingStream->startTimeStamp_ = 1;
+
+    std::shared_ptr<AudioStreamDescriptor> incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    incomingStream->newDeviceDescs_.front()->networkId_ = "test_networkId";
+    incomingStream->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    incomingStream->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
+    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    incomingStream->startTimeStamp_ = 2;
+
+    bool isConcedeExisting = false;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, false);
+
+    existingStream->streamInfo_.channels = AudioChannel::STEREO;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, true);
+
+    incomingStream->streamInfo_.channels = AudioChannel::STEREO;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, true);
+
+    incomingStream->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, false);
+}
+
+/**
+ * @tc.name: GetIncomingStreamPriority_002
+ * @tc.desc: Test GetIncomingStreamPriority when incomingStream played earlier than existingStream.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, GetIncomingStreamPriority_002, TestSize.Level1)
+{
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    std::shared_ptr<AudioStreamDescriptor> existingStream = std::make_shared<AudioStreamDescriptor>();
+    existingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    existingStream->newDeviceDescs_.front()->networkId_ = "test_networkId";
+    existingStream->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    existingStream->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    existingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    existingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    existingStream->startTimeStamp_ = 2;
+
+    std::shared_ptr<AudioStreamDescriptor> incomingStream = std::make_shared<AudioStreamDescriptor>();
+    incomingStream->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    incomingStream->newDeviceDescs_.front()->networkId_ = "test_networkId";
+    incomingStream->streamInfo_.channels = AudioChannel::CHANNEL_6;
+    incomingStream->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_192000;
+    incomingStream->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    incomingStream->streamStatus_ = STREAM_STATUS_STARTED;
+    incomingStream->startTimeStamp_ = 1;
+
+    bool isConcedeExisting = false;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, true);
+
+    incomingStream->streamInfo_.channels = AudioChannel::STEREO;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, false);
+
+    existingStream->streamInfo_.channels = AudioChannel::STEREO;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, true);
+
+    incomingStream->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    isConcedeExisting = audioPipeSelector->GetIncomingStreamPriority(existingStream, incomingStream);
+    EXPECT_EQ(isConcedeExisting, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

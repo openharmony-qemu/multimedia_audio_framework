@@ -122,6 +122,7 @@ void AudioPipeManager::StartClient(uint32_t sessionId)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
     streamDesc->streamStatus_ = STREAM_STATUS_STARTED;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
 }
 
 void AudioPipeManager::PauseClient(uint32_t sessionId)

@@ -3425,7 +3425,7 @@ bool AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
         existingSourceType.push_back(static_cast<uint8_t>(desc->capturerInfo_.sourceType));
         existingCaptureState.push_back(static_cast<uint8_t>(desc->streamStatus_));
         existingCreateDuration.push_back(GetTimeCostFrom(desc->createTimeStamp_));
-        existingStartDuration.push_back(GetTimeCostFrom(desc->startTimeStamp_));
+        existingStartDuration.push_back(GetTimeCostFrom(desc->stateStartTimeStamp_));
         existingFastFlag.push_back(static_cast<bool>(desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST));
     }
     result->existingAppName = std::move(existingAppName);
