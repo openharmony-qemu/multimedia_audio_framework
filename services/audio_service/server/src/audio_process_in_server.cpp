@@ -459,8 +459,9 @@ int32_t AudioProcessInServer::StartInner()
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
+    int32_t result = SUCCESS;
     for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnStart(this);
+        result = listenerList_[i]->OnStart(this);
     }
     if (streamStatus_->load() == STREAM_STAND_BY) {
         AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
@@ -476,8 +477,7 @@ int32_t AudioProcessInServer::StartInner()
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    HILOG_COMM_INFO("[StartInner]Start in server success!");
-    return SUCCESS;
+    return result;
 }
 
 void AudioProcessInServer::RebuildCaptureInjector()
@@ -555,16 +555,16 @@ int32_t AudioProcessInServer::Resume()
     MarkStaticFadeIn();
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
+    int32_t result = SUCCESS;
     for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnStart(this);
+        result = listenerList_[i]->OnStart(this);
     }
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    HILOG_COMM_INFO("[Resume]Resume in server success!");
     streamStatusInServer_ = STREAM_RUNNING;
-    return SUCCESS;
+    return result;
 }
 
 int32_t AudioProcessInServer::Stop(int32_t stageIn)
