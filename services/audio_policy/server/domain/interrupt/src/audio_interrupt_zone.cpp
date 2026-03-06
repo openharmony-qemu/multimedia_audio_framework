@@ -119,7 +119,11 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
             releaseZone->context.backStrategy_ == MediaBackStrategy::STOP) {
             ForceStopAudioFocusInZone(zoneId, it->first);
         } else {
-            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", it->first.streamUsage);
+            StreamUsage streamUsage = service_->sessionService_.GetAudioSessionStreamUsage(it->first.pid);
+            streamUsage = ((streamUsage != StreamUsage::STREAM_USAGE_INVALID) &&
+                service_->sessionService_.IsAudioSessionActivated(it->first.pid)) ?
+                streamUsage : it->first.streamUsage;
+            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", streamUsage);
             service_->ActivateAudioInterruptInternal(destZoneId, it->first, false, updateScene);
         }
     }
@@ -176,7 +180,11 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
     bool isMigrate = false;
     bool updateScene = false;
     for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
-        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "", itFocus->first.streamUsage);
+        StreamUsage streamUsage = service_->sessionService_.GetAudioSessionStreamUsage(itFocus->first.pid);
+        streamUsage = ((streamUsage != StreamUsage::STREAM_USAGE_INVALID) &&
+            service_->sessionService_.IsAudioSessionActivated(itFocus->first.pid)) ?
+            streamUsage : itFocus->first.streamUsage;
+        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "", streamUsage);
         if (toZoneId == zoneId) {
             ++itFocus;
             continue;

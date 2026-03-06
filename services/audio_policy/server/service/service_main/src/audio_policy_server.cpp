@@ -2950,8 +2950,7 @@ int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
-            audioInterrupt.streamUsage);
+        int32_t zoneId = interruptService_->FindAudioZoneByStreamId(audioInterrupt.streamId);
         StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(audioInterrupt.uid,
             audioInterrupt.streamId);
         return UpdateAudioSceneAfterDeactivateInterrupt(zoneId, audioInterrupt);
@@ -5179,12 +5178,6 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
-    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
-        // If an audio zone is selected based on the scene type,
-        // then all audio streams of the audioSession must be selected to the corresponding audio zone,
-        // which is equivalent to binding the entire application to the audio zone.
-        AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, callerUid);
-    }
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d, "
         "streamUsage:%{public}d", static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId, streamUsage);
 
@@ -5225,9 +5218,6 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
-    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
-        AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, callerUid);
-    }
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
         callerPid, zoneId, streamUsage);
     return interruptService_->DeactivateAudioSession(zoneId, callerPid);
