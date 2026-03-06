@@ -101,7 +101,7 @@ ohos_fuzztest("AudioEffectVolumeFuzzTest") {
     "qos_manager:concurrent_task_client",
   ]
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
   if (accessibility_enable == true) {
     external_deps += [

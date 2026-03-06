@@ -85,7 +85,7 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     "samgr:samgr_proxy",
   ]
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
   if (accessibility_enable == true) {
     external_deps += [

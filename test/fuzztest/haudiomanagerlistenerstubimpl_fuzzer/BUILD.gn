@@ -66,7 +66,7 @@ ohos_fuzztest("HAudioManagerListenerStubImplFuzzTest") {
     "samgr:samgr_proxy",
   ]
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
 
