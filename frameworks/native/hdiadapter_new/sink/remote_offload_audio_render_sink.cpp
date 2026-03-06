@@ -409,12 +409,6 @@ int32_t RemoteOffloadAudioRenderSink::GetLatency(uint32_t &latency)
     return ret;
 }
 
-int32_t RemoteOffloadAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteOffloadAudioRenderSink::GetHdiPresentationPosition(uint64_t &frames, int64_t &timeSec,
     int64_t &timeNanoSec)
 {

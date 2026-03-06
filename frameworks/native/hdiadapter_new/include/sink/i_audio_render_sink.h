@@ -63,7 +63,6 @@ public:
     virtual int32_t GetVolume(float &left, float &right) = 0;
 
     virtual int32_t GetLatency(uint32_t &latency) = 0;
-    virtual int32_t GetTransactionId(uint64_t &transactionId) = 0;
     virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
     virtual float GetMaxAmplitude(void) = 0;
     virtual void SetAudioMonoState(bool audioMono) = 0;

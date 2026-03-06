@@ -66,11 +66,7 @@ static const sptr<IStandardAudioService> GetAudioAbilityManagerProxy()
 
 uint64_t AudioAbilityManager::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {
-    const sptr<IStandardAudioService> gasp = GetAudioAbilityManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    uint64_t transactionId = 0;
-    gasp->GetTransactionId(deviceType, deviceRole, transactionId);
-    return transactionId;
+    return static_cast<uint64_t>(deviceType) << 32 | static_cast<uint64_t>(deviceRole);
 }
 } // namespace AudioStandard
 } // namespace OHOS

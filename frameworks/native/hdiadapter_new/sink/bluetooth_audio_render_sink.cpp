@@ -443,16 +443,6 @@ int32_t BluetoothAudioRenderSink::GetLatency(uint32_t &latency)
     return SUCCESS;
 }
 
-int32_t BluetoothAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        HILOG_COMM_ERROR("[GetTransactionId]render is nullptr"));
-    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
-    transactionId = reinterpret_cast<uint64_t>(audioRender_);
-    return SUCCESS;
-}
-
 int32_t BluetoothAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");
