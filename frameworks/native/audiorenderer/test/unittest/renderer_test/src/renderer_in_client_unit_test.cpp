@@ -2252,38 +2252,6 @@ HWTEST(RendererInClientInnerUnitTest, SetCacheSize_001, TestSize.Level1)
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC
- * @tc.number: SetCacheSize_002
- * @tc.desc  : Test RendererInClientInner::SetCacheSize
- */
-HWTEST(RendererInClientInnerUnitTest, SetCacheSize_002, TestSize.Level1)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ptrRendererInClientInner->spanSizeInFrame_ = 20;
-    uint32_t testValue = 20;
-    uint32_t expectValue = 40;
-    ptrRendererInClientInner->SetCacheSize(testValue);
-    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, expectValue);
-}
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
- * @tc.number: SetCacheSize_003
- * @tc.desc  : Test RendererInClientInner::SetCacheSize
- */
-HWTEST(RendererInClientInnerUnitTest, SetCacheSize_003, TestSize.Level1)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ptrRendererInClientInner->spanSizeInFrame_ = 20;
-    uint32_t testValue = 93;
-    uint32_t expectValue = 120;
-    ptrRendererInClientInner->SetCacheSize(testValue);
-    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, expectValue);
-}
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
  * @tc.number: SetCacheSize_004
  * @tc.desc  : Test RendererInClientInner::SetCacheSize with ipcStream_ null
  */

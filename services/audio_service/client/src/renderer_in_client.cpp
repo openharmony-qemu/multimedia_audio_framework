@@ -335,7 +335,7 @@ void RendererInClientInner::SetCacheSize(uint32_t cacheSizeInFrame)
     int32_t ret = ipcStream_->CalculateCacheCount(cacheSizeInFrame, cacheCount);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("CalculateCacheCount failed: %{public}d", ret);
-        return;
+        cacheCount = (cacheSizeInFrame + spanSizeInFrame_ - 1) / spanSizeInFrame_ + 1;
     }
     cacheSizeInFrame_ = cacheCount * spanSizeInFrame_;
     AUDIO_INFO_LOG("cacheCount:%{public}d cacheSizeInFrame:%{public}d", cacheCount, cacheSizeInFrame_.load());
