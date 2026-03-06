@@ -52,7 +52,7 @@ AudioHighPassFilter::AudioHighPassFilter() : handle_(nullptr), filter_(nullptr)
 AudioHighPassFilter::~AudioHighPassFilter()
 {
     if (filter_) {
-        free(filter_);
+        delete filter_;
         filter_ = nullptr;
     }
     if (handle_) {

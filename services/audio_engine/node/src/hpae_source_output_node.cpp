@@ -44,9 +44,21 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
         filterChannelCount_ = static_cast<int32_t>(GetChannelCount());
         CHECK_AND_RETURN_LOG(filterChannelCount_ > 0, "invalid channelCount: %{public}d", filterChannelCount_);
         highpassFilter_ = std::make_unique<AudioHighPassFilter>();
-        int32_t ret = highpassFilter_->InitFilter(filterChannelCount_);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "filter init failed: %{public}d", ret);
-        AUDIO_INFO_LOG("Init HighpassFilter succ");
+        if (highpassFilter_) {
+            int32_t ret = highpassFilter_->InitFilter(filterChannelCount_);
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("filter init failed: %{public}d, disable highpass filter", ret);
+                highpassFilter_.reset();
+                isSupportHighpassFilter_ = false;
+                filterChannelCount_ = 0;
+            } else {
+                AUDIO_INFO_LOG("Init HighpassFilter succ");
+            }
+        } else {
+            AUDIO_ERR_LOG("create highpass filter failed");
+            isSupportHighpassFilter_ = false;
+            filterChannelCount_ = 0;
+        }
     }
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeSourceOutputNode");
