@@ -472,18 +472,18 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_001, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
     
     // Test with exception flag set
     desc->exceptionFlag_ = true;
-    result = audioDeviceManager.IsDeviceAvailable(desc);
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
     
     // Test with disabled device
     desc->exceptionFlag_ = false;
     desc->isEnable_ = false;
-    result = audioDeviceManager.IsDeviceAvailable(desc);
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
 }
 
@@ -502,12 +502,12 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_002, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
     
     // Test with Bluetooth SCO device in suspend connected state
     desc->connectState_ = SUSPEND_CONNECTED;
-    result = audioDeviceManager.IsDeviceAvailable(desc);
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
 }
 
@@ -526,7 +526,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_003, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = VIRTUAL_CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
 }
 
@@ -545,7 +545,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_004, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = SUSPEND_CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
 }
 
@@ -560,8 +560,31 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_005, TestSize.Level1)
     
     // Test with nullptr
     std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_006
+* @tc.desc  : Test IsDeviceAvailable interface for Nearlink.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_006, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    // Test with Nearlink device (should be unavailable)
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->deviceUsage_ = RECOGNITION;
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
+    EXPECT_EQ(false, result);
+
+    desc->deviceUsage_ = ALL_USAGE;
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
+    EXPECT_EQ(true, result);
 }
 
 /**

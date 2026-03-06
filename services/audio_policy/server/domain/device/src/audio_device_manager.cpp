@@ -1885,12 +1885,29 @@ int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceD
     return PRIORITY_BASE;
 }
 
-bool AudioDeviceManager::IsDeviceAvailable(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+bool AudioDeviceManager::IsDeviceAvailable(AudioDeviceUsage audioDevUsage,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    auto IsDeviceUsageSupported = [](AudioDeviceUsage audioDevUsage,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) -> bool {
+        CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "deviceDesc is nullptr");
+        uint32_t deviceUsage = static_cast<uint32_t>(deviceDesc->deviceUsage_);
+        switch (audioDevUsage) {
+            case MEDIA_OUTPUT_DEVICES:
+            case MEDIA_INPUT_DEVICES:
+                return (deviceUsage & MEDIA) != 0;
+            case CALL_OUTPUT_DEVICES:
+            case CALL_INPUT_DEVICES:
+                return (deviceUsage & VOICE) != 0;
+            default:
+                return false;
+        }
+    };
     if (desc != nullptr && !desc->exceptionFlag_ && desc->isEnable_ &&
         (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
         desc->connectState_ != SUSPEND_CONNECTED) &&
-        desc->connectState_ != VIRTUAL_CONNECTED) {
+        desc->connectState_ != VIRTUAL_CONNECTED &&
+        IsDeviceUsageSupported(audioDevUsage, desc)) {
         return true;
     }
     return false;

@@ -190,10 +190,10 @@ bool SleAudioDeviceManager::IsGameApp(int32_t uid)
 uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid)
 {
     bool isGameApp = IsGameApp(uid);
+    if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {
+        return SLE_AUDIO_STREAM_GAME;
+    }
     for (const auto &pair : STREAM_USAGE_TO_SLE_STREAM_TYPE) {
-        if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {
-            return SLE_AUDIO_STREAM_GAME;
-        }
         if (pair.second.find(streamUsage) != pair.second.end()) {
             return pair.first;
         }
