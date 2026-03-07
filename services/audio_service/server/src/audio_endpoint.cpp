@@ -561,6 +561,7 @@ bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
     AUDIO_INFO_LOG("Role %{public}d, format %{public}d, ultraFastFlag_%{public}d",
         endpointConfig.deviceInfo.deviceRole_, endpointConfig.streamInfo.format, endpointConfig.isUltraFast);
     deviceInfo_ = endpointConfig.deviceInfo;
+    auto isArmUsb = deviceInfo_.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET;
     dstStreamInfo_ = endpointConfig.streamInfo;
     endpointName_ = GenerateEndpointKey(deviceInfo_, id_);
     if (deviceInfo_.deviceRole_ == INPUT_DEVICE) {
@@ -573,15 +574,19 @@ bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
         HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
         return false;
     }
-    if (sink->IsInited()) {
+    if (sink->IsInited() && isArmUsb) {
+        AUDIO_WARNING_LOG("need DeInit, sink is inited, device is arm usb");
         sink->DeInit();
     }
 
     IAudioSinkAttr attr = InitSinkAttr(endpointConfig);
-    sink->Init(attr);
     if (!sink->IsInited()) {
-        HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
-        return false;
+        AUDIO_INFO_LOG("need Init sink");
+        sink->Init(attr);
+        if (!sink->IsInited()) {
+            HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
+            return false;
+        }
     }
 
     if (PrepareDeviceBuffer(deviceInfo_) != SUCCESS) {
