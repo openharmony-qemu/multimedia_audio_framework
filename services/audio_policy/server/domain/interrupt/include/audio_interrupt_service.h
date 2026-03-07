@@ -155,6 +155,7 @@ public:
 
     AudioScene GetHighestPriorityAudioSceneFromAllZones();
     int32_t FindAudioZoneByStreamId(const uint32_t streamId);
+    int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -305,6 +306,8 @@ private:
         const AudioFocusEntry &focusEntry);
     bool CanMixForActiveSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         const AudioFocusEntry &focusEntry);
+    bool CapturerMixForSessionBehavior(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt);
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
@@ -328,6 +331,8 @@ private:
         const AudioInterrupt &activeInterrupt);
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
+    void HandleMuteAllStreamsInSession(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId, bool returnDefault = false);
 
