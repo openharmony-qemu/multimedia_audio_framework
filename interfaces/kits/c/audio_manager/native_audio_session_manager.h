@@ -44,6 +44,7 @@
 #define NATIVE_AUDIO_SESSION_MANAGER_H
 
 #include "native_audio_common.h"
+#include "native_audio_session_base.h"
 #include "native_audiostream_base.h"
 #include "native_audio_device_base.h"
 #ifdef __cplusplus
@@ -57,33 +58,6 @@ extern "C" {
  * @since 12
  */
 typedef struct OH_AudioSessionManager OH_AudioSessionManager;
-
-/**
- * @brief Declare the audio concurrency modes.
- *
- * @since 12
- */
-typedef enum {
-    /**
-     * @brief default mode
-     */
-    CONCURRENCY_DEFAULT = 0,
-
-    /**
-     * @brief mix with others mode
-     */
-    CONCURRENCY_MIX_WITH_OTHERS = 1,
-
-    /**
-     * @brief duck others mode
-     */
-    CONCURRENCY_DUCK_OTHERS = 2,
-
-    /**
-     * @brief pause others mode
-     */
-    CONCURRENCY_PAUSE_OTHERS = 3,
-} OH_AudioSession_ConcurrencyMode;
 
 /**
  * @brief Declare the audio session scene.
@@ -162,6 +136,28 @@ typedef enum {
      * @since 23
      */
     AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION = 7,
+
+    /**
+     * @brief The hint can be received only after the parameter
+     * {@link OH_AudioSession_BehaviorFlags.MUTE_WHEN_INTERRUPTED}
+     * has been set by the interface {@link #OH_AudioSessionManager_SetBehavior}
+     * and {@link #OH_AudioSessionManager_SetScene} has been called. 
+     * After the hint is received, the audio stream is muted.
+     *
+     * @since 24
+     */
+    AUDIO_SESSION_STATE_CHANGE_HINT_MUTE = 8,
+ 
+    /**
+     * @brief The hint can be received only after the parameter
+     * {@link OH_AudioSession_BehaviorFlags.MUTE_WHEN_INTERRUPTED}
+     * has been set by the interface {@link #OH_AudioSessionManager_SetBehavior}
+     * and {@link #OH_AudioSessionManager_SetScene} has been called.
+     * When the hint is received, the audio stream is unmuted.
+     *
+     * @since 24
+     */
+    AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE = 9,
 } OH_AudioSession_StateChangeHint;
 
 /**
@@ -227,18 +223,6 @@ typedef enum {
      */
     PREFERRED_HIGH_QUALITY = 3,
 } OH_AudioSession_BluetoothAndNearlinkPreferredRecordCategory;
-
-/**
- * @brief declare the audio session strategy
- *
- * @since 12
- */
-typedef struct OH_AudioSession_Strategy {
-    /**
-     * @brief audio session concurrency mode
-     */
-    OH_AudioSession_ConcurrencyMode concurrencyMode;
-} OH_AudioSession_Strategy;
 
 /**
  * @brief declare the audio session deactivated event
@@ -763,6 +747,21 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
  * @since 23
  */
 bool OH_AudioSessionManager_IsOtherMediaPlaying(OH_AudioSessionManager *audioSessionManager);
+
+/**
+ * @brief Set audio session behavior parameters (supporting multiple flag combinations)
+ * This interface takes effect only after the interface {@link #OH_AudioSessionManager_SetScene} has been invoked
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param behavior Audio session behavior flags,
+ * which can be a single flag or a bitwise OR combination of multiple flags {@link #OH_AudioSession_BehaviorFlags}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} Parameter validation fails.
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} Function is called without setting {@link #OH_AudioSession_Scene}.
+ * @since 24
+ */
+OH_AudioCommon_Result OH_AudioSessionManager_SetBehavior(
+    OH_AudioSessionManager *audioSessionManager, uint32_t behavior);
 #ifdef __cplusplus
 }
 #endif
