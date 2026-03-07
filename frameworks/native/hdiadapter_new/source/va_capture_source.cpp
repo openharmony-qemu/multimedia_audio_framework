@@ -296,11 +296,6 @@ int32_t VACaptureSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-uint64_t VACaptureSource::GetTransactionId(void)
-{
-    return SUCCESS;
-}
-
 int32_t VACaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     return SUCCESS;

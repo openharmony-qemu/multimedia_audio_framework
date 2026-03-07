@@ -178,18 +178,6 @@ HWTEST_F(FileAudioCaptureSourceUnitTest, FileSourceUnitTest_006, TestSize.Level1
 
 /**
  * @tc.name   : Test FileSource API
- * @tc.number : FileSourceUnitTest_007
- * @tc.desc   : Test file source get transaction id
- */
-HWTEST_F(FileAudioCaptureSourceUnitTest, FileSourceUnitTest_007, TestSize.Level1)
-{
-    EXPECT_TRUE(source_ && source_->IsInited());
-    uint64_t transId = source_->GetTransactionId();
-    EXPECT_EQ(transId, -1);
-}
-
-/**
- * @tc.name   : Test FileSource API
  * @tc.number : FileSourceUnitTest_008
  * @tc.desc   : Test file source get presentation position
  */

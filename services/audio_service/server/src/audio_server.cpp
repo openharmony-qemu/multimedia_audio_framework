@@ -1404,47 +1404,6 @@ const std::string AudioServer::GetAudioParameterInner(const std::string& network
     return "";
 }
 
-int32_t AudioServer::GetTransactionId(int32_t deviceType, int32_t deviceRole, uint64_t& transactionId)
-{
-    AUDIO_DEBUG_LOG("device type: %{public}d, device role: %{public}d", deviceType, deviceRole);
-    if (deviceRole != INPUT_DEVICE && deviceRole != OUTPUT_DEVICE) {
-        AUDIO_ERR_LOG("AudioServer::GetTransactionId: error device role");
-        transactionId =  static_cast<uint64_t>(ERR_INVALID_PARAM);
-        return SUCCESS;
-    }
-    std::shared_ptr<IAudioCaptureSource> source = nullptr;
-    if (deviceRole == INPUT_DEVICE) {
-        if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-            source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-        } else {
-            source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
-        }
-        if (source) {
-            transactionId = source->GetTransactionId();
-        }
-        return SUCCESS;
-    }
-
-    // deviceRole OUTPUT_DEVICE
-    std::shared_ptr<IAudioRenderSink> sink = nullptr;
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        sink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    } else if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-    } else {
-        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    }
-    int32_t ret = ERROR;
-    if (sink != nullptr) {
-        ret = sink->GetTransactionId(transactionId);
-    }
-
-    CHECK_AND_RETURN_RET_LOG(!ret, SUCCESS, "Get transactionId failed.");
-
-    AUDIO_DEBUG_LOG("Transaction Id: %{public}" PRIu64, transactionId);
-    return SUCCESS;
-}
-
 // LCOV_EXCL_START
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {

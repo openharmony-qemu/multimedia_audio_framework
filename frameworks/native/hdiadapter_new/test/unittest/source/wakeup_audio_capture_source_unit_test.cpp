@@ -181,18 +181,6 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_007, TestSize.Le
  
 /**
  * @tc.name   : Test WakeupSource API
- * @tc.number : WakeupSourceUnitTest_008
- * @tc.desc   : Test wakeup source get transaction id
- */
-HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_008, TestSize.Level1)
-{
-    EXPECT_TRUE(source_);
-    uint64_t transId = source_->GetTransactionId();
-    EXPECT_NE(transId, 0);
-}
- 
-/**
- * @tc.name   : Test WakeupSource API
  * @tc.number : WakeupSourceUnitTest_009
  * @tc.desc   : Test wakeup source get max amplitude
  */

@@ -59,7 +59,6 @@ public:
     virtual int32_t SetMute(bool isMute) = 0;
     virtual int32_t GetMute(bool &isMute) = 0;
 
-    virtual uint64_t GetTransactionId(void) = 0;
     virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
     virtual float GetMaxAmplitude(void) = 0;
 

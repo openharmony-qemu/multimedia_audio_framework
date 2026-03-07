@@ -272,20 +272,6 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_007, TestSize.Level1)
 
 /**
  * @tc.name   : Test PrimarySource API
- * @tc.number : PrimarySourceUnitTest_008
- * @tc.desc   : Test primary source get transaction id
- */
-HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_008, TestSize.Level1)
-{
-    InitPrimarySource();
-    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    uint64_t transId = primarySource_->GetTransactionId();
-    EXPECT_NE(transId, 0);
-    DeInitPrimarySource();
-}
-
-/**
- * @tc.name   : Test PrimarySource API
  * @tc.number : PrimarySourceUnitTest_009
  * @tc.desc   : Test primary source get max amplitude
  */

@@ -95,7 +95,6 @@ public:
     int32_t GetVolume(float &left, float &right) override { return SUCCESS; }
 
     int32_t GetLatency(uint32_t &latency) override { return SUCCESS; }
-    int32_t GetTransactionId(uint64_t &transactionId) override { return SUCCESS; }
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override { return 0; }
     float GetMaxAmplitude(void) override { return 0.0; }
     void SetAudioMonoState(bool audioMono) override {}

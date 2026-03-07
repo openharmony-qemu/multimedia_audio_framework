@@ -96,7 +96,6 @@ vector<AudioServerInterfaceCode> AudioServerInterfaceCodeVec = {
     AudioServerInterfaceCode::UPDATE_ROUTE_REQ,
     AudioServerInterfaceCode::UPDATE_ROUTES_REQ,
     AudioServerInterfaceCode::UPDATE_DUAL_TONE_REQ,
-    AudioServerInterfaceCode::GET_TRANSACTION_ID,
     AudioServerInterfaceCode::SET_PARAMETER_CALLBACK,
     AudioServerInterfaceCode::GET_REMOTE_AUDIO_PARAMETER,
     AudioServerInterfaceCode::SET_REMOTE_AUDIO_PARAMETER,

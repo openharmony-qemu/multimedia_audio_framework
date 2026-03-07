@@ -265,12 +265,6 @@ int32_t DirectAudioRenderSink::GetLatency(uint32_t &latency)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t DirectAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    transactionId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_HWDECODING);
-    return SUCCESS;
-}
-
 int32_t DirectAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);

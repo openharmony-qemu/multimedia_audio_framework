@@ -272,25 +272,6 @@ void AudioServerUpdateDualToneStateTest(const uint8_t* rawData, size_t size)
         data, reply, option);
 }
 
-void AudioServerGetTransactionIdTest(const uint8_t* rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    DeviceType deviceType = *reinterpret_cast<const DeviceType*>(rawData);
-    DeviceRole deviceRole = *reinterpret_cast<const DeviceRole*>(rawData);
-    data.WriteInt32(deviceType);
-    data.WriteInt32(deviceRole);
-    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_TRANSACTION_ID),
-        data, reply, option);
-}
-
 void AudioGetAudioParameterTest(const uint8_t* rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE || size < sizeof(AudioParamKey)) {
@@ -983,7 +964,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerUpdateRouteReqTest(data, size);
     OHOS::AudioStandard::AudioServerUpdateActiveDevicesRouteTest(data, size);
     OHOS::AudioStandard::AudioServerUpdateDualToneStateTest(data, size);
-    OHOS::AudioStandard::AudioServerGetTransactionIdTest(data, size);
     OHOS::AudioStandard::AudioSetAudioParameterTest(data, size);
     OHOS::AudioStandard::AudioGetAudioParameterTest(data, size);
     OHOS::AudioStandard::AudioCreateAudioProcessTest(data, size);

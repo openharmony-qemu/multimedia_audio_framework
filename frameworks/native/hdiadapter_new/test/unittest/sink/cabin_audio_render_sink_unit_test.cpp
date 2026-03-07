@@ -164,23 +164,6 @@ HWTEST_F(CabinAudioRenderSinkUnitTest, FormatConversion_Test, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Misc_Interface_Test
-* @tc.type   : FUNC
-* @tc.desc   : Test getter methods and unsupported interfaces.
-*/
-HWTEST_F(CabinAudioRenderSinkUnitTest, Misc_Interface_Test, TestSize.Level1)
-{
-    uint64_t transactionId = 0;
-    EXPECT_EQ(sink_->GetTransactionId(transactionId), SUCCESS);
-    EXPECT_GT(transactionId, 0);
-
-    EXPECT_EQ(sink_->Resume(), ERR_NOT_SUPPORTED);
-
-    float left, right;
-    EXPECT_EQ(sink_->GetVolume(left, right), SUCCESS);
-}
-
-/**
 * @tc.name   : Pause_001
 * @tc.type   : FUNC
 * @tc.desc   : Test Pause interface to ensure state transition from started to paused

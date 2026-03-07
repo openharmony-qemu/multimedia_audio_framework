@@ -327,13 +327,6 @@ int32_t FastAudioRenderSink::GetLatency(uint32_t &latency)
     return SUCCESS;
 }
 
-int32_t FastAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    AUDIO_INFO_LOG("not support");
-    transactionId = 6; // 6: mmap device
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t FastAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");
