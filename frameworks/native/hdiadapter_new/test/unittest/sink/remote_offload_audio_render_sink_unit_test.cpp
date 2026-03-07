@@ -223,5 +223,18 @@ HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_009, Te
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name   : Test OffloadSink API
+ * @tc.number : RemoteOffloadSinkUnitTest_011
+ * @tc.desc   : Test remote offload sink deinit with invalid state
+ */
+HWTEST_F(RemoteOffloadAudioRenderSinkUnitTest, RemoteOffloadSinkUnitTest_011, TestSize.Level1)
+{
+    std::shared_ptr<RemoteOffloadAudioRenderSink> sink = std::make_shared<RemoteOffloadAudioRenderSink>("test");
+    sink->SetInvalidState();
+    sink->DeInit();
+    EXPECT_FALSE(sink->IsInited());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

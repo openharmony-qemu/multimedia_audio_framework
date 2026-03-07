@@ -28,6 +28,7 @@
 #include "audio_utils.h"
 #include "i_audio_stream.h"
 #include "audio_stream_descriptor.h"
+#include "audio_errors.h"
 #include "audio_task_loop.h"
 
 namespace OHOS {
@@ -41,6 +42,18 @@ class AudioRouteCallbackImpl;
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
     friend class AudioRouteCallbackImpl;
 public:
+    bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return StartImpl(cmdType) == SUCCESS; }
+    int32_t StartWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return StartImpl(cmdType); }
+    bool Drain() const override { return DrainImpl() == SUCCESS; }
+    int32_t DrainWithError() const override { return DrainImpl(); }
+    bool Flush() const override { return FlushImpl() == SUCCESS; }
+    int32_t FlushWithError() const override { return FlushImpl(); }
+    bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return PauseImpl(cmdType) == SUCCESS; }
+    int32_t PauseWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override { return PauseImpl(cmdType); }
+    bool Stop() override { return StopImpl() == SUCCESS; }
+    int32_t StopWithError() override { return StopImpl(); }
+    bool Release() override { return ReleaseImpl() == SUCCESS; }
+    int32_t ReleaseWithError() override { return ReleaseImpl(); }
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const override;
@@ -50,20 +63,14 @@ public:
     int32_t GetParams(AudioRendererParams &params) const override;
     int32_t GetRendererInfo(AudioRendererInfo &rendererInfo) const override;
     int32_t GetStreamInfo(AudioStreamInfo &streamInfo) const override;
-    bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     int32_t Write(uint8_t *buffer, size_t bufferSize) override;
     int32_t Write(uint8_t *pcmBuffer, size_t pcmSize, uint8_t *metaBuffer, size_t metaSize) override;
     RendererState GetStatus() const override;
     bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) const override;
     bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
-    bool Drain() const override;
     bool PauseTransitent(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
-    bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     bool Mute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
     bool Unmute(StateChangeCmdType cmdType = CMD_FROM_CLIENT) const override;
-    bool Stop() override;
-    bool Flush() const override;
-    bool Release() override;
     int32_t GetBufferSize(size_t &bufferSize) const override;
     int32_t GetAudioStreamId(uint32_t &sessionID) const override;
     int32_t SetAudioRendererDesc(AudioRendererDesc audioRendererDesc) override;
@@ -126,13 +133,13 @@ public:
     void SetAudioRendererErrorCallback(std::shared_ptr<AudioRendererErrorCallback> errorCallback) override;
     int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
 
-    int32_t RegisterRendererPolicyServiceDiedCallback();
-    int32_t RemoveRendererPolicyServiceDiedCallback();
+    int32_t RegisterRendererPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream);
+    int32_t RemoveRendererPolicyServiceDiedCallback(const std::shared_ptr<IAudioStream> &ipcStream);
 
     void SetFastStatusChangeCallback(const std::shared_ptr<AudioRendererFastStatusChangeCallback> &callback) override;
 
     void GetAudioInterrupt(AudioInterrupt &audioInterrupt);
-    void SetAudioInterrupt(const AudioInterrupt &audioInterrupt);
+    void UpdateInterruptState(int32_t state);
 
     bool IsOffloadEnable() override;
 
@@ -200,9 +207,14 @@ public:
     AudioRendererPrivate &operator=(const AudioRendererPrivate &) = delete;
     AudioRendererPrivate(AudioRendererPrivate &&) = delete;
     AudioRendererPrivate &operator=(AudioRendererPrivate &&) = delete;
-protected:
 
 private:
+    int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    int32_t StopImpl() override;
+    int32_t FlushImpl() const override;
+    int32_t ReleaseImpl() override;
+    int32_t PauseImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
+    int32_t DrainImpl() const override;
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
     int32_t AsyncCheckAudioRenderer(std::string callingFunc, bool needWait = false);
     int32_t CheckAudioRenderer(std::string callingFunc);
@@ -315,6 +327,7 @@ private:
     bool isSwitchStreamSt_ = false;
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
+    std::atomic<int32_t> audioInterruptState_ = INVALID;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {
@@ -405,7 +418,7 @@ private:
     std::mutex callbackMutex_;
 };
 
-class RendererPolicyServiceDiedCallback : public AudioStreamPolicyServiceDiedCallback,
+class RendererPolicyServiceDiedCallback : public RemoteDiedCallback,
     public std::enable_shared_from_this<RendererPolicyServiceDiedCallback> {
 public:
     RendererPolicyServiceDiedCallback();

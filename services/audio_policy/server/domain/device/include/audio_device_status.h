@@ -187,6 +187,7 @@ private:
         uint32_t paIndex, AudioIOHandle ioHandle, std::string &currentActivePort);
     void UpdateChangeReasonForCollaboration(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand updateCommand,
         AudioStreamDeviceChangeReasonExt &reason);
+    bool CheckNeedExclude(const AudioDeviceDescriptor &desc, bool isConnected);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioStreamCollector& streamCollector_;

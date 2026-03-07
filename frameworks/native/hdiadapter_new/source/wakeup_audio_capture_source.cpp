@@ -238,11 +238,6 @@ int32_t WakeupAudioCaptureSource::GetMute(bool &isMute)
     return audioCaptureSource_.GetMute(isMute);
 }
 
-uint64_t WakeupAudioCaptureSource::GetTransactionId(void)
-{
-    return audioCaptureSource_.GetTransactionId();
-}
-
 int32_t WakeupAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     return audioCaptureSource_.GetPresentationPosition(frames, timeSec, timeNanoSec);

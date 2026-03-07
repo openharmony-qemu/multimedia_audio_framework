@@ -63,7 +63,6 @@ public:
     MOCK_METHOD(int32_t, GetVolume, (float &left, float &right), (override));
 
     MOCK_METHOD(int32_t, GetLatency, (uint32_t &latency), (override));
-    MOCK_METHOD(int32_t, GetTransactionId, (uint64_t &transactionId), (override));
     MOCK_METHOD(int32_t, GetPresentationPosition,
         (uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec), (override));
     MOCK_METHOD(float, GetMaxAmplitude, (), (override));
@@ -165,7 +164,6 @@ public:
     MOCK_METHOD(int32_t, GetVolume, (float &left, float &right), (override));
     MOCK_METHOD(int32_t, SetMute, (bool isMute), (override));
     MOCK_METHOD(int32_t, GetMute, (bool &isMute), (override));
-    MOCK_METHOD(uint64_t, GetTransactionId, (), (override));
     MOCK_METHOD(int32_t, GetPresentationPosition, (uint64_t &frames, int64_t &timeSec,
         int64_t &timeNanoSec), (override));
     MOCK_METHOD(float, GetMaxAmplitude, (), (override));

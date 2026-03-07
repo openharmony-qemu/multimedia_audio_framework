@@ -22,6 +22,8 @@
 #include "media_monitor_manager.h"
 #include "audio_connected_device.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 const std::string AUDIO_SAFE_VOLUME_STATE = "audio_safe_volume_state";

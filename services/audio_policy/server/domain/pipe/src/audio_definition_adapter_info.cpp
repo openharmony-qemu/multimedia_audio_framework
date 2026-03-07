@@ -119,8 +119,8 @@ std::string AudioPolicyConfigData::GetVersion()
     return version_;
 }
 
-std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
-    DeviceType type_, DeviceRole role_, const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag)
+std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
+    const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag, std::string macAddress)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
     // use primary to select device when in remote cast;
@@ -158,7 +158,11 @@ std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
             AUDIO_ERR_LOG("AdapterInfo is nullptr!");
             continue;
         }
-        if (adapterInfoPtr->adapterName == targetAdapterName) {
+        bool condition = (adapterInfoPtr->adapterName == targetAdapterName);
+#ifdef MULTI_BUS_ENABLE
+        condition = condition && (deviceInfo->address_ == macAddress);
+#endif
+        if (condition) {
             return deviceInfo;
         }
     }

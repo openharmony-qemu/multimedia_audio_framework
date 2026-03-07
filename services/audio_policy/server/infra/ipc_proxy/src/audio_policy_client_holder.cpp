@@ -326,5 +326,34 @@ void AudioPolicyClientHolder::OnAdaptiveSpatialRenderingEnabledChangeForAnyDevic
         audioPolicyClient_->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, false);
     }
 }
+
+void AudioPolicyClientHolder::OnSpatializationEnabledChangeForBTDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled,
+    const bool &headTrackingEnabled)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    if (hasSystemPermission_) {
+        AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
+        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+        deviceDescriptor->SetClientInfo(clientInfo);
+        AUDIO_INFO_LOG("OnSpatializationEnabledChangeForBTDevice %{public}d %{public}d", enabled, headTrackingEnabled);
+        audioPolicyClient_->OnSpatializationEnabledChangeForBTDevice(deviceDescriptor, enabled, headTrackingEnabled);
+    } else {
+        AUDIO_INFO_LOG("OnSpatializationEnabledChangeForBTDevice 0 0");
+        audioPolicyClient_->OnSpatializationEnabledChangeForBTDevice(deviceDescriptor, false, false);
+    }
+}
+
+void AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    if (hasSystemPermission_) {
+        AUDIO_INFO_LOG("AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange %{public}d", mode);
+        audioPolicyClient_->OnSpatialAudioSourceTypeChange(mode);
+    } else {
+        AUDIO_INFO_LOG("AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange 0 0");
+        audioPolicyClient_->OnSpatialAudioSourceTypeChange(SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

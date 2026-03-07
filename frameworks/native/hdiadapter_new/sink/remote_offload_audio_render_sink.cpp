@@ -102,9 +102,10 @@ void RemoteOffloadAudioRenderSink::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN(deviceManager != nullptr);
-    CHECK_AND_RETURN(IsValidState());
-    deviceManager->DestroyRender(deviceNetworkId_, hdiRenderId_);
-    deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_);
+    if (IsValidState()) {
+        deviceManager->DestroyRender(deviceNetworkId_, hdiRenderId_);
+        deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, hdiRenderId_);
+    }
     audioRender_.ForceSetRefPtr(nullptr);
     hdiCallback_ = {};
     muteCount_ = 0;
@@ -406,12 +407,6 @@ int32_t RemoteOffloadAudioRenderSink::GetLatency(uint32_t &latency)
         "%{public}" PRIu64 ", lastHdiOriginFramesUS: %{public}" PRIu64 ", originLatencyUS: %{public}u, hdiLatencyUS: "
         "%{public}" PRIu64, latency, positionUS, renderFrameUS, lastHdiOriginFramesUS_, originLatencyUS, hdiLatencyUS_);
     return ret;
-}
-
-int32_t RemoteOffloadAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteOffloadAudioRenderSink::GetHdiPresentationPosition(uint64_t &frames, int64_t &timeSec,

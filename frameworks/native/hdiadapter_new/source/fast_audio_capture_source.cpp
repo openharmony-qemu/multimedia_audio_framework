@@ -223,11 +223,6 @@ int32_t FastAudioCaptureSource::GetMute(bool &isMute)
     return ERR_NOT_SUPPORTED;
 }
 
-uint64_t FastAudioCaptureSource::GetTransactionId(void)
-{
-    return reinterpret_cast<uint64_t>(audioCapture_);
-}
-
 int32_t FastAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");
@@ -432,7 +427,8 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     param.isSignedData = true;
     param.startThreshold = 0;
     param.stopThreshold = INT_MAX;
-    param.silenceThreshold = 0;
+    int silenceThreTest = 4096;
+    param.silenceThreshold = silenceThreTest;
 
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
     param.type = attr_.audioStreamFlag == AUDIO_FLAG_VOIP_FAST ? AUDIO_MMAP_VOIP : AUDIO_MMAP_NOIRQ; // enable mmap!
@@ -445,7 +441,7 @@ void FastAudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &p
     } else if (param.channelCount == STEREO) {
         param.channelLayout = CH_LAYOUT_STEREO;
     }
-    param.silenceThreshold = attr_.bufferSize;
+    param.silenceThreshold = silenceThreTest;
     param.frameSize = param.format * param.channelCount;
     param.startThreshold = 0;
 }

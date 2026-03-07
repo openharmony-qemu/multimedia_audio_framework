@@ -29,6 +29,8 @@
 #include "audio_connected_device.h"
 #include "audio_volume_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -199,7 +201,10 @@ int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,
         CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone id %{public}d is not found", zoneId);
 
         for (auto it : devices) {
+            CHECK_AND_CONTINUE_LOG(it != nullptr, "device is nullptr");
             CHECK_AND_CONTINUE(zone->IsDeviceConnect(it));
+            auto temp = zone->GetDeviceDescriptor(it->deviceType_, it->networkId_);
+            CHECK_AND_CONTINUE_LOG(temp != nullptr, "temp is not found");
             toGlobalDevices.push_back(it);
         }
         zone->RemoveDeviceDescriptor(devices);

@@ -272,12 +272,6 @@ int32_t RemoteFastAudioCaptureSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-uint64_t RemoteFastAudioCaptureSource::GetTransactionId(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteFastAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");

@@ -1,4 +1,4 @@
-# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+# Copyright (c) 2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,23 +13,19 @@
 
 import("//build/config/features.gni")
 import("//build/test.gni")
-import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeOffloadSinkOutputNodeFuzzTest") {
+ohos_fuzztest("NoneMixEngineFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file =
-      "../hpaeoffloadsinkoutputnode_fuzzer"
+  fuzz_config_file = "../nonemixengine_fuzzer"
 
   include_dirs = [
-    "../../../services/audio_service/common/include",
-    "../../../frameworks/native/audio_audioiperf/include",
-    "../../../services/audio_engine/node/include",
-    "../../../services/audio_engine/buffer",
-    "../../../services/audio_engine/manager/include",
-    "../../../services/audio_engine/utils",
+    "../../../frameworks/native/audioinnercall/include",
     "../../../frameworks/native/hdiadapter_new/include",
-    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_service/server/include",
+    "../../../services/audio_service/client/include",
+    "../../../services/audio_policy/client/include",
+    "../../../services/audio_service/common/include",
   ]
 
   cflags = [
@@ -40,36 +36,39 @@ ohos_fuzztest("HpaeOffloadSinkOutputNodeFuzzTest") {
     "-fno-access-control",
   ]
 
-  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+  sources = [ "none_mix_engine_fuzzer.cpp" ]
 
-  sources = [
-    "../../../services/audio_engine/node/src/hpae_offload_sinkoutput_node.cpp",
-    "hpaeoffloadsinkoutputnode_fuzzer.cpp",
-  ]
+  configs = [ "../../../services/audio_service:audio_service_config" ]
+  cflags_cc = [ "-std=c++20" ]
 
   deps = [
-    "../../../services/audio_engine:audio_engine_node",
-    "../../../services/audio_engine:audio_engine_utils",
-    "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_engine_manager",
+    "../../../services/audio_service:audio_policy_manager",
+    "../../../services/audio_service:audio_stream_client",
     "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_process_service_static",
+    "../../../services/audio_service:audio_service_static",
   ]
-
   external_deps = [
-    "ability_base:configuration",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
     "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "eventhandler:libeventhandler",
-    "hdf_core:libhdf_ipc_adapter",
     "hdf_core:libhdi",
-    "hicollie:libhicollie",
+    "hdf_core:libpub_utils",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
-    "hitrace:hitrace_meter",
+    "init:libbegetutil",
     "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -78,9 +77,12 @@ ohos_fuzztest("HpaeOffloadSinkOutputNodeFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
 }
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeOffloadSinkOutputNodeFuzzTest" ]
+  deps = [ ":NoneMixEngineFuzzTest" ]
 }

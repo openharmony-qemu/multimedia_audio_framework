@@ -87,6 +87,17 @@ public:
         sinkPrestoreInfo_.Set(infoKey, info);
     }
 
+    template<typename T>
+    int32_t GetSinkPrestoreInfo(const std::string infoKey, T &info)
+    {
+        return sinkPrestoreInfo_.Get(infoKey, info);
+    }
+
+    void EraseSinkPrestoreInfo(const std::string infoKey)
+    {
+        sinkPrestoreInfo_.Erase(infoKey);
+    }
+
     void DumpInfo(std::string &dumpString);
 
     int32_t GetCurrentOutputPipeChangeInfos(std::vector<std::shared_ptr<AudioOutputPipeInfo>> &pipeChangeInfos);

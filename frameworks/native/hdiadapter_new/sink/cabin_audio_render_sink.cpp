@@ -199,12 +199,6 @@ int32_t CabinAudioRenderSink::GetLatency(uint32_t &latency)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t CabinAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    transactionId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT);
-    return SUCCESS;
-}
-
 int32_t CabinAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     return 0;

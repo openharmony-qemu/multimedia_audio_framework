@@ -48,7 +48,7 @@ static SLresult CreateAudioPlayer(
         return SL_RESULT_PARAMETER_INVALID;
     }
     std::unique_lock<std::mutex> lock(playerIdMutex);
-    thiz->mId = audioPlayerId++;
+    thiz->mId = ++audioPlayerId;
     lock.unlock();
     IObjectInit(&thiz->mObject);
     IPlayInit(&thiz->mPlay, audioPlayerId);

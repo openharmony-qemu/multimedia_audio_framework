@@ -472,18 +472,18 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_001, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
     
     // Test with exception flag set
     desc->exceptionFlag_ = true;
-    result = audioDeviceManager.IsDeviceAvailable(desc);
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
     
     // Test with disabled device
     desc->exceptionFlag_ = false;
     desc->isEnable_ = false;
-    result = audioDeviceManager.IsDeviceAvailable(desc);
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
 }
 
@@ -502,12 +502,12 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_002, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
     
     // Test with Bluetooth SCO device in suspend connected state
     desc->connectState_ = SUSPEND_CONNECTED;
-    result = audioDeviceManager.IsDeviceAvailable(desc);
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
 }
 
@@ -526,7 +526,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_003, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = VIRTUAL_CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
 }
 
@@ -545,7 +545,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_004, TestSize.Level1)
     desc->exceptionFlag_ = false;
     desc->isEnable_ = true;
     desc->connectState_ = SUSPEND_CONNECTED;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(true, result);
 }
 
@@ -560,8 +560,49 @@ HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_005, TestSize.Level1)
     
     // Test with nullptr
     std::shared_ptr<AudioDeviceDescriptor> desc = nullptr;
-    bool result = audioDeviceManager.IsDeviceAvailable(desc);
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
     EXPECT_EQ(false, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: IsDeviceAvailable_006
+* @tc.desc  : Test IsDeviceAvailable interface for Nearlink.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, IsDeviceAvailable_006, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    // Test with Nearlink device (should be unavailable)
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NEARLINK, DeviceRole::OUTPUT_DEVICE);
+    desc->exceptionFlag_ = false;
+    desc->isEnable_ = true;
+    desc->deviceUsage_ = RECOGNITION;
+    bool result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
+    EXPECT_EQ(false, result);
+
+    desc->deviceUsage_ = ALL_USAGE;
+    result = audioDeviceManager.IsDeviceAvailable(CALL_OUTPUT_DEVICES, desc);
+    EXPECT_EQ(true, result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: GetDevicePriority_001
+* @tc.desc  : Test GetDevicePriority with different conditions.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, GetDevicePriority_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_DP,
+        DeviceRole::OUTPUT_DEVICE);
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    EXPECT_EQ(audioDeviceManager.GetDevicePriority(desc), PRIORITY_BASE);
+    desc->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    desc->networkId_ = "RemoteDevice";
+    EXPECT_EQ(audioDeviceManager.GetDevicePriority(desc), PRIORITY_DISTRIBUTED);
+    desc->deviceType_ = DeviceType::DEVICE_TYPE_REMOTE_CAST;
+    EXPECT_EQ(audioDeviceManager.GetDevicePriority(desc), PRIORITY_DISTRIBUTED);
 }
 
 /**
@@ -603,6 +644,25 @@ HWTEST_F(AudioDeviceManagerUnitTest, TriggerDeviceInfoUpdatedCallback_001, TestS
     desc.glassesWearCount_ = 1;
     result = AudioDeviceManager::GetAudioDeviceManager().TriggerDeviceInfoUpdatedCallback(desc, descForCb);
     EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: AudioDeviceManagerUnitTest_020.
+* @tc.desc  : Test GetCommRenderDefaultDevice.
+*/
+HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_020, TestSize.Level1)
+{
+    AudioDeviceManager &audioDeviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    shared_ptr<AudioDeviceDescriptor> desc0 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_MEDIA);
+    shared_ptr<AudioDeviceDescriptor> desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_INVALID);
+    EXPECT_NE(desc0, desc1);
+    desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VOICE_RINGTONE);
+    EXPECT_NE(desc0, desc1);
+    shared_ptr<AudioDeviceDescriptor> desc2 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_ULTRASONIC);
+    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.earpiece_), desc2);
+    desc1 = audioDeviceManager.GetCommRenderDefaultDevice(STREAM_USAGE_VIDEO_COMMUNICATION);
+    EXPECT_EQ(make_shared<AudioDeviceDescriptor>(audioDeviceManager.speaker_), desc1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

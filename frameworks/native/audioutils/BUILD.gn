@@ -76,7 +76,7 @@ ohos_shared_library("audio_utils") {
   ]
 
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
   defines = []

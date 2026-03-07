@@ -115,15 +115,6 @@ void UpdateDualToneState(FuzzedDataProvider &provider)
     audioServer->UpdateDualToneState(enable, sessionId, dupSinkName);
 }
 
-void GetTransactionId(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    int32_t deviceRole = provider.ConsumeIntegral<int32_t>();
-    uint64_t transactionId = provider.ConsumeIntegral<uint64_t>();
-    audioServer->GetTransactionId(deviceType, deviceRole, transactionId);
-}
-
 void SetParameterCallback(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -908,7 +899,6 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     UpdateActiveDeviceRoute,
     UpdateActiveDevicesRoute,
     UpdateDualToneState,
-    GetTransactionId,
     SetParameterCallback,
     GetAudioMoreParameters,
     SetAudioMoreParameter,

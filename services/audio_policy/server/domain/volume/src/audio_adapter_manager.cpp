@@ -35,6 +35,8 @@
 #include "audio_manager_listener_stub_impl.h"
 #include "audio_format_utils.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 using namespace std;
 
 namespace OHOS {
@@ -1216,6 +1218,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
     AudioVolume::GetInstance()->SetScoActive(isScoActive);
 
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
+    std::set<std::pair<std::string, AudioStreamType>> setedVolume;
     for (auto &streamDesc : streamDescs) {
         AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage);
         auto desc = streamDesc->newDeviceDescs_.front();
@@ -1224,6 +1227,10 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != HILINK_MODE);
         RedirectVolumeType(streamDesc, volumeType);
         for (auto &tempDesc : streamDesc->newDeviceDescs_) {
+            CHECK_AND_CONTINUE(tempDesc != nullptr);
+            auto target = std::make_pair(tempDesc->GetName(), volumeType);
+            CHECK_AND_CONTINUE(setedVolume.find(target) == setedVolume.end());
+            setedVolume.insert(target);
             int32_t volumeLevel = GetStreamVolumeInternal(tempDesc, volumeType);
             SaveSystemVolumeForSwitchDevice(tempDesc, volumeType, volumeLevel);
             SetVolumeDb(tempDesc, volumeType);
@@ -1982,6 +1989,9 @@ std::string AudioAdapterManager::GetHdiSinkIdInfo(const AudioModuleInfo &audioMo
 
 std::string AudioAdapterManager::GetHdiSourceIdInfo(const AudioModuleInfo &audioModuleInfo) const
 {
+    if (!audioModuleInfo.busAddress.empty()) {
+        return audioModuleInfo.busAddress;
+    }
     if (audioModuleInfo.className == "primary" && audioModuleInfo.sourceType == "SOURCE_TYPE_WAKEUP") {
         return audioModuleInfo.name;
     }
@@ -3677,6 +3687,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERROR, "desc is null");
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
+    std::set<std::pair<std::string, AudioStreamType>> setedVolume;
     for (auto &streamDesc : streamDescs) {
         AudioStreamType newStreamType = streamType;
         auto device = streamDesc->newDeviceDescs_.front();
@@ -3685,12 +3696,19 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != HILINK_MODE);
         RedirectVolumeType(streamDesc, newStreamType);
         for (auto &tempDesc : streamDesc->newDeviceDescs_) {
+            CHECK_AND_CONTINUE(tempDesc != nullptr);
+            auto target = std::make_pair(tempDesc->GetName(), newStreamType);
+            CHECK_AND_CONTINUE(setedVolume.find(target) == setedVolume.end());
+            setedVolume.insert(target);
             SetVolumeDb(tempDesc, newStreamType);
         }
     }
     if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
         SetVolumeDb(desc, streamType);
     }
+    int32_t volumeLevel =
+        GetStreamVolumeInternal(desc, streamType) * (GetStreamMuteInternal(desc, streamType) ? 0 : 1);
+    SaveRingtoneVolumeToLocal(desc, streamType, volumeLevel);
     return SUCCESS;
 }
 

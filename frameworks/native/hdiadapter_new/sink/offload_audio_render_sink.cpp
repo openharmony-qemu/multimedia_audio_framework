@@ -311,13 +311,6 @@ int32_t OffloadAudioRenderSink::GetLatency(uint32_t &latency)
     return SUCCESS;
 }
 
-int32_t OffloadAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
-    transactionId = reinterpret_cast<uint64_t>(audioRender_);
-    return SUCCESS;
-}
-
 int32_t OffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     Trace trace("OffloadAudioRenderSink::GetPresentationPosition");

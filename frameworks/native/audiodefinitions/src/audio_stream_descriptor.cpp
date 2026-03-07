@@ -79,6 +79,7 @@ AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDe
     oldRouteFlag_ = streamDescriptor->oldRouteFlag_;
     createTimeStamp_ = streamDescriptor->createTimeStamp_;
     startTimeStamp_ = streamDescriptor->startTimeStamp_;
+    stateStartTimeStamp_ = streamDescriptor->stateStartTimeStamp_;
     rendererInfo_ = streamDescriptor->rendererInfo_;
     capturerInfo_ = streamDescriptor->capturerInfo_;
     appInfo_ = streamDescriptor->appInfo_;
@@ -100,6 +101,7 @@ void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
     streamDesc.oldRouteFlag_ = oldRouteFlag_;
     streamDesc.createTimeStamp_ = createTimeStamp_;
     streamDesc.startTimeStamp_ = startTimeStamp_;
+    streamDesc.stateStartTimeStamp_ = stateStartTimeStamp_;
     streamDesc.rendererInfo_ = rendererInfo_;
     streamDesc.capturerInfo_ = capturerInfo_;
     streamDesc.appInfo_ = appInfo_;
@@ -123,6 +125,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint32(oldRouteFlag_) &&
         parcel.WriteInt64(createTimeStamp_) &&
         parcel.WriteInt64(startTimeStamp_) &&
+        parcel.WriteInt64(stateStartTimeStamp_) &&
         rendererInfo_.Marshalling(parcel) &&
         capturerInfo_.Marshalling(parcel) &&
         parcel.WriteInt32(appInfo_.appUid) &&
@@ -155,6 +158,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->oldRouteFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
     info->createTimeStamp_ = parcel.ReadInt64();
     info->startTimeStamp_ = parcel.ReadInt64();
+    info->stateStartTimeStamp_ = parcel.ReadInt64();
     info->rendererInfo_.UnmarshallingSelf(parcel);
     info->capturerInfo_.UnmarshallingSelf(parcel);
     info->appInfo_.appUid = parcel.ReadInt32();
@@ -243,6 +247,7 @@ void AudioStreamDescriptor::DumpCommonAttrs(std::string &dumpString)
         audioFlag_, routeFlag_, oldRouteFlag_);
     AppendFormat(dumpString, "    - CreateTimestamp: %" PRId64"\n", createTimeStamp_);
     AppendFormat(dumpString, "    - StartTimestamp: %" PRId64"\n", startTimeStamp_);
+    AppendFormat(dumpString, "    - StateStartTimestamp: %" PRId64"\n", stateStartTimeStamp_);
 }
 
 void AudioStreamDescriptor::DumpRendererStreamAttrs(std::string &dumpString)

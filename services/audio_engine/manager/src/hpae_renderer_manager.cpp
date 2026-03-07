@@ -41,6 +41,7 @@ namespace {
     constexpr int64_t AUDIO_NS_PER_US = 1000;
     constexpr int64_t BUFFER_DURATION_US = 10 * 1000; // 10ms
     constexpr int64_t UNDERRUN_BYPASS_DURATION_NS = 60 * 1000 * 1000; // 60ms
+    constexpr int64_t UNDERRUN_BYPASS_DURATION_OFFLOAD_NS = 40 * 1000 * 1000; // 40ms
     const std::string REMOTE_DEVICE_CLASS = "remote";
     const std::string BT_SINK_NAME = "a2dp";
     const std::string USB_SINK_NAME = "usb";
@@ -1580,6 +1581,7 @@ int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBuf
             coBufferNode->SetOutputClusterConnected(true);
             coBufferNodeIsConnected_ = true;
             outputCluster_->SetCollaborationState(true);
+            coBufferNode->SetDefaultRendererManagerCallBack(weak_from_this());
             AUDIO_INFO_LOG("finish connectCoBufferNode");
         }
         if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
@@ -1598,13 +1600,29 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
         if (coBufferNode->IsOutputClusterConnected()) {
             outputCluster_->DisConnect(coBufferNode);
             coBufferNode->SetOutputClusterConnected(false);
+            defaultCoBufferNode_ = coBufferNode;
             coBufferNodeIsConnected_ = false;
             outputCluster_->SetCollaborationState(false);
-            AUDIO_INFO_LOG("finish disconnectCoBufferNode");
+            AUDIO_INFO_LOG("will disconnectCoBufferNode");
         }
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeRendererManager::OnDisConnectCoBufferWaitFadeOutDone()
+{
+    auto request = [this]() {
+        CHECK_AND_RETURN_LOG(defaultCoBufferNode_ != nullptr, "defaultCoBufferNode_ is nullptr");
+        CHECK_AND_RETURN_LOG(defaultCoBufferNode_->IsOutputClusterConnected() == false,
+            "defaultCoBufferNode_ is connect, dont allow disconnect");
+        outputCluster_->DisConnect(defaultCoBufferNode_);
+        outputCluster_->SetCollaborationState(false);
+        defaultCoBufferNode_ = nullptr;
+        coBufferNodeIsConnected_ = false;
+        AUDIO_INFO_LOG("finish disconnectCoBufferNode");
+    };
+    SendRequest(request, __func__);
 }
 
 void HpaeRendererManager::ReConnectNodeForCollaboration(uint32_t sessionId)
@@ -1623,30 +1641,61 @@ void HpaeRendererManager::EnableCollaboration()
         hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
     }
 
-    std::vector<uint32_t> sinkInputNodeMapKeys;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
         if (nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
-            sinkInputNodeMapKeys.push_back(key);
+            AUDIO_INFO_LOG("move to coll sessionId %{public}u, state: %{public}d", key,
+                static_cast<int32_t>(node->GetState()));
+            if (node->GetState() == HPAE_SESSION_RUNNING) {
+                HpaeProcessorType sceneType = node->connectedProcessorType_;
+                std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
+                CHECK_AND_CONTINUE_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
+                    sceneClusterMap_[sceneType]->GetGainNodeById(key) != nullptr, "NULL");
+                sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(key);
+                sessionGainNode->SetCollFadeState(OPERATION_PAUSED);
+            } else {
+                ReConnectNodeForCollaboration(key);
+            }
         }
     }
+}
 
-    for (auto& key : sinkInputNodeMapKeys) {
-        ReConnectNodeForCollaboration(key);
-    }
+void HpaeRendererManager::OnCollborationFadeDone(uint32_t sessionId)
+{
+    auto request = [this, sessionId]() {
+        ReConnectNodeForCollaboration(sessionId);
+        CHECK_AND_RETURN_LOG(sinkInputNodeMap_.find(sessionId) != sinkInputNodeMap_.end() &&
+            sinkInputNodeMap_[sessionId] != nullptr, "nullptr");
+        HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->connectedProcessorType_;
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
+            "sceneType no find in sceneClusterMap_, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+        CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetGainNodeById(sessionId) != nullptr,
+            "HpaeGainNode is null, sessionId: %{public}u", sessionId);
+        std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
+        sessionGainNode->SetCollFadeState(OPERATION_STARTED);
+        AUDIO_INFO_LOG("OnCollborationFadeDone sessionId %{public}u", sessionId);
+    };
+    SendRequest(request, __func__);
 }
 
 void HpaeRendererManager::DisableCollaboration()
 {
-    std::vector<uint32_t> sinkInputNodeMapKeys;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
         if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
-            sinkInputNodeMapKeys.push_back(key);
+            AUDIO_INFO_LOG("delete coll sessionId %{public}u, state: %{public}d", key,
+                static_cast<int32_t>(node->GetState()));
+            if (node->GetState() == HPAE_SESSION_RUNNING) {
+                HpaeProcessorType sceneType = node->connectedProcessorType_;
+                std::shared_ptr<HpaeGainNode> sessionGainNode = nullptr;
+                CHECK_AND_CONTINUE_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
+                    sceneClusterMap_[sceneType]->GetGainNodeById(key) != nullptr, "NULL");
+                sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(key);
+                sessionGainNode->SetCollFadeState(OPERATION_PAUSED);
+            } else {
+                ReConnectNodeForCollaboration(key);
+            }
         }
-    }
-    for (auto& key : sinkInputNodeMapKeys) {
-        ReConnectNodeForCollaboration(key);
     }
 }
 
@@ -1696,7 +1745,9 @@ bool HpaeRendererManager::QueryOneStreamUnderrun()
     }
     if (underrunFlag) {
         lastOnUnderrunTime_ = lastOnUnderrunTime_ == 0 ? ClockTime::GetCurNano() : lastOnUnderrunTime_;
-        int64_t sleepTimeInNs = lastOnUnderrunTime_ + UNDERRUN_BYPASS_DURATION_NS - ClockTime::GetCurNano();
+         int64_t underrunBypassDurationNs = AudioEffectChainManager::GetInstance()->GetOffloadEnabled()
+            ? UNDERRUN_BYPASS_DURATION_NS : UNDERRUN_BYPASS_DURATION_OFFLOAD_NS;
+        int64_t sleepTimeInNs = lastOnUnderrunTime_ + underrunBypassDurationNs - ClockTime::GetCurNano();
         Trace trace("HpaeRendererManager::sleep " + std::to_string(sleepTimeInNs) + "ns underrun");
         CHECK_AND_RETURN_RET(sleepTimeInNs > 0, false);
         // sleep atmost 10ms

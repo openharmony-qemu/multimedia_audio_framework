@@ -24,6 +24,8 @@
 
 #include "client_type_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -188,10 +190,10 @@ bool SleAudioDeviceManager::IsGameApp(int32_t uid)
 uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid)
 {
     bool isGameApp = IsGameApp(uid);
+    if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {
+        return SLE_AUDIO_STREAM_GAME;
+    }
     for (const auto &pair : STREAM_USAGE_TO_SLE_STREAM_TYPE) {
-        if (IsSupportedByGameFastPath(isGameApp, streamUsage)) {
-            return SLE_AUDIO_STREAM_GAME;
-        }
         if (pair.second.find(streamUsage) != pair.second.end()) {
             return pair.first;
         }
@@ -366,8 +368,9 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
 {
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     auto &sessionSet = startedSleStreamType_[deviceAddr][streamType].sessionIds;
-    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u sessionId %{public}d",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd, streamType, sessionId);
+    AUDIO_INFO_LOG("sle device %{public}s, add [%{public}d] sle streamType %{public}u with size[%{public}zu]\
+        sessionId %{public}d", AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str(), isAdd,
+        streamType, sessionSet.size(), sessionId);
     if (isAdd) {
         sessionSet.insert(sessionId);
     } else {
@@ -543,6 +546,20 @@ int32_t SleAudioDeviceManager::GetVolumeLevelByVolumeType(AudioVolumeType volume
         return deviceVolumeConfigInfo_[deviceDesc.macAddress_].second.volumeLevel;
     }
     return 0;
+}
+
+bool SleAudioDeviceManager::GetMuteStatusByVolumeType(AudioVolumeType volumeType,
+    const std::string &nearLinkDevice)
+{
+    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
+    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(nearLinkDevice) != deviceVolumeConfigInfo_.end(),
+        ERR_INVALID_PARAM, "device not found");
+    if (volumeType == STREAM_MUSIC) {
+        return deviceVolumeConfigInfo_[nearLinkDevice].first.isMute;
+    } else if (volumeType == STREAM_VOICE_CALL) {
+        return false;
+    }
+    return false;
 }
 } // namespace AudioStandard
 } // namespace OHOS

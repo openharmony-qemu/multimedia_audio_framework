@@ -432,8 +432,11 @@ int32_t HpaeSourceInputNode::GetCapturerSourceAdapter(
 }
 
 int32_t HpaeSourceInputNode::GetCapturerSourceInstance(const std::string &deviceClass, const std::string &deviceNetId,
-    const SourceType &sourceType, const std::string &sourceName)
+    const SourceType &sourceType, const std::string &sourceName, const std::string &busAddress)
 {
+    if (!busAddress.empty()) {
+        return GetCapturerSourceAdapter(deviceClass, sourceType, busAddress);
+    }
     if (sourceType == SOURCE_TYPE_WAKEUP || sourceName == HDI_ID_INFO_EC || sourceName == HDI_ID_INFO_MIC_REF) {
         return GetCapturerSourceAdapter(deviceClass, sourceType, sourceName);
     }

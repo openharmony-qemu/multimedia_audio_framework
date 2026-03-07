@@ -19,6 +19,8 @@
 #include "audio_log.h"
 #include "audio_errors.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 AudioZoneInterruptReporter::ReportMap AudioZoneInterruptReporter::interruptEnableMaps_;

@@ -20,6 +20,10 @@
 #include "ipc_skeleton.h"
 #include "audio_errors.h"
 
+namespace {
+constexpr size_t BIT_32 = 32;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 AudioSystemClientEngineManager &AudioSystemClientEngineManager::GetInstance()
@@ -81,12 +85,7 @@ int32_t AudioSystemClientEngineManager::SetExtraParameters(const std::string &ke
 
 uint64_t AudioSystemClientEngineManager::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {
-    const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    uint64_t transactionId = 0;
-    int32_t res = gasp->GetTransactionId(deviceType, deviceRole, transactionId);
-    CHECK_AND_RETURN_RET_LOG(res == 0, 0, "GetTransactionId failed");
-    return transactionId;
+    return static_cast<uint64_t>(deviceType) << BIT_32 | static_cast<uint64_t>(deviceRole);
 }
 
 void AudioSystemClientEngineManager::SetAudioMonoState(bool monoState)

@@ -399,11 +399,6 @@ public:
         const std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> &callback);
     int32_t UnregisterAudioPolicyServerDiedCb(const int32_t clientPid);
 
-    int32_t RegisterAudioStreamPolicyServerDiedCb(
-        const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback);
-    int32_t UnregisterAudioStreamPolicyServerDiedCb(
-        const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback);
-
     bool IsVolumeUnadjustable();
 
     int32_t AdjustVolumeByStep(VolumeAdjustType adjustType);
@@ -475,19 +470,24 @@ public:
     int32_t SetAdaptiveSpatialRenderingEnabled(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable);
 
+    int32_t GetCurrentSpatialAudioSourceType();
+
     int32_t RegisterSpatializationEnabledEventListener(
-        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback);
+        const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback, bool isFromBluetooth = false);
 
     int32_t RegisterSpatializationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> &callback);
 
     int32_t RegisterHeadTrackingEnabledEventListener(
-        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback);
+        const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback, bool isFromNearlink);
 
     int32_t RegisterNnStateEventListener(const std::shared_ptr<AudioNnStateChangeCallback> &callback);
 
     int32_t RegisterAdaptiveSpatialRenderingEnabledEventListener(
         const std::shared_ptr<AudioAdaptiveSpatialRenderingEnabledChangeCallback> &callback);
+
+    int32_t RegisterSpatialAudioSourceTypeEventListener(
+        const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &callback);
 
     int32_t UnregisterSpatializationEnabledEventListener();
 
@@ -498,6 +498,8 @@ public:
     int32_t UnregisterNnStateEventListener();
 
     int32_t UnregisterAdaptiveSpatialRenderingEnabledEventListener();
+
+    int32_t UnregisterSpatialAudioSourceTypeEventListener();
 
     AudioSpatializationState GetSpatializationState(const StreamUsage streamUsage);
 
@@ -741,6 +743,7 @@ public:
     int32_t RegisterCollaborationEnabledForCurrentDeviceEventListener(
         const std::shared_ptr<AudioCollaborationEnabledChangeForCurrentDeviceCallback> &callback);
     int32_t UnregisterCollaborationEnabledForCurrentDeviceEventListener();
+    AudioScene GetAudioSceneFromAllZones();
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
     int32_t NotifyStreamSilentChange(uint32_t streamId);
 
@@ -764,7 +767,7 @@ private:
 
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> capturerCB_;
-    static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
+    static std::vector<std::weak_ptr<RemoteDiedCallback>> audioStreamCBMap_;
     static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
 
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};

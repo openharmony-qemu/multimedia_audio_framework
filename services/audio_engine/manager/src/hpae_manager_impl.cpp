@@ -486,6 +486,12 @@ void HpaeManagerImpl::UpdateParamExtra(const std::string &mainkey, const std::st
     manager_->UpdateParamExtra(mainkey, subkey, value);
 }
 
+void HpaeManagerImpl::HandleBypassSpatializationForStereo(bool bypass)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->HandleBypassSpatializationForStereo(bypass);
+}
+
 // interfaces for capture effect
 void HpaeManagerImpl::InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
     const EffectChainManagerParam &managerParam,

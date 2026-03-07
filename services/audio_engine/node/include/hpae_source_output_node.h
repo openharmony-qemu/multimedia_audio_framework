@@ -20,10 +20,13 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_info.h"
 #include "i_capturer_stream.h"
+#include "audio_highpass_filter.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
+extern int32_t PC_ENABLE_STATE;
 
 class HpaeSourceOutputNode : public InputNode<HpaePcmBuffer *> {
 public:
@@ -44,8 +47,11 @@ public:
     int32_t GetAppUid();
     void SetMute(bool isMute);
     bool GetMute();
+    static int32_t GetPcEnableState();
+    static void SetPcEnableState(int32_t val);
 private:
     uint64_t GetTimestamp();
+    void ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer);
 private:
     InputPort<HpaePcmBuffer *> inputStream_;
     std::weak_ptr<ICapturerStreamCallback> readCallback_;
@@ -57,6 +63,9 @@ private:
     uint64_t totalFrames_;
     int32_t appUid_ = -1;
     bool isMute_;
+    std::unique_ptr<AudioHighPassFilter> highpassFilter_;
+    int32_t filterChannelCount_;
+    bool isSupportHighpassFilter_;
 };
 
 }  // namespace HPAE

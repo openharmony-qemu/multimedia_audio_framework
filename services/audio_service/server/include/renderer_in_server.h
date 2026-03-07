@@ -162,7 +162,7 @@ public:
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
 
     int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId);
-    
+
     int32_t InitSoftLink(int32_t innerCapId);
     int32_t DestroySoftLink(int32_t innerCapId);
     int32_t InitSoftLinkVolume(std::shared_ptr<HPAE::IHpaeSoftLink> softLinkPtr);
@@ -176,6 +176,7 @@ public:
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
     bool IsWriteFirst() const noexcept;
+    int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
 public:
     const AudioProcessConfig processConfig_;
 private:
@@ -255,7 +256,7 @@ private:
     uint32_t streamIndex_ = -1;
     std::string traceTag_;
     mutable int64_t volumeDataCount_ = 0;
-    IStatus status_ = I_STATUS_IDLE;
+    std::atomic<IStatus> status_ = I_STATUS_IDLE;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;
     std::atomic<bool> muteFlag_ = false;

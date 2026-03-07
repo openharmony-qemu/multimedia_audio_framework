@@ -32,6 +32,12 @@ namespace HPAE {
 const uint32_t DEFAULT_SESSION_ID = 123456;
 const uint32_t OVERSIZED_FRAME_LENGTH = 38500;
 const float FRAME_LENGTH_IN_SECOND = 0.02;
+const uint32_t TEST_SESSION_ID_1 = 10999;
+const uint32_t TEST_SESSION_ID_2 = 11000;
+// Constants for InnerCapSinkNode tests
+const uint32_t TEST_SESSION_ID_SINK_NODE = 70001;
+const uint32_t TEST_SESSION_ID_PRE_NODE_BASE = 70100;
+const uint32_t TEST_CONNECTION_COUNT = 5;
 std::string g_rootPath = "/data/";
 
 static HpaeSinkInfo GetInCapSinkInfo()
@@ -647,6 +653,35 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_001, Test
 }
 
 /**
+ * @tc.name  : Test MoveAllStreamToNewSinkInner with created stream
+ * @tc.type  : FUNC
+ * @tc.number: MoveAllStreamToNewSinkInner_003
+ * @tc.desc  : Test MoveAllStreamToNewSinkInner with created streams.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStreamToNewSinkInner_003, TestSize.Level1)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    // Create stream first to populate sinkInputNodeMap_
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    auto mockCallback = std::make_shared<MockSendMsgCallback>();
+    EXPECT_CALL(*mockCallback, InvokeSync(MOVE_ALL_SINK_INPUT, testing::_))
+        .Times(1);
+    EXPECT_CALL(*mockCallback, Invoke(MOVE_ALL_SINK_INPUT, testing::_))
+        .Times(1);
+    hpaeInnerCapturerManager_->weakCallback_ = mockCallback;
+
+    vector<uint32_t> moveids;
+    hpaeInnerCapturerManager_->MoveAllStreamToNewSinkInner("", moveids, MOVE_ALL);
+    hpaeInnerCapturerManager_->MoveAllStreamToNewSinkInner("", moveids, MOVE_PREFER);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
+}
+
+/**
  * @tc.name  : Test InitSinkInner
  * @tc.type  : FUNC
  * @tc.number: InitSinkInner_001
@@ -929,6 +964,80 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveStream_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : MoveAllStream not init
+ * @tc.type  : FUNC
+ * @tc.number: MoveAllStream_002
+ * @tc.desc  : Test MoveAllStream when not initialized (sync mode).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStream_002, TestSize.Level1)
+{
+    std::string sinkName = "TestSink";
+    std::vector<uint32_t> sessionIds = {9001};
+
+    // Test MoveAllStream when not initialized - should use sync mode
+    hpaeInnerCapturerManager_->MoveAllStream(sinkName, sessionIds, MOVE_ALL);
+
+    // Now initialize and test async mode
+    hpaeInnerCapturerManager_->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    int32_t result = hpaeInnerCapturerManager_->MoveAllStream(sinkName, sessionIds, MOVE_PREFER);
+
+    EXPECT_EQ(result, SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : MoveAllStream with created streams
+ * @tc.type  : FUNC
+ * @tc.number: MoveAllStream_003
+ * @tc.desc  : Test MoveAllStream with initialized manager and created streams.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveAllStream_003, TestSize.Level1)
+{
+    hpaeInnerCapturerManager_->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    // Create stream to populate sinkInputNodeMap_
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    std::string sinkName = "TargetSink";
+    std::vector<uint32_t> sessionIds = {streamInfo.sessionId};
+
+    // Test MoveAllStream in async mode (after Init)
+    int32_t result = hpaeInnerCapturerManager_->MoveAllStream(sinkName, sessionIds, MOVE_ALL);
+
+    EXPECT_EQ(result, SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : MoveStream with empty sink name
+ * @tc.type  : FUNC
+ * @tc.number: MoveStream_002
+ * @tc.desc  : Test MoveStream with empty sink name.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, MoveStream_002, TestSize.Level1)
+{
+    hpaeInnerCapturerManager_->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    // Create stream
+    HpaeStreamInfo streamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    // Test MoveStream with empty sink name - should fail gracefully
+    hpaeInnerCapturerManager_->MoveStream(streamInfo.sessionId, "");
+
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
+}
+
+/**
  * @tc.name  : DeactivateThread_001
  * @tc.type  : FUNC
  * @tc.number: DeactivateThread_001
@@ -1019,6 +1128,391 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Control_001, TestSiz
     EXPECT_EQ(sinkNode->InnerCapturerSinkResume(), SUCCESS);
     EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
 }
+
+/**
+ * @tc.name  : DeactivateThread_002
+ * @tc.type  : FUNC
+ * @tc.number: DeactivateThread_002
+ * @tc.desc  : Test DeactivateThread after Init to verify thread deactivation.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, DeactivateThread_002, TestSize.Level1)
+{
+    hpaeInnerCapturerManager_->Init();
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    // Verify thread is initialized and active
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), true);
+
+    // Test DeactivateThread
+    bool result = hpaeInnerCapturerManager_->DeactivateThread();
+    EXPECT_TRUE(result);
+
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Reset_Empty_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Reset with no connections (Branch 1: preOutputMap is empty).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Reset_Empty_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Verify no connections initially
+    EXPECT_EQ(sinkNode->GetPreOutNum(), 0);
+
+    // Call Reset with empty map - loop should not execute
+    bool result = sinkNode->Reset();
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(sinkNode->GetPreOutNum(), 0);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Reset_Multiple_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test Reset with multiple connections (Branch 2: loop executes for each).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Reset_Multiple_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Create multiple pre-nodes and connect them
+    HpaeNodeInfo preInfo1;
+    preInfo1.sessionId = TEST_SESSION_ID_PRE_NODE_BASE;
+    auto preNode1 = std::make_shared<HpaeSinkInputNode>(preInfo1);
+
+    HpaeNodeInfo preInfo2;
+    preInfo2.sessionId = TEST_SESSION_ID_1;
+    auto preNode2 = std::make_shared<HpaeSinkInputNode>(preInfo2);
+
+    HpaeNodeInfo preInfo3;
+    preInfo3.sessionId = TEST_SESSION_ID_2;
+    auto preNode3 = std::make_shared<HpaeSinkInputNode>(preInfo3);
+
+    sinkNode->Connect(preNode1);
+    sinkNode->Connect(preNode2);
+    sinkNode->Connect(preNode3);
+
+    // Verify multiple connections
+    EXPECT_EQ(sinkNode->GetPreOutNum(), 3);
+
+    // Call Reset - loop should execute for all three connections
+    bool result = sinkNode->Reset();
+
+    EXPECT_TRUE(result);
+    EXPECT_EQ(sinkNode->GetPreOutNum(), 0);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Flush_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkFlush always returns SUCCESS.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Flush_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Flush should always return SUCCESS
+    int32_t result = sinkNode->InnerCapturerSinkFlush();
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Pause_FromNew_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkPause from NEW state (Branch 1: NEW -> SUSPENDED).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Pause_FromNew_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Initial state should be NEW
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_NEW);
+
+    // Pause from NEW state
+    int32_t result = sinkNode->InnerCapturerSinkPause();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Pause_FromRunning_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkPause from RUNNING state (Branch 2: RUNNING -> SUSPENDED).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Pause_FromRunning_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to RUNNING
+    sinkNode->SetSinkState(STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    // Pause from RUNNING state
+    int32_t result = sinkNode->InnerCapturerSinkPause();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Pause_FromSuspended_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkPause from SUSPENDED state (Branch 3: duplicate pause).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Pause_FromSuspended_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to SUSPENDED
+    sinkNode->SetSinkState(STREAM_MANAGER_SUSPENDED);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    // Pause from SUSPENDED state (duplicate)
+    int32_t result = sinkNode->InnerCapturerSinkPause();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Pause_FromReleased_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkPause from RELEASED state (Branch 4: RELEASED -> SUSPENDED).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Pause_FromReleased_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to RELEASED
+    sinkNode->SetSinkState(STREAM_MANAGER_RELEASED);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RELEASED);
+
+    // Pause from RELEASED state
+    int32_t result = sinkNode->InnerCapturerSinkPause();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_ResetSink_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkReset always returns SUCCESS.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_ResetSink_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Reset should always return SUCCESS
+    int32_t result = sinkNode->InnerCapturerSinkReset();
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Resume_FromNew_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkResume from NEW state (Branch 1: NEW -> RUNNING).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Resume_FromNew_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Initial state should be NEW
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_NEW);
+
+    // Resume from NEW state
+    int32_t result = sinkNode->InnerCapturerSinkResume();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Resume_FromSuspended_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkResume from SUSPENDED state (Branch 2: SUSPENDED -> RUNNING).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Resume_FromSuspended_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to SUSPENDED
+    sinkNode->SetSinkState(STREAM_MANAGER_SUSPENDED);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+
+    // Resume from SUSPENDED state
+    int32_t result = sinkNode->InnerCapturerSinkResume();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Resume_FromRunning_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkResume from RUNNING state (Branch 3: duplicate resume).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Resume_FromRunning_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to RUNNING
+    sinkNode->SetSinkState(STREAM_MANAGER_RUNNING);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+
+    // Resume from RUNNING state (duplicate)
+    int32_t result = sinkNode->InnerCapturerSinkResume();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Resume_FromReleased_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkResume from RELEASED state (Branch 4: RELEASED -> RUNNING).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Resume_FromReleased_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to RELEASED
+    sinkNode->SetSinkState(STREAM_MANAGER_RELEASED);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RELEASED);
+
+    // Resume from RELEASED state
+    int32_t result = sinkNode->InnerCapturerSinkResume();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_GetPreOutNum_NoConnections_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetPreOutNum with no connections (Branch 1: return 0).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_GetPreOutNum_NoConnections_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // No connections - should return 0
+    size_t numConnections = sinkNode->GetPreOutNum();
+
+    EXPECT_EQ(numConnections, 0);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_GetPreOutNum_SingleConnection_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetPreOutNum with single connection (Branch 2: return 1).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_GetPreOutNum_SingleConnection_001, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    HpaeNodeInfo preInfo;
+    preInfo.sessionId = TEST_SESSION_ID_PRE_NODE_BASE;
+    auto preNode = std::make_shared<HpaeSinkInputNode>(preInfo);
+
+    sinkNode->Connect(preNode);
+
+    // Single connection - should return 1
+    size_t numConnections = sinkNode->GetPreOutNum();
+
+    EXPECT_EQ(numConnections, 1);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_GetPreOutNum_MultipleConnections_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test GetPreOutNum with multiple connections (Branch 3: return N).
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_GetPreOutNum_MultipleConnections_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Create 5 pre-nodes and connect them
+    const int numNodes = TEST_CONNECTION_COUNT;
+    std::vector<std::shared_ptr<HpaeSinkInputNode>> preNodes;
+    for (int i = 0; i < numNodes; i++) {
+        HpaeNodeInfo preInfo;
+        preInfo.sessionId = TEST_SESSION_ID_PRE_NODE_BASE + i;
+        auto preNode = std::make_shared<HpaeSinkInputNode>(preInfo);
+        preNodes.push_back(preNode);
+        sinkNode->Connect(preNode);
+    }
+
+    // Multiple connections - should return numNodes
+    size_t numConnections = sinkNode->GetPreOutNum();
+
+    EXPECT_EQ(numConnections, static_cast<size_t>(numNodes));
+}
+
+
+/**
+ * @tc.name  : InnerCapSinkNode_Pause_FromIdle_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkPause from IDLE state.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Pause_FromIdle_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = TEST_SESSION_ID_SINK_NODE;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to IDLE
+    sinkNode->SetSinkState(STREAM_MANAGER_IDLE);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_IDLE);
+
+    int32_t result = sinkNode->InnerCapturerSinkPause();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_SUSPENDED);
+}
+
+/**
+ * @tc.name  : InnerCapSinkNode_Resume_FromIdle_001
+ * @tc.type  : FUNC
+ * @tc.desc  : Test InnerCapturerSinkResume from IDLE state.
+ */
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, InnerCapSinkNode_Resume_FromIdle_001, TestSize.Level1)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = TEST_SESSION_ID_SINK_NODE;
+    auto sinkNode = std::make_shared<HpaeInnerCapSinkNode>(nodeInfo);
+
+    // Set state to IDLE
+    sinkNode->SetSinkState(STREAM_MANAGER_IDLE);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_IDLE);
+
+    int32_t result = sinkNode->InnerCapturerSinkResume();
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(sinkNode->GetSinkState(), STREAM_MANAGER_RUNNING);
+}
+
 }  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

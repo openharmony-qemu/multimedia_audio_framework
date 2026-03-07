@@ -181,12 +181,6 @@ void GetVolumeFuzzTest()
     GetAdaptorBlueToothSink()->GetVolume(left, right);
 }
 
-void GetTransactionIdFuzzTest()
-{
-    uint64_t transactionId = GetData<uint64_t>();
-    GetAdaptorBlueToothSink()->GetTransactionId(transactionId);
-}
-
 void StopFuzzTest()
 {
     GetAdaptorBlueToothSink()->Stop();
@@ -256,7 +250,6 @@ TestFuncs g_testFuncs = {
     RegisterParameterCallbackFuzzTest,
     SetVolumeFuzzTest,
     GetVolumeFuzzTest,
-    GetTransactionIdFuzzTest,
     SuspendRenderSinkFuzzTest,
     RestoreRenderSinkFuzzTest,
     GetPresentationPositionFuzzTest,

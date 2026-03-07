@@ -443,16 +443,6 @@ int32_t BluetoothAudioRenderSink::GetLatency(uint32_t &latency)
     return SUCCESS;
 }
 
-int32_t BluetoothAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    std::lock_guard<std::mutex> lock(sinkMutex_);
-    CHECK_AND_CALL_FUNC_RETURN_RET(audioRender_ != nullptr, ERR_INVALID_HANDLE,
-        HILOG_COMM_ERROR("[GetTransactionId]render is nullptr"));
-    CHECK_AND_RETURN_RET(IsValidState(), ERR_INVALID_HANDLE);
-    transactionId = reinterpret_cast<uint64_t>(audioRender_);
-    return SUCCESS;
-}
-
 int32_t BluetoothAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");
@@ -918,21 +908,15 @@ int32_t BluetoothAudioRenderSink::CheckBluetoothScenario(void)
     return SUCCESS;
 }
 
-void BluetoothAudioRenderSink::SetBluetoothSinkParam(AudioParamKey key, std::string condition, std::string value)
-{
-    a2dpParam_.key = key;
-    a2dpParam_.condition = condition;
-    a2dpParam_.value = value;
-    AUDIO_INFO_LOG("SetBluetoothSinkParam key %{public}u, condition %{public}s, value %{public}s",
-        a2dpParam_.key, a2dpParam_.condition.c_str(), a2dpParam_.value.c_str());
-}
-
 void BluetoothAudioRenderSink::SetA2dpCacheParam()
 {
-    if (!a2dpParam_.empty()) {
-        SetAudioParameterInner(a2dpParam_.value);
-        AUDIO_INFO_LOG("Set a2dpParam %{public}s SUCCESS", a2dpParam_.value.c_str());
-        a2dpParam_ = {};
+    std::pair<AudioParamKey, std::pair<std::string, std::string>> param = {AudioParamKey::NONE, {"", ""}};
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    int32_t ret = manager.GetSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM, param);
+    if (ret == SUCCESS && param.first != AudioParamKey::NONE) {
+        SetAudioParameterInner(param.second.second);
+        AUDIO_INFO_LOG("Set a2dpParam %{public}s SUCCESS", param.second.second.c_str());
+        manager.EraseSinkPrestoreInfo(PRESTORE_INFO_AUDIO_BT_PARAM);
     }
 }
 } // namespace AudioStandard

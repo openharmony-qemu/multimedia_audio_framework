@@ -201,10 +201,10 @@ HWTEST_F(AudioSuiteGeneralVoiceChangeNodeTest, AudioSuiteGeneralVoiceChangeNodeG
     std::string name = "AudioGeneralVoiceChangeType";
     int32_t ret = node->GetOptions(name, value);
     EXPECT_EQ(ret, ERROR);
- 
+  
     ret = node->SetOptions(name, value);
     EXPECT_EQ(ret, SUCCESS);
- 
+  
     std::string getValue;
     ret = node->GetOptions(name, getValue);
     EXPECT_EQ(getValue, value);

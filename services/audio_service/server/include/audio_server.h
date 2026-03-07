@@ -105,7 +105,6 @@ public:
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
     int32_t GetAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
-    int32_t GetTransactionId(int32_t deviceType, int32_t deviceRole, uint64_t& transactionId) override;
     int32_t UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
         int32_t a2dpOffloadFlag, const std::string &deviceName,
@@ -373,6 +372,8 @@ private:
         const DeviceType& deviceType);
 
     void SetA2dpAudioParameter(const std::string &renderValue);
+    bool CheckAndPreStoreA2dpParam(std::shared_ptr<IAudioRenderSink> btSink,
+        AudioParamKey parmKey, const std::string &renderValue);
     bool VerifyClientPermission(const std::string &permissionName,
         Security::AccessToken::AccessTokenID tokenId = Security::AccessToken::INVALID_TOKENID);
     bool PermissionChecker(const AudioProcessConfig &config);
@@ -471,6 +472,7 @@ private:
     int32_t SetAudioBalanceStatus();
     int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
     void OnStartExpansion();
+    bool AudioParameterValueCheck(const std::string &key, const std::string &value);
 
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;

@@ -42,9 +42,9 @@ int32_t AudioSuiteAissNode::Init()
         AUDIO_DEBUG_LOG("AudioSuiteAissNode has inited");
         return SUCCESS;
     }
-    if (!isOutputPortInit_) {
+    if (!isOutputStreamInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
-        isOutputPortInit_ = true;
+        isOutputStreamInit_ = true;
     }
     if (!algoInterface_) {
         algoInterface_ =

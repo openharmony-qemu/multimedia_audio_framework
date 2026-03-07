@@ -765,7 +765,8 @@ int32_t HpaeCapturerManager::InitCapturerManager()
         sourceInputClusterMap_[mainMicType_]->SetSourceInputNodeType(HPAE_SOURCE_OFFLOAD);
     }
     int32_t ret = sourceInputClusterMap_[mainMicType_]->GetCapturerSourceInstance(
-        sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType, sourceInfo_.sourceName);
+        sourceInfo_.deviceClass, sourceInfo_.deviceNetId, sourceInfo_.sourceType,
+        sourceInfo_.sourceName, sourceInfo_.busAddress);
     captureId_ = sourceInputClusterMap_[mainMicType_]->GetCaptureId();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get mic capturer soruce instance error, ret = %{public}d.\n", ret);
     PrepareCapturerEc(ecNodeInfo);

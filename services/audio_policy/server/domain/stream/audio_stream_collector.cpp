@@ -27,6 +27,8 @@
 #include "parameters.h"
 #include <fstream>
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -1013,6 +1015,9 @@ void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid
             continue;
         }
         sessionID = audioRendererChangeInfo->sessionId;
+        if (audioRendererChangeInfo->rendererState == RENDERER_RUNNING) {
+            ResetRingerModeMute(RENDERER_RELEASED, audioRendererChangeInfo->rendererInfo.streamUsage);
+        }
         audioRendererChangeInfo->rendererState = RENDERER_RELEASED;
         WriteRenderStreamReleaseSysEvent(audioRendererChangeInfo);
         if (audioPolicyServerHandler_ != nullptr) {

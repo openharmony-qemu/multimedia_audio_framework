@@ -420,16 +420,6 @@ void HdiAdapterManager::DoSetSinkPrestoreInfo(std::shared_ptr<IAudioRenderSink> 
     } else {
         AUDIO_WARNING_LOG("get %{public}s fail", PRESTORE_INFO_AUDIO_MONO);
     }
-
-    std::pair<AudioParamKey, std::pair<std::string, std::string>> param = {AudioParamKey::NONE, {"", ""}};
-    ret = sinkPrestoreInfo_.Get(PRESTORE_INFO_AUDIO_BT_PARAM, param);
-    if (ret == SUCCESS && type == HDI_ID_TYPE_BLUETOOTH) {
-        sink->SetBluetoothSinkParam(param.first, param.second.first, param.second.second);
-        AUDIO_INFO_LOG("Set AudioParamKey %{public}u, condition %{public}s, value %{public}s",
-            param.first, param.second.first.c_str(), param.second.second.c_str());
-        sinkPrestoreInfo_.Erase(PRESTORE_INFO_AUDIO_BT_PARAM);
-        AUDIO_INFO_LOG("SetBluetoothSinkParam SUCCESS");
-    }
 }
 
 void HdiAdapterManager::ProcessIdUseCount(uint32_t id, bool isResident, bool tryCreate)

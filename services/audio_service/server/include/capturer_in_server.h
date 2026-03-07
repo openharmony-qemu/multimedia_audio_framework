@@ -51,6 +51,8 @@ public:
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetLatency(uint64_t &latency);
     int32_t RequestUserPrivacyAuthority();
+    int32_t SetInMainThreadState(bool isInMainThread);
+    bool IsAppStateBackground(int32_t appPid);
 
     int32_t Init();
 
@@ -93,6 +95,8 @@ private:
     void NotifyVoIPStart(SourceType sourceType, int32_t uid);
     void ResetAsrFlag();
     void RecordOverflowStatus(bool currentStatus);
+    void ReportNoBgPermissionEvent();
+    void ReportOverflowEvent();
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -118,6 +122,8 @@ private:
     std::shared_ptr<OHAudioBuffer> audioServerBuffer_ = nullptr;
     int32_t needStart = 0;
     int32_t underflowCount = 0;
+    int32_t lastOverflowCount_ = 0;
+    int64_t lastOverflowTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
     uint32_t overFlowLogFlag_ = 0;
@@ -149,6 +155,7 @@ private:
 
     std::mutex runnerMutex_;
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
+    bool isInMainThread_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

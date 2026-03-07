@@ -102,6 +102,8 @@ public:
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     void SetCollDelayCount() override;
     void TriggerAppsUidUpdate(uint32_t sessionId) override;
+    void OnCollborationFadeDone(uint32_t sessionId) override;
+    void OnDisConnectCoBufferWaitFadeOutDone() override;
 
 private:
     void SendRequest(Request &&request, const std::string &funcName, bool isInit = false);
@@ -177,7 +179,8 @@ private:
     HpaeSinkInfo sinkInfo_;
     std::unordered_map<HpaeProcessorType, int32_t> sceneTypeToProcessClusterCountMap_;
     std::vector<int32_t> appsUid_;
-    std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
+    std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_ = nullptr;
+    std::shared_ptr<HpaeCoBufferNode> defaultCoBufferNode_ = nullptr;
     bool isCollaborationEnabled_ = false;
     int64_t noneStreamTime_ = 0; // if no stream, 3s time out to stop rendersink
     std::unordered_map<uint32_t, bool> isNeedInitEffectBufferFlagMap_;

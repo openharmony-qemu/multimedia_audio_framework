@@ -70,6 +70,7 @@ private:
         const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt);
     void CheckMuteInterruptEvent(uint32_t streamId);
     void CheckShortInterruptEvent(uint32_t streamId);
+    bool IsCheckDfxStream(AudioStreamType audioStreamType);
 
     AudioSessionService &sessionService_;
 

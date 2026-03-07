@@ -369,6 +369,7 @@ enum CallbackChange : int32_t {
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
+    CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -431,6 +432,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_COLLABORATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     CALLBACK_PREFERRED_DEVICE_SET,
     CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE,
+    CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -1314,7 +1316,6 @@ struct AudioRegisterTrackerInfo {
     AudioCapturerInfo capturerInfo;
     int32_t channelCount;
     uint32_t appTokenId;
-    AudioStreamInfo streamInfo;
     // callback for backMute status to renderChangeinfo
     bool backMute = false;
 };
@@ -1338,6 +1339,19 @@ enum StopAudioType {
 enum RecordErrorCode {
     RECORD_ERROR_GET_FOCUS_FAIL = 0,
     RECORD_ERROR_NO_FOCUS_CFG = 1,
+    RECORD_ERROR_NO_BG_PERMISSION = 2,
+};
+
+enum RecordUnderflowReason {
+    REASON_RECORDING_DEFAULT = 1 << 0,
+    REASON_RECORDING_IN_ARTTS_MAINTHREAD = 1 << 1,
+    REASON_RECORDING_BACKGROUND = 1 << 2,
+};
+
+enum RecordErrorType {
+    RECORD_ERROR_TYPE_INTERRUPT,
+    RECORD_ERROR_TYPE_START_FAIL,
+    RECORD_ERROR_TYPE_OVERFLOW,
 };
 
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
@@ -1785,9 +1799,9 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
-class AudioStreamPolicyServiceDiedCallback {
+class RemoteDiedCallback {
 public:
-    virtual ~AudioStreamPolicyServiceDiedCallback() = default;
+    virtual ~RemoteDiedCallback() = default;
 
     /**
      * Called when audio policy service died.

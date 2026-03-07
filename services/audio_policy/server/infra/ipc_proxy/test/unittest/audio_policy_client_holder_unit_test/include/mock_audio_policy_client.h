@@ -111,6 +111,10 @@ public:
         int32_t uid, const std::string &caller), (override));
     MOCK_METHOD(ErrCode, OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice,
             (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled), (override));
+    MOCK_METHOD(ErrCode, OnSpatializationEnabledChangeForBTDevice,
+        (const std::shared_ptr<AudioDeviceDescriptor>& deviceDescriptor, bool enabled, bool headTrackingEnabled),
+        (override));
+    MOCK_METHOD(ErrCode, OnSpatialAudioSourceTypeChange, (int32_t mode), (override));
 };
 
 } // namespace AudioStandard

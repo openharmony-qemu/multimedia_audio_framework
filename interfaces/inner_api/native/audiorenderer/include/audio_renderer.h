@@ -384,6 +384,15 @@ public:
     virtual bool Start(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
+     * @brief Starts audio rendering.
+     *
+     * @return Returns {@link SUCCESS} if the rendering is successfully started; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t StartWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
+
+    /**
      * @brief Writes audio data.
      * * This API cannot be used if render mode is RENDER_MODE_CALLBACK.
      *
@@ -470,12 +479,30 @@ public:
     virtual bool Drain() const = 0;
 
     /**
+     * @brief drain renderer buffer.
+     *
+     * @return Returns {@link SUCCESS} if the buffer is successfully drained; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t DrainWithError() const { return 0; }
+
+    /**
      * @brief flush renderer stream.
      *
      * @return Returns <b>true</b> if the object is successfully flushed; returns <b>false</b> otherwise.
      * @since 8
      */
     virtual bool Flush() const = 0;
+
+    /**
+     * @brief flush renderer stream.
+     *
+     * @return Returns {@link SUCCESS} if the object is successfully flushed; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t FlushWithError() const { return 0; }
 
     /**
      * @brief Pauses audio rendering transitent.
@@ -494,6 +521,15 @@ public:
     virtual bool Pause(StateChangeCmdType cmdType = CMD_FROM_CLIENT) = 0;
 
     /**
+     * @brief Pauses audio rendering.
+     *
+     * @return Returns {@link SUCCESS} if the rendering is successfully Paused; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 10
+     */
+    virtual int32_t PauseWithError(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
+
+    /**
      * @brief Stops audio rendering.
      *
      * @return Returns <b>true</b> if the rendering is successfully stopped; returns <b>false</b> otherwise.
@@ -502,12 +538,30 @@ public:
     virtual bool Stop() = 0;
 
     /**
+     * @brief Stops audio rendering.
+     *
+     * @return Returns {@link SUCCESS} if the rendering is successfully stopped; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t StopWithError() { return 0; }
+
+    /**
      * @brief Releases a local <b>AudioRenderer</b> object.
      *
      * @return Returns <b>true</b> if the object is successfully released; returns <b>false</b> otherwise.
      * @since 8
      */
     virtual bool Release() = 0;
+
+    /**
+     * @brief Releases a local <b>AudioRenderer</b> object.
+     *
+     * @return Returns {@link SUCCESS} if the object is successfully released; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 8
+     */
+    virtual int32_t ReleaseWithError() { return 0; }
 
     /**
      * @brief Obtains a reasonable minimum buffer size for rendering, however, the renderer can
@@ -1194,6 +1248,18 @@ public:
     virtual bool ResetStaticPlayPosition() { return false; }
 
 private:
+    virtual int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
+
+    virtual int32_t DrainImpl() const { return 0; }
+
+    virtual int32_t FlushImpl() const { return 0; }
+
+    virtual int32_t PauseImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
+
+    virtual int32_t StopImpl() { return 0; }
+
+    virtual int32_t ReleaseImpl() { return 0; }
+
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     static bool CheckStreamTypeAndPermission(AudioStreamType audioStreamType, StreamUsage streamUsage);

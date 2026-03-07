@@ -219,9 +219,14 @@ int32_t AudioCaptureSource::Start(void)
 
     InitLatencyMeasurement();
     InitRunningLock();
-
+    std::string dumpFilePrefix = halName_;
+#ifdef MULTI_BUS_ENABLE
+    if (!address_.empty()) {
+        dumpFilePrefix = address_;
+    }
+#endif
     // eg: primary_source_0_20240527202236189_44100_2_1.pcm
-    dumpFileName_ = halName_ + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
+    dumpFileName_ = dumpFilePrefix + "_source_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
         std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
         std::to_string(attr_.format) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
@@ -572,11 +577,6 @@ int32_t AudioCaptureSource::GetMute(bool &isMute)
     AUDIO_DEBUG_LOG("hdiMuteState: %{public}d, muteState: %{public}d", hdiMuteState, muteState_.load());
     isMute = muteState_.load();
     return SUCCESS;
-}
-
-uint64_t AudioCaptureSource::GetTransactionId(void)
-{
-    return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
 int32_t AudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
@@ -988,7 +988,8 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     }
     param.stopThreshold = INT_MAX;
-    param.silenceThreshold = AUDIO_BUFFER_SIZE;
+    int silenceThreTest = 4096;
+    param.silenceThreshold = silenceThreTest;
     param.sourceType = SOURCE_TYPE_MIC;
 
     param.sampleRate = attr_.sampleRate;
@@ -1000,7 +1001,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
         AUDIO_WARNING_LOG("channelLayout is ot suitable for channelCount, convert channel to channelLayout");
         param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
     }
-    param.silenceThreshold = attr_.bufferSize;
+    param.silenceThreshold = silenceThreTest;
     param.frameSize = param.format * param.channelCount;
     if (param.frameSize != 0) {
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);

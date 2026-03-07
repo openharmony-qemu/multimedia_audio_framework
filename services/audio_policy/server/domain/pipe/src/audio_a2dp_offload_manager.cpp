@@ -25,6 +25,8 @@
 #include "audio_server_proxy.h"
 #include "i_hpae_manager.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 namespace OHOS {
 namespace AudioStandard {
 const int32_t A2DP_PLAYING = 2;

@@ -27,6 +27,8 @@
 #include "audio_setting_provider.h"
 #include "istandard_audio_service.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
@@ -278,12 +280,52 @@ int32_t AudioSpatializationService::SetAdaptiveSpatialRenderingEnabled(
     }
     addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled = enable;
     HandleAdaptiveSpatialRenderingEnabledChange(selectedAudioDevice, enable);
+    if (address == currentDeviceAddress_) {
+        HandleDeviceConfigChanged(selectedAudioDevice);
+        bool bypass = addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled &&
+            (!addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled ||
+            spatialAudioSourceType_ == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
+        SetBypassSpatialForStereo(selectedAudioDevice, bypass);
+    }
     std::string deviceSpatialInfo = EncapsulateDeviceInfo(address);
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
     int32_t ret = UpdateSpatializationStateReal(false);
     CHECK_AND_RETURN_RET(ret == 0, ERROR);
     WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     return SPATIALIZATION_SERVICE_OK;
+}
+
+int32_t AudioSpatializationService::SetBypassSpatialForStereo(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool bypass)
+{
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->macAddress_ = selectedAudioDevice->macAddress_;
+    if (audioPolicyServerHandler_ != nullptr) {
+        std::string currEncryptedAddress_ = GetSha256EncryptAddress(deviceDesc->macAddress_);
+        AUDIO_INFO_LOG("bypass %{public}d", bypass);
+        AUDIO_INFO_LOG("spatializationEnabled %{public}d, headTrackingEnabled %{public}d",
+            addressToSpatialEnabledMap_[currEncryptedAddress_].spatializationEnabled,
+            addressToSpatialEnabledMap_[currEncryptedAddress_].headTrackingEnabled);
+        audioPolicyServerHandler_->SendBypassSpatialForStereo(deviceDesc,
+            addressToSpatialEnabledMap_[currEncryptedAddress_].spatializationEnabled,
+            addressToSpatialEnabledMap_[currEncryptedAddress_].headTrackingEnabled);
+    }
+    return SPATIALIZATION_SERVICE_OK;
+}
+
+int32_t AudioSpatializationService::GetCurrentSpatialAudioSourceType()
+{
+    AUDIO_INFO_LOG("current sourceType: %{public}d", spatialAudioSourceType_);
+    return spatialAudioSourceType_;
+}
+
+void AudioSpatializationService::SetSpatialAudioSourceType(SpatialAudioSourceType mode)
+{
+    AUDIO_INFO_LOG("set sourceType: %{public}d", mode);
+    spatialAudioSourceType_ = mode;
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendSpatialAudioSourceTypeChangeEvent(mode);
+    }
 }
 
 void AudioSpatializationService::HandleSpatializationEnabledChange(const bool &enabled)
@@ -425,6 +467,7 @@ int32_t AudioSpatializationService::UpdateSpatialDeviceState(const AudioSpatialD
     }
 
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
+    UpdateSpatialStateToNewDevice(audioSpatialDeviceState);
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
     }
@@ -457,19 +500,11 @@ int32_t AudioSpatializationService::UnregisterSpatializationStateEventListener(c
     return SUCCESS;
 }
 
-void AudioSpatializationService::UpdateCurrentDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddress)
 {
     AUDIO_INFO_LOG("UpdateCurrentDevice Entered");
     std::lock_guard<std::mutex> lock(spatializationServiceMutex_);
-    const std::string macAddress = selectedAudioDevice->macAddress_;
-    std::string currEncryptedAddress_ = GetSha256EncryptAddress(macAddress);
     if (!macAddress.empty()) {
-        if (!addressToSpatialEnabledMap_.count(currEncryptedAddress_)) {
-            addressToSpatialEnabledMap_[currEncryptedAddress_] = {true, false, true};
-            HandleSpatializationEnabledChange(selectedAudioDevice, true);
-            HandleAdaptiveSpatialRenderingEnabledChange(selectedAudioDevice, true);
-        }
         std::string deviceSpatialInfo = EncapsulateDeviceInfo(macAddress);
         UpdateDeviceSpatialMapInfo(macAddress, deviceSpatialInfo);
         WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
@@ -480,6 +515,7 @@ void AudioSpatializationService::UpdateCurrentDevice(
     }
     std::string preDeviceAddress = currentDeviceAddress_;
     currentDeviceAddress_ = macAddress;
+    std::string currEncryptedAddress_ = GetSha256EncryptAddress(macAddress);
     if (addressToSpatialDeviceStateMap_.find(currEncryptedAddress_) != addressToSpatialDeviceStateMap_.end()) {
         auto nextSpatialDeviceType{ addressToSpatialDeviceStateMap_[currEncryptedAddress_].spatialDeviceType };
         AUDIO_INFO_LOG("currSpatialDeviceType_ = %{public}d,  nextSpatialDeviceType_ = %{public}d",
@@ -570,7 +606,8 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
             IsHeadTrackingSupported() && IsHeadTrackingSupportedForDeviceInner(currentDeviceAddress_) &&
             spatializationEnabled;
         adaptiveSpatialRenderingEnabled =
-            addressToSpatialEnabledMap_[currEncryptedAddress_].adaptiveSpatialRenderingEnabled;
+            addressToSpatialEnabledMap_[currEncryptedAddress_].adaptiveSpatialRenderingEnabled &&
+            IsSpatializationSupportedForDeviceInner(currentDeviceAddress_);
     }
 
     if ((spatializationEnabledReal_ == spatializationEnabled) && (headTrackingEnabledReal_ == headTrackingEnabled) &&
@@ -994,6 +1031,16 @@ void AudioSpatializationService::UpdateDeviceSpatialMapInfo(std::string address,
         AUDIO_INFO_LOG("the number of devices exceeds the maximum limit, remove the least recently used one.");
     }
     addressToDeviceSpatialInfoMap_[encryptedAddress] = deviceSpatialInfo;
+}
+
+void AudioSpatializationService::UpdateSpatialStateToNewDevice(const AudioSpatialDeviceState audioSpatialDeviceState)
+{
+    std::string encryptedAddress = GetSha256EncryptAddress(audioSpatialDeviceState.address);
+    CHECK_AND_RETURN(!addressToSpatialEnabledMap_.count(encryptedAddress));
+    addressToSpatialEnabledMap_[encryptedAddress].spatializationEnabled =
+        audioSpatialDeviceState.isSpatializationSupported;
+    addressToSpatialEnabledMap_[encryptedAddress].adaptiveSpatialRenderingEnabled =
+        audioSpatialDeviceState.isSpatializationSupported;
 }
 } // namespace AudioStandard
 } // namespace OHOS

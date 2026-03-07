@@ -28,6 +28,7 @@
 #include "audio_service.h"
 #include "audio_schedule.h"
 #include "audio_utils.h"
+#include "audio_info.h"
 #include "media_monitor_manager.h"
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
@@ -343,6 +344,19 @@ bool AudioProcessInServer::CheckBGCapturer()
     return res;
 }
 
+void AudioProcessInServer::ReportNoBgPermissionEvent()
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::RECORD_ERROR,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("INCOMING_SOURCE", processConfig_.capturerInfo.sourceType);
+    bean->Add("INCOMING_PID", processConfig_.appInfo.appPid);
+    bean->Add("INCOMING_UID", processConfig_.appInfo.appUid);
+    bean->Add("REASON", RECORD_ERROR_NO_BG_PERMISSION);
+    bean->Add("TYPE", RECORD_ERROR_TYPE_START_FAIL);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
@@ -354,8 +368,11 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         tokenId,
         capturerState,
     };
-    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(CheckBGCapturer(), false, "Verify failed");
+    if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED) && !CheckBGCapturer()) {
+        AUDIO_ERR_LOG("Verify failed, incoming: sourceType %{public}d pid %{public}d uid %{public}d",
+            processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
+        ReportNoBgPermissionEvent();
+        return false;
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
@@ -444,8 +461,9 @@ int32_t AudioProcessInServer::StartInner()
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[StartInner]Policy start client failed, reason: %{public}d", ret));
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
+    int32_t result = SUCCESS;
     for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnStart(this);
+        result = listenerList_[i]->OnStart(this);
     }
     if (streamStatus_->load() == STREAM_STAND_BY) {
         AUDIO_INFO_LOG("Call start while in stand-by, session %{public}u", sessionId_);
@@ -461,8 +479,7 @@ int32_t AudioProcessInServer::StartInner()
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    HILOG_COMM_INFO("[StartInner]Start in server success!");
-    return SUCCESS;
+    return result;
 }
 
 void AudioProcessInServer::TurnOnRemoteMicIndicator()
@@ -559,16 +576,16 @@ int32_t AudioProcessInServer::Resume()
     MarkStaticFadeIn();
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
+    int32_t result = SUCCESS;
     for (size_t i = 0; i < listenerList_.size(); i++) {
-        listenerList_[i]->OnStart(this);
+        result = listenerList_[i]->OnStart(this);
     }
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
-    HILOG_COMM_INFO("[Resume]Resume in server success!");
     streamStatusInServer_ = STREAM_RUNNING;
-    return SUCCESS;
+    return result;
 }
 
 int32_t AudioProcessInServer::Stop(int32_t stageIn)
@@ -638,7 +655,10 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     TurnOffRemoteMicIndicator();
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+
+    bool needRemoveFromMap = !isSwitchStream;
+    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE,
+        SESSION_OP_MSG_DEFAULT, needRemoveFromMap);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", ret));
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);

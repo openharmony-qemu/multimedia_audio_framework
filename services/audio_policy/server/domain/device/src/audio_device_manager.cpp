@@ -26,6 +26,7 @@
 #include "audio_adapter_manager.h"
 #include "audio_device_status.h"
 #include "audio_pipe_manager.h"
+#include "audio_zone_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -450,11 +451,15 @@ bool AudioDeviceManager::IsVirtualDevicesExist(const std::shared_ptr<AudioDevice
 void AudioDeviceManager::AddDefaultDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
 {
     DeviceType devType = devDesc->deviceType_;
+    bool defaultMicCondition = devType == DEVICE_TYPE_MIC;
+#ifdef MULTI_BUS_ENABLE
+    defaultMicCondition = defaultMicCondition && devDesc->macAddress_.empty();
+#endif
     if (devType == DEVICE_TYPE_EARPIECE) {
         earpiece_ = devDesc;
     } else if (devType == DEVICE_TYPE_SPEAKER) {
         speaker_ = devDesc;
-    } else if (devType == DEVICE_TYPE_MIC) {
+    } else if (defaultMicCondition) {
         defalutMic_ = devDesc;
     }
 }
@@ -525,6 +530,9 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
             descriptor->networkId_ == deviceDescriptor->networkId_ &&
             descriptor->deviceRole_ == deviceDescriptor->deviceRole_) {
             switch (descriptor->deviceType_) {
+#ifdef MULTI_BUS_ENABLE
+                case DEVICE_TYPE_MIC:
+#endif
                 case DEVICE_TYPE_USB_HEADSET:
                 case DEVICE_TYPE_USB_ARM_HEADSET:
                 case DEVICE_TYPE_BLUETOOTH_A2DP:
@@ -1859,6 +1867,9 @@ bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<Audio
 
 int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    if (desc->deviceType_ == DEVICE_TYPE_DP && AudioZoneService::GetInstance().CheckDeviceInAudioZone(*desc)) {
+        return PRIORITY_DISTRIBUTED;
+    }
     if (DeviceAttrMatch(desc, TYPE_PRIVACY, OUTPUT_DEVICE, ALL_USAGE)) {
         return PRIORITY_PRIVACY;
     }
@@ -1874,12 +1885,29 @@ int32_t AudioDeviceManager::GetDevicePriority(const std::shared_ptr<AudioDeviceD
     return PRIORITY_BASE;
 }
 
-bool AudioDeviceManager::IsDeviceAvailable(const std::shared_ptr<AudioDeviceDescriptor> &desc)
+bool AudioDeviceManager::IsDeviceAvailable(AudioDeviceUsage audioDevUsage,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
+    auto IsDeviceUsageSupported = [](AudioDeviceUsage audioDevUsage,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc) -> bool {
+        CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "deviceDesc is nullptr");
+        uint32_t deviceUsage = static_cast<uint32_t>(deviceDesc->deviceUsage_);
+        switch (audioDevUsage) {
+            case MEDIA_OUTPUT_DEVICES:
+            case MEDIA_INPUT_DEVICES:
+                return (deviceUsage & MEDIA) != 0;
+            case CALL_OUTPUT_DEVICES:
+            case CALL_INPUT_DEVICES:
+                return (deviceUsage & VOICE) != 0;
+            default:
+                return false;
+        }
+    };
     if (desc != nullptr && !desc->exceptionFlag_ && desc->isEnable_ &&
         (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO ||
         desc->connectState_ != SUSPEND_CONNECTED) &&
-        desc->connectState_ != VIRTUAL_CONNECTED) {
+        desc->connectState_ != VIRTUAL_CONNECTED &&
+        IsDeviceUsageSupported(audioDevUsage, desc)) {
         return true;
     }
     return false;

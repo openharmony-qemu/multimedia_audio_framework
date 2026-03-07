@@ -343,12 +343,6 @@ int32_t RemoteAudioRenderSink::GetLatency(uint32_t &latency)
     return SUCCESS;
 }
 
-int32_t RemoteAudioRenderSink::GetTransactionId(uint64_t &transactionId)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t RemoteAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");

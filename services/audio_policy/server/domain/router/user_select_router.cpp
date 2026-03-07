@@ -18,6 +18,8 @@
 
 #include "user_select_router.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B83
 using namespace std;
 
 namespace OHOS {

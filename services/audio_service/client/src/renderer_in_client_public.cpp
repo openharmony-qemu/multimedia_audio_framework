@@ -182,6 +182,12 @@ int32_t RendererInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     return ERR_NOT_SUPPORTED;
 }
 
+int32_t RendererInClientInner::SetInMainThreadState(bool isInMainThread)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
@@ -1411,6 +1417,29 @@ void RendererInClientInner::SetOverflowCount(uint32_t overflowCount)
     // not support for renderer
     AUDIO_WARNING_LOG("No Overflow in renderer");
     return;
+}
+
+int32_t RendererInClientInner::RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback)
+{
+    std::lock_guard<std::mutex> lock(deathRecipientLock_);
+    if (deathRecipient_ == nullptr) {
+        deathRecipient_ = sptr<RemoteDeathRecipient>::MakeSptr(callback);
+    }
+    CHECK_AND_RETURN_RET_LOG(ipcProxy_ != nullptr, ERR_ILLEGAL_STATE, "ipcProxy_ is null!");
+    bool result = ipcProxy_->AddDeathRecipient(deathRecipient_);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "AddDeathRecipient failed.");
+    return SUCCESS;
+}
+
+int32_t RendererInClientInner::UnregisterRemoteDiedCallback()
+{
+    std::lock_guard<std::mutex> lock(deathRecipientLock_);
+    CHECK_AND_RETURN_RET_LOG(deathRecipient_ != nullptr && ipcProxy_ != nullptr, ERR_ILLEGAL_STATE,
+        "deathRecipient or ipcProxy_ is null!");
+    bool result = ipcProxy_->RemoveDeathRecipient(deathRecipient_);
+    CHECK_AND_RETURN_RET_LOG(result, ERR_OPERATION_FAILED, "RemoveDeathRecipient failed.");
+    deathRecipient_ = nullptr;
+    return SUCCESS;
 }
 
 void RendererInClientInner::SetRendererPositionCallback(int64_t markPosition,

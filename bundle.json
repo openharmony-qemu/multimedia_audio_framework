@@ -96,6 +96,7 @@
             "samgr",
             "sensor",
             "bounds_checking_function",
+            "sonic",
             "pulseaudio",
             "libuv",
             "libxml2",

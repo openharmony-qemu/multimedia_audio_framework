@@ -158,6 +158,7 @@ public:
     static AudioChannelLayout ConvertChannelsToDefaultChannelLayout(AudioChannel channels,
         AudioChannelLayout channelLayout);
     virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) = 0;
+    virtual int32_t SetInMainThreadState(bool isInMainThread) = 0;
     virtual void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) = 0;
     virtual void SetClientDeviceId(const std::string &deviceId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
@@ -203,6 +204,9 @@ public:
 
     virtual void SetUnderflowCount(uint32_t underflowCount) = 0;
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
+
+    virtual int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) = 0;
+    virtual int32_t UnregisterRemoteDiedCallback() = 0;
 
     // callback mode api
     virtual int32_t SetRenderMode(AudioRenderMode renderMode) = 0;

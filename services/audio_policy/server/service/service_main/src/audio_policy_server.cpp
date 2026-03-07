@@ -47,6 +47,8 @@
 #include "standalone_mode_manager.h"
 #include "audio_injector_policy.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
 using namespace std;
@@ -139,7 +141,6 @@ const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_AAM_CONN_SVC
 };
 const std::string NEARLINK_LIST = "audio_nearlink_list";
-const std::string BUNDLE_NAME_SCENE_BOARD = "com.ohos.sceneboard";
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -2656,12 +2657,7 @@ int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene, const in
 int32_t AudioPolicyServer::GetAudioScene(int32_t &scene)
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
-    std::string bundleName = AudioBundleManager::GetBundleName();
-    if (bundleName == BUNDLE_NAME_SCENE_BOARD) {
-        scene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
-    } else {
-        scene = static_cast<int32_t>(audioSceneManager_.GetAudioScene(hasSystemPermission));
-    }
+    scene = static_cast<int32_t>(audioSceneManager_.GetAudioScene(hasSystemPermission));
     return SUCCESS;
 }
 
@@ -2954,8 +2950,7 @@ int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
-            audioInterrupt.streamUsage);
+        int32_t zoneId = interruptService_->FindAudioZoneByStreamId(audioInterrupt.streamId);
         StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(audioInterrupt.uid,
             audioInterrupt.streamId);
         return UpdateAudioSceneAfterDeactivateInterrupt(zoneId, audioInterrupt);
@@ -4379,6 +4374,16 @@ int32_t AudioPolicyServer::SetAdaptiveSpatialRenderingEnabled(
     return audioSpatializationService_.SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
 }
 
+int32_t AudioPolicyServer::GetCurrentSpatialAudioSourceType(int32_t &ret)
+{
+    bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+    if (!hasSystemPermission) {
+        return ERR_PERMISSION_DENIED;
+    }
+    ret = audioSpatializationService_.GetCurrentSpatialAudioSourceType();
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetSpatializationState(int32_t streamUsage,
     AudioSpatializationState &state)
 {
@@ -5173,12 +5178,6 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
-    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
-        // If an audio zone is selected based on the scene type,
-        // then all audio streams of the audioSession must be selected to the corresponding audio zone,
-        // which is equivalent to binding the entire application to the audio zone.
-        AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, callerUid);
-    }
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d, "
         "streamUsage:%{public}d", static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId, streamUsage);
 
@@ -5219,9 +5218,6 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
-    if (streamUsage != StreamUsage::STREAM_USAGE_INVALID) {
-        AudioZoneService::GetInstance().RemoveUidFromAudioZone(zoneId, callerUid);
-    }
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
         callerPid, zoneId, streamUsage);
     return interruptService_->DeactivateAudioSession(zoneId, callerPid);
@@ -5849,6 +5845,12 @@ bool AudioPolicyServer::IsPublishCalled() const
 int32_t AudioPolicyServer::SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes)
 {
     return AudioPipeSelector::GetPipeSelector()->SetCustomAudioMix(zoneName, audioMixes);
+}
+
+int32_t AudioPolicyServer::GetAudioSceneFromAllZones(int32_t &audioScene)
+{
+    audioScene = static_cast<int32_t>(audioPolicyService_.GetAudioSceneFromAllZones());
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)

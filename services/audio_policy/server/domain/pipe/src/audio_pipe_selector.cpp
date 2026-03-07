@@ -245,12 +245,17 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
                                           const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
                                           std::vector<std::shared_ptr<AudioPipeInfo>>::iterator &busPipeIter)
 {
-    auto findPipe = [&](std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos, const auto &condition) {
+    auto FindPipe = [&](std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos, const auto &condition) {
                 return std::find_if(pipeInfos.begin(), pipeInfos.end(), condition);
     };
-    if (busAddresses.size() == 1) {
+    if (streamDesc->IsRecording()) {
+        std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+        busPipeIter = FindPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+            return IsPipeMatch(streamDesc, newPipeInfo, streamDescAdapterName);
+        });
+    } else if (busAddresses.size() == 1) {
         // Vehicle system scenario enter.
-        busPipeIter = findPipe(newPipeInfoList, [&busAddresses](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+        busPipeIter = FindPipe(newPipeInfoList, [&busAddresses](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return newPipeInfo->moduleInfo_.name == busAddresses[0];
         });
     } else if (busAddresses.size() > 1) {
@@ -259,7 +264,7 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         std::shared_ptr<AudioStreamDescriptor> tempDesc = streamDesc;
         configManager_.GetStreamPropInfo(tempDesc, streamPropInfo, busAddresses);
-        busPipeIter = findPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+        busPipeIter = FindPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return std::any_of(busAddresses.begin(), busAddresses.end(),
                                [&](const auto &busAddress) { return newPipeInfo->moduleInfo_.name == busAddress; }) &&
                    newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
@@ -593,16 +598,48 @@ void AudioPipeSelector::SetPipeTypeByStreamType(AudioPipeType &nowPipeType,
     }
 }
 
-void AudioPipeSelector::CheckIfConcedeExisting(ConcurrencyAction &action,
-    const std::shared_ptr<AudioStreamDescriptor> &existingStream,
+bool AudioPipeSelector::GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
     const std::shared_ptr<AudioStreamDescriptor> &incomingStream)
 {
+    // When two music streams need to be played on remote offload, select multi-channel audio source, or source with a
+ 	// higher sampling rate.
+    CHECK_AND_RETURN_RET(existingStream != nullptr && incomingStream != nullptr, false);
+    CHECK_AND_RETURN_RET(existingStream->IsRunningOffload() && incomingStream->IsRunningOffload(), false);
+    CHECK_AND_RETURN_RET(existingStream->IsDeviceRemote() && incomingStream->IsDeviceRemote(), false);
+
+    bool startTimePriority = incomingStream->startTimeStamp_ < existingStream->startTimeStamp_;
+    if (startTimePriority) {
+        return incomingStream->IsMultiChannelStream() || (!existingStream->IsMultiChannelStream() &&
+            incomingStream->GetSamplingRate() >= existingStream->GetSamplingRate());
+    }
+    return !existingStream->IsMultiChannelStream() && (incomingStream->IsMultiChannelStream() ||
+        incomingStream->GetSamplingRate() > existingStream->GetSamplingRate());
+}
+
+ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
+    std::shared_ptr<AudioStreamDescriptor> &existingStream,
+    std::shared_ptr<AudioStreamDescriptor> &incomingStream)
+{
+    AudioPipeType existingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+        existingStream->routeFlag_, existingStream->audioMode_);
+    AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+        incomingStream->routeFlag_, incomingStream->audioMode_);
+    SetPipeTypeByStreamType(existingPipe, existingStream);
+    SetPipeTypeByStreamType(commingPipe, incomingStream);
+    ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
+    action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     bool isIncomingStreamIsLoopback = incomingStream->capturerInfo_.isLoopback ||
         incomingStream->rendererInfo_.isLoopback;
-    bool isConcedeExisting = action == CONCEDE_INCOMING && (existingStream->IsNoRunningOffload() ||
-        (existingStream->IsRouteOffload() && isIncomingStreamIsLoopback));
-    CHECK_AND_RETURN(isConcedeExisting);
+    // No running offload can not concede incoming special pipe
+    // incoming is loopback, concede existing offload
+    // Two remote offload streams, concede the one with lower quality.
+    bool isConcedeExisting = action == CONCEDE_INCOMING &&
+        (existingStream->IsNoRunningOffload() ||
+        (existingStream->IsRouteOffload() && isIncomingStreamIsLoopback) ||
+        GetIncomingStreamPriority(existingStream, incomingStream));
+    CHECK_AND_RETURN_RET(isConcedeExisting, action);
     action = CONCEDE_EXISTING;
+    return action;
 }
 
 void AudioPipeSelector::AdjustConcedeActionByStatus(std::shared_ptr<AudioStreamDescriptor> existingStream,
@@ -634,17 +671,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
     std::shared_ptr<AudioStreamDescriptor> incomingStream,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
 {
-    AudioPipeType existingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
-        existingStream->routeFlag_, existingStream->audioMode_);
-    AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
-        incomingStream->routeFlag_, incomingStream->audioMode_);
-    SetPipeTypeByStreamType(existingPipe, existingStream);
-    SetPipeTypeByStreamType(commingPipe, incomingStream);
-    ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
-    action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
-    // No running offload can not concede incoming special pipe
-    // incoming is loopback, concede offload
-    CheckIfConcedeExisting(action, existingStream, incomingStream);
+    ConcurrencyAction action = DetermineConcurrencyAction(existingStream, incomingStream);
 
     JUDGE_AND_INFO_LOG(action != PLAY_BOTH, "Action: %{public}u "
         "existingStream id: %{public}u, routeFlag: %{public}u; "
@@ -804,6 +831,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;
     info.moduleInfo_.name = pipeInfoPtr->paProp_.moduleName_;
+    info.moduleInfo_.busAddress = pipeInfoPtr->paProp_.busAddress_;
     info.moduleInfo_.adapterName = adapterInfoPtr->adapterName;
     info.moduleInfo_.className = adapterInfoPtr->adapterName;
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
@@ -1055,6 +1083,9 @@ bool AudioPipeSelector::IsPipeMatch(const std::shared_ptr<AudioStreamDescriptor>
 
     // Use networkId to distinguish multiple remote devices that may exist
     auto deviceDesc = streamDesc->GetMainNewDeviceDesc();
+#ifdef MULTI_BUS_ENABLE
+    CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->macAddress_ != pipeInfo->moduleInfo_.busAddress, true);
+#endif
     CHECK_AND_RETURN_RET(deviceDesc != nullptr && deviceDesc->networkId_ != LOCAL_NETWORK_ID, true);
 
     return pipeInfo->IsSameNetworkId(deviceDesc->networkId_);

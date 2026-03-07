@@ -90,6 +90,12 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
 }
 
+int32_t FastAudioStream::SetInMainThreadState(bool isInMainThread)
+{
+    AUDIO_ERR_LOG("Unsupported operation!");
+    return ERR_NOT_SUPPORTED;
+}
+
 void FastAudioStream::GetRendererInfo(AudioRendererInfo &rendererInfo)
 {
     rendererInfo = rendererInfo_;
@@ -921,6 +927,18 @@ void FastAudioStream::SetOverflowCount(uint32_t overflowCount)
     CHECK_AND_RETURN_LOG(processClient_ != nullptr,
         "%{public}s: process client is null.", logTag_.c_str());
     processClient_->SetOverflowCount(overflowCount);
+}
+
+int32_t FastAudioStream::RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "process is null.");
+    return processClient_->RegisterRemoteDiedCallback(callback);
+}
+
+int32_t FastAudioStream::UnregisterRemoteDiedCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "process is null.");
+    return processClient_->UnregisterRemoteDiedCallback();
 }
 
 void FastAudioStream::SetRendererPositionCallback(int64_t markPosition,

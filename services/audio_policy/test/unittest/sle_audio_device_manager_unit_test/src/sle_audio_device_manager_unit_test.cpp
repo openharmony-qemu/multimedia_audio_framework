@@ -2167,5 +2167,103 @@ HWTEST(SleAudioDeviceManagerUnitTest, DeviceRemoval_001, TestSize.Level1)
     auto streamTypeMap = sleAudioDeviceManager_->GetNearlinkStreamTypeMapByDevice(device);
     EXPECT_TRUE(streamTypeMap.empty());
 }
+
+/**
+ * @tc.name  : Test GetMuteStatusByVolumeType
+ * @tc.number: GetMuteStatusByVolumeType_001
+ * @tc.desc  : Test SleAudioDeviceManager::GetMuteStatusByVolumeType
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetMuteStatusByVolumeType_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+    std::string nearLinkDevice = deviceDesc.macAddress_;
+
+    bool ret =  sleAudioDeviceManager_->GetMuteStatusByVolumeType(volumeType, nearLinkDevice);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test GetMuteStatusByVolumeType
+ * @tc.number: GetMuteStatusByVolumeType_002
+ * @tc.desc  : Test SleAudioDeviceManager::GetMuteStatusByVolumeType
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetMuteStatusByVolumeType_002, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    AudioVolumeType volumeType = STREAM_ENFORCED_AUDIBLE;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+    std::string nearLinkDevice = deviceDesc.macAddress_;
+
+    bool ret =  sleAudioDeviceManager_->GetMuteStatusByVolumeType(volumeType, nearLinkDevice);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test GetMuteStatusByVolumeType
+ * @tc.number: GetMuteStatusByVolumeType_003
+ * @tc.desc  : Test SleAudioDeviceManager::GetMuteStatusByVolumeType
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetMuteStatusByVolumeType_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    AudioVolumeType volumeType = STREAM_VOICE_CALL;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+    std::string nearLinkDevice = deviceDesc.macAddress_;
+
+    bool ret =  sleAudioDeviceManager_->GetMuteStatusByVolumeType(volumeType, nearLinkDevice);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test GetMuteStatusByVolumeType
+ * @tc.number: GetMuteStatusByVolumeType_004
+ * @tc.desc  : Test SleAudioDeviceManager::GetMuteStatusByVolumeType
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetMuteStatusByVolumeType_004, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    AudioVolumeType volumeType = STREAM_MUSIC;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    std::string nearLinkDevice = "1234567890";
+    bool ret =  sleAudioDeviceManager_->GetMuteStatusByVolumeType(volumeType, nearLinkDevice);
+    EXPECT_FALSE(ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

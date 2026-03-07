@@ -118,6 +118,10 @@ public:
 
     virtual void SetOverflowCount(uint32_t overflowCount) = 0;
 
+    virtual int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) = 0;
+
+    virtual int32_t UnregisterRemoteDiedCallback() = 0;
+
     virtual int64_t GetFramesWritten() = 0;
 
     virtual int64_t GetFramesRead() = 0;

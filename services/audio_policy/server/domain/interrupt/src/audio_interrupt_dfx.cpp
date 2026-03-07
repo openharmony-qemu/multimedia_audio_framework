@@ -167,13 +167,28 @@ void AudioInterruptDfx::RecordInterruptEvent(const InterruptEventInternal &inter
     RecordMediaInterruptEvent(interruptEvent, activeInterrupt, incomingInterrupt);
 }
 
+bool AudioInterruptDfx::IsCheckDfxStream(AudioStreamType audioStreamType)
+{
+    if (audioStreamType == STREAM_MUSIC || audioStreamType == STREAM_MOVIE ||
+        audioStreamType == STREAM_SPEECH || audioStreamType == STREAM_NOTIFICATION ||
+        audioStreamType == STREAM_VOICE_MESSAGE || audioStreamType == STREAM_NAVIGATION) {
+        return true;
+    }
+    return false;
+}
+
 void AudioInterruptDfx::RecordMediaInterruptEvent(const InterruptEventInternal &interruptEvent,
     const AudioInterrupt &activeInterrupt, const AudioInterrupt &incomingInterrupt)
 {
-    if (activeInterrupt.audioFocusType.streamType < 0 || incomingInterrupt.audioFocusType.streamType < 0) {
+    AudioStreamType activeStreamType = activeInterrupt.audioFocusType.streamType;
+    AudioStreamType incomingStreamType = incomingInterrupt.audioFocusType.streamType;
+    if (!IsCheckDfxStream(activeStreamType) || !IsCheckDfxStream(incomingStreamType)) {
         return;
     }
     if (interruptEvent.hintType != INTERRUPT_HINT_PAUSE && interruptEvent.hintType != INTERRUPT_HINT_STOP) {
+        return;
+    }
+    if (activeInterrupt.pid == incomingInterrupt.pid) {
         return;
     }
     if (sessionService_.IsAudioSessionFocusMode(incomingInterrupt.pid)) {

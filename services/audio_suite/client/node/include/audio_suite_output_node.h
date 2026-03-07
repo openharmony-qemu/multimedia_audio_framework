@@ -18,7 +18,6 @@
 
 #include <vector>
 #include "audio_suite_node.h"
-#include "audio_suite_channel.h"
 #include "audio_suite_pcm_buffer.h"
 
 namespace OHOS {
@@ -50,7 +49,6 @@ private:
     void ClearCacheBuffer();
     int32_t GetCacheBufferDataLen();
     uint8_t *GetCacheBufferData(size_t idx);
-    InputPort<AudioSuitePcmBuffer *> inputStream_;
     int32_t preNodeOutputNum_ = 0;
     uint32_t needDataLength_ = 0;
 

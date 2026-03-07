@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include "audio_info.h"
+#include "audio_device_status.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
 using namespace testing::ext;
@@ -1910,7 +1911,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CaptureConcurrentCheck_001, TestSize.Level1)
 
         streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
         streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
-        streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
+        streamDescs[i]->stateStartTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
         streamDescs[i]->callerUid_ = getuid();
         auto result = audioCoreService->CreateCapturerClient(streamDescs[i], flag[i], originalSessionId[i]);
         EXPECT_EQ(result, SUCCESS);
@@ -6481,5 +6482,174 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadNormalSource_007, TestSize.Level4)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+* @tc.name  : Test CheckNeedExclude.
+* @tc.number: CheckNeedExclude_001
+* @tc.desc  : Test CheckNeedExclude usage.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CheckNeedExclude_001, TestSize.Level1)
+{
+    AudioDeviceStatus &audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    // Test with disconnected device
+    AudioDeviceDescriptor disconnectedDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(disconnectedDesc, false));
+
+    // Test with connected but non-wireless device
+    AudioDeviceDescriptor wiredDesc(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(wiredDesc, true));
+
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    auto server = GetServerUtil::GetServerPtr();
+    EXPECT_NE(nullptr, server);
+    auto clearDevice = std::make_shared<AudioDeviceDescriptor>();
+
+    // Test bluetooth A2DP device - not preferred for both
+    AudioDeviceDescriptor a2dpDesc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_TRUE(audioDeviceStatus.CheckNeedExclude(a2dpDesc, true));
+
+    // Test bluetooth A2DP device - preferred for media only
+    auto preferredMediaDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(preferredMediaDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(a2dpDesc, true));
+
+    // Test bluetooth A2DP device - preferred for call only
+    auto preferredCallDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(preferredCallDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(a2dpDesc, true));
+
+    // Test bluetooth SCO device - not preferred for both
+    AudioDeviceDescriptor scoDesc(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_TRUE(audioDeviceStatus.CheckNeedExclude(scoDesc, true));
+
+    // Test bluetooth SCO device - preferred for media only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(preferredMediaDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(scoDesc, true));
+
+    // Test bluetooth SCO device - preferred for call only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(preferredCallDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(scoDesc, true));
+
+    // Test nearlink device - not preferred for both
+    AudioDeviceDescriptor nearlinkDesc(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_TRUE(audioDeviceStatus.CheckNeedExclude(nearlinkDesc, true));
+
+    // Test nearlink device - preferred for media only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE));
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(clearDevice);
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(nearlinkDesc, true));
+
+    // Test nearlink device - preferred for call only
+    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(clearDevice);
+    audioDeviceStatus.audioStateManager_.SetPreferredCallRenderDevice(
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE));
+    EXPECT_FALSE(audioDeviceStatus.CheckNeedExclude(nearlinkDesc, true));
+#endif
+}
+
+/**
+* @tc.name  : Test ReleaseClient.
+* @tc.number: ReleaseClient_001
+* @tc.desc  : Test ReleaseClient - When needRemoveFromMap is true, RemoveSwitchStream should be called.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
+{
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    pipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::MONO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+
+    pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
+    EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
+
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, true);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_FALSE(pipeManager->IsSwitchStreamExist(originalSessionId));
+}
+
+/**
+* @tc.name  : Test ReleaseClient.
+* @tc.number: ReleaseClient_002
+* @tc.desc  : Test ReleaseClient - When needRemoveFromMap is false, RemoveSwitchStream should not be called.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
+{
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    pipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::MONO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
+    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc->macAddress_ = "00:00:00:00:00:00";
+    streamDesc->newDeviceDescs_.clear();
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+
+    pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
+    EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
+
+    result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
+
+    pipeManager->RemoveSwitchStream(originalSessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

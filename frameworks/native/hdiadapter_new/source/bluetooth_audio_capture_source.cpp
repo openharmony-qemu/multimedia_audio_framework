@@ -318,11 +318,6 @@ int32_t BluetoothAudioCaptureSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-uint64_t BluetoothAudioCaptureSource::GetTransactionId(void)
-{
-    return reinterpret_cast<uint64_t>(audioCapture_);
-}
-
 int32_t BluetoothAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");

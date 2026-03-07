@@ -41,7 +41,6 @@ vector<IStandardAudioServiceIpcCode> IStandardAudioServiceIpcCodeVec = {
     IStandardAudioServiceIpcCode::COMMAND_UPDATE_ACTIVE_DEVICE_ROUTE,
     IStandardAudioServiceIpcCode::COMMAND_UPDATE_ACTIVE_DEVICES_ROUTE,
     IStandardAudioServiceIpcCode::COMMAND_UPDATE_DUAL_TONE_STATE,
-    IStandardAudioServiceIpcCode::COMMAND_GET_TRANSACTION_ID,
     IStandardAudioServiceIpcCode::COMMAND_SET_PARAMETER_CALLBACK,
     IStandardAudioServiceIpcCode::COMMAND_GET_AUDIO_PARAMETER_IN_STRING_IN_INT_IN_STRING_OUT_STRING,
     IStandardAudioServiceIpcCode::COMMAND_SET_AUDIO_PARAMETER_IN_STRING_IN_INT_IN_STRING_IN_STRING,

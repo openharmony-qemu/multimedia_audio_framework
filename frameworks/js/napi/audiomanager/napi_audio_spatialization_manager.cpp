@@ -174,6 +174,9 @@ napi_value NapiAudioSpatializationManager::Init(napi_env env, napi_value exports
             OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice),
         DECLARE_NAPI_FUNCTION("offAdaptiveSpatialRenderingEnabledChangeForAnyDevice",
             OffAdaptiveSpatialRenderingEnabledChangeForAnyDevice),
+        DECLARE_NAPI_FUNCTION("getCurrentSpatialAudioSourceType", GetCurrentSpatialAudioSourceType),
+        DECLARE_NAPI_FUNCTION("onSpatialAudioSourceTypeChange", OnSpatialAudioSourceTypeChange),
+        DECLARE_NAPI_FUNCTION("offSpatialAudioSourceTypeChange", OffSpatialAudioSourceTypeChange),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
     };
@@ -428,7 +431,6 @@ napi_value NapiAudioSpatializationManager::updateHeadTrackingEnabled(napi_env en
             context->intValue = napiAudioSpatializationManager->audioSpatializationMngr_->SetHeadTrackingEnabled(
                 context->deviceDescriptor, context->headTrackingEnable);
         }
-
         if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION);
         } else if (context->intValue != SUCCESS) {
@@ -519,10 +521,10 @@ napi_value NapiAudioSpatializationManager::SetAdaptiveSpatialRenderingEnabled(na
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    return updateAdaptiveSpatialRenderingEnabled(env, requireArgc, context);
+    return UpdateAdaptiveSpatialRenderingEnabled(env, requireArgc, context);
 }
 
-napi_value NapiAudioSpatializationManager::updateAdaptiveSpatialRenderingEnabled(napi_env env, const std::size_t argc,
+napi_value NapiAudioSpatializationManager::UpdateAdaptiveSpatialRenderingEnabled(napi_env env, const std::size_t argc,
     std::shared_ptr<AudioSpatializationManagerAsyncContext> &context)
 {
     auto executor = [context, argc]() {
@@ -912,6 +914,34 @@ void NapiAudioSpatializationManager::RegisterAdaptiveSpatialRenderingEnabledChan
     AUDIO_INFO_LOG("Register adaptive spatial rendering enabled callback is successful");
 }
 
+void NapiAudioSpatializationManager::RegisterSpatialAudioSourceTypeChangeCallback(napi_env env,
+    napi_value *args, NapiAudioSpatializationManager *napiAudioSpatializationManager)
+{
+    if (!napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_) {
+        napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_ =
+            std::make_shared<NapiSpatialAudioSourceTypeCallback>(env);
+        CHECK_AND_RETURN_LOG(napiAudioSpatializationManager->
+            spatialAudioSourceTypeChangeCallbackNapi_ != nullptr,
+            "NapiAudioSpatializationManager: Memory Allocation Failed !!");
+
+        int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
+            RegisterSpatialAudioSourceTypeEventListener(
+            napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS,
+            "NapiAudioSpatializationManager: Registering of Effect Mode Change Callback Failed");
+    }
+
+    std::shared_ptr<NapiSpatialAudioSourceTypeCallback> cb =
+        std::static_pointer_cast<NapiSpatialAudioSourceTypeCallback>
+        (napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_);
+    cb->SaveSpatialAudioSourceTypeChangeCallbackReference(args[PARAM0]);
+    if (!cb->GetCurrentSpatialAudioSourceTypeTsfnFlag()) {
+        cb->CreateSpatialAudioSourceTypeTsfn(env);
+    }
+
+    AUDIO_INFO_LOG("Register effect mode callback is successful");
+}
+
 napi_value NapiAudioSpatializationManager::On(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_TWO;
@@ -1072,6 +1102,29 @@ void NapiAudioSpatializationManager::UnregisterAdaptiveSpatialRenderingEnabledCh
     }
 }
 
+void NapiAudioSpatializationManager::UnregisterSpatialAudioSourceTypeChangeCallback(napi_env env,
+    napi_value callback, NapiAudioSpatializationManager *napiAudioSpatializationManager)
+{
+    if (napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_ != nullptr) {
+        std::shared_ptr<NapiSpatialAudioSourceTypeCallback> cb =
+            std::static_pointer_cast<NapiSpatialAudioSourceTypeCallback>(
+            napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_);
+        if (callback != nullptr) {
+            cb->RemoveSpatialAudioSourceTypeChangeCallbackReference(env, callback);
+        }
+        if (callback == nullptr || cb->GetCurrentSpatialAudioSourceTypeChangeCbListSize() == 0) {
+            int32_t ret = napiAudioSpatializationManager->audioSpatializationMngr_->
+                UnregisterSpatialAudioSourceTypeEventListener();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterSpatialAudioSourceTypeEventListener Failed");
+            napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_.reset();
+            napiAudioSpatializationManager->spatialAudioSourceTypeChangeCallbackNapi_ = nullptr;
+            cb->RemoveAllSpatialAudioSourceTypeChangeCallbackReference();
+        }
+    } else {
+        AUDIO_ERR_LOG("UnregisterCallback: AdaptiveSpatialRenderingEnabledChangeCallbackNapi_ is null");
+    }
+}
+
 napi_value NapiAudioSpatializationManager::Off(napi_env env, napi_callback_info info)
 {
     const size_t requireArgc = ARGS_ONE;
@@ -1214,6 +1267,108 @@ napi_value NapiAudioSpatializationManager::OffAdaptiveSpatialRenderingEnabledCha
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
     UnregisterAdaptiveSpatialRenderingEnabledChangeCallback(env, args[PARAM0], napiAudioSpatializationManager);
+    return undefinedResult;
+}
+
+napi_value NapiAudioSpatializationManager::GetCurrentSpatialAudioSourceType(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("in");
+    napi_value result = nullptr;
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    int32_t sourceType = SpatialAudioSourceType::SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+    size_t argc = PARAM0;
+    auto *napiAudioSpatializationManager = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(argc == PARAM0, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID),
+        "invaild arguments");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager != nullptr, result,
+        "napiAudioSpatializationManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, result,
+        "audioSpatializationMngr_ is nullptr");
+
+    sourceType = napiAudioSpatializationManager->audioSpatializationMngr_->GetCurrentSpatialAudioSourceType();
+
+    NapiParamUtils::SetValueInt32(env, sourceType, result);
+    return result;
+}
+
+napi_value NapiAudioSpatializationManager::OnSpatialAudioSourceTypeChange(napi_env env, napi_callback_info info)
+{
+    const size_t requireArgc = ARGS_ONE;
+    size_t argc = ARGS_TWO;
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    napi_value args[requireArgc + 1] = {nullptr, nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    if (status != napi_ok || argc < requireArgc) {
+        AUDIO_ERR_LOG("On fail to napi_get_cb_info/Requires min 1 parameters");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
+    }
+
+    napi_valuetype handler = napi_undefined;
+    if (napi_typeof(env, args[PARAM0], &handler) != napi_ok || handler != napi_function) {
+        AUDIO_ERR_LOG("On type mismatch for parameter 1");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of callback must be function");
+        return undefinedResult;
+    }
+    NapiAudioSpatializationManager *napiAudioSpatializationManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioSpatializationManager));
+    if ((status != napi_ok) || (napiAudioSpatializationManager == nullptr) ||
+        (napiAudioSpatializationManager->audioSpatializationMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("NapiAudioSpatializationManager::Failed to retrieve audio spatialization manager napi instance.");
+        return undefinedResult;
+    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    RegisterSpatialAudioSourceTypeChangeCallback(env, args, napiAudioSpatializationManager);
+    return undefinedResult;
+}
+
+napi_value NapiAudioSpatializationManager::OffSpatialAudioSourceTypeChange(napi_env env, napi_callback_info info)
+{
+    const size_t requireArgc = ARGS_ZERO;
+    size_t argc = PARAM1;
+
+    napi_value undefinedResult = nullptr;
+    napi_get_undefined(env, &undefinedResult);
+
+    napi_value args[requireArgc + 1] = {nullptr};
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("Off fail to napi_get_cb_info");
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "mandatory parameters are left unspecified");
+        return undefinedResult;
+    }
+
+    napi_valuetype argsType = napi_undefined;
+    if (argc > requireArgc &&
+        (napi_typeof(env, args[PARAM0], &argsType) != napi_ok || argsType != napi_function)) {
+        NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID,
+            "incorrect parameter types: The type of callback must be function");
+        return undefinedResult;
+    }
+
+    if (argc == requireArgc) {
+        args[PARAM0] = nullptr;
+    }
+
+    NapiAudioSpatializationManager *napiAudioSpatializationManager = nullptr;
+    status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiAudioSpatializationManager));
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && napiAudioSpatializationManager != nullptr, undefinedResult,
+        "Failed to retrieve napi instance.");
+    CHECK_AND_RETURN_RET_LOG(napiAudioSpatializationManager->audioSpatializationMngr_ != nullptr, undefinedResult,
+        "spatialization instance null.");
+
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+    UnregisterSpatialAudioSourceTypeChangeCallback(env, args[PARAM0], napiAudioSpatializationManager);
     return undefinedResult;
 }
 } // namespace AudioStandard

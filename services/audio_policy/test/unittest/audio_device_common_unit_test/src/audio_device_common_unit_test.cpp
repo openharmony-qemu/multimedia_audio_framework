@@ -1198,5 +1198,46 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_A2dpSuspen
     EXPECT_EQ(deviceList[0]->deviceId_, 0);
 }
 
+/**
+* @tc.name  : Test NeedUpdatePreferredDevice.
+* @tc.number: NeedUpdatePreferredDevice_001
+* @tc.desc  : Test NeedUpdatePreferredDevice usage.
+*/
+HWTEST_F(AudioDeviceCommonUnitTest, NeedUpdatePreferredDevice_001, TestSize.Level1)
+{
+    AudioDeviceCommon &audioDeviceCommon = AudioDeviceCommon::GetInstance();
+
+    // Test virtual connected device
+    AudioDeviceDescriptor virtualDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    virtualDesc.connectState_ = VIRTUAL_CONNECTED;
+    EXPECT_FALSE(audioDeviceCommon.NeedUpdatePreferredDevice(virtualDesc));
+
+    // Test normal connected device
+    AudioDeviceDescriptor normalDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    normalDesc.connectState_ = CONNECTED;
+    EXPECT_TRUE(audioDeviceCommon.NeedUpdatePreferredDevice(normalDesc));
+
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    // Test bluetooth A2DP device
+    AudioDeviceDescriptor a2dpDesc(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    a2dpDesc.connectState_ = CONNECTED;
+    EXPECT_FALSE(audioDeviceCommon.NeedUpdatePreferredDevice(a2dpDesc));
+
+    // Test bluetooth SCO device
+    AudioDeviceDescriptor scoDesc(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE);
+    scoDesc.connectState_ = CONNECTED;
+    EXPECT_FALSE(audioDeviceCommon.NeedUpdatePreferredDevice(scoDesc));
+
+    // Test nearlink device
+    AudioDeviceDescriptor nearlinkDesc(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    nearlinkDesc.connectState_ = CONNECTED;
+    EXPECT_FALSE(audioDeviceCommon.NeedUpdatePreferredDevice(nearlinkDesc));
+
+    // Test wired device (should return true)
+    AudioDeviceDescriptor wiredDesc(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
+    wiredDesc.connectState_ = CONNECTED;
+    EXPECT_TRUE(audioDeviceCommon.NeedUpdatePreferredDevice(wiredDesc));
+#endif
+}
 } // namespace AudioStandard
 } // namespace OHOS

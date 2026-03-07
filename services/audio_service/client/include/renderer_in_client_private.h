@@ -36,6 +36,7 @@
 #include "audio_spatialization_types.h"
 #include "audio_safe_block_queue.h"
 #include "istandard_audio_service.h"
+#include "remote_death_recipient.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,6 +59,7 @@ public:
     void SetClientDeviceId(const std::string &deviceId) override;
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
+    int32_t SetInMainThreadState(bool isInMainThread) override;
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
@@ -145,6 +147,9 @@ public:
     uint32_t GetOverflowCount() override;
     void SetUnderflowCount(uint32_t underflowCount) override;
     void SetOverflowCount(uint32_t overflowCount) override;
+
+    int32_t RegisterRemoteDiedCallback(const std::shared_ptr<RemoteDiedCallback> &callback) override;
+    int32_t UnregisterRemoteDiedCallback() override;
 
     void SetRendererPositionCallback(int64_t markPosition, const std::shared_ptr<RendererPositionCallback> &callback)
         override;
@@ -428,6 +433,9 @@ private:
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
     sptr<IIpcStream> ipcStream_ = nullptr;
+    sptr<IRemoteObject> ipcProxy_ = nullptr;
+    std::mutex deathRecipientLock_;
+    sptr<RemoteDeathRecipient> deathRecipient_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // for static audio renderer

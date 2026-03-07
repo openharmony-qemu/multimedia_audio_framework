@@ -1062,6 +1062,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
 void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
+    Trace trace("AudioCoreService::ProcessOutputPipeUpdate");
     for (auto &desc : pipeInfo->streamDescriptors_) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
         HILOG_COMM_INFO("[StreamExecInfo] Stream: %{public}u, action: %{public}d, belong to %{public}s",
@@ -1827,9 +1828,7 @@ void AudioCoreService::OnPreferredOutputDeviceUpdated(const AudioDeviceDescripto
         AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(false);
     }
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
-    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice =
-            std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
-    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(selectedAudioDevice);
+    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
     AudioCollaborativeService::GetAudioCollaborativeService().UpdateCurrentDevice(deviceDescriptor);
 }
 
@@ -2132,7 +2131,7 @@ bool AudioCoreService::RecoverFetchedDescs(const std::vector<std::shared_ptr<Aud
 {
     for (auto &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "Stream desc is nullptr");
-        streamDesc->newDeviceDescs_ = streamDesc->oldDeviceDescs_;
+        pipeManager_->UpdateNewDeviceDesc(streamDesc, streamDesc->oldDeviceDescs_);
     }
 
     return true;
@@ -3167,6 +3166,33 @@ void AudioCoreService::DeactivateBluetoothDevice(bool isRunning)
     }
 }
 
+bool AudioCoreService::DeactivateA2dpAfterExclude(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &excludeDeviceDescs,
+    const std::vector<std::shared_ptr<AudioStreamDescriptor>> &outputStreamDescs)
+{
+    bool excludeA2dp = std::any_of(excludeDeviceDescs.begin(), excludeDeviceDescs.end(), [](const auto &deviceDesc) {
+        return deviceDesc && deviceDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    });
+    if (!excludeA2dp) {
+        return false;
+    }
+
+    bool willUseA2dp = std::any_of(outputStreamDescs.begin(), outputStreamDescs.end(), [](const auto &streamDesc) {
+        return streamDesc && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !streamDesc->newDeviceDescs_.empty() && streamDesc->newDeviceDescs_.front() &&
+            streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    });
+    if (willUseA2dp) {
+        return false;
+    }
+
+    audioPolicyManager_.StopAudioPort(BLUETOOTH_SPEAKER);
+    if (Bluetooth::AudioA2dpManager::GetActiveA2dpDeviceLocal() != EMPTY_ADDRESS) {
+        Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(NULL_ADDRESS);
+    }
+    return true;
+}
+
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -3399,7 +3425,7 @@ bool AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
         existingSourceType.push_back(static_cast<uint8_t>(desc->capturerInfo_.sourceType));
         existingCaptureState.push_back(static_cast<uint8_t>(desc->streamStatus_));
         existingCreateDuration.push_back(GetTimeCostFrom(desc->createTimeStamp_));
-        existingStartDuration.push_back(GetTimeCostFrom(desc->startTimeStamp_));
+        existingStartDuration.push_back(GetTimeCostFrom(desc->stateStartTimeStamp_));
         existingFastFlag.push_back(static_cast<bool>(desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST));
     }
     result->existingAppName = std::move(existingAppName);
@@ -3523,9 +3549,10 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
 {
     for (auto &desc : outputDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-        desc->newDeviceDescs_ = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
+        auto newDescs = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
             GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
             streamDesc->rendererInfo_.privacyType);
+        pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDevicesForDescs");
 }

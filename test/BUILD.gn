@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -103,6 +103,7 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_source_process_cluster_test",
     "../services/audio_engine/test/unittest:hpae_sink_virtual_output_node_test",
     "../services/audio_engine/test/unittest:hpae_virtual_process_cluster_test",
+    "../services/audio_engine/test/unittest:hpae_source_output_node_highpass_test",
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_dump_pcm_unit_test",
@@ -135,6 +136,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:audio_stream_monitor_unit_test",
     "../services/audio_service/test/unittest:audio_tool_calculate_unit_test",
     "../services/audio_service/test/unittest:cabin_playback_engine_unit_test",
+    "../services/audio_service/test/unittest:audio_highpass_filter_unit_test",
   ]
 
   if (audio_framework_feature_audiosuite_support) {
@@ -235,6 +237,8 @@ group("audio_fuzz_test") {
     "fuzztest/audioeffectenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioeffectservice_fuzzer:fuzztest",
     "fuzztest/audioeffectvolume_fuzzer:fuzztest",
+    "fuzztest/audioendpointsinkadapter_fuzzer:fuzztest",
+    "fuzztest/audioinjectorservice_fuzzer:fuzztest",
     "fuzztest/audiofilter_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audioinputthread_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiointerruptdfxcollector_fuzzer:fuzztest",
@@ -288,6 +292,7 @@ group("audio_fuzz_test") {
     # "fuzztest/audioserviceclient_fuzzer:fuzztest",
     "fuzztest/audioservicecommon_fuzzer:fuzztest",
     "fuzztest/audioservicecommonenhance_fuzzer:fuzztest",
+    "fuzztest/nonemixengine_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrc_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
     "fuzztest/audioservicestub_fuzzer:fuzztest",
@@ -332,7 +337,6 @@ group("audio_fuzz_test") {
     "fuzztest/hpaemanagerstream_fuzzer:fuzztest",
     "fuzztest/hpaemanagerhighriskinterface_fuzzer:fuzztest",
     "fuzztest/hpaeoffloadrenderermanager_fuzzer:fuzztest",
-    "fuzztest/hpaeoffloadsinkoutputnode_fuzzer:fuzztest",
     "fuzztest/hpaeproresampler_fuzzer:fuzztest",
     # "fuzztest/hpaeaudioformatconverternode_fuzzer:fuzztest",
     # "fuzztest/hpaeinjectorrenderermanager_fuzzer:fuzztest",
@@ -343,19 +347,17 @@ group("audio_fuzz_test") {
     # "fuzztest/hpaeprocesscluster_fuzzer:fuzztest",
     # "fuzztest/hpaerendereffectnode_fuzzer:fuzztest",
     # "fuzztest/hpaesignalprocessthread_fuzzer:fuzztest",
-    "fuzztest/hpaesourceprocesscluster_fuzzer:fuzztest",
-    "fuzztest/hpaesourceinputcluster_fuzzer:fuzztest",
     # "fuzztest/hpaesourceinputnode_fuzzer:fuzztest",
     # "fuzztest/hpaesourceoutputnode_fuzzer:fuzztest",
     # "fuzztest/hpaestreammanager_fuzzer:fuzztest",
     # "fuzztest/hpaevirtualprocesscluster_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanageradd_fuzzer:fuzztest",
-    "fuzztest/hpaevirtualcapturermanager_fuzzer:fuzztest",
     "fuzztest/ipcstreaminserver_fuzzer:fuzztest",
     "fuzztest/istandardaudiozoneclient_fuzzer:fuzztest",
     "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",
     "fuzztest/microphonedescriptor_fuzzer:fuzztest",
+    "fuzztest/audiosystemloadlistener_fuzzer:fuzztest",
     "fuzztest/offlineaudioeffectserverchain_fuzzer:fuzztest",
     "fuzztest/offlinestreaminserver_fuzzer:fuzztest",
     "fuzztest/powerstatelistener_fuzzer:fuzztest",

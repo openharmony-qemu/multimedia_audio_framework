@@ -175,6 +175,7 @@ public:
     StreamStatus GetStreamInServerStatus() override;
 
     bool TurnOnMicIndicator(CapturerState capturerState);
+    void ReportNoBgPermissionEvent();
     bool TurnOffMicIndicator(CapturerState capturerState);
     void TurnOnRemoteMicIndicator();
     void TurnOffRemoteMicIndicator();

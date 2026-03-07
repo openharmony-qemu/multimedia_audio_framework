@@ -43,6 +43,7 @@ public:
     uint32_t futureRouteFlag_ = AUDIO_FLAG_NONE;
     int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
+    int64_t stateStartTimeStamp_ = 0;
     AudioRendererInfo rendererInfo_ = {};
     AudioCapturerInfo capturerInfo_ = {};
     AppInfo appInfo_ = {};
@@ -163,6 +164,11 @@ public:
             (rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK);
     }
 
+    AudioSamplingRate GetSamplingRate() const
+    {
+        return streamInfo_.samplingRate;
+    }
+
     // Route funcs above
     uint32_t GetRoute() const
     {
@@ -229,6 +235,16 @@ public:
     bool IsNoRunningOffload() const
     {
         return IsRouteOffload() && !IsRunning();
+    }
+
+    bool IsRunningOffload() const
+    {
+        return IsRouteOffload() && IsRunning();
+    }
+
+    bool IsMultiChannelStream() const
+    {
+        return streamInfo_.channels > AudioChannel::STEREO;
     }
 
     void ResetToNormalRoute(bool updateRoute);

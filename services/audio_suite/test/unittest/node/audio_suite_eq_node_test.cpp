@@ -80,4 +80,16 @@ HWTEST_F(AudioSuiteEqNodeTest, testAudioSuiteEqNodeDeInit, TestSize.Level0)
     EXPECT_NE(node->Init(), 0);
     EXPECT_EQ(node->DeInit(), 0);
 }
+
+HWTEST_F(AudioSuiteEqNodeTest, AudioSuiteEqNodeInitTest, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteEqNode>();
+    node->isEqNodeInit_ = true;
+    int32_t ret = node->Init();
+    EXPECT_EQ(ret, ERROR);
+
+    node->isEqNodeInit_ = false;
+    ret = node->Init();
+    EXPECT_EQ(ret, SUCCESS);
+}
 }  // namespace

@@ -33,6 +33,8 @@
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
 
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
 
@@ -169,9 +171,7 @@ void AudioDeviceCommon::OnPreferredOutputDeviceUpdated(const AudioDeviceDescript
         AudioServerProxy::GetInstance().UpdateEffectBtOffloadSupportedProxy(false);
     }
     AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(deviceDescriptor.deviceType_);
-    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice =
-            std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
-    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(selectedAudioDevice);
+    AudioSpatializationService::GetAudioSpatializationService().UpdateCurrentDevice(deviceDescriptor.macAddress_);
 }
 
 void AudioDeviceCommon::OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId)
@@ -204,7 +204,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
                 AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
             CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
             auto device = audioDeviceManager_.FindConnectedDeviceById(preferredDevice->deviceId_);
-            if (device != nullptr && audioDeviceManager_.IsDeviceAvailable(device)) {
+            if (device != nullptr && audioDeviceManager_.IsDeviceAvailable(CALL_OUTPUT_DEVICES, device)) {
                 deviceList.push_back(preferredDevice);
                 return deviceList;
             }
@@ -476,14 +476,15 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     AudioPolicyUtils::GetInstance().UpdateDisplayName(audioDescriptor);
     AudioAdapterManager::GetInstance().QueryDeviceVolumeBehavior(audioDescriptor);
     audioConnectedDevice_.AddConnectedDevice(audioDescriptor);
+#ifndef WIRELESS_DEFAULT_EXCLUDE
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
         make_shared<AudioDeviceDescriptor>(updatedDesc)};
     AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
+#endif
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
-    if (updatedDesc.connectState_ == VIRTUAL_CONNECTED) {
-        AUDIO_INFO_LOG("The device is virtual device, no need to update preferred device");
-        return; // No need to update preferred device for virtual device
+    if (!NeedUpdatePreferredDevice(updatedDesc)) {
+        return;
     }
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
     if (NeedClearPreferredMediaRenderer(audioStateManager_.GetPreferredMediaRenderDevice(), audioDescriptor,
@@ -525,6 +526,28 @@ bool AudioDeviceCommon::NeedClearPreferredMediaRenderer(const std::shared_ptr<Au
 
     CHECK_AND_RETURN_RET(frontDesc != nullptr, false);
     return updated->IsSameDeviceDescPtr(frontDesc);
+}
+
+bool AudioDeviceCommon::NeedUpdatePreferredDevice(const AudioDeviceDescriptor &desc)
+{
+    if (desc.connectState_ == VIRTUAL_CONNECTED) {
+        AUDIO_INFO_LOG("The device is virtual device, no need to update preferred device");
+        return false;
+    }
+
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    switch (desc.deviceType_) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
+            AUDIO_INFO_LOG("The device is wireless device, no need to update preferred device");
+            return false;
+        default:
+            return true;
+    }
+#endif
+
+    return true;
 }
 
 void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForInputDevice(

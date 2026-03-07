@@ -17,7 +17,8 @@
 #define AUDIO_SUITE_INPUT_NODE_H
 
 #include "audio_suite_common.h"
-#include "audio_suite_channel.h"
+#include "audio_suite_node.h"
+#include "audio_suite_pcm_buffer.h"
 #include "audio_suite_format_conversion.h"
 
 class InputNodeRequestDataCallBack;
@@ -36,7 +37,6 @@ public:
 
     int32_t Connect(const std::shared_ptr<AudioNode>& preNode) override;
     int32_t DisConnect(const std::shared_ptr<AudioNode>& preNode) override;
-    OutputPort<AudioSuitePcmBuffer*>* GetOutputPort() override;
     int32_t DoProcess(uint32_t needDataLength) override;
     int32_t SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback) override;
     bool IsSetReadDataCallback() override;
@@ -47,7 +47,6 @@ private:
     int32_t GeneratePushBuffer();
     int32_t InitCacheBuffer(uint32_t needDataLength);
 
-    OutputPort<AudioSuitePcmBuffer*> outputStream_;
     std::shared_ptr<InputNodeRequestDataCallBack> reqDataCallback_ = nullptr;
 
     AudioSuitePcmBuffer inPcmData_;
@@ -56,7 +55,6 @@ private:
     uint32_t singleRequestSize_ = 0;
     uint32_t inPcmDataGetSize_ = 0;
     uint32_t nextNodeNeedDataLength_ = 0;
-    AudioSuiteFormatConversion convert_;
 };
 }
 }

@@ -542,8 +542,7 @@ void NapiAudioHeadTrackingEnabledChangeCallback::RemoveAllHeadTrackingEnabledCha
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!cbName.compare(HEAD_TRACKING_ENABLED_CHANGE_CALLBACK_NAME)) {
-        for (auto it = headTrackingEnabledChangeCbList_.begin();
-            it != headTrackingEnabledChangeCbList_.end(); ++it) {
+        for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); ++it) {
             napi_delete_reference(env_, (*it)->cb_);
             (*it)->cb_ = nullptr;
         }
@@ -698,7 +697,6 @@ void NapiAdaptiveSpatialRenderingEnabledChangeCallback::SaveAdaptiveSpatialRende
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
     const int32_t refCount = ARGS_ONE;
-
     std::string taskName = "NapiAdaptiveSpatialRenderingEnabledChangeCallback::destroy";
     for (auto it = adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.begin();
         it != adaptiveSpatialRenderingEnabledChangeCbForAnyDeviceList_.end(); ++it) {
@@ -852,6 +850,171 @@ void NapiAdaptiveSpatialRenderingEnabledChangeCallback::OnJsCallbackAdaptiveSpat
 
     napi_acquire_threadsafe_function(amAdaptiveSpatialRenderingTsfn_);
     napi_call_threadsafe_function(amAdaptiveSpatialRenderingTsfn_, event, napi_tsfn_blocking);
+}
+
+NapiSpatialAudioSourceTypeCallback::NapiSpatialAudioSourceTypeCallback(
+    napi_env env) : env_(env)
+{
+    AUDIO_DEBUG_LOG("NapiSpatialAudioSourceTypeCallback: instance create");
+}
+
+NapiSpatialAudioSourceTypeCallback::~NapiSpatialAudioSourceTypeCallback()
+{
+    if (regAmSpatialAudioSourceTypeTsfn_) {
+        napi_release_threadsafe_function(amSpatialAudioSourceTypeTsfn_, napi_tsfn_abort);
+    }
+    AUDIO_DEBUG_LOG("NapiSpatialAudioSourceTypeCallback: instance destroy");
+}
+
+void NapiSpatialAudioSourceTypeCallback::SaveSpatialAudioSourceTypeChangeCallbackReference(
+    napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    napi_ref callback = nullptr;
+    const int32_t refCount = ARGS_ONE;
+
+    std::string taskName = "NapiSpatialAudioSourceTypeCallback::destroy";
+    for (auto it = spatialAudioSourceTypeChangeCbList_.begin();
+        it != spatialAudioSourceTypeChangeCbList_.end(); ++it) {
+        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
+        CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: spatialization manager has same callback");
+    }
+
+    napi_status status = napi_create_reference(env_, args, refCount, &callback);
+    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+        "NapiSpatialAudioSourceTypeCallback: creating reference for callback fail");
+
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback, taskName);
+    CHECK_AND_RETURN_LOG(cb != nullptr,
+        "NapiSpatialAudioSourceTypeCallback: creating callback failed");
+
+    spatialAudioSourceTypeChangeCbList_.push_back(cb);
+}
+
+void NapiSpatialAudioSourceTypeCallback::CreateSpatialAudioSourceTypeTsfn(napi_env env)
+{
+    regAmSpatialAudioSourceTypeTsfn_ = true;
+    napi_value cbName;
+    std::string callbackName = "AudioSourceType";
+    napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
+    napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr,
+        SpatialAudioSourceTypeTsfnFinalize, nullptr, SafeJsCallbackSpatialAudioSourceTypeWork,
+        &amSpatialAudioSourceTypeTsfn_);
+}
+
+bool NapiSpatialAudioSourceTypeCallback::GetCurrentSpatialAudioSourceTypeTsfnFlag()
+{
+    return regAmSpatialAudioSourceTypeTsfn_;
+}
+
+void NapiSpatialAudioSourceTypeCallback::RemoveSpatialAudioSourceTypeChangeCallbackReference(
+    napi_env env, napi_value args)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = spatialAudioSourceTypeChangeCbList_.begin();
+        it != spatialAudioSourceTypeChangeCbList_.end(); ++it) {
+        bool isSameCallback = NapiAudioManagerCallback::IsSameCallback(env_, args, (*it)->cb_);
+        if (isSameCallback) {
+            AUDIO_INFO_LOG("RemoveSpatialAudioSourceTypeChangeCallback: find js callback, delete it");
+            napi_delete_reference(env, (*it)->cb_);
+            (*it)->cb_ = nullptr;
+            spatialAudioSourceTypeChangeCbList_.erase(it);
+            return;
+        }
+    }
+    AUDIO_INFO_LOG("RemoveSpatialAudioSourceTypeChangeCallbackReference: js callback no find");
+}
+
+void NapiSpatialAudioSourceTypeCallback::RemoveAllSpatialAudioSourceTypeChangeCallbackReference(
+    )
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = spatialAudioSourceTypeChangeCbList_.begin();
+        it != spatialAudioSourceTypeChangeCbList_.end(); ++it) {
+        napi_delete_reference(env_, (*it)->cb_);
+        (*it)->cb_ = nullptr;
+    }
+    spatialAudioSourceTypeChangeCbList_.clear();
+    AUDIO_INFO_LOG("RemoveAllSpatialAudioSourceTypeChangeCallbackReference: remove all js callbacks success");
+}
+
+int32_t NapiSpatialAudioSourceTypeCallback::GetCurrentSpatialAudioSourceTypeChangeCbListSize()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return spatialAudioSourceTypeChangeCbList_.size();
+}
+
+void NapiSpatialAudioSourceTypeCallback::OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode)
+{
+    AUDIO_INFO_LOG("OnSpatialAudioSourceTypeChange by the specified device entered");
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto it = spatialAudioSourceTypeChangeCbList_.begin();
+        it != spatialAudioSourceTypeChangeCbList_.end(); it++) {
+        std::unique_ptr<AudioSpatialAudioSourceTypeJsCallback> cb =
+            std::make_unique<AudioSpatialAudioSourceTypeJsCallback>();
+        CHECK_AND_RETURN_LOG(cb != nullptr, "No memory!!");
+        cb->callback = (*it);
+        cb->mode = mode;
+        OnJsCallbackSpatialAudioSourceType(cb);
+    }
+
+    return;
+}
+
+void NapiSpatialAudioSourceTypeCallback::SafeJsCallbackSpatialAudioSourceTypeWork(
+    napi_env env, napi_value js_cb, void *context, void *data)
+{
+    AudioSpatialAudioSourceTypeJsCallback *event =
+        reinterpret_cast<AudioSpatialAudioSourceTypeJsCallback *>(data);
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
+        "OnJsCallbackSpatialAudioSourceType: no memory");
+    std::shared_ptr<AudioSpatialAudioSourceTypeJsCallback> safeContext(
+        static_cast<AudioSpatialAudioSourceTypeJsCallback*>(data),
+        [](AudioSpatialAudioSourceTypeJsCallback *ptr) {
+            delete ptr;
+    });
+    napi_ref callback = event->callback->cb_;
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
+    AUDIO_INFO_LOG("SafeJsCallbackSpatialAudioSourceTypeWork: safe js callback working.");
+
+    do {
+        napi_value jsCallback = nullptr;
+        napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "callback get reference value fail");
+        napi_value args[ARGS_ONE] = { nullptr };
+        const size_t argCount = ARGS_ONE;
+        napi_value result = nullptr;
+
+        NapiParamUtils::SetValueInt32(env, event->mode, args[PARAM0]);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr, "fail to convert to jsobj");
+        
+        nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok, "Fail to call effect mode change callback");
+    } while (0);
+    napi_close_handle_scope(env, scope);
+}
+
+void NapiSpatialAudioSourceTypeCallback::SpatialAudioSourceTypeTsfnFinalize(
+    napi_env env, void *data, void *hint)
+{
+    AUDIO_INFO_LOG("AdaptiveSpatialRenderingEnabledTsfnFinalize: safe thread resource release.");
+}
+
+void NapiSpatialAudioSourceTypeCallback::OnJsCallbackSpatialAudioSourceType(
+    std::unique_ptr<AudioSpatialAudioSourceTypeJsCallback> &jsCb)
+{
+    if (jsCb.get() == nullptr) {
+        AUDIO_ERR_LOG("OnJsCallbackSpatialAudioSourceType: jsCb.get() is null");
+        return;
+    }
+
+    AudioSpatialAudioSourceTypeJsCallback *event = jsCb.release();
+    CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
+
+    napi_acquire_threadsafe_function(amSpatialAudioSourceTypeTsfn_);
+    napi_call_threadsafe_function(amSpatialAudioSourceTypeTsfn_, event, napi_tsfn_blocking);
 }
 } // namespace AudioStandard
 } // namespace OHOS

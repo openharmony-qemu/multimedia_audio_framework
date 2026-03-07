@@ -138,7 +138,9 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
     auto len = "len[" + std::to_string(inputs[0]->GetFrameLen()) + "]";
     Trace trace("[" + sceneType_ + "]HpaeRenderEffectNode::SignalProcess " + rate + ch + len);
 
-    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled()) {
+    if (AudioEffectChainManager::GetInstance()->GetOffloadEnabled() ||
+        (inputs[0]->GetSampleRate() > DEFUALT_EFFECT_RATE &&
+        !AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_))) {
         return inputs[0];
     }
     if (IsByPassEffectZeroVolume(inputs[0])) {
@@ -417,7 +419,9 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
 
 int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-    basicFormat.rate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+    basicFormat.rate = static_cast<uint32_t>(basicFormat.rate) > DEFUALT_EFFECT_RATE &&
+        !AudioEffectChainManager::GetInstance()->IsDownSamplingForSpatialization(sceneType_) ?
+        basicFormat.rate : static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
     uint64_t channelLayout = 0;
     int32_t ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_,
         basicFormat.audioChannelInfo.numChannels, channelLayout);
@@ -462,6 +466,7 @@ void HpaeRenderEffectNode::InitEffectBuffer(const uint32_t sessionId)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    CHECK_AND_RETURN_LOG(sceneType_ != "SCENE_COLLABORATIVE", "COLLABORATIVE, no need InitEffectBuffer");
     audioEffectChainManager->InitEffectBuffer(std::to_string(sessionId));
 }
 

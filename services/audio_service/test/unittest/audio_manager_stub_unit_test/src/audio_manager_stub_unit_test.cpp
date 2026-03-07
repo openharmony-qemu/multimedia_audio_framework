@@ -1374,26 +1374,6 @@ HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_013, TestSize.Level1)
 /**
 * @tc.name  : Test OnRemoteRequest API
 * @tc.type  : FUNC
-* @tc.number: OnRemoteRequest_014
-* @tc.desc  : Test OnRemoteRequest interface. Set code value to GET_TRANSACTION_ID
-*/
-HWTEST_F(AudioManagerStubUnitTest, OnRemoteRequest_014, TestSize.Level1)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t format = static_cast<uint32_t>(AudioServerInterfaceCode::GET_TRANSACTION_ID);
-    MessageParcel data;
-    data.WriteInterfaceToken(u"IStandardAudioService");
-    data.WriteInt32(1);
-    data.WriteInt32(1);
-    MessageParcel reply;
-    MessageOption option;
-    auto ret = audioServer->OnRemoteRequest(format, data, reply, option);
-    EXPECT_EQ(AUDIO_OK, ret);
-}
-
-/**
-* @tc.name  : Test OnRemoteRequest API
-* @tc.type  : FUNC
 * @tc.number: OnRemoteRequest_015
 * @tc.desc  : Test OnRemoteRequest interface. Set code value to SET_PARAMETER_CALLBACK
 */

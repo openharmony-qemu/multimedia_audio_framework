@@ -177,6 +177,41 @@ private:
     bool regAmAdaptiveSpatialRenderingTsfn_ = false;
     napi_threadsafe_function amAdaptiveSpatialRenderingTsfn_ = nullptr;
 };
+
+class NapiSpatialAudioSourceTypeCallback :
+    public AudioSpatialAudioSourceTypeChangeCallback {
+public:
+    explicit NapiSpatialAudioSourceTypeCallback(napi_env env);
+    virtual ~NapiSpatialAudioSourceTypeCallback();
+    void SaveSpatialAudioSourceTypeChangeCallbackReference(napi_value args);
+    void RemoveSpatialAudioSourceTypeChangeCallbackReference(
+        napi_env env, napi_value args);
+    void RemoveAllSpatialAudioSourceTypeChangeCallbackReference();
+    int32_t GetCurrentSpatialAudioSourceTypeChangeCbListSize();
+    void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode) override;
+    void CreateSpatialAudioSourceTypeTsfn(napi_env env);
+    bool GetCurrentSpatialAudioSourceTypeTsfnFlag();
+
+private:
+    struct AudioSpatialAudioSourceTypeJsCallback {
+        std::shared_ptr<AutoRef> callback = nullptr;
+        std::string callbackName = "unknown";
+        SpatialAudioSourceType mode;
+    };
+
+    void OnJsCallbackSpatialAudioSourceType(
+        std::unique_ptr<AudioSpatialAudioSourceTypeJsCallback> &jsCb);
+    static void SafeJsCallbackSpatialAudioSourceTypeWork(
+        napi_env env, napi_value js_cb, void *context, void *data);
+    static void SpatialAudioSourceTypeTsfnFinalize(
+        napi_env env, void *data, void *hint);
+
+    std::mutex mutex_;
+    napi_env env_ = nullptr;
+    std::list<std::shared_ptr<AutoRef>> spatialAudioSourceTypeChangeCbList_;
+    bool regAmSpatialAudioSourceTypeTsfn_ = false;
+    napi_threadsafe_function amSpatialAudioSourceTypeTsfn_ = nullptr;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif /* AUDIO_SPATIALIZATION_MANAGER_CALLBACK_NAPI_H */

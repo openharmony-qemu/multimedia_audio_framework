@@ -43,10 +43,8 @@ constexpr auto SLEEP_TIMES_RETYT_FAILED = 1min;
 constexpr int32_t CREATE_RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t CREATE_MAX_RETRY_COUNT = 8;
 std::mutex g_cBMapMutex;
-std::mutex g_cBDiedMapMutex;
 std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> AudioPolicyManager::rendererCBMap_;
 std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> AudioPolicyManager::capturerCB_;
-std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> AudioPolicyManager::audioStreamCBMap_;
 std::vector<AudioServerDiedCallBack> AudioPolicyManager::serverDiedCbks_;
 std::mutex AudioPolicyManager::serverDiedCbkMutex_;
 std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> AudioPolicyManager::clientTrackerStubMap_;
@@ -280,21 +278,6 @@ void AudioPolicyManager::AudioPolicyServerDied(pid_t pid, pid_t uid)
         }
     }
     GetInstance().RecoverAudioPolicyCallbackClient();
-
-    {
-        std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
-        if (audioStreamCBMap_.size() != 0) {
-            for (auto it = audioStreamCBMap_.begin(); it != audioStreamCBMap_.end();) {
-                auto cb = (*it).lock();
-                if (cb == nullptr) {
-                    it = audioStreamCBMap_.erase(it);
-                    continue;
-                }
-                cb->OnAudioPolicyServiceDied();
-                ++it;
-            }
-        }
-    }
 
     {
         std::lock_guard<std::mutex> lockCbMap(serverDiedCbkMutex_);
@@ -1665,34 +1648,6 @@ int32_t AudioPolicyManager::UnregisterAudioPolicyServerDiedCb(const int32_t clie
     return SUCCESS;
 }
 
-int32_t AudioPolicyManager::RegisterAudioStreamPolicyServerDiedCb(
-    const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
-    AUDIO_DEBUG_LOG("RegisterAudioStreamPolicyServerDiedCb");
-    audioStreamCBMap_.emplace_back(callback);
-
-    return SUCCESS;
-}
-
-int32_t AudioPolicyManager::UnregisterAudioStreamPolicyServerDiedCb(
-    const std::shared_ptr<AudioStreamPolicyServiceDiedCallback> &callback)
-{
-    std::lock_guard<std::mutex> lockCbMap(g_cBDiedMapMutex);
-    AUDIO_DEBUG_LOG("UnregisterAudioStreamPolicyServerDiedCb");
-
-    audioStreamCBMap_.erase(std::remove_if(audioStreamCBMap_.begin(), audioStreamCBMap_.end(),
-        [&callback] (const weak_ptr<AudioStreamPolicyServiceDiedCallback> &cb) {
-            auto sharedCb = cb.lock();
-            if (sharedCb == callback || sharedCb == nullptr) {
-                return true;
-            }
-            return false;
-        }), audioStreamCBMap_.end());
-
-    return SUCCESS;
-}
-
 int32_t AudioPolicyManager::GetMaxRendererInstances()
 {
     AUDIO_DEBUG_LOG("AudioPolicyManager::GetMaxRendererInstances");
@@ -1909,6 +1864,15 @@ int32_t AudioPolicyManager::SetAdaptiveSpatialRenderingEnabled(
     return gsp->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable);
 }
 
+int32_t AudioPolicyManager::GetCurrentSpatialAudioSourceType()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    int32_t ret = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+    gsp->GetCurrentSpatialAudioSourceType(ret);
+    return ret;
+}
+
 bool AudioPolicyManager::IsAdaptiveSpatialRenderingEnabled(const std::string address)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1952,7 +1916,7 @@ int32_t AudioPolicyManager::SetHeadTrackingEnabled(
 }
 
 int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(
-    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback)
+    const std::shared_ptr<AudioSpatializationEnabledChangeCallback> &callback, bool isFromNearlink)
 {
     AUDIO_DEBUG_LOG("Start to register");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -1968,7 +1932,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledEventListener(
 
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddSpatializationEnabledChangeCallback(callback);
+        audioPolicyClientStubCB_->AddSpatializationEnabledChangeCallback(callback, isFromNearlink);
         size_t callbackSize = audioPolicyClientStubCB_->GetSpatializationEnabledChangeCallbackSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_SPATIALIZATION_ENABLED_CHANGE].isEnable = true;
@@ -2007,7 +1971,7 @@ int32_t AudioPolicyManager::RegisterSpatializationEnabledForCurrentDeviceEventLi
 }
 
 int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
-    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback)
+    const std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> &callback, bool isFromNearlink)
 {
     AUDIO_DEBUG_LOG("Start to register");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
@@ -2023,7 +1987,7 @@ int32_t AudioPolicyManager::RegisterHeadTrackingEnabledEventListener(
 
     std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].mutex);
     if (audioPolicyClientStubCB_ != nullptr) {
-        audioPolicyClientStubCB_->AddHeadTrackingEnabledChangeCallback(callback);
+        audioPolicyClientStubCB_->AddHeadTrackingEnabledChangeCallback(callback, isFromNearlink);
         size_t callbackSize = audioPolicyClientStubCB_->GetHeadTrackingEnabledChangeCallbacSize();
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_HEAD_TRACKING_ENABLED_CHANGE].isEnable = true;
@@ -2078,6 +2042,34 @@ int32_t AudioPolicyManager::RegisterAdaptiveSpatialRenderingEnabledEventListener
         if (callbackSize == 1) {
             callbackChangeInfos_[CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE].isEnable = true;
             SetClientCallbacksEnable(CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE, true);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::RegisterSpatialAudioSourceTypeEventListener(
+    const std::shared_ptr<AudioSpatialAudioSourceTypeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("Start to register");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+
+    if (!isAudioPolicyClientRegisted_) {
+        const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+        CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->AddSpatialAudioSourceTypeChangeCallback(callback);
+        size_t callbackSize = audioPolicyClientStubCB_->GetCurrentSpatialAudioSourceTypeChangeCallbackSize();
+        if (callbackSize == 1) {
+            callbackChangeInfos_[CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE].isEnable = true;
+            SetClientCallbacksEnable(CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE, true);
         }
     }
     return SUCCESS;
@@ -2149,6 +2141,21 @@ int32_t AudioPolicyManager::UnregisterAdaptiveSpatialRenderingEnabledEventListen
         if (audioPolicyClientStubCB_->GetAdaptiveSpatialRenderingEnabledChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE].isEnable = false;
             SetClientCallbacksEnable(CALLBACK_ADAPTIVE_SPATIAL_RENDERING_ENABLED_CHANGE, false);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyManager::UnregisterSpatialAudioSourceTypeEventListener()
+{
+    AUDIO_DEBUG_LOG("Start to unregister");
+    std::lock_guard<std::mutex> lockCbMap(
+        callbackChangeInfos_[CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE].mutex);
+    if (audioPolicyClientStubCB_ != nullptr) {
+        audioPolicyClientStubCB_->RemoveSpatialAudioSourceTypeChangeCallback();
+        if (audioPolicyClientStubCB_->GetCurrentSpatialAudioSourceTypeChangeCallbackSize() == 0) {
+            callbackChangeInfos_[CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE].isEnable = false;
+            SetClientCallbacksEnable(CALLBACK_SPATIAL_AUDIO_SOURCE_TYPE_CHANGE, false);
         }
     }
     return SUCCESS;
@@ -3517,6 +3524,15 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;
     return policyManager;
+}
+
+AudioScene AudioPolicyManager::GetAudioSceneFromAllZones()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_SCENE_DEFAULT, "audio policy manager proxy is NULL.");
+    int32_t audioScene = AUDIO_SCENE_DEFAULT;
+    gsp->GetAudioSceneFromAllZones(audioScene);
+    return static_cast<AudioScene>(audioScene);
 }
 
 int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)

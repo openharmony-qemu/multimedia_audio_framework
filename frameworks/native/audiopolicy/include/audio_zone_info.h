@@ -53,17 +53,24 @@ enum class MediaBackStrategy {
     KEEP = 1,
 };
 
+enum class InitMode {
+    NONE = 0,
+    APP = 1,
+};
+
 class AudioZoneContext : public Parcelable {
 public:
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
     MediaBackStrategy backStrategy_ = MediaBackStrategy::STOP;
+    InitMode initMode_ = InitMode::NONE;
 
     AudioZoneContext() = default;
 
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_))
-            && parcel.WriteInt32(static_cast<int32_t>(backStrategy_));
+            && parcel.WriteInt32(static_cast<int32_t>(backStrategy_))
+            && parcel.WriteInt32(static_cast<int32_t>(initMode_));
     }
 
     static AudioZoneContext *Unmarshalling(Parcel &parcel)
@@ -75,6 +82,7 @@ public:
 
         info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
         info->backStrategy_ = static_cast<MediaBackStrategy>(parcel.ReadInt32());
+        info->initMode_ = static_cast<InitMode>(parcel.ReadInt32());
         return info;
     }
 };
@@ -85,6 +93,7 @@ public:
     std::string name_;
     std::set<int32_t> uids_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices_;
+    int32_t initMode_;
 
     AudioZoneDescriptor() = default;
 
@@ -92,6 +101,7 @@ public:
     {
         bool result = parcel.WriteInt32(zoneId_);
         result &= parcel.WriteString(name_);
+        result &= parcel.WriteInt32(initMode_);
         result &= MarshallingSetInt32(uids_, parcel);
         if (!result) {
             return false;
@@ -113,6 +123,7 @@ public:
     {
         zoneId_ = parcel.ReadInt32();
         name_ = parcel.ReadString();
+        initMode_ = parcel.ReadInt32();
         uids_ = UnmarshallingSetInt32<int32_t>(parcel);
 
         size_t size = parcel.ReadUint64();

@@ -29,6 +29,7 @@
 #include "hisysevent.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
+#include "i_hpae_manager.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -384,9 +385,6 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
         AUDIO_INFO_LOG("Generate session id %{public}u for stream", sessionId);
     }
 
-    pipeManager_->RemoveSwitchStream(sessionId);
-    streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
-
     ClientTypeManager::GetInstance()->GetAndSaveClientType(GetRealUid(streamDesc),
         AudioBundleManager::GetBundleNameFromUid(GetRealUid(streamDesc)));
 
@@ -420,6 +418,10 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
+
+    pipeManager_->RemoveSwitchStream(sessionId);
+    streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
+
     return SUCCESS;
 }
 
@@ -438,8 +440,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
     std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc = GetCaptureClientDevice(streamDesc, sessionId);
     CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
-    streamDesc->newDeviceDescs_.clear();
-    streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
+    pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
@@ -807,7 +808,10 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
     if (streamDesc->streamStatus_ == STREAM_STATUS_RELEASED) {
         audioDeviceManager_.RemoveSelectedDefaultOutputDevice(streamDesc->sessionId_);
     }
-    if (!audioSceneManager_.IsPhoneCallOrChatSceneTriggeredByUid(streamDesc->callerUid_)) {
+    // Do not trigger FetchOutputDeviceAndRoute on single call stream stop,
+    // FetchOutputDeviceAndRoute is triggered by AudioScene changes instead of a single call stream stop.
+    if (!audioSceneManager_.IsPhoneCallOrChatSceneTriggeredByUid(streamDesc->callerUid_) ||
+        streamCollector_.IsVoipStreamActive()) {
         FetchOutputDeviceAndRoute(caller);
     }
 
@@ -846,6 +850,53 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
             }
         }
     }
+}
+
+void AudioCoreService::CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        AUDIO_INFO_LOG("not nearlink or bluetooth, device is %{public}d", streamDesc->newDeviceDescs_[0]->deviceType_);
+        return;
+    }
+
+    SpatialAudioSourceType sourceType = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = pipeManager_->GetPipeList();
+    for (auto pipe : pipeList) {
+        AUDIO_INFO_LOG("pipe id %{public}d name %{public}s",
+            pipe->id_, pipe->name_.c_str());
+        for (auto it : pipe->streamDescriptors_) {
+            AUDIO_INFO_LOG("stream id %{public}d, encoding %{public}d, channels %{public}d",
+                it->sessionId_, it->streamInfo_.encoding, it->streamInfo_.channels);
+            if (it->streamStatus_ == STREAM_STATUS_STARTED && it->sessionId_ != streamDesc->sessionId_) {
+                AUDIO_INFO_LOG("has running stream %{public}d", it->sessionId_);
+                return;
+            }
+        }
+    }
+    if (streamDesc->streamInfo_.encoding == ENCODING_AUDIOVIVID) {
+        sourceType = SPATIAL_AUDIO_SOURCE_TYPE_AUDIO_VIVID;
+    } else if (streamDesc->streamInfo_.channels > STEREO) {
+        sourceType = SPATIAL_AUDIO_SOURCE_TYPE_MULTI_CHANNEL;
+    }
+    AUDIO_INFO_LOG("need update spatializaitonenabled %{public}d", sourceType);
+    // 通知hpaemanager音效模式变化 最终通知给audioeffectchain
+    HPAE::IHpaeManager::GetHpaeManager().HandleBypassSpatializationForStereo(
+        sourceType == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
+    // AudioSpatializationService里面调用回调通知管家音效模式变化
+    AudioSpatializationService::GetAudioSpatializationService().SetSpatialAudioSourceType(sourceType);
+
+    if (!AudioSpatializationService::GetAudioSpatializationService().IsAdaptiveSpatialRenderingEnabled(
+        streamDesc->newDeviceDescs_[0]->macAddress_)) {
+        AUDIO_INFO_LOG("adaptiveSpatialRendering is not enabled");
+        return;
+    }
+    AUDIO_INFO_LOG("IsHeadTrackingEnabled: %{public}d",
+        AudioSpatializationService::GetAudioSpatializationService().IsHeadTrackingEnabled(
+            streamDesc->newDeviceDescs_[0]->macAddress_));
+    // 通知星闪、蓝牙空间音频、头动开关变化
+    AudioSpatializationService::GetAudioSpatializationService().SetBypassSpatialForStereo(
+        streamDesc->newDeviceDescs_[0], sourceType == SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
 }
 
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
@@ -903,6 +954,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
     // [Capturer NOTE 1.3] should use the new device.
     CheckForRemoteDeviceState(deviceDesc);
+    CheckAndUpdateEffect(streamDesc);
     if (streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         ReloadCaptureSession(sessionId, SESSION_OPERATION_START);
     }
@@ -956,7 +1008,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg)
+int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg, bool needRemoveFromMap)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
@@ -987,6 +1039,11 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         }
         ReloadCaptureSession(sessionId, SESSION_OPERATION_RELEASE);
     }
+
+    if (needRemoveFromMap) {
+        pipeManager_->RemoveSwitchStream(sessionId);
+    }
+
     return SUCCESS;
 }
 
@@ -1353,7 +1410,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetExclude
 int32_t AudioCoreService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    return audioRecoveryDevice_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = audioRecoveryDevice_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    DeactivateA2dpAfterExclude(audioDeviceDescriptors, pipeManager_->GetAllOutputStreamDescs());
+    return result;
 }
 
 int32_t AudioCoreService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
@@ -1810,12 +1869,12 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller, const Aud
     bool isUpdateActiveDevice = false;
     for (auto streamDesc : inputStreamDescs) {
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
-        streamDesc->newDeviceDescs_.clear();
+        pipeManager_->UpdateNewDeviceDesc(streamDesc, {});
         std::shared_ptr<AudioDeviceDescriptor> inputDeviceDesc =
             audioRouterCenter_.FetchInputDevice(streamDesc->capturerInfo_.sourceType, GetRealUid(streamDesc),
                 streamDesc->sessionId_);
         CHECK_AND_RETURN_RET_LOG(inputDeviceDesc != nullptr, ERR_INVALID_PARAM, "inputDeviceDesc is nullptr");
-        streamDesc->newDeviceDescs_.push_back(inputDeviceDesc);
+        pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
 
@@ -1920,6 +1979,7 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
         return ERR_NOT_SUPPORTED;
     }
 
+    streamDesc->stateStartTimeStamp_ = ClockTime::GetCurNano();
     auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
     if (!WriteCapturerConcurrentMsg(streamDesc, dfxResult)) {
         return ERR_INVALID_HANDLE;

@@ -55,7 +55,7 @@ ohos_unittest("audio_utils_unit_test") {
   }
 
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
   sources = [
@@ -115,7 +115,7 @@ ohos_unittest("audio_utils_plus_unit_test") {
   }
 
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
   sources = [ "audio_utils_plus_unit_test.cpp" ]
@@ -147,7 +147,7 @@ ohos_unittest("audio_utils_pro_unit_test") {
   }
 
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
   sources = [ "audio_utils_pro_unit_test.cpp" ]
@@ -179,7 +179,7 @@ ohos_unittest("audio_speed_unit_test") {
   }
 
   if (sonic_enable == true) {
-    external_deps += [ "pulseaudio:sonic" ]
+    external_deps += [ "sonic:sonic" ]
   }
 
   sources = [ "audio_speed_unit_test.cpp" ]

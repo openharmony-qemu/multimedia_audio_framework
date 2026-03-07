@@ -118,6 +118,7 @@ public:
     virtual void InitHdiState() = 0;
     virtual void UpdateEffectBtOffloadSupported(const bool &isSupported) = 0;
     virtual void UpdateParamExtra(const std::string &mainkey, const std::string &subkey, const std::string &value) = 0;
+    virtual void HandleBypassSpatializationForStereo(bool bypass) = 0;
     // interfaces for capture effect
     virtual void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,

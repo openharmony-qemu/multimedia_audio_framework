@@ -53,6 +53,8 @@
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
 #include "util/id_handler.h"
+#include "manager/hdi_monitor.h"
+#include "audio_bundle_manager.h"
 
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
@@ -166,6 +168,31 @@ const std::set<SourceType> VALID_SOURCE_TYPE = {
     SOURCE_TYPE_UNPROCESSED,
     SOURCE_TYPE_LIVE,
     SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT,
+};
+
+const std::set<std::string> ASR_FORBIDDEN_KEYS = {
+    "asr_aec_mode",
+    "ASR_AEC",
+    "asr_ns_mode",
+    "asr_wd_mode",
+    "TTS_2_DEVICE",
+    "TTS_2_MODEM",
+    "MIC_2_MODEM",
+    "MODEM_2_DEVICE",
+    "audio2voicetx",
+    "audiomix2voicetx",
+    "audio2voicetxex",
+    "audiomix2voicetxex",
+    "output_mute=true",
+    "output_mute=false",
+    "input_mute=true",
+    "input_mute=false",
+    "mute_tts=true",
+    "mute_tts=false",
+    "mute_call=true",
+    "mute_call=false",
+    "ouput_mute_ex=true",
+    "ouput_mute_ex=false"
 };
 
 static constexpr unsigned int GET_BUNDLE_TIME_OUT_SECONDS = 10;
@@ -925,18 +952,25 @@ bool AudioServer::CacheExtraParameters(const std::string &key,
     return false;
 }
 
+bool AudioServer::CheckAndPreStoreA2dpParam(std::shared_ptr<IAudioRenderSink> btSink,
+    AudioParamKey parmKey, const std::string &renderValue)
+{
+    if (btSink == nullptr || !btSink->IsInited()) {
+        AUDIO_WARNING_LOG("has no valid sink, need preStore %{public}s.", renderValue.c_str());
+        HdiAdapterManager::GetInstance().
+            UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
+            PRESTORE_INFO_AUDIO_BT_PARAM, {parmKey, {"", renderValue}});
+        return false;
+    }
+    return true;
+}
+
 void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
 {
     std::lock_guard<std::mutex> lock(setA2dpParamMutex_);
     auto parmKey = AudioParamKey::A2DP_SUSPEND_STATE;
     std::shared_ptr<IAudioRenderSink> btSink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    if (btSink == nullptr || !btSink->IsInited()) {
-        AUDIO_WARNING_LOG("has no valid sink, need preStore a2dpParam.");
-        HdiAdapterManager::GetInstance().
-            UpdateSinkPrestoreInfo<std::pair<AudioParamKey, std::pair<std::string, std::string>>>(
-            PRESTORE_INFO_AUDIO_BT_PARAM, {parmKey, {"", renderValue}});
-        return;
-    }
+    CHECK_AND_RETURN(CheckAndPreStoreA2dpParam(btSink, parmKey, renderValue));
     btSink->SetAudioParameter(parmKey, "", renderValue);
 
     if (AudioService::GetInstance()->HasBluetoothEndpoint()) {
@@ -952,6 +986,9 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
     AudioXCollie audioXCollie("AudioServer::SetAudioParameter", TIME_OUT_SECONDS,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    CHECK_AND_RETURN_RET_LOG(AudioParameterValueCheck(key, value), ERR_INVALID_PARAM,
+        "AudioParameterValueCheck fail! key: %{public}s, value: %{public}s", key.c_str(), value.c_str());
+
     if (key != "AUDIO_EXT_PARAM_KEY_A2DP_OFFLOAD_CONFIG") {
         bool ret = VerifyClientPermission(MODIFY_AUDIO_SETTINGS_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "MODIFY_AUDIO_SETTINGS permission denied");
@@ -1021,6 +1058,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
         }
         char *subkey = std::strtok(param, "=");
         char *strvalue = std::strtok(NULL, "=");
+        CHECK_AND_RETURN_RET_LOG(subkey == nullptr || strvalue == nullptr, false, "subkey and strvalue is nullptr");
         RecognizeAudioEffectType(key, (std::string)subkey, (std::string)strvalue);
         AUDIO_INFO_LOG("LOUD_VOLUMN_MODE mainkey = %{public}s, key = %{public}s, value = %{public}s",
             key.c_str(), subkey, strvalue);
@@ -1364,47 +1402,6 @@ const std::string AudioServer::GetAudioParameterInner(const std::string& network
         return sink->GetAudioParameter(key, condition);
     }
     return "";
-}
-
-int32_t AudioServer::GetTransactionId(int32_t deviceType, int32_t deviceRole, uint64_t& transactionId)
-{
-    AUDIO_DEBUG_LOG("device type: %{public}d, device role: %{public}d", deviceType, deviceRole);
-    if (deviceRole != INPUT_DEVICE && deviceRole != OUTPUT_DEVICE) {
-        AUDIO_ERR_LOG("AudioServer::GetTransactionId: error device role");
-        transactionId =  static_cast<uint64_t>(ERR_INVALID_PARAM);
-        return SUCCESS;
-    }
-    std::shared_ptr<IAudioCaptureSource> source = nullptr;
-    if (deviceRole == INPUT_DEVICE) {
-        if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-            source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-        } else {
-            source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
-        }
-        if (source) {
-            transactionId = source->GetTransactionId();
-        }
-        return SUCCESS;
-    }
-
-    // deviceRole OUTPUT_DEVICE
-    std::shared_ptr<IAudioRenderSink> sink = nullptr;
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        sink = GetSinkByProp(HDI_ID_TYPE_BLUETOOTH);
-    } else if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-    } else {
-        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY);
-    }
-    int32_t ret = ERROR;
-    if (sink != nullptr) {
-        ret = sink->GetTransactionId(transactionId);
-    }
-
-    CHECK_AND_RETURN_RET_LOG(!ret, SUCCESS, "Get transactionId failed.");
-
-    AUDIO_DEBUG_LOG("Transaction Id: %{public}" PRIu64, transactionId);
-    return SUCCESS;
 }
 
 // LCOV_EXCL_START
@@ -3551,6 +3548,20 @@ int32_t AudioServer::RequestUserPrivacyAuthority(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->RequestUserPrivacyAuthority(sessionId);
 }
+
+bool AudioServer::AudioParameterValueCheck(const std::string &key, const std::string &value)
+{
+    for (const auto &keyWord : ASR_FORBIDDEN_KEYS) {
+        if (value.find(keyWord) != std::string::npos) {
+            std::string bundleName = AudioBundleManager::GetBundleNameByToken(IPCSkeleton::GetCallingFullTokenID());
+            HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CHECK_HDI_FAILED, -1,
+                (bundleName + " ASR parameter not allowed in SetAudioParameter! key: " + key + ", value: " + value));
+            return false;
+        }
+    }
+    return true;
+}
+
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
