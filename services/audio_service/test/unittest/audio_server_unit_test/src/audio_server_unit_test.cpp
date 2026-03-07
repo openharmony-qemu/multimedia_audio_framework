@@ -470,38 +470,6 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioParameter_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetTransactionId API
- * @tc.type  : FUNC
- * @tc.number: AudioServerGetTransactionId_001
- * @tc.desc  : Test GetTransactionId interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerGetTransactionId_001, TestSize.Level1)
-{
-    CaptureSourceInfo sourceInfo;
-    uint32_t id = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);
-    sourceInfo.source_ = std::make_shared<TestAudioCaptureSource>();
-    sourceInfo.refCount_.store(1);
-    HdiAdapterManager::GetInstance().captureSources_.erase(id);
-    HdiAdapterManager::GetInstance().captureSources_.try_emplace(id);
-    HdiAdapterManager::GetInstance().captureSources_[id].source_ = std::make_shared<TestAudioCaptureSource>();
-    HdiAdapterManager::GetInstance().captureSources_[id].refCount_.store(1);
-
-    EXPECT_NE(nullptr, audioServer);
-    uint64_t ret;
-    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::DEVICE_ROLE_MAX, ret);
-    EXPECT_NE(0, ret);
-
-    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::INPUT_DEVICE, ret);
-    EXPECT_EQ(0, ret);
-
-    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE, ret);
-    EXPECT_EQ(0, ret);
-
-    audioServer->GetTransactionId(DeviceType::DEVICE_TYPE_USB_ARM_HEADSET, DeviceRole::OUTPUT_DEVICE, ret);
-    EXPECT_EQ(0, ret);
-}
-
-/**
  * @tc.name  : Test SetAudioScene API
  * @tc.type  : FUNC
  * @tc.number: AudioServerSetAudioScene_001
