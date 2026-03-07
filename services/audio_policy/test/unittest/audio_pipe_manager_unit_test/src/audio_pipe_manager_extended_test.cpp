@@ -224,6 +224,32 @@ HWTEST_F(AudioPipeManagerExtendedUnitTest, AudioPipeManager_009, TestSize.Level4
 }
 
 /**
+ * @tc.name: AudioPipeManager_017
+ * @tc.desc: Test AudioPipeManager IsNormalRecordPipe.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerExtendedUnitTest, AudioPipeManager_017, TestSize.Level1)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_VA;
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    EXPECT_TRUE(sPipeManager_->IsNormalRecordPipe(pipeInfo));
+}
+ 
+/**
+ * @tc.name: AudioPipeManager_018
+ * @tc.desc: Test AudioPipeManager IsNormalRecordPipe.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerExtendedUnitTest, AudioPipeManager_018, TestSize.Level4)
+{
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->adapterName_ = ADAPTER_TYPE_VA;
+    pipeInfo->routeFlag_ = AUDIO_FLAG_NONE;
+    EXPECT_FALSE(sPipeManager_->IsNormalRecordPipe(pipeInfo));
+}
+
+/**
  * @tc.name: AudioPipeManager_HasRunningStream_001
  * @tc.desc: Test HasRunningStream when curPipeList_ is empty
  * @tc.type: FUNC
