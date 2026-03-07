@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPipeManager"ZZ
+#define LOG_TAG "AudioPipeManager"
 #endif
 
 #include "audio_pipe_manager.h"
@@ -168,7 +168,9 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
-        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe->routeFlag_)) {
+        if (pipe->streamDescriptors_.empty() && (IsSpecialPipe(pipe->routeFlag_) ||
+            (pipe->adapterName_ == ADAPTER_TYPE_VA &&
+            pipe->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL))) {
             newList.push_back(pipe);
         }
     }
