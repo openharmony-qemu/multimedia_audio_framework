@@ -475,5 +475,23 @@ bool AudioSession::IsMuteSuggestionWhenMixEnabled()
     return isMuteSuggestionEnabled_;
 }
 
+int32_t AudioSession::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    behaviorFlags_ = {};
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) {
+        behaviorFlags_.voipNoPrivacyFlag = true;
+        AUDIO_INFO_LOG("Session pid: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", callerPid_);
+    }
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
+        behaviorFlags_.muteWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Session pid: %{public}d activated MUTE_WHEN_INTERRUPT success", callerPid_);
+    }
+    return SUCCESS;
+}
+
+AudioSessionActiveBehaviors AudioSession::GetSessionBehaviors()
+{
+    return behaviorFlags_;
+}
 } // namespace AudioStandard
 } // namespace OHOS
