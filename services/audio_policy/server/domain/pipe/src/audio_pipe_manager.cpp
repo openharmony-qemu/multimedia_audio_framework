@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPipeManager"
+#define LOG_TAG "AudioPipeManager"ZZ
 #endif
 
 #include "audio_pipe_manager.h"
