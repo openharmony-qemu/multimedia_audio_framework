@@ -756,6 +756,7 @@ public:
     void HandleDataShareReadyEvent();
     int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes) override;
+    int32_t SetAudioSessionBehavior(const uint32_t behavior) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
