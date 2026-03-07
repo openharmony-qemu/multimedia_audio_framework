@@ -216,7 +216,8 @@ bool AudioPipeManager::IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInf
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "Pipe info is null");
     if ((pipeInfo->adapterName_ == PRIMARY_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) ||
-        (pipeInfo->adapterName_ == USB_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL)) {
+        (pipeInfo->adapterName_ == USB_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) ||
+        (pipeInfo->adapterName_ == ADAPTER_TYPE_VA && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL)) {
         return true;
     }
     return false;
