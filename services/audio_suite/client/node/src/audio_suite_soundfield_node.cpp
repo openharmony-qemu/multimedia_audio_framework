@@ -40,9 +40,9 @@ AudioSuiteSoundFieldNode::~AudioSuiteSoundFieldNode()
 int32_t AudioSuiteSoundFieldNode::Init()
 {
     AUDIO_INFO_LOG("AudioSuiteSoundFieldNode::Init begin");
-    if (!isOutputPortInit_) {
+    if (!isOutputStreamInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
-        isOutputPortInit_ = true;
+        isOutputStreamInit_ = true;
     }
     
     algoInterface_ =

@@ -19,6 +19,7 @@
 
 #include "audio_suite_node.h"
 #include "audio_suite_log.h"
+#include <algorithm>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -54,9 +55,128 @@ std::shared_ptr<AudioNode> AudioNode::GetSharedInstance()
     return shared_from_this();
 }
 
-OutputPort<AudioSuitePcmBuffer*>* AudioNode::GetOutputPort()
+// Connection management methods
+void AudioNode::AddNextNode(const std::shared_ptr<AudioNode>& node)
 {
-    return nullptr;
+    if (!node) {
+        return;
+    }
+    for (auto& weakNode : nextNodes_) {
+        if (auto locked = weakNode.lock()) {
+            if (locked == node) {
+                return; // Already exists
+            }
+        }
+    }
+    nextNodes_.push_back(node);
+}
+
+void AudioNode::RemoveNextNode(const std::shared_ptr<AudioNode>& node)
+{
+    if (!node) {
+        return;
+    }
+    nextNodes_.erase(std::remove_if(nextNodes_.begin(), nextNodes_.end(),
+        [&node](const std::weak_ptr<AudioNode>& weakNode) {
+            auto locked = weakNode.lock();
+            return !locked || locked == node;
+        }), nextNodes_.end());
+}
+
+void AudioNode::AddPreNode(const std::shared_ptr<AudioNode>& node)
+{
+    if (!node) {
+        return;
+    }
+    for (auto& weakNode : preNodes_) {
+        if (auto locked = weakNode.lock()) {
+            if (locked == node) {
+                return; // Already exists
+            }
+        }
+    }
+    preNodes_.push_back(node);
+}
+
+void AudioNode::RemovePreNode(const std::shared_ptr<AudioNode>& node)
+{
+    if (!node) {
+        return;
+    }
+    preNodes_.erase(std::remove_if(preNodes_.begin(), preNodes_.end(),
+        [&node](const std::weak_ptr<AudioNode>& weakNode) {
+            auto locked = weakNode.lock();
+            return !locked || locked == node;
+        }), preNodes_.end());
+}
+
+// Output data management methods
+int32_t AudioNode::WriteOutputData(AudioSuitePcmBuffer* data)
+{
+    if (!data) {
+        AUDIO_ERR_LOG("WriteOutputData failed, data is nullptr");
+        return ERR_INVALID_PARAM;
+    }
+    outputData_.push_back(data);
+    return SUCCESS;
+}
+
+std::vector<AudioSuitePcmBuffer*> AudioNode::PullOutputData(
+    PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength)
+{
+    // Trigger node processing
+    DoProcess(needDataLength);
+
+    if (outputData_.empty()) {
+        return {};
+    }
+
+    CHECK_AND_RETURN_RET_LOG(outputData_.size() == formatConverters_.size(), {},
+        "outputData size (%zu) != formatConverters size (%zu)", outputData_.size(), formatConverters_.size());
+
+    std::vector<AudioSuitePcmBuffer*> outData;
+    for (size_t idx = 0; idx < outputData_.size(); idx++) {
+        AudioSuitePcmBuffer* data = outputData_[idx];
+        CHECK_AND_RETURN_RET_LOG(data != nullptr, {}, "outputData is nullptr.");
+        CHECK_AND_RETURN_RET_LOG(formatConverters_[idx] != nullptr, {}, "converter is nullptr.");
+
+        // Format conversion
+        if (!needConvert || data->IsSameFormat(outFormat)) {
+            outData.push_back(data);
+        } else {
+            AudioSuitePcmBuffer* convertData = formatConverters_[idx]->Process(data, outFormat);
+            CHECK_AND_RETURN_RET_LOG(convertData != nullptr, {}, "convertData is nullptr.");
+            convertData->SetIsFinished(data->GetIsFinished());
+            outData.push_back(convertData);
+        }
+    }
+
+    outputData_.clear();
+    return outData;
+}
+
+// Data fetching method for downstream nodes
+void AudioNode::ReadPreNodeData(PcmBufferFormat outFormat, bool needConvert, uint32_t needDataLength)
+{
+    preNodeResult_.clear();
+    for (auto& weakNode : preNodes_) {
+        auto node = weakNode.lock();
+        if (!node) {
+            continue;
+        }
+        auto data = node->PullOutputData(outFormat, needConvert, needDataLength);
+        preNodeResult_.insert(preNodeResult_.end(), data.begin(), data.end());
+    }
+}
+
+// Format converter initialization (base implementation)
+int32_t AudioNode::InitFormatConverters()
+{
+    formatConverters_.clear();
+    formatConversionBuffers_.clear();
+    formatConverters_.emplace_back(std::make_unique<AudioSuiteFormatConversion>());
+    formatConversionBuffers_.resize(1);
+    return SUCCESS;
 }
 
 int32_t AudioNode::SetRequestDataCallback(std::shared_ptr<InputNodeRequestDataCallBack> callback)

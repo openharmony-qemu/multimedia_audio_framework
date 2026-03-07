@@ -46,7 +46,7 @@ AudioInputNode::~AudioInputNode()
 
 int32_t AudioInputNode::Init()
 {
-    outputStream_.SetOutputPort(GetSharedInstance());
+    InitFormatConverters();
     uint32_t doubleFrame = 2;
     PcmBufferFormat inPcmFormat = GetAudioNodeInPcmFormat();
     if (GetAudioNodeFormat().rate == AudioSamplingRate::SAMPLE_RATE_11025) {
@@ -74,8 +74,6 @@ int32_t AudioInputNode::Flush()
     AUDIO_INFO_LOG("AudioInputNode::Flush");
     cachedBuffer_.ClearBuffer();
     SetAudioNodeDataFinishedFlag(false);
-    convert_.Reset();
-    outputStream_.ResetResampleCfg();
     return SUCCESS;
 }
 
@@ -109,11 +107,6 @@ int32_t AudioInputNode::DisConnect(const std::shared_ptr<AudioNode>& preNode)
 {
     AUDIO_ERR_LOG("AudioInputNode::DisConnect not support opt");
     return ERROR;
-}
-
-OutputPort<AudioSuitePcmBuffer*>* AudioInputNode::GetOutputPort()
-{
-    return &outputStream_;
 }
 
 int32_t AudioInputNode::DoProcess(uint32_t needDataLength)
@@ -186,7 +179,10 @@ int32_t AudioInputNode::GetDataFromUser()
         }
 
         if ((singleGetSize == inPcmData_.GetDataSize()) || isFinished) {
-            AudioSuitePcmBuffer *ConverPcmData = convert_.Process(&inPcmData_, outPcmData_.GetPcmBufferFormat());
+            AudioSuitePcmBuffer *ConverPcmData = nullptr;
+            if (!formatConverters_.empty() && formatConverters_[0]) {
+                ConverPcmData = formatConverters_[0]->Process(&inPcmData_, outPcmData_.GetPcmBufferFormat());
+            }
             CHECK_AND_RETURN_RET_LOG(ConverPcmData != nullptr, ERR_INVALID_PARAM, "convert pcm format fail");
 
             int32_t ret = cachedBuffer_.PushData(ConverPcmData->GetPcmData(), ConverPcmData->GetDataSize());
@@ -218,7 +214,7 @@ int32_t AudioInputNode::GeneratePushBuffer()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Get data from cachedBuffer fail");
 
     outPcmData_.SetIsFinished(GetAudioNodeDataFinishedFlag() && (cachedBuffer_.GetSize() == 0));
-    outputStream_.WriteDataToOutput(&outPcmData_);
+    WriteOutputData(&outPcmData_);
     return SUCCESS;
 }
 

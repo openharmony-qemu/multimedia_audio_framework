@@ -46,9 +46,9 @@ int32_t AudioSuiteGeneralVoiceChangeNode::Init()
     algoInterface_ =
         AudioSuiteAlgoInterface::CreateAlgoInterface(AlgoType::AUDIO_NODE_TYPE_GENERAL_VOICE_CHANGE, nodeParameter_);
     CHECK_AND_RETURN_RET_LOG(algoInterface_ != nullptr, ERROR, "Failed to create General Voice Change algoInterface");
-    if (!isOutputPortInit_) {
+    if (!isOutputStreamInit_) {
         CHECK_AND_RETURN_RET_LOG(InitOutputStream() == SUCCESS, ERROR, "Init OutPutStream error");
-        isOutputPortInit_ = true;
+        isOutputStreamInit_ = true;
     }
 
     int32_t ret = algoInterface_->Init();

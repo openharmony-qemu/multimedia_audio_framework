@@ -99,4 +99,5 @@ namespace {
         int32_t ret = impl->DeInit();
         EXPECT_EQ(ret, SUCCESS);
     }
+
 }

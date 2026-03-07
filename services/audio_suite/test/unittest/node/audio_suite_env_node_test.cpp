@@ -53,6 +53,18 @@ HWTEST_F(AudioSuiteEnvNodeTest, testAudioSuiteEnvDeInit, TestSize.Level0)
     EXPECT_EQ(node->DeInit(), 0);
 }
 
+HWTEST_F(AudioSuiteEnvNodeTest, AudioSuiteEnvNodeInitTest, TestSize.Level0)
+{
+    auto node = std::make_shared<AudioSuiteEnvNode>();
+    node->isInit_ = true;
+    int32_t ret = node->Init();
+    EXPECT_EQ(ret, ERROR);
+
+    node->isInit_ = false;
+    ret = node->Init();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
 HWTEST_F(AudioSuiteEnvNodeTest, testAudioSuiteEnvSetOptions, TestSize.Level0)
 {
     auto node = std::make_shared<AudioSuiteEnvNode>();
