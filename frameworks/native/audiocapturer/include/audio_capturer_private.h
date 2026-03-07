@@ -115,6 +115,7 @@ public:
 
     int32_t StartPlaybackCapture() override;
     int32_t SetInMainThreadState(bool isInMainThread) override;
+    int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior) override;
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
