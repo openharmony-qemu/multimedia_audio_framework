@@ -20,7 +20,7 @@
 using namespace testing::ext;
 
 namespace OHOS {
-namespace AudioStandard {SS
+namespace AudioStandard {
 
 static std::shared_ptr<AudioPipeManager> sPipeManager_ = nullptr;
 
