@@ -26,11 +26,6 @@
 #include "system_ability_definition.h"
 #include "istandard_audio_service.h"
 
-namespace {
-constexpr size_t BIT_32 = 32;
-}
-
-
 namespace OHOS {
 namespace AudioStandard {
 constexpr unsigned int XCOLLIE_TIME_OUT_SECONDS = 10;
