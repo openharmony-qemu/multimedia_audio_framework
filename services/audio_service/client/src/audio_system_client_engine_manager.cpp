@@ -20,6 +20,10 @@
 #include "ipc_skeleton.h"
 #include "audio_errors.h"
 
+namespace {
+constexpr size_t BIT_32 = 32;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 AudioSystemClientEngineManager &AudioSystemClientEngineManager::GetInstance()
@@ -81,7 +85,7 @@ int32_t AudioSystemClientEngineManager::SetExtraParameters(const std::string &ke
 
 uint64_t AudioSystemClientEngineManager::GetTransactionId(DeviceType deviceType, DeviceRole deviceRole)
 {
-    return static_cast<uint64_t>(deviceType) << 32 | static_cast<uint64_t>(deviceRole);
+    return static_cast<uint64_t>(deviceType) << BIT_32 | static_cast<uint64_t>(deviceRole);
 }
 
 void AudioSystemClientEngineManager::SetAudioMonoState(bool monoState)
