@@ -308,6 +308,18 @@ void AudioSessionClientManager::OnAudioSessionStateChanged(const AudioSessionSta
     restoreParams_.OnAudioSessionStateChanged(stateChangedEvent.stateChangeHint);
 }
 
+int32_t AudioSessionClientManager::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionBehavior(behavior);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "SetAudioSessionBehavior failed, result:%{public}d", result);
+
+    RegisterAudioPolicyServerDiedCb();
+    restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_BEHAVIOR,
+        behavior);
+    return result;
+}
+
 bool AudioSessionClientManager::Restore()
 {
     AUDIO_INFO_LOG("start restore audio session manager params.");
