@@ -494,6 +494,8 @@ private:
     void UpdateVolumeWhenPassThroughDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
     void RedirectVolumeType(std::shared_ptr<AudioStreamDescriptor> streamDescriptor,
  	    AudioVolumeType &volumeType);
+    void SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
+        DeviceType deviceType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

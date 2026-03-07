@@ -587,9 +587,25 @@ int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamTyp
     int32_t maxRet = GetMaxVolumeLevel(streamType, deviceType);
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
-    CHECK_AND_RETURN_RET_LOG(handler_ != nullptr, ERROR, "handler_ is null");
-    handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
+    SaveSpecifiedDeviceVolumeInner(streamType, volumeLevel, deviceType);
     return SUCCESS;
+}
+
+void AudioAdapterManager::SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
+    DeviceType deviceType)
+{
+    std::thread([this, streamType, volumeLevel, deviceType]() {
+        AUDIO_INFO_LOG("SaveSpecifiedDeviceVolumeInner: streamType: %{public}d, volumeLevel: %{public}d, "
+            "deviceType: %{public}d", streamType, volumeLevel, deviceType);
+        auto desc = audioConnectedDevice_.GetDeviceByDeviceType(deviceType);
+        volumeDataMaintainer_.SaveVolumeToDb(desc, streamType, volumeLevel);
+        auto descs = audioConnectedDevice_.GetCopy();
+        for (auto &temp : descs) {
+            CHECK_AND_CONTINUE(temp != nullptr);
+            CHECK_AND_CONTINUE(temp->deviceType_ == deviceType);
+            UpdateVolumeWhenDeviceConnect(temp);
+        }
+    }).detach();
 }
 
 int32_t AudioAdapterManager::GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType)
