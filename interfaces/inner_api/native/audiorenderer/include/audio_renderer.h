@@ -1247,6 +1247,21 @@ public:
      */
     virtual bool ResetStaticPlayPosition() { return false; }
 
+    /**
+     * @brief Set focus policy independent of audiosession.
+     *
+     * @param strategy Audio session strategy.
+     * @param behavior behavior is used to adjust the focus behavior,
+     * which can be a single flag or a bitwise OR combination of multiple flags in AudioSessionBehaviorFlags.
+     * @return Returns {@link SUCCESS} if the getting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 24
+     */
+    virtual int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior)
+    {
+        return 0;
+    };
+
 private:
     virtual int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) { return 0; }
 
