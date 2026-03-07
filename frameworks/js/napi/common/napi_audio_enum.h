@@ -327,6 +327,7 @@ private:
     static const std::map<std::string, int32_t> renderTargetMap;
     static const std::map<std::string, int32_t> audioLatencyTypeMap;
     static const std::map<std::string, int32_t> BluetoothAndNearlinkPreferredRecordCategoryMap;
+    static const std::map<std::string, int32_t> AudioSessionBehaviorFlagsMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;
