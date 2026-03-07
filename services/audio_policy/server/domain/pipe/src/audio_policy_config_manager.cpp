@@ -505,14 +505,19 @@ bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
         AudioSampleFormat tempFormat = streamInfo.format;
         AudioChannelLayout tempLayout = streamInfo.channelLayout;
 
-        tempFormat = ((tempFormat == SAMPLE_S32LE) || (tempFormat == SAMPLE_F32LE)) ? SAMPLE_S16LE : tempFormat;
+        if (pipeIt.second->supportFlags_ == AUDIO_OUTPUT_FLAG_FAST) {
+            CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S32L || tempFormat == SAMPLE_F32LE ||
+                tempFormat == SAMPLE_S16LE, false);
+        }
+        if (pipeIt.second->supportFlags_ == AUDIO_INPUT_FLAG_FAST) {
+            CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S16LE, false);
+        }
+
         tempLayout = (tempLayout == CH_LAYOUT_MONO) ? CH_LAYOUT_STEREO : tempLayout;
 
         for (auto it = pipeIt.second->streamPropInfos_.begin(); it != pipeIt.second->streamPropInfos_.end(); ++it) {
-            if ((*it)->format_ == tempFormat && (*it)->sampleRate_ == streamInfo.samplingRate &&
-                (*it)->channelLayout_ == tempLayout) {
-                return true;
-            }
+            CHECK_AND_CONTINUE((*it)->format_ == tempFormat && (*it)->channelLayout_ == tempLayout);
+            return true;
         }
     }
 
