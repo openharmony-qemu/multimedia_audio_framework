@@ -142,9 +142,6 @@ void AudioInterruptService::SetSessionMuteState(uint32_t sessionId, bool insert,
 void AudioInterruptService::SetLatestMuteState(const InterruptEventInternal &interruptEvent,
     const uint32_t &streamId)
 {
-    CHECK_AND_RETURN_LOG(interruptEvent.hintType == INTERRUPT_HINT_MUTE ||
-        interruptEvent.hintType == INTERRUPT_HINT_UNMUTE, "unsupported hintType: %{public}d",
-        interruptEvent.hintType);
     bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
     streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
@@ -167,11 +164,9 @@ void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &c
         return;
     }
 
-    if (currentInterrupt.strategy == InterruptStrategy::MUTE) {
-        focusEntry.actionOn = CURRENT;
-    }
-    if (incomingInterrupt.strategy == InterruptStrategy::MUTE) {
-        focusEntry.actionOn = INCOMING;
+    if (!(currentInterrupt.strategy == InterruptStrategy::MUTE && focusEntry.actionOn == CURRENT) &&
+        !(incomingInterrupt.strategy == InterruptStrategy::MUTE && focusEntry.actionOn == INCOMING)) {
+        return;
     }
 
     AUDIO_INFO_LOG("currentStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
@@ -559,6 +554,25 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
         removeFocusInfo = false;
         muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
         AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
+    }
+}
+
+int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    sessionService_.SetAudioSessionBehavior(callerPid, behavior);
+    return SUCCESS;
+}
+ 
+void AudioInterruptService::HandleMuteAllStreamsInSession(const InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &audioInterrupt)
+{
+    bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
+    AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
+        audioInterrupt.pid, muteFlag);
+    const auto &interruptsInSession = sessionService_.GetStreams(audioInterrupt.pid);
+    for (auto interrupt : interruptsInSession) {
+        SetNonInterruptMute(interrupt.sessionId, muteFlag);
     }
 }
 }
