@@ -816,6 +816,14 @@ enum AudioSessionStateChangeHint: i32 {
   AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK = 5,
   AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION = 6,
   AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION = 7,
+  AUDIO_SESSION_STATE_CHANGE_HINT_MUTE = 8,
+  AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE = 9,
+}
+
+enum AudioSessionBehaviorFlags: i32 {
+  DEFAULT = 0x00000000,
+  VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
+  MUTE_WHEN_INTERRUPTED = 0x00000002,
 }
 
 enum OutputDeviceChangeRecommendedAction: i32 {
@@ -872,6 +880,8 @@ interface AudioSessionManager {
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
+
+  SetAudioSessionBehavior(behavior: i32): void;
 
   GetAvailableDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
 
@@ -994,6 +1004,8 @@ interface AudioCapturer {
   GetCurrentAudioCapturerChangeInfo(): AudioCapturerChangeInfo;
 
   SetInputDeviceToAccessory(): void;
+
+  SetIndependentAudioSessionStrategy(strategy: AudioSessionStrategy, behavior: i32): void;
 
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
@@ -1142,6 +1154,8 @@ interface AudioRenderer {
   GetLoudnessGain(): f64;
 
   GetLatency(type: AudioLatencyType): i32;
+
+  SetIndependentAudioSessionStrategy(strategy: AudioSessionStrategy, behavior: i32): void;
 
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
