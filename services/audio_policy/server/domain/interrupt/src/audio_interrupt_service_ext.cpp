@@ -164,9 +164,11 @@ void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &c
         return;
     }
 
-    if (!(currentInterrupt.strategy == InterruptStrategy::MUTE && focusEntry.actionOn == CURRENT) &&
-        !(incomingInterrupt.strategy == InterruptStrategy::MUTE && focusEntry.actionOn == INCOMING)) {
-        return;
+    if (currentInterrupt.strategy == InterruptStrategy::MUTE) {
+        focusEntry.actionOn = CURRENT;
+    }
+    if (incomingInterrupt.strategy == InterruptStrategy::MUTE) {
+        focusEntry.actionOn = INCOMING;
     }
 
     AUDIO_INFO_LOG("currentStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
