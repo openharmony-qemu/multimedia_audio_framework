@@ -3543,6 +3543,17 @@ int32_t AudioPolicyManager::NotifyStreamSilentChange(uint32_t streamId)
     gsp->NotifyStreamSilentChange(streamId);
     return SUCCESS;
 }
+
+int32_t AudioPolicyManager::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "RegisterPolicyCallbackClientFunc failed");
+    }
+    return gsp->SetAudioSessionBehavior(behavior);
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

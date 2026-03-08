@@ -132,6 +132,7 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("setDefaultOutputDevice", SetDefaultOutputDevice),
         DECLARE_NAPI_FUNCTION("setTarget", SetTarget),
         DECLARE_NAPI_FUNCTION("getTarget", GetTarget),
+        DECLARE_NAPI_FUNCTION("setIndependentAudioSessionStrategy", SetIndependentAudioSessionStrategy),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_RENDERER_CLASS_NAME.c_str(),
@@ -2469,6 +2470,40 @@ void NapiAudioRenderer::DestroyNAPICallbacks()
         rendererPolicyServiceDiedCallbackNapi_.reset();
         rendererPolicyServiceDiedCallbackNapi_ = nullptr;
     }
+}
+
+napi_value NapiAudioRenderer::SetIndependentAudioSessionStrategy(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value argv[ARGS_TWO] = {};
+    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "argcCount invaild");
+
+    AudioSessionStrategy audioSessionStrategy;
+    napi_status status = NapiParamUtils::GetAudioSessionStrategy(env, audioSessionStrategy, argv[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG((status == napi_ok), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "param1 verification failed: audioSessionStrategy wrong value"),
+        "valueType invalid");
+
+    uint32_t behavior;
+    status = NapiParamUtils::GetValueUInt32(env, behavior, argv[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG((status == napi_ok), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "param2 verification failed: behavior wrong value"),
+        "valueType invalid");
+    CHECK_AND_RETURN_RET_LOG(
+        behavior < (static_cast<int32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "Parameter verification failed. behavior param is out of range"), "invaild behavior param");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    int32_t ret =
+        napiAudioRenderer->audioRenderer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE), "SetIndependentAudioSessionStrategy Failed");
+    return result;
 }
 } // namespace AudioStandard
 } // namespace OHOS

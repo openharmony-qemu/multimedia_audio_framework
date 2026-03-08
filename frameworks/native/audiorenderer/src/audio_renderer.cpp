@@ -1799,8 +1799,9 @@ InterruptCallbackEvent AudioRendererInterruptCallbackImpl::HandleAndNotifyForced
             AUDIO_INFO_LOG("Unduck Volume successfully");
             isForceDucked_ = NO_EVENT;
             break;
+        case INTERRUPT_HINT_MUTE:
+        case INTERRUPT_HINT_UNMUTE:
         case INTERRUPT_HINT_MUTE_SUGGESTION:
-            break;
         case INTERRUPT_HINT_UNMUTE_SUGGESTION:
             break;
         default: // If the hintType is NONE, don't need to send callbacks
@@ -3272,5 +3273,19 @@ bool AudioRendererPrivate::ResetStaticPlayPosition()
     return audioStream_->ResetStaticPlayPosition();
 }
 
+int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
+    const AudioSessionStrategy &strategy, const uint32_t behavior)
+{
+    audioInterrupt_.behaviorFlags_ = {};
+    if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
+        audioInterrupt_.strategy = InterruptStrategy::MUTE;
+        audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
+        AUDIO_INFO_LOG("Renderer id: %{public}d activated MUTE_WHEN_INTERRUPTED success",sessionID_);
+    }
+    audioInterrupt_.independentStrategy = strategy;
+    AUDIO_INFO_LOG("Renderer id: %{public}d set independentStrategy: %{public}d",
+        sessionID_, static_cast<int32_t>(strategy.concurrencyMode));
+    return SUCCESS;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
