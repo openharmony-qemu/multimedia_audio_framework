@@ -1136,6 +1136,7 @@ struct AppInfo {
     uint32_t appTokenId { 0 };
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
+    std::string deviceId {""};
 };
 
 struct BufferQueueState {
@@ -1432,6 +1433,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteUint32(appInfo.appTokenId);
         parcel.WriteInt32(appInfo.appPid);
         parcel.WriteUint64(appInfo.appFullTokenId);
+        parcel.WriteString(appInfo.deviceId);
 
         // AudioStreamInfo
         parcel.WriteInt32(streamInfo.samplingRate);
@@ -1495,6 +1497,7 @@ struct AudioProcessConfig : public Parcelable {
         config->appInfo.appTokenId = parcel.ReadUint32();
         config->appInfo.appPid = parcel.ReadInt32();
         config->appInfo.appFullTokenId = parcel.ReadUint64();
+        config->appInfo.deviceId = parcel.ReadString();
 
         // AudioStreamInfo
         config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());

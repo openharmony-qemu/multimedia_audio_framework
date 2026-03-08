@@ -657,6 +657,11 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
+{
+    return AudioPolicyUtils::GetInstance().GetRemoteDeviceName(deviceId, deviceName);
+}
+
 int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo,
     int32_t type, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList)
 {

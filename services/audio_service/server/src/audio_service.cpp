@@ -860,6 +860,11 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDev
     return false;
 }
 
+bool AudioService::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
+{
+    return PolicyHandler::GetInstance().GetRemoteDeviceName(deviceId, deviceName);
+}
+
 #ifdef SUPPORT_LOW_LATENCY
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {

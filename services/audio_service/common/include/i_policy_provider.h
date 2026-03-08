@@ -88,6 +88,8 @@ public:
     virtual int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo) = 0;
 
+    virtual int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName) = 0;
+
     virtual int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) = 0;
 
     virtual int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,

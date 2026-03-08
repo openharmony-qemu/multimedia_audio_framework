@@ -605,6 +605,21 @@ void AudioPolicyUtils::UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDes
 #endif
 }
 
+int32_t AudioPolicyUtils::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
+{
+#ifdef FEATURE_DEVICE_MANAGER
+    std::shared_ptr<DistributedHardware::DmInitCallback> callback = std::make_shared<DeviceInitCallBack>();
+    int32_t ret = DistributedHardware::DeviceManager::GetInstance().InitDeviceManager(AUDIO_SERVICE_PKG, callback);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "init device failed");
+    DistributedHardware::DmDeviceInfo deviceInfo;
+    ret = DistributedHardware::DeviceManager::GetInstance().
+        GetDeviceInfo(AUDIO_SERVICE_PKG, deviceId, deviceInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "get device info failed");
+    deviceName = deviceInfo.deviceName;
+#endif
+    return SUCCESS;
+}
+
 void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
 {
     Trace trace("AudioPolicyUtils::UpdateEffectDefaultSink:" + std::to_string(deviceType));

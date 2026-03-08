@@ -56,7 +56,7 @@ public:
 
     // IAudioStream
     void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
-
+    void SetClientDeviceId(const std::string &deviceId) override;
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId) override;
     int32_t SetInMainThreadState(bool isInMainThread) override;

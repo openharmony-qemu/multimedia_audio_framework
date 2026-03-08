@@ -74,6 +74,8 @@ public:
 
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
+    void TurnOnRemoteMicIndicator();
+    void TurnOffRemoteMicIndicator();
 
 private:
     bool CheckBGCapture();
@@ -105,6 +107,7 @@ private:
 
     bool needCheckBackground_ = false;
     bool isMicIndicatorOn_ = false;
+    bool isRemoteMicIndicatorOn_ = false;
 
     std::mutex filterConfigLock_;
     AudioPlaybackCaptureConfig filterConfig_;
@@ -135,6 +138,7 @@ private:
     int32_t innerCapId_ = 0;
     std::string asrBundleName_ = "";
     std::atomic<bool> rebuildFlag_ = false;
+    std::string deviceId_ = "";
 
     int64_t lastStartTime_{};
     int64_t lastStopTime_{};
