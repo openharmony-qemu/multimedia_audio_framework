@@ -3149,10 +3149,10 @@ int32_t AudioCoreService::FetchTargetInfoForSessionAdd(const SessionInfo session
     const uint32_t bytesPerSample = AudioPolicyUtils::GetInstance().PcmFormatToBytes(targetInfo.format_);
     if (bytesPerSample > 0 && targetInfo.sampleRate_ > 0 && targetInfo.channels_ > 0 && targetInfo.bufferSize_ > 0) {
         const uint64_t denom = static_cast<uint64_t>(targetInfo.sampleRate_) *
-            static_cast<uint64_t>(targetInfo.channels_) *
-            static_cast<uint64_t>(bytesPerSample);
+                            static_cast<uint64_t>(targetInfo.channels_) *
+                            static_cast<uint64_t>(bytesPerSample);
         const uint64_t number = static_cast<uint64_t>(targetInfo.bufferSize_) *
-            static_cast<uint64_t>(MS_PER_S);
+                            static_cast<uint64_t>(MS_PER_S);
         targetBufferMs = static_cast<uint32_t>((number + denom / 2) / denom);
     }
 
@@ -3204,7 +3204,6 @@ void AudioCoreService::UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDesc
                             static_cast<uint64_t>(bytesPerSample);
         CHECK_AND_RETURN_LOG(denom > 0, "denom is 0");
         const uint64_t number = static_cast<uint64_t>(bufferSizeValue) *
-
                             static_cast<uint64_t>(MS_PER_S);
         buffCalcMs = static_cast<uint32_t>((number + denom / 2) / denom);
     }
