@@ -1114,9 +1114,7 @@ void HpaeManager::HandleMoveSinkInput(const std::shared_ptr<HpaeSinkInputNode> s
     rendererManager->AddNodeToSink(sinkInputNode);
     rendererIdSinkNameMap_[sessionId] = sinkName;
     rendererIdStreamInfoMap_[sessionId].streamInfo.deviceName = sinkName;
-    if (sinkName != defaultSink_) {
-        idPreferSinkNameMap_[sessionId] = sinkName;
-    }
+    idPreferSinkNameMap_[sessionId] = sinkName;
     if (sinkInputs_.find(sessionId) != sinkInputs_.end()) {
         sinkInputs_[sessionId].deviceSinkId = sinkNameSinkIdMap_[sinkName];
         sinkInputs_[sessionId].sinkName = sinkName;
