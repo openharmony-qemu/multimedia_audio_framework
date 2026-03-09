@@ -1354,7 +1354,7 @@ napi_status NapiParamUtils::GetAudioSessionStrategy(const napi_env &env,
     if (status == napi_ok) {
         CHECK_AND_RETURN_RET_LOG((intValue >= static_cast<int32_t>(AudioConcurrencyMode::DEFAULT) &&
             intValue <= static_cast<int32_t>(AudioConcurrencyMode::PAUSE_OTHERS)),
-            napi_generic_failure, "invaild concurrencyMode");
+            napi_generic_failure, "invalid concurrencyMode");
         audioSessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(intValue);
         return napi_ok;
     } else {
