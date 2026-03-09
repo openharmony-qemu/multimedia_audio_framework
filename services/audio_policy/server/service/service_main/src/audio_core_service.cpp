@@ -3415,9 +3415,17 @@ void AudioCoreService::PrepareNormalSource(std::shared_ptr<AudioPipeInfo> &pipeI
     SetOpenedNormalSourceSessionId(streamDesc->sessionId_);
 }
 
+void AudioCoreService::UpdateModuleInfoDeviceType(AudioModuleInfo &moduleInfo,
+    const std::shared_ptr<AudioDeviceDescriptor> &inputDesc)
+{
+    CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
+    moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
+}
+
 void AudioCoreService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo,
     SourceType sourceType)
 {
+    shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
     if (!isEcFeatureEnable_) {
         moduleInfo = primaryMicModuleInfo_;
         // current layout represents the number of channel. This will need to be modify in the future.
@@ -3427,8 +3435,8 @@ void AudioCoreService::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeS
         moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
         moduleInfo.sourceType = std::to_string(sourceType);
         moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
+        UpdateModuleInfoDeviceType(moduleInfo, inputDesc);
     } else {
-        shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             moduleInfo = usbSourceModuleInfo_;
             moduleInfo.sourceType = std::to_string(sourceType);
