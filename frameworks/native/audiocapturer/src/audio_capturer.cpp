@@ -2094,12 +2094,12 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
     if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) &&
         (audioInterrupt_.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION)) {
         audioInterrupt_.behaviorFlags_.voipNoPrivacyFlag = true;
-        AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success",sessionID_);
+        AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
     }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
         audioInterrupt_.strategy = InterruptStrategy::MUTE;
         audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
-        AUDIO_INFO_LOG("Capturer id: %{public}d activated MUTE_WHEN_INTERRUPTED success",sessionID_);
+        AUDIO_INFO_LOG("Capturer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
     }
     audioInterrupt_.independentStrategy = strategy;
     AUDIO_INFO_LOG("Capturer id: %{public}d set independentStrategy: %{public}d",

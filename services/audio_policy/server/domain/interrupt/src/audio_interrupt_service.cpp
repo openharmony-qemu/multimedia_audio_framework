@@ -1626,7 +1626,7 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
         {AudioConcurrencyMode::PAUSE_OTHERS, INTERRUPT_HINT_PAUSE},
     };
 
-    AudioConcurrencyMode concurrencyMode = AudioConcurrencyMode::INVALID;
+    AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
     if (focusEntry.actionOn == CURRENT) {
         bool modeUpdate = false;
         if (incomingInterrupt.independentStrategy.concurrencyMode != AudioConcurrencyMode::INVALID) {

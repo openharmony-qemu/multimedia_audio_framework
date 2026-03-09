@@ -164,6 +164,10 @@ void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &c
         return;
     }
 
+    if (focusEntry.actionOn == CURRENT && incomingInterrupt.focusEntry.sourceType == SOURCE_TYPE_INVALID) {
+        return;
+    }
+
     if (currentInterrupt.strategy == InterruptStrategy::MUTE) {
         focusEntry.actionOn = CURRENT;
     }

@@ -141,7 +141,7 @@ typedef enum {
      * @brief The hint can be received only after the parameter
      * {@link OH_AudioSession_BehaviorFlags.MUTE_WHEN_INTERRUPTED}
      * has been set by the interface {@link #OH_AudioSessionManager_SetBehavior}
-     * and {@link #OH_AudioSessionManager_SetScene} has been called. 
+     * and {@link #OH_AudioSessionManager_SetScene} has been called.
      * After the hint is received, the audio stream is muted.
      *
      * @since 24
