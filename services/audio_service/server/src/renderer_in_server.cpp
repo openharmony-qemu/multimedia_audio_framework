@@ -1566,7 +1566,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE,
         SESSION_OP_MSG_DEFAULT, needRemoveFromMap);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
-         HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", ret));
+        HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", ret));
 
     RemoveIdForInjector();
     if (status_ != I_STATUS_STOPPING &&
