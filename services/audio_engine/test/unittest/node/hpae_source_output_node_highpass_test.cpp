@@ -19,6 +19,7 @@
 #include <cstring>
 #include <iostream>
 #include <functional>
+#include <dlfcn.h>
 #include "hpae_source_output_node.h"
 #include "hpae_pcm_buffer.h"
 #include "hpae_node_common.h"
@@ -39,6 +40,18 @@ namespace HPAE {
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
+
+const std::string HIGH_PASS_FILTER_SO = "/system/lib64/libhighpass_filter.z.so";
+
+static bool IsPcDevice()
+{
+    void *handle = dlopen(HIGH_PASS_FILTER_SO.c_str(), RTLD_LAZY);
+    if (handle != nullptr) {
+        dlclose(handle);
+        return true;
+    }
+    return false;
+}
 
 class TestHighPassFilter : public IHighPassFilter {
 public:
@@ -182,9 +195,16 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_Ultrasonic_001, 
     auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
     EXPECT_NE(node, nullptr);
 
-    EXPECT_EQ(node->isSupportHighpassFilter_, true);
-    EXPECT_NE(node->highpassFilter_, nullptr);
-    EXPECT_EQ(node->filterChannelCount_, STEREO);
+    bool isPc = IsPcDevice();
+    if (isPc) {
+        EXPECT_EQ(node->isSupportHighpassFilter_, true);
+        EXPECT_NE(node->highpassFilter_, nullptr);
+        EXPECT_EQ(node->filterChannelCount_, STEREO);
+    } else {
+        EXPECT_EQ(node->isSupportHighpassFilter_, false);
+        EXPECT_EQ(node->highpassFilter_, nullptr);
+        EXPECT_EQ(node->filterChannelCount_, 0);
+    }
 }
 
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_NonPcDevice_Mic_001, TestSize.Level1)
@@ -225,7 +245,6 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_VoiceComm_001, T
     EXPECT_EQ(node->highpassFilter_, nullptr);
 }
 
-
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_DifferentChannels_001, TestSize.Level1)
 {
     SetPcEnableState(1);
@@ -241,16 +260,23 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_DifferentChannel
         {CHANNEL_8, "8_CHANNELS"}
     };
 
+    bool isPc = IsPcDevice();
     for (const auto& testCase : testCases) {
         auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
         nodeInfo.channels = testCase.channels;
 
         auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
-        EXPECT_NE(node, nullptr) << "Failed for " << testCase.name;
+        EXPECT_NE(node, nullptr);
 
-        EXPECT_EQ(node->isSupportHighpassFilter_, true) << "Failed for " << testCase.name;
-        EXPECT_NE(node->highpassFilter_, nullptr) << "Failed for " << testCase.name;
-        EXPECT_EQ(node->filterChannelCount_, static_cast<int32_t>(testCase.channels)) << "Failed in " << testCase.name;
+        if (isPc) {
+            EXPECT_EQ(node->isSupportHighpassFilter_, true);
+            EXPECT_NE(node->highpassFilter_, nullptr);
+            EXPECT_EQ(node->filterChannelCount_, static_cast<int32_t>(testCase.channels));
+        } else {
+            EXPECT_EQ(node->isSupportHighpassFilter_, false);
+            EXPECT_EQ(node->highpassFilter_, nullptr);
+            EXPECT_EQ(node->filterChannelCount_, 0);
+        }
     }
 }
 
@@ -260,16 +286,23 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Constructor_PcDevice_DifferentFrameLe
 
     std::vector<uint32_t> frameLengths = {512, 960, 1024, 2048, 4096};
 
+    bool isPc = IsPcDevice();
     for (auto frameLen : frameLengths) {
         auto nodeInfo = GetTestNodeInfo(SOURCE_TYPE_ULTRASONIC);
         nodeInfo.frameLen = frameLen;
 
         auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
-        EXPECT_NE(node, nullptr) << "Failed for frameLen=" << frameLen;
+        EXPECT_NE(node, nullptr);
 
-        EXPECT_EQ(node->isSupportHighpassFilter_, true) << "Failed for frameLen=" << frameLen;
-        EXPECT_NE(node->highpassFilter_, nullptr) << "Failed for frameLen=" << frameLen;
-        EXPECT_EQ(node->filterChannelCount_, STEREO) << "Failed for frameLen=" << frameLen;
+        if (isPc) {
+            EXPECT_EQ(node->isSupportHighpassFilter_, true);
+            EXPECT_NE(node->highpassFilter_, nullptr);
+            EXPECT_EQ(node->filterChannelCount_, STEREO);
+        } else {
+            EXPECT_EQ(node->isSupportHighpassFilter_, false);
+            EXPECT_EQ(node->highpassFilter_, nullptr);
+            EXPECT_EQ(node->filterChannelCount_, 0);
+        }
     }
 }
 
@@ -397,10 +430,15 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SetAppUid_PcDevice_WithFilter_001, Te
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, Destructor_PcDevice_WithFilter_001, TestSize.Level1)
 {
     SetPcEnableState(1);
+    bool isPc = IsPcDevice();
     {
         auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
         ASSERT_NE(node, nullptr);
-        ASSERT_NE(node->highpassFilter_, nullptr);
+        if (isPc) {
+            ASSERT_NE(node->highpassFilter_, nullptr);
+        } else {
+            ASSERT_EQ(node->highpassFilter_, nullptr);
+        }
     }
     SUCCEED();
 }
@@ -408,6 +446,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, Destructor_PcDevice_WithFilter_001, T
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, MultipleNodes_PcDevice_WithFilters_001, TestSize.Level1)
 {
     SetPcEnableState(1);
+    bool isPc = IsPcDevice();
 
     std::vector<std::unique_ptr<HpaeSourceOutputNode>> nodes;
 
@@ -417,8 +456,13 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, MultipleNodes_PcDevice_WithFilters_00
 
         auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
         EXPECT_NE(node, nullptr);
-        EXPECT_EQ(node->isSupportHighpassFilter_, true);
-        EXPECT_NE(node->highpassFilter_, nullptr);
+        if (isPc) {
+            EXPECT_EQ(node->isSupportHighpassFilter_, true);
+            EXPECT_NE(node->highpassFilter_, nullptr);
+        } else {
+            EXPECT_EQ(node->isSupportHighpassFilter_, false);
+            EXPECT_EQ(node->highpassFilter_, nullptr);
+        }
 
         nodes.push_back(std::move(node));
     }
@@ -470,7 +514,6 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, StateTransitions_PcDevice_WithFilter_
     }
 }
 
-
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_ZeroFrameLength_001, TestSize.Level1)
 {
     SetPcEnableState(1);
@@ -515,7 +558,8 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, EdgeCase_PcDevice_MonoChannel_001, Te
     auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
     EXPECT_NE(node, nullptr);
 
-    if (node->isSupportHighpassFilter_) {
+    bool isPc = IsPcDevice();
+    if (isPc && node->isSupportHighpassFilter_) {
         EXPECT_EQ(node->filterChannelCount_, static_cast<int32_t>(MONO));
     }
 }
@@ -530,6 +574,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SourceTypeCombination_001, TestSize.L
         SOURCE_TYPE_PLAYBACK_CAPTURE
     };
 
+    bool isPc = IsPcDevice();
     for (auto sourceType : testTypes) {
         if (sourceType == SOURCE_TYPE_ULTRASONIC) {
             SetPcEnableState(1);
@@ -541,7 +586,7 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SourceTypeCombination_001, TestSize.L
         auto node = std::make_unique<HpaeSourceOutputNode>(nodeInfo);
         EXPECT_NE(node, nullptr);
 
-        bool expectedSupport = (sourceType == SOURCE_TYPE_ULTRASONIC && PC_ENABLE_STATE != 0);
+        bool expectedSupport = (isPc && sourceType == SOURCE_TYPE_ULTRASONIC && PC_ENABLE_STATE != 0);
         EXPECT_EQ(node->isSupportHighpassFilter_, expectedSupport);
 
         if (expectedSupport) {
@@ -555,12 +600,18 @@ HWTEST_F(HpaeSourceOutputNodeHighpassTest, SourceTypeCombination_001, TestSize.L
 HWTEST_F(HpaeSourceOutputNodeHighpassTest, MemoryAllocation_PcDevice_001, TestSize.Level1)
 {
     SetPcEnableState(1);
+    bool isPc = IsPcDevice();
 
     for (int i = 0; i < 100; ++i) {
         auto node = CreateTestNode(SOURCE_TYPE_ULTRASONIC);
         ASSERT_NE(node, nullptr);
-        ASSERT_EQ(node->isSupportHighpassFilter_, true);
-        ASSERT_NE(node->highpassFilter_, nullptr);
+        if (isPc) {
+            ASSERT_EQ(node->isSupportHighpassFilter_, true);
+            ASSERT_NE(node->highpassFilter_, nullptr);
+        } else {
+            ASSERT_EQ(node->isSupportHighpassFilter_, false);
+            ASSERT_EQ(node->highpassFilter_, nullptr);
+        }
     }
 }
 } // namespace HPAE
