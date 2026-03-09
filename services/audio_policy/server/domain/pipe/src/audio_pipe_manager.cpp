@@ -343,13 +343,11 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             std::shared_ptr<AudioStreamDescriptor> tmp = std::make_shared<AudioStreamDescriptor>();
             tmp->newDeviceDescs_ = desc->newDeviceDescs_;
-            tmp->rendererInfo_ = desc->rendererInfo_;
+            tmp->rendererInfo_.streamUsage = desc->rendererInfo_.streamUsage;
             tmp->appInfo_ = desc->appInfo_;
             tmp->sessionId_ = desc->sessionId_;
             tmp->callerUid_ = desc->callerUid_;
             tmp->callerPid_ = desc->callerPid_;
-            tmp->streamStatus_ = desc->streamStatus_;
-            tmp->bundleName_ = desc->bundleName_;
             streamDescs.push_back(tmp);
         }
     }
