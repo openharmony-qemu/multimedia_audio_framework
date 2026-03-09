@@ -2692,6 +2692,7 @@ int32_t AudioCoreService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo
     if (pipeInfo != nullptr && IsPipeInSourceStrategyMap(pipeInfo, sessionID)) {
         AUDIO_WARNING_LOG("pipe:%{public}s routeFlag:%{public}u need not add",
             pipeInfo->name_.c_str(), pipeInfo->routeFlag_);
+            sessionWithInputPipeRouteFlag_[sessionID] = pipeInfo->routeFlag_;
             sessionWithInputPipeAdapterName_[sessionID] = pipeInfo->adapterName_;
             return SUCCESS;
     }
