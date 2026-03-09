@@ -359,6 +359,7 @@ void HpaeGainNode::SetCollFadeState(IOperation operation)
 
 void HpaeGainNode::DoCollFading(HpaePcmBuffer *input)
 {
+#ifndef CONFIG_FACTORY_VERSION
     AudioRawFormat rawFormat;
     rawFormat.format = SAMPLE_F32LE; // for now PCM in gain node is float32
     rawFormat.channels = GetChannelCount();
@@ -366,11 +367,14 @@ void HpaeGainNode::DoCollFading(HpaePcmBuffer *input)
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     uint32_t index = GetFadeLength(byteLength, input);
     int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
+#endif
     // do fade out
     if (collFadeOutState_ == FadeOutState::DO_FADEOUT) {
         auto ret = SUCCESS;
+#ifndef CONFIG_FACTORY_VERSION
         AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
         ret = ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+#endif
         collFadeOutState_ = FadeOutState::DONE_FADEOUT;
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
@@ -387,8 +391,10 @@ void HpaeGainNode::DoCollFading(HpaePcmBuffer *input)
             return;
         }
         auto ret = SUCCESS;
+#ifndef CONFIG_FACTORY_VERSION
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
         ret = ProcessVol(data + index, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+#endif
         collFadeInState_ = false;
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "do fade in fail");
     }

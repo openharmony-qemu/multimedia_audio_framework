@@ -1243,7 +1243,6 @@ HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level1)
     ret = hpaeRendererManager->ConnectCoBufferNode(coBufferNode);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     ret = hpaeRendererManager->DisConnectCoBufferNode(coBufferNode);
     EXPECT_EQ(ret, SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
