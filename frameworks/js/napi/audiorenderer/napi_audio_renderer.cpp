@@ -2497,7 +2497,7 @@ napi_value NapiAudioRenderer::SetIndependentAudioSessionStrategy(napi_env env, n
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "Parameter verification failed. behavior param is out of range"), "invaild behavior param");
 
-    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioCapturer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
     int32_t ret =
         napiAudioRenderer->audioRenderer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
