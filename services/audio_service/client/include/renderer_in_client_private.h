@@ -258,6 +258,8 @@ private:
 
     int32_t WriteRawBuffer(BufferDesc &bufferDesc);
 
+    int32_t Write3DADirectBuffer(BufferDesc &bufferDesc);
+
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
@@ -273,7 +275,6 @@ private:
     bool ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached);
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
-    void WriteAudioVividDirect(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     bool IsMutePlaying();
     void MonitorMutePlay(bool isPlayEnd);
@@ -348,8 +349,6 @@ private:
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
 
-    std::vector<uint8_t> outPackedBuf_;
-    size_t outPackedLen_ = 0;
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 
     AudioRendererInfo rendererInfo_ = {};
