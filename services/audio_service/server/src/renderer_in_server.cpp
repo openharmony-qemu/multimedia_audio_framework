@@ -1563,7 +1563,7 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     }
 
     bool needRemoveFromMap = !isSwitchStream;
-    int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE,
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE,
         SESSION_OP_MSG_DEFAULT, needRemoveFromMap);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,	 
          HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", ret));
