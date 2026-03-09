@@ -496,6 +496,7 @@ int32_t NoneMixEngine::InitSink(uint32_t channel, AudioSampleFormat format, uint
 {
     std::string sinkName = DIRECT_SINK_NAME;
     if (isVoip_) {
+        firstSetVolume_ = true;
         sinkName = VOIP_SINK_NAME;
     }
     renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, sinkName, true);
