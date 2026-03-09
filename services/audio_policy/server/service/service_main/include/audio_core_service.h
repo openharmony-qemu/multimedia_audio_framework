@@ -444,6 +444,8 @@ private:
     void UpdateEnhanceEffectState(SourceType source);
     void UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &pipeInfo, SourceType sourceType);
     void UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStreamPropInfo &targetInfo, SourceType sourceType);
+    void UpdateModuleInfoDeviceType(AudioModuleInfo &moduleInfo,
+        const std::shared_ptr<AudioDeviceDescriptor> &inputDesc);
     void UpdateAudioEcInfo(const AudioDeviceDescriptor &inputDevice, const AudioDeviceDescriptor &outputDevice);
     void UpdateModuleInfoForEc(AudioModuleInfo &moduleInfo);
     void UpdateModuleInfoForMicRef(AudioModuleInfo &moduleInfo, SourceType sourceType);
