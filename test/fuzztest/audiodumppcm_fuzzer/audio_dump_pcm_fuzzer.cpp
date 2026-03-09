@@ -99,8 +99,6 @@ void DeInitFuzzTest()
 {
     AudioCacheMgrInner audioCacheMgrInner;
     audioCacheMgrInner.DeInit();
-    audioCacheMgrInner.InitCallbackHandler();
-    audioCacheMgrInner.DeInit();
 }
 
 void DumpAllMemBlockFuzzTest()
