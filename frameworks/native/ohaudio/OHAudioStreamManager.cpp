@@ -169,6 +169,66 @@ bool OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(
     return ohAudioStreamManager->IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType);
 }
 
+bool OH_AudioStreamManager_IsMultichannelPlaybackSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage)
+{
+    OHAudioStreamManager* ohAudioStreamManager = convertManager(streamManager);
+    if (ohAudioStreamManager == nullptr || streamInfo == nullptr || !VALID_OH_STREAM_USAGES.count(usage)) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return false;
+    }
+
+    StreamUsage streamUsage = static_cast<StreamUsage>(usage);
+    AudioStreamInfo audioStreamInfo = {
+        (AudioSamplingRate)streamInfo->samplingRate,
+        (AudioEncodingType)streamInfo->encodingType,
+        (AudioSampleFormat)streamInfo->sampleFormat,
+        AudioChannel::STEREO,
+        (AudioChannelLayout)streamInfo->channelLayout
+    };
+    return ohAudioStreamManager->IsMultichannelPlaybackSupported(audioStreamInfo, streamUsage);
+}
+
+bool OH_AudioStreamManager_IsDirectPlaybackSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage)
+{
+    OHAudioStreamManager* ohAudioStreamManager = convertManager(streamManager);
+    if (ohAudioStreamManager == nullptr || streamInfo == nullptr || !VALID_OH_STREAM_USAGES.count(usage)) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return false;
+    }
+
+    StreamUsage streamUsage = static_cast<StreamUsage>(usage);
+    AudioStreamInfo audioStreamInfo = {
+        (AudioSamplingRate)streamInfo->samplingRate,
+        (AudioEncodingType)streamInfo->encodingType,
+        (AudioSampleFormat)streamInfo->sampleFormat,
+        AudioChannel::STEREO,
+        (AudioChannelLayout)streamInfo->channelLayout
+    };
+    return ohAudioStreamManager->IsDirectPlaybackSupported(audioStreamInfo, streamUsage);
+}
+
+bool OH_AudioStreamManager_IsOffloadPlaybackSupported(
+    OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage)
+{
+    OHAudioStreamManager* ohAudioStreamManager = convertManager(streamManager);
+    if (ohAudioStreamManager == nullptr || streamInfo == nullptr || !VALID_OH_STREAM_USAGES.count(usage)) {
+        AUDIO_ERR_LOG("Invalid params!");
+        return false;
+    }
+
+    StreamUsage streamUsage = static_cast<StreamUsage>(usage);
+    AudioStreamInfo audioStreamInfo = {
+        (AudioSamplingRate)streamInfo->samplingRate,
+        (AudioEncodingType)streamInfo->encodingType,
+        (AudioSampleFormat)streamInfo->sampleFormat,
+        AudioChannel::STEREO,
+        (AudioChannelLayout)streamInfo->channelLayout
+    };
+    return ohAudioStreamManager->IsOffloadPlaybackSupported(audioStreamInfo, streamUsage);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 

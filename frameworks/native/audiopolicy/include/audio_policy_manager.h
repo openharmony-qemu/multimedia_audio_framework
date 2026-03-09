@@ -99,6 +99,12 @@ public:
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
+    bool IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+
+    bool IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+
+    bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);

@@ -17,6 +17,7 @@
 #define TAIHE_AUDIO_STREAM_MANAGER_H
 
 #include "audio_stream_manager.h"
+#include "audio_stream_info.h"
 #include "taihe_audio_renderer_state_callback.h"
 #include "taihe_audio_capturer_state_callback.h"
 
@@ -44,12 +45,11 @@ public:
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool IsRecordingAvailable(AudioCapturerInfo capturerInfo);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
-    // 5个新增的ArkTS接口方法
-    bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
-    bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
-    bool IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
-    bool IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
-    bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
+    bool IsFastPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage);
+    bool IsFastRecordingSupported(AudioStreamInfo streamInfo, SourceType source);
+    bool IsMultichannelPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage);
+    bool IsDirectPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage);
+    bool IsOffloadPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage);
     void OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback);
     void OnAudioCapturerChange(callback_view<void(array_view<AudioCapturerChangeInfo>)> callback);
     void OffAudioRendererChange(optional_view<callback<void(array_view<AudioRendererChangeInfo>)>> callback);

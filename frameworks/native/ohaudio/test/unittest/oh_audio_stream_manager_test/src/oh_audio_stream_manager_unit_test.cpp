@@ -223,5 +223,110 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsIntelligentNoiseRed
         sourceType);
     EXPECT_EQ(result, false);
 }
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsMultichannelPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsMultichannelPlaybackSupported_001
+ * @tc.desc  : Test OH_AudioStreamManager_IsMultichannelPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsMultichannelPlaybackSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    OH_AudioStream_Usage usage = static_cast<OH_AudioStream_Usage>(100);
+    auto result = OH_AudioStreamManager_IsMultichannelPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsMultichannelPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsMultichannelPlaybackSupported_002
+ * @tc.desc  : Test OH_AudioStreamManager_IsMultichannelPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsMultichannelPlaybackSupported_002, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioStreamManager, nullptr);
+    streamInfo->samplingRate = 48000;
+    streamInfo->channelLayout = CH_LAYOUT_2POINT1;
+    streamInfo->encodingType = AUDIOSTREAM_ENCODING_TYPE_E_AC3;
+    streamInfo->sampleFormat = AUDIOSTREAM_SAMPLE_F32LE;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    auto result = OH_AudioStreamManager_IsMultichannelPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsDirectPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsDirectPlaybackSupported_001
+ * @tc.desc  : Test OH_AudioStreamManager_IsDirectPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsDirectPlaybackSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    OH_AudioStream_Usage usage = static_cast<OH_AudioStream_Usage>(100);
+    auto result = OH_AudioStreamManager_IsDirectPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsDirectPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsDirectPlaybackSupported_002
+ * @tc.desc  : Test OH_AudioStreamManager_IsDirectPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsDirectPlaybackSupported_002, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioStreamManager, nullptr);
+    streamInfo->samplingRate = 48000;
+    streamInfo->channelLayout = CH_LAYOUT_STEREO;
+    streamInfo->encodingType = AUDIOSTREAM_ENCODING_TYPE_RAW;
+    streamInfo->sampleFormat = AUDIOSTREAM_SAMPLE_F32LE;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    auto result = OH_AudioStreamManager_IsDirectPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsOffloadPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsOffloadPlaybackSupported_001
+ * @tc.desc  : Test OH_AudioStreamManager_IsOffloadPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsOffloadPlaybackSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    OH_AudioStream_Usage usage = static_cast<OH_AudioStream_Usage>(100);
+    auto result = OH_AudioStreamManager_IsOffloadPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsOffloadPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsOffloadPlaybackSupported_002
+ * @tc.desc  : Test OH_AudioStreamManager_IsOffloadPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsOffloadPlaybackSupported_002, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioStreamManager, nullptr);
+    streamInfo->samplingRate = 48000;
+    streamInfo->channelLayout = CH_LAYOUT_STEREO;
+    streamInfo->encodingType = AUDIOSTREAM_ENCODING_TYPE_E_AC3;
+    streamInfo->sampleFormat = AUDIOSTREAM_SAMPLE_F32LE;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    auto result = OH_AudioStreamManager_IsOffloadPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

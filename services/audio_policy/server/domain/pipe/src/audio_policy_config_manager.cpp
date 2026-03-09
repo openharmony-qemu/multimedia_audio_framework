@@ -516,7 +516,7 @@ bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
         tempLayout = (tempLayout == CH_LAYOUT_MONO) ? CH_LAYOUT_STEREO : tempLayout;
 
         for (auto it = pipeIt.second->streamPropInfos_.begin(); it != pipeIt.second->streamPropInfos_.end(); ++it) {
-            CHECK_AND_CONTINUE((*it)->format_ == tempFormat && (*it)->channelLayout_ == tempLayout);
+            CHECK_AND_CONTINUE((*it)->sampleRate_ == streamInfo.samplingRate && (*it)->channelLayout_ == tempLayout);
             return true;
         }
     }
@@ -1145,52 +1145,80 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
 bool AudioPolicyConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo,
     std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+    bool isSupported = false;
+    for (auto &audioDeviceDescriptor : desc) {
+        CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 
-    // Check if device supports multichannel output
-    // Multichannel support means the device can output more than 2 channels
-    // This is determined by checking the device capabilities and channel layout
-    auto tempStreamProp = GetStreamPropInfoForMultiChannel(desc, deviceInfo->adapterPipeInfo_, streamInfo);
+        isSupported = GetPlaybackStreamSupport(streamInfo, AUDIO_OUTPUT_FLAG_MULTICHANNEL,
+            audioDeviceDescriptor);
 
-    if (tempStreamProp != nullptr) {
-        return true;
+        CHECK_AND_BREAK_LOG(!isSupported, "Support MultichannelPlayback");
     }
 
+    return isSupported;
+}
+
+bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamInfo, uint32_t flag,
+    std::shared_ptr<AUdioDeviceDescriptor> &audioDeviceDesc)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
+
+    deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDesc->deviceType_,
+        audioDeviceDesc->deviceRole_, audioDeviceDesc->networkId_, flag);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+
+    for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+        CHECK_AND_CONTINUE(pipeIt.second != nullptr);
+
+        CHECK_AND_CONTINUE(pipeIt.second->supportFlags_ & flag);
+        
+        // consider the logic of path support under format conversion
+        AudioSampleFormat tempFormat = streamInfo.format;
+        AudioChannelLayout tempLayout = streamInfo.channelLayout;
+
+        for (auto it = pipeIt.second->streamPropInfos_.begin(); it != pipeIt.second->streamPropInfos_.end(); ++it) {
+            CHECK_AND_RETURN_RET((*it)->format_ != tempFormat || (*it)->sampleRate_ != streamInfo.samplingRate ||
+                (*it)->channelLayout_ != tempLayout, true);
+        }
+    }
     return false;
 }
 
 bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
     std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
 
-    DirectPlaybackMode mode = GetDirectPlaybackSupport(desc, streamInfo);
-    return (mode != DIRECT_PLAYBACK_NOT_SUPPORTED);
+    for (auto &audioDeviceDescriptor : desc) {
+        CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
+
+        deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDescriptor->deviceType_,
+            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, AUDIO_OUTPUT_FLAG_HD);
+        CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+
+        DirectPlaybackMode mode = GetDirectPlaybackSupport(audioDeviceDescriptor, streamInfo);
+
+        CHECK_AND_RETURN_RET(mode == DIRECT_PLAYBACK_NOT_SUPPORTED, true);
+    }
+
+    return false;
 }
 
 bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
     std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
-    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
-        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
-    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+    CHECK_AND_RETURN_RET(usage == STREAM_USAGE_MUSIC || usage == STREAM_USAGE_AUDIOBOOK, false);
 
-    // Offload playback means the device can handle decoding independently
-    // This is determined by checking if the device supports hardware decoding
-    auto tempStreamProp = info->streamPropInfos_.front();
+    bool isSupported = false;
+    for (auto &audioDeviceDescriptor : desc) {
+        CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 
-    // Check if device supports offload for the given stream info
-    // This typically requires specific encoding and sample format support
-    if (tempStreamProp != nullptr && tempStreamProp->format_ == streamInfo.format &&
-        tempStreamProp->sampleRate_ == static_cast<uint32_t>(streamInfo.samplingRate)) {
-        return true;
+        isSupported = GetPlaybackStreamSupport(streamInfo, AUDIO_OUTPUT_FLAG_LOWPOWER,
+            audioDeviceDescriptor);
+        CHECK_AND_BREAK_LOG(!isSupported, "Support OffloadPlayback");
     }
 
-    return false;
+    return isSupported;
 }
 }
 }
