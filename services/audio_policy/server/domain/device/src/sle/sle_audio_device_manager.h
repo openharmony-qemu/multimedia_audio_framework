@@ -20,6 +20,7 @@
 #include "audio_general_manager.h"
 #include "audio_stream_descriptor.h"
 #include "istandard_sle_audio_operation_callback.h"
+#include "audio_common_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -106,9 +107,8 @@ public:
 
     // Device Volume Manager
     int32_t SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute);
-    int32_t SetNearlinkDeviceVolumeLevel(const std::string &device, AudioStreamType streamType,
-        const int32_t volumeLevel);
-    int32_t SetNearlinkDeviceVolumeDegree(const std::string &device, AudioStreamType streamType, int32_t volumeDegree);
+    int32_t SetNearlinkDeviceVolume(const std::string &device, AudioStreamType streamType,
+        VolumeScale &volume);
     int32_t GetVolumeDegreeByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
     int32_t GetVolumeLevelByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
     bool GetMuteStatusByVolumeType(AudioVolumeType volumeType, const std::string &nearLinkDevice);

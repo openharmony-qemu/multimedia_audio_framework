@@ -504,8 +504,10 @@ void AudioVolumeManagerSetZoneVolumeDegreeToMapFuzzTest(FuzzedDataProvider& fdp)
     int32_t zoneId = g_fuzzUtils.GetData<int32_t>();
     uint32_t index = g_fuzzUtils.GetData<uint32_t>();
     AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    int32_t volumeLevel = g_fuzzUtils.GetData<int32_t>();
     int32_t volumeDegree = g_fuzzUtils.GetData<int32_t>();
-    audioAdapterManager->SetZoneVolumeDegreeToMap(zoneId, streamType, volumeDegree);
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    audioAdapterManager->SetZoneVolumeLevel(zoneId, streamType, {volumeLevel, volumeDegree}, desc);
 }
 
 void AudioVolumeManagerSetDeviceNoMuteForRingerFuzzTest(FuzzedDataProvider& fdp)

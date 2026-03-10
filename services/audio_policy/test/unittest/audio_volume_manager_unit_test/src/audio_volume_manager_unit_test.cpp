@@ -768,14 +768,15 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_034, TestSize.Level1)
     ASSERT_TRUE(audioVolumeManager != nullptr);
 
     int32_t volumeLevel = 1;
+    VolumeScale volume{volumeLevel, volumeLevel};
     AudioStreamType streamType = STREAM_MUSIC;
     DeviceType curOutputDeviceType = DEVICE_TYPE_SPEAKER;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.macAddress_ = "";
-    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volumeLevel, curOutputDeviceType);
+    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
     EXPECT_EQ(ret, ERR_UNKNOWN);
 
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.macAddress_ = "test";
-    ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volumeLevel, curOutputDeviceType);
+    ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -905,11 +906,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_040, TestSize.Level1)
 
     std::string macAddress = "test";
     int32_t volumeLevel = 1000;
+    VolumeScale volume{volumeLevel, volumeLevel};
     bool internalCall = true;
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = true;
     audioVolumeManager->audioA2dpDevice_.connectedA2dpDeviceMap_[macAddress] = a2dpDeviceConfigInfo;
-    audioVolumeManager->SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    audioVolumeManager->SetA2dpDeviceVolume(macAddress, volume, internalCall);
 }
 
 /**
@@ -924,11 +926,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_041, TestSize.Level1)
 
     std::string macAddress = "test";
     int32_t volumeLevel = 1000;
+    VolumeScale volume{volumeLevel, volumeLevel};
     bool internalCall = false;
     A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
     a2dpDeviceConfigInfo.absVolumeSupport = true;
     audioVolumeManager->audioA2dpDevice_.connectedA2dpDeviceMap_[macAddress] = a2dpDeviceConfigInfo;
-    audioVolumeManager->SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    audioVolumeManager->SetA2dpDeviceVolume(macAddress, volume, internalCall);
 }
 
 /**
@@ -982,16 +985,17 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_044, TestSize.Level1)
 
     std::string macAddress = "test";
     AudioStreamType streamType = STREAM_MUSIC;
-    int32_t volumeLevel = 1000;
+    int32_t volumeLevel = 1;
+    VolumeScale volume{volumeLevel, volumeLevel};
     bool internalCall = true;
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
-    auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
     EXPECT_EQ(ret, ERR_UNKNOWN);
 
     internalCall = false;
-    ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
     EXPECT_EQ(ret, ERR_UNKNOWN);
 }
 
@@ -1008,14 +1012,15 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_045, TestSize.Level1)
     std::string macAddress = "test";
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = -10;
+    VolumeScale volume{volumeLevel, volumeLevel};
     bool internalCall = true;
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
-    audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
 
     streamType = STREAM_VOICE_CALL_ASSISTANT;
-    audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
 }
 
 /**
@@ -1031,15 +1036,16 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_048, TestSize.Level1)
     std::string macAddress = "test";
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 1000;
+    VolumeScale volume{volumeLevel, volumeLevel};
     bool internalCall = true;
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
-    auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    auto ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
     EXPECT_NE(ret, 0);
 
     internalCall = false;
-    ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volumeLevel, internalCall);
+    ret = audioVolumeManager->SetNearlinkDeviceVolume(macAddress, streamType, volume, internalCall);
     EXPECT_NE(ret, 0);
 }
 
@@ -1288,8 +1294,11 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Leve
 {
     AudioVolumeManager &audioVolumeManager(AudioVolumeManager::GetInstance());
     AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeLevel = 7;
     int32_t volumeDegree = 44;
-    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDb(streamType, volumeDegree, 0);
+    VolumeScale volume{volumeLevel, volumeDegree};
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    int32_t ret = audioVolumeManager.SetSystemVolumeLevel(streamType, volume, deviceDesc, 0);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = audioVolumeManager.GetSystemVolumeDegree(STREAM_ALL);
@@ -1307,15 +1316,14 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Leve
     EXPECT_EQ(ret, 0);
 
     int32_t zoneId = 0;
-    int32_t volumeLevel = 1;
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    volume = volumeLevel;
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioVolumeManager.SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
+    audioVolumeManager.SetSystemVolumeLevel(streamType, volume, deviceDesc, zoneId);
     ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
     EXPECT_GT(ret, 0);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioVolumeManager.SetSystemVolumeLevel(streamType, volumeLevel, deviceDesc, zoneId);
+    audioVolumeManager.SetSystemVolumeLevel(streamType, volume, deviceDesc, zoneId);
     ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
     EXPECT_GT(ret, 0);
 
@@ -1333,7 +1341,11 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_002, TestSize.Leve
     int32_t invalidZone = 1;
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeDegree = 44;
-    int32_t ret = audioVolumeManager.SetSystemVolumeDegreeToDbInner(streamType, volumeDegree, invalidZone);
+    int32_t volumeLevel = 7;
+    VolumeScale volume{volumeLevel, volumeDegree};
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    int32_t ret = audioVolumeManager.SetSystemVolumeLevel(streamType, volume,
+        deviceDesc, invalidZone);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     ret = audioVolumeManager.GetSystemVolumeDegree(streamType, invalidZone);

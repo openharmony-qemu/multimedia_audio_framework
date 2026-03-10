@@ -88,7 +88,7 @@ public:
 
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
 
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
@@ -107,7 +107,7 @@ public:
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
-    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel,
+    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, const VolumeScale &volume,
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
 
     int32_t GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType);
@@ -343,11 +343,9 @@ public:
     void HandleCastingConnection();
     void HandleCastingDisconnection();
     bool IsDPCastingConnect();
-    int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
     float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType, DeviceType deviceType, bool mute);
-    int32_t SetZoneVolumeDegreeToMap(int32_t zoneId, AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType);
     float CalculateVolumeDbByDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree);
     void SetOffloadVolumeForStreamVolumeChange(int32_t sessionId);
@@ -467,7 +465,7 @@ private:
     void UpdateSafeVolumeInner(std::shared_ptr<AudioDeviceDescriptor> &device);
     int32_t GetVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     void SaveVolumeToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, int32_t volumeLevel);
+        AudioStreamType streamType, const VolumeScale &volume);
     void SaveMuteToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, bool mute);
     int32_t SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
@@ -476,8 +474,6 @@ private:
     float CalculateVolumeDbNonlinearExt(AudioStreamType streamType, DeviceType deviceType, int32_t volumeDegree);
     void SaveVolumeData(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType, int32_t volumeLevel, bool updateDb = false, bool updateMem = false);
-    void SaveVolumeDegreeToDbAsync(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetStreamVolumeDegreeInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioStreamType streamType);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType,

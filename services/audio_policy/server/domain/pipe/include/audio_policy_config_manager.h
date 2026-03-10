@@ -107,6 +107,14 @@ public:
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo);
     DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamInfo &streamInfo);
+    bool GetPlaybackStreamSupport(AudioStreamInfo &streamInfo, uint32_t flag,
+        std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDesc);
+    bool IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
+    bool IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage);
+    bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage);
     bool IsStreamPropMatch(const AudioStreamInfo &streamInfo, std::list<std::shared_ptr<PipeStreamPropInfo>> &infos);
     bool GetSupportMultSupMode();
     bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);

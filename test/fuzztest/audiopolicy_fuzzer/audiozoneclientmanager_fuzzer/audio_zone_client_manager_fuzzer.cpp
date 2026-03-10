@@ -153,9 +153,11 @@ void AudioZoneClientManagerSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     pid_t clientPid = GetData<pid_t>();
     int32_t zoneId = GetData<int32_t>();
     int32_t volumeLevel = GetData<int32_t>();
+    int32_t volumeDegree = GetData<int32_t>();
+    VolumeScale volume = {volumeLevel, volumeDegree};
     int32_t volumeFlag = GetData<int32_t>();
     AudioVolumeType volumeType = GetData<AudioVolumeType>();
-    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volumeLevel, volumeFlag);
+    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volume, volumeFlag);
 }
 
 void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
@@ -175,9 +177,11 @@ void AudioZoneClientManagerSetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp
     pid_t clientPid = GetData<pid_t>();
     int32_t zoneId = GetData<int32_t>();
     AudioVolumeType volumeType  = GetData<AudioVolumeType>();
+    int32_t volumeLevel = GetData<int32_t>();
     int32_t volumeDegree = GetData<int32_t>();
+    VolumeScale volume = {volumeLevel, volumeDegree};
     int32_t volumeFlag  = GetData<int32_t>();
-    audioZoneClientManager.SetSystemVolumeDegree(clientPid, zoneId, volumeType, volumeDegree, volumeFlag);
+    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volume, volumeFlag);
 }
 
 void AudioZoneClientManagerGetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)

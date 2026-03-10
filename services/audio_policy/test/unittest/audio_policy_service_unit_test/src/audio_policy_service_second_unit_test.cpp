@@ -341,8 +341,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_001, TestSize.Level1
     auto server = GetServerUtil::GetServerPtr();
     std::string macAddress = "";
     int32_t volumeLevel = 4;
+    VolumeScale volume = volumeLevel;
     bool internalCall = false;
-    int32_t ret = server->audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    int32_t ret = server->audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volume, internalCall);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -359,8 +360,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_002, TestSize.Level1
     configInfo.absVolumeSupport = true;
     server->audioPolicyService_.audioDeviceStatus_.audioA2dpDevice_.AddA2dpDevice(macAddress, configInfo);
     int32_t volumeLevel = 4;
+    VolumeScale volume = volumeLevel;
     bool internalCall = true;
-    int32_t ret = server->audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    int32_t ret = server->audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volume, internalCall);
     EXPECT_EQ(ret, SUCCESS);
 }
 

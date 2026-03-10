@@ -108,8 +108,9 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     ASSERT_NE(nullptr, volumeDataMaintainer);
     std::shared_ptr<AudioDeviceDescriptor> device;
     int32_t volumeDegree = 1;
+    VolumeScale volume{volumeDegree, volumeDegree};
     AudioStreamType streamType = STREAM_ALL;
-    volumeDataMaintainer->SaveVolumeDegreeToMap(device, streamType, volumeDegree);
+    volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume);
     EXPECT_EQ(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
 
     int32_t retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, STREAM_ALL);
@@ -121,25 +122,22 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     ASSERT_NE(nullptr, device);
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
 
-    volumeDataMaintainer->SaveVolumeDegreeToMap(device, streamType, volumeDegree);
+    volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume);
     EXPECT_GT(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
 
-    volumeDataMaintainer->SaveVolumeDegreeToMap(device, STREAM_RING, volumeDegree);
-    EXPECT_EQ(volumeDataMaintainer->LoadVolumeDegreeFromMap(device, STREAM_RING), volumeDegree);
-
-    volumeDataMaintainer->SaveVolumeDegreeToMap(device, STREAM_MUSIC, volumeDegree);
+    volumeDataMaintainer->SaveVolumeToMap(device, STREAM_MUSIC, volume);
     retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, streamType);
     EXPECT_EQ(retVolumeDegree, volumeDegree);
 
     device->networkId_ = "111";
-    EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume), SUCCESS);
 
     device->volumeBehavior_.isReady = true;
-    EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume), SUCCESS);
 
     device->volumeBehavior_.databaseVolumeName = "Test";
     volumeDataMaintainer->SetDataShareReady(true);
-    EXPECT_EQ(volumeDataMaintainer->SaveVolumeDegreeToDb(device, STREAM_MUSIC, volumeDegree), SUCCESS);
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume), SUCCESS);
 
     device->deviceType_ = DEVICE_TYPE_NONE;
     EXPECT_EQ(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);

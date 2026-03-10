@@ -1186,10 +1186,6 @@ AudioInterruptResult AudioInterruptService::DeactivateAudioInterrupt(const int32
         incomingStreamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
         currAudioInterrupt.streamUsage, incomingSourceType);
 
-    if (currAudioInterrupt.strategy == InterruptStrategy::MUTE) {
-        AudioServerProxy::GetInstance().SetLatestMuteState(incomingStreamId, 0);
-        streamCollector_.CapturerMutedFlagChange(incomingStreamId, 0);
-    }
     if (interruptDfx_ != nullptr) {
         interruptDfx_->CheckInterruptEvent(currAudioInterrupt.streamId);
     }
@@ -2612,6 +2608,9 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
             AUDIO_INFO_LOG("Change the state of streamId %{public}u to PLACEHOLDER! (pid %{public}d)",
                 audioInterrupt.streamId, audioInterrupt.pid);
             return;
+        }
+        if (iter->second == MUTED) {
+            ResetInterruptMuteState(audioInterrupt);
         }
         ResetNonInterruptControl(audioInterrupt);
         muteAudioFocus_.erase(iter->first.streamId);

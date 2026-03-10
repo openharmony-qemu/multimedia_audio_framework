@@ -469,6 +469,16 @@ interface AudioStreamManager {
 
   IsAcousticEchoCancelerSupported(sourceType: SourceType): bool;
 
+  IsFastPlaybackSupported(streamInfo: AudioStreamInfo, usage: StreamUsage): bool;
+
+  IsFastRecordingSupported(streamInfo: AudioStreamInfo, source: SourceType): bool;
+
+  IsMultichannelPlaybackSupported(streamInfo: AudioStreamInfo, usage: StreamUsage): bool;
+
+  IsDirectPlaybackSupported(streamInfo: AudioStreamInfo, usage: StreamUsage): bool;
+
+  IsOffloadPlaybackSupported(streamInfo: AudioStreamInfo, usage: StreamUsage): bool;
+
   IsIntelligentNoiseReductionEnabledForCurrentDevice(sourceType: SourceType): bool;
 
   IsRecordingAvailable(capturerInfo: AudioCapturerInfo): bool;

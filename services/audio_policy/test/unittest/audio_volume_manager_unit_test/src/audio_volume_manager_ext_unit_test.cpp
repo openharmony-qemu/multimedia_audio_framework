@@ -74,9 +74,10 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, HandleA2dpAbsVolume_001, TestSize.Level1
     ASSERT_TRUE(audioVolumeManager != nullptr);
 
     int32_t volumeLevel = 0;
+    VolumeScale volume{volumeLevel, volumeLevel};
     AudioStreamType streamType = STREAM_RING;
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    int32_t ret = audioVolumeManager->HandleA2dpAbsVolume(streamType, volumeLevel, deviceType);
+    int32_t ret = audioVolumeManager->HandleA2dpAbsVolume(streamType, volume, deviceType);
     EXPECT_NE(ret, 0);
 }
 
@@ -93,11 +94,12 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, HandleNearlinkDeviceAbsVolume_001, TestS
     DeviceType curOutputDeviceType = DEVICE_TYPE_SPEAKER;
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t volumeLevel = 1000;
+    VolumeScale volume{volumeLevel, volumeLevel};
     bool internalCall = true;
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
-    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volumeLevel, curOutputDeviceType);
+    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
     EXPECT_NE(ret, ERROR);
 }
 
@@ -115,10 +117,11 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, HandleNearlinkDeviceAbsVolume_002, TestS
     std::string macAddress = "test";
     AudioStreamType streamType = STREAM_RING;
     int32_t volumeLevel = 1000;
+    VolumeScale volume{volumeLevel, volumeLevel};
     SleVolumeConfigInfo configInfo;
     std::pair<SleVolumeConfigInfo, SleVolumeConfigInfo> pairConfigInfo = std::make_pair(configInfo, configInfo);
     SleAudioDeviceManager::GetInstance().deviceVolumeConfigInfo_["test"] = pairConfigInfo;
-    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volumeLevel, curOutputDeviceType);
+    auto ret = audioVolumeManager->HandleNearlinkDeviceAbsVolume(streamType, volume, curOutputDeviceType);
     EXPECT_NE(ret, ERROR);
 }
 

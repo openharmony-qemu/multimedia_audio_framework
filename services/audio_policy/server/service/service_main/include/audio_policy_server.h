@@ -71,7 +71,7 @@ struct VolumeUpdateOption {
     bool isUpdateUi = false;
     bool mute = false;
     int32_t zoneId = 0;
-    bool syncDegree = true;
+    int32_t volumeDegree = -1;
     bool hasCheckLoudVolume = false;
 };
 
@@ -157,6 +157,12 @@ public:
 
     int32_t IsFastPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage, bool &support) override;
     int32_t IsFastRecordingSupported(const AudioStreamInfo &streamInfo, int32_t source, bool &support) override;
+    int32_t IsMultichannelPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
+        bool &support) override;
+    int32_t IsDirectPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
+        bool &support) override;
+    int32_t IsOffloadPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t streamUsage,
+        bool &support) override;
 
     int32_t IsVolumeUnadjustable(bool &unadjustable) override;
 
@@ -900,6 +906,7 @@ private:
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone);
+    bool IsScreenOnAdjustVolume();
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
@@ -942,6 +949,7 @@ private:
     std::atomic<bool> isInitMuteState_ = false;
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
+    std::atomic<bool> isScreenOn_ = false; // for TV
     std::atomic<bool> isInitRingtoneReady_ = false;
     std::atomic<bool> isRingtoneEL2Ready_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT

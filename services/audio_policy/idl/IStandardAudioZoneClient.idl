@@ -32,12 +32,9 @@ interface IStandardAudioZoneClient {
         [in] int reason); // AudioZoneInterruptReason reason
 
     void SetSystemVolume([in] int zoneId, [in] int volumeType, // AudioVolumeType volumeType
-        [in] int volumeLevel, [in] int volumeFlag);
+        [in] int volumeLevel, [in] int volumeDegree, [in] int volumeFlag);
 
     void GetSystemVolume([in] int zoneId, [in] int volumeType, [out] float outVolume); // AudioVolumeType volumeType
-
-    void SetSystemVolumeDegree([in] int zoneId, [in] int volumeType, // AudioVolumeType volumeType
-        [in] int volumeLevel, [in] int volumeFlag);
 
     void GetSystemVolumeDegree([in] int zoneId, [in] int volumeType, [out] int outVolume); // AudioVolumeType volumeType
 }

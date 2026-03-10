@@ -204,20 +204,21 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_DegreeTest_001, TestSize.Level1)
     AudioZoneContext context;
     AudioVolumeType volumeType = STREAM_MUSIC;
     int32_t volumeDegree = 10;
+    VolumeScale volume{volumeDegree, volumeDegree};
     auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
     auto zone = AudioZoneService::GetInstance().FindZone(zoneId);
     ASSERT_NE(zone, nullptr);
     EXPECT_NE(zone->GetSystemVolumeDegree(volumeType), 0);
-    EXPECT_NE(zone->SetSystemVolumeDegree(volumeType, volumeDegree, 0), 0);
-    EXPECT_NE(zone->SetSystemVolumeDegree(volumeType, volumeDegree, 0), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
 
     int32_t clientPid = 1;
     zone->EnableSystemVolumeProxy(clientPid, true);
-    EXPECT_NE(zone->SetSystemVolumeDegree(volumeType, volumeDegree, 0), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
     EXPECT_NE(zone->GetSystemVolumeDegree(volumeType), volumeDegree);
 
     zone->clientManager_.reset();
-    EXPECT_NE(zone->SetSystemVolumeDegree(volumeType, volumeDegree, 0), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
     EXPECT_NE(zone->GetSystemVolumeDegree(volumeType), 0);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }

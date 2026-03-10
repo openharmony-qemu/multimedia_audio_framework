@@ -184,7 +184,7 @@ void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zon
 }
 
 int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
-    const AudioVolumeType volumeType, const int32_t volumeLevel, const int32_t volumeFlag)
+    const AudioVolumeType volumeType, const VolumeScale &volume, int32_t volumeFlag)
 {
     sptr<IStandardAudioZoneClient> client = nullptr;
     {
@@ -192,9 +192,9 @@ int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, cons
         CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
         client = clients_[clientPid];
     }
-    AUDIO_DEBUG_LOG("set audio zone %{public}d volume %{public}d to client %{public}d",
-        zoneId, volumeLevel, clientPid);
-    return client->SetSystemVolume(zoneId, volumeType, volumeLevel, volumeFlag);
+    AUDIO_DEBUG_LOG("set audio zone %{public}d volumeLevel:%{public}d volumeDegree:%{public}d to client %{public}d",
+        zoneId, volume.VolumeLevel(), volume.VolumeDegree(), clientPid);
+    return client->SetSystemVolume(zoneId, volumeType, volume.VolumeLevel(), volume.VolumeDegree(), volumeFlag);
 }
 
 int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
@@ -211,20 +211,6 @@ int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, cons
     float outVolume = 0.0f;
     client->GetSystemVolume(zoneId, volumeType, outVolume);
     return static_cast<int32_t>(outVolume);
-}
-
-int32_t AudioZoneClientManager::SetSystemVolumeDegree(pid_t clientPid, int32_t zoneId,
-    AudioVolumeType volumeType, int32_t volumeDegree, int32_t volumeFlag)
-{
-    sptr<IStandardAudioZoneClient> client = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(clientMutex_);
-        CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
-        client = clients_[clientPid];
-    }
-    AUDIO_DEBUG_LOG("set audio zone %{public}d volume %{public}d to client %{public}d",
-        zoneId, volumeDegree, clientPid);
-    return client->SetSystemVolumeDegree(zoneId, volumeType, volumeDegree, volumeFlag);
 }
 
 int32_t AudioZoneClientManager::GetSystemVolumeDegree(pid_t clientPid, int32_t zoneId,
