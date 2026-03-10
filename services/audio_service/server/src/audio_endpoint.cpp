@@ -556,6 +556,26 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
 }
 
+bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
+{
+    AUDIO_INFO_LOG("Role %{public}d, format %{public}d, ultraFastFlag_%{public}d",
+        endpointConfig.deviceInfo.deviceRole_, endpointConfig.streamInfo.format, endpointConfig.isUltraFast);
+    deviceInfo_ = endpointConfig.deviceInfo;
+    dstStreamInfo_ = endpointConfig.streamInfo;
+    endpointName_ = GenerateEndpointKey(deviceInfo_, id_);
+    if (deviceInfo_.deviceRole_ == INPUT_DEVICE) {
+        return ConfigInputPoint(deviceInfo_);
+    }
+    if (!ConfigOutputPoint(endpointConfig)) {
+        HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
+        return false;
+    }
+    bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
+    CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
+    StartThread(InitSinkAttr(endpointConfig));
+    return true;
+}
+
 bool AudioEndpointInner::ConfigOutputPoint(const AudioEndpointConfig &endpointConfig)
 {
     std::shared_ptr<IAudioRenderSink> sink = GetFastSink(deviceInfo_, endpointType_);
@@ -593,26 +613,6 @@ bool AudioEndpointInner::ConfigOutputPoint(const AudioEndpointConfig &endpointCo
         AUDIO_INFO_LOG("Init Volume 1.0 with Device %{public}d", deviceType);
     }
     return true;
-}
-bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
-{
-    AUDIO_INFO_LOG("Role %{public}d, format %{public}d, ultraFastFlag_%{public}d",
-        endpointConfig.deviceInfo.deviceRole_, endpointConfig.streamInfo.format, endpointConfig.isUltraFast);
-    deviceInfo_ = endpointConfig.deviceInfo;
-    dstStreamInfo_ = endpointConfig.streamInfo;
-    endpointName_ = GenerateEndpointKey(deviceInfo_, id_);
-    if (deviceInfo_.deviceRole_ == INPUT_DEVICE) {
-        return ConfigInputPoint(deviceInfo_);
-    }
-    if (!ConfigOutputPoint(endpointConfig)) {
-        HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
-        return false;
-    }
-    bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
-    CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
-    StartThread(InitSinkAttr(endpointConfig));
-    return true;
-
 }
 
 static std::shared_ptr<IAudioRenderSink> SwitchSink(uint32_t &id, HdiIdType type, const std::string &info)
