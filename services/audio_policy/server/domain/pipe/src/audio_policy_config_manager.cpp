@@ -1143,7 +1143,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
 }
 
 bool AudioPolicyConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo,
-    std::shared_ptr<AudioDeviceDescriptor> &desc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     bool isSupported = false;
     for (auto &audioDeviceDescriptor : desc) {
@@ -1159,7 +1159,7 @@ bool AudioPolicyConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &
 }
 
 bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamInfo, uint32_t flag,
-    std::shared_ptr<AUdioDeviceDescriptor> &audioDeviceDesc)
+    std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDesc)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
 
@@ -1185,7 +1185,7 @@ bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamI
 }
 
 bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
-    std::shared_ptr<AudioDeviceDescriptor> &desc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
 
@@ -1205,7 +1205,7 @@ bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &stream
 }
 
 bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
-    std::shared_ptr<AudioDeviceDescriptor> &desc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_RET(usage == STREAM_USAGE_MUSIC || usage == STREAM_USAGE_AUDIOBOOK, false);
 

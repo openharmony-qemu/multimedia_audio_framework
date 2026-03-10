@@ -980,10 +980,10 @@ napi_value NapiAudioStreamMgr::IsFastPlaybackSupported(napi_env env, napi_callba
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
 
     napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
 
     AudioStreamInfo audioStreamInfo = {};
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
@@ -1011,10 +1011,10 @@ napi_value NapiAudioStreamMgr::IsFastRecordingSupported(napi_env env, napi_callb
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
 
     napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
 
     AudioStreamInfo audioStreamInfo = {};
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
@@ -1040,9 +1040,9 @@ static napi_value IsMultichannelPlaybackSupported(napi_env env, napi_callback_in
         napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
     napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
 
     AudioStreamInfo audioStreamInfo = {};
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
@@ -1068,9 +1068,9 @@ static napi_value IsDirectPlaybackSupported(napi_env env, napi_callback_info inf
         napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
     napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
 
     AudioStreamInfo audioStreamInfo = {};
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
@@ -1096,9 +1096,9 @@ static napi_value IsOffloadPlaybackSupported(napi_env env, napi_callback_info in
         napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
     napi_typeof(env, args[PARAM1], &valueType);
-    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invaild valueType");
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
 
     AudioStreamInfo audioStreamInfo = {};
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
