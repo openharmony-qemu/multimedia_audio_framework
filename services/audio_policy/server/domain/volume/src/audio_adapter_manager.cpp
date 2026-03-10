@@ -3751,10 +3751,9 @@ void AudioAdapterManager::SetMaxVolumeForDpBoardcast()
     CHECK_AND_RETURN_LOG(desc != nullptr, "there is no dp device connected");
     bool temp = (GetMaxVolumeLevel(STREAM_MUSIC, desc) == MAX_VOLUME_LEVEL) && !VolumeUtils::IsPCVolumeEnable();
     CHECK_AND_RETURN_LOG(temp, "current dp device need not max volume");
-    volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC, desc));
-    volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL, desc));
-    volumeDataMaintainer_.SaveVolumeToMap(desc, STREAM_VOICE_ASSISTANT,
-        GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, desc));
+    SaveVolumeData(desc, STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC, desc), false, true);
+    SaveVolumeData(desc, STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL, desc), false, true);
+    SaveVolumeData(desc, STREAM_VOICE_ASSISTANT, GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT, desc), false, true);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_MUSIC, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_CALL, false);
     volumeDataMaintainer_.SaveMuteToMap(desc, STREAM_VOICE_ASSISTANT, false);
