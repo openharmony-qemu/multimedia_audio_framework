@@ -446,8 +446,7 @@ int32_t RendererInClientInner::Write3DADirectBuffer(BufferDesc &bufferDesc)
 
     CHECK_AND_RETURN_RET_LOG(bufferDesc.dataLength != 0 &&
         bufferDesc.metaBuffer != nullptr, ERR_INVALID_PARAM,
-        "3DA: Invalid buffer, dataLength=%{public}zu, metaBuffer=%{public}p",
-        bufferDesc.dataLength, bufferDesc.metaBuffer);
+        "3DA: Invalid buffer, dataLength=%{public}zu", bufferDesc.dataLength);
 
     CHECK_AND_RETURN_RET(CallStartWhenInStandby() == SUCCESS, ERR_OPERATION_FAILED);
     FirstFrameProcess();
@@ -503,6 +502,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
             AUDIO_WARNING_LOG("INVALID 3DA buffer");
             usleep(WAIT_FOR_NEXT_CB);
         }
+        return result;
     }
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
         if (bufferDesc.dataLength != 0) {
