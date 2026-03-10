@@ -5302,6 +5302,86 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateArmModuleInfo_007, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test UpdateArmModuleInfo API with valid original params
+ * @tc.type  : FUNC
+ * @tc.number: UpdateArmModuleInfo_008
+ * @tc.desc  : Verify original module buffer duration is applied after HAL rate/format update.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateArmModuleInfo_008, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    streamInfo.samplingRate = {AudioSamplingRate::SAMPLE_RATE_48000};
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    deviceDesc->audioStreamInfo_ = {streamInfo};
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.rate = "48000";
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2";
+    moduleInfo.bufferSize = "1920";
+
+    audioCoreService->UpdateArmModuleInfo(deviceDesc, moduleInfo);
+
+    EXPECT_EQ(moduleInfo.rate, "48000");
+    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_EQ(moduleInfo.bufferSize, "1920");
+}
+
+/**
+ * @tc.name  : Test UpdateArmModuleInfo API with incomplete original params
+ * @tc.type  : FUNC
+ * @tc.number: UpdateArmModuleInfo_009
+ * @tc.desc  : Verify default 20ms is used when original module params are incomplete.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateArmModuleInfo_009, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    streamInfo.samplingRate = {AudioSamplingRate::SAMPLE_RATE_48000};
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    deviceDesc->audioStreamInfo_ = {streamInfo};
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.channels = "2";
+
+    audioCoreService->UpdateArmModuleInfo(deviceDesc, moduleInfo);
+
+    EXPECT_EQ(moduleInfo.rate, "48000");
+    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_EQ(moduleInfo.bufferSize, "3840");
+}
+
+/**
+ * @tc.name  : Test UpdateArmModuleInfo API with empty original rate
+ * @tc.type  : FUNC
+ * @tc.number: UpdateArmModuleInfo_010
+ * @tc.desc  : Verify empty original rate triggers default 20ms branch.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdateArmModuleInfo_010, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    DeviceStreamInfo streamInfo;
+    streamInfo.samplingRate = {AudioSamplingRate::SAMPLE_RATE_48000};
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    deviceDesc->audioStreamInfo_ = {streamInfo};
+
+    AudioModuleInfo moduleInfo;
+    moduleInfo.format = "s16le";
+    moduleInfo.channels = "2";
+    moduleInfo.bufferSize = "960";
+
+    audioCoreService->UpdateArmModuleInfo(deviceDesc, moduleInfo);
+
+    EXPECT_EQ(moduleInfo.rate, "48000");
+    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_EQ(moduleInfo.bufferSize, "3840");
+}
+
+/**
 * @tc.name  : Test AudioEcManager ActivateArmDevice function.
 * @tc.number: ActivateArmDevice_001
 * @tc.desc  : Test ActivateArmDevice interface with various scenarios.
@@ -6237,7 +6317,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_002, TestSize.Le
 * @tc.number: FetchTargetInfoForSessionAdd_003
 * @tc.desc  : Test target buffer duration calculation with a custom stream profile.
 */
-HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_003, TestSize.Level4)
+HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_003, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
@@ -6292,7 +6372,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_003, TestSize.Le
 * @tc.number: FetchTargetInfoForSessionAdd_004
 * @tc.desc  : Test default 20ms fallback when source profile bufferSize is invalid.
 */
-HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_004, TestSize.Level4)
+HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_004, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
@@ -6334,6 +6414,88 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_004, TestSize.Le
     EXPECT_EQ(targetInfo.bufferSize_, expectedBufferSize);
 
     audioCoreService->isEcFeatureEnable_ = originEcFeatureEnable;
+    audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker = originMicSpeaker;
+    pipeInfo->streamPropInfos_ = originalStreamPropInfos;
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: FetchTargetInfoForSessionAdd_005
+* @tc.desc  : Test fallback branch when source profile sampleRate is 0.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
+    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+        AudioAdapterType::TYPE_PRIMARY, adapterInfo));
+    ASSERT_NE(adapterInfo, nullptr);
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
+    ASSERT_NE(pipeInfo, nullptr);
+
+    auto originalStreamPropInfos = pipeInfo->streamPropInfos_;
+    auto customStreamProp = std::make_shared<PipeStreamPropInfo>();
+    ASSERT_NE(customStreamProp, nullptr);
+    customStreamProp->format_ = SAMPLE_S16LE;
+    customStreamProp->sampleRate_ = 0;
+    customStreamProp->channels_ = AudioChannel::STEREO;
+    customStreamProp->channelLayout_ = CH_LAYOUT_STEREO;
+    customStreamProp->bufferSize_ = 1000;
+    pipeInfo->streamPropInfos_.clear();
+    pipeInfo->streamPropInfos_.push_back(customStreamProp);
+
+    std::string originMicSpeaker = audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker;
+    audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker = "0";
+
+    SessionInfo sessionInfo = {};
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    PipeStreamPropInfo targetInfo = {};
+    SourceType targetSourceType = SOURCE_TYPE_MIC;
+    int32_t ret = audioCoreService->FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(targetInfo.sampleRate_, 0);
+
+    audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker = originMicSpeaker;
+    pipeInfo->streamPropInfos_ = originalStreamPropInfos;
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: FetchTargetInfoForSessionAdd_006
+* @tc.desc  : Test fallback branch when source profile format has zero bytesPerSample.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_006, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
+    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+        AudioAdapterType::TYPE_PRIMARY, adapterInfo));
+    ASSERT_NE(adapterInfo, nullptr);
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
+    ASSERT_NE(pipeInfo, nullptr);
+
+    auto originalStreamPropInfos = pipeInfo->streamPropInfos_;
+    auto customStreamProp = std::make_shared<PipeStreamPropInfo>();
+    ASSERT_NE(customStreamProp, nullptr);
+    customStreamProp->format_ = INVALID_WIDTH;
+    customStreamProp->sampleRate_ = static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_48000);
+    customStreamProp->channels_ = AudioChannel::STEREO;
+    customStreamProp->channelLayout_ = CH_LAYOUT_STEREO;
+    customStreamProp->bufferSize_ = 1000;
+    pipeInfo->streamPropInfos_.clear();
+    pipeInfo->streamPropInfos_.push_back(customStreamProp);
+
+    std::string originMicSpeaker = audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker;
+    audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker = "0";
+
+    SessionInfo sessionInfo = {};
+    sessionInfo.sourceType = SOURCE_TYPE_MIC;
+    PipeStreamPropInfo targetInfo = {};
+    SourceType targetSourceType = SOURCE_TYPE_MIC;
+    int32_t ret = audioCoreService->FetchTargetInfoForSessionAdd(sessionInfo, targetInfo, targetSourceType);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(targetInfo.format_, INVALID_WIDTH);
+
     audioCoreService->primaryMicModuleInfo_.OpenMicSpeaker = originMicSpeaker;
     pipeInfo->streamPropInfos_ = originalStreamPropInfos;
 }
