@@ -1185,7 +1185,7 @@ bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamI
 }
 
 bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
 
@@ -1205,7 +1205,7 @@ bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &stream
 }
 
 bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage)
 {
     CHECK_AND_RETURN_RET(usage == STREAM_USAGE_MUSIC || usage == STREAM_USAGE_AUDIOBOOK, false);
 
