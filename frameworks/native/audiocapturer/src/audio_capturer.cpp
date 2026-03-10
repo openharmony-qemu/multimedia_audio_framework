@@ -2097,7 +2097,6 @@ int32_t AudioCapturerPrivate::SetIndependentAudioSessionStrategy(
         AUDIO_INFO_LOG("Capturer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
     }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
-        audioInterrupt_.strategy = InterruptStrategy::MUTE;
         audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Capturer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);
     }

@@ -444,11 +444,29 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
     }
 
     // If the application deactivates a session, the streams managed by session needs to be stoped.
+    // and be unmuted if the session is muted.
     if (handler_ != nullptr) {
         AUDIO_INFO_LOG("Send InterruptCallbackEvent to all streams for pid %{public}d", callerPid);
-        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        InterruptEventInternal stopInterruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        InterruptEventInternal unmuteInterruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
+        bool sessionIsMuted = false;
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
+        auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+            return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
+        };
+        auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
+        if (iter != audioFocusInfoList.end() && iter->second = MUTED) {
+            AUDIO_INFO_LOG("Need to unmute all streams for pid %{public}d", callerPid);
+            sessionIsMuted = true;
+        }
+
         for (auto &it : streamsInSession) {
-            handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, it.streamId);
+            if (sessionIsMuted) {
+                SendInterruptEventCallback(unmuteInterruptEvent, it.streamId, it);
+            }
+            handler_->SendInterruptEventWithStreamIdCallback(stopInterruptEvent, it.streamId);
         }
     }
 
@@ -2877,15 +2895,13 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         RemoveStreamIdSuggestionRecord(streamId);
     }
 
-    if ((audioInterrupt.strategy == InterruptStrategy::MUTE) &&
-        (interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {
-        if (audioInterrupt.isAudioSessionInterrupt) {
-            HandleMuteAllStreamsInSession(interruptEvent, audioInterrupt);
-        } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-            SetLatestMuteState(interruptEvent, streamId);
-        } else {
-            bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
-            SetNonInterruptMute(streamId, muteFlag);
+    if ((interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {
+        bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
+        if (audioInterrupt.behaviorFlags_.muteWhenInterruptFlag) {
+            HandMuteSessionBehavior(audioInterrupt, muteFlag);
+        }
+        if (audioInterrput.strategy == InterruptStrategy::MUTE) {
+            SetLatestMuteState(streamId, muteFlag);
         }
     }
 

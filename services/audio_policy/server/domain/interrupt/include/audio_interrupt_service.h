@@ -324,15 +324,14 @@ private:
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
     void SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag);
-    void SetLatestMuteState(const InterruptEventInternal &interruptEvent, const uint32_t &streamId);
+    void SetLatestMuteState(const uint32_t &streamId, bool muteFlag);
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt);
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
-    void HandleMuteAllStreamsInSession(const InterruptEventInternal &interruptEvent,
-        const AudioInterrupt &audioInterrupt);
+    void HandMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId, bool returnDefault = false);
 
