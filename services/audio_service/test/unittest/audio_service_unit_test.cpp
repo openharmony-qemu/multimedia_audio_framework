@@ -2066,7 +2066,7 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
  * @tc.number: AudioServiceSetLatestMuteState_001
  * @tc.desc  : Test RegisterMuteStateChangeCallback whether callback can invoke.
 */
-HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_001, TestSize.Level1) 
+HWTEST(AudioServiceUnitTest, AudioServiceSetLatestMuteState_001, TestSize.Level1)
 {
     uint32_t sessionId = 100000;
     bool muteFlag = false;
@@ -2074,7 +2074,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_001, TestSize.Level
     auto service = AudioService::GetInstance();
     ASSERT_NE(service, nullptr);
     service->RegisterMuteStateChangeCallback(sessionId, [&](bool flag) {
-        muteFlag = flag; 
+        muteFlag = flag;
     });
     EXPECT_EQ(muteFlag, false);
 
