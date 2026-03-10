@@ -3217,7 +3217,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_160, TestSize.Level1)
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_161
-* @tc.desc  : Test OnAddSystemAbilityExtract.
+* @tc.desc  : Test HandleAudioServerRelatedSystemAbility.
 */
 HWTEST(AudioPolicyUnitTest, AudioPolicyServer_161, TestSize.Level1)
 {
@@ -3226,10 +3226,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_161, TestSize.Level1)
 
     int32_t systemAbilityId = APP_MGR_SERVICE_ID;
     std::string deviceId = "test";
-    server->OnAddSystemAbilityExtract(systemAbilityId, deviceId);
+    server->HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
 
     systemAbilityId = -1;
-    server->OnAddSystemAbilityExtract(systemAbilityId, deviceId);
+    server->HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
 }
 
 /**

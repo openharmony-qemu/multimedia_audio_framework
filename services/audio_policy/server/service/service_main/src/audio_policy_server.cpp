@@ -347,7 +347,6 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     AddSystemAbilityListener(MULTIMODAL_INPUT_SERVICE_ID);
 #endif
-    AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
     AddSystemAbilityListener(POWER_MANAGER_SERVICE_ID);
     AddSystemAbilityListener(BACKGROUND_TASK_MANAGER_SERVICE_ID);
 #ifdef USB_ENABLE
@@ -357,6 +356,12 @@ void AudioPolicyServer::AddSystemAbilityListeners()
 #ifdef SUPPORT_USER_ACCOUNT
     AddSystemAbilityListener(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN);
 #endif
+}
+
+// Adds SA listeners that should be registered only after audioserver startup.
+void AudioPolicyServer::AddSystemAbilityListenerAfterAudioServerStart()
+{
+    AddSystemAbilityListener(BLUETOOTH_HOST_SYS_ABILITY_ID);
 }
 
 void AudioPolicyServer::OnStop()
@@ -387,12 +392,6 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID:
             AddRemoteDevstatusCallback();
             break;
-        case AUDIO_DISTRIBUTED_SERVICE_ID:
-            AddAudioServiceOnStart();
-            break;
-        case BLUETOOTH_HOST_SYS_ABILITY_ID:
-            RegisterBluetoothListener();
-            break;
         case POWER_MANAGER_SERVICE_ID:
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
@@ -407,13 +406,16 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
         case BACKGROUND_TASK_MANAGER_SERVICE_ID:
             SubscribeBackgroundTask();
             break;
+        case APP_MGR_SERVICE_ID:
+            RegisterAppStateListener();
+            break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
             usbManager_.Init(eventEntry_);
             break;
 #endif
         default:
-            OnAddSystemAbilityExtract(systemAbilityId, deviceId);
+            HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
             break;
     }
     // eg. done systemAbilityId: [3001] cost 780ms
@@ -430,14 +432,20 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
     interruptService_->RegisterDefaultVolumeTypeListener();
 }
 
-void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string &deviceId)
+// Handles audioserver-related SA events, including startup trigger and post-start callbacks.
+void AudioPolicyServer::HandleAudioServerRelatedSystemAbility(int32_t systemAbilityId,
+    const std::string &deviceId)
 {
     switch (systemAbilityId) {
-        case APP_MGR_SERVICE_ID:
-            RegisterAppStateListener();
+        case AUDIO_DISTRIBUTED_SERVICE_ID:
+            AddAudioServiceOnStart();
+            break;
+        case BLUETOOTH_HOST_SYS_ABILITY_ID:
+            RegisterBluetoothListener();
             break;
         default:
-            AUDIO_WARNING_LOG("OnAddSystemAbility unhandled sysabilityId:%{public}d", systemAbilityId);
+            AUDIO_WARNING_LOG("unhandled sysabilityId:%{public}d",
+                systemAbilityId);
             break;
     }
 }
@@ -931,6 +939,8 @@ void AudioPolicyServer::AddAudioServiceOnStart()
         LoadEffectLibrary();
         isFirstAudioServiceStart_ = true;
         distributeDeviceCond_.notify_all();
+        // Register SA listener(s) that should start only after audioserver is up.
+        AddSystemAbilityListenerAfterAudioServerStart();
     } else {
         AUDIO_WARNING_LOG("OnAddSystemAbility audio service is not first start");
     }
