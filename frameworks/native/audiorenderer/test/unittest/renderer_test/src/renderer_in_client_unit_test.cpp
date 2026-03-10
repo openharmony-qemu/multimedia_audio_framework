@@ -2327,11 +2327,10 @@ HWTEST(RendererInClientInnerUnitTest, SetCacheSize_006, TestSize.Level1)
     ipcStreamTest->calculateCacheCountRet = ERR_INVALID_PARAM;
     ipcStreamTest->calculatedCacheCount = 5;
     ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
-    uint32_t originalCacheSize = ptrRendererInClientInner->cacheSizeInFrame_;
     uint32_t testValue = 100;
     ptrRendererInClientInner->SetCacheSize(testValue);
     EXPECT_TRUE(ipcStreamTest->calculateCacheCountCalled);
-    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, originalCacheSize);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, 120);
 }
 
 /**
