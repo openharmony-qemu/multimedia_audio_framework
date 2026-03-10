@@ -22,6 +22,44 @@
 namespace OHOS {
 namespace AudioStandard {
 
+enum class VolumeKeyType : int32_t {
+    VOLUME_KEY_TYPE_LEVEL,
+    VOLUME_KEY_TYPE_DEGREE,
+};
+
+struct VolumeScale {
+    VolumeScale(int32_t volumeLevel) : volumeLevel_(volumeLevel) {}
+    VolumeScale(int32_t volumeLevel, int32_t volumeDegree, int32_t maxVolumeLevel = -1)
+        : volumeLevel_(volumeLevel), volumeDegree_(volumeDegree), maxVolumeLevel_(maxVolumeLevel)
+    {
+        valueType_ = volumeDegree_ != -1 ?
+            VolumeKeyType::VOLUME_KEY_TYPE_DEGREE : VolumeKeyType::VOLUME_KEY_TYPE_LEVEL;
+        if (maxVolumeLevel != -1) {
+            Refresh();
+        }
+    }
+
+    VolumeScale Refresh();
+    VolumeScale Update(const VolumeScale &volume);
+    VolumeScale Adjust(const VolumeScale &volume);
+    bool IsVolumeDegreeValid(int32_t min, int32_t max);
+    void SetMaxVolumeLevel(int32_t maxVolumeLevel) { maxVolumeLevel_ = maxVolumeLevel; }
+    int32_t VolumeLevel() const { return volumeLevel_; }
+    int32_t VolumeDegree() const { return volumeDegree_; }
+    int32_t MaxVolumeLevel() const { return maxVolumeLevel_; }
+
+private:
+    int32_t volumeLevel_ = -1;
+
+    /**
+     * if not initialized, volumeDegree_ can be calculated by
+     * volumeLevel_ and maxVolumeLevel_ if they are valid;
+     */
+    int32_t volumeDegree_ = -1;
+    int32_t maxVolumeLevel_ = -1;
+    VolumeKeyType valueType_ = VolumeKeyType::VOLUME_KEY_TYPE_LEVEL; // mark the struct used as level or degree;
+};
+
 class VolumeUtils {
 public:
     static AudioVolumeType GetVolumeTypeFromStreamType(AudioStreamType streamType);
@@ -44,6 +82,7 @@ public:
     static float GetEnforcedToneVolumeFixed();
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
+    static void InitLevelToDegreeMap(int32_t maxLevel);
 
     static std::unordered_map<AudioStreamType, AudioVolumeType> defaultVolumeMap_;
     static std::unordered_map<AudioStreamType, AudioVolumeType> audioPCVolumeMap_;
@@ -56,6 +95,8 @@ private:
     static std::unordered_set<AudioVolumeType> audioVolumeTypeSet_;
     static std::map<AudioVolumeType, std::vector<StreamUsage>> streamToStreamUsageMap_;
     static float enforcedToneVolume_;
+    // maxLevel -> {level, degree}
+    static inline std::unordered_map<int32_t, std::map<int32_t, int32_t>> levelToDegreeMap_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

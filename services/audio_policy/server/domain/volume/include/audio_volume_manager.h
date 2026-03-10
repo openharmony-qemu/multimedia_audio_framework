@@ -87,8 +87,8 @@ public:
     int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
-        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0, bool syncVolDegree = true);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
@@ -105,10 +105,11 @@ public:
         int32_t zoneId = 0);
     bool GetStreamMute(AudioStreamType streamType, int32_t zoneId = 0) const;
 
-    int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
+    int32_t SetA2dpDeviceVolume(const std::string &macAddress, VolumeScale &volume,
+        bool internalCall = false);
 
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
-        const int32_t volume, bool internalCall = false);
+        VolumeScale &volume, bool internalCall = false);
     int32_t SetNearlinkDeviceVolumeEx(AudioVolumeType volumeType, const int32_t volume);
 
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
@@ -141,9 +142,8 @@ public:
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
     void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
-    int32_t SetSystemVolumeDegreeToDb(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
-    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     int32_t UpdateSafeVolumeByStrMode();
     void OnCheckActiveMusicTime(const std::string &reason);
     void DealWithPauseAndStop(const std::string &reason);
@@ -189,19 +189,16 @@ private:
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
 
-    int32_t HandleA2dpAbsVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType curDeviceType);
-    int32_t HandleA2dpAbsVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
-    int32_t HandleNearlinkDeviceAbsVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
-    int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, int32_t volumeLevel,
+    int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
+        DeviceType curDeviceType);
+    int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
 private:
-    int32_t SetSystemVolumeExternal(AudioStreamType streamType, int32_t volume, VolumeKeyType keyType);
+    int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
-        int32_t volumeLevel, int32_t zoneId, bool syncVolDegree, std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
-    int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
-    int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
+        const VolumeScale &volume, std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
         const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
 

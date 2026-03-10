@@ -307,7 +307,8 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SetA2dpDeviceVolumeLevel_001, TestSize.Level1)
 {
     std::string device = "non_existent_device";
     int32_t volumeLevel = 50;
-    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolumeLevel(device, volumeLevel);
+    VolumeScale volume = volumeLevel;
+    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolume(device, volume);
     EXPECT_FALSE(result);
 }
 
@@ -324,7 +325,8 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SetA2dpDeviceVolumeLevel_002, TestSize.Level1)
     std::string device = "test_device";
     AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
     int32_t volumeLevel = 50;
-    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolumeLevel(device, volumeLevel);
+    VolumeScale volume = volumeLevel;
+    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolume(device, volume);
     EXPECT_FALSE(result);
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
@@ -342,7 +344,8 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SetA2dpDeviceVolumeLevel_003, TestSize.Level1)
     std::string device = "test_device";
     AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
     int32_t volumeLevel = 50;
-    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolumeLevel(device, volumeLevel);
+    VolumeScale volume = volumeLevel;
+    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolume(device, volume);
     EXPECT_TRUE(result);
     A2dpDeviceConfigInfo info;
     bool getInfoResult = AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);

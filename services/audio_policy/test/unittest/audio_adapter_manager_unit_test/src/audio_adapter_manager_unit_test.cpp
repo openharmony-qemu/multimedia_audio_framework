@@ -320,22 +320,24 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeDegree_001, TestSize.Level4
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
     AudioStreamType streamType = STREAM_MUSIC;
-    int32_t volumeDegree = 44;
+    int32_t volumeDegree = 1;
+    VolumeScale volume{volumeDegree, volumeDegree};
     auto desc = audioAdapterManager->audioActiveDevice_.GetDeviceForVolume(streamType);
     ASSERT_NE(desc, nullptr);
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioAdapterManager->handler_ = std::make_shared<AudioAdapterManagerHandler>();
-    auto ret = audioAdapterManager->SetSystemVolumeDegree(streamType, volumeDegree);
+    std::shared_ptr<AudioDeviceDescriptor> volDeviceDesc = nullptr;
+    auto ret = audioAdapterManager->SetSystemVolumeLevel(streamType, volume, volDeviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 
     audioAdapterManager->useNonlinearAlgo_ = true;
-    ret = audioAdapterManager->SetSystemVolumeDegree(streamType, volumeDegree);
+    ret = audioAdapterManager->SetSystemVolumeLevel(streamType, volume, volDeviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioAdapterManager->SetSystemVolumeDegree(STREAM_VOICE_CALL, volumeDegree);
+    ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_CALL, volume, volDeviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = audioAdapterManager->SetSystemVolumeDegree(STREAM_VOICE_RING, volumeDegree);
+    ret = audioAdapterManager->SetSystemVolumeLevel(STREAM_VOICE_RING, volume, volDeviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = audioAdapterManager->GetSystemVolumeDegree(streamType);
@@ -362,12 +364,14 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     ASSERT_NE(audioAdapterManager, nullptr);
     AudioStreamType streamType = STREAM_MUSIC;
-    int32_t volumeDegree = 44;
+    int32_t volumeDegree = 1;
+    VolumeScale volume{volumeDegree, volumeDegree};
+    std::shared_ptr<AudioDeviceDescriptor> volDeviceDesc = nullptr;
 
     auto ret = audioAdapterManager->GetZoneVolumeDegree(0, streamType);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
-    ret = audioAdapterManager->SetZoneVolumeDegreeToMap(0, streamType, volumeDegree);
+    ret = audioAdapterManager->SetZoneVolumeLevel(0, streamType, volume, volDeviceDesc);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 
     auto device1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
@@ -381,10 +385,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
     AudioConnectedDevice::GetInstance().AddConnectedDevice(device1);
     AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(device1);
 
-    ret = audioAdapterManager->SetZoneVolumeDegreeToMap(zoneId1_, streamType, -1);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-
-    ret = audioAdapterManager->SetZoneVolumeDegreeToMap(zoneId1_, streamType, volumeDegree);
+    ret = audioAdapterManager->SetZoneVolumeLevel(zoneId1_, streamType, volume, volDeviceDesc);
     EXPECT_EQ(ret, SUCCESS);
 
     ret = audioAdapterManager->GetZoneVolumeDegree(zoneId1_, streamType);

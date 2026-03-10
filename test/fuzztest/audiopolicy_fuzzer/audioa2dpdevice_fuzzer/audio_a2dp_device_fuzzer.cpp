@@ -206,7 +206,8 @@ void SetA2dpDeviceVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     std::string device = "test_device";
     AudioA2dpDevice::GetInstance().AddA2dpDevice(device, configInfo);
     int32_t volumeLevel = GetData<int32_t>();
-    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolumeLevel(device, volumeLevel);
+    VolumeScale volume = volumeLevel;
+    bool result = AudioA2dpDevice::GetInstance().SetA2dpDeviceVolume(device, volume);
     A2dpDeviceConfigInfo info;
     bool getInfoResult = AudioA2dpDevice::GetInstance().GetA2dpDeviceInfo(device, info);
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);

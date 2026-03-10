@@ -77,9 +77,11 @@ public:
         return 0;
     }
 
-    ErrCode SetSystemVolume(int32_t zoneId, int32_t volumeType, int32_t volumeLevel, int32_t volumeFlag) override
+    ErrCode SetSystemVolume(int32_t zoneId, int32_t volumeType, int32_t volumeLevel,
+        int32_t volumeDegree, int32_t volumeFlag) override
     {
         volumeLevel_ = volumeLevel;
+        volumeDegree_ = volumeDegree;
         Notify();
         return 0;
     }
@@ -88,13 +90,6 @@ public:
     {
         Notify();
         return volumeLevel_;
-    }
-
-    ErrCode SetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t volumeDegree, int32_t volumeFlag) override
-    {
-        volumeDegree_ = volumeDegree;
-        Notify();
-        return 0;
     }
 
     ErrCode GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume) override
@@ -456,15 +451,16 @@ HWTEST_F(AudioZoneClientManagerUnitTest, AudioZoneClientManager_DegreeTest_001, 
 
     AudioVolumeType volumeType = STREAM_MUSIC;
     int32_t volumeDegree = 10;
+    VolumeScale volume{volumeDegree, volumeDegree};
     pid_t pid = 106;
     EXPECT_NE(manager.GetSystemVolumeDegree(pid, 0, volumeType), 0);
-    EXPECT_NE(manager.SetSystemVolumeDegree(pid, 0, volumeType, volumeDegree, 0), 0);
+    EXPECT_NE(manager.SetSystemVolumeLevel(pid, 0, volumeType, volume, 0), 0);
 
     sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientUnitTest();
     ASSERT_NE(client, nullptr);
 
     manager.clients_[pid] = client;
-    EXPECT_EQ(manager.SetSystemVolumeDegree(pid, 0, volumeType, volumeDegree, 0), 0);
+    EXPECT_EQ(manager.SetSystemVolumeLevel(pid, 0, volumeType, volume, 0), 0);
     EXPECT_EQ(manager.GetSystemVolumeDegree(pid, 0, volumeType), volumeDegree);
 }
 } // namespace AudioStandard

@@ -71,7 +71,7 @@ struct VolumeUpdateOption {
     bool isUpdateUi = false;
     bool mute = false;
     int32_t zoneId = 0;
-    bool syncDegree = true;
+    int32_t volumeDegree = -1;
     bool hasCheckLoudVolume = false;
 };
 
