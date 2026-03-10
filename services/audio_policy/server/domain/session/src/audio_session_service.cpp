@@ -336,8 +336,7 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
         fakeAudioInterrupt.audioFocusType.streamType = session->second->GetFakeStreamType();
         fakeAudioInterrupt.streamUsage = session->second->GetSessionStreamUsage();
         auto sessionBehaviors = session->second->GetSessionBehaviors();
-        fakeAudioInterrupt.strategy = sessionBehaviors.muteWhenInterruptFlag ?
-            InterruptStrategy::MUTE : InterruptStrategy::DEFAULT;
+        fakeAudioInterrupt.behaviorFlags_.muteWhenInterruptFlag = sessionBehaviors.muteWhenInterruptFlag;
     } else {
         AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
     }
