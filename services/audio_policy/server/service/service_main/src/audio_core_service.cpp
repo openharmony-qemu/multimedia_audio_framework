@@ -662,7 +662,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             return;
         case AUDIO_FLAG_ULTRA_FAST:
             streamDesc->ResetUltraFastFlag();
-            CHECK_AND_RETURN(!IsSupportUltraFast(streamDesc));
+            GetFlagForUltraFastStream(streamDesc, isCreateProcess);
             break;
         default:
             break;

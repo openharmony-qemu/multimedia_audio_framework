@@ -76,7 +76,7 @@ static const char* PIPE_ACCESSORY_INPUT = "accessory_input";
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_THRESHOLD = 2;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
 static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
-static const std::unordered_set<DeviceType> g_ultraFastDeviceSet = {
+static const std::unordered_set<DeviceType> g_ultraFastDevicesSet = {
     DEVICE_TYPE_SPEAKER,
     DEVICE_TYPE_EARPIECE
 };
@@ -716,7 +716,7 @@ private:
     void OnRemoteDeviceStatusUpdated();
 
     bool IsDescInSourceStrategyMap(std::shared_ptr<AudioStreamDescriptor> desc);
-    void GetFlagForUltraFastStream(std::stared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    void GetFlagForUltraFastStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
 
     void HandlePlaybackStoppingOperations(std::shared_ptr<AudioStreamDescriptor> &streamDesc, std::string caller);
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
