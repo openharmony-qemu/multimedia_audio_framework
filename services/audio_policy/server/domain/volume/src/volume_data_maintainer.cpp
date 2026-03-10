@@ -1139,9 +1139,6 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDevic
     }
     int32_t defaultVolumeDegree = DEFAULT_VOLUME_DEGREE;
     CHECK_AND_RETURN_RET_LOG(device != nullptr, defaultVolumeDegree, "device is null");
-    if (Util::IsDualToneStreamType(streamType)) {
-        device = ringerDevice_;
-    }
     if (volumeType == STREAM_ALL) {
         AUDIO_INFO_LOG("replace stream all to music");
         volumeType = STREAM_MUSIC;
