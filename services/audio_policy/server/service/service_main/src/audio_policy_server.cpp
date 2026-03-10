@@ -3980,7 +3980,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, in
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (ret == SUCCESS && audioPolicyServerHandler_ != nullptr &&
-        audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP) {
         audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
     }
