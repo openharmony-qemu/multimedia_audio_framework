@@ -1030,7 +1030,7 @@ napi_value NapiAudioStreamMgr::IsFastRecordingSupported(napi_env env, napi_callb
     return result;
 }
 
-static napi_value IsMultichannelPlaybackSupported(napi_env env, napi_callback_info info)
+napi_value NapiAudioStreamMgr::IsMultichannelPlaybackSupported(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_TWO;
@@ -1058,7 +1058,7 @@ static napi_value IsMultichannelPlaybackSupported(napi_env env, napi_callback_in
     return result;
 }
 
-static napi_value IsDirectPlaybackSupported(napi_env env, napi_callback_info info)
+napi_value NapiAudioStreamMgr::IsDirectPlaybackSupported(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_TWO;
@@ -1086,7 +1086,7 @@ static napi_value IsDirectPlaybackSupported(napi_env env, napi_callback_info inf
     return result;
 }
 
-static napi_value IsOffloadPlaybackSupported(napi_env env, napi_callback_info info)
+napi_value NapiAudioStreamMgr::IsOffloadPlaybackSupported(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_TWO;
