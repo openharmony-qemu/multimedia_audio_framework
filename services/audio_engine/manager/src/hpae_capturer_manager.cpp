@@ -111,7 +111,7 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
     clusterNodeInfo.channels = sourceInfo_.channels;
     clusterNodeInfo.format = sourceInfo_.format;
     clusterNodeInfo.samplingRate = sourceInfo_.samplingRate;
-    clusterNodeInfo.frameLen = CalculateFrameLenBySampleRate(clusterNodeInfo.samplingRate);
+    clusterNodeInfo.frameLen = sourceInfo_.frameLen;
     clusterNodeInfo.statusCallback = weak_from_this();
     clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);

@@ -56,7 +56,6 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     nodeInfoMap_.emplace(sourceBufferType, nodeInfo);
     frameByteSizeMap_.emplace(
         sourceBufferType, nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
-    nodeInfoMap_[sourceBufferType].frameLen = FRAME_DURATION_DEFAULT * nodeInfo.samplingRate / MILLISECOND_PER_SECOND;
     pcmBufferInfoMap_.emplace(
         sourceBufferType, PcmBufferInfo(nodeInfoMap_[sourceBufferType].channels,
         nodeInfoMap_[sourceBufferType].frameLen, nodeInfoMap_[sourceBufferType].samplingRate));
