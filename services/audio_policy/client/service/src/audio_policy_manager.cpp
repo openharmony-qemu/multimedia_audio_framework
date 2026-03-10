@@ -608,6 +608,36 @@ bool AudioPolicyManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, S
     return support;
 }
 
+bool AudioPolicyManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+
+    bool support = false;
+    gsp->IsMultichannelPlaybackSupported(streamInfo, static_cast<int32_t>(streamUsage), support);
+    return support;
+}
+
+bool AudioPolicyManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+
+    bool support = false;
+    gsp->IsDirectPlaybackSupported(streamInfo, static_cast<int32_t>(streamUsage), support);
+    return support;
+}
+
+bool AudioPolicyManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+
+    bool support = false;
+    gsp->IsOffloadPlaybackSupported(streamInfo, static_cast<int32_t>(streamUsage), support);
+    return support;
+}
+
 int32_t AudioPolicyManager::GetAudioFocusInfoList(std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList,
     const int32_t zoneID)
 {

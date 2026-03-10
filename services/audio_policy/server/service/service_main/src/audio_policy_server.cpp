@@ -2346,6 +2346,42 @@ int32_t AudioPolicyServer::IsFastRecordingSupported(const AudioStreamInfo &strea
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsMultichannelPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage,
+    bool &support)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.streamUsage = static_cast<StreamUsage>(usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc{};
+    GetPreferredOutputDeviceDescriptors(rendererInfo, false, desc);
+    AudioStreamInfo newStreamInfo = streamInfo;
+    support = audioConfigManager_.IsMultichannelPlaybackSupported(newStreamInfo, desc);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsDirectPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage,
+    bool &support)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.streamUsage = static_cast<StreamUsage>(usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc{};
+    GetPreferredOutputDeviceDescriptors(rendererInfo, false, desc);
+    AudioStreamInfo newStreamInfo = streamInfo;
+    support = audioConfigManager_.IsDirectPlaybackSupported(newStreamInfo, desc, usage);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::IsOffloadPlaybackSupported(const AudioStreamInfo &streamInfo, int32_t usage,
+    bool &support)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.streamUsage = static_cast<StreamUsage>(usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc{};
+    GetPreferredOutputDeviceDescriptors(rendererInfo, false, desc);
+    AudioStreamInfo newStreamInfo = streamInfo;
+    support = audioConfigManager_.IsOffloadPlaybackSupported(newStreamInfo, desc, usage);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetDeviceActive(int32_t deviceType, bool active, int32_t uid)
 {
     return eventEntry_->SetDeviceActive(static_cast<InternalDeviceType>(deviceType), active, uid);
