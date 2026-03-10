@@ -217,6 +217,7 @@ float HdiAdapterManager::GetNormalSourceMaxAmplitude()
         normalMaxAmplitude = source->GetMaxAmplitude();
         break;
     }
+    return normalMaxAmplitude;
 }
 
 int32_t HdiAdapterManager::ProcessSource(const std::function<int32_t(uint32_t,

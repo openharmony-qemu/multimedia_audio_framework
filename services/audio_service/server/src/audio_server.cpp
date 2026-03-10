@@ -2812,7 +2812,7 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
     } else {
         // get normal source maxAmplitude
         maxAmplitude = HdiAdapterManager::GetInstance().GetNormalSourceMaxAmplitude();
-        maxAmplitude = (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
+        maxAmplitude = (maxAmplitude > fastMaxAmplitude) ? maxAmplitude : fastMaxAmplitude;
     }
 
     return SUCCESS;
