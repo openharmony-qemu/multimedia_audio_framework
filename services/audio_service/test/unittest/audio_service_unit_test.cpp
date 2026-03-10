@@ -1776,6 +1776,8 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_005, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
     bool isUltraFast = true;
