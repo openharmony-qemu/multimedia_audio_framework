@@ -2802,7 +2802,6 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
 
     float fastMaxAmplitude = AudioService::GetInstance()->GetMaxAmplitude(isOutputDevice);
     std::shared_ptr<IAudioRenderSink> sink = nullptr;
-    std::shared_ptr<IAudioCaptureSource> source = nullptr;
     if (isOutputDevice) {
         uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass);
         sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
@@ -2811,13 +2810,9 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
             maxAmplitude = (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
         }
     } else {
-        uint32_t sourceId = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(deviceClass,
-            static_cast<SourceType>(sourceType));
-        source = HdiAdapterManager::GetInstance().GetCaptureSource(sourceId, false);
-        if (source != nullptr) {
-            float normalMaxAmplitude = source->GetMaxAmplitude();
-            maxAmplitude = (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
-        }
+        // get normal source maxAmplitude
+        maxAmplitude = HdiAdapterManager::GetInstance().GetNormalSourceMaxAmplitude();
+        maxAmplitude = (normalMaxAmplitude > fastMaxAmplitude) ? normalMaxAmplitude : fastMaxAmplitude;
     }
 
     return SUCCESS;

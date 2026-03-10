@@ -165,6 +165,11 @@ bool VACaptureSource::IsInited(void)
     return sourceInited_.load();
 }
 
+bool RemoteAudioCaptureSource::IsStarted(void)
+{
+    return started_.load();
+}
+
 int32_t VACaptureSource::Start(void)
 {
     AUDIO_INFO_LOG("VACaptureSource::Start called");
@@ -183,10 +188,10 @@ int32_t VACaptureSource::Start(void)
     if (audioSrcClock_ != nullptr) {
         audioSrcClock_->Reset();
     }
-    callback_.OnCaptureState(true);
     int ret = inputStream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "va start failed");
     started_.store(true);
+    callback_.OnCaptureState(true);
 
     startTimestamp = ClockTime::GetCurNano();
     return SUCCESS;

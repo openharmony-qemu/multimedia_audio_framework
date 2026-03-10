@@ -178,6 +178,11 @@ bool AudioCaptureSource::IsInited(void)
     return sourceInited_;
 }
 
+bool AudioCaptureSource::IsStarted(void)
+{
+    return started_.load();
+}
+
 void AudioCaptureSource::InitRunningLock(void)
 {
 #ifdef FEATURE_POWER_MANAGER

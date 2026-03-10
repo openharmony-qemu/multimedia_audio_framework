@@ -103,6 +103,11 @@ bool BluetoothAudioCaptureSource::IsInited(void)
     return sourceInited_;
 }
 
+bool BluetoothAudioCaptureSource::IsStarted(void)
+{
+    return started_;
+}
+
 int32_t BluetoothAudioCaptureSource::Start(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);

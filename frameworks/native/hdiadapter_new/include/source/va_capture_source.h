@@ -46,6 +46,7 @@ public:
 
     void DeInit(void) override;
     bool IsInited(void) override;
+    bool IsStarted(void) override;
 
     int32_t Start(void) override;
     int32_t Stop(void) override;
@@ -81,7 +82,6 @@ private:
     uint32_t captureId_ = HDI_INVALID_ID;
     IAudioSourceAttr attr_ = {};
     std::atomic<bool> sourceInited_ = false;
-    std::atomic<bool> started_ = false;
     std::mutex statusMutex_;
 
     float maxAmplitude_ = 0;
