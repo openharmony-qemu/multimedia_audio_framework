@@ -877,6 +877,16 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
 int32_t VolumeDataMaintainer::SaveVolumeToDb(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType, const VolumeScale &volume)
 {
+    int32_t volumeLevel = volume.VolumeLevel();
+    int32_t volumeDegree = volume.VolumeDegree();
+    CHECK_AND_RETURN_RET_LOG(volumeLevel >= 0 && volumeDegree >= 0, ERR_INVALID_PARAM,
+        "invalid input, volumeLevel: %{public}d, volumeDegree: %{public}d", volumeLevel, volumeDegree);
+    return SaveVolumeToDbInner(device, streamType, volume);
+}
+
+int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, const VolumeScale &volume)
+{
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "SaveVolumeToDb device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     if (AudioVolumeUtils::GetInstance().IsDistributedDevice(device)) {
@@ -918,6 +928,16 @@ int32_t VolumeDataMaintainer::SaveVolumeToDb(std::shared_ptr<AudioDeviceDescript
 }
 
 void VolumeDataMaintainer::SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, VolumeScale &volume)
+{
+    int32_t volumeLevel = volume.VolumeLevel();
+    int32_t volumeDegree = volume.VolumeDegree();
+    CHECK_AND_RETURN_LOG(volumeLevel >= 0 && volumeDegree >= 0,
+        "invalid input, volumeLevel: %{public}d, volumeDegree: %{public}d", volumeLevel, volumeDegree);
+    SaveVolumeToMapInner(device, streamType, volume);
+}
+
+void VolumeDataMaintainer::SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType, VolumeScale &volume)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "SaveVolumeToMap device is null");

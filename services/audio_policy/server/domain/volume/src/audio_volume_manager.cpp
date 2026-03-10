@@ -567,7 +567,7 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelInternal(AudioStreamType streamT
     CheckToCloseNotification(streamType, volumeLevel);
     if (volumeLevel != sVolumeLevel) {
         volumeLevel = sVolumeLevel;
-        buffedVolume.Update(sVolumeLevel);
+        buffedVolume.Update({sVolumeLevel, -1, buffedVolume.MaxVolumeLevel()});
     }
     result = audioPolicyManager_.SetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
         buffedVolume, volDeviceDesc);
@@ -659,7 +659,7 @@ int32_t AudioVolumeManager::SetA2dpDeviceVolume(const std::string &macAddress,
         }
     }
     isBtFirstBoot_ = false;
-    volume.Update(sVolumeLevel);
+    volume.Update({sVolumeLevel, -1, volume.MaxVolumeLevel()});
     if (audioA2dpDevice_.SetA2dpDeviceVolume(macAddress, volume) == false) {
         return ERROR;
     }
@@ -731,7 +731,7 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
         }
         isBtFirstBoot_ = false;
     }
-    volume.Update(sVolumeLevel);
+    volume.Update({sVolumeLevel, -1, volume.MaxVolumeLevel()});
     ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolume(macAddress, streamType, volume);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetDeviceAbsVolume failed");
     ret = SetNearlinkDeviceVolumeEx(streamType, sVolumeLevel);

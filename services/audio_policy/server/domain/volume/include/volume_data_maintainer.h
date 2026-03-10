@@ -178,6 +178,10 @@ private:
     void LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device);
 
     void WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg);
+    int32_t SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, const VolumeScale &volume);
+    void SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, VolumeScale &volume);
 
     ffrt::mutex volumeMutex_;
     ffrt::mutex volumeForDbMutex_;

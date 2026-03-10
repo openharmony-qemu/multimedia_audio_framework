@@ -91,7 +91,7 @@ const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
 const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 const int32_t MAX_VOLUME_DEGREE = 100;
-const int32_t MIN_VOLUME_DEGREE = 0;
+const int32_t VOLUME_DEGREE_ZERO = 0;
 const int32_t VOLUME_LEVEL_ZERO = 0;
 const int32_t MID_CORE_START = 4;
 
@@ -2149,10 +2149,10 @@ std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeTy
 
 int32_t VolumeUtils::VolumeDegreeToLevel(int32_t degree, int32_t maxLevel)
 {
-    CHECK_AND_RETURN_RET_LOG(degree >= MIN_VOLUME_DEGREE && degree <= MAX_VOLUME_DEGREE && maxLevel > 0,
+    CHECK_AND_RETURN_RET_LOG(degree >= VOLUME_DEGREE_ZERO && degree <= MAX_VOLUME_DEGREE && maxLevel > 0,
         -1, "invalid input, degree:%{public}d, maxLevel:%{public}d", degree, maxLevel);
 
-    if (degree == MIN_VOLUME_DEGREE) {
+    if (degree == VOLUME_DEGREE_ZERO) {
         return VOLUME_LEVEL_ZERO;
     }
 
@@ -2160,7 +2160,7 @@ int32_t VolumeUtils::VolumeDegreeToLevel(int32_t degree, int32_t maxLevel)
         return maxLevel;
     }
 
-    int32_t level = (degree - 1) * (maxLevel - 1) / (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) + 1;
+    int32_t level = (degree - 1) * (maxLevel - 1) / (MAX_VOLUME_DEGREE - VOLUME_DEGREE_ZERO - 1) + 1;
     return level;
 }
 
@@ -2171,35 +2171,43 @@ int32_t VolumeUtils::VolumeLevelToDegree(int32_t level, int32_t maxLevel)
         -1, "invalid input, level:%{public}d, maxLevel:%{public}d", level, maxLevel);
 
     if (level == VOLUME_LEVEL_ZERO) {
-        return MIN_VOLUME_DEGREE;
+        return VOLUME_DEGREE_ZERO;
     }
     
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }
 
-    int32_t degree = ((level * 2 - 1) * (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / divider + 1) / 2;
+    int32_t degree = ((level * 2 - 1) * (MAX_VOLUME_DEGREE - VOLUME_DEGREE_ZERO - 1) / divider + 1) / 2;
     return degree;
+}
+
+void VolumeUtils::InitLevelToDegreeMap(int32_t maxLevel)
+{
+    for (int32_t i = VOLUME_DEGREE_ZERO; i <= MAX_VOLUME_DEGREE; i++) {
+        int32_t level = VolumeDegreeToLevel(i, maxLevel);
+        levelToDegreeMap_[maxLevel][level] = i;
+    }
 }
 
 int32_t VolumeUtils::GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel)
 {
     int32_t divider = maxLevel - 1;
-    CHECK_AND_RETURN_RET_LOG(level >= VOLUME_LEVEL_ZERO && divider > 0,
+    CHECK_AND_RETURN_RET_LOG(level >= VOLUME_LEVEL_ZERO && level <= maxLevel && divider > 0,
         -1, "invalid input, level:%{public}d, maxLevel:%{public}d", level, maxLevel);
-
     if (level == VOLUME_LEVEL_ZERO) {
-        return MIN_VOLUME_DEGREE;
+        return VOLUME_DEGREE_ZERO;
     }
-
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }
-
-    int32_t nextLevel = level + 1;
-    int32_t ceiling = VolumeLevelToDegree(nextLevel, maxLevel) - 1;
-
-    return ceiling;
+    if (levelToDegreeMap_.find(maxLevel) == levelToDegreeMap_.end()) {
+        InitLevelToDegreeMap(maxLevel);
+    }
+    auto innerMap = levelToDegreeMap_[maxLevel];
+    CHECK_AND_RETURN_RET_LOG(innerMap.find(level) != innerMap.end(),
+        -1, "level degree map not init");
+    return innerMap[level];
 }
 
 VolumeScale VolumeScale::Refresh()
@@ -2230,11 +2238,10 @@ VolumeScale VolumeScale::Adjust(const VolumeScale &volume)
     return *this;
 }
 
-VolumeScale VolumeScale::Update(int32_t volumeLevel)
+VolumeScale VolumeScale::Update(const VolumeScale &volume)
 {
-    if (volumeLevel != volumeLevel_) {
-        volumeLevel_ = volumeLevel;
-        volumeDegree_ = VolumeUtils::VolumeLevelToDegree(volumeLevel_, maxVolumeLevel_);
+    if (volume.VolumeLevel() != volumeLevel_) {
+        *this = volume;
     }
     Refresh();
     return *this;

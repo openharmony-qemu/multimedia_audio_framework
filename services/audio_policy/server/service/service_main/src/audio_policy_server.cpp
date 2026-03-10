@@ -5777,8 +5777,12 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
         "MANAGE_AUDIO_CONFIG_PERMISSION permission check failed");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
-    CHECK_AND_RETURN_RET_LOG(volumeDegree >= 0 && volumeDegree <= MAX_VOLUME_DEGREE, ERR_INVALID_PARAM,
-        "volumeDegree:%{public}d not in range:[0, %{public}d]", volumeDegree, MAX_VOLUME_DEGREE);
+
+    int32_t volumeDegreeMin = -1;
+    GetMinVolumeDegree(streamTypeIn, static_cast<int32_t>(DEVICE_TYPE_NONE), volumeDegreeMin);
+    CHECK_AND_RETURN_RET_LOG(volumeDegree >= volumeDegreeMin && volumeDegree <= MAX_VOLUME_DEGREE, ERR_INVALID_PARAM,
+        "volumeDegree:%{public}d not in range:[%{public}d, %{public}d]",
+        volumeDegree, volumeDegreeMin, MAX_VOLUME_DEGREE);
 
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
