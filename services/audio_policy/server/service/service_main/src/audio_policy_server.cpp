@@ -471,7 +471,7 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
         volumeEvent.volume = volLevel;
-        volumeEvent.volumeDegree = VolumeUtils::VolumeLevelToDegree(volLevel, volumeLevelMax);
+        volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(streamInFocus, zoneId);
         volumeEvent.updateUi = true;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
