@@ -506,7 +506,7 @@ bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
         AudioChannelLayout tempLayout = streamInfo.channelLayout;
 
         if (pipeIt.second->supportFlags_ == AUDIO_OUTPUT_FLAG_FAST) {
-            CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S32L || tempFormat == SAMPLE_F32LE ||
+            CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S32LE || tempFormat == SAMPLE_F32LE ||
                 tempFormat == SAMPLE_S16LE, false);
         }
         if (pipeIt.second->supportFlags_ == AUDIO_INPUT_FLAG_FAST) {
