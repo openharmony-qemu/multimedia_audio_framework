@@ -294,7 +294,7 @@ private:
     
     EndpointType endpointType_;
     AdapterType adapterType_ = ADAPTER_TYPE_FAST;
-    std::atomic<bool> IsEndpointUltraFast_ = false;
+    std::atomic<bool> isEndpointUltraFast_ = false;
     int32_t id_ = 0;
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
 
