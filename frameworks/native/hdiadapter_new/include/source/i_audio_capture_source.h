@@ -18,7 +18,6 @@
 
 #include <iostream>
 #include <string>
-#include <atomic>
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_engine_callback_types.h"
