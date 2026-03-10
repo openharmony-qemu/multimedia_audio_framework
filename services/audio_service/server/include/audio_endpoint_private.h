@@ -137,6 +137,7 @@ private:
     void CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t &wakeUpTime, int64_t &curTime);
     void MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId);
     bool ConfigInputPoint(const AudioDeviceDescriptor &deviceInfo);
+    bool ConfigOutputPoint(const AudioEndpointConfig &endpointConfig);
     int32_t PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo);
     void InitTransBuffer();
     int32_t GetAdapterBufferInfo(const AudioDeviceDescriptor &deviceInfo);
