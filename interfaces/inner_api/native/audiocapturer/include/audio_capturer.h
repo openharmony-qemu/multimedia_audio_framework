@@ -806,6 +806,8 @@ public:
      */
     virtual int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior)
     {
+        (void)strategy;
+        (void)behavior;
         return 0;
     }
 

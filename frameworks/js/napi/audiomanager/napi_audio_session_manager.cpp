@@ -1282,7 +1282,7 @@ napi_value NapiAudioSessionMgr::SetAudioSessionBehavior(napi_env env, napi_callb
         "parameter verification failed: behavior wrong value"),
         "valueType invalid");
     CHECK_AND_RETURN_RET_LOG(
-        behavior < (static_cast<int32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        behavior < (static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
         "Parameter verification failed. behavior param is out of range"), "invaild behavior param");
 

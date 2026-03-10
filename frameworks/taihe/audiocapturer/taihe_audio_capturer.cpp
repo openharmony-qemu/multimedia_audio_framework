@@ -613,7 +613,7 @@ void AudioCapturerImpl::SetIndependentAudioSessionStrategy(
             return;
     }
     CHECK_AND_RETURN_RET_LOG(
-        behavior < (static_cast<int32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        behavior < (static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invaild behavior param");
     int32_t ret = audioCapturer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
     if (ret != OHOS::AudioStandard::SUCCESS) {
