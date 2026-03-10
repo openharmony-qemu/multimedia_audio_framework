@@ -1776,15 +1776,15 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_005, TestSize.Level1)
 
     AudioProcessConfig clientConfig = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.networkId_ = LOACL_NETWORK_ID;
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::string adapterName = "";
     bool isUltraFast = true;
     AudioEndpointConfig endpointConfig = {
         .deviceInfo = deviceInfo,
         .streamInfo = audioStreamInfo,
         .adapterName = adapterName,
-        .audioMode = config.audioMode,
-        .streamType = config.streamType,
+        .audioMode = clientConfig.audioMode,
+        .streamType = clientConfig.streamType,
         .isUltraFast = isUltraFast
     };
     std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
