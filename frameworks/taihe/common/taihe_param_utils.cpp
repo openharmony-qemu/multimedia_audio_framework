@@ -91,15 +91,6 @@ const std::unordered_map<OHOS::AudioStandard::AudioSampleFormat, AudioSampleForm
     {OHOS::AudioStandard::AudioSampleFormat::SAMPLE_F32LE, AudioSampleFormat::key_t::SAMPLE_FORMAT_F32LE},
 };
 
-// 反向映射：Taihe AudioSampleFormat -> Native AudioSampleFormat
-const std::unordered_map<AudioSampleFormat::key_t, OHOS::AudioStandard::AudioSampleFormat> gAniToNativeAudioSampleFormat = {
-    {AudioSampleFormat::key_t::SAMPLE_FORMAT_U8, OHOS::AudioStandard::AudioSampleFormat::SAMPLE_U8},
-    {AudioSampleFormat::key_t::SAMPLE_FORMAT_S16LE, OHOS::AudioStandard::AudioSampleFormat::SAMPLE_S16LE},
-    {AudioSampleFormat::key_t::SAMPLE_FORMAT_S24LE, OHOS::AudioStandard::AudioSampleFormat::SAMPLE_S24LE},
-    {AudioSampleFormat::key_t::SAMPLE_FORMAT_S32LE, OHOS::AudioStandard::AudioSampleFormat::SAMPLE_S32LE},
-    {AudioSampleFormat::key_t::SAMPLE_FORMAT_F32LE, OHOS::AudioStandard::AudioSampleFormat::SAMPLE_F32LE},
-};
-
 int32_t TaiheParamUtils::GetRendererInfo(OHOS::AudioStandard::AudioRendererInfo &rendererInfo,
     AudioRendererInfo const &in)
 {
