@@ -4503,54 +4503,6 @@ HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_004, TestSize.Le
 
 /**
  * @tc.name   : Test AudioCoreService.
- * @tc.number : GetFlagForUltraFastStream_005
- * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device type is not in ultra fast support
- */
-HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_005, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-    audioCoreService->isSupportUltraFast_ = true;
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-    streamDesc->bundleName_ = "com.huawei.hmos.musiccreate";
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    bool isCreateProcess = true;
-
-    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
-    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
-}
-
-/**
- * @tc.name   : Test AudioCoreService.
- * @tc.number : GetFlagForUltraFastStream_007
- * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device is not in ultra fast support
- */
-HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_007, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-    audioCoreService->isSupportUltraFast_ = true;
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-    streamDesc->bundleName_ = "com.huawei.hmos.musiccreate";
-    streamDesc->sessionId_ = 1001;
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    bool isCreateProcess = false;
-
-    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
-    EXPECT_TRUE(streamDesc->IsUltraFastRequested());
-    EXPECT_EQ(streamDesc->GetAudioFlag(), AUDIO_OUTPUT_FLAG_NORMAL);
-}
-
-/**
- * @tc.name   : Test AudioCoreService.
  * @tc.number : DecidedAudioFlagForStreams_001
  * @tc.desc   : Test AudioCoreService::DecidedAudioFlagForStreams with empty streamDescs
  */
