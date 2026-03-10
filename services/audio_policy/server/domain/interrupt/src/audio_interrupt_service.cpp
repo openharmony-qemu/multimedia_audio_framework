@@ -2873,8 +2873,15 @@ void AudioInterruptService::SendAudioSessionInterruptEventCallback(
 
 bool AudioInterruptService::IsHandleIter(
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive, AudioFocuState oldState,
-    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew)
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew, bool isExistActiveInjectFocus)
 {
+    // When distributed focus sync, at most only one focus can be restored as active.
+    if (iterNew->first.deviceTag != "" && iterNew->second == ACTIVE && isExistActiveInjectFocus) {
+        ++iterActive;
+        ++iterNew;
+        return true;
+    }
+
     if (oldState == PAUSEDBYREMOTE) {
         AUDIO_INFO_LOG("old State is PAUSEDBYREMOTE");
         ++iterActive;
@@ -2884,22 +2891,29 @@ bool AudioInterruptService::IsHandleIter(
     return false;
 }
 
+bool AudioInterruptService::IsActiveInjectFocusExist(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList)
+{
+    for (const auto &item : audioFocusInfoList) {
+        CHECK_AND_RETURN_RET(item.first.deviceTag == "" || item.second != ACTIVE, true);
+    }
+    return false;
+}
+
 void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSessionTimeout)
 {
     AudioScene highestPriorityAudioScene = AUDIO_SCENE_DEFAULT;
-
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
+    bool isExistActiveInjectFocus = IsActiveInjectFocusExist(audioFocusInfoList);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList = SimulateFocusEntry(zoneId);
     for (auto iterActive = audioFocusInfoList.begin(), iterNew = newAudioFocuInfoList.begin();
         iterActive != audioFocusInfoList.end() && iterNew != newAudioFocuInfoList.end();) {
         AudioFocuState oldState = iterActive->second;
-        if (IsHandleIter(iterActive, oldState, iterNew)) {
-            continue;
-        }
+        CHECK_AND_CONTINUE(!IsHandleIter(iterActive, oldState, iterNew, isExistActiveInjectFocus));
         AudioFocuState newState = iterNew->second;
         bool removeFocusInfo = false;
         if (oldState != newState) {
@@ -2916,8 +2930,8 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
             AUDIO_INFO_LOG("State change: streamId %{public}d, oldstate %{public}d, "\
                 "newState %{public}d", (iterActive->first).streamId, oldState, newState);
             SendInterruptEvent(oldState, newState, iterActive, removeFocusInfo);
+            isExistActiveInjectFocus = (iterNew->first.deviceTag != "" && iterNew->second == ACTIVE) ? true : false;
         }
-
         if (iterActive->first.deviceTag.empty() && removeFocusInfo && !IsGameAvoidCallbackCase(iterActive->first)) {
             AudioInterrupt interruptToRemove = iterActive->first;
             iterActive = audioFocusInfoList.erase(iterActive);
