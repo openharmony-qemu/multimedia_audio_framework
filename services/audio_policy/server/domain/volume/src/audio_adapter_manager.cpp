@@ -3193,17 +3193,17 @@ void AudioAdapterManager::SetActiveDeviceDescriptor(AudioDeviceDescriptor device
 
 AudioDeviceDescriptor AudioAdapterManager::GetActiveDeviceDescriptor()
 {
-    return audioActiveDevice_.GetDeviceForVolume();
+    return audioActiveDevice_.GetCurrentOutputDevice();
 }
 
 DeviceCategory AudioAdapterManager::GetCurrentOutputDeviceCategory()
 {
-    return audioActiveDevice_.GetDeviceForVolume()->deviceCategory_;
+    return audioActiveDevice_.GetCurrentOutputDeviceCategory();
 }
 
 DeviceType AudioAdapterManager::GetActiveDevice()
 {
-    return audioActiveDevice_.GetDeviceForVolume()->deviceType_;
+    return audioActiveDevice_.GetCurrentOutputDeviceType();
 }
 
 int32_t AudioAdapterManager::SetNearlinkDeviceVolume(AudioVolumeType volumeType, int32_t volume)
