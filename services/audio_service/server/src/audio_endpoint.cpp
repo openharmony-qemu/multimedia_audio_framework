@@ -676,6 +676,8 @@ IAudioSinkAttr AudioEndpointInner::InitSinkAttr(const AudioEndpointConfig &endpo
         attr.pin = AUDIO_PIN_OUT_DP;
     }
     if (endpointConfig.isUltraFast) {
+        isEndpointUltraFast_ = true;
+        adapterType_ = ADAPTER_TYPE_ULTRA_FAST;
         attr.period = static_cast<int32_t>(
             static_cast<float>(attr.sampleRate * attr.channel * GetFormatByteSize(attr.format)) *
             ULTRA_FAST_PERIOD_TIME_IN_MS / static_cast<float>(MILLISECOND_PER_SECOND));
@@ -2516,6 +2518,7 @@ int32_t AudioEndpointInner::RemoveCaptureInjector(const uint32_t &sinkPortIndex,
     DumpFileUtil::CloseDumpFile(&dumpMixDup_);
     return SUCCESS;
 }
+
 void AudioEndpointInner::UpdateEndpointStatus(AudioEndpoint::EndpointStatus newStatus)
 {
     endpointStatus_ = newStatus;
@@ -2523,6 +2526,11 @@ void AudioEndpointInner::UpdateEndpointStatus(AudioEndpoint::EndpointStatus newS
     if (checker != nullptr) {
         checker->UpdateStatus(fastRenderId_, endpointName_, endpointStatus_.load());
     }
+}
+
+bool AudioEndpointInner::IsEndpointUltraFast() const
+{
+    return isEndpointUltraFast_;
 }
 
 void AudioEndpointInner::StopByRestore(const RestoreInfo &restoreInfo)

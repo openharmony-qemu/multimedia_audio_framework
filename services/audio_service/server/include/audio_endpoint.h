@@ -113,6 +113,8 @@ public:
     virtual int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) = 0;
     virtual int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) = 0;
 
+    virtual bool IsEndpointUltraFast() const = 0;
+    
     virtual ~AudioEndpoint() = default;
 
 protected:

@@ -896,6 +896,20 @@ bool AudioPipeManager::HasFastOutputPipe()
     return false;
 }
 
+bool AudioPipeManager::HasUltraFastStreamRequest()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_RETURN_RET_LOG(desc->rendererInfo_.originalFlag != AUDIO_FLAG_ULTRA_FAST, true,
+                "stream %{public}u is request ultra fast route", desc->GetSessionId());
+        }
+    }
+    return false;
+}
+
 bool AudioPipeManager::IsStreamUseUltraFastRoute(uint32_t sessionId)
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);

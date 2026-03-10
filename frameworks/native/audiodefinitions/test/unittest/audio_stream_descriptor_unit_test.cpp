@@ -594,5 +594,84 @@ HWTEST_F(AudioStreamDescriptorUnitTest, DumpRendererStreamAttrs_FastFalse_001, T
     testRendererStream_->Dump(dumpStr);
     EXPECT_NE(std::string::npos, dumpStr.find("UltralFastStream: 0"));
 }
+
+/**
+ * @tc.name   : Test AudioStreamDescriptor API
+ * @tc.type   : FUNC
+ * @tc.number : SetForcedNormalBool_001
+ * @tc.desc   : Test AudioStreamDescriptor::SetFastStreamForcedNormalFlag true
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, SetForcedNormalBool_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    streamDesc.SetFastStreamForcedNormalFlag(true);
+    EXPECT_TRUE(streamDesc.GetFastStreamForcedNormalFlag());
+}
+
+/**
+ * @tc.name   : Test AudioStreamDescriptor API
+ * @tc.type   : FUNC
+ * @tc.number : SetForcedNormalBool_002
+ * @tc.desc   : Test AudioStreamDescriptor::SetFastStreamForcedNormalFlag false
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, SetForcedNormalBool_002, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    streamDesc.SetFastStreamForcedNormalFlag(true);
+    EXPECT_TRUE(streamDesc.GetFastStreamForcedNormalFlag());
+
+    streamDesc.SetFastStreamForcedNormalFlag(false);
+    EXPECT_FALSE(streamDesc.GetFastStreamForcedNormalFlag());
+}
+
+/**
+ * @tc.name   : Test AudioStreamDescriptor API
+ * @tc.type   : FUNC
+ * @tc.number : GetForcedNormalBool_001
+ * @tc.desc   : Test AudioStreamDescriptor::GetFastStreamForcedNormalFlag default value
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, GetForcedNormalBool_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    EXPECT_FALSE(streamDesc.GetFastStreamForcedNormalFlag());
+}
+
+/**
+ * @tc.name   : Test AudioStreamDescriptor API
+ * @tc.type   : FUNC
+ * @tc.number : ResetForcedNormalBool_001
+ * @tc.desc   : Test AudioStreamDescriptor::ResetFastStreamForcedNormalFlag
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, ResetForcedNormalBool_001, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    streamDesc.SetFastStreamForcedNormalFlag(true);
+    EXPECT_TRUE(streamDesc.GetFastStreamForcedNormalFlag());
+
+    bool oldValue = streamDesc.ResetFastStreamForcedNormalFlag();
+    EXPECT_TRUE(oldValue);
+    EXPECT_FALSE(streamDesc.GetFastStreamForcedNormalFlag());
+}
+
+/**
+ * @tc.name   : Test AudioStreamDescriptor API
+ * @tc.type   : FUNC
+ * @tc.number : ResetForcedNormalBool_002
+ * @tc.desc   : Test AudioStreamDescriptor::ResetFastStreamForcedNormalFlag
+ */
+HWTEST_F(AudioStreamDescriptorUnitTest, ResetForcedNormalBool_002, TestSize.Level1)
+{
+    AudioStreamDescriptor streamDesc;
+
+    EXPECT_FALSE(streamDesc.GetFastStreamForcedNormalFlag());
+
+    bool oldValue = streamDesc.ResetFastStreamForcedNormalFlag();
+    EXPECT_FALSE(oldValue);
+    EXPECT_FALSE(streamDesc.GetFastStreamForcedNormalFlag());
+}
 } // namespace AudioStandard
 } // namespace OHOS
