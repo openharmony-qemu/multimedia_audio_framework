@@ -2925,16 +2925,6 @@ int32_t AudioServer::SetLatestMuteState(uint32_t sessionId, bool muteFlag)
     return SUCCESS;
 }
 
-int32_t AudioServer::SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag)
-{
-    AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
-        "Refused for %{public}d", callingUid);
-    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
-    return SUCCESS;
-}
-
 int32_t AudioServer::SetNonInterruptMute(uint32_t sessionId, bool muteFlag)
 {
     AUDIO_INFO_LOG("sessionId_: %{public}u, muteFlag: %{public}d", sessionId, muteFlag);

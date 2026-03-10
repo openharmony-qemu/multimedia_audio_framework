@@ -2998,14 +2998,6 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
 
-    if (IsRecordingInterruption(audioInterrupt)) {
-        if (callbackCategory == static_cast<int32_t>(AudioPolicyServerHandler::REQUEST_CALLBACK_CATEGORY)) {
-            SetSessionMuteState(audioInterrupt.streamId, true, audioInterrupt.strategy != InterruptStrategy::DEFAULT);
-        } else if (callbackCategory == static_cast<int32_t>(AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY)) {
-            SetSessionMuteState(audioInterrupt.streamId, false, audioInterrupt.strategy != InterruptStrategy::DEFAULT);
-        }
-    }
-
     handler_->SendAudioFocusInfoChangeCallback(callbackCategory, audioInterrupt, audioFocusInfoList);
 }
 

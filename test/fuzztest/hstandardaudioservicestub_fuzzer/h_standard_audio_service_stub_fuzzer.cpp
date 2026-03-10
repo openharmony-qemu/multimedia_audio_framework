@@ -707,15 +707,6 @@ void IsAcousticEchoCancelerSupported(FuzzedDataProvider &provider)
     audioServer->IsAcousticEchoCancelerSupported(sourceType, isSupported);
 }
 
-void SetSessionMuteState(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
-    bool insert = provider.ConsumeBool();
-    bool muteFlag = provider.ConsumeBool();
-    audioServer->SetSessionMuteState(sessionId, insert, muteFlag);
-}
-
 void SetLatestMuteState(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -975,7 +966,6 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     RegisterDataTransferCallback,
     NotifySettingsDataReady,
     IsAcousticEchoCancelerSupported,
-    SetSessionMuteState,
     SetLatestMuteState,
     ForceStopAudioStream,
     CreateAudioWorkgroup,
