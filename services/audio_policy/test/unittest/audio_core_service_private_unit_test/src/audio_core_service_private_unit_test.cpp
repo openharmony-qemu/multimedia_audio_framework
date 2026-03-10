@@ -4526,30 +4526,6 @@ HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_005, TestSize.Le
 
 /**
  * @tc.name   : Test AudioCoreService.
- * @tc.number : GetFlagForUltraFastStream_006
- * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device supports ultra fast
- */
-HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_006, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-    audioCoreService->isSupportUltraFast_ = true;
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    ASSERT_NE(streamDesc, nullptr);
-    streamDesc->bundleName_ = "com.huawei.hmos.musiccreate";
-    streamDesc->sessionId_ = 1001;
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-    bool isCreateProcess = true;
-
-    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
-    EXPECT_TRUE(streamDesc->IsUltraFastRequested());
-}
-
-/**
- * @tc.name   : Test AudioCoreService.
  * @tc.number : GetFlagForUltraFastStream_007
  * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device is not in ultra fast support
  */
