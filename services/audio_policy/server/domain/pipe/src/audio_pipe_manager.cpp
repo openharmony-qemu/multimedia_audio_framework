@@ -168,7 +168,9 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
-        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe->routeFlag_)) {
+        if (pipe->streamDescriptors_.empty() && (IsSpecialPipe(pipe->routeFlag_) ||
+            (pipe->adapterName_ == ADAPTER_TYPE_VA &&
+            pipe->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL))) {
             newList.push_back(pipe);
         }
     }
@@ -214,7 +216,8 @@ bool AudioPipeManager::IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInf
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "Pipe info is null");
     if ((pipeInfo->adapterName_ == PRIMARY_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) ||
-        (pipeInfo->adapterName_ == USB_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL)) {
+        (pipeInfo->adapterName_ == USB_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) ||
+        (pipeInfo->adapterName_ == ADAPTER_TYPE_VA && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL)) {
         return true;
     }
     return false;
