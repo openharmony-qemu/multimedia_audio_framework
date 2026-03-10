@@ -247,8 +247,8 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsMultichannelPlaybac
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    auto ret = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
     EXPECT_NE(audioStreamManager, nullptr);
     streamInfo->samplingRate = 48000;
     streamInfo->channelLayout = CH_LAYOUT_2POINT1;
@@ -282,8 +282,8 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsDirectPlaybackSuppo
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    auto ret = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
     EXPECT_NE(audioStreamManager, nullptr);
     streamInfo->samplingRate = 48000;
     streamInfo->channelLayout = CH_LAYOUT_STEREO;
@@ -317,8 +317,8 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsOffloadPlaybackSupp
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    auto result = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    auto ret = OH_AudioManager_GetAudioStreamManager(&audioStreamManager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
     EXPECT_NE(audioStreamManager, nullptr);
     streamInfo->samplingRate = 48000;
     streamInfo->channelLayout = CH_LAYOUT_STEREO;
