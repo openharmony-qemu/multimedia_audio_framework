@@ -55,6 +55,7 @@ static const int64_t RING_DUAL_END_DELAY_US = 100000;
 static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
+static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 
 static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_WIRED_HEADSET,
@@ -168,6 +169,55 @@ static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_REMOTE_CAST
 };
+
+static uint32_t CalculateTargetBufferDurationMs(const PipeStreamPropInfo &targetInfo)
+{
+    uint32_t targetBufferMs = BUFFER_CALC_20MS;
+    const uint32_t bytesPerSample = AudioPolicyUtils::GetInstance().PcmFormatToBytes(targetInfo.format_);
+    if (bytesPerSample == 0 || targetInfo.sampleRate_ == 0 || targetInfo.channels_ == 0 ||
+        targetInfo.bufferSize_ == 0) {
+        return targetBufferMs;
+    }
+
+    const uint64_t denom = static_cast<uint64_t>(targetInfo.sampleRate_) *
+                           static_cast<uint64_t>(targetInfo.channels_) *
+                           static_cast<uint64_t>(bytesPerSample);
+    const uint64_t number = static_cast<uint64_t>(targetInfo.bufferSize_) *
+                            static_cast<uint64_t>(MS_PER_S);
+    targetBufferMs = static_cast<uint32_t>((number + denom / ROUNDING_HALF_DIVISOR) / denom);
+    return targetBufferMs;
+}
+
+static bool CalculateArmBufferDurationMs(const AudioModuleInfo &moduleInfo, uint32_t &buffCalcMs)
+{
+    if (moduleInfo.rate.empty() || moduleInfo.format.empty() || moduleInfo.channels.empty() ||
+        moduleInfo.bufferSize.empty()) {
+        return true;
+    }
+
+    uint32_t rateValue = 0;
+    uint32_t channelValue = 0;
+    uint32_t bufferSizeValue = 0;
+    CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.rate, rateValue), false,
+        "convert invalid moduleInfo.rate: %{public}s", moduleInfo.rate.c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.channels, channelValue), false,
+        "convert invalid moduleInfo.channels: %{public}s", moduleInfo.channels.c_str());
+    CHECK_AND_RETURN_RET_LOG(StringConverter(moduleInfo.bufferSize, bufferSizeValue), false,
+        "convert invalid original bufferSize: %{public}s", moduleInfo.bufferSize.c_str());
+
+    const uint32_t bytesPerSample =
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]);
+    CHECK_AND_RETURN_RET_LOG(bytesPerSample > 0, false, "bytesPerSample is 0");
+
+    const uint64_t denom = static_cast<uint64_t>(rateValue) *
+                           static_cast<uint64_t>(channelValue) *
+                           static_cast<uint64_t>(bytesPerSample);
+    CHECK_AND_RETURN_RET_LOG(denom > 0, false, "denom is 0");
+    const uint64_t number = static_cast<uint64_t>(bufferSizeValue) *
+                            static_cast<uint64_t>(MS_PER_S);
+    buffCalcMs = static_cast<uint32_t>((number + denom / ROUNDING_HALF_DIVISOR) / denom);
+    return true;
+}
 
 }
 
@@ -3145,6 +3195,7 @@ int32_t AudioCoreService::FetchTargetInfoForSessionAdd(const SessionInfo session
         }
     }
     targetInfo = *targetStreamPropInfo;
+    uint32_t targetBufferMs = CalculateTargetBufferDurationMs(targetInfo);
 
     if (isEcFeatureEnable_) {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
@@ -3160,7 +3211,7 @@ int32_t AudioCoreService::FetchTargetInfoForSessionAdd(const SessionInfo session
     // need change to use profile for all devices later
     if (primaryMicModuleInfo_.OpenMicSpeaker == "1") {
         uint32_t sampleFormatBits = AudioPolicyUtils::GetInstance().PcmFormatToBytes(targetInfo.format_);
-        targetInfo.bufferSize_ = BUFFER_CALC_20MS * targetInfo.sampleRate_ / static_cast<uint32_t>(MS_PER_S)
+        targetInfo.bufferSize_ = targetBufferMs * targetInfo.sampleRate_ / static_cast<uint32_t>(MS_PER_S)
             * targetInfo.channels_ * sampleFormatBits;
     }
 #endif
@@ -3172,6 +3223,9 @@ void AudioCoreService::UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDesc
     AudioModuleInfo& moduleInfo)
 {
     CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "AudioDeviceDescriptor is nullptr");
+    uint32_t buffCalcMs = BUFFER_CALC_20MS;
+    CHECK_AND_RETURN_LOG(CalculateArmBufferDurationMs(moduleInfo, buffCalcMs),
+        "calculate arm buffer duration ms failed");
     CHECK_AND_RETURN_LOG(deviceDesc->GetAudioStreamInfo().size() != 0, "AudioStreamInfo is empty");
     DeviceStreamInfo deviceStreamInfo = deviceDesc->GetAudioStreamInfo().back();
     CHECK_AND_RETURN_LOG(!deviceStreamInfo.samplingRate.empty(), "samplingRate is empty");
@@ -3196,7 +3250,7 @@ void AudioCoreService::UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDesc
 
         uint32_t bufferSize = rateValue * channelValue *
             AudioPolicyUtils::GetInstance().PcmFormatToBytes(formatStrToEnum[moduleInfo.format]) *
-            BUFFER_CALC_20MS / static_cast<uint32_t>(MS_PER_S);
+            buffCalcMs / static_cast<uint32_t>(MS_PER_S);
         moduleInfo.bufferSize = std::to_string(bufferSize);
         AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
     }
