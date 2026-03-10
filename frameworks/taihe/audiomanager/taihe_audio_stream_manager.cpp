@@ -365,7 +365,7 @@ bool AudioStreamManagerImpl::IsFastPlaybackSupported(AudioStreamInfo streamInfo,
             static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
     }
 
-    return audioStreamMngr_->IsFastPlaybackSupported(streamInfo,
+    return audioStreamMngr_->IsFastPlaybackSupported(nativeInfo,
         static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
 }
 
@@ -393,7 +393,7 @@ bool AudioStreamManagerImpl::IsFastRecordingSupported(AudioStreamInfo streamInfo
             static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
     }
 
-    return audioStreamMngr_->IsFastRecordingSupported(streamInfo,
+    return audioStreamMngr_->IsFastRecordingSupported(nativeInfo,
         static_cast<OHOS::AudioStandard::SourceType>(source.get_value()));
 }
 
@@ -421,7 +421,7 @@ bool AudioStreamManagerImpl::IsMultichannelPlaybackSupported(AudioStreamInfo str
             static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
     }
 
-    return audioStreamMngr_->IsMultichannelPlaybackSupported(streamInfo,
+    return audioStreamMngr_->IsMultichannelPlaybackSupported(nativeInfo,
         static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
 }
 
@@ -449,7 +449,7 @@ bool AudioStreamManagerImpl::IsDirectPlaybackSupported(AudioStreamInfo streamInf
             static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
     }
 
-    return audioStreamMngr_->IsDirectPlaybackSupported(streamInfo,
+    return audioStreamMngr_->IsDirectPlaybackSupported(nativeInfo,
         static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
 }
 
@@ -477,7 +477,7 @@ bool AudioStreamManagerImpl::IsOffloadPlaybackSupported(AudioStreamInfo streamIn
             static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
     }
 
-    return audioStreamMngr_->IsOffloadPlaybackSupported(streamInfo,
+    return audioStreamMngr_->IsOffloadPlaybackSupported(nativeInfo,
         static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
 }
 } // namespace ANI::Audio
