@@ -1,4 +1,4 @@
-/*
+1/*
  * Copyright (c) 2023-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
+static const uint32_t ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 
 class AudioServiceUnitTest : public testing::Test {
 public:
@@ -1727,7 +1728,7 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_003, TestSize.Level1)
 /**
  * @tc.name  : Test GetReleaseDelayTime API
  * @tc.type  : FUNC
- * @tc.number: GetReleaseDelayTime_003
+ * @tc.number: GetReleaseDelayTime_004
  * @tc.desc  : Test GetReleaseDelayTime interface.
  */
 HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
@@ -1758,6 +1759,42 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
 
     isSwitchStream = false;
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+}
+
+/**
+ * @tc.name  : Test GetReleaseDelayTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetReleaseDelayTime_005
+ * @tc.desc  : Test GetReleaseDelayTime interface with ultra fast endpoint.
+ */
+HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_005, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
+    AudioProcessConfig clientConfig = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.networkId_ = LOACL_NETWORK_ID;
+    std::string adapterName = "";
+    bool isUltraFast = true;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
+    EXPECT_NE(nullptr, endpoint);
+
+    bool isSwitchStream = true;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    
+    isSwitchStream = false;
     EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
         NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }

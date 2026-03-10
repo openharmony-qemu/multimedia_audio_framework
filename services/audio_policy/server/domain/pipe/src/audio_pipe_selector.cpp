@@ -366,7 +366,7 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
                 sessionIdForLog.push_back(streamDesc->GetSessionId());
                 continue;
             }
-            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}d, RouteFlag %{public}d -> %{public}d, "
+            AUDIO_INFO_LOG("    |-[PipeFetchInfo] Id %{public}u, RouteFlag %{public}d -> %{public}d, "
                 "sAction %{public}d", streamDesc->GetSessionId(),
                 streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute(),
                 newPipeInfo->GetRoute(), streamDesc->GetAction());
@@ -859,6 +859,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 
     if (streamDesc->IsUltraFastRequested() && !AudioPipeManager::GetPipeManager()->HasRunningStream()) {
         info.SetUltraFastFlag(true);
+        streamDesc->SetUltraFastImplemented(true);
     }
 }
 

@@ -4437,5 +4437,213 @@ HWTEST_F(AudioCoreServicePrivateTest, DeactivateA2dpAfterExclude_005, TestSize.L
     bool result = audioCoreService->DeactivateA2dpAfterExclude(excludeDeviceDescs, outputStreamDescs);
     EXPECT_TRUE(result);
 }
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_001
+ * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream with empty newDeviceDescs
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    bool isCreateProcess = true;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_003
+ * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when ultra fast is not supported
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isSupportUltraFast_ = false;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    bool isCreateProcess = true;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_004
+ * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when bundle name is not in support list
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isSupportUltraFast_ = true;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->bundleName_ = "test.bundle.name";
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    bool isCreateProcess = true;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_FLAG_NONE);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_005
+ * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device type is not in ultra fast support
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_005, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isSupportUltraFast_ = true;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->bundleName_ = "com.huawei.hmos.musiccreate";
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    bool isCreateProcess = true;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_006
+ * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device supports ultra fast
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_006, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isSupportUltraFast_ = true;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->bundleName_ = "com.huawei.hmos.musiccreate";
+    streamDesc->sessionId_ = 1001;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    bool isCreateProcess = true;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_TRUE(streamDesc->IsUltraFastRequested());
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : GetFlagForUltraFastStream_007
+ * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device is PRIMARY_SPEAKER and not in ultra fast support
+ */
+HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_007, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->isSupportUltraFast_ = true;
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->bundleName_ = "com.huawei.hmos.musiccreate";
+    streamDesc->sessionId_ = 1001;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    bool isCreateProcess = false;
+
+    audioCoreService->GetFlagForUltraFastStream(streamDesc, isCreateProcess);
+    EXPECT_TRUE(streamDesc->IsUltraFastRequested());
+    EXPECT_EQ(streamDesc->GetAudioFlag(), AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : DecidedAudioFlagForStreams_001
+ * @tc.desc   : Test AudioCoreService::DecidedAudioFlagForStreams with empty streamDescs
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DecidedAudioFlagForStreams_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+
+    audioCoreService->DecidedAudioFlagForStreams(streamDescs);
+    EXPECT_NE(audioCoreService, nullptr);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : DecidedAudioFlagForStreams_002
+ * @tc.desc   : Test AudioCoreService::DecidedAudioFlagForStreams with empty streamDescs
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DecidedAudioFlagForStreams_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    AudioFlag fastFlag = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc->sessionId_ = 1001;
+    streamDesc->SetAudioFlag(fastFlag);
+    streamDescs.push_back(streamDesc);
+
+    audioCoreService->DecidedAudioFlagForStreams(streamDescs);
+    EXPECT_EQ(streamDesc->GetAudioFlag(), AUDIO_FLAG_MMAP);
+}
+
+/**
+ * @tc.name   : Test AudioCoreService.
+ * @tc.number : DecidedAudioFlagForStreams_003
+ * @tc.desc   : Test AudioCoreService::DecidedAudioFlagForStreams with empty streamDescs
+ */
+HWTEST_F(AudioCoreServicePrivateTest, DecidedAudioFlagForStreams_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc1->newDeviceDescs_.push_back(deviceDesc);
+    AudioFlag fastFlag = AUDIO_OUTPUT_FLAG_FAST;
+    streamDesc1->sessionId_ = 1001;
+    streamDesc1->SetAudioFlag(fastFlag);
+    streamDesc1->SetFastStreamForcedNormalFlag(true);
+    streamDescs.push_back(streamDesc1);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc2 = std::make_shared<AudioStreamDescriptor>();
+    streamDesc2->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc1->sessionId_ = 1002;
+    streamDesc1->SetAudioFlag(fastFlag);
+    streamDescs.push_back(streamDesc2);
+
+    audioCoreService->DecidedAudioFlagForStreams(streamDescs);
+    EXPECT_EQ(streamDesc1->GetAudioFlag(), AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_EQ(streamDesc2->GetAudioFlag(), AUDIO_OUTPUT_FLAG_NORMAL);
+    EXPECT_FALSE(streamDesc1->GetFastStreamForcedNormalFlag());
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -674,6 +674,17 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
 
 AudioFlag AudioCoreService::GetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_[0] != nullptr, AUDIO_OUTPUT_FLAG_NORMAL, "Invalid stream desc");
+    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
+    // For primary hal, fast and ultra fast cannot be used concurrently.
+    // When a stream switched to a device that does not support ultra fast, all fast stream should use normal route.
+    // During the recreate of fast stream, if current has ultra fast stream and current device does not support
+    // ultra fast, set the flag to normal.
+    CHECK_AND_RETURN_RET_LOG(!pipeManager_->HasUltraFastStreamRequest() ||
+        g_ultraFastDevicesSet.find(deviceType) != g_ultraFastDevicesSet.end() ||
+        AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType) != PRIMARY_SPEAKER,
+        AUDIO_OUTPUT_FLAG_NORMAL, "Ultra fast stream exists, set %{public}u to normal", streamDesc->GetSessionId());
     if (streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
         IsFastAllowed(streamDesc->bundleName_)) {
         return AUDIO_OUTPUT_FLAG_FAST;

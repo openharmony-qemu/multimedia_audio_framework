@@ -90,10 +90,6 @@ static const std::unordered_set<uid_t> skipAddSessionIdUidSet_ = {
     MCU_UID,
     TV_SERVICE_UID
 };
-static const std::unordered_set<DeviceType> ultraFastDevicesSet_ = {
-    DEVICE_TYPE_SPEAKER,
-    DEVICE_TYPE_EARPIECE
-};
 static const std::set<std::string> supportUltraFastBundleSet_ = {
 };
 }
@@ -251,13 +247,35 @@ void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<Audio
     }
 }
 
+void AudioCoreService::DecidedAudioFlagForStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu input streams", streamDescs.size());
+    if (streamDescs.size() == 0) {
+        return;
+    }
+    bool needSetAllFastStreamNormal = false;
+    for (std::shared_ptr<AudioStreamDescriptor> &streamDesc : streamDescs) {
+        UpdatePlaybackStreamFlag(streamDesc, false);
+        if (streamDesc->GetFastStreamForcedNormalFlag()) {
+            AUDIO_INFO_LOG("Cause session: %{public}u, set all fast stream to normal", streamDesc->GetSessionId());
+            needSetAllFastStreamNormal = true;
+            streamDesc->ResetFastStreamForcedNormalFlag();
+        }
+    }
+    CHECK_AND_RETURN(needSetAllFastStreamNormal);
+    for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
+        if (streamDesc->GetAudioFlag() == AUDIO_OUTPUT_FLAG_FAST) {
+            streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
+            AUDIO_INFO_LOG("Set stream %{public}u to normal", streamDesc->sessionId_);
+        }
+    }
+}
+
 int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
-    for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
-        UpdatePlaybackStreamFlag(streamDesc, false);
-    }
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
+    DecidedAudioFlagForStreams(streamDescs);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
     // Update a2dp offload flag here because UpdateActiveRoute() need actual flag.
@@ -3646,24 +3664,33 @@ void AudioCoreService::OnRemoteDeviceStatusUpdated()
     NotifyRemoteDeviceStatusUpdate(oldDesc);
 }
 
-bool AudioCoreService::IsSupportUltraFast(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+void AudioCoreService::GetFlagForUltraFastStream(
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
-        streamDesc->newDeviceDescs_.front() != nullptr, false, "Invalid stream desc");
-    CHECK_AND_RETURN_RET_LOG(isSupportUltraFast_, false, "Ultra fast is not supported");
-    CHECK_AND_RETURN_RET_LOG(
-        supportUltraFastBundleSet_.find(streamDesc->GetBundleName()) != supportUltraFastBundleSet_.end(), false,
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
+        streamDesc->newDeviceDescs_.front() != nullptr, "Invalid stream desc");
+    CHECK_AND_RETURN_LOG(isSupportUltraFast_, "Ultra fast is not supported");
+    CHECK_AND_RETURN_LOG(
+        supportUltraFastBundleSet_.find(streamDesc->GetBundleName()) != supportUltraFastBundleSet_.end(),
         "Bundle name %{public}s is not in ultra fast support list", streamDesc->GetBundleName().c_str());
     DeviceType deviceType = streamDesc->newDeviceDescs_.front()->getType();
-    if (ultraFastDevicesSet_.find(deviceType) == ultraFastDevicesSet_.end()) {
+    if (g_ultraFastDevicesSet.find(deviceType) == g_ultraFastDevicesSet.end()) {
         AUDIO_INFO_LOG("Device type %{public}d is not support ultra fast mode", deviceType);
-        streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
-        return false;
+        // Issue: Missing check for recreate triggered route reselection.
+        // Consequence: Every "device without primary ultra-fast support" whill be forced to use normal route,
+        // in the presence of a 2.5ms stream.
+        // This needs further consideration.
+        if (AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType) != PRIMARY_SPEAKER) {
+            streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
+        } else {
+            streamDesc->SetFastStreamForcedNormalFlag(true);
+            streamDesc->SetAudioFlag(AUDIO_OUTPUT_FLAG_NORMAL);
+        }
+        return;
     }
     streamDesc->SetUltraFastRequested(true);
     streamDesc->SetAudioFlag(GetFlagForMmapStream(streamDesc));
-    AUDIO_INFO_LOG("Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
-    return true;
+    AUDIO_INFO_LOG("[StaticCheck] Enable ultra fast mode for stream %{public}d", streamDesc->GetSessionId());
 }
 } // namespace AudioStandard
 } // namespace OHOS

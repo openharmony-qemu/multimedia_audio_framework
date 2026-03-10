@@ -49,6 +49,7 @@ static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
+static const uint32_t UlTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t UPDATE_MUTE_CONTROL_SET_TIME_OUT = 15; // 15s
@@ -183,6 +184,9 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
 
 int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
+    if (isSwitchStream && endpoint->IsEndpointUltraFast()) {
+        return ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS;
+    }
     if (isSwitchStream && endpoint->GetDeviceInfo().deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         return ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }

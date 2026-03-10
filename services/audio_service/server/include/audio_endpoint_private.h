@@ -127,6 +127,7 @@ public:
 
     int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
     int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
+    bool IsEndpointUltraFast() const override;
     void StopByRestore(const RestoreInfo &restoreInfo) override;
     
     // This func is a virtual sync func, we can continully calculate frame rate and time even sink stoped
@@ -293,6 +294,7 @@ private:
     
     EndpointType endpointType_;
     AdapterType adapterType_ = ADAPTER_TYPE_FAST;
+    std::atomic<bool> IsEndpointUltraFast_ = false;
     int32_t id_ = 0;
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
 
