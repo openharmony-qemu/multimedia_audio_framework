@@ -556,23 +556,11 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
 }
 
-bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
+bool AudioEndpointInner::ConfigOutputPoint(const AudioEndpointConfig &endpointConfig)
 {
-    AUDIO_INFO_LOG("Role %{public}d, format %{public}d, ultraFastFlag_%{public}d",
-        endpointConfig.deviceInfo.deviceRole_, endpointConfig.streamInfo.format, endpointConfig.isUltraFast);
-    deviceInfo_ = endpointConfig.deviceInfo;
-    dstStreamInfo_ = endpointConfig.streamInfo;
-    endpointName_ = GenerateEndpointKey(deviceInfo_, id_);
-    if (deviceInfo_.deviceRole_ == INPUT_DEVICE) {
-        return ConfigInputPoint(deviceInfo_);
-    }
-
     std::shared_ptr<IAudioRenderSink> sink = GetFastSink(deviceInfo_, endpointType_);
-    if (sink == nullptr) {
-        AUDIO_ERR_LOG("Get fastSink instance failed");
-        HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, false, "sink is null, get fast sink fail");
+
     if (sink->IsInited() && deviceInfo_.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AUDIO_WARNING_LOG("need DeInit, sink is inited, device is arm usb");
         sink->DeInit();
@@ -582,21 +570,16 @@ bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
     if (!sink->IsInited()) {
         AUDIO_INFO_LOG("need Init sink:%{public}u", fastRenderId_);
         sink->Init(attr);
-        if (!sink->IsInited()) {
-            HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
-            return false;
-        }
+        CHECK_AND_RETURN_RET_LOG(sink->IsInited(), false, "Init sink fail");
     }
 
     if (PrepareDeviceBuffer(deviceInfo_) != SUCCESS) {
+        AUDIO_ERR_LOG("PrepareDeviceBuffer fail, nedd DeInit sink");
         sink->DeInit();
-        HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
         return false;
     }
-
-    if (checker != nullptr) {
-        checker->AddOperation(fastRenderId_, endpointName_, GetStatus());
-    }
+    AudioEndpointSinkAdapter::GetInstance()->AddOperation(fastRenderId_,
+        endpointName_, GetStatus());
 
     Volume vol = {true, 1.0f, 0};
     DeviceType deviceType = AudioVolume::GetInstance()->GetCurrentActiveDevice();
@@ -609,11 +592,27 @@ bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
         sink->SetVolume(1.0f, 1.0f);
         AUDIO_INFO_LOG("Init Volume 1.0 with Device %{public}d", deviceType);
     }
-
+    return true;
+}
+bool AudioEndpointInner::Config(const AudioEndpointConfig &endpointConfig)
+{
+    AUDIO_INFO_LOG("Role %{public}d, format %{public}d, ultraFastFlag_%{public}d",
+        endpointConfig.deviceInfo.deviceRole_, endpointConfig.streamInfo.format, endpointConfig.isUltraFast);
+    deviceInfo_ = endpointConfig.deviceInfo;
+    dstStreamInfo_ = endpointConfig.streamInfo;
+    endpointName_ = GenerateEndpointKey(deviceInfo_, id_);
+    if (deviceInfo_.deviceRole_ == INPUT_DEVICE) {
+        return ConfigInputPoint(deviceInfo_);
+    }
+    if (!ConfigOutputPoint(endpointConfig)) {
+        HdiAdapterManager::GetInstance().ReleaseId(fastRenderId_);
+        return false;
+    }
     bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
-    StartThread(attr);
+    StartThread(InitSinkAttr(endpointConfig));
     return true;
+
 }
 
 static std::shared_ptr<IAudioRenderSink> SwitchSink(uint32_t &id, HdiIdType type, const std::string &info)
