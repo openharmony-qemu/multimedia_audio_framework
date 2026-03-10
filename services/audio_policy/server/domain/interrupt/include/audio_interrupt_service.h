@@ -335,7 +335,8 @@ private:
         InterruptEventInternal &interruptEvent, std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList);
 
     bool IsHandleIter(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
-        AudioFocuState oldState, std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew);
+        AudioFocuState oldState, std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterNew,
+        bool isExistActiveInjectFocus = false);
     void WriteStartDfxMsg(InterruptDfxBuilder &dfxBuilder, const AudioInterrupt &audioInterrupt);
     void WriteStopDfxMsg(const AudioInterrupt &audioInterrupt);
     void WriteSessionTimeoutDfxEvent(const int32_t pid);
@@ -394,6 +395,7 @@ private:
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
     void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
+    bool IsActiveInjectFocusExist(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

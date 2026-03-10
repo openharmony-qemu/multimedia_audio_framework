@@ -319,11 +319,11 @@ int32_t AudioInterruptZoneManager::InjectInterruptToAudioZone(const int32_t zone
     size_t focusListSize = tempMap[zoneId]->audioFocusInfoList.size();
     AUDIO_DEBUG_LOG("focus list size is %{public}zu for zone %{public}d before remove", focusListSize, zoneId);
     RemoveAudioZoneInterrupts(zoneId, oldDeviceList);
-    if (focusListSize != tempMap[zoneId]->audioFocusInfoList.size()) {
+    TryActiveAudioFocusForZone(zoneId, activeFocusList);
+    if (oldDeviceList.size() > 0) {
         AUDIO_INFO_LOG("exist inject focus removed, try resume focus");
         TryResumeAudioFocusForZone(zoneId);
     }
-    TryActiveAudioFocusForZone(zoneId, activeFocusList);
     return SUCCESS;
 }
 
