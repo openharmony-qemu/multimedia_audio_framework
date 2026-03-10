@@ -1607,6 +1607,11 @@ void AudioService::SetLatestMuteState(const uint32_t sessionId, const bool muteF
         AUDIO_ERR_LOG("send mute flag to session:%{public}u failed", sessionId);
         return;
     }
+    if (muteFlag) {
+        muteStateMap_[sessionId] = muteFlag;
+    } else {
+        muteStateMap_.erase(sessionId);
+    }
     AUDIO_INFO_LOG("session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
     muteStateCallbacks_[sessionId](muteFlag);
 }
