@@ -2060,6 +2060,31 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
     audioService->allRendererMap_.clear();
 }
 
+/*
+ * @tc.name  : Test SetLatestMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceSetLatestMuteState_001
+ * @tc.desc  : Test RegisterMuteStateChangeCallback whether callback can invoke.
+*/
+HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_001, TestSize.Level1) 
+{
+    uint32_t sessionId = 100000;
+    bool muteFlag = false;
+
+    auto service = AudioService::GetInstance();
+    ASSERT_NE(service, nullptr);
+    service->RegisterMuteStateChangeCallback(sessionId, [&](bool flag) {
+        muteFlag = flag; 
+    });
+    EXPECT_EQ(muteFlag, false);
+
+    service->SetLatestMuteState(sessionId, true);
+    EXPECT_EQ(muteFlag, true);
+
+    service->SetLatestMuteState(sessionId, false);
+    EXPECT_EQ(muteFlag, false);
+}
+
 /**
  * @tc.name  : Test GetCurrentLoopbackStreamCnt API
  * @tc.type  : FUNC
