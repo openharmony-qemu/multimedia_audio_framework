@@ -4551,7 +4551,7 @@ HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_006, TestSize.Le
 /**
  * @tc.name   : Test AudioCoreService.
  * @tc.number : GetFlagForUltraFastStream_007
- * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device is PRIMARY_SPEAKER and not in ultra fast support
+ * @tc.desc   : Test AudioCoreService::GetFlagForUltraFastStream when device is not in ultra fast support
  */
 HWTEST_F(AudioCoreServicePrivateTest, GetFlagForUltraFastStream_007, TestSize.Level1)
 {
