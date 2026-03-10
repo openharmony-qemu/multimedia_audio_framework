@@ -561,5 +561,14 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
         AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
     }
 }
+
+void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioInterrupt)
+{
+    uint32_t sessionId = audioInterrupt.streamId;
+    InterruptEventInternal forceUnmute {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
+    SendInterruptEventCallback(forceUnmute, sessionId, audioInterrupt);
+    AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
+    streamCollector_.CapturerMutedFlagChange(sessionId, 0);
+}
 }
 } // namespace OHOS

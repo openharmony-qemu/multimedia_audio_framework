@@ -393,6 +393,7 @@ private:
     void MuteCheckFocusStrategy(AudioFocusEntry &focusEntry,
         const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, const AudioInterrupt &incomingInterrupt,
         bool &removeFocusInfo, InterruptEventInternal &interruptEvent);
+    void ResetInterruptMuteState(const AudioInterrupt &audioInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
