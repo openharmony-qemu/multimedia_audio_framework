@@ -697,7 +697,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     bool active = false;
     IsStreamActive(streamInFocus, active);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    if (isScreenOffOrLock_ && !active && !VolumeUtils::IsPCVolumeEnable() && !screenOffAdjustVolumeEnable_) {
+    if (isScreenOffOrLock_ && !active && !VolumeUtils::IsPCVolumeEnable() && !(IsScreenOnAdjustVolume())) {
         AUDIO_INFO_LOG("isScreenOffOrLock: %{public}d, active: %{public}d, screenOffAdjustVolumeEnable: %{public}d",
             isScreenOffOrLock_.load(), active, screenOffAdjustVolumeEnable_);
         return AUDIO_OK;
@@ -717,6 +717,14 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     return SetVolumeInternalByKeyEvent(streamInFocus, zoneId, keyType);
 }
 #endif
+
+bool AudioPolicyServer::IsScreenOnAdjustVolume()
+{
+    if (screenOffAdjustVolumeEnable_ && isScreenOn_) {
+        return true;
+    }
+    return false;
+}
 
 int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId,
     const int32_t keyType)
@@ -1053,10 +1061,14 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
+        isScreenOn_ = true;
         CHECK_AND_RETURN_LOG(coreService_, "coreService_ is nullptr");
         coreService_->SetFirstScreenOn();
         CHECK_AND_RETURN_LOG(powerStateListener_, "powerStateListener_ is nullptr");
         powerStateListener_->ControlAudioFocus(false);
+    } else if (action == "usual.event.SCREEN_OFF") {
+        AUDIO_INFO_LOG("receive SCREEN_OFF action, control audio focus if need");
+        isScreenOn_ = false;
     } else if (action == "usual.event.SCREEN_LOCKED") {
         AUDIO_INFO_LOG("receive SCREEN_OFF or SCREEN_LOCKED action, control audio volume change if stream is active");
         isScreenOffOrLock_ = true;

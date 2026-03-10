@@ -900,6 +900,7 @@ private:
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone);
+    bool IsScreenOnAdjustVolume();
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
@@ -942,6 +943,7 @@ private:
     std::atomic<bool> isInitMuteState_ = false;
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
+    std::atomic<bool> isScreenOn_ = false; // for TV
     std::atomic<bool> isInitRingtoneReady_ = false;
     std::atomic<bool> isRingtoneEL2Ready_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
