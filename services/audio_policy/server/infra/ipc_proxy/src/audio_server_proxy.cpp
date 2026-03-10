@@ -673,15 +673,6 @@ void AudioServerProxy::SetLatestMuteState(const uint32_t sessionId, const bool m
     IPCSkeleton::SetCallingIdentity(identity);
 }
 
-void AudioServerProxy::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
-{
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetSessionMuteState(sessionId, insert, muteFlag);
-    IPCSkeleton::SetCallingIdentity(identity);
-}
-
 void AudioServerProxy::SetBtHdiInvalidState()
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

@@ -118,7 +118,6 @@ public:
     bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
-    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetBtHdiInvalidState();
     int32_t ForceStopAudioStreamProxy(StopAudioType audioType);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);

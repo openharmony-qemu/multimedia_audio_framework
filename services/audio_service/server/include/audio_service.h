@@ -137,7 +137,6 @@ public:
     int32_t ForceStopAudioStream(StopAudioType audioType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
     void RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback);
-    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);

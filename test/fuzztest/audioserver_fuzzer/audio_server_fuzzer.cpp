@@ -737,21 +737,6 @@ void AudioServerCheckHibernateStateTest()
         data, reply, option);
 }
 
-void AudioServerSetSessionMuteStateTest()
-{
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
-    data.WriteInt32(sessionId);
-    data.WriteBool(true);
-    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_SESSION_MUTE_STATE),
-        data, reply, option);
-}
-
 void AudioServerNotifyMuteStateChangeTest()
 {
     MessageParcel data;
@@ -2283,7 +2268,6 @@ vector<TestFuncs> g_testFuncs = {
     AudioServerSetOffloadModeTest,
     AudioServerUnsetOffloadTest,
     AudioServerCheckHibernateStateTest,
-    AudioServerSetSessionMuteStateTest,
     AudioServerNotifyMuteStateChangeTest,
     AudioServerAudioWorkgroupCreateTest,
     AudioServerAudioWorkgroupReleaseTest,

@@ -320,7 +320,6 @@ private:
     void RemoveAllPlaceholderInterrupt(std::list<int32_t> &removeFocusInfoPidList);
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
-    void SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag);
     void SetLatestMuteState(const InterruptEventInternal &interruptEvent, const uint32_t &streamId);
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);

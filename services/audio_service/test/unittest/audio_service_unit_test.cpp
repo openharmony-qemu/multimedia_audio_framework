@@ -2061,59 +2061,28 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test SetSessionMuteState API
+ * @tc.name  : Test SetLatestMuteState API
  * @tc.type  : FUNC
- * @tc.number: AudioServiceSetSessionMuteState_001
+ * @tc.number: AudioServiceSetLatestMuteState_001
  * @tc.desc  : Test RegisterMuteStateChangeCallback whether callback can invoke.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_001, TestSize.Level1)
+*/
+HWTEST(AudioServiceUnitTest, AudioServiceSetLatestMuteState_001, TestSize.Level1)
 {
-    bool muteFlag = true;
-    uint32_t sessionId = 0;
-    uint32_t sessionId2 = 1;
-    uint32_t sessionId3 = 3;
-    bool testFlag = false;
+    uint32_t sessionId = 100000;
+    bool muteFlag = false;
 
     auto service = AudioService::GetInstance();
     ASSERT_NE(service, nullptr);
-    service->SetSessionMuteState(sessionId, true, muteFlag);
-    service->RegisterMuteStateChangeCallback(sessionId2, [&](bool flag) {
-        testFlag = flag;
-    });
-    EXPECT_EQ(testFlag, false);
     service->RegisterMuteStateChangeCallback(sessionId, [&](bool flag) {
-        testFlag = flag;
+        muteFlag = flag;
     });
-    EXPECT_EQ(testFlag, false);
+    EXPECT_EQ(muteFlag, false);
 
-    testFlag = false;
-    service->SetLatestMuteState(sessionId3, muteFlag);
-    EXPECT_FALSE(testFlag);
+    service->SetLatestMuteState(sessionId, true);
+    EXPECT_EQ(muteFlag, true);
 
-    service->RegisterMuteStateChangeCallback(sessionId3, [&](bool flag) {
-        testFlag = flag;
-    });
-    service->SetSessionMuteState(sessionId3, true, muteFlag);
-    service->SetLatestMuteState(sessionId3, muteFlag);
-    EXPECT_EQ(testFlag, muteFlag);
-}
-
-/**
- * @tc.name  : Test SetSessionMuteState API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceSetSessionMuteState_002
- * @tc.desc  : Test SetSessionMuteState interface .
- */
-HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_002, TestSize.Level1)
-{
-    bool muteFlag = true;
-    uint32_t sessionId = 0;
-    auto service = AudioService::GetInstance();
-    ASSERT_NE(service, nullptr);
-    service->SetSessionMuteState(sessionId, true, muteFlag);
-    EXPECT_TRUE(service->muteStateMap_.count(sessionId) != 0);
-    service->SetSessionMuteState(sessionId, false, muteFlag);
-    EXPECT_TRUE(service->muteStateMap_.count(sessionId) == 0);
+    service->SetLatestMuteState(sessionId, false);
+    EXPECT_EQ(muteFlag, false);
 }
 
 /**
@@ -2875,24 +2844,6 @@ HWTEST(AudioServiceUnitTest, IsStreamTypeFitWorkgroup_001, TestSize.Level1)
     EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_ALARM));
     EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_SYSTEM));
     EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_NOTIFICATION));
-}
-
-/**
- * @tc.name  : Test SetSessionMuteState API
- * @tc.type  : FUNC
- * @tc.number: SetSessionMuteState_001,
- * @tc.desc  : Test SetSessionMuteState interface.
- */
-HWTEST(AudioServiceUnitTest, SetSessionMuteState_001, TestSize.Level1)
-{
-    uint32_t sessionId = 1;
-    bool insert = true;
-    bool muteFlag = true;
-
-    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
-
-    std::unique_lock<std::mutex> lock(AudioService::GetInstance()->muteStateMapMutex_);
-    EXPECT_EQ(AudioService::GetInstance()->muteStateMap_[sessionId], muteFlag);
 }
 
 /**

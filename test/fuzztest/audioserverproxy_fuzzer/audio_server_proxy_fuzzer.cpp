@@ -320,15 +320,6 @@ void AudioServerProxyIsAudioLoopbackSupportedFuzzTest()
     audioServerProxy.IsAudioLoopbackSupported(mode, deviceType);
 }
  
-void AudioServerProxySetSessionMuteStateFuzzTest()
-{
-    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    uint32_t sessionId = GetData<uint32_t>();
-    bool insert = GetData<bool>();
-    bool muteFlag = GetData<bool>();
-    audioServerProxy.SetSessionMuteState(sessionId, insert, muteFlag);
-}
- 
 void AudioServerProxySetActiveOutputDeviceProxyFuzzTest()
 {
     if (g_testDeviceTypes.size() == 0) {
@@ -435,7 +426,6 @@ TestPtr g_testPtrs[] = {
     AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest,
     AudioServerProxySetKaraokeParametersFuzzTest,
     AudioServerProxyIsAudioLoopbackSupportedFuzzTest,
-    AudioServerProxySetSessionMuteStateFuzzTest,
     AudioServerProxySetActiveOutputDeviceProxyFuzzTest,
     AudioServerProxyForceStopAudioStreamProxyFuzzTest,
     AudioServerProxyGetVolumeDataCountFuzzTest,

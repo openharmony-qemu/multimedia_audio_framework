@@ -1600,22 +1600,17 @@ void AudioService::RegisterMuteStateChangeCallback(uint32_t sessionId, const Mut
     muteStateCallbacks_[sessionId] = callback;
 }
 
-void AudioService::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
-{
-    std::unique_lock<std::mutex> lock(muteStateMapMutex_);
-    if (!insert) {
-        muteStateMap_.erase(sessionId);
-    } else {
-        muteStateMap_[sessionId] = muteFlag;
-    }
-}
-
 void AudioService::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
 {
     std::unique_lock<std::mutex> lock(muteStateMapMutex_);
     if (muteStateCallbacks_.count(sessionId) == 0) {
         AUDIO_ERR_LOG("send mute flag to session:%{public}u failed", sessionId);
         return;
+    }
+    if (muteFlag) {
+        muteStateMap_[sessionId] = muteFlag;
+    } else {
+        muteStateMap_.erase(sessionId);
     }
     AUDIO_INFO_LOG("session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
     muteStateCallbacks_[sessionId](muteFlag);

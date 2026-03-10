@@ -1278,24 +1278,6 @@ void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
     focusEntry.hintType = INTERRUPT_HINT_DUCK;
     interruptService->UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
-
-void SetSessionMuteStateFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    uint32_t sessionId = *reinterpret_cast<const uint32_t *>(rawData);
-    bool insert = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
-    bool muteFlag = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
-    if (interruptService == nullptr) {
-        return;
-    }
-    interruptService->SetSessionMuteState(sessionId, insert, muteFlag);
-}
  
 void ReportRecordGetFocusFailFuzzTest(const uint8_t *rawData, size_t size)
 {
@@ -1424,7 +1406,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::ClearAudioFocusBySessionIDFuzzTest,
     OHOS::AudioStandard::DeactivateAudioSessionInFakeFocusModeFuzzTest,
     OHOS::AudioStandard::DeactivateAudioSessionFakeInterruptFuzzTest,
-    OHOS::AudioStandard::SetSessionMuteStateFuzzTest,
     OHOS::AudioStandard::SetLatestMuteStateFuzzTest,
     OHOS::AudioStandard::UpdateMuteAudioFocusStrategyFuzzTest,
     OHOS::AudioStandard::ReportRecordGetFocusFailFuzzTest,

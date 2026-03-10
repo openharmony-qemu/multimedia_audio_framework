@@ -174,7 +174,6 @@ vector<AudioServerInterfaceCode> AudioServerInterfaceCodeVec = {
     AudioServerInterfaceCode::REGISTER_DATATRANSFER_CALLBACK,
     AudioServerInterfaceCode::NOTIFY_SETTINGS_DATA_READY,
     AudioServerInterfaceCode::IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED,
-    AudioServerInterfaceCode::SET_SESSION_MUTE_STATE,
     AudioServerInterfaceCode::NOTIFY_MUTE_STATE_CHANGE,
     AudioServerInterfaceCode::FORCE_STOP_AUDIO_STREAM,
     AudioServerInterfaceCode::CREATE_AUDIOWORKGROUP,
