@@ -469,6 +469,9 @@ void AudioUsbManager::AddDeviceBySoundCard(uint32_t cardNum)
     auto it = find(audioDevices_.begin(), audioDevices_.end(), dev);
     CHECK_AND_RETURN(it == audioDevices_.end());
     UpdateDeviceName(usbAddr, dev.name_);
+#ifdef WIRELESS_DEFAULT_EXCLUDE
+    CHECK_AND_RETURN_LOG(!dev.name_.empty(), "usb device name is empty");
+#endif
     audioDevices_.push_back(dev);
     NotifyDevice(dev, true);
 }
