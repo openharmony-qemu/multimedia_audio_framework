@@ -111,6 +111,14 @@ bool PolicyHandler::GetProcessDeviceInfo(const AudioProcessConfig &config, bool 
     return true;
 }
 
+bool PolicyHandler::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "GetRemoteDeviceName failed with null provider!");
+    int32_t ret = iPolicyProvider_->GetRemoteDeviceName(deviceId, deviceName);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "GetRemoteDeviceName failed:%{public}d", ret);
+    return true;
+}
+
 bool PolicyHandler::InitVolumeMap()
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, false, "InitVolumeMap failed with null provider!");

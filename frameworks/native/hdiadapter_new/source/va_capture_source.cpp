@@ -165,6 +165,11 @@ bool VACaptureSource::IsInited(void)
     return sourceInited_.load();
 }
 
+bool VACaptureSource::IsStarted(void)
+{
+    return started_.load();
+}
+
 int32_t VACaptureSource::Start(void)
 {
     AUDIO_INFO_LOG("VACaptureSource::Start called");
@@ -292,11 +297,6 @@ int32_t VACaptureSource::SetMute(bool isMute)
     return SUCCESS;
 }
 int32_t VACaptureSource::GetMute(bool &isMute)
-{
-    return SUCCESS;
-}
-
-uint64_t VACaptureSource::GetTransactionId(void)
 {
     return SUCCESS;
 }

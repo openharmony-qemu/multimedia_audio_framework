@@ -5731,5 +5731,182 @@ HWTEST(AudioPolicyUnitTest, ResetAllProxy_002, TestSize.Level1)
     // Reset token
     GetPermission();
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: OnReceiveEvent_002
+* @tc.desc  : Test OnReceiveEvent.
+*/
+HWTEST(AudioPolicyUnitTest, OnReceiveEvent_002, TestSize.Level4)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.SCREEN_OFF");
+    eventData.SetWant(want);
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isScreenOn_, false);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: IsScreenOnAdjustVolume_001
+* @tc.desc  : Test IsScreenOnAdjustVolume.
+*/
+HWTEST(AudioPolicyUnitTest, IsScreenOnAdjustVolume_001, TestSize.Level4)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOn_ = true;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = true;
+    bool ret = audioPolicyServer->IsScreenOnAdjustVolume();
+    EXPECT_TRUE(ret);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: IsScreenOnAdjustVolume_002
+* @tc.desc  : Test IsScreenOnAdjustVolume.
+*/
+HWTEST(AudioPolicyUnitTest, IsScreenOnAdjustVolume_002, TestSize.Level4)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOn_ = false;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = true;
+    bool ret = audioPolicyServer->IsScreenOnAdjustVolume();
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: IsScreenOnAdjustVolume_003
+* @tc.desc  : Test IsScreenOnAdjustVolume.
+*/
+HWTEST(AudioPolicyUnitTest, IsScreenOnAdjustVolume_003, TestSize.Level4)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOn_ = true;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = false;
+    bool ret = audioPolicyServer->IsScreenOnAdjustVolume();
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: IsScreenOnAdjustVolume_004
+* @tc.desc  : Test IsScreenOnAdjustVolume.
+*/
+HWTEST(AudioPolicyUnitTest, IsScreenOnAdjustVolume_004, TestSize.Level4)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOn_ = false;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = false;
+    bool ret = audioPolicyServer->IsScreenOnAdjustVolume();
+    EXPECT_FALSE(ret);
+}
+
+/**
+* @tc.name  : Test ProcessVolumeKeyEvents.
+* @tc.number: ProcessVolumeKeyEvents_005
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
+*/
+HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_005, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOffOrLock_ = true;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = true;
+    audioPolicyServer->isScreenOn_ = true;
+    audioPolicyServer->ProcessVolumeKeyEvents(keyType);
+}
+
+/**
+* @tc.name  : Test ProcessVolumeKeyEvents.
+* @tc.number: ProcessVolumeKeyEvents_006
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
+*/
+HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_006, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOffOrLock_ = false;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = false;
+    audioPolicyServer->isScreenOn_ = false;
+    audioPolicyServer->ProcessVolumeKeyEvents(keyType);
+}
+
+/**
+* @tc.name  : Test ProcessVolumeKeyEvents.
+* @tc.number: ProcessVolumeKeyEvents_007
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
+*/
+HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_007, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOffOrLock_ = true;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = true;
+    audioPolicyServer->isScreenOn_ = false;
+    audioPolicyServer->ProcessVolumeKeyEvents(keyType);
+}
+
+/**
+* @tc.name  : Test ProcessVolumeKeyEvents.
+* @tc.number: ProcessVolumeKeyEvents_008
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
+*/
+HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_008, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOffOrLock_ = true;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = false;
+    audioPolicyServer->isScreenOn_ = false;
+    audioPolicyServer->ProcessVolumeKeyEvents(keyType);
+}
+
+/**
+* @tc.name  : Test ProcessVolumeKeyEvents.
+* @tc.number: ProcessVolumeKeyEvents_009
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
+*/
+HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_009, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(audioPolicyServer, nullptr);
+    audioPolicyServer->isScreenOffOrLock_ = false;
+    audioPolicyServer->screenOffAdjustVolumeEnable_ = true;
+    audioPolicyServer->isScreenOn_ = false;
+    audioPolicyServer->ProcessVolumeKeyEvents(keyType);
+}
 } // AudioStandard
 } // OHOS

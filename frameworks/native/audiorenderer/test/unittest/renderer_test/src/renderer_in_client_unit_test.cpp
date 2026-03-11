@@ -2279,38 +2279,6 @@ HWTEST(RendererInClientInnerUnitTest, SetCacheSize_001, TestSize.Level1)
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC
- * @tc.number: SetCacheSize_002
- * @tc.desc  : Test RendererInClientInner::SetCacheSize
- */
-HWTEST(RendererInClientInnerUnitTest, SetCacheSize_002, TestSize.Level1)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ptrRendererInClientInner->spanSizeInFrame_ = 20;
-    uint32_t testValue = 20;
-    uint32_t expectValue = 40;
-    ptrRendererInClientInner->SetCacheSize(testValue);
-    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, expectValue);
-}
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
- * @tc.number: SetCacheSize_003
- * @tc.desc  : Test RendererInClientInner::SetCacheSize
- */
-HWTEST(RendererInClientInnerUnitTest, SetCacheSize_003, TestSize.Level1)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
-    ptrRendererInClientInner->spanSizeInFrame_ = 20;
-    uint32_t testValue = 93;
-    uint32_t expectValue = 120;
-    ptrRendererInClientInner->SetCacheSize(testValue);
-    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, expectValue);
-}
-
-/**
- * @tc.name  : Test RendererInClientInner API
- * @tc.type  : FUNC
  * @tc.number: SetCacheSize_004
  * @tc.desc  : Test RendererInClientInner::SetCacheSize with ipcStream_ null
  */
@@ -2359,11 +2327,10 @@ HWTEST(RendererInClientInnerUnitTest, SetCacheSize_006, TestSize.Level1)
     ipcStreamTest->calculateCacheCountRet = ERR_INVALID_PARAM;
     ipcStreamTest->calculatedCacheCount = 5;
     ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
-    uint32_t originalCacheSize = ptrRendererInClientInner->cacheSizeInFrame_;
     uint32_t testValue = 100;
     ptrRendererInClientInner->SetCacheSize(testValue);
     EXPECT_TRUE(ipcStreamTest->calculateCacheCountCalled);
-    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, originalCacheSize);
+    EXPECT_EQ(ptrRendererInClientInner->cacheSizeInFrame_, 120);
 }
 
 /**
@@ -3394,32 +3361,6 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_094, TestSize.Level4
 
     ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
     EXPECT_EQ(ptrRendererInClientInner->curStreamParams_.channelLayout, AudioChannelLayout::CH_LAYOUT_5POINT1POINT2);
-}
-
-/**
- * @tc.name  : Test RendererInClientInner_AudioVivid_Direct3DA_001
- * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_AudioVivid_Direct3DA_001
- * @tc.desc  : Test RendererInClientInner::WriteAudioVividDirect
- */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_AudioVivid_Direct3DA_001, TestSize.Level4)
-{
-    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
-    size_t pcmSize = 1024;
-    size_t metaSize = 512;
-    uint8_t *pcmBuf = new uint8_t[pcmSize];
-    uint8_t *metaBuf = new uint8_t[metaSize];
-    memset_s(pcmBuf, pcmSize, 0xAA, pcmSize);
-    memset_s(metaBuf, metaSize, 0xBB, metaSize);
-
-    ptrRendererInClientInner->WriteAudioVividDirect(pcmBuf, pcmSize, metaBuf, metaSize);
-    EXPECT_EQ(ptrRendererInClientInner->outPackedLen_, pcmSize + metaSize);
-    ASSERT_EQ(ptrRendererInClientInner->outPackedBuf_.size(), pcmSize + metaSize);
-    EXPECT_EQ(static_cast<uint8_t>(ptrRendererInClientInner->outPackedBuf_[0]), 0xAA);
-    EXPECT_EQ(static_cast<uint8_t>(ptrRendererInClientInner->outPackedBuf_[pcmSize]), 0xBB);
-
-    delete[] pcmBuf;
-    delete[] metaBuf;
 }
 
 /**

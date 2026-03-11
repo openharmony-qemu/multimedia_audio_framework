@@ -737,21 +737,6 @@ void AudioServerCheckHibernateStateTest()
         data, reply, option);
 }
 
-void AudioServerSetSessionMuteStateTest()
-{
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
-    data.WriteInt32(sessionId);
-    data.WriteBool(true);
-    sptr<AudioServer> AudioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    MessageParcel reply;
-    MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_SESSION_MUTE_STATE),
-        data, reply, option);
-}
-
 void AudioServerNotifyMuteStateChangeTest()
 {
     MessageParcel data;
@@ -1288,19 +1273,6 @@ void AudioServerSetAudioParameterFuzzTest()
     std::string value = provider.ConsumeRandomLengthString(MAX_BUNDLE_NAME_LENGTH);
     sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetAudioParameter(networkId, key, condition, value);
-}
-
-void AudioServerGetTransactionIdFuzzTest()
-{
-    FuzzedDataProvider provider(RAW_DATA, g_dataSize);
-    if (g_testDeviceTypes.empty() || g_testDeviceRoles.empty()) {
-        return;
-    }
-    DeviceType deviceType = g_testDeviceTypes[provider.ConsumeIntegral<uint32_t>() % g_testDeviceTypes.size()];
-    DeviceRole deviceRole = g_testDeviceRoles[provider.ConsumeIntegral<uint32_t>() % g_testDeviceRoles.size()];
-    uint64_t transactionId = provider.ConsumeIntegral<uint64_t>();
-    sptr<AudioServer> audioServerPtr = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->GetTransactionId(deviceType, deviceRole, transactionId);
 }
 
 void AudioServerSetIORoutesFuzzTest()
@@ -2296,7 +2268,6 @@ vector<TestFuncs> g_testFuncs = {
     AudioServerSetOffloadModeTest,
     AudioServerUnsetOffloadTest,
     AudioServerCheckHibernateStateTest,
-    AudioServerSetSessionMuteStateTest,
     AudioServerNotifyMuteStateChangeTest,
     AudioServerAudioWorkgroupCreateTest,
     AudioServerAudioWorkgroupReleaseTest,
@@ -2320,7 +2291,6 @@ vector<TestFuncs> g_testFuncs = {
     AudioServerUnregisterDataTransferMonitorParamFuzzTest,
     AudioServerOnDataTransferStateChangeFuzzTest,
     AudioServerSetAudioParameterFuzzTest,
-    AudioServerGetTransactionIdFuzzTest,
     AudioServerSetIORoutesFuzzTest,
     AudioServerUpdateActiveDeviceRouteFuzzTest,
     AudioServerUpdateActiveDevicesRouteFuzzTest,

@@ -29,6 +29,7 @@ public:
 
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo) override;
+    int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName) override;
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
     int32_t NotifyCapturerAdded(const AudioCapturerInfo &capturerInfo, const AudioStreamInfo &streamInfo,
         uint32_t sessionId) override;

@@ -1081,5 +1081,36 @@ HWTEST(AudioProcessInClientUnitTest, SetPreferredFrameSize_003, TestSize.Level1)
     ptrAudioProcessInClientInner->SetPreferredFrameSize(15, true);
 }
 
+/*
+ * @tc.name  : Test SetPreferredFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: SetPreferredFrameSize_004
+ * @tc.desc  : Test SetPreferredFrameSize with isRecreate parameter
+ */
+HWTEST(AudioProcessInClientUnitTest, SetPreferredFrameSize_004, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = false;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+    
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+    int32_t frameSize = 5;
+    int32_t originalSize = 20;
+    ptrAudioProcessInClientInner->spanSizeInFrame_ = originalSize;
+    ptrAudioProcessInClientInner->clientByteSizePerFrame_ = 0;
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.originalFlag = AUDIO_FLAG_ULTRA_FAST;
+    ptrAudioProcessInClientInner->SetPreferredFrameSize(frameSize, true);
+    EXPECT_EQ(ptrAudioProcessInClientInner->clientSpanSizeInFrame_, frameSize);
+    ptrAudioProcessInClientInner->SetPreferredFrameSize(frameSize, false);
+    EXPECT_EQ(ptrAudioProcessInClientInner->clientSpanSizeInFrame_, originalSize);
+    ptrAudioProcessInClientInner->processConfig_.rendererInfo.originalFlag = AUDIO_FLAG_NORMAL;
+    ptrAudioProcessInClientInner->SetPreferredFrameSize(frameSize, true);
+    EXPECT_EQ(ptrAudioProcessInClientInner->clientSpanSizeInFrame_, originalSize);
+    ptrAudioProcessInClientInner->SetPreferredFrameSize(frameSize, false);
+    EXPECT_EQ(ptrAudioProcessInClientInner->clientSpanSizeInFrame_, originalSize);
+}
+
 } // namespace AudioStandard
-} // namespace OHOSs
+} // namespace OHOS

@@ -131,6 +131,11 @@ void CapturerInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
     return;
 }
 
+void CapturerInClientInner::SetClientDeviceId(const std::string &deviceId)
+{
+    deviceId_ = deviceId;
+}
+
 int32_t CapturerInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -433,6 +438,7 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
     config.appInfo.appFullTokenId = fullTokenId_;
+    config.appInfo.deviceId = deviceId_;
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);

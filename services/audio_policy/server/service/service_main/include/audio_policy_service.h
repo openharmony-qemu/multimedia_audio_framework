@@ -171,6 +171,8 @@ public:
     // override for IPolicyProvider
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
 
+    int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName);
+
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
 #ifdef BLUETOOTH_ENABLE

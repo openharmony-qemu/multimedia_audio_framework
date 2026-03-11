@@ -134,12 +134,6 @@ int32_t FileAudioCaptureSource::GetMute(bool &isMute)
     return SUCCESS;
 }
 
-uint64_t FileAudioCaptureSource::GetTransactionId(void)
-{
-    uint64_t res = -1L;
-    return res;
-}
-
 int32_t FileAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     return SUCCESS;

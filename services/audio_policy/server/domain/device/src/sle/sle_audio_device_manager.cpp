@@ -486,35 +486,25 @@ int32_t SleAudioDeviceManager::SetNearlinkDeviceMute(const std::string &device, 
     return SUCCESS;
 }
 
-int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel(const std::string &device, AudioStreamType streamType,
-    const int32_t volumeLevel)
+int32_t SleAudioDeviceManager::SetNearlinkDeviceVolume(const std::string &device, AudioStreamType streamType,
+    VolumeScale &volume)
 {
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
     CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(device) != deviceVolumeConfigInfo_.end(),
         ERR_INVALID_PARAM, "device not found");
+    SleVolumeConfigInfo tmp{};
+    auto *config = &tmp;
     if (streamType == STREAM_MUSIC) {
-        deviceVolumeConfigInfo_[device].first.volumeLevel = volumeLevel;
-    } else if (streamType == STREAM_VOICE_CALL && volumeLevel > 0) {
-        deviceVolumeConfigInfo_[device].second.volumeLevel = volumeLevel;
+        config = &deviceVolumeConfigInfo_[device].first;
+    } else if (streamType == STREAM_VOICE_CALL && volume.VolumeLevel() > 0) {
+        config = &deviceVolumeConfigInfo_[device].second;
     }
-    return SUCCESS;
-}
 
-int32_t SleAudioDeviceManager::SetNearlinkDeviceVolumeDegree(const std::string &device, AudioStreamType streamType,
-    int32_t volumeDegree)
-{
-    std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
-    CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(device) != deviceVolumeConfigInfo_.end(),
-        ERR_INVALID_PARAM, "device not found");
-    if (streamType == STREAM_MUSIC) {
-        deviceVolumeConfigInfo_[device].first.volumeDegree = volumeDegree;
-    } else if (streamType == STREAM_VOICE_CALL) {
-        if (volumeDegree > 0) {
-            deviceVolumeConfigInfo_[device].second.volumeDegree = volumeDegree;
-        } else {
-            return ERR_INVALID_PARAM;
-        }
-    }
+    volume.Adjust({config->volumeLevel, config->volumeDegree});
+    config->volumeLevel = volume.VolumeLevel();
+    config->volumeDegree = volume.VolumeDegree();
+    AUDIO_INFO_LOG("Set Volume: streamType:%{public}d volumeLevel:%{public}d, volumeDegree:%{public}d",
+        config->volumeType, volume.VolumeLevel(), volume.VolumeDegree());
     return SUCCESS;
 }
 
@@ -553,7 +543,7 @@ bool SleAudioDeviceManager::GetMuteStatusByVolumeType(AudioVolumeType volumeType
 {
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
     CHECK_AND_RETURN_RET_LOG(deviceVolumeConfigInfo_.find(nearLinkDevice) != deviceVolumeConfigInfo_.end(),
-        ERR_INVALID_PARAM, "device not found");
+        false, "device not found");
     if (volumeType == STREAM_MUSIC) {
         return deviceVolumeConfigInfo_[nearLinkDevice].first.isMute;
     } else if (volumeType == STREAM_VOICE_CALL) {

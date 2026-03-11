@@ -213,6 +213,7 @@ private:
     BufferDesc PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc);
     void CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
         const RingBufferWrapper& ringBufferDesc);
+    int32_t Write3DAModeData(uint64_t currentReadFrame, uint64_t currentWriteFrame);
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
     void ProcessManagerType();

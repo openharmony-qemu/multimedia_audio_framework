@@ -250,6 +250,9 @@ interface IAudioPolicy {
     void DeactivatePreemptMode();
     void IsFastPlaybackSupported([in] AudioStreamInfo streamInfo, [in] int usage, [out] boolean retSupported);
     void IsFastRecordingSupported([in] AudioStreamInfo streamInfo, [in] int source, [out] boolean retSupported);
+    void IsMultichannelPlaybackSupported([in] AudioStreamInfo streamInfo, [in] int streamUsage, [out] boolean retSupported);
+    void IsDirectPlaybackSupported([in] AudioStreamInfo streamInfo, [in] int streamUsage, [out] boolean retSupported);
+    void IsOffloadPlaybackSupported([in] AudioStreamInfo streamInfo, [in] int streamUsage, [out] boolean retSupported);
     void GetDmDeviceType([out] unsigned short retDeviceType);
     void GetDirectPlaybackSupport([in] AudioStreamInfo streamInfo, [in] int streamUsage, [out] int retMode);
     void NotifySessionStateChange([in] int uid, [in] int pid, [in] boolean hasSession);

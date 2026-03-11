@@ -395,6 +395,21 @@ public:
         return (ultraFastFlag_ & ULTRA_IMPLEMENTED);
     }
 
+    void SetFastStreamForcedNormalFlag(bool isForcedNormal)
+    {
+        forcedNormalFlag_ = isForcedNormal;
+    }
+
+    bool GetFastStreamForcedNormalFlag()
+    {
+        return forcedNormalFlag_.load();
+    }
+
+    bool ResetFastStreamForcedNormalFlag()
+    {
+        return forcedNormalFlag_.exchange(false);
+    }
+
     int32_t GetRealUid() const;
 
 private:
@@ -410,6 +425,7 @@ private:
     std::mutex lock_;
     std::shared_mutex ultraFastFlagLock_;
     uint32_t ultraFastFlag_ = ULTRA_NONE;
+    std::atomic<bool> forcedNormalFlag_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -634,7 +634,11 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize, bool is
     size_t count = static_cast<size_t>(frameSize) / spanSizeInFrame_;
     size_t rest = static_cast<size_t>(frameSize) % spanSizeInFrame_;
     if (tmp <= originalSpanSizeInFrame) {
-        clientSpanSizeInFrame_ = originalSpanSizeInFrame;
+        if (processConfig_.rendererInfo.originalFlag == AUDIO_FLAG_ULTRA_FAST && isRecreate) {
+            clientSpanSizeInFrame_ = tmp;
+        } else {
+            clientSpanSizeInFrame_ = originalSpanSizeInFrame;
+        }
     } else if (tmp >= MAX_TIMES * originalSpanSizeInFrame) {
         clientSpanSizeInFrame_ = MAX_TIMES * originalSpanSizeInFrame;
     } else {
@@ -651,7 +655,8 @@ void AudioProcessInClientInner::SetPreferredFrameSize(int32_t frameSize, bool is
         clientSpanSizeInByte_ = clientSpanSizeInFrame_ * clientByteSizePerFrame_;
     }
     callbackBuffer_ = std::make_unique<uint8_t[]>(clientSpanSizeInByte_);
-    AUDIO_INFO_LOG("Set preferred callbackBuffer size:%{public}zu", clientSpanSizeInByte_);
+    AUDIO_INFO_LOG("Preferred frame size: %{public}d, spanSizeInFrame_: %{public}u, isRecreate: %{public}d, "
+        "callbackBuffer size:%{public}zu", frameSize, spanSizeInFrame_, isRecreate, clientSpanSizeInByte_);
     memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_);
 }
 

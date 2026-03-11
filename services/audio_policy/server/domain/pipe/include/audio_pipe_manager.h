@@ -103,6 +103,7 @@ public:
     bool HasPrimarySink();
     bool HasRunningStream();
     bool HasFastOutputPipe();
+    bool HasUltraFastStreamRequest();
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
     bool HasRunningRecognitionCapturerStream();
     bool IsOnPrimaryAdapter(uint32_t sessionId);

@@ -2274,5 +2274,61 @@ HWTEST_F(AudioEndpointUnitTest, AsyncGetPosTime_003, TestSize.Level1)
     
     EXPECT_FALSE(audioEndpointInner->isStarted_);
 }
+
+/**
+ * @tc.name  : Test AudioEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: IsEndpointUltraFast_001
+ * @tc.desc  : Test AudioEndpoint::IsEndpointUltraFast default value
+ */
+HWTEST_F(AudioEndpointUnitTest, IsEndpointUltraFast_001, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUTL_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    bool isUltraFast = false;
+    AudioEndpointCOnfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
+    EXPECT_NE(nullptr, audioEndpoint);
+    EXPECT_FALSE(audioEndpoint->IsEndpointUltraFast());
+}
+
+/**
+ * @tc.name  : Test AudioEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: IsEndpointUltraFast_002
+ * @tc.desc  : Test AudioEndpoint::IsEndpointUltraFast when isUltraFast is true
+ */
+HWTEST_F(AudioEndpointUnitTest, IsEndpointUltraFast_002, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUTL_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    bool isUltraFast = true;
+    AudioEndpointCOnfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = config.audioMode,
+        .streamType = config.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> audioEndpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
+    EXPECT_NE(nullptr, audioEndpoint);
+    EXPECT_TRUE(audioEndpoint->IsEndpointUltraFast());
+}
 } // namespace AudioStandard
 } // namespace OHOS

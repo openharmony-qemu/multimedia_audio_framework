@@ -40,11 +40,11 @@ HWTEST(AudioAbilityManagerTest, AudioAbilityManagerTest_001, TestSize.Level4)
     DeviceRole deviceRole = DeviceRole::INPUT_DEVICE;
     uint64_t id = 0;
     id = audioManagerTest->GetTransactionId(deviceType, deviceRole);
-    EXPECT_EQ(0, id);
+    EXPECT_NE(0, id);
 
     deviceRole = DeviceRole::OUTPUT_DEVICE;
     id = audioManagerTest->GetTransactionId(deviceType, deviceRole);
-    EXPECT_EQ(0, id);
+    EXPECT_NE(0, id);
 }
 } // namespace AudioStandard
 } // namespace OHOS

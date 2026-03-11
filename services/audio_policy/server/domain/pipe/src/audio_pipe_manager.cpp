@@ -168,7 +168,9 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedPipe()
     std::vector<std::shared_ptr<AudioPipeInfo>> newList;
     for (auto pipe : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
-        if (pipe->streamDescriptors_.empty() && IsSpecialPipe(pipe->routeFlag_)) {
+        if (pipe->streamDescriptors_.empty() && (IsSpecialPipe(pipe->routeFlag_) ||
+            (pipe->adapterName_ == ADAPTER_TYPE_VA &&
+            pipe->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL))) {
             newList.push_back(pipe);
         }
     }
@@ -214,7 +216,8 @@ bool AudioPipeManager::IsNormalRecordPipe(std::shared_ptr<AudioPipeInfo> pipeInf
 {
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, false, "Pipe info is null");
     if ((pipeInfo->adapterName_ == PRIMARY_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) ||
-        (pipeInfo->adapterName_ == USB_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL)) {
+        (pipeInfo->adapterName_ == USB_CLASS && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL) ||
+        (pipeInfo->adapterName_ == ADAPTER_TYPE_VA && pipeInfo->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL)) {
         return true;
     }
     return false;
@@ -343,13 +346,11 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             std::shared_ptr<AudioStreamDescriptor> tmp = std::make_shared<AudioStreamDescriptor>();
             tmp->newDeviceDescs_ = desc->newDeviceDescs_;
-            tmp->rendererInfo_ = desc->rendererInfo_;
+            tmp->rendererInfo_.streamUsage = desc->rendererInfo_.streamUsage;
             tmp->appInfo_ = desc->appInfo_;
             tmp->sessionId_ = desc->sessionId_;
             tmp->callerUid_ = desc->callerUid_;
             tmp->callerPid_ = desc->callerPid_;
-            tmp->streamStatus_ = desc->streamStatus_;
-            tmp->bundleName_ = desc->bundleName_;
             streamDescs.push_back(tmp);
         }
     }
@@ -890,6 +891,20 @@ bool AudioPipeManager::HasFastOutputPipe()
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         if ((pipeInfo->GetRoute() & AUDIO_OUTPUT_FLAG_FAST)) {
             return true;
+        }
+    }
+    return false;
+}
+
+bool AudioPipeManager::HasUltraFastStreamRequest()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            CHECK_AND_RETURN_RET_LOG(desc->rendererInfo_.originalFlag != AUDIO_FLAG_ULTRA_FAST, true,
+                "stream %{public}u is request ultra fast route", desc->GetSessionId());
         }
     }
     return false;

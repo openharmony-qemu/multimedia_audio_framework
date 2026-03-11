@@ -127,6 +127,7 @@ public:
 
     int32_t AddCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
     int32_t RemoveCaptureInjector(const uint32_t &sinkPortIndex, const SourceType &sourceType) override;
+    bool IsEndpointUltraFast() const override;
     void StopByRestore(const RestoreInfo &restoreInfo) override;
     
     // This func is a virtual sync func, we can continully calculate frame rate and time even sink stoped
@@ -137,6 +138,7 @@ private:
     void CheckTimeAndBufferReady(uint64_t &curWritePos, int64_t &wakeUpTime, int64_t &curTime);
     void MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId);
     bool ConfigInputPoint(const AudioDeviceDescriptor &deviceInfo);
+    bool ConfigOutputPoint(const AudioEndpointConfig &endpointConfig);
     int32_t PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo);
     void InitTransBuffer();
     int32_t GetAdapterBufferInfo(const AudioDeviceDescriptor &deviceInfo);
@@ -293,6 +295,7 @@ private:
     
     EndpointType endpointType_;
     AdapterType adapterType_ = ADAPTER_TYPE_FAST;
+    std::atomic<bool> isEndpointUltraFast_ = false;
     int32_t id_ = 0;
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
 

@@ -108,6 +108,11 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("isAcousticEchoCancelerSupported", IsAcousticEchoCancelerSupported),
         DECLARE_NAPI_FUNCTION("isRecordingAvailable", IsRecordingAvailable),
         DECLARE_NAPI_FUNCTION("isAudioLoopbackSupported", IsAudioLoopbackSupported),
+        DECLARE_NAPI_FUNCTION("isFastPlaybackSupported", IsFastPlaybackSupported),
+        DECLARE_NAPI_FUNCTION("isFastRecordingSupported", IsFastRecordingSupported),
+        DECLARE_NAPI_FUNCTION("isMultichannelPlaybackSupported", IsMultichannelPlaybackSupported),
+        DECLARE_NAPI_FUNCTION("isDirectPlaybackSupported", IsDirectPlaybackSupported),
+        DECLARE_NAPI_FUNCTION("isOffloadPlaybackSupported", IsOffloadPlaybackSupported),
         DECLARE_NAPI_FUNCTION("isIntelligentNoiseReductionEnabledForCurrentDevice",
             IsIntelligentNoiseReductionEnabledForCurrentDevice),
     };
@@ -959,6 +964,152 @@ napi_value NapiAudioStreamMgr::IsIntelligentNoiseReductionEnabledForCurrentDevic
 
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsIntelligentNoiseReductionEnabledForCurrentDevice(
         static_cast<SourceType>(sourceType));
+    NapiParamUtils::SetValueBoolean(env, isSupported, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsFastPlaybackSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO && napiStreamMgr != nullptr &&
+        napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
+
+    napi_typeof(env, args[PARAM1], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
+
+    AudioStreamInfo audioStreamInfo = {};
+    napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
+
+    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        result, "get streamUsage failed");
+
+    bool isFastPlaybackSupported = napiStreamMgr->audioStreamMngr_->IsFastPlaybackSupported(
+        audioStreamInfo, static_cast<StreamUsage>(streamUsage));
+    NapiParamUtils::SetValueBoolean(env, isFastPlaybackSupported, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsFastRecordingSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO && napiStreamMgr != nullptr &&
+        napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
+
+    napi_typeof(env, args[PARAM1], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
+
+    AudioStreamInfo audioStreamInfo = {};
+    napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
+
+    int32_t sourceType = 0;
+    NapiParamUtils::GetValueInt32(env, sourceType, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsValidSourceType(sourceType), result, "get sourceType failed");
+
+    bool isFastRecordingSupported = napiStreamMgr->audioStreamMngr_->IsFastRecordingSupported(
+        audioStreamInfo, static_cast<SourceType>(sourceType));
+    NapiParamUtils::SetValueBoolean(env, isFastRecordingSupported, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsMultichannelPlaybackSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO && napiStreamMgr != nullptr &&
+        napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
+    napi_typeof(env, args[PARAM1], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
+
+    AudioStreamInfo audioStreamInfo = {};
+    napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
+
+    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        result, "get streamUsage failed");
+    
+    bool isSupported = napiStreamMgr->audioStreamMngr_->IsMultichannelPlaybackSupported(audioStreamInfo,
+        static_cast<StreamUsage>(streamUsage));
+    NapiParamUtils::SetValueBoolean(env, isSupported, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsDirectPlaybackSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO && napiStreamMgr != nullptr &&
+        napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
+    napi_typeof(env, args[PARAM1], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
+
+    AudioStreamInfo audioStreamInfo = {};
+    napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
+
+    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        result, "get streamUsage failed");
+    
+    bool isSupported = napiStreamMgr->audioStreamMngr_->IsDirectPlaybackSupported(audioStreamInfo,
+        static_cast<StreamUsage>(streamUsage));
+    NapiParamUtils::SetValueBoolean(env, isSupported, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsOffloadPlaybackSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO && napiStreamMgr != nullptr &&
+        napiStreamMgr->audioStreamMngr_ != nullptr, result, "argcCount invalid");
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, result, "invalid valueType");
+    napi_typeof(env, args[PARAM1], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, result, "invalid valueType");
+
+    AudioStreamInfo audioStreamInfo = {};
+    napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
+
+    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        result, "get streamUsage failed");
+    
+    bool isSupported = napiStreamMgr->audioStreamMngr_->IsOffloadPlaybackSupported(audioStreamInfo,
+        static_cast<StreamUsage>(streamUsage));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);
     return result;
 }

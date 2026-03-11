@@ -45,7 +45,6 @@ public:
     int32_t SetMute(bool isMute)override {return 0;};
     int32_t GetMute(bool &isMute)override {return 0;};
 
-    uint64_t GetTransactionId(void) override {return 0;};
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override {return 0;};
     float GetMaxAmplitude(void) override {return 0;};
 

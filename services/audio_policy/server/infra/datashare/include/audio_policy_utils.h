@@ -71,6 +71,7 @@ public:
     void UpdateDisplayNameForRemote(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
     void UpdateEffectDefaultSink(DeviceType deviceType);
+    int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName);
     std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
     AudioModuleInfo ConstructRemoteAudioModuleInfo(std::string networkId,
         DeviceRole deviceRole, DeviceType deviceType);

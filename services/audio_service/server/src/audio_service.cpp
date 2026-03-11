@@ -49,6 +49,7 @@ static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
+static const uint32_t ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 #endif
 static const uint32_t UPDATE_MUTE_CONTROL_SET_TIME_OUT = 15; // 15s
@@ -183,6 +184,9 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
 
 int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoint, bool isSwitchStream, bool isRecord)
 {
+    if (isSwitchStream && endpoint->IsEndpointUltraFast()) {
+        return ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS;
+    }
     if (isSwitchStream && endpoint->GetDeviceInfo().deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         return ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS;
     }
@@ -858,6 +862,11 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDev
         return config.capturerInfo.originalFlag == AUDIO_FLAG_VOIP_FAST || deviceInfo.networkId_ != LOCAL_NETWORK_ID;
     }
     return false;
+}
+
+bool AudioService::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
+{
+    return PolicyHandler::GetInstance().GetRemoteDeviceName(deviceId, deviceName);
 }
 
 #ifdef SUPPORT_LOW_LATENCY
@@ -1595,22 +1604,17 @@ void AudioService::RegisterMuteStateChangeCallback(uint32_t sessionId, const Mut
     muteStateCallbacks_[sessionId] = callback;
 }
 
-void AudioService::SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag)
-{
-    std::unique_lock<std::mutex> lock(muteStateMapMutex_);
-    if (!insert) {
-        muteStateMap_.erase(sessionId);
-    } else {
-        muteStateMap_[sessionId] = muteFlag;
-    }
-}
-
 void AudioService::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
 {
     std::unique_lock<std::mutex> lock(muteStateMapMutex_);
     if (muteStateCallbacks_.count(sessionId) == 0) {
         AUDIO_ERR_LOG("send mute flag to session:%{public}u failed", sessionId);
         return;
+    }
+    if (muteFlag) {
+        muteStateMap_[sessionId] = muteFlag;
+    } else {
+        muteStateMap_.erase(sessionId);
     }
     AUDIO_INFO_LOG("session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
     muteStateCallbacks_[sessionId](muteFlag);

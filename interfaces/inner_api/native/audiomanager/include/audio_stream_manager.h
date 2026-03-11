@@ -227,6 +227,36 @@ public:
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
 
     /**
+     * @brief Is multichannel playback supported.
+     *
+     * @param streamInfo audio stream info.
+     * @param streamUsage StreamUsage.
+     * @return Returns <b>true</b> if the stream is support multichannel playback; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
+
+    /**
+     * @brief Is direct playback supported.
+     *
+     * @param streamInfo audio stream info.
+     * @param streamUsage StreamUsage.
+     * @return Returns <b>true</b> if the stream is support direct playback; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
+
+    /**
+     * @brief Is offload playback supported.
+     *
+     * @param streamInfo audio stream info.
+     * @param streamUsage StreamUsage.
+     * @return Returns <b>true</b> if the stream is support offload playback; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
+
+    /**
      * @brief Gets sampling rate for hardware output.
      *
      * @param AudioDeviceDescriptor Target output device.

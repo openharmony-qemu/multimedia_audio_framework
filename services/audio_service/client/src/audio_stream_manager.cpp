@@ -248,6 +248,21 @@ bool AudioStreamManager::IsFastRecordingSupported(AudioStreamInfo &streamInfo, S
     return AudioPolicyManager::GetInstance().IsFastRecordingSupported(streamInfo, source);
 }
 
+bool AudioStreamManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    return AudioPolicyManager::GetInstance().IsMultichannelPlaybackSupported(streamInfo, streamUsage);
+}
+
+bool AudioStreamManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    return AudioPolicyManager::GetInstance().IsDirectPlaybackSupported(streamInfo, streamUsage);
+}
+
+bool AudioStreamManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage)
+{
+    return AudioPolicyManager::GetInstance().IsOffloadPlaybackSupported(streamInfo, streamUsage);
+}
+
 int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     int32_t result = 0;

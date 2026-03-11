@@ -323,6 +323,64 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetUnusedPipe_004
+ * @tc.desc: Test GetUnusedPipe when pipe meets streamDescriptors empty but routeFlag is not special.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_004, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+ 
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = ADAPTER_TYPE_VA;
+    pipe1->streamDescriptors_.clear();
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+ 
+/**
+ * @tc.name: GetUnusedPipe_005
+ * @tc.desc: Test GetUnusedPipe when pipe meets streamDescriptors empty but routeFlag is not special.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_005, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+ 
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = ADAPTER_TYPE_VA;
+    pipe1->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL;
+    pipe1->streamDescriptors_.clear();
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+ 
+/**
+ * @tc.name: GetUnusedPipe_006
+ * @tc.desc: Test GetUnusedPipe when pipe meets streamDescriptors empty but routeFlag is not special.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_006, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+ 
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->routeFlag_ == AUDIO_INPUT_FLAG_NORMAL;
+    pipe1->streamDescriptors_.clear();
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+
+/**
  * @tc.name: IsSpecialPipe_001
  * @tc.desc: Test IsSpecialPipe when routeFlag includes AUDIO_OUTPUT_FLAG_FAST.
  * @tc.type: FUNC

@@ -71,6 +71,11 @@ bool RemoteAudioCaptureSource::IsInited(void)
     return sourceInited_.load();
 }
 
+bool RemoteAudioCaptureSource::IsStarted(void)
+{
+    return started_.load();
+}
+
 int32_t RemoteAudioCaptureSource::Start(void)
 {
     Trace trace("RemoteAudioCaptureSource::Start");
@@ -265,12 +270,6 @@ int32_t RemoteAudioCaptureSource::GetMute(bool &isMute)
     AUDIO_DEBUG_LOG("hdiMuteState: %{public}d, muteState: %{public}d", hdiMuteState, muteState_);
     isMute = muteState_;
     return SUCCESS;
-}
-
-uint64_t RemoteAudioCaptureSource::GetTransactionId(void)
-{
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)

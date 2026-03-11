@@ -51,7 +51,6 @@ public:
     int32_t GetVolume(float &left, float &right) override;
 
     int32_t GetLatency(uint32_t &latency) override;
-    int32_t GetTransactionId(uint64_t &transactionId) override;
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude(void) override;
     void SetAudioMonoState(bool audioMono) override;

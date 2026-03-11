@@ -52,6 +52,7 @@ static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
 static const uint32_t A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t ARMUSB_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
+static const uint32_t ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS = 0; // 0ms
 
 class AudioServiceUnitTest : public testing::Test {
 public:
@@ -1727,7 +1728,7 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_003, TestSize.Level1)
 /**
  * @tc.name  : Test GetReleaseDelayTime API
  * @tc.type  : FUNC
- * @tc.number: GetReleaseDelayTime_003
+ * @tc.number: GetReleaseDelayTime_004
  * @tc.desc  : Test GetReleaseDelayTime interface.
  */
 HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
@@ -1758,6 +1759,44 @@ HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_004, TestSize.Level1)
 
     isSwitchStream = false;
     endpoint->deviceInfo_.deviceType_ = DEVICE_TYPE_SPEAKER;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
+}
+
+/**
+ * @tc.name  : Test GetReleaseDelayTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetReleaseDelayTime_005
+ * @tc.desc  : Test GetReleaseDelayTime interface with ultra fast endpoint.
+ */
+HWTEST(AudioServiceUnitTest, GetReleaseDelayTime_005, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    EXPECT_NE(audioService, nullptr);
+
+    AudioProcessConfig clientConfig = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    AudioStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO };
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::string adapterName = "";
+    bool isUltraFast = true;
+    AudioEndpointConfig endpointConfig = {
+        .deviceInfo = deviceInfo,
+        .streamInfo = audioStreamInfo,
+        .adapterName = adapterName,
+        .audioMode = clientConfig.audioMode,
+        .streamType = clientConfig.streamType,
+        .isUltraFast = isUltraFast
+    };
+    std::shared_ptr<AudioEndpoint> endpoint = AudioEndpoint::CreateEndpoint(false, endpointConfig);
+    EXPECT_NE(nullptr, endpoint);
+
+    bool isSwitchStream = true;
+    EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
+        ULTRA_FAST_ENDPOINT_RELEASE_DELAY_TIME_MS);
+    
+    isSwitchStream = false;
     EXPECT_EQ(audioService->GetReleaseDelayTime(endpoint, isSwitchStream, false),
         NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS);
 }
@@ -2061,59 +2100,28 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
 }
 
 /*
- * @tc.name  : Test SetSessionMuteState API
+ * @tc.name  : Test SetLatestMuteState API
  * @tc.type  : FUNC
- * @tc.number: AudioServiceSetSessionMuteState_001
+ * @tc.number: AudioServiceSetLatestMuteState_001
  * @tc.desc  : Test RegisterMuteStateChangeCallback whether callback can invoke.
- */
-HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_001, TestSize.Level1)
+*/
+HWTEST(AudioServiceUnitTest, AudioServiceSetLatestMuteState_001, TestSize.Level1)
 {
-    bool muteFlag = true;
-    uint32_t sessionId = 0;
-    uint32_t sessionId2 = 1;
-    uint32_t sessionId3 = 3;
-    bool testFlag = false;
+    uint32_t sessionId = 100000;
+    bool muteFlag = false;
 
     auto service = AudioService::GetInstance();
     ASSERT_NE(service, nullptr);
-    service->SetSessionMuteState(sessionId, true, muteFlag);
-    service->RegisterMuteStateChangeCallback(sessionId2, [&](bool flag) {
-        testFlag = flag;
-    });
-    EXPECT_EQ(testFlag, false);
     service->RegisterMuteStateChangeCallback(sessionId, [&](bool flag) {
-        testFlag = flag;
+        muteFlag = flag;
     });
-    EXPECT_EQ(testFlag, false);
+    EXPECT_EQ(muteFlag, false);
 
-    testFlag = false;
-    service->SetLatestMuteState(sessionId3, muteFlag);
-    EXPECT_FALSE(testFlag);
+    service->SetLatestMuteState(sessionId, true);
+    EXPECT_EQ(muteFlag, true);
 
-    service->RegisterMuteStateChangeCallback(sessionId3, [&](bool flag) {
-        testFlag = flag;
-    });
-    service->SetSessionMuteState(sessionId3, true, muteFlag);
-    service->SetLatestMuteState(sessionId3, muteFlag);
-    EXPECT_EQ(testFlag, muteFlag);
-}
-
-/**
- * @tc.name  : Test SetSessionMuteState API
- * @tc.type  : FUNC
- * @tc.number: AudioServiceSetSessionMuteState_002
- * @tc.desc  : Test SetSessionMuteState interface .
- */
-HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_002, TestSize.Level1)
-{
-    bool muteFlag = true;
-    uint32_t sessionId = 0;
-    auto service = AudioService::GetInstance();
-    ASSERT_NE(service, nullptr);
-    service->SetSessionMuteState(sessionId, true, muteFlag);
-    EXPECT_TRUE(service->muteStateMap_.count(sessionId) != 0);
-    service->SetSessionMuteState(sessionId, false, muteFlag);
-    EXPECT_TRUE(service->muteStateMap_.count(sessionId) == 0);
+    service->SetLatestMuteState(sessionId, false);
+    EXPECT_EQ(muteFlag, false);
 }
 
 /**
@@ -2875,24 +2883,6 @@ HWTEST(AudioServiceUnitTest, IsStreamTypeFitWorkgroup_001, TestSize.Level1)
     EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_ALARM));
     EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_SYSTEM));
     EXPECT_FALSE(service->IsStreamTypeFitWorkgroup(STREAM_NOTIFICATION));
-}
-
-/**
- * @tc.name  : Test SetSessionMuteState API
- * @tc.type  : FUNC
- * @tc.number: SetSessionMuteState_001,
- * @tc.desc  : Test SetSessionMuteState interface.
- */
-HWTEST(AudioServiceUnitTest, SetSessionMuteState_001, TestSize.Level1)
-{
-    uint32_t sessionId = 1;
-    bool insert = true;
-    bool muteFlag = true;
-
-    AudioService::GetInstance()->SetSessionMuteState(sessionId, insert, muteFlag);
-
-    std::unique_lock<std::mutex> lock(AudioService::GetInstance()->muteStateMapMutex_);
-    EXPECT_EQ(AudioService::GetInstance()->muteStateMap_[sessionId], muteFlag);
 }
 
 /**

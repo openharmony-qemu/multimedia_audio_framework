@@ -50,6 +50,7 @@ namespace AudioStandard {
 namespace {
 // poraudio only support F32 resample
 static constexpr AudioSampleFormat RESAMPLE_FORMAT = SAMPLE_F32LE;
+static constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 #endif
@@ -95,6 +96,7 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
     AudioSampleFormat format = processConfig_.streamInfo.format;
     AudioChannel channels = processConfig_.streamInfo.channels;
     const auto audioMode = processConfig_.audioMode;
+    deviceId_ = processConfig.appInfo.deviceId;
     logUtilsTag_ = audioMode == AUDIO_MODE_PLAYBACK ? "ProcessServerPlay::" : "ProcessServerRec::";
     logUtilsTag_ += std::to_string(sessionId_);
     // eg: 100005_dump_process_server_play/rec_audio_48000_2_1.pcm
@@ -142,7 +144,7 @@ AudioProcessInServer::~AudioProcessInServer()
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
-
+    TurnOffRemoteMicIndicator();
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_RELEASE);
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
@@ -448,7 +450,7 @@ int32_t AudioProcessInServer::StartInner()
             HILOG_COMM_ERROR("[StartInner]Turn on micIndicator failed or check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
     }
-
+    TurnOnRemoteMicIndicator();
     MarkStaticFadeIn();
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
@@ -480,6 +482,25 @@ int32_t AudioProcessInServer::StartInner()
     return result;
 }
 
+void AudioProcessInServer::TurnOnRemoteMicIndicator()
+{
+    CHECK_AND_RETURN(processConfig_.callerUid == UID_DISTRIBUTED_AUDIO_SA && !isRemoteMicIndicatorOn_);
+    std::string deviceName = "";
+    AudioService::GetInstance()->GetRemoteDeviceName(deviceId_, deviceName);
+    PermissionUtil::StartRemoteUsingPermission(deviceId_, deviceName, MICROPHONE_PERMISSION);
+    PermissionUtil::AddRemotePermissionUsedRecord(deviceId_, deviceName, MICROPHONE_PERMISSION, 1, 0);
+    isRemoteMicIndicatorOn_ = true;
+}
+
+void AudioProcessInServer::TurnOffRemoteMicIndicator()
+{
+    CHECK_AND_RETURN(processConfig_.callerUid == UID_DISTRIBUTED_AUDIO_SA && isRemoteMicIndicatorOn_);
+    std::string deviceName = "";
+    AudioService::GetInstance()->GetRemoteDeviceName(deviceId_, deviceName);
+    PermissionUtil::StopRemoteUsingPermission(deviceId_, deviceName, MICROPHONE_PERMISSION);
+    isRemoteMicIndicatorOn_ = false;
+}
+
 void AudioProcessInServer::RebuildCaptureInjector()
 {
     CHECK_AND_RETURN(rebuildFlag_);
@@ -509,7 +530,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
-
+    TurnOffRemoteMicIndicator();
     MarkStaticFadeOut(false);
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -551,7 +572,7 @@ int32_t AudioProcessInServer::Resume()
             HILOG_COMM_ERROR("[Resume]Turn on micIndicator failed or check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
     }
-
+    TurnOnRemoteMicIndicator();
     MarkStaticFadeIn();
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
@@ -582,7 +603,7 @@ int32_t AudioProcessInServer::Stop(int32_t stageIn)
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
-
+    TurnOffRemoteMicIndicator();
     MarkStaticFadeOut(true);
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
@@ -633,6 +654,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
+    TurnOffRemoteMicIndicator();
 
     bool needRemoveFromMap = !isSwitchStream;
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE,

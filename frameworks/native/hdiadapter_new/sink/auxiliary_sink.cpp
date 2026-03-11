@@ -337,12 +337,6 @@ int32_t AuxiliarySink::GetLatency(uint32_t &latency)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t AuxiliarySink::GetTransactionId(uint64_t &transactionId)
-{
-    AUDIO_WARNING_LOG("not supported");
-    return ERR_NOT_SUPPORTED;
-}
-
 int32_t AuxiliarySink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_WARNING_LOG("not supported");

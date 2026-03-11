@@ -465,7 +465,7 @@ int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, bool enable)
 }
 
 int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
-    int32_t volumeLevel, int32_t volumeFlag)
+    const VolumeScale &volume, int32_t volumeFlag)
 {
     std::shared_ptr<AudioZoneClientManager> mgr;
     {
@@ -476,7 +476,7 @@ int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
         mgr = clientManager_;
     }
     return mgr->SetSystemVolumeLevel(volumeProxyClientPid_, zoneId_,
-        volumeType, volumeLevel, volumeFlag);
+        volumeType, volume, volumeFlag);
 }
 
 int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
@@ -490,21 +490,6 @@ int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
         mgr = clientManager_;
     }
     return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, volumeType);
-}
-
-int32_t AudioZone::SetSystemVolumeDegree(AudioVolumeType volumeType,
-    int32_t volumeDegree, int32_t volumeFlag)
-{
-    std::shared_ptr<AudioZoneClientManager> mgr;
-    {
-        std::lock_guard<std::mutex> lock(zoneMutex_);
-        CHECK_AND_RETURN_RET_LOG(clientManager_ != nullptr, ERROR, "clientManager is nullptr");
-        CHECK_AND_RETURN_RET_LOG(isVolumeProxyEnabled_, ERROR, "volume proxy is not enable");
-
-        mgr = clientManager_;
-    }
-    return mgr->SetSystemVolumeDegree(volumeProxyClientPid_, zoneId_,
-        volumeType, volumeDegree, volumeFlag);
 }
 
 int32_t AudioZone::GetSystemVolumeDegree(AudioVolumeType volumeType)

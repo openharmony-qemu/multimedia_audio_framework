@@ -505,14 +505,19 @@ bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
         AudioSampleFormat tempFormat = streamInfo.format;
         AudioChannelLayout tempLayout = streamInfo.channelLayout;
 
-        tempFormat = ((tempFormat == SAMPLE_S32LE) || (tempFormat == SAMPLE_F32LE)) ? SAMPLE_S16LE : tempFormat;
+        if (pipeIt.second->supportFlags_ == AUDIO_OUTPUT_FLAG_FAST) {
+            CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S32LE || tempFormat == SAMPLE_F32LE ||
+                tempFormat == SAMPLE_S16LE, false);
+        }
+        if (pipeIt.second->supportFlags_ == AUDIO_INPUT_FLAG_FAST) {
+            CHECK_AND_RETURN_RET(tempFormat == SAMPLE_S16LE, false);
+        }
+
         tempLayout = (tempLayout == CH_LAYOUT_MONO) ? CH_LAYOUT_STEREO : tempLayout;
 
         for (auto it = pipeIt.second->streamPropInfos_.begin(); it != pipeIt.second->streamPropInfos_.end(); ++it) {
-            if ((*it)->format_ == tempFormat && (*it)->sampleRate_ == streamInfo.samplingRate &&
-                (*it)->channelLayout_ == tempLayout) {
-                return true;
-            }
+            CHECK_AND_CONTINUE((*it)->sampleRate_ == streamInfo.samplingRate && (*it)->channelLayout_ == tempLayout);
+            return true;
         }
     }
 
@@ -1135,6 +1140,85 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     tempStreamProp->channels_ = CHANNEL_6;
     tempStreamProp->channelLayout_ = CH_LAYOUT_5POINT1;
     return tempStreamProp;
+}
+
+bool AudioPolicyConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    bool isSupported = false;
+    for (auto &audioDeviceDescriptor : desc) {
+        CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
+
+        isSupported = GetPlaybackStreamSupport(streamInfo, AUDIO_OUTPUT_FLAG_MULTICHANNEL,
+            audioDeviceDescriptor);
+
+        CHECK_AND_BREAK_LOG(!isSupported, "Support MultichannelPlayback");
+    }
+
+    return isSupported;
+}
+
+bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamInfo, uint32_t flag,
+    std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDesc)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
+
+    deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDesc->deviceType_,
+        audioDeviceDesc->deviceRole_, audioDeviceDesc->networkId_, flag);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+
+    for (auto &pipeIt : deviceInfo->supportPipeMap_) {
+        CHECK_AND_CONTINUE(pipeIt.second != nullptr);
+
+        CHECK_AND_CONTINUE(pipeIt.second->supportFlags_ & flag);
+        
+        // consider the logic of path support under format conversion
+        AudioSampleFormat tempFormat = streamInfo.format;
+        AudioChannelLayout tempLayout = streamInfo.channelLayout;
+
+        for (auto it = pipeIt.second->streamPropInfos_.begin(); it != pipeIt.second->streamPropInfos_.end(); ++it) {
+            CHECK_AND_RETURN_RET((*it)->format_ != tempFormat || (*it)->sampleRate_ != streamInfo.samplingRate ||
+                (*it)->channelLayout_ != tempLayout, true);
+        }
+    }
+    return false;
+}
+
+bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
+
+    for (auto &audioDeviceDescriptor : desc) {
+        CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
+
+        deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(audioDeviceDescriptor->deviceType_,
+            audioDeviceDescriptor->deviceRole_, audioDeviceDescriptor->networkId_, AUDIO_OUTPUT_FLAG_HD);
+        CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "Find device failed");
+
+        DirectPlaybackMode mode = GetDirectPlaybackSupport(audioDeviceDescriptor, streamInfo);
+
+        CHECK_AND_RETURN_RET(mode == DIRECT_PLAYBACK_NOT_SUPPORTED, true);
+    }
+
+    return false;
+}
+
+bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage)
+{
+    CHECK_AND_RETURN_RET(usage == STREAM_USAGE_MUSIC || usage == STREAM_USAGE_AUDIOBOOK, false);
+
+    bool isSupported = false;
+    for (auto &audioDeviceDescriptor : desc) {
+        CHECK_AND_CONTINUE_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
+
+        isSupported = GetPlaybackStreamSupport(streamInfo, AUDIO_OUTPUT_FLAG_LOWPOWER,
+            audioDeviceDescriptor);
+        CHECK_AND_BREAK_LOG(!isSupported, "Support OffloadPlayback");
+    }
+
+    return isSupported;
 }
 }
 }

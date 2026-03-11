@@ -498,7 +498,9 @@ void SleAudioDeviceManagerSetNearlinkDeviceVolumeLevelFuzzTest(FuzzedDataProvide
     }
     AudioStreamType streamType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
     int32_t volumeLevel = GetData<int32_t>();
-    manager.SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
+    int32_t volumeDegree = GetData<int32_t>();
+    VolumeScale volume{volumeLevel, volumeDegree};
+    manager.SetNearlinkDeviceVolume(device, streamType, volume);
 }
 
 void SleAudioDeviceManagerGetVolumeLevelByVolumeTypeFuzzTest(FuzzedDataProvider& fdp)

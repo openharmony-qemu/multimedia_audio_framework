@@ -91,7 +91,7 @@ const int32_t DATA_INDEX_5 = 5;
 const int32_t STEREO_CHANNEL_COUNT = 2;
 const int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 const int32_t MAX_VOLUME_DEGREE = 100;
-const int32_t MIN_VOLUME_DEGREE = 0;
+const int32_t VOLUME_DEGREE_ZERO = 0;
 const int32_t VOLUME_LEVEL_ZERO = 0;
 const int32_t MID_CORE_START = 4;
 
@@ -800,6 +800,43 @@ int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* 
         targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
+int32_t PermissionUtil::StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
+    const char* permission)
+{
+    Trace trace("PrivacyKit::StartRemoteUsingPermission");
+    AUDIO_WARNING_LOG("PrivacyKit::StartRemoteUsingPermission deviceId: %{public}s, permission: %{public}s",
+        GetEncryptStr(deviceId).c_str(), permission);
+    Security::AccessToken::RemoteCallerInfo remoteCallerInfo = {deviceId, deviceName};
+    WatchTimeout guard("PrivacyKit::StartRemoteUsingPermission:PermissionUtil::StartUsingPermission");
+    int32_t res = Security::AccessToken::PrivacyKit::StartRemoteUsingPermission(remoteCallerInfo, permission);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
+int32_t PermissionUtil::StopRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
+    const char* permission)
+{
+    Trace trace("PrivacyKit::StopRemoteUsingPermission");
+    AUDIO_WARNING_LOG("PrivacyKit::StopRemoteUsingPermission deviceId: %{public}s, permission: %{public}s",
+        GetEncryptStr(deviceId).c_str(), permission);
+    Security::AccessToken::RemoteCallerInfo remoteCallerInfo = {deviceId, deviceName};
+    WatchTimeout guard("PrivacyKit::StopRemoteUsingPermission:PermissionUtil::StopRemoteUsingPermission");
+    int32_t res = Security::AccessToken::PrivacyKit::StopRemoteUsingPermission(remoteCallerInfo, permission);
+    guard.CheckCurrTimeout();
+    return res;
+}
+
+int32_t PermissionUtil::AddRemotePermissionUsedRecord(const std::string &deviceId, const std::string &deviceName,
+    const char* permission, int32_t successCount, int32_t failCount)
+{
+    Security::AccessToken::RemoteCallerInfo remoteCallerInfo = {deviceId, deviceName};
+    WatchTimeout guard("Security::AccessToken::PrivacyKit::AddRemotePermissionUsedRecord");
+    int32_t res = Security::AccessToken::PrivacyKit::AddRemotePermissionUsedRecord(remoteCallerInfo, permission,
+        successCount, failCount);
     guard.CheckCurrTimeout();
     return res;
 }
@@ -2149,10 +2186,10 @@ std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeTy
 
 int32_t VolumeUtils::VolumeDegreeToLevel(int32_t degree, int32_t maxLevel)
 {
-    CHECK_AND_RETURN_RET_LOG(degree >= MIN_VOLUME_DEGREE && degree <= MAX_VOLUME_DEGREE && maxLevel > 0,
+    CHECK_AND_RETURN_RET_LOG(degree >= VOLUME_DEGREE_ZERO && degree <= MAX_VOLUME_DEGREE && maxLevel > 0,
         -1, "invalid input, degree:%{public}d, maxLevel:%{public}d", degree, maxLevel);
 
-    if (degree == MIN_VOLUME_DEGREE) {
+    if (degree == VOLUME_DEGREE_ZERO) {
         return VOLUME_LEVEL_ZERO;
     }
 
@@ -2160,7 +2197,7 @@ int32_t VolumeUtils::VolumeDegreeToLevel(int32_t degree, int32_t maxLevel)
         return maxLevel;
     }
 
-    int32_t level = (degree - 1) * (maxLevel - 1) / (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) + 1;
+    int32_t level = (degree - 1) * (maxLevel - 1) / (MAX_VOLUME_DEGREE - VOLUME_DEGREE_ZERO - 1) + 1;
     return level;
 }
 
@@ -2171,31 +2208,88 @@ int32_t VolumeUtils::VolumeLevelToDegree(int32_t level, int32_t maxLevel)
         -1, "invalid input, level:%{public}d, maxLevel:%{public}d", level, maxLevel);
 
     if (level == VOLUME_LEVEL_ZERO) {
-        return MIN_VOLUME_DEGREE;
+        return VOLUME_DEGREE_ZERO;
     }
     
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }
 
-    int32_t degree = ((level * 2 - 1) * (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / divider + 1) / 2;
+    int32_t degree = ((level * 2 - 1) * (MAX_VOLUME_DEGREE - VOLUME_DEGREE_ZERO - 1) / divider + 1) / 2;
     return degree;
+}
+
+void VolumeUtils::InitLevelToDegreeMap(int32_t maxLevel)
+{
+    for (int32_t i = VOLUME_DEGREE_ZERO; i <= MAX_VOLUME_DEGREE; i++) {
+        int32_t level = VolumeDegreeToLevel(i, maxLevel);
+        levelToDegreeMap_[maxLevel][level] = i;
+    }
 }
 
 int32_t VolumeUtils::GetVolumeLevelMaxDegree(int32_t level, int32_t maxLevel)
 {
     int32_t divider = maxLevel - 1;
-    CHECK_AND_RETURN_RET_LOG(level >= VOLUME_LEVEL_ZERO && divider > 0,
+    CHECK_AND_RETURN_RET_LOG(level >= VOLUME_LEVEL_ZERO && level <= maxLevel && divider > 0,
         -1, "invalid input, level:%{public}d, maxLevel:%{public}d", level, maxLevel);
-
+    if (level == VOLUME_LEVEL_ZERO) {
+        return VOLUME_DEGREE_ZERO;
+    }
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }
+    if (levelToDegreeMap_.find(maxLevel) == levelToDegreeMap_.end()) {
+        InitLevelToDegreeMap(maxLevel);
+    }
+    auto innerMap = levelToDegreeMap_[maxLevel];
+    CHECK_AND_RETURN_RET_LOG(innerMap.find(level) != innerMap.end(),
+        -1, "level degree map not init");
+    return innerMap[level];
+}
 
-    int32_t quotient = (MAX_VOLUME_DEGREE - MIN_VOLUME_DEGREE - 1) / divider;
-    int32_t ceiling = level * quotient;
+VolumeScale VolumeScale::Refresh()
+{
+    if (volumeDegree_ == -1) {
+        volumeDegree_ = VolumeUtils::VolumeLevelToDegree(volumeLevel_, maxVolumeLevel_);
+    }
 
-    return ceiling;
+    if (volumeDegree_ == -1) {
+        AUDIO_WARNING_LOG("refresh failed, maxVolumeLevel: %{public}d", maxVolumeLevel_);
+    }
+    return *this;
+}
+
+VolumeScale VolumeScale::Adjust(const VolumeScale &volume)
+{
+    if (volume.volumeLevel_ == volumeLevel_) {
+        int32_t oldVal = volumeDegree_;
+        if (valueType_ == VolumeKeyType::VOLUME_KEY_TYPE_LEVEL) {
+            volumeDegree_ = volume.volumeDegree_;
+        }
+
+        if (volumeDegree_ != oldVal) {
+            AUDIO_WARNING_LOG("volumeDegree, old: %{public}d, new: %{public}d", oldVal, volumeDegree_);
+        }
+    }
+    Refresh();
+    return *this;
+}
+
+VolumeScale VolumeScale::Update(const VolumeScale &volume)
+{
+    if (volume.VolumeLevel() != volumeLevel_) {
+        *this = volume;
+    }
+    Refresh();
+    return *this;
+}
+
+bool VolumeScale::IsVolumeDegreeValid(int32_t min, int32_t max)
+{
+    CHECK_AND_RETURN_RET_LOG((volumeDegree_ == -1) || (volumeDegree_ >= min && volumeDegree_ <= max), false,
+        "volumeDegree:%{public}d not in range:[%{public}d, %{public}d]",
+        volumeDegree_, min, max);
+    return true;
 }
 
 StreamUsage AudioTypeUtils::GetStreamUsageByStreamType(AudioStreamType streamType)

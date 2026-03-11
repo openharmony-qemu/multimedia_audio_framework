@@ -19,9 +19,11 @@
 #include "istandard_audio_zone_client.h"
 #include "i_audio_zone_event_dispatcher.h"
 #include "audio_policy_server_handler.h"
+#include "audio_common_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
 class AudioZoneClientManager : public IAudioZoneEventDispatcher {
 public:
     explicit AudioZoneClientManager(std::shared_ptr<AudioPolicyServerHandler> handler);
@@ -43,10 +45,8 @@ public:
         AudioZoneInterruptReason reason);
 
     int32_t SetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
-        const AudioVolumeType volumeType, const int32_t volumeLevel, const int32_t volumeFlag = 0);
+        const AudioVolumeType volumeType, const VolumeScale &volume, int32_t volumeFlag);
     int32_t GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId, AudioVolumeType volumeType);
-    int32_t SetSystemVolumeDegree(pid_t clientPid, int32_t zoneId,
-        AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0);
     int32_t GetSystemVolumeDegree(pid_t clientPid, int32_t zoneId, AudioVolumeType volumeType);
 
 private:

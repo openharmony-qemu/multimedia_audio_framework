@@ -412,15 +412,33 @@ void ProRendererStreamImpl::WriteToSinkBuffer(const BufferDesc &bufferDesc, uint
 {
     if ((processConfig_.rendererInfo.rendererFlags == AUDIO_FLAG_3DA_DIRECT) &&
         (processConfig_.streamInfo.encoding == ENCODING_AUDIOVIVID)) {
-        if (sinkBuffer_[writeIndex].size() < bufferDesc.bufLength) {
-            AUDIO_ERR_LOG("sinkBuffer size too small! index: %{public}u", writeIndex);
-            return;
-        }
-        auto ret = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(),
-            bufferDesc.buffer, bufferDesc.bufLength);
-        if (ret != EOK) {
-            AUDIO_ERR_LOG("memcpy_s failed");
-        }
+            size_t totalSize = bufferDesc.bufLength + bufferDesc.metaLength;
+            if (sinkBuffer_[writeIndex].size() < bufferDesc.bufLength) {
+                AUDIO_ERR_LOG("sinkBuffer size too small! index: %{public}u", writeIndex);
+                return;
+            }
+            if (sinkBuffer_[writeIndex].size() < totalSize) {
+                AUDIO_ERR_LOG("sinkBuffer size too small for 3DA! index: %{public}u, need=%{public}zu,"
+                    "have=%{public}zu", writeIndex, totalSize, sinkBuffer_[writeIndex].size());
+                return;
+            }
+
+            auto ret = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(),
+                bufferDesc.buffer, bufferDesc.bufLength);
+            if (ret != EOK) {
+                AUDIO_ERR_LOG("memcpy_s failed");
+                return;
+            }
+            if (bufferDesc.metaBuffer != nullptr && bufferDesc.metaLength > 0) {
+                ret = memcpy_s(sinkBuffer_[writeIndex].data() + bufferDesc.bufLength,
+                sinkBuffer_[writeIndex].size() - bufferDesc.bufLength,
+                bufferDesc.metaBuffer, bufferDesc.metaLength);
+                if (ret != EOK) {
+                    AUDIO_ERR_LOG("memcpy_s meta failed");
+                    return;
+                }
+                AUDIO_INFO_LOG("3DA: Copied Metadata, size=%{public}zu", bufferDesc.metaLength);
+            }
         return;
     }
 

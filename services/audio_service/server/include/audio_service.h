@@ -80,6 +80,7 @@ public:
     bool InRenderWhitelist(const std::string bundleName);
 
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
+    bool GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
 
@@ -136,7 +137,6 @@ public:
     int32_t ForceStopAudioStream(StopAudioType audioType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
     void RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback);
-    void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);

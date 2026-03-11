@@ -81,7 +81,7 @@ constexpr uint64_t AUDIO_MS_PER_S = 1000;
 
 constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
 constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
-constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 5000;
+constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 2500;
 constexpr size_t FIXED_BUFFER_SIZE = 128 * 1024; // 128K
 
 constexpr int32_t FAST_DUAL_CAP_ID = 100000;
@@ -685,7 +685,7 @@ struct AudioRendererInfo : public Parcelable {
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
-    uint8_t ultraFastFlag = ULTRA_NONE;
+    uint32_t ultraFastFlag = ULTRA_NONE;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -1136,6 +1136,7 @@ struct AppInfo {
     uint32_t appTokenId { 0 };
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
+    std::string deviceId {""};
 };
 
 struct BufferQueueState {
@@ -1432,6 +1433,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteUint32(appInfo.appTokenId);
         parcel.WriteInt32(appInfo.appPid);
         parcel.WriteUint64(appInfo.appFullTokenId);
+        parcel.WriteString(appInfo.deviceId);
 
         // AudioStreamInfo
         parcel.WriteInt32(streamInfo.samplingRate);
@@ -1495,6 +1497,7 @@ struct AudioProcessConfig : public Parcelable {
         config->appInfo.appTokenId = parcel.ReadUint32();
         config->appInfo.appPid = parcel.ReadInt32();
         config->appInfo.appFullTokenId = parcel.ReadUint64();
+        config->appInfo.deviceId = parcel.ReadString();
 
         // AudioStreamInfo
         config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());

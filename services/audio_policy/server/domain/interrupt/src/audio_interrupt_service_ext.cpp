@@ -133,12 +133,6 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
     return callingUid_;
 }
 
-void AudioInterruptService::SetSessionMuteState(uint32_t sessionId, bool insert, bool muteFlag)
-{
-    AudioServerProxy::GetInstance().SetSessionMuteState(sessionId, insert, muteFlag);
-    streamCollector_.CapturerMutedFlagChange(sessionId, muteFlag);
-}
-
 void AudioInterruptService::SetLatestMuteState(const uint32_t &streamId, bool muteFlag)
 {
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
@@ -557,6 +551,15 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
         muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
         AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
     }
+}
+
+void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioInterrupt)
+{
+    uint32_t sessionId = audioInterrupt.streamId;
+    InterruptEventInternal forceUnmute {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
+    SendInterruptEventCallback(forceUnmute, sessionId, audioInterrupt);
+    AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
+    streamCollector_.CapturerMutedFlagChange(sessionId, 0);
 }
 
 int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)

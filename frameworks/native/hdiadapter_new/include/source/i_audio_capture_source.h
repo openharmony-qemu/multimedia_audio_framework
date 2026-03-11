@@ -39,6 +39,7 @@ public:
     virtual int32_t Init(const IAudioSourceAttr &attr) = 0;
     virtual void DeInit(void) = 0;
     virtual bool IsInited(void) = 0;
+    virtual bool IsStarted(void) { return false;};
 
     virtual int32_t Start(void) = 0;
     virtual int32_t Stop(void) = 0;
@@ -59,7 +60,6 @@ public:
     virtual int32_t SetMute(bool isMute) = 0;
     virtual int32_t GetMute(bool &isMute) = 0;
 
-    virtual uint64_t GetTransactionId(void) = 0;
     virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
     virtual float GetMaxAmplitude(void) = 0;
 

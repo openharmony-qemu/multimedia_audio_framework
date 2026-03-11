@@ -178,6 +178,11 @@ bool AudioCaptureSource::IsInited(void)
     return sourceInited_;
 }
 
+bool AudioCaptureSource::IsStarted(void)
+{
+    return started_.load();
+}
+
 void AudioCaptureSource::InitRunningLock(void)
 {
 #ifdef FEATURE_POWER_MANAGER
@@ -577,11 +582,6 @@ int32_t AudioCaptureSource::GetMute(bool &isMute)
     AUDIO_DEBUG_LOG("hdiMuteState: %{public}d, muteState: %{public}d", hdiMuteState, muteState_.load());
     isMute = muteState_.load();
     return SUCCESS;
-}
-
-uint64_t AudioCaptureSource::GetTransactionId(void)
-{
-    return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
 int32_t AudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)

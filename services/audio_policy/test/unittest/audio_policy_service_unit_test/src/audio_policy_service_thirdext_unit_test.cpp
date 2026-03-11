@@ -2296,5 +2296,131 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ClearActiveHfpDevice_001, TestSize.Le
     ret = server->audioPolicyService_.audioRecoveryDevice_.ClearActiveHfpDevice(desc);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test GetFastStreamSupport
+* @tc.number: GetFastStreamSupport_001
+* @tc.desc  : Test GetFastStreamSupport with AUDIO_OUTPUT_FLAG_FAST and supported format
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+
+    AudioStreamInfo streamInfo;
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->supportFlags_ = AUDIO_OUTPUT_FLAG_FAST;
+    pipeInfo->streamPropInfos_ = {propInfo};
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->role_ = OUTPUT_DEVICE;
+    deviceInfo->supportPipeMap_.insert({0, pipeInfo});
+
+    bool ret = audioConfigManager_.GetFastStreamSupport(streamInfo, deviceInfo);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+* @tc.name  : Test GetFastStreamSupport
+* @tc.number: GetFastStreamSupport_002
+* @tc.desc  : Test GetFastStreamSupport with AUDIO_OUTPUT_FLAG_FAST and unsupported format
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_002, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+
+    AudioStreamInfo streamInfo;
+    streamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_U8;
+    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->supportFlags_ = AUDIO_OUTPUT_FLAG_FAST;
+    pipeInfo->streamPropInfos_ = {propInfo};
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->role_ = OUTPUT_DEVICE;
+    deviceInfo->supportPipeMap_.insert({0, pipeInfo});
+
+    bool ret = audioConfigManager_.GetFastStreamSupport(streamInfo, deviceInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test GetFastStreamSupport
+* @tc.number: GetFastStreamSupport_003
+* @tc.desc  : Test GetFastStreamSupport with AUDIO_INPUT_FLAG_FAST and supported format
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_003, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+
+    AudioStreamInfo streamInfo;
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->supportFlags_ = AUDIO_INPUT_FLAG_FAST;
+    pipeInfo->streamPropInfos_ = {propInfo};
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->role_ = INPUT_DEVICE;
+    deviceInfo->supportPipeMap_.insert({0, pipeInfo});
+
+    bool ret = audioConfigManager_.GetFastStreamSupport(streamInfo, deviceInfo);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+* @tc.name  : Test GetFastStreamSupport
+* @tc.number: GetFastStreamSupport_004
+* @tc.desc  : Test GetFastStreamSupport with AUDIO_INPUT_FLAG_FAST and unsupported format
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_004, TestSize.Level1)
+{
+    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(audioConfigManager_.Init(true), true);
+
+    AudioStreamInfo streamInfo;
+    streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S32LE;
+    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->supportFlags_ = AUDIO_INPUT_FLAG_FAST;
+    pipeInfo->streamPropInfos_ = {propInfo};
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->role_ = INPUT_DEVICE;
+    deviceInfo->supportPipeMap_.insert({0, pipeInfo});
+
+    bool ret = audioConfigManager_.GetFastStreamSupport(streamInfo, deviceInfo);
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

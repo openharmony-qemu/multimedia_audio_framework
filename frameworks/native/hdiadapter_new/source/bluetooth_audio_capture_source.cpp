@@ -103,6 +103,11 @@ bool BluetoothAudioCaptureSource::IsInited(void)
     return sourceInited_;
 }
 
+bool BluetoothAudioCaptureSource::IsStarted(void)
+{
+    return started_;
+}
+
 int32_t BluetoothAudioCaptureSource::Start(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
@@ -316,11 +321,6 @@ int32_t BluetoothAudioCaptureSource::GetMute(bool &isMute)
     AUDIO_DEBUG_LOG("hdiMuteState: %{public}d, muteState: %{public}d", hdiMuteState, muteState_);
     isMute = muteState_;
     return SUCCESS;
-}
-
-uint64_t BluetoothAudioCaptureSource::GetTransactionId(void)
-{
-    return reinterpret_cast<uint64_t>(audioCapture_);
 }
 
 int32_t BluetoothAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)

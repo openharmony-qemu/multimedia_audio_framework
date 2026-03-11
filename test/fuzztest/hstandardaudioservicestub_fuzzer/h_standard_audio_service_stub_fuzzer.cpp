@@ -115,15 +115,6 @@ void UpdateDualToneState(FuzzedDataProvider &provider)
     audioServer->UpdateDualToneState(enable, sessionId, dupSinkName);
 }
 
-void GetTransactionId(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    int32_t deviceType = provider.ConsumeIntegral<int32_t>();
-    int32_t deviceRole = provider.ConsumeIntegral<int32_t>();
-    uint64_t transactionId = provider.ConsumeIntegral<uint64_t>();
-    audioServer->GetTransactionId(deviceType, deviceRole, transactionId);
-}
-
 void SetParameterCallback(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -716,15 +707,6 @@ void IsAcousticEchoCancelerSupported(FuzzedDataProvider &provider)
     audioServer->IsAcousticEchoCancelerSupported(sourceType, isSupported);
 }
 
-void SetSessionMuteState(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    uint32_t sessionId = provider.ConsumeIntegral<uint32_t>();
-    bool insert = provider.ConsumeBool();
-    bool muteFlag = provider.ConsumeBool();
-    audioServer->SetSessionMuteState(sessionId, insert, muteFlag);
-}
-
 void SetLatestMuteState(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -908,7 +890,6 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     UpdateActiveDeviceRoute,
     UpdateActiveDevicesRoute,
     UpdateDualToneState,
-    GetTransactionId,
     SetParameterCallback,
     GetAudioMoreParameters,
     SetAudioMoreParameter,
@@ -985,7 +966,6 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     RegisterDataTransferCallback,
     NotifySettingsDataReady,
     IsAcousticEchoCancelerSupported,
-    SetSessionMuteState,
     SetLatestMuteState,
     ForceStopAudioStream,
     CreateAudioWorkgroup,

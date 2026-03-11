@@ -159,6 +159,11 @@ void RendererInClientInner::SetClientID(int32_t clientPid, int32_t clientUid, ui
     fullTokenId_ = fullTokenId;
 }
 
+void RendererInClientInner::SetClientDeviceId(const std::string &deviceId)
+{
+    // not support
+}
+
 int32_t RendererInClientInner::UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config)
 {
     AUDIO_ERR_LOG("Unsupported operation!");

@@ -340,4 +340,144 @@ void AudioStreamManagerImpl::UnregisterCapturerChangeCallback(std::shared_ptr<ui
     cb->RemoveCallbackReference(callback);
     taiheStreamManager->capturerStateCallback_.reset();
 }
+
+bool AudioStreamManagerImpl::IsFastPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage)
+{
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage.get_value())) {
+        AUDIO_ERR_LOG("get streamUsage failed");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        return false;
+    }
+
+    OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
+    int32_t intValue = streamInfo.samplingRate.get_value();
+    nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
+    nativeInfo.channels =
+        static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
+    nativeInfo.format =
+        static_cast<OHOS::AudioStandard::AudioSampleFormat>(streamInfo.sampleFormat.get_value());
+    nativeInfo.encoding =
+        static_cast<OHOS::AudioStandard::AudioEncodingType>(streamInfo.encodingType.get_value());
+    if (streamInfo.channelLayout.has_value()) {
+        nativeInfo.channelLayout =
+            static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
+    }
+
+    return audioStreamMngr_->IsFastPlaybackSupported(nativeInfo,
+        static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
+}
+
+bool AudioStreamManagerImpl::IsFastRecordingSupported(AudioStreamInfo streamInfo, SourceType source)
+{
+    if (!TaiheAudioEnum::IsValidSourceType(source.get_value())) {
+        AUDIO_ERR_LOG("get sourceType failed: %{public}d", source.get_value());
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        return false;
+    }
+
+    OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
+    int32_t intValue = streamInfo.samplingRate.get_value();
+    nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
+    nativeInfo.channels =
+        static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
+    nativeInfo.format =
+        static_cast<OHOS::AudioStandard::AudioSampleFormat>(streamInfo.sampleFormat.get_value());
+    nativeInfo.encoding =
+        static_cast<OHOS::AudioStandard::AudioEncodingType>(streamInfo.encodingType.get_value());
+    if (streamInfo.channelLayout.has_value()) {
+        nativeInfo.channelLayout =
+            static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
+    }
+
+    return audioStreamMngr_->IsFastRecordingSupported(nativeInfo,
+        static_cast<OHOS::AudioStandard::SourceType>(source.get_value()));
+}
+
+bool AudioStreamManagerImpl::IsMultichannelPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage)
+{
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage.get_value())) {
+        AUDIO_ERR_LOG("get streamUsage failed");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        return false;
+    }
+
+    OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
+    int32_t intValue = streamInfo.samplingRate.get_value();
+    nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
+    nativeInfo.channels =
+        static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
+    nativeInfo.format =
+        static_cast<OHOS::AudioStandard::AudioSampleFormat>(streamInfo.sampleFormat.get_value());
+    nativeInfo.encoding =
+        static_cast<OHOS::AudioStandard::AudioEncodingType>(streamInfo.encodingType.get_value());
+    if (streamInfo.channelLayout.has_value()) {
+        nativeInfo.channelLayout =
+            static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
+    }
+
+    return audioStreamMngr_->IsMultichannelPlaybackSupported(nativeInfo,
+        static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
+}
+
+bool AudioStreamManagerImpl::IsDirectPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage)
+{
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage.get_value())) {
+        AUDIO_ERR_LOG("get streamUsage failed");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        return false;
+    }
+
+    OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
+    int32_t intValue = streamInfo.samplingRate.get_value();
+    nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
+    nativeInfo.channels =
+        static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
+    nativeInfo.format =
+        static_cast<OHOS::AudioStandard::AudioSampleFormat>(streamInfo.sampleFormat.get_value());
+    nativeInfo.encoding =
+        static_cast<OHOS::AudioStandard::AudioEncodingType>(streamInfo.encodingType.get_value());
+    if (streamInfo.channelLayout.has_value()) {
+        nativeInfo.channelLayout =
+            static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
+    }
+
+    return audioStreamMngr_->IsDirectPlaybackSupported(nativeInfo,
+        static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
+}
+
+bool AudioStreamManagerImpl::IsOffloadPlaybackSupported(AudioStreamInfo streamInfo, StreamUsage streamUsage)
+{
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage.get_value())) {
+        AUDIO_ERR_LOG("get streamUsage failed");
+        return false;
+    }
+    if (audioStreamMngr_ == nullptr) {
+        return false;
+    }
+
+    OHOS::AudioStandard::AudioStreamInfo nativeInfo = {};
+    int32_t intValue = streamInfo.samplingRate.get_value();
+    nativeInfo.samplingRate = static_cast<OHOS::AudioStandard::AudioSamplingRate>(intValue);
+    nativeInfo.channels =
+        static_cast<OHOS::AudioStandard::AudioChannel>(streamInfo.channels.get_value());
+    nativeInfo.format =
+        static_cast<OHOS::AudioStandard::AudioSampleFormat>(streamInfo.sampleFormat.get_value());
+    nativeInfo.encoding =
+        static_cast<OHOS::AudioStandard::AudioEncodingType>(streamInfo.encodingType.get_value());
+    if (streamInfo.channelLayout.has_value()) {
+        nativeInfo.channelLayout =
+            static_cast<OHOS::AudioStandard::AudioChannelLayout>(streamInfo.channelLayout.value().get_value());
+    }
+
+    return audioStreamMngr_->IsOffloadPlaybackSupported(nativeInfo,
+        static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage.get_value()));
+}
 } // namespace ANI::Audio

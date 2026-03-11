@@ -39,6 +39,12 @@ int32_t PolicyProviderWrapper::GetProcessDeviceInfo(const AudioProcessConfig &co
     return policyWorker_->GetProcessDeviceInfo(config, lockFlag, deviceInfo);
 }
 
+int32_t PolicyProviderWrapper::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->GetRemoteDeviceName(deviceId, deviceName);
+}
+
 int32_t PolicyProviderWrapper::InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");

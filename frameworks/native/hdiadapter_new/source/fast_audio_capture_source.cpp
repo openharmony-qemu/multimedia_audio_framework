@@ -223,11 +223,6 @@ int32_t FastAudioCaptureSource::GetMute(bool &isMute)
     return ERR_NOT_SUPPORTED;
 }
 
-uint64_t FastAudioCaptureSource::GetTransactionId(void)
-{
-    return reinterpret_cast<uint64_t>(audioCapture_);
-}
-
 int32_t FastAudioCaptureSource::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
     AUDIO_INFO_LOG("not support");

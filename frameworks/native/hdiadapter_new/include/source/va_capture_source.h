@@ -46,6 +46,7 @@ public:
 
     void DeInit(void) override;
     bool IsInited(void) override;
+    bool IsStarted(void) override;
 
     int32_t Start(void) override;
     int32_t Stop(void) override;
@@ -63,7 +64,6 @@ public:
     int32_t SetMute(bool isMute)override;
     int32_t GetMute(bool &isMute)override;
 
-    uint64_t GetTransactionId(void) override;
     int32_t GetPresentationPosition(uint64_t& frames, int64_t& timeSec, int64_t& timeNanoSec) override;
     float GetMaxAmplitude(void) override;
 
