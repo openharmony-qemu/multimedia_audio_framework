@@ -418,7 +418,8 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->connectedProcessorType_;
     DereferenceInputCluster(sessionId);
     DisConnectCoBufferFromDeleteProcessCluster(sceneType);
-    DisConnectOutputCluster(sceneType, true);
+    AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(true);
+    DisConnectOutputCluster(sceneType);
     
     HpaeProcessorType sceneTypeToDestroyNodes = GetProcessorType(sessionId);
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneTypeToDestroyNodes), ERROR,
@@ -730,7 +731,8 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
     auto request = [this, sceneType]() {
         AUDIO_INFO_LOG("mixerNode trigger callback, sceneType %{public}d", sceneType);
         if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
-            DisConnectOutputCluster(sceneType, false);
+            AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(false);
+            DisConnectOutputCluster(sceneType);
             // for collaboration
             DisConnectCoBufferFromOnDisConnectProcessCluster(sceneType);
             if (toBeStoppedSceneTypeToSessionMap_.count(sceneType) &&
@@ -787,11 +789,11 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
     }
 }
 
-void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType, const bool isNeedInitEffectBuffer)
+void HpaeRendererManager::DisConnectOutputCluster(HpaeProcessorType sceneType)
 {
     if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0 &&
         sceneClusterMap_[sceneType]->GetConnectedFlag()) {
-        sceneClusterMap_[sceneType]->DisConnectMixerNode(isNeedInitEffectBuffer);
+        sceneClusterMap_[sceneType]->DisConnectMixerNode();
         if (outputCluster_ != nullptr) {
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
         }
@@ -1016,6 +1018,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
     auto request = [this, sinkInfo, isReload]() {
         AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", GetEncryptStr(sinkInfo.deviceName).c_str());
         StopOuputNode();
+        AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(false);
         for (const auto &it : sinkInputNodeMap_) {
             TriggerStreamState(it.first, it.second);
             DeleteProcessCluster(it.first);

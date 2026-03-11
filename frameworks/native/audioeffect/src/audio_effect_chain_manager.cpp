@@ -701,6 +701,7 @@ int32_t AudioEffectChainManager::UpdateMultichannelConfig(const std::string &sce
 int32_t AudioEffectChainManager::InitAudioEffectChainDynamic(const std::string &sceneType)
 {
     Trace trace("AudioEffectChainManager::InitAudioEffectChainDynamic: " + sceneType);
+    CHECK_AND_RETURN_RET_LOG(isNeedInitEffectBuffer_, SUCCESS, "no need InitEffectBuffer");
     std::lock_guard<std::mutex> lock(dynamicMutex_);
     return InitAudioEffectChainDynamicInner(sceneType);
 }
@@ -1355,7 +1356,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     std::string defaultSceneTypeAndDeviceKey = DEFAULT_SCENE_TYPE + "_&_" + GetDeviceTypeName();
     sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 0;
-    if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0) {
+    if (sceneTypeToSpecialEffectSet_.erase(sceneType) > 0 && isNeedInitEffectBuffer_) {
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]->InitEffectChain();
     }
     if (!isDefaultEffectChainExisted_) {
@@ -1368,8 +1369,9 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
         if (sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] <= 1) {
             sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey] = 0;
             isDefaultEffectChainExisted_ = false;
-            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
             HILOG_COMM_INFO("[CheckAndReleaseCommonEffectChain]default effect chain will be released");
+            CHECK_AND_RETURN_RET(isNeedInitEffectBuffer_, SUCCESS);
+            sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey]->InitEffectChain();
             return SUCCESS;
         } else {
             sceneTypeToEffectChainCountMap_[defaultSceneTypeAndDeviceKey]--;
@@ -2149,6 +2151,11 @@ bool AudioEffectChainManager::IsDownSamplingForSpatialization(const std::string 
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     return audioEffectChain->IsEffectChainFading() || !(spatializationEnabled_ && bypassSpatializationForStereo_ &&
         IsDeviceTypeSupportingSpatialization());
+}
+
+bool AudioEffectChainManager::SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer)
+{
+    isNeedInitEffectBuffer_ = isNeedInitEffectBuffer;
 }
 } // namespace AudioStandard
 } // namespace OHOS

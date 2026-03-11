@@ -476,8 +476,7 @@ HWTEST_F(HpaeProcessClusterTest, DisConnectMixerNode_001, TestSize.Level1)
     auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
 
     cluster->ConnectMixerNode();
-    cluster->DisConnectMixerNode(true);
-    cluster->DisConnectMixerNode(false);
+    cluster->DisConnectMixerNode();
     SUCCEED();
 }
 
@@ -496,7 +495,7 @@ HWTEST_F(HpaeProcessClusterTest, DisConnectMixerNode_002, TestSize.Level1)
     HpaeSinkInfo sinkInfo = GetRenderTestSinkInfo();
     auto cluster = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo);
 
-    cluster->DisConnectMixerNode(true);
+    cluster->DisConnectMixerNode();
     SUCCEED();
 }
 
