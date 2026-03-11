@@ -2153,7 +2153,7 @@ bool AudioEffectChainManager::IsDownSamplingForSpatialization(const std::string 
         IsDeviceTypeSupportingSpatialization());
 }
 
-bool AudioEffectChainManager::SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer)
+void AudioEffectChainManager::SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer)
 {
     isNeedInitEffectBuffer_ = isNeedInitEffectBuffer;
 }
