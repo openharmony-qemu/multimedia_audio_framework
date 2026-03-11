@@ -2477,7 +2477,7 @@ napi_value NapiAudioRenderer::SetIndependentAudioSessionStrategy(napi_env env, n
     napi_value result = nullptr;
     size_t argc = ARGS_TWO;
     napi_value argv[ARGS_TWO] = {};
-    auto *napiAudioCapturer = GetParamWithSync(env, info, argc, argv);
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, argv);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "argcCount invaild");
 
