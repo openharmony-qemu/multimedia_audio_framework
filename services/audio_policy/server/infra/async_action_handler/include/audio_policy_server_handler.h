@@ -240,6 +240,7 @@ public:
     bool SendBypassSpatialForStereo(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice,
         bool spatialization, bool headtracking);
     bool SendSpatialAudioSourceTypeChangeEvent(SpatialAudioSourceType mode);
+    void PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId);
 
 protected:
     void ProcessEvent(const AppExecFwk::InnerEvent::Pointer &event) override;
