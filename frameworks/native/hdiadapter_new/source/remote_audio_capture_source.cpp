@@ -71,6 +71,11 @@ bool RemoteAudioCaptureSource::IsInited(void)
     return sourceInited_.load();
 }
 
+bool RemoteAudioCaptureSource::IsStarted(void)
+{
+    return started_.load();
+}
+
 int32_t RemoteAudioCaptureSource::Start(void)
 {
     Trace trace("RemoteAudioCaptureSource::Start");

@@ -40,6 +40,7 @@ public:
     int32_t Init(const IAudioSourceAttr &attr) override;
     void DeInit(void) override;
     bool IsInited(void) override;
+    bool IsStarted(void) override;
 
     int32_t Start(void) override;
     int32_t Stop(void) override;

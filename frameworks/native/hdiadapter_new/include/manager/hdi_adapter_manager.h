@@ -64,6 +64,7 @@ public:
     void UnloadAdapter(HdiDeviceManagerType type, const std::string &adapterName, bool force = false);
 
     int32_t ProcessSink(const std::function<int32_t(uint32_t, std::shared_ptr<IAudioRenderSink>)> &processFunc);
+    float GetNormalSourceMaxAmplitude();
     int32_t ProcessSource(const std::function<int32_t(uint32_t, std::shared_ptr<IAudioCaptureSource>)> &processFunc);
 
     void RegistSinkCallback(HdiAdapterCallbackType type, std::shared_ptr<IAudioSinkCallback> cb,

@@ -39,6 +39,7 @@ public:
     virtual int32_t Init(const IAudioSourceAttr &attr) = 0;
     virtual void DeInit(void) = 0;
     virtual bool IsInited(void) = 0;
+    virtual bool IsStarted(void) { return false;};
 
     virtual int32_t Start(void) = 0;
     virtual int32_t Stop(void) = 0;
