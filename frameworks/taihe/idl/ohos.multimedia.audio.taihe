@@ -346,6 +346,7 @@ interface AudioManager {
   GetSpatializationManager(): AudioSpatializationManager;
   GetEffectManager(): AudioEffectManager;
   GetCollaborativeManager(): AudioCollaborativeManager;
+  GetDeviceEnhanceManager(): AudioDeviceEnhanceManager;
 
   @gen_promise("disableSafeMediaVolume")
   DisableSafeMediaVolumeSync(): void;
@@ -1077,6 +1078,7 @@ struct AudioTimestampInfo {
 interface AudioRenderer {
   @get GetState(): AudioState;
 
+  GetImplPtr(): i64;
   @gen_async("getRendererInfo")
   @gen_promise("getRendererInfo")
   GetRendererInfoSync(): AudioRendererInfo;
@@ -1448,4 +1450,21 @@ interface AudioCollaborativeManager {
 
   @gen_promise("setCollaborativePlaybackEnabledForDevice")
   SetCollaborativePlaybackEnabledForDeviceSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
+}
+
+interface AudioDeviceEnhanceManager {
+  @gen_promise("IsEnhancedRoutingSupported")
+  IsEnhancedRoutingSupported(): bool;
+
+  @gen_promise("selectOutputDevice")
+  SelectOutputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectOutputDeviceForAudioRenderer")
+  SelectOutputDeviceForAudioRendererSync(renderer: AudioRenderer, deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectInputDevice")
+  SelectInputDeviceSync(deviceDescriptor: AudioDeviceDescriptor): void;
+
+  @gen_promise("selectInputDeviceForAudioCapturer")
+  SelectInputDeviceForAudioCapturerSync(capturer: AudioCapturer, deviceDescriptor: AudioDeviceDescriptor): void;
 }

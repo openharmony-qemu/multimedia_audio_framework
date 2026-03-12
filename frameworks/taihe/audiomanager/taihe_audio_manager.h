@@ -46,6 +46,7 @@ public:
     AudioScene GetAudioSceneSync();
     AudioSpatializationManager GetSpatializationManager();
     AudioCollaborativeManager GetCollaborativeManager();
+    AudioDeviceEnhanceManager GetDeviceEnhanceManager();
     void OnAudioSceneChange(callback_view<void(AudioScene data)> callback);
     void OffAudioSceneChange(optional_view<callback<void(AudioScene data)>> callback);
 
