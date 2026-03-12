@@ -409,6 +409,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetEarphoneProduct(earphoneProduct_);
     audioEffectChain->SetOutdoorMode(outdoorMode_);
     audioEffectChain->SetSuperLoudnessMode(superLoudnessMode_);
+    audioEffectChain->SetFrontendAppType(frontendAppType_);
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
@@ -1017,6 +1018,10 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 audioEffectChain->SetSuperLoudnessMode(value);
                 paramUpdated = true;
                 break;
+            case HDI_FRONTEND_APP_TYPE:
+                audioEffectChain->SetFrontendAppType(value);
+                paramUpdated = true;
+                break;
             default:
                 break;
         }
@@ -1053,6 +1058,8 @@ void AudioEffectChainManager::UpdateParamExtra(
         updateParam(outdoorMode_, HDI_OUTDOOR_MODE);
     } else if (mainkey == "LOUD_VOLUME_MODE" && subkey == "super_loudness_mode") {
         updateParam(superLoudnessMode_, HDI_SUPER_LOUDNESS_MODE);
+    } else if (mainkey == "audio_effect" && subkey == "update_audio_effect_hvs_type") {
+        updateParam(frontendAppType_, HDI_FRONTEND_APP_TYPE);
     } else {
         AUDIO_INFO_LOG("UpdateParamExtra failed, mainkey is %{public}s, subkey is %{public}s, "
             "value is %{public}s", mainkey.c_str(), subkey.c_str(), value.c_str());

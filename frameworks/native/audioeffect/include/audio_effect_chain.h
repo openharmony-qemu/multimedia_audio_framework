@@ -85,6 +85,7 @@ public:
     void SetOutdoorMode(const std::string &outdoorMode);
     void SetSuperLoudnessMode(const std::string &superLoudnessMode);
     bool IsEffectChainFading();
+    void SetFrontendAppType(const std::string &frontendAppType);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -131,6 +132,7 @@ private:
     AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
     int32_t outdoorMode_ = 0;
     int32_t superLoudnessMode_ = 0;
+    int32_t frontendAppType_ = 0;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

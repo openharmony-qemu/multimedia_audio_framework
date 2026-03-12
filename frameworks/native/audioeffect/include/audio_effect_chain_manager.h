@@ -262,6 +262,7 @@ private:
 
     std::shared_ptr<AudioEffectHdiParam> audioEffectHdiParam_;
     int8_t effectHdiInput_[SEND_HDI_COMMAND_LEN];
+    std::string frontendAppType_ = "0";
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

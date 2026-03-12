@@ -201,11 +201,11 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
         "volume: %{public}d, extraSceneType: %{public}d, spatialDeviceType: %{public}d, spatializationSceneType: "
         "%{public}d, spatializationEnabled: %{public}d, streamUsage: %{public}d, absVolumeState: %{public}d, "
         "earphoneProduct: %{public}d, outdoorMode: %{public}d, superLoudnessMode: %{public}d, "
-        "systemLoadState: %{public}d",
+        "systemLoadState: %{public}d, frontendAppType: %{public}d",
         data[SCENE_TYPE_INDEX], data[EFFECT_MODE_INDEX], data[ROTATION_INDEX], data[VOLUME_INDEX],
         data[EXTRA_SCENE_TYPE_INDEX], data[SPATIAL_DEVICE_TYPE_INDEX], data[SPATIALIZATION_SCENE_TYPE_INDEX],
         data[SPATIALIZATION_ENABLED_INDEX], data[STREAM_USAGE_INDEX], data[ABS_VOLUME_STATE], data[EARPHONE_PRODUCT],
-        data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX]);
+        data[OUTDOOR_MODE], data[SUPER_LOUDNESS_MODE], data[SYSTEMLOAD_STATE_INDEX], data[FRONTEND_APP_TYPE]);
     cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
     int32_t ret = (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "[%{public}s] with mode [%{public}s], NUM_SET_EFFECT_PARAM fail",
@@ -248,6 +248,7 @@ void AudioEffectChain::BuildEffectParamData(int32_t *data)
     data[OUTDOOR_MODE] = static_cast<int32_t>(outdoorMode_);
     data[SUPER_LOUDNESS_MODE] = static_cast<int32_t>(superLoudnessMode_);
     data[SYSTEMLOAD_STATE_INDEX] = static_cast<int32_t>(systemLoadState_);
+    data[FRONTEND_APP_TYPE] = static_cast<int32_t>(frontendAppType_);
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)
@@ -746,6 +747,12 @@ void AudioEffectChain::SetSuperLoudnessMode(const std::string &superLoudnessMode
     } else if (superLoudnessMode == "music_off") {
         superLoudnessMode_ = 0;
     }
+}
+
+void AudioEffectChain::SetFrontendAppType(const std::string &frontendAppType)
+{
+    CHECK_AND_RETURN_LOG(StringConverter(frontendAppType, frontendAppType_),
+        "convert invalid outdoorMode: %{public}s", frontendAppType.c_str());
 }
 } // namespace AudioStandard
 } // namespace OHOS
