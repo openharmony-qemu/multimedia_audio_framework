@@ -451,7 +451,8 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
         InterruptEventInternal unmuteInterruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
         bool sessionIsMuted = false;
         auto itZone = zonesMap_.find(zoneId);
-        CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR, "can not find zone");
+        CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+            ERROR, "can not find zone");
         std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
         auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
             return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
