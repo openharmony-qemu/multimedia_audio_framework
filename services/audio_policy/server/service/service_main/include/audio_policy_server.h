@@ -893,7 +893,8 @@ private:
 
     int32_t SetRingerModeInner(AudioRingerMode ringMode);
     void AddSystemAbilityListeners();
-    void OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string &deviceId);
+    void AddSystemAbilityListenerAfterAudioServerStart();
+    void HandleAudioServerRelatedSystemAbility(int32_t systemAbilityId, const std::string &deviceId);
 
     // for updating default device selection state when game audio stream is muted
     void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);

@@ -188,15 +188,15 @@ void AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest()
     audioPolicyServer->RegisterDefaultVolumeTypeListener();
 }
 
-void AudioPolicyServerOnAddSystemAbilityExtractFuzzTest()
+void AudioPolicyServerHandleAudioServerRelatedSystemAbilityFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     int32_t systemAbilityId = APP_MGR_SERVICE_ID;
     std::string deviceId = "";
-    audioPolicyServer->OnAddSystemAbilityExtract(systemAbilityId, deviceId);
+    audioPolicyServer->HandleAudioServerRelatedSystemAbility(systemAbilityId, deviceId);
     int32_t systemAbilityId1 = 0;
-    audioPolicyServer->OnAddSystemAbilityExtract(systemAbilityId1, deviceId);
+    audioPolicyServer->HandleAudioServerRelatedSystemAbility(systemAbilityId1, deviceId);
 }
 
 void AudioPolicyServerOnRemoveSystemAbilityFuzzTest()
@@ -2066,7 +2066,7 @@ void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest()
 
 TestFuncs g_testFuncs[] = {
     AudioPolicyServerRegisterDefaultVolumeTypeListenerFuzzTest,
-    AudioPolicyServerOnAddSystemAbilityExtractFuzzTest,
+    AudioPolicyServerHandleAudioServerRelatedSystemAbilityFuzzTest,
     AudioPolicyServerOnRemoveSystemAbilityFuzzTest,
     AudioPolicyServerMaxOrMinVolumeOptionFuzzTest,
     AudioPolicyServerChangeVolumeOnVoiceAssistantFuzzTest,
