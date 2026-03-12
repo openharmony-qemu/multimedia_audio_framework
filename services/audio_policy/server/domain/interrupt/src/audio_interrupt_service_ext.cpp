@@ -565,8 +565,7 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
 int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    sessionService_.SetAudioSessionBehavior(callerPid, behavior);
-    return SUCCESS;
+    return sessionService_.SetAudioSessionBehavior(callerPid, behavior);;
 }
  
 void AudioInterruptService::HandMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)
@@ -579,7 +578,7 @@ void AudioInterruptService::HandMuteSessionBehavior(const AudioInterrupt &audioI
             SetNonInterruptMute(interrupt.streamId, muteFlag);
         }
     } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-        SetLatestMuteState(audioInterrupt.stremaId, muteFlag);
+        SetLatestMuteState(audioInterrupt.streamId, muteFlag);
     } else {
         SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
     }
