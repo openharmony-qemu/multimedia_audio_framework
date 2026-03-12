@@ -780,7 +780,7 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
     if (activeInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
-        if (IsIncomingStreamLowPriority(focusEntry)) {
+        if (IsActiveStreamLowPriority(focusEntry)) {
             bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
                 incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
             return isSameType;
