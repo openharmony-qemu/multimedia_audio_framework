@@ -2487,7 +2487,7 @@ uint8_t* ReallocVectorBufferAndClear(std::vector<uint8_t> &buffer, const size_t 
     return buffer.data();
 }
 
-std::string GenerateAppsUidStr(std::unordered_set<int32_t> &appsUid)
+std::string GenerateAppsUidStr(std::unordered_set<int32_t> appsUid)
 {
     std::ostringstream uidStream;
     uidStream << "AppInfo=";
