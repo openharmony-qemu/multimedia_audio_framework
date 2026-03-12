@@ -149,6 +149,7 @@ public:
     void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
     bool IsDownSamplingForSpatialization(const std::string &sceneType);
+    void SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -253,6 +254,7 @@ private:
     AudioEffectScene currDspSceneType_ = SCENE_INITIAL;
     AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
     bool bypassSpatializationForStereo_ = false;
+    bool isNeedInitEffectBuffer_ = true;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -237,11 +237,11 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
     }
 }
 
-void HpaeProcessCluster::DisConnectMixerNode(const bool isNeedInitEffectBuffer)
+void HpaeProcessCluster::DisConnectMixerNode()
 {
     if (renderEffectNode_) {
         renderEffectNode_->DisConnect(mixerNode_);
-        renderEffectNode_->InitEffectBufferFromDisConnect(isNeedInitEffectBuffer);
+        renderEffectNode_->InitEffectBufferFromDisConnect();
         AUDIO_INFO_LOG("DisConnect mixerNode_");
     }
 }
