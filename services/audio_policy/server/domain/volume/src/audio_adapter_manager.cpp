@@ -594,7 +594,8 @@ void AudioAdapterManager::SaveSpecifiedDeviceVolumeInner(AudioStreamType streamT
         for (auto &temp : descs) {
             CHECK_AND_CONTINUE(temp != nullptr);
             CHECK_AND_CONTINUE(temp->deviceType_ == deviceType);
-            UpdateVolumeWhenDeviceConnect(temp);
+            volumeDataMaintainer_.InitDeviceVolumeMap(temp);
+            UpdateSafeVolumeInner(temp);
         }
     }).detach();
 }
