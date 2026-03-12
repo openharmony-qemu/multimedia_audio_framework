@@ -741,8 +741,12 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
         if (IsIncomingStreamLowPriority(focusEntry)) {
             bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
                 incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+            AUDIO_INFO_LOG("Incoming stream activates independent MIX strategy and is low priority."
+                " isSameType: %{public}d.", isSameType);
             return isSameType;
         }
+        AUDIO_INFO_LOG("The independent concurrencyMode mode of incoming stream is MIX_WITH_OTHERS."
+            " Skip the interrupt operation");
         return true;
     }
     if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
@@ -783,8 +787,12 @@ bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomin
         if (IsActiveStreamLowPriority(focusEntry)) {
             bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
                 incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+            AUDIO_INFO_LOG("Active stream activates independent MIX strategy and is low priority."
+                " isSameType: %{public}d.", isSameType);
             return isSameType;
         }
+        AUDIO_INFO_LOG("The independent concurrencyMode mode of active stream is MIX_WITH_OTHERS."
+            " Skip the interrupt operation");
         return true;
     }
     if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid)) {
