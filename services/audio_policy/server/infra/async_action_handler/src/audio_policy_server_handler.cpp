@@ -1309,6 +1309,7 @@ void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExec
         }
         AUDIO_INFO_LOG("Trigger for client pid : %{public}d", clientPid);
         audioSessionCb->OnAudioSessionStateChanged(stateChangedEvent);
+        PublishCtrlCmdEvent(hintType, eventContextObj->audioInterrupt.uid, eventContextObj->audioInterrupt.streamId);
     } else {
         AUDIO_ERR_LOG("No registered callback for pid %{public}d", clientPid);
     }
@@ -2238,6 +2239,21 @@ void AudioPolicyServerHandler::HandlePreferredDeviceSetEvent(const AppExecFwk::I
             }
         }
     }
+}
+
+void AudioPolicyServerHandler::PublishCtrlCmdEvent(int32_t hintType, int32_t uid, int32_t streamId)
+{
+    OHOS::AAFwk::Want want;
+    want.SetAction("usual.event.AUDIO_FOCUS_CHANGE_EVENT");
+    want.SetParam("hintType", hintType);
+    want.SetParam("uid", uid);
+    want.SetParam("streamId", streamId);
+    EventFwk::CommonEventData data { want };
+    EventFwk::CommonEventPublishInfo publishInfo;
+    publishInfo.SetSubscriberUid({ RSS_UID });
+    int32_t ret = EventFwk::CommonEventManager::NewPublishCommonEvent(data, publishInfo);
+    AUDIO_INFO_LOG("publish ret:%{public}d hintType:%{public}d uid:%{public}d streamId:%{public}d",
+        ret, hintType, uid, streamId);
 }
 } // namespace AudioStandard
 } // namespace OHOS
