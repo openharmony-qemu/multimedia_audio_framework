@@ -4573,5 +4573,29 @@ HWTEST_F(AudioCoreServicePrivateTest, DecidedAudioFlagForStreams_003, TestSize.L
     EXPECT_EQ(streamDesc2->GetAudioFlag(), AUDIO_OUTPUT_FLAG_NORMAL);
     EXPECT_FALSE(streamDesc1->GetFastStreamForcedNormalFlag());
 }
+
+/**
+ * @tc.name  : AudioCoreServicePrivateTest_WriteScoStateFaultEvent_001
+ * @tc.number: WriteScoStateFaultEvent_001
+ * @tc.desc  : Test AudioCoreService::WriteScoStateFaultEvent()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, WriteScoStateFaultEvent_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioStreamDescriptor->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    audioCoreService->WriteScoStateFaultEvent(deviceDescriptor);
+    int ret = HiSysEventWrite(
+        HiviewDFX::HiSysEvent::Domain::AUDIO, "STREAM_STATE_SCO",
+        HiviewDFX::HiSysEvent::EventType::STATISTIC,
+        "DEVICE_TYPE", static_cast<int32_t>(deviceDescriptor->deviceType_),
+        "STREAM_USAGE", static_cast<int32_t>(audioStreamDescriptor->rendererInfo_.streamUsage)
+    );
+    EXPECT_EQ(ret, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
