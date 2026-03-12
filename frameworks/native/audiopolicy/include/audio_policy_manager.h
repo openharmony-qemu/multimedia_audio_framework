@@ -371,6 +371,8 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo);
 
+    int32_t SetDeclaredDeviceTypes(const std::vector<DeviceType> &deviceTypes);
+
     int32_t SetPreferredOutputDeviceChangeCallback(const AudioRendererInfo &rendererInfo,
         const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> &callback, const int32_t uid = -1);
 

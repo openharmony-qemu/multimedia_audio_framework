@@ -47,6 +47,11 @@ static const char* SETTINGS_DATA_BASE_URI =
 static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 static const std::string NEARLINK_LIST = "audio_nearlink_list";
+static const std::map<DeviceType, std::string> SUPPORTED_LIST = {
+    {DEVICE_TYPE_NEARLINK, "nearlink_whitelist"},
+    {DEVICE_TYPE_NEARLINK_IN, "nearlink_whitelist"},
+    {DEVICE_TYPE_HEARING_AID, "hearing_aid_whitelist"},
+};
 
 std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
@@ -65,6 +70,12 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_UNPROCESS_MIC, TYPE_PRIMARY},
     {PRIMARY_VOICE_RECOGNITION_MIC, TYPE_PRIMARY},
     {PRIMARY_RAW_AI_MIC, TYPE_PRIMARY},
+};
+
+std::set<DeviceType> AudioPolicyUtils::needDeclaredDevices = {
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_NEARLINK_IN,
+    DEVICE_TYPE_HEARING_AID,
 };
 
 static inline const char* ResolvePrimaryMicPort(uint32_t routeFlag)
@@ -883,18 +894,45 @@ int32_t AudioPolicyUtils::SetQueryBundleNameListCallback(const sptr<IRemoteObjec
     return SUCCESS;
 }
 
-bool AudioPolicyUtils::IsBundleNameInList(const std::string &bundleName, const std::string &listType)
+bool AudioPolicyUtils::IsBundleNameInList(const std::string &bundleName, DeviceType deviceType)
 {
     bool isBundleNameExist = false;
+    auto it = SUPPORTED_LIST.find(deviceType);
+    CHECK_AND_RETURN_RET(it != SUPPORTED_LIST.end(), false);
+    std::string listType = it->second;
     CHECK_AND_RETURN_RET_LOG(queryBundleNameListCallback_ != nullptr, false, "queryBundleNameListCallback_ is nullptr");
     queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, listType, isBundleNameExist);
     return isBundleNameExist;
 }
 
-bool AudioPolicyUtils::IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission)
+int32_t AudioPolicyUtils::SetDeclaredDeviceTypes(const std::string &bundleName,
+    const std::vector<DeviceType> &deviceTypeVector)
 {
+    std::unique_lock lock(setDeclaredDevicesMutex_);
+    auto &declaredDeviceTypeSet = alreadyDeclaredDevicesByApp_[bundleName];
+    std::string deviceTypeLog = "";
+    for (auto deviceType : deviceTypeVector) {
+        declaredDeviceTypeSet.insert(deviceType);
+        deviceTypeLog += std::to_string(static_cast<int>(deviceType)) + " ";
+    }
+    AUDIO_INFO_LOG("bundle name: %{public}s, declare supported devicetype: %{public}s", bundleName.c_str(),
+        deviceTypeLog.c_str());
+    return SUCCESS;
+}
+
+bool AudioPolicyUtils::IsDeclaredByApp(const std::string &bundleName, DeviceType deviceType)
+{
+    std::shared_lock lock(setDeclaredDevicesMutex_);
+    auto itr = alreadyDeclaredDevicesByApp_.find(bundleName);
+    CHECK_AND_RETURN_RET(itr != alreadyDeclaredDevicesByApp_.end(), false);
+    return itr->second.contains(deviceType);
+}
+
+bool AudioPolicyUtils::IsSupportedDevice(const std::string &bundleName, DeviceType deviceType, bool hasSystemPermission)
+{
+    CHECK_AND_RETURN_RET(needDeclaredDevices.contains(deviceType), true);
     return hasSystemPermission ||
-        (apiVersion >= NEARLINK_API_VERSION && !IsBundleNameInList(bundleName, NEARLINK_LIST));
+        IsDeclaredByApp(bundleName, deviceType) || IsBundleNameInList(bundleName, deviceType);
 }
 
 bool AudioPolicyUtils::IsWirelessDevice(DeviceType deviceType)

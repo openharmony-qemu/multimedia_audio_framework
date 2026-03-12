@@ -77,13 +77,14 @@ public:
     void OnSpatializationEnabledChangeForBTDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
         const bool &enabled, const bool &headTrackingEnabled);
     void OnSpatialAudioSourceTypeChange(const SpatialAudioSourceType &mode);
-
+private:
+    bool CheckDeviceSupported(DeviceType devicetype);
 public:
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;
     int32_t apiVersion_ = API_VERSION_MAX;
-    bool isSupportedNearlink_ = true;
-
+    std::set<DeviceType> needDeclaredDevices_;
+    std::set<DeviceType> alreadyDeclaredDevicesByApp_;
 private:
     sptr<IAudioPolicyClient> audioPolicyClient_ = nullptr;
 };

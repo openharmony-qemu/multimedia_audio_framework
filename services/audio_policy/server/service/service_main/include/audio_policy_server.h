@@ -399,6 +399,8 @@ public:
     int32_t GetPreferredInputDeviceDescriptors(const AudioCapturerInfo &captureInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
+    int32_t SetDeclaredDeviceTypes(const std::set<int32_t> &deviceTypes) override;
+
     int32_t GetOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 

@@ -57,6 +57,11 @@ int32_t AudioRoutingClientManager::GetPreferredInputDeviceForCapturerInfo(AudioC
     return SUCCESS;
 }
 
+int32_t AudioRoutingClientManager::SetDeclaredDeviceTypes(std::vector<DeviceType> &deviceTypeVector)
+{
+    return AudioPolicyManager::GetInstance().SetDeclaredDeviceTypes(deviceTypeVector);
+}
+
 int32_t AudioRoutingClientManager::SetPreferredOutputDeviceChangeCallback(AudioRendererInfo rendererInfo,
     const std::shared_ptr<AudioPreferredOutputDeviceChangeCallback>& callback, const int32_t uid)
 {

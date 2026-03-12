@@ -95,8 +95,10 @@ public:
 
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
-    bool IsBundleNameInList(const std::string &bundleName, const std::string &listType);
-    bool IsSupportedNearlink(const std::string &bundleName, int32_t apiVersion, bool hasSystemPermission);
+    bool IsBundleNameInList(const std::string &bundleName, DeviceType deviceType);
+    int32_t SetDeclaredDeviceTypes(const std::string &bundleName, const std::vector<DeviceType> &deviceTypeVector);
+    bool IsDeclaredByApp(const std::string &bundleName, DeviceType deviceType);
+    bool IsSupportedDevice(const std::string &bundleName, DeviceType deviceType, bool hasSystemPermission);
 
     bool IsWirelessDevice(DeviceType deviceType);
 
@@ -111,11 +113,14 @@ private:
 public:
     static int32_t startDeviceId;
     static std::map<std::string, ClassType> portStrToEnum;
+    static std::set<DeviceType> needDeclaredDevices;
 private:
     std::mutex mutex_;
     bool isBTReconnecting_ = false;
     bool isScoExcluded_ = false;
     DeviceType effectActiveDevice_ = DEVICE_TYPE_NONE;
+    std::map<std::string, std::set<DeviceType>> alreadyDeclaredDevicesByApp_;
+    std::shared_mutex setDeclaredDevicesMutex_;
     AudioStreamCollector& streamCollector_;
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;

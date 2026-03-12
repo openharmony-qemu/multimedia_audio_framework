@@ -58,7 +58,7 @@ public:
         bool hasBTPermission_ = false;
         bool hasSystemPermission_ = false;
         int32_t apiVersion_ = 0;
-        bool isSupportedNearlink_ = true;
+        bool isSupportedDevice_ = true;
 
         ClientInfo() = default;
         ClientInfo(int32_t apiVersion)
@@ -133,7 +133,7 @@ public:
 
     bool IsRemoteDevice() const;
 
-    DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedNearlink = true) const;
+    DeviceType MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedDevice = true) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;
 
@@ -191,7 +191,7 @@ private:
     bool MarshallingInner(Parcel &parcel) const;
 
     bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
-        int32_t apiVersion, bool isSupportedNearlink = true) const;
+        int32_t apiVersion, bool isSupportedDevice = true) const;
     
     uint32_t ParseArmUsbAudioParameters(const std::string &audioParameters, AudioParametersKey key);
 public:

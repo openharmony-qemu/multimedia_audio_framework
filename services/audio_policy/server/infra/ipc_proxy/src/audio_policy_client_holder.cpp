@@ -52,8 +52,11 @@ void AudioPolicyClientHolder::OnDeviceChange(const DeviceChangeAction &deviceCha
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
-    deviceChangeAction.SetClientInfo(clientInfo);
+    for (auto &deviceDesc : deviceChangeAction.deviceDescriptors) {
+        CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr.");
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
+        deviceDesc->SetClientInfo(clientInfo);
+    }
     audioPolicyClient_->OnDeviceChange(deviceChangeAction);
 }
 
@@ -61,8 +64,11 @@ void AudioPolicyClientHolder::OnDeviceInfoUpdate(const DeviceChangeAction &devic
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
-    deviceChangeAction.SetClientInfo(clientInfo);
+    for (auto &deviceDesc : deviceChangeAction.deviceDescriptors) {
+        CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr.");
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
+        deviceDesc->SetClientInfo(clientInfo);
+    }
     audioPolicyClient_->OnDeviceInfoUpdate(deviceChangeAction);
 }
 
@@ -70,8 +76,11 @@ void AudioPolicyClientHolder::OnMicrophoneBlocked(const MicrophoneBlockedInfo &m
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
-    microphoneBlockedInfo.SetClientInfo(clientInfo);
+    for (auto &deviceDesc : microphoneBlockedInfo.devices) {
+        CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr.");
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
+        deviceDesc->SetClientInfo(clientInfo);
+    }
     audioPolicyClient_->OnMicrophoneBlocked(microphoneBlockedInfo);
 }
 
@@ -104,9 +113,9 @@ void AudioPolicyClientHolder::OnPreferredOutputDeviceUpdated(const AudioRenderer
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &deviceDesc : desc) {
         CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr.");
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
         deviceDesc->SetClientInfo(clientInfo);
     }
     audioPolicyClient_->OnPreferredOutputDeviceUpdated(rendererInfo, desc);
@@ -117,9 +126,9 @@ void AudioPolicyClientHolder::OnPreferredInputDeviceUpdated(const AudioCapturerI
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &deviceDesc : desc) {
         CHECK_AND_CONTINUE_LOG(deviceDesc != nullptr, "deviceDesc is nullptr.");
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDesc->deviceType_);
         deviceDesc->SetClientInfo(clientInfo);
     }
     audioPolicyClient_->OnPreferredInputDeviceUpdated(capturerInfo, desc);
@@ -130,9 +139,9 @@ void AudioPolicyClientHolder::OnRendererStateChange(
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { hasBTPermission_, hasSystemPermission_, apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &audioRendererChangeInfo : audioRendererChangeInfos) {
         CHECK_AND_CONTINUE_LOG(audioRendererChangeInfo != nullptr, "audioRendererChangeInfo is nullptr.");
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(audioRendererChangeInfo->outputDeviceInfo.deviceType_);
         audioRendererChangeInfo->SetClientInfo(clientInfo);
     }
     audioPolicyClient_->OnRendererStateChange(audioRendererChangeInfos);
@@ -143,9 +152,9 @@ void AudioPolicyClientHolder::OnCapturerStateChange(
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { hasBTPermission_, hasSystemPermission_, apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
     for (auto &audioCapturerChangeInfo : audioCapturerChangeInfos) {
         CHECK_AND_CONTINUE_LOG(audioCapturerChangeInfo != nullptr, "audioCapturerChangeInfo is nullptr.");
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(audioCapturerChangeInfo->inputDeviceInfo.deviceType_);
         audioCapturerChangeInfo->SetClientInfo(clientInfo);
     }
     audioPolicyClient_->OnCapturerStateChange(audioCapturerChangeInfos);
@@ -156,7 +165,7 @@ void AudioPolicyClientHolder::OnRendererDeviceChange(const uint32_t sessionId,
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-    clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+    clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceInfo.deviceType_);
     deviceInfo.SetClientInfo(clientInfo);
     audioPolicyClient_->OnRendererDeviceChange(sessionId, deviceInfo, reason);
 }
@@ -198,7 +207,7 @@ void AudioPolicyClientHolder::OnSpatializationEnabledChangeForAnyDevice(
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
     if (hasSystemPermission_) {
         AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
         deviceDescriptor->SetClientInfo(clientInfo);
         audioPolicyClient_->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     } else {
@@ -229,7 +238,7 @@ void AudioPolicyClientHolder::OnHeadTrackingEnabledChangeForAnyDevice(
     CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
     if (hasSystemPermission_) {
         AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
         deviceDescriptor->SetClientInfo(clientInfo);
         audioPolicyClient_->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     } else {
@@ -317,9 +326,10 @@ void AudioPolicyClientHolder::OnAdaptiveSpatialRenderingEnabledChangeForAnyDevic
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
     if (hasSystemPermission_) {
         AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
         deviceDescriptor->SetClientInfo(clientInfo);
         audioPolicyClient_->OnAdaptiveSpatialRenderingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
     } else {
@@ -332,9 +342,10 @@ void AudioPolicyClientHolder::OnSpatializationEnabledChangeForBTDevice(
     const bool &headTrackingEnabled)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "deviceDescriptor is nullptr.");
     if (hasSystemPermission_) {
         AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
-        clientInfo.isSupportedNearlink_ = isSupportedNearlink_;
+        clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceDescriptor->deviceType_);
         deviceDescriptor->SetClientInfo(clientInfo);
         AUDIO_INFO_LOG("OnSpatializationEnabledChangeForBTDevice %{public}d %{public}d", enabled, headTrackingEnabled);
         audioPolicyClient_->OnSpatializationEnabledChangeForBTDevice(deviceDescriptor, enabled, headTrackingEnabled);
@@ -354,6 +365,12 @@ void AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange(const SpatialAudioS
         AUDIO_INFO_LOG("AudioPolicyClientHolder::OnSpatialAudioSourceTypeChange 0 0");
         audioPolicyClient_->OnSpatialAudioSourceTypeChange(SPATIAL_AUDIO_SOURCE_TYPE_STEREO);
     }
+}
+
+bool AudioPolicyClientHolder::CheckDeviceSupported(DeviceType devicetype)
+{
+    CHECK_AND_RETURN_RET(needDeclaredDevices_.contains(devicetype), true);
+    return alreadyDeclaredDevicesByApp_.contains(devicetype);
 }
 } // namespace AudioStandard
 } // namespace OHOS

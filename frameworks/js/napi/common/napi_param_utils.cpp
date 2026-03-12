@@ -1174,6 +1174,29 @@ napi_status NapiParamUtils::GetAudioDeviceUsage(const napi_env &env, AudioDevice
     return napi_ok;
 }
 
+napi_status NapiParamUtils::GetAudioDeviceTypeArray(const napi_env &env, std::vector<DeviceType> &deviceTypeVector,
+    napi_value in)
+{
+    uint32_t arrayLen = 0;
+    napi_get_array_length(env, in, &arrayLen);
+    if (arrayLen == 0) {
+        deviceTypeVector = {};
+        AUDIO_ERR_LOG("DeviceType vector is empty!");
+        return napi_ok;
+    }
+
+    for (size_t i = 0; i < arrayLen; i++) {
+        napi_value element;
+        napi_get_element(env, in, i, &element);
+        int32_t intValue = 0;
+        napi_status status = GetValueInt32(env, intValue, element);
+        if (status == napi_ok) {
+            deviceTypeVector.push_back(static_cast<DeviceType>(intValue));
+        }
+    }
+    return napi_ok;
+}
+
 napi_status NapiParamUtils::SetValueDeviceChangeAction(const napi_env& env, const DeviceChangeAction &action,
     napi_value &result)
 {

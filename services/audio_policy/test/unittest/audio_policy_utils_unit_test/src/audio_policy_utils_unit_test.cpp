@@ -436,10 +436,10 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IsSupportedNearlink API
+ * @tc.name  : Test IsSupportedDevice API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_017
- * @tc.desc  : Test IsSupportedNearlink with system permission
+ * @tc.desc  : Test IsSupportedDevice with system permission
  */
 HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_017, TestSize.Level1)
 {
@@ -449,17 +449,16 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_017, TestSize.Level1)
 
     std::string bundleName = "com.ohos.test";
     bool hasSystemPermission = true;
-    int32_t apiVersion = 0;
 
-    int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
+    int32_t ret = audioPolicyUtilsTest_->IsSupportedDevice(bundleName, DEVICE_TYPE_NEARLINK, hasSystemPermission);
     EXPECT_EQ(ret, true);
 }
 
 /**
- * @tc.name  : Test IsSupportedNearlink API
+ * @tc.name  : Test IsSupportedDevice API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_018
- * @tc.desc  : Test IsSupportedNearlink without system permission.
+ * @tc.desc  : Test IsSupportedDevice without system permission.
  */
 HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_018, TestSize.Level1)
 {
@@ -469,17 +468,16 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_018, TestSize.Level1)
 
     std::string bundleName = "com.ohos.test";
     bool hasSystemPermission = false;
-    int32_t apiVersion = 0;
 
-    int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
+    int32_t ret = audioPolicyUtilsTest_->IsSupportedDevice(bundleName, DEVICE_TYPE_NEARLINK, hasSystemPermission);
     EXPECT_EQ(ret, false);
 }
 
 /**
- * @tc.name  : Test IsSupportedNearlink API
+ * @tc.name  : Test IsSupportedDevice API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_019
- * @tc.desc  : Test IsSupportedNearlink without system permission with 20 api.
+ * @tc.desc  : Test IsSupportedDevice without system permission with being declared by app.
  */
 HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_019, TestSize.Level1)
 {
@@ -489,9 +487,8 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_019, TestSize.Level1)
 
     std::string bundleName = "com.ohos.test";
     bool hasSystemPermission = false;
-    int32_t apiVersion = 20;
-
-    int32_t ret = audioPolicyUtilsTest_->IsSupportedNearlink(bundleName, apiVersion, hasSystemPermission);
+    audioPolicyUtilsTest_->SetDeclaredDeviceTypes(bundleName, {DEVICE_TYPE_NEARLINK});
+    int32_t ret = audioPolicyUtilsTest_->IsSupportedDevice(bundleName, DEVICE_TYPE_NEARLINK, hasSystemPermission);
     EXPECT_EQ(ret, true);
 }
 

@@ -59,6 +59,8 @@ public:
     static int32_t GetAudioDeviceDescriptorVector(
         std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> &deviceDescriptorsVector,
         bool &argTransFlag, array_view<AudioDeviceDescriptor> in);
+    static int32_t GetAudioDeviceTypeVector(std::vector<OHOS::AudioStandard::DeviceType> &deviceTypeVector,
+        array_view<DeviceType> in);
     static int32_t GetAudioCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &capturerInfo,
         AudioCapturerInfo const &in);
     static int32_t GetAudioCapturerFilter(OHOS::sptr<OHOS::AudioStandard::AudioCapturerFilter> &audioCapturerFilter,

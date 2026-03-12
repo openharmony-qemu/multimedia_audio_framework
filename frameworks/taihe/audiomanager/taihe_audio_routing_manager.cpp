@@ -138,6 +138,24 @@ void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsageAndDevices(DeviceUs
     }
 }
 
+void AudioRoutingManagerImpl::DeclareDeviceTypesCompatibility(array_view<DeviceType> deviceTypes)
+{
+    std::vector<OHOS::AudioStandard::DeviceType> deviceTypeVector;
+    int ret = TaiheParamUtils::GetAudioDeviceTypeVector(deviceTypeVector, deviceTypes);
+    if (ret == AUDIO_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID, "parameter verification failed");
+        return;
+    }
+
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_->SetDeclaredDeviceTypes(deviceTypeVector) != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM, "SetDeclaredDeviceTypes failed");
+    }
+}
+
 void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsage(DeviceUsage usage)
 {
     int32_t deviceUsage = usage.get_value();

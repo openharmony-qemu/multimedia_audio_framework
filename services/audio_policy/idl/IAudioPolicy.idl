@@ -330,4 +330,5 @@ interface IAudioPolicy {
     void SetAdaptiveSpatialRenderingEnabled([in] sharedptr<AudioDeviceDescriptor> selectedAudioDevice, [in] boolean enable);
     void GetCurrentSpatialAudioSourceType([out] int ret);
     void SetAudioSessionBehavior([in] unsigned int behavior);
+    void SetDeclaredDeviceTypes([in] Set<int> deviceTypes);
 }
