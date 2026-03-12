@@ -573,15 +573,15 @@ void AudioInterruptService::HandMuteSessionBehavior(const AudioInterrupt &audioI
 {
     if (audioInterrupt.isAudioSessionInterrupt) {
         AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
-            audioInterrput.pid, muteFlag);
+            audioInterrupt.pid, muteFlag);
         const auto &interruptsInSession = sessionService_.GetStreams(audioInterrupt.pid);
         for (auto interrupt : interruptsInSession) {
             SetNonInterruptMute(interrupt.streamId, muteFlag);
         }
     } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-        SetLatestMuteState(audioInterrput.stremaId, muteFlag);
+        SetLatestMuteState(audioInterrupt.stremaId, muteFlag);
     } else {
-        SetNonInterruptMute(interrupt.streamId, muteFlag);
+        SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
     }
 }
 }

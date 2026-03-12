@@ -457,7 +457,7 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
             return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
         };
         auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
-        if (iter != audioFocusInfoList.end() && iter->second = MUTED) {
+        if (iter != audioFocusInfoList.end() && iter->second == MUTED) {
             AUDIO_INFO_LOG("Need to unmute all streams for pid %{public}d", callerPid);
             sessionIsMuted = true;
         }
@@ -2899,7 +2899,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         if (audioInterrupt.behaviorFlags_.muteWhenInterruptFlag) {
             HandMuteSessionBehavior(audioInterrupt, muteFlag);
         }
-        if (audioInterrput.strategy == InterruptStrategy::MUTE) {
+        if (audioInterrupt.strategy == InterruptStrategy::MUTE) {
             SetLatestMuteState(streamId, muteFlag);
         }
     }
