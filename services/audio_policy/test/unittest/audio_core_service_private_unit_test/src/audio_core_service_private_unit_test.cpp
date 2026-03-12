@@ -14,6 +14,7 @@
  */
 
 #include "audio_core_service_private_unit_test.h"
+#include "hisysevent.h"
 
 using namespace testing::ext;
 
