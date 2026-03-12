@@ -51,6 +51,7 @@ private:
     const std::string reason_;
 };
 
+static const int64_t MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S = 24 * 60 * 60; // 24h
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 static std::string GetEncryptAddr(const std::string &addr)
@@ -339,6 +340,9 @@ void AudioVolumeManager::CheckToCloseNotification(AudioStreamType streamType, in
             CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
             restoreNIsShowing_ = false;
         }
+    }
+    if (isLegacyHighVolumeNtfShowing_) {
+        HandleLegacyHighVolumeNotification(VolumeNotifyActionType::ACTOPN_CANCEL);
     }
 }
 
@@ -818,6 +822,72 @@ void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
 #endif
 }
 
+void AudioVolumeManager::HandleLegacyHighVolumeEvent()
+{
+    HandleLegacyHighVolumeNotification(VolumeNotifyActionType::ACTOPN_CANCEL);
+    int64_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    audioPolicyManager_.SetLegacyHighVolumeCheckTime(currentTime);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
+    int32_t ret = SetSystemVolumeLevel(legacyHighVolumeStreamType_, legacyHighVolumeLevel_, deviceDesc);
+    AUDIO_INFO_LOG("handle AUDIO_LEGACY_HIGH_VOLUME_EVENT result: %{public}d", ret);
+}
+
+bool AudioVolumeManager::IsLegacyHighVolumeChecked()
+{
+    int64_t checkedTime = audioPolicyManager_.GetLegacyHighVolumeCheckTime();
+    if (checkedTime <= 0) {
+        AUDIO_INFO_LOG("legacy high volume notification not checked");
+        return false;
+    }
+    int64_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    return currentTime > checkedTime && currentTime - checkedTime < MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S;
+}
+
+void AudioVolumeManager::HandleLegacyHighVolumeNotification(VolumeNotifyActionType actionType,
+    AudioStreamType streamType, int32_t volumeLevel)
+{
+    if (actionType == ACTION_PUBLISH) {
+        legacyHighVolumeStreamType_ = streamType;
+        legacyHighVolumeLevel_ = volumeLevel;
+    }
+    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
+    if (libHandle == nullptr) {
+        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
+        return;
+    }
+    CreateLegacyHighVolumeNotification *createLegacyHighVolumeNotificationImpl =
+        reinterpret_cast<CreateLegacyHighVolumeNotification*>(dlsym(libHandle,
+        "CreateLegacyHighVolumeNotificationImpl"));
+    if (createLegacyHighVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("createLegacyHighVolumeNotificationImpl failed %{public}s", __func__);
+#ifndef TEST_COVERAGE
+        dlclose(libHandle);
+#endif
+        return;
+    }
+    AudioLegacyHighVolumeNotification *audioLegacyHighVolumeNotificationImpl = createLegacyHighVolumeNotificationImpl();
+    if (audioLegacyHighVolumeNotificationImpl == nullptr) {
+        AUDIO_ERR_LOG("audioLegacyHighVolumeNotificationImpl is nullptr %{public}s", __func__);
+#ifndef TEST_COVERAGE
+        dlclose(libHandle);
+#endif
+        return;
+    }
+    AUDIO_INFO_LOG("legacy high volume notification type: %{public}d, streamType: %{public}d, volumeLevel: %{public}d"
+        "isShowing: %{public}d", actionType, streamType, volumeLevel, isLegacyHighVolumeNtfShowing_.load());
+    if (actionType == ACTION_PUBLISH) {
+        audioLegacyHighVolumeNotificationImpl->PublishLegacyHighVolumeNotification();
+        isLegacyHighVolumeNtfShowing_ = true;
+    } else {
+        audioLegacyHighVolumeNotificationImpl->CancelLegacyHighVolumeNotification();
+        isLegacyHighVolumeNtfShowing_ = false;
+    }
+    delete audioLegacyHighVolumeNotificationImpl;
+#ifndef TEST_COVERAGE
+    dlclose(libHandle);
+#endif
+}
+
 void AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice()
 {
     if (increaseNIsShowing_) {
@@ -1228,6 +1298,9 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
         ChangeDeviceSafeStatus(SAFE_INACTIVE);
         DealWithEventVolume(INCREASE_VOLUME_NOTIFICATION_ID);
         SetSafeVolumeCallback(STREAM_MUSIC);
+    } else if (action == AUDIO_LEGACY_HIGH_VOLUME_EVENT) {
+        std::lock_guard<std::mutex> lock(notifyMutex_);
+        HandleLegacyHighVolumeEvent();
     }
 }
 

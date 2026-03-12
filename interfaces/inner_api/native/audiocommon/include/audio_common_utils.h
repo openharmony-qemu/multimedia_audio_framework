@@ -68,6 +68,8 @@ public:
     static bool IsPCVolumeEnable();
     static void SetVolumeFixEnable(const bool& isPCVolumeEnable);
     static bool IsVolumeFixEnable();
+    static void SetLegacyVolumeNotificationLevel(int32_t level);
+    static int32_t GetLegacyVolumeNotificationLevel();
     static AudioVolumeType GetVolumeTypeFromStreamUsage(StreamUsage streamUsage);
     static std::set<StreamUsage> GetOverlapStreamUsageSet(const std::set<StreamUsage>& streamUsages,
         AudioVolumeType volumeType);
@@ -89,6 +91,7 @@ private:
     static std::unordered_map<AudioStreamType, AudioVolumeType>& GetVolumeMap();
     static bool isPCVolumeEnable_;
     static bool isVolumeFixEnable_;
+    static int32_t legacyVolumeNotificationLevel_;
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> defaultVolumeToStreamUsageMap_;
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> pcVolumeToStreamUsageMap_;
     static std::unordered_map<StreamUsage, AudioStreamType> streamUsageMap_;

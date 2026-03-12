@@ -28,6 +28,7 @@ namespace {
 } // namespace
 
 float VolumeUtils::enforcedToneVolume_ = -1.0f;
+int32_t VolumeUtils::legacyVolumeNotificationLevel_ = -1;
 
 void VolumeUtils::InitEnforcedToneVolume()
 {
@@ -47,6 +48,17 @@ float VolumeUtils::GetEnforcedToneVolumeFixed()
 {
     AUDIO_DEBUG_LOG("fixed enforced tone volume: %{public}f", enforcedToneVolume_);
     return enforcedToneVolume_;
+}
+
+void VolumeUtils::SetLegacyVolumeNotificationLevel(int32_t level)
+{
+    AUDIO_INFO_LOG("set notification volume level: %{public}d", level);
+    legacyVolumeNotificationLevel_ = level;
+}
+
+int32_t VolumeUtils::GetLegacyVolumeNotificationLevel()
+{
+    return legacyVolumeNotificationLevel_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

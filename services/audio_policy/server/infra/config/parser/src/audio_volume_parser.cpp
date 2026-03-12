@@ -255,6 +255,13 @@ int32_t AudioVolumeParser::ParseVolumeFixInfo(std::shared_ptr<AudioXmlNode> curN
         // volumeFixEnable for volume 0 return 1, not mute
         return ERR_NOT_SUPPORTED;
     }
+    if (pValueStr == "LEGACY_HIGH_VOLUME_LEVEL_TO_NOTIFY") {
+        int32_t volumeLevel = -1;
+        CHECK_AND_RETURN_RET_LOG(StringConverter<int32_t>(volumeFix, volumeLevel), ERR_INVALID_PARAM,
+            "conver volumeLevel failed");
+        VolumeUtils::SetLegacyVolumeNotificationLevel(volumeLevel);
+        return AUDIO_OK;
+    }
     if (pValueStr == "LOWER_VOLUME_IN_CALL" && volumeFix == "1") {
         ParseLowerVolumeInfo(curNode);
     }

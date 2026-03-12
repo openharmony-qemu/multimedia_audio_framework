@@ -15,6 +15,7 @@
 
 #include "volume_data_maintainer_unit_test.h"
 
+#include <chrono>
 #include "system_ability_definition.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -833,5 +834,21 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveMuteToDb, TestSize.Level4)
     EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
 }
 
+/**
+* @tc.name  : Test VolumeDataMaintainer.
+* @tc.number: LegacyHighVolumeCheckTime_001.
+* @tc.desc  : Test SaveLegacyHighVolumeTime and GetLegacyHighVolumeTime.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, LegacyHighVolumeCheckTime_001, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+
+    int64_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    (void)vd->SaveLegacyHighVolumeTime(now);
+    int64_t loadedTime = 0;
+    (void)vd->GetLegacyHighVolumeTime(loadedTime);
+    SUCCEED();
+}
 } // AudioStandardnamespace
 } // OHOSnamespace

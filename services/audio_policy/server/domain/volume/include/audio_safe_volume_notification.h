@@ -24,10 +24,12 @@ namespace AudioStandard {
 const uint32_t SAVE_VOLUME_SYS_ABILITY_ID = 1041;
 const int32_t RESTORE_VOLUME_NOTIFICATION_ID = 116000;
 const int32_t INCREASE_VOLUME_NOTIFICATION_ID = 116001;
+const int32_t LEGACY_HIGH_VOLUME_NOTIFICATION_ID = 116002;
 const uint32_t NOTIFICATION_BANNER_FLAG = 1 << 9;
 const uint32_t NOTIFICATION_CLOSE_SOUND_FLAG = 1 << 0;
 inline const std::string AUDIO_RESTORE_VOLUME_EVENT = "AUDIO_RESTORE_VOLUME_EVENT";
 inline const std::string AUDIO_INCREASE_VOLUME_EVENT = "AUDIO_INCREASE_VOLUME_EVENT";
+inline const std::string AUDIO_LEGACY_HIGH_VOLUME_EVENT = "AUDIO_LEGACY_HIGH_VOLUME_EVENT";
 inline const std::string SAVE_VOLUME_SYS_ABILITY_NAME = "audio_service";
 
 inline const std::string SAFE_VOLUME_ICON_ID = "safe_volume_notification_icon";
@@ -37,6 +39,7 @@ inline const std::string SAFE_VOLUME_MUSIC_TIMER_TEXT_ID = "ohos_id_notification
 inline const std::string SAFE_VOLUME_INCREASE_VOLUME_TEXT_ID = "ohos_id_notification_increase_volume_context";
 inline const std::string SAFE_VOLUME_RESTORE_VOL_BUTTON_ID = "ohos_id_notification_restore_volume_button";
 inline const std::string SAFE_VOLUME_INCREASE_VOL_BUTTON_ID = "ohos_id_notification_increase_volume_button";
+inline const std::string LEGACY_HIGH_VOLUME_NOTIFICATION_HINT = "notification_vol_too_high_noise";
 
 const int32_t ICON_WIDTH = 220;
 const int32_t ICON_HEIGHT = 220;
@@ -68,6 +71,17 @@ public:
 };
 
 typedef AudioLoudVolumeNotification* CreateLoudVolumeNotification();
+
+class AudioLegacyHighVolumeNotification {
+public:
+    AudioLegacyHighVolumeNotification() = default;
+    virtual ~AudioLegacyHighVolumeNotification() = default;
+
+    virtual void PublishLegacyHighVolumeNotification() = 0;
+    virtual void CancelLegacyHighVolumeNotification() = 0;
+};
+
+typedef AudioLegacyHighVolumeNotification* CreateLegacyHighVolumeNotification();
 
 } // namespace AudioStandard
 } // namespace OHOS

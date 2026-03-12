@@ -116,6 +116,8 @@ public:
     bool GetSafeStatus(DeviceType deviceType, SafeStatus &safeStatus);
     bool SaveSafeVolumeTime(DeviceType deviceType, int64_t time);
     bool GetSafeVolumeTime(DeviceType deviceType, int64_t &time);
+    bool SaveLegacyHighVolumeTime(int64_t time);
+    bool GetLegacyHighVolumeTime(int64_t &time);
     bool SaveSystemSoundUrl(const std::string &key, const std::string &value);
     bool GetSystemSoundUrl(const std::string &key, std::string &value);
     bool SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume);
