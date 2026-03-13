@@ -260,6 +260,12 @@ size_t HpaeSourceProcessCluster::GetPreOutNum()
     CHECK_AND_RETURN_RET_LOG(captureEffectNode_, 0, "captureEffectNode_ is nullptr");
     return captureEffectNode_->GetPreOutNum();
 }
+
+int32_t HpaeSourceProcessCluster::SetAppsEnhanceMuteState(bool isMute)
+{
+    CHECK_AND_RETURN_RET_LOG(captureEffectNode_, ERROR_ILLEGAL_STATE, "captureEffectNode_ is nullptr");
+    return captureEffectNode_->SetAppsEnhanceMuteState(isMute);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

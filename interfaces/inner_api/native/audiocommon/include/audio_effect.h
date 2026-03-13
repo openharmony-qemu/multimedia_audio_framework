@@ -855,6 +855,7 @@ struct AudioEnhanceParam {
     uint32_t volumeInfo;
     uint32_t foldState;
     uint32_t powerState;
+    uint32_t appsMuteState;
     const char *preDevice;
     const char *postDevice;
     const char *sceneType;
