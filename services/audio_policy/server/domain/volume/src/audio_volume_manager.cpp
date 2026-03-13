@@ -793,7 +793,8 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetNearlinkDeviceVolumeLevel failed");
     int32_t sVolumeLevel = volumeLevel;
     // Voice call does not support safe volume
-    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
+    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (volumeType == STREAM_MUSIC) {
         if (volumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
             if (internalCall) {
                 sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
@@ -809,7 +810,7 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     ret = SetNearlinkDeviceVolumeEx(streamType, sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetSystemVolumeLevel failed");
 
-    bool mute = sVolumeLevel == 0 && (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC);
+    bool mute = sVolumeLevel == 0 && (volumeType == STREAM_MUSIC);
 
     if (internalCall) {
         CheckToCloseNotification(streamType, volumeLevel);
@@ -1566,7 +1567,8 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneI
         return audioPolicyManager_.GetZoneMute(zoneId, streamType);
     }
     DeviceType curOutputDeviceType = (audioActiveDevice_.GetDeviceForVolume(streamType))->deviceType_;
-    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
+    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (volumeType == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
         std::string btDevice = audioActiveDevice_.GetActiveBtDeviceMac();
         A2dpDeviceConfigInfo info;
@@ -1577,7 +1579,7 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneI
             return info.mute;
         }
     }
-    if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
+    if (volumeType == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_NEARLINK) {
         std::string nearLinkDevice = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
         bool muteStatus = SleAudioDeviceManager::GetInstance().GetMuteStatusByVolumeType(streamType, nearLinkDevice);
@@ -1585,6 +1587,7 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneI
     }
     return audioPolicyManager_.GetStreamMute(streamType);
 }
+
 
 void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId,
     std::string networkId, bool connected, int32_t mappingId)
