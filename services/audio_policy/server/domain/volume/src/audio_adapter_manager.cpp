@@ -3551,6 +3551,8 @@ void AudioAdapterManager::QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceD
 {
     VolumeBehavior behavior;
     CHECK_AND_RETURN_LOG(desc != nullptr, "QueryDeviceVolumeBehavior desc is null");
+    CHECK_AND_RETURN_LOG(AudioVolumeUtils::GetInstance().IsDistributedDevice(desc),
+        "QueryDeviceVolumeBehavior desc is not dmsdp");
     CHECK_AND_RETURN_LOG(deviceVolumeBehaviorListener_ != nullptr,
         "QueryDeviceVolumeBehavior deviceVolumeBehaviorListener_ is null");
     (void)deviceVolumeBehaviorListener_->OnQueryDeviceVolumeBehavior(behavior);
