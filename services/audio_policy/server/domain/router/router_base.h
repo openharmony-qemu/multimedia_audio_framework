@@ -150,9 +150,9 @@ public:
         CHECK_AND_RETURN_RET(desc != nullptr && desc->getType() == DEVICE_TYPE_DP &&
             audioPolicyManager_.IsDPCastingConnect(), false);
         CHECK_AND_RETURN_RET(streamUsage == STREAM_USAGE_NOTIFICATION || streamUsage == STREAM_USAGE_ENFORCED_TONE ||
-            streamUsage == STREAM_USAGE_ALARM, false);
+            streamUsage == STREAM_USAGE_ALARM || streamUsage == STREAM_USAGE_VOICE_ASSISTANT, false);
 
-        AUDIO_INFO_LOG("Wired cast scenarios, ALARM, NOTIFICATION and ENFORCED_TONE sound on the local device");
+        AUDIO_INFO_LOG("Wired cast, ALARM, NOTIFICATION, ENFORCED_TONE and VOICE_ASSISTANT sound on local device");
         return true;
     }
 };
