@@ -581,24 +581,19 @@ bool AudioInterruptService::IsOtherMediaPlaying()
 {
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     std::lock_guard<std::mutex> lock(mutex_);
-    int32_t zoneId = zoneManager_.FindZoneByPid(callerPid);
-    auto itZone = zonesMap_.find(zoneId);
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
-        audioFocusInfoList = itZone->second->audioFocusInfoList;
-    }
-
-    for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
-        CHECK_AND_CONTINUE(iter->first.pid != callerPid);
-        if (iter->second != ACTIVE && iter->second != DUCK) {
-            continue;
-        }
-        if (iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC ||
-            iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MOVIE ||
-            iter->first.audioFocusType.streamType == AudioStreamType::STREAM_GAME ||
-            iter->first.audioFocusType.streamType == AudioStreamType::STREAM_SPEECH) {
-            if (CheckPlaying(iter->first)) {
-                return true;
+    for (const auto &itZone : zonesMap_) {
+        CHECK_AND_CONTINUE_LOG(itZone.second != nullptr, "audioInterruptZone is nullptr");
+        const auto &audioFocusInfoList = itZone.second->audioFocusInfoList;
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
+            CHECK_AND_CONTINUE(iter->first.pid != callerPid);
+            if (!IsAudioStreamActive(iter->second)) {
+                continue;
+            }
+            if (iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC ||
+                iter->first.audioFocusType.streamType == AudioStreamType::STREAM_MOVIE ||
+                iter->first.audioFocusType.streamType == AudioStreamType::STREAM_GAME ||
+                iter->first.audioFocusType.streamType == AudioStreamType::STREAM_SPEECH) {
+                RETURN_RET_IF(CheckPlaying(iter->first), true);
             }
         }
     }
@@ -3453,6 +3448,11 @@ int32_t AudioInterruptService::FindAudioZoneByStreamId(const uint32_t streamId)
         }
     }
     return ZONEID_DEFAULT;
+}
+
+bool AudioInterruptService::IsAudioStreamActive(const AudioFocuState &state)
+{
+    return state == ACTIVE || state == DUCK;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
