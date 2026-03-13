@@ -5739,6 +5739,7 @@ ohos_unittest("audio_core_service_private_unit_test") {
     "hdf_core:libhdi",
     "hdf_core:libpub_utils",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "init:libbegetutil",
     "kv_store:distributeddata_inner",
     "media_foundation:media_monitor_client",
