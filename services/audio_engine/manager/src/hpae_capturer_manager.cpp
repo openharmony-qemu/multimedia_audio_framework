@@ -1158,12 +1158,12 @@ int32_t HpaeCapturerManager::SetAppsEnhanceMuteState(const uint32_t &sessionId, 
 {
     auto request = [this, sessionId, isMute] () {
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
-            ERROR, "can not find sessionId %{public}u", sessionId);
+            "can not find sessionId %{public}u", sessionId);
         CHECK_AND_RETURN_LOG(sessionNodeMap_.find(sessionId) != sessionNodeMap_.end(),
-            ERROR, "can not find session [%{public}u] info", sessionId);
+            "can not find session [%{public}u] info", sessionId);
         HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
-        CHECK_AND_RETURN_LOG(sceneCluster != nullptr, ERROR, "cluster is nullptr");
+        CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "cluster is nullptr");
         sceneCluster->SetAppsEnhanceMuteState(isMute);
     };
     SendRequest(request, __func__);
