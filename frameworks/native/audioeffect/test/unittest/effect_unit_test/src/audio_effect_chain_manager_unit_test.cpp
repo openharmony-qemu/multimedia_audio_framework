@@ -4241,5 +4241,34 @@ HWTEST(AudioEffectChainManagerUnitTest, IsDeviceTypeSupportingSpatialization_001
     EXPECT_EQ(AudioEffectChainManager::GetInstance()->IsDeviceTypeSupportingSpatialization(), false);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+
+/**
+* @tc.name   : Test UpdateParamExtra_frontendAppType API
+* @tc.number : UpdateParamExtra_frontendAppType_001
+* @tc.desc   : Test UpdateParamExtra_frontendAppType interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, UpdateParamExtra_frontendAppType_001, TestSize.Level1)
+{
+    HdiSetParamCommandCode code = HDI_FRONTEND_APP_TYPE;
+    std::string value = "test";
+    std::string scene = "123";
+    std::string mainkey = "audio_effect";
+    std::string mainkeyError = "audio_effect_error";
+    std::string subkey = "update_audio_effect_hvs_type";
+    std::string subkeyError = "update_audio_effect_hvs_type_error";
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkey, value);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->frontendAppType_ == value, true);
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkeyError, subkey, scene);
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkey, subkeyError, scene);
+    AudioEffectChainManager::GetInstance()->UpdateParamExtra(mainkeyError, subkeyError, scene);
+    EXPECT_EQ(AudioEffectChainManager::GetInstance()->frontendAppType_ == scene, false);
+    AudioEffectChainManager::GetInstance()->SendAudioParamToARM(code, value);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS
