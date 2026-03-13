@@ -34,8 +34,10 @@
 #include "audio_zone_service.h"
 #include "audio_server_proxy.h"
 #include "standalone_mode_manager.h"
-#include "audio_injector_policy.h"
+#ifdef HAS_WINDOW_MANAGER
 #include "window_utils.h"
+#endif
+#include "audio_injector_policy.h"
 #include "audio_interrupt_utils.h"
 
 #undef LOG_DOMAIN
@@ -256,7 +258,7 @@ void AudioInterruptService::ActivateAudioSessionErrorEvent(const int32_t zoneId,
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
-    
+
     if (interruptDfx_ != nullptr) {
         interruptDfx_->ActivateAudioSessionErrorEvent(audioFocusInfoList, callerPid);
     }
@@ -2208,6 +2210,7 @@ bool AudioInterruptService::IsMicSource(SourceType sourceType)
 void AudioInterruptService::UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
     const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType, AudioFocusEntry &focusEntry)
 {
+#ifdef HAS_WINDOW_MANAGER
     if (currentPid == incomingPid) {
         return;
     }
@@ -2225,6 +2228,7 @@ void AudioInterruptService::UpdateWindowFocusStrategy(const int32_t &currentPid,
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         focusEntry.actionOn = INCOMING;
     }
+#endif
 }
 
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator
@@ -2322,7 +2326,7 @@ int32_t AudioInterruptService::HandleExistStreamsForSession(
     const int32_t zoneId, const int32_t callerPid, bool &updateScene)
 {
     HandleOtherZoneExistStreams(zoneId, callerPid, updateScene);
-    
+
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR, "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;

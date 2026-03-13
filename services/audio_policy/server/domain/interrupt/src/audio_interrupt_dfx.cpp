@@ -24,7 +24,6 @@
 #include "audio_utils.h"
 #include "dfx_msg_manager.h"
 #include "media_monitor_manager.h"
-#include "window_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
