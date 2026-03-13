@@ -60,7 +60,9 @@ bool AudioCapturerFilter::Marshalling(Parcel &parcel) const
 {
     return parcel.WriteInt32(uid) &&
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.sourceType)) &&
-        parcel.WriteInt32(capturerInfo.capturerFlags);
+        parcel.WriteInt32(capturerInfo.capturerFlags) &&
+        parcel.WriteInt32(audioDeviceSelectMode) &&
+        parcel.WriteInt32(streamId);
 }
 
 AudioCapturerFilter *AudioCapturerFilter::Unmarshalling(Parcel &in)
@@ -71,6 +73,8 @@ AudioCapturerFilter *AudioCapturerFilter::Unmarshalling(Parcel &in)
     audioCapturerFilter->uid = in.ReadInt32();
     audioCapturerFilter->capturerInfo.sourceType = static_cast<SourceType>(in.ReadInt32());
     audioCapturerFilter->capturerInfo.capturerFlags = in.ReadInt32();
+    audioCapturerFilter->audioDeviceSelectMode = in.ReadInt32();
+    audioCapturerFilter->streamId = in.ReadInt32();
 
     return audioCapturerFilter;
 }

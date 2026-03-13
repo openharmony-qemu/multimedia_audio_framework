@@ -19,6 +19,8 @@
 
 #include "OHAudioCommon.h"
 
+#include "audio_errors.h"
+
 namespace OHOS {
 namespace AudioStandard {
 AudioChannel OHAudioCommon::ConvertLayoutToChannel(OH_AudioChannelLayout layout)
@@ -68,5 +70,22 @@ AudioChannel OHAudioCommon::ConvertLayoutToChannel(OH_AudioChannelLayout layout)
     return channel;
 }
 
+OH_AudioCommon_Result OHAudioCommon::ConvertResult(int32_t ret)
+{
+    if (ret == SUCCESS) {
+        return AUDIOCOMMON_RESULT_SUCCESS;
+    }
+    if (ret == ERR_INVALID_PARAM) {
+        return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
+    }
+    return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> OHAudioCommon::ConvertDevice(OH_AudioDeviceDescriptor *desc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, nullptr, "OH_AudioDeviceDescriptor is error");
+    auto ohDesc = reinterpret_cast<OHOS::AudioStandard::OHAudioDeviceDescriptor *>(desc);
+    return ohDesc->GetAudioDeviceDescriptor();
+}
 } // namespace AudioStandard
 } // namespace OHOS

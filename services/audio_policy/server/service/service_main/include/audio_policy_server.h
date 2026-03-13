@@ -222,6 +222,8 @@ public:
     int32_t GetDevicesInner(int32_t deviceFlag,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs) override;
 
+    int32_t IsEnhancedRoutingSupported(bool &ret) override;
+
     int32_t SetDeviceActive(int32_t deviceType, bool active, int32_t uid) override;
 
     int32_t IsDeviceActive(int32_t deviceType, bool &active) override;

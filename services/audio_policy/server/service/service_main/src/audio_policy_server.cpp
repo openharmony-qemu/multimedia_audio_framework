@@ -2187,6 +2187,12 @@ int32_t AudioPolicyServer::GetDevicesInner(int32_t deviceFlagIn,
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsEnhancedRoutingSupported(bool &ret)
+{
+    ret = audioPolicyService_.IsEnhancedRoutingSupported();
+    return SUCCESS;
+}
+
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)

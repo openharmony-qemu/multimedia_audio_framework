@@ -345,6 +345,11 @@ public:
         return;
     }
 
+    int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override
+    {
+        return sharedAudioCapturer_->SelectInputDevice(desc);
+    }
+
     ~SharedCapturerWrapper() override = default;
 
     SharedCapturerWrapper(const SharedCapturerWrapper&) = delete;

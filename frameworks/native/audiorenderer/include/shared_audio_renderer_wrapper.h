@@ -537,6 +537,11 @@ public:
         return sharedAudioRenderer_->SetLoopTimes(bufferLoopTimes);
     }
 
+    int32_t SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override
+    {
+        return sharedAudioRenderer_->SelectOutputDevice(desc);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }

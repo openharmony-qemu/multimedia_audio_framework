@@ -112,6 +112,7 @@ interface IAudioPolicy {
         [out] AudioInterrupt audioInterrupt,
         [in] int zoneId /* zoneID default value: 0 -- local device */);
     void GetDevices([in] int deviceFlag, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
+    void IsEnhancedRoutingSupported([out] boolean ret);
     void SelectOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors, [in] int audioDeviceSelectMode);
     void GetSelectedDeviceInfo([in] int uid, [in] int pid, [in] int streamType, [out] String retStr);
     void SelectInputDevice([in] sptr<AudioCapturerFilter> audioCapturerFilter, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);

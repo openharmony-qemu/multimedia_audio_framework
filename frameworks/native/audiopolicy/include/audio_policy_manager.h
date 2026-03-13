@@ -105,6 +105,8 @@ public:
 
     bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
 
+    bool IsEnhancedRoutingSupported();
+
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);

@@ -107,6 +107,7 @@ public:
     FastStatus GetFastStatus() override;
 
     uint32_t GetOverflowCount() const override;
+    int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;
     int32_t SetInputDevice(DeviceType deviceType) const override;
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
@@ -128,6 +129,7 @@ public:
     AudioStreamType audioStreamType_;
     bool abortRestore_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
+    mutable std::shared_ptr<AudioDeviceDescriptor> selectedDevice_ = nullptr;
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();
@@ -158,6 +160,7 @@ public:
     }
 
 private:
+    int32_t SelectInputDeviceInner(const std::shared_ptr<AudioDeviceDescriptor> &desc) const;
     int32_t StartImpl() override;
     int32_t StopImpl() const override;
     int32_t ReleaseImpl() override;

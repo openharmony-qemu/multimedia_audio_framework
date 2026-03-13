@@ -47,6 +47,16 @@ int32_t AudioPolicyManager::SelectOutputDevice(sptr<AudioRendererFilter> audioRe
     return gsp->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors, audioDeviceSelectMode);
 }
 
+bool AudioPolicyManager::IsEnhancedRoutingSupported()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+
+    bool supported = false;
+    gsp->IsEnhancedRoutingSupported(supported);
+    return supported;
+}
+
 int32_t AudioPolicyManager::SelectPrivateDevice(DeviceType devType, const std::string &macAddress)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

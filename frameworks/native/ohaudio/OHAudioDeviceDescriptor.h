@@ -17,7 +17,6 @@
 #define OH_AUDIO_DEVICE_DESCRIPTOR_H
 
 #include "audio_common_log.h"
-#include "native_audio_routing_manager.h"
 #include "native_audio_common.h"
 #include "native_audio_device_base.h"
 #include "audio_system_manager.h"

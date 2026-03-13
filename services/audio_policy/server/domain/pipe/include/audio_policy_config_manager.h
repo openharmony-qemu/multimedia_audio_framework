@@ -49,6 +49,7 @@ public:
     void OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs);
     void OnVoipConfigParsed(bool enableFastVoip);
     void OnUpdateRouteSupport(bool isSupported);
+    void SetEnhancedRoutingSupported(bool isSupported);
     void OnUpdateAnahsSupport(std::string anahsShowType);
     void OnUpdateEac3Support(bool isSupported);
     void OnHasEarpiece();
@@ -84,6 +85,7 @@ public:
     void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
     bool GetVoipConfig();
     bool GetUpdateRouteSupport();
+    bool GetEnhancedRoutingSupported();
     bool GetAdapterInfoFlag();
     bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
     bool GetHasEarpiece();
@@ -160,6 +162,7 @@ private:
     std::unordered_map<ClassType, AudioModuleInfo> dynamicCapturerConfig_ = {};
     bool hasEarpiece_ = false;
     bool isUpdateRouteSupported_ = true;
+    bool isEnhancedRoutingSupported_ = true;
     bool isSupportEac3_ = false;
     std::unordered_map<std::string, std::string> volumeGroupData_;
     std::unordered_map<std::string, std::string> interruptGroupData_;

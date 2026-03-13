@@ -1003,6 +1003,20 @@ public:
     virtual int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const = 0;
 
     /**
+     * @brief Select the output device for the current renderer.
+     *
+     * @param desc Target audio device descriptor.
+     * @return Returns {@link SUCCESS} if the device is selected successfully; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26
+    */
+    virtual int32_t SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
+    {
+        (void)desc;
+        return -1;
+    }
+
+    /**
      * @brief Gets the audio effect mode.
      *
      * @return  Returns current audio effect mode.

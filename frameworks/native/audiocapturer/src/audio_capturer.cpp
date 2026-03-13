@@ -44,6 +44,7 @@ static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 static constexpr int32_t UID_MEDIA_SA = 1013;
 static constexpr uint8_t AUDIO_MAX_CAPTURE_CHANNELS = 16;
+static constexpr int32_t APP_SELECT_INDEPENDENT = 1;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -646,6 +647,24 @@ int32_t AudioCapturerPrivate::SetInputDevice(DeviceType deviceType) const
         capturerInfo_.sourceType, GetStatus() == CAPTURER_RUNNING);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "select input device failed");
     return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = { desc };
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED, "create capturer filter failed");
+    audioCapturerFilter->uid = static_cast<int32_t>(getuid());
+    audioCapturerFilter->capturerInfo = capturerInfo_;
+    audioCapturerFilter->audioDeviceSelectMode = APP_SELECT_INDEPENDENT;
+    audioCapturerFilter->streamId = static_cast<int32_t>(sessionID_);
+    return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+}
+
+int32_t AudioCapturerPrivate::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
+{
+    selectedDevice_ = desc;
+    return SelectInputDeviceInner(selectedDevice_);
 }
 
 FastStatus AudioCapturerPrivate::GetFastStatus()
@@ -2211,6 +2230,9 @@ void AudioCapturerPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
     restoreInfo.restoreReason = SERVER_DIED;
     restoreResult = SwitchToTargetStream(audioStream_->GetStreamClass(), restoreInfo);
     AUDIO_INFO_LOG("Set restore status when server died, restore result %{public}d", restoreResult);
+    CHECK_AND_RETURN(restoreResult);
+    CHECK_AND_RETURN(selectedDevice_ != nullptr);
+    SelectInputDeviceInner(selectedDevice_);
     return;
 }
 

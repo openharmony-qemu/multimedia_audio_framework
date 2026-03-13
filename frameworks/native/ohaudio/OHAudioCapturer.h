@@ -20,6 +20,7 @@
 #include "native_audio_session_base.h"
 #include "audio_capturer.h"
 #include "audio_common_log.h"
+#include "OHAudioDeviceDescriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -193,6 +194,7 @@ public:
     int32_t GetFrameSizeInCallback();
     int32_t GetBufferDesc(BufferDesc &bufDesc) const;
     int32_t Enqueue(const BufferDesc &bufDesc) const;
+    int32_t SelectInputDevice(OH_AudioDeviceDescriptor *desc) const;
     int32_t SetInputDevice(DeviceType deviceType);
     int32_t SetMuteHint(bool mute);
     FastStatus GetFastStatus();

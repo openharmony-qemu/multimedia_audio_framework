@@ -717,6 +717,11 @@ bool AudioPolicyService::IsSupportInnerCaptureOffload()
     return audioConfigManager_.IsSupportInnerCaptureOffload();
 }
 
+bool AudioPolicyService::IsEnhancedRoutingSupported()
+{
+    return audioConfigManager_.GetEnhancedRoutingSupported();
+}
+
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {
     return audioConfigManager_.GetMaxRendererInstances();

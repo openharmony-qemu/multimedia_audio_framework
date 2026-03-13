@@ -20,6 +20,7 @@
 #include <limits>
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "OHAudioCommon.h"
 
 using OHOS::AudioStandard::Timestamp;
 
@@ -1080,6 +1081,12 @@ int32_t OHAudioRenderer::GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetLatencyWithFlag(latency, flag);
+}
+
+int32_t OHAudioRenderer::SelectOutputDevice(OH_AudioDeviceDescriptor *desc) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERR_INVALID_PARAM, "renderer client is nullptr");
+    return audioRenderer_->SelectOutputDevice(OHAudioCommon::ConvertDevice(desc));
 }
 
 int32_t OHAudioRenderer::SetDefaultOutputDevice(DeviceType deviceType)

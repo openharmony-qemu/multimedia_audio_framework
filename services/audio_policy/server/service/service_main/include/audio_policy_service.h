@@ -196,6 +196,7 @@ public:
 
     int32_t GetMaxRendererInstances();
 
+    bool IsEnhancedRoutingSupported();
     bool IsSupportInnerCaptureOffload();
 
     void RegisterDataObserver();
