@@ -331,7 +331,7 @@ private:
         const AudioInterrupt &activeInterrupt);
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
-    void HandMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag);
+    void HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId, bool returnDefault = false);
 

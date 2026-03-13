@@ -489,7 +489,7 @@ bool AudioSessionRestoreParams::RestoreParams()
         }
 
         if ((*it)->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_BEHAVIOR) {
-            int32_t behavior = static_cast<int32_t>((*it)->optValue);
+            uint32_t behavior = static_cast<uint32_t>((*it)->optValue);
             ret = AudioPolicyManager::GetInstance().SetAudioSessionBehavior(behavior);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore Behavior params failed, ret:%{public}d",
                 ret);

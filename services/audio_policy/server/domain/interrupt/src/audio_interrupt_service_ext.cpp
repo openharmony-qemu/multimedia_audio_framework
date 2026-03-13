@@ -568,13 +568,13 @@ int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, 
     return sessionService_.SetAudioSessionBehavior(callerPid, behavior);
 }
  
-void AudioInterruptService::HandMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)
+void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)
 {
     if (audioInterrupt.isAudioSessionInterrupt) {
         AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
             audioInterrupt.pid, muteFlag);
         const auto &interruptsInSession = sessionService_.GetStreams(audioInterrupt.pid);
-        for (auto interrupt : interruptsInSession) {
+        for (auto &interrupt : interruptsInSession) {
             SetNonInterruptMute(interrupt.streamId, muteFlag);
         }
     } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {

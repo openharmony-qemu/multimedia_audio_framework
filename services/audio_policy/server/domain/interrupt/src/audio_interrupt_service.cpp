@@ -2906,7 +2906,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     if ((interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {
         bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
         if (audioInterrupt.behaviorFlags_.muteWhenInterruptFlag) {
-            HandMuteSessionBehavior(audioInterrupt, muteFlag);
+            HandleMuteSessionBehavior(audioInterrupt, muteFlag);
         }
         if (audioInterrupt.strategy == InterruptStrategy::MUTE) {
             SetLatestMuteState(streamId, muteFlag);
