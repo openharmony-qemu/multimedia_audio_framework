@@ -44,6 +44,9 @@ HpaeCapturerManager::HpaeCapturerManager(HpaeSourceInfo &sourceInfo)
         sourceInfo.samplingRate, sourceInfo.channels, sourceInfo.format,
         sourceInfo.ecType, sourceInfo.ecSamplingRate, sourceInfo.ecChannels, sourceInfo.ecFormat,
         sourceInfo.micRef, sourceInfo.micRefSamplingRate, sourceInfo.micRefChannels, sourceInfo.micRefFormat);
+    CHECK_AND_RETURN(sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
+    AUDIO_INFO_LOG("micin info:[%{public}u_%{public}u_%{public}u]",
+        sourceInfo_.micInSamplingRate, sourceInfo_.micInFormat, sourceInfo_.micInChannels);
 }
 
 HpaeCapturerManager::~HpaeCapturerManager()
@@ -103,6 +106,17 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     return SUCCESS;
 }
 
+void HpaeCapturerManager::UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo)
+{
+    CHECK_AND_RETURN(clusterNodeInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
+    // for recognition, mic = preprocess(1ch) + micin(4ch)
+    uint8_t totalChannels = static_cast<uint8_t>(sourceInfo_.micInChannels) +
+        static_cast<uint8_t>(sourceInfo_.channels) + static_cast<uint8_t>(sourceInfo_.ecChannels);
+    CHECK_AND_RETURN_LOG(totalChannels <= CHANNEL_16,
+        "totalChannels[%{public}u] is not supported", totalChannels);
+    clusterNodeInfo.channels = static_cast<AudioChannel>(totalChannels);
+}
+
 void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioEnhanceScene enhanceScene)
 {
     CHECK_AND_RETURN(sceneType != HPAE_SCENE_EFFECT_NONE && !SafeGetMap(sceneClusterMap_, sceneType));
@@ -114,6 +128,9 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
     clusterNodeInfo.frameLen = CalculateFrameLenBySampleRate(clusterNodeInfo.samplingRate);
     clusterNodeInfo.statusCallback = weak_from_this();
     clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+
+    UpdateClusterNodeInfoForRecognition(clusterNodeInfo);
+    
     sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(clusterNodeInfo);
     CHECK_AND_RETURN(CaptureEffectCreate(sceneType, enhanceScene) != SUCCESS);
     // not erase effect processcluster for inject
@@ -616,15 +633,26 @@ void HpaeCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
     return;
 }
 
-int32_t HpaeCapturerManager::InitCapturer()
+void HpaeCapturerManager::UpdateSourceAttr(IAudioSourceAttr &attr)
 {
-    IAudioSourceAttr attr;
-    CreateSourceAttr(attr);
     if (attr.hasEcConfig) {
         attr.formatEc = sourceInfo_.ecFormat;
         attr.sampleRateEc = sourceInfo_.ecSamplingRate;
         attr.channelEc = sourceInfo_.ecChannels;
     }
+    if (sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        attr.formatMicIn = sourceInfo_.micInFormat;
+        attr.sampleRateMicIn = sourceInfo_.micInSamplingRate;
+        attr.channelMicIn = sourceInfo_.micInChannels;
+    }
+}
+
+int32_t HpaeCapturerManager::InitCapturer()
+{
+    IAudioSourceAttr attr;
+    CreateSourceAttr(attr);
+    UpdateSourceAttr(attr);
+    
     int32_t ret = sourceInputClusterMap_[mainMicType_]->CapturerSourceInit(attr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_OPERATION,
         "init mic source input node err, , ret = %{public}d.\n", ret);
@@ -723,6 +751,17 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
     return SUCCESS;
 }
 
+void HpaeCapturerManager::UpdateSourceInputNodeInfoForRecognition(HpaeNodeInfo &nodeInfo)
+{
+    CHECK_AND_RETURN(nodeInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
+    // for recognition, mic = preprocess(1ch) + micin(4ch)
+    uint8_t totalChannels = static_cast<uint8_t>(sourceInfo_.micInChannels) +
+        static_cast<uint8_t>(sourceInfo_.channels);
+    CHECK_AND_RETURN_LOG(totalChannels <= CHANNEL_16,
+        "totalChannels[%{public}u] is not supported", totalChannels);
+    nodeInfo.channels = static_cast<AudioChannel>(totalChannels);
+}
+
 int32_t HpaeCapturerManager::InitCapturerManager()
 {
     AUDIO_INFO_LOG("deviceName:%{public}s,channel:%{public}u,rate:%{public}u", sourceInfo_.sourceName.c_str(),
@@ -731,9 +770,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     HpaeNodeInfo ecNodeInfo;
     HpaeNodeInfo micRefNodeInfo;
     int32_t checkRet = CheckSourceInfoFramelen(sourceInfo_);
-    if (checkRet != SUCCESS) {
-        return checkRet;
-    }
+    CHECK_AND_RETURN_RET(checkRet == SUCCESS, checkRet);
     nodeInfo.deviceClass = sourceInfo_.deviceClass;
     nodeInfo.channels = sourceInfo_.channels;
     nodeInfo.format = sourceInfo_.format;
@@ -743,6 +780,8 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.sourceType = sourceInfo_.sourceType;
     mainMicType_ = sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER ? HPAE_SOURCE_MIC_EC : HPAE_SOURCE_MIC;
+    
+    UpdateSourceInputNodeInfoForRecognition(nodeInfo);
 
     if (mainMicType_ == HPAE_SOURCE_MIC_EC) {
         ecNodeInfo.channels = sourceInfo_.ecChannels;

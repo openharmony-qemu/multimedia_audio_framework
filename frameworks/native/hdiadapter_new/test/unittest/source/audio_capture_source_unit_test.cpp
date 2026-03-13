@@ -986,5 +986,42 @@ HWTEST_F(AudioCaptureSourceUnitTest, UpdateActiveDevice_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     DeInitPrimarySource();
 }
+
+/**
+ * @tc.name   : Test UpdateRawSampleAttr API
+ * @tc.number : UpdateRawSampleAttr_001
+ * @tc.desc   : Test UpdateRawSampleAttr API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, UpdateRawSampleAttr_001, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+
+    captureSource->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    captureSource->attr_.formatMicIn = SAMPLE_S16LE;
+    captureSource->attr_.sampleRateMicIn = SAMPLE_RATE_16000;
+    captureSource->attr_.channelMicIn = CHANNEL_4;
+
+    struct AudioSampleAttributes param;
+    captureSource->UpdateRawSampleAttr(param);
+    EXPECT_EQ(param.rawSampleAttributes.rawFormat, AUDIO_FORMAT_TYPE_PCM_16_BIT);
+    EXPECT_EQ(param.rawSampleAttributes.rawSampleRate, SAMPLE_RATE_16000);
+    EXPECT_EQ(param.rawSampleAttributes.rawChannelLayout, CH_LAYOUT_QUAD);
+}
+
+/**
+ * @tc.name   : Test UpdateRawSampleAttr API
+ * @tc.number : UpdateRawSampleAttr_002
+ * @tc.desc   : Test UpdateRawSampleAttr API
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, UpdateRawSampleAttr_002, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+
+    captureSource->attr_.sourceType = SOURCE_TYPE_MIC;
+
+    struct AudioSampleAttributes param;
+    captureSource->UpdateRawSampleAttr(param);
+    EXPECT_NE(captureSource, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
