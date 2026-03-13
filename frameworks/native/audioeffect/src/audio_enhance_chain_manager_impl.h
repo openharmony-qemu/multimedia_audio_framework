@@ -88,6 +88,7 @@ public:
 
     int32_t SendInitCommand() override;
 
+    int32_t SetAppsMuteStateToChainById(uint64_t sceneKeyCode, bool isMute) override;
 private:
     friend class AudioEnhanceChainManager;
     AudioEnhanceChainManagerImpl() = default;

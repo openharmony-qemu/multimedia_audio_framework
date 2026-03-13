@@ -1768,6 +1768,76 @@ HWTEST_F(HpaeCapturerManagerTest, TriggerAppsUidUpdate_001, TestSize.Level2)
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->appsUid_.size(), 0);
 }
+
+/**
+ * @tc.name  : Test HpaeCapturerManager SetAppsEnhanceMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: HandleAppsEnhanceMuteState_001
+ * @tc.desc  : Test HpaeCapturerManager SetAppsEnhanceMuteState with invalid session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HandleAppsEnhanceMuteState_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(SUCCESS, capturerManager->Init());
+    WaitForMsgProcessing(capturerManager);
+
+    // Test with invalid session id
+    uint32_t invalidSessionId = 999999;
+    EXPECT_EQ(ERROR, capturerManager->SetAppsEnhanceMuteState(invalidSessionId, true));
+    EXPECT_EQ(ERROR, capturerManager->SetAppsEnhanceMuteState(invalidSessionId, false));
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager SetAppsEnhanceMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: HandleAppsEnhanceMuteState_002
+ * @tc.desc  : Test HpaeCapturerManager SetAppsEnhanceMuteState with valid session
+ */
+HWTEST_F(HpaeCapturerManagerTest, HandleAppsEnhanceMuteState_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(SUCCESS, capturerManager->Init());
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // Test with valid session id
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, true));
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false));
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerManager SetAppsEnhanceMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: HandleAppsEnhanceMuteState_003
+ * @tc.desc  : Test HpaeCapturerManager SetAppsEnhanceMuteState with multiple mute states
+ */
+HWTEST_F(HpaeCapturerManagerTest, HandleAppsEnhanceMuteState_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_EQ(SUCCESS, capturerManager->Init());
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateOutputSession(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // Test multiple calls with different states
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, true));
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false));
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, true));
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false));
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

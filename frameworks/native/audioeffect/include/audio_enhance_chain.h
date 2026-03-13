@@ -62,6 +62,7 @@ struct AudioEnhanceParamAdapter {
     uint32_t volumeInfo { 0 };
     uint32_t foldState { FOLD_STATE_MIDDLE };
     uint32_t powerState { 0 };
+    uint32_t appsMuteState { 0 };
     std::string preDevice;
     std::string postDevice;
     std::string sceneType;
@@ -89,6 +90,7 @@ public:
     int32_t GetOutputDataFromChain(void *buf, size_t bufSize);
     int32_t ApplyEnhanceChain(const EnhanceTransBuffer &transBuf);
     int32_t InitCommand();
+    int32_t SetAppsMuteState(uint32_t appsMuteState);
 
 private:
     void InitAudioEnhanceChain();
@@ -106,6 +108,7 @@ private:
     int32_t ProcessSetEnhanceProperty(const std::string &enhance, const std::string &property);
     int32_t ProcessApplyEnhanceChain(void);
     int32_t ProcessReleaseAllEnhanceModule(void);
+    int32_t ProcessSetAppsMuteState(uint32_t appsMuteState);
     int32_t WriteChainOutputData(void *buf, size_t bufSize);
     int32_t CacheChainInputData(const EnhanceTransBuffer &transBuf);
     int32_t InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp);

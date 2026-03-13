@@ -1153,6 +1153,22 @@ void HpaeCapturerManager::TriggerAppsUidUpdate(uint32_t sessionId)
     };
     SendRequest(request, __func__);
 }
+
+int32_t HpaeCapturerManager::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute)
+{
+    auto request = [this, sessionId, isMute] () {
+        CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            ERROR, "can not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_RET_LOG(sessionNodeMap_.find(sessionId) != sessionNodeMap_.end(),
+            ERROR, "can not find session [%{public}u] info", sessionId);
+        HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
+        auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
+        CHECK_AND_RETURN_RET_LOG(sceneCluster != nullptr, ERROR, "cluster is nullptr");
+        sceneCluster->SetAppsEnhanceMuteState(isMute);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -391,5 +391,58 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, ApplyEnhanceChainSucc, TestSize.Level
 
     EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
 }
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAppsMuteStateToChainByIdSucc, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    // Test set apps mute state to true
+    EXPECT_EQ(manager_->SetAppsMuteStateToChainById(sceneKeyCode, true), SUCCESS);
+
+    // Test set apps mute state to false
+    EXPECT_EQ(manager_->SetAppsMuteStateToChainById(sceneKeyCode, false), SUCCESS);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAppsMuteStateToChainByIdWithInvalidCode, TestSize.Level1)
+{
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+
+    // Test with invalid scene key code
+    const uint64_t invalidKeyCode = 0x123456;
+    EXPECT_EQ(manager_->SetAppsMuteStateToChainById(invalidKeyCode, true), ERROR);
+    EXPECT_EQ(manager_->SetAppsMuteStateToChainById(invalidKeyCode, false), ERROR);
+}
+
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SetAppsMuteStateToChainByIdMultiScene, TestSize.Level1)
+{
+    const uint32_t tempCaptureId = 0x800;
+    std::vector<uint64_t> sceneKeyCodeArray = {
+        GetValidSceneKeyCode(SCENE_VOIP_UP, TEST_CAPTURER_ID),
+        GetValidSceneKeyCode(SCENE_RECORD, tempCaptureId),
+    };
+
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->SetInputDevice(tempCaptureId, DEVICE_TYPE_USB_HEADSET), SUCCESS);
+
+    for (const auto sceneKeyCode : sceneKeyCodeArray) {
+        EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+    }
+
+    // Test set apps mute state for multiple chains
+    for (const auto sceneKeyCode : sceneKeyCodeArray) {
+        EXPECT_EQ(manager_->SetAppsMuteStateToChainById(sceneKeyCode, true), SUCCESS);
+        EXPECT_EQ(manager_->SetAppsMuteStateToChainById(sceneKeyCode, false), SUCCESS);
+    }
+
+    for (const auto sceneKeyCode : sceneKeyCodeArray) {
+        EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

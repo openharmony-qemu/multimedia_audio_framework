@@ -45,6 +45,7 @@ public:
     explicit MockHpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo) : HpaeCaptureEffectNode(nodeInfo) {}
     MOCK_METHOD(int32_t, CaptureEffectCreate, (uint64_t sceneKeyCode, CaptureEffectAttr attr), (override));
     MOCK_METHOD(bool, GetCapturerEffectConfig, (HpaeNodeInfo & nodeInfo, HpaeSourceBufferType type), (override));
+    MOCK_METHOD(int32_t, SetAppsEnhanceMuteState, (bool isMute), (override));
 };
 
 void HpaeSourceProcessClusterTest::SetUp()
@@ -557,6 +558,84 @@ HWTEST_F(HpaeSourceProcessClusterTest, TestHpaeSourceProcessCluster_015, TestSiz
     // Reset should clean up all connections
     bool resetResult = cluster->Reset();
     EXPECT_TRUE(resetResult);
+}
+
+/**
+ * @tc.name: TestHpaeSourceProcessCluster_016
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceProcessCluster_016
+ * @tc.desc: Test HpaeSourceProcessCluster SetAppsEnhanceMuteState with null effect node
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, TestHpaeSourceProcessCluster_016, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+    std::unique_ptr<HpaeSourceProcessCluster> cluster = std::make_unique<HpaeSourceProcessCluster>(nodeInfo);
+
+    // Set captureEffectNode_ to nullptr to test error handling
+    cluster->captureEffectNode_ = nullptr;
+
+    // Should return ERROR_ILLEGAL_STATE when captureEffectNode_ is nullptr
+    int32_t result = cluster->SetAppsEnhanceMuteState(true);
+    EXPECT_EQ(result, ERROR_ILLEGAL_STATE);
+
+    result = cluster->SetAppsEnhanceMuteState(false);
+    EXPECT_EQ(result, ERROR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name: TestHpaeSourceProcessCluster_017
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceProcessCluster_017
+ * @tc.desc: Test HpaeSourceProcessCluster SetAppsEnhanceMuteState with mock effect node
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, TestHpaeSourceProcessCluster_017, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+
+    std::shared_ptr<HpaeSourceProcessCluster> cluster =
+        std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+    std::shared_ptr<MockHpaeCaptureEffectNode> mockEffectNode =
+        std::make_shared<NiceMock<MockHpaeCaptureEffectNode>>(nodeInfo);
+    cluster->captureEffectNode_ = mockEffectNode;
+
+    // Mock SetAppsEnhanceMuteState to return SUCCESS
+    EXPECT_CALL(*mockEffectNode, SetAppsEnhanceMuteState(true))
+        .WillOnce(Return(SUCCESS));
+    EXPECT_CALL(*mockEffectNode, SetAppsEnhanceMuteState(false))
+        .WillOnce(Return(SUCCESS));
+
+    int32_t result = cluster->SetAppsEnhanceMuteState(true);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = cluster->SetAppsEnhanceMuteState(false);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name: TestHpaeSourceProcessCluster_018
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeSourceProcessCluster_018
+ * @tc.desc: Test HpaeSourceProcessCluster SetAppsEnhanceMuteState with different mute states
+ */
+HWTEST_F(HpaeSourceProcessClusterTest, TestHpaeSourceProcessCluster_018, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo = GetTestNodeInfo();
+
+    std::shared_ptr<HpaeSourceProcessCluster> cluster =
+        std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
+    std::shared_ptr<MockHpaeCaptureEffectNode> mockEffectNode =
+        std::make_shared<NiceMock<MockHpaeCaptureEffectNode>>(nodeInfo);
+    cluster->captureEffectNode_ = mockEffectNode;
+
+    // Test multiple calls with different states
+    EXPECT_CALL(*mockEffectNode, SetAppsEnhanceMuteState(_))
+        .Times(4)
+        .WillRepeatedly(Return(SUCCESS));
+
+    EXPECT_EQ(cluster->SetAppsEnhanceMuteState(true), SUCCESS);
+    EXPECT_EQ(cluster->SetAppsEnhanceMuteState(false), SUCCESS);
+    EXPECT_EQ(cluster->SetAppsEnhanceMuteState(true), SUCCESS);
+    EXPECT_EQ(cluster->SetAppsEnhanceMuteState(false), SUCCESS);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

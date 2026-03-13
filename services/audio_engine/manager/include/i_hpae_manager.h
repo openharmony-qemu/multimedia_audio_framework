@@ -147,6 +147,7 @@ public:
     virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
     virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) = 0;
+    virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) = 0;
 
     // interfaces for injector
     virtual void UpdateAudioPortInfo(const uint32_t &sinkPortIndex, const AudioModuleInfo &audioPortInfo) = 0;

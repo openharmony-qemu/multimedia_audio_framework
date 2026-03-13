@@ -2886,6 +2886,19 @@ void HpaeManager::HandleBypassSpatializationForStereo(bool bypass)
     };
     SendRequest(request, __func__);
 }
+
+int32_t HpaeManager::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute)
+{
+    AUDIO_INFO_LOG("HpaeManager::SetAppsEnhanceMuteState %{public}d", isMute);
+    auto request = [this, sessionId, isMute]() {
+        auto captureManager = GetCapturerManagerById(sessionId);
+        if (captureManager != nullptr) {
+            captureManager->SetAppsEnhanceMuteState(sessionId, isMute);
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
