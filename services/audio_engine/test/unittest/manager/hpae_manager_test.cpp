@@ -2233,4 +2233,65 @@ HWTEST_F(HpaeManagerUnitTest, CreateRendererManager_Test_001, TestSize.Level1)
     std::shared_ptr<IHpaeRendererManager> rendererManager = hpaeManager_->GetRendererManagerByName("Bt_Speaker");
     EXPECT_NE(rendererManager, nullptr);
 }
+
+/**
+ * @tc.name  : Test HpaeManager SetAppsEnhanceMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: HandleAppsEnhanceMuteState_001
+ * @tc.desc  : Test HpaeManager SetAppsEnhanceMuteState basic functionality
+ */
+HWTEST_F(HpaeManagerUnitTest, HandleAppsEnhanceMuteState_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+
+    uint32_t sessionId = 123456;
+    // Test set apps mute state
+    EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, true));
+    EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, false));
+}
+
+/**
+ * @tc.name  : Test HpaeManager SetAppsEnhanceMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: HandleAppsEnhanceMuteState_002
+ * @tc.desc  : Test HpaeManager SetAppsEnhanceMuteState with multiple calls
+ */
+HWTEST_F(HpaeManagerUnitTest, HandleAppsEnhanceMuteState_002, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+
+    // Test multiple calls with different states
+    uint32_t sessionId = 111111;
+    EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, true));
+    EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, false));
+    EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, true));
+    EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, false));
+}
+
+/**
+ * @tc.name  : Test HpaeManager SetAppsEnhanceMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: HandleAppsEnhanceMuteState_003
+ * @tc.desc  : Test HpaeManager SetAppsEnhanceMuteState with different session ids
+ */
+HWTEST_F(HpaeManagerUnitTest, HandleAppsEnhanceMuteState_003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+
+    // Test with different session ids
+    std::vector<uint32_t> sessionIds = {123, 456, 789, 123456789};
+    for (auto sessionId : sessionIds) {
+        EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, true));
+        EXPECT_EQ(SUCCESS, hpaeManager_->SetAppsEnhanceMuteState(sessionId, false));
+    }
+}
 }  // namespace

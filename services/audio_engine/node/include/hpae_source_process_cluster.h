@@ -50,6 +50,7 @@ public:
     int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
     bool IsEffectNodeValid();
+    int32_t SetAppsEnhanceMuteState(bool isMute);
 
     // for ut test
     uint32_t GetMixerNodeUseCount();

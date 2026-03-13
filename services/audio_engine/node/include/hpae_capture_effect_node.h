@@ -47,6 +47,7 @@ public:
     virtual int32_t CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr);
     int32_t CaptureEffectRelease(uint64_t sceneKeyCode);
     uint64_t GetLatency(uint32_t sessionId = 0) override;
+    virtual int32_t SetAppsEnhanceMuteState(bool isMute);
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:

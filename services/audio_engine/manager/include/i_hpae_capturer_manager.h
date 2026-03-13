@@ -66,6 +66,7 @@ public:
     virtual int32_t RemoveCaptureInjector(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &sinkOutputNode,
         const SourceType &sourceType) = 0;
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; };
+    virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) { return 0; };
 private:
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxMapTree dfxTree_;

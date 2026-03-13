@@ -209,6 +209,7 @@ public:
     void UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
     void HandleBypassSpatializationForStereo(bool bypass) override;
+    int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) override;
 
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) override;

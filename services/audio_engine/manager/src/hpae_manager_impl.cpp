@@ -666,6 +666,12 @@ void HpaeManagerImpl::TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, 
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
     manager_->TriggerAppsUidUpdate(streamClassType, sessionId);
 }
+
+int32_t HpaeManagerImpl::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERROR, "manager is nullptr");
+    return manager_->SetAppsEnhanceMuteState(sessionId, isMute);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

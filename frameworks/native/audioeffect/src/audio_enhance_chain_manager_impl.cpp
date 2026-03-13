@@ -353,7 +353,7 @@ std::shared_ptr<AudioEnhanceChain> AudioEnhanceChainManagerImpl::CreateEnhanceCh
     CHECK_AND_RETURN_RET_LOG(parseSceneKeyCodeRet == SUCCESS, nullptr, "ParseSceneKeyCode fail");
 
     AudioEnhanceParamAdapter enhancePara = { enhancePara_.muteInfo, enhancePara_.volumeInfo, enhancePara_.foldState,
-        enhancePara_.powerState, capturerDevice, rendererDeivce, sceneType, "" };
+        enhancePara_.powerState, enhancePara_.appsMuteState, capturerDevice, rendererDeivce, sceneType, "" };
     if (priorSceneSet_.find(sceneType) != priorSceneSet_.end()) {
         AUDIO_INFO_LOG("scene: %{public}s create prior enhance chain", sceneType.c_str());
         return std::make_shared<AudioEnhanceChain>(sceneKeyCode, sceneType, PRIOR_SCENE, enhancePara, deviceAttr);
@@ -751,6 +751,16 @@ int32_t AudioEnhanceChainManagerImpl::SendInitCommand()
         }
     }
     AUDIO_INFO_LOG("success");
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChainManagerImpl::SetAppsMuteStateToChainById(uint64_t sceneKeyCode, bool isMute)
+{
+    auto chain = ChainPool::GetInstance().GetChainById(sceneKeyCode);
+    CHECK_AND_RETURN_RET_LOG(chain != nullptr, ERROR, "can not find [%{public}" PRIu64 "] chain", sceneKeyCode);
+    int32_t ret = chain->SetAppsMuteState(isMute);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
+        "[%{public}" PRIu64 "] set app mute:%{public}d fail", chain->GetChainId(), static_cast<int32_t>(isMute));
     return SUCCESS;
 }
 

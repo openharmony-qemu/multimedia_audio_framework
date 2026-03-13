@@ -302,7 +302,7 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
     AudioEnhanceParam setParam = {algoParam_.muteInfo, algoParam_.volumeInfo, algoParam_.foldState,
-        algoParam_.powerState, algoParam_.preDevice.c_str(), algoParam_.postDevice.c_str(),
+        algoParam_.powerState, algoParam_.appsMuteState, algoParam_.preDevice.c_str(), algoParam_.postDevice.c_str(),
         algoParam_.sceneType.c_str(), algoParam_.preDeviceName.c_str()};
     cmdInfo.data = static_cast<void *>(&setParam);
     cmdInfo.size = sizeof(setParam);
@@ -660,6 +660,30 @@ int32_t AudioEnhanceChain::InitCommand()
 
     ScheduleAudioTask(task);
 
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::ProcessSetAppsMuteState(uint32_t appsMuteState)
+{
+    if (appsMuteState == algoParam_.appsMuteState) {
+        AUDIO_INFO_LOG("no need update app mute state %{public}u", appsMuteState);
+        return SUCCESS;
+    }
+    algoParam_.appsMuteState = appsMuteState;
+    AUDIO_INFO_LOG("update app mute state %{public}u", appsMuteState);
+
+    return ProcessSetEnhanceParam();
+}
+
+int32_t AudioEnhanceChain::SetAppsMuteState(uint32_t appsMuteState)
+{
+    auto task = [self = weak_from_this(), appsMuteState]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessSetAppsMuteState(appsMuteState);
+        }
+    };
+
+    ScheduleAudioTask(task);
     return SUCCESS;
 }
 } // namespace AudioStandard
