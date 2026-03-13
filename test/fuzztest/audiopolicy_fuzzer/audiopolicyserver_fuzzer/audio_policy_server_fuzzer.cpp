@@ -258,16 +258,6 @@ void AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest()
     audioPolicyServer->SetVolumeInternalByKeyEvent(streamInFocus, zoneId, keyType);
 }
 
-void AudioPolicyServerSubscribeSafeVolumeEventFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
-    int32_t zoneId = GetData<int32_t>();
-    int32_t keyType = GetData<int32_t>();
-    audioPolicyServer->SubscribeSafeVolumeEvent();
-}
-
 void AudioPolicyServerIsVolumeTypeValidFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -2075,7 +2065,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerTriggerMuteCheckFuzzTest,
     AudioPolicyServerProcessVolumeKeyEventsFuzzTest,
     AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest,
-    AudioPolicyServerSubscribeSafeVolumeEventFuzzTest,
     AudioPolicyServerIsVolumeTypeValidFuzzTest,
     AudioPolicyServerIsVolumeLevelValidFuzzTest,
     AudioPolicyServerIsRingerModeValidFuzzTest,

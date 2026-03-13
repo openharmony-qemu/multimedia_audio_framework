@@ -14,6 +14,7 @@
  */
 
 #include "audio_policy_service_extended_unit_test.h"
+#include "audio_safe_volume_event_subscriber.h"
 #include "get_server_util.h"
 #include "audio_utils.h"
 
@@ -333,7 +334,7 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, UpdateSpatializationSupported, Test
 HWTEST_F(AudioPolicyServiceExtendedUnitTest, SubscribeSafeVolumeEvent, TestSize.Level1)
 {
     EXPECT_NO_THROW(
-        AudioPolicyService::GetAudioPolicyService().SubscribeSafeVolumeEvent();
+        SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
     );
 }
 
@@ -510,19 +511,6 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, GetAllSinkInputs_001, TestSize.Leve
     GetPermission();
     std::vector<SinkInput> sinkInputs;
     GetServerPtr()->audioPolicyService_.GetAllSinkInputs(sinkInputs);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
-* @tc.number: SubscribeSafeVolumeEvent_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtendedUnitTest, SubscribeSafeVolumeEvent_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceExtendedUnitTest SubscribeSafeVolumeEvent_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetPermission();
-    GetServerPtr()->audioPolicyService_.SubscribeSafeVolumeEvent();
 }
 
 /**

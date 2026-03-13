@@ -241,8 +241,6 @@ public:
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 
 
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
-    void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -419,17 +417,6 @@ private:
     VADeviceManager& vaDeviceManager_;
 };
 
-class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {
-public:
-    explicit SafeVolumeEventSubscriber(const EventFwk::CommonEventSubscribeInfo &subscribeInfo,
-        std::function<void(const EventFwk::CommonEventData&)> receiver)
-        : EventFwk::CommonEventSubscriber(subscribeInfo), eventReceiver_(receiver) {}
-    ~SafeVolumeEventSubscriber() {}
-    void OnReceiveEvent(const EventFwk::CommonEventData &eventData) override;
-private:
-    SafeVolumeEventSubscriber() = default;
-    std::function<void(const EventFwk::CommonEventData&)> eventReceiver_;
-};
 } // namespace AudioStandard
 } // namespace OHOS
 

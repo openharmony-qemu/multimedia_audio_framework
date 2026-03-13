@@ -893,7 +893,6 @@ private:
     void RegisterAppStateListener();
     void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
-    void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
     void SubscribeBackgroundTask();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);

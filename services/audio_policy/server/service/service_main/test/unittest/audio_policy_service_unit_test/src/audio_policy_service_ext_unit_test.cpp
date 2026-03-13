@@ -16,6 +16,8 @@
 #include "audio_policy_service_ext_unit_test.h"
 #include "audio_core_config_manager.h"
 #include "audio_core_service.h"
+#include "audio_safe_volume_event_subscriber.h"
+#include "audio_policy_config_manager.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
@@ -163,18 +165,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_004, TestSize.Lev
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, SafeVolumeEventSubscriber_001, TestSize.Level1)
 {
-    EventFwk::MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
-    matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
-    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
-    auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo,
-        [](const EventFwk::CommonEventData&){});
-    ASSERT_NE(nullptr, commonSubscribePtr);
-    const EventFwk::CommonEventData eventData;
-    commonSubscribePtr->OnReceiveEvent(eventData);
-    EXPECT_NE(nullptr, commonSubscribePtr->eventReceiver_);
-    commonSubscribePtr->eventReceiver_ = nullptr;
-    commonSubscribePtr->OnReceiveEvent(eventData);
+    SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
 }
 
 /**

@@ -49,6 +49,7 @@
 #include "va_device_manager.h"
 #include "standalone_mode_manager.h"
 #include "audio_injector_policy.h"
+#include "audio_safe_volume_event_subscriber.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -859,12 +860,6 @@ void AudioPolicyServer::SendMonitrtEvent(const int32_t keyType, int32_t resultOf
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-void AudioPolicyServer::SubscribeSafeVolumeEvent()
-{
-    AUDIO_INFO_LOG("enter");
-    audioPolicyService_.SubscribeSafeVolumeEvent();
-}
-
 bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
 {
     bool result = false;
@@ -1016,7 +1011,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
-    SubscribeSafeVolumeEvent();
+    SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
     isAlreadyRegisterCommonEventListener_ = true;
 }
 
