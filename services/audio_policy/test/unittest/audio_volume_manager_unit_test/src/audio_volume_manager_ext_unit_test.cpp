@@ -1033,5 +1033,41 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, IsNearLink_002, TestSize.Level4)
     auto ret = audioVolumeManager.IsNearLink(deviceType);
     EXPECT_EQ(ret, false);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: IsLegacyHighVolumeChecked_001
+* @tc.desc  : Test legacy high volume checked status.
+*/
+HWTEST_F(AudioVolumeManagerExtUnitTest, IsLegacyHighVolumeChecked_001, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    audioVolumeManager.audioPolicyManager_.SetLegacyHighVolumeCheckTime(0);
+    EXPECT_FALSE(audioVolumeManager.IsLegacyHighVolumeChecked());
+
+    int64_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    audioVolumeManager.audioPolicyManager_.SetLegacyHighVolumeCheckTime(currentTime - 1);
+    EXPECT_TRUE(audioVolumeManager.IsLegacyHighVolumeChecked());
+
+    audioVolumeManager.audioPolicyManager_.SetLegacyHighVolumeCheckTime(currentTime - 2147483647LL);
+    EXPECT_FALSE(audioVolumeManager.IsLegacyHighVolumeChecked());
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: HandleLegacyHighVolumeNotification_001
+* @tc.desc  : Test legacy high volume notification cache update.
+*/
+HWTEST_F(AudioVolumeManagerExtUnitTest, HandleLegacyHighVolumeNotification_001, TestSize.Level4)
+{
+    auto &audioVolumeManager = AudioVolumeManager::GetInstance();
+    audioVolumeManager.legacyHighVolumeStreamType_ = STREAM_DEFAULT;
+    audioVolumeManager.legacyHighVolumeLevel_ = 0;
+
+    audioVolumeManager.HandleLegacyHighVolumeNotification(VolumeNotifyActionType::ACTION_PUBLISH,
+        STREAM_MUSIC, 11);
+    EXPECT_EQ(audioVolumeManager.legacyHighVolumeStreamType_, STREAM_MUSIC);
+    EXPECT_EQ(audioVolumeManager.legacyHighVolumeLevel_, 11);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1174,10 +1174,25 @@ int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volume
     return SUCCESS;
 }
 
+bool AudioPolicyServer::ShouldNotifyForLegacyVolume(int32_t volumeLevel)
+{
+    int32_t notifyVolumeLevel = VolumeUtils::GetLegacyVolumeNotificationLevel();
+    if (notifyVolumeLevel <= 0) {
+        AUDIO_DEBUG_LOG("legacy high volume notification not enable");
+        return false;
+    }
+    return volumeLevel > notifyVolumeLevel && !audioVolumeManager_.IsLegacyHighVolumeChecked();
+}
+
 // deprecated since api 9.
 int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int32_t volumeLevel)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
+    if (ShouldNotifyForLegacyVolume(volumeLevel) && !PermissionUtil::VerifySystemPermission()) {
+        audioVolumeManager_.HandleLegacyHighVolumeNotification(VolumeNotifyActionType::ACTION_PUBLISH,
+            streamType, volumeLevel);
+        return SUCCESS;
+    }
     if (!IsVolumeTypeValid(streamType)) {
         return ERR_NOT_SUPPORTED;
     }

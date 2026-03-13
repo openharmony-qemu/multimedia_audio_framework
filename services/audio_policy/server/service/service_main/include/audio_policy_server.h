@@ -909,6 +909,7 @@ private:
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone);
     bool IsScreenOnAdjustVolume();
+    bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;

@@ -86,6 +86,22 @@ extern "C" AudioLoudVolumeNotification *CreateLoudVolumeNotificationImpl()
     return new AudioLoudVolumeNotificationImpl;
 }
 
+class AudioLegacyHighVolumeNotificationImpl : public AudioLegacyHighVolumeNotification {
+public:
+    AudioLegacyHighVolumeNotificationImpl() = default;
+    virtual ~AudioLegacyHighVolumeNotificationImpl() = default;
+
+    void PublishLegacyHighVolumeNotification() override;
+    void CancelLegacyHighVolumeNotification() override;
+private:
+    std::string GetSystemStringByName(const std::string &name);
+    bool SetTitleAndText(std::shared_ptr<Notification::NotificationNormalContent> content);
+};
+
+extern "C" AudioLegacyHighVolumeNotification *CreateLegacyHighVolumeNotificationImpl()
+{
+    return new AudioLegacyHighVolumeNotificationImpl;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif  // AUDIO_SAFE_VOLUME_NOTIFICATION_IMPL_H

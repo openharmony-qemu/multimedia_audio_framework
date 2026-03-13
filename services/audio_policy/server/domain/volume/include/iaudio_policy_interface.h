@@ -317,6 +317,8 @@ public:
     virtual void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute) = 0;
     virtual void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress) = 0;
     virtual void SetMuteFromRemote(std::string networkId, bool mute) = 0;
+    virtual int32_t SetLegacyHighVolumeCheckTime(int64_t checkTime) = 0;
+    virtual int64_t GetLegacyHighVolumeCheckTime() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

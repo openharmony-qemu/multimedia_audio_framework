@@ -354,6 +354,9 @@ public:
     void SetDualStreamVolumeMute(int32_t sessionId, bool isDualMute);
     void SetVolumeFromRemote(std::string networkId, int32_t volumeDegress);
     void SetMuteFromRemote(std::string networkId, bool mute);
+    int32_t SetLegacyHighVolumeCheckTime(int64_t checkTime);
+    int64_t GetLegacyHighVolumeCheckTime();
+    void InitLegacyHighVolumeCheckTime(bool isFirstBoot);
 
     class RemoteVolumeCallback : public AudioParameterCallback {
         void OnAudioParameterChange(const std::string networkId, const AudioParamKey key,
@@ -548,6 +551,7 @@ private:
     AudioActiveDevice &audioActiveDevice_;
     AudioConnectedDevice &audioConnectedDevice_;
     std::atomic<bool> isPrimarySinkExist_ {true};
+    std::atomic<int64_t> legacyHighVolumeCheckTime_ = 0;
 
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};

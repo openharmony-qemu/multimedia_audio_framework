@@ -65,6 +65,11 @@ struct VolumeKeyEventRegistration {
     bool registrationResult;
 };
 
+enum VolumeNotifyActionType {
+    ACTION_PUBLISH,
+    ACTOPN_CANCEL
+};
+
 class AudioVolumeManager {
 public:
     static AudioVolumeManager& GetInstance()
@@ -150,6 +155,9 @@ public:
     std::string DoLoopCheck(const std::string &reason);
     int32_t CheckActiveMusicTime(const std::string &reason = "Default");
     void RefreshActiveDeviceVolume();
+    void HandleLegacyHighVolumeNotification(VolumeNotifyActionType actionType,
+        AudioStreamType streamType = STREAM_DEFAULT, int32_t volumeLevel = 0);
+    bool IsLegacyHighVolumeChecked();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -195,6 +203,7 @@ private:
         DeviceType curDeviceType);
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
+    void HandleLegacyHighVolumeEvent();
 private:
     int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
@@ -250,6 +259,10 @@ private:
     int32_t sleRestoreVol_ = 0;
     std::atomic<bool> restoreNIsShowing_ = false;
     std::atomic<bool> increaseNIsShowing_ = false;
+
+    std::atomic<bool> isLegacyHighVolumeNtfShowing_ = false;
+    AudioStreamType legacyHighVolumeStreamType_ = STREAM_DEFAULT;
+    int32_t legacyHighVolumeLevel_ = 0;
 
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
