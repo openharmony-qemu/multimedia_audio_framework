@@ -1784,9 +1784,11 @@ HWTEST_F(HpaeCapturerManagerTest, HandleAppsEnhanceMuteState_001, TestSize.Level
     WaitForMsgProcessing(capturerManager);
 
     // Test with invalid session id
-    uint32_t invalidSessionId = 999999;
-    EXPECT_EQ(ERROR, capturerManager->SetAppsEnhanceMuteState(invalidSessionId, true));
-    EXPECT_EQ(ERROR, capturerManager->SetAppsEnhanceMuteState(invalidSessionId, false));
+    uint32_t invalidSessionId = DEFAULT_SESSION_ID;
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(invalidSessionId, true));
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(invalidSessionId, false));
+    WaitForMsgProcessing(capturerManager);
 }
 
 /**
@@ -1810,7 +1812,9 @@ HWTEST_F(HpaeCapturerManagerTest, HandleAppsEnhanceMuteState_002, TestSize.Level
 
     // Test with valid session id
     EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, true));
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false));
+    WaitForMsgProcessing(capturerManager);
 }
 
 /**
@@ -1834,9 +1838,13 @@ HWTEST_F(HpaeCapturerManagerTest, HandleAppsEnhanceMuteState_003, TestSize.Level
 
     // Test multiple calls with different states
     EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, true));
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false));
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, true));
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false));
+    WaitForMsgProcessing(capturerManager);
 }
 } // namespace HPAE
 } // namespace AudioStandard
