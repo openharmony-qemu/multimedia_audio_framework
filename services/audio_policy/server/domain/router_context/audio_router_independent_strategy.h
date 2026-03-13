@@ -33,7 +33,7 @@ public:
 
     std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId, 
         StreamUsage streamUsage) override;
-    void SetMediaOutputDevice(int32_t uid, uint32_t streamId, StreamUsage streamUsage,
+    void SetMediaOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor>& device) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetCallInputDevice(int32_t uid, uint32_t streamId) override;

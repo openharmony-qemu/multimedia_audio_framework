@@ -126,7 +126,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaOutput
     return result;
 }
 
-void AudioRouterFollowStrategy::SetMediaOutputDevice(int32_t uid, uint32_t streamId, StreamUsage streamUsage,
+void AudioRouterFollowStrategy::SetMediaOutputDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceDescriptor>& device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);

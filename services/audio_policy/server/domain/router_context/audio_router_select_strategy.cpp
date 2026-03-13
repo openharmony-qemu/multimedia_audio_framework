@@ -41,7 +41,8 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterSelectStrategy::ConvertD
     if (deviceDesc == nullptr) {
         return nullptr;
     }
-    return deviceDesc->CreateSimpleDescriptor();
+    return std::make_shared<AudioDeviceSimpleDescriptor>(deviceDesc->deviceType_,
+        deviceDesc->deviceRole_, deviceDesc->deviceId_, deviceDesc->networkId_);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::JudgeFinalSelectDevice(
@@ -137,6 +138,25 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetFinalOutput
     }
 
     return isConnected ? desc : nullptr;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetRecognitionInputDevice()
+{
+    AudioRouterInfra::GetInstance().Lock();
+    
+    auto simpleDesc = AudioRouterInfra::GetInstance().GetRecognitionCaptureDevice();
+    auto result = ConvertSimpleToDevice(simpleDesc);
+    
+    AudioRouterInfra::GetInstance().Unlock();
+    return result;
+}
+
+void AudioRouterSelectStrategy::SetRecognitionCaptureDevice(
+    const std::shared_ptr<AudioDeviceDescriptor>& device)
+{
+    auto simpleDesc = ConvertDeviceToSimple(device);
+    AudioRouterInfra::GetInstance().SetRecognitionCaptureDevice(simpleDesc);
+}
 }
 
 } 

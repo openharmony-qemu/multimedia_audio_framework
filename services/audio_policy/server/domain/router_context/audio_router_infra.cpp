@@ -168,6 +168,13 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type)
     }
 }
 
+void AudioRouterInfra::SetRecognitionCaptureDevice(
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    recognitionSelectDevice_ = device;
+}
+
 AudioSelectDeviceInfo AudioRouterInfra::GetSystemSelectDevice(SelectDeviceType type)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -261,6 +268,12 @@ AudioSelectDeviceInfo AudioRouterInfra::GetStreamSelectDevice(int32_t uid, int32
     }
 
     return AudioSelectDeviceInfo();
+}
+
+AudioSelectDeviceInfo AudioRouterInfra::GetRecognitionCaptureDevice()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return recognitionSelectDevice_;
 }
 
 void AudioRouterInfra::UpdatePreferredInputCategory(int32_t uid, 

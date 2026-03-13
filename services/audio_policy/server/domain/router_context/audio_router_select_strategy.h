@@ -31,22 +31,25 @@ public:
     virtual ~AudioRouterSelectStrategy() = default;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId, 
-         SourceType sourceType) = 0;
+        SourceType sourceType) = 0;
     virtual void SetMediaInputDevice(int32_t uid, uint32_t streamId, 
-         SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+        SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId, 
          StreamUsage streamUsage) = 0;
     virtual void SetMediaOutputDevice(int32_t uid, uint32_t streamId, 
-         StreamUsage streamUsage, const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallInputDevice(int32_t uid, uint32_t streamId) = 0;
     virtual void SetCallInputDevice(int32_t uid, uint32_t streamId, 
-         const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallOutputDevice(int32_t uid, uint32_t streamId) = 0;
     virtual void SetCallOutputDevice(int32_t uid, uint32_t streamId, 
-         const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetRecognitionInputDevice();
+    virtual void SetRecognitionInputDevice(const std::shared_ptr<AudioDeviceDescriptor>& device);
 
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(

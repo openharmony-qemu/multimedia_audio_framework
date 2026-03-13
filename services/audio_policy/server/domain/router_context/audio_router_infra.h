@@ -41,11 +41,13 @@ public:
     void RefreshSelectDevice(SelectDeviceType type, int32_t uid, 
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearAllSelectSelectDevice(SelectDeviceType type);
+    void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
 
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
     AudioSelectDeviceInfo GetHighestPrioritySelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetStreamSelectDevice(int32_t uid, int32_t streamId, SelectDeviceType type);
+    AudioSelectDeviceInfo GetRecognitionCaptureDevice();
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
@@ -70,10 +72,6 @@ public:
     StreamUsage GetStreamStreamUsage(int32_t uid, uint32_t streamId);
     SourceType GetFirstAppRunningSourceType(int32_t uid);
 
-    void SetCallOwnerUid(int32_t uid);
-    int32_t GetCallOwnerUid() const;
-    bool IsInCall() const;
-
 private:
     AudioRouterInfra() = default;
     ~AudioRouterInfra() = default;
@@ -95,6 +93,7 @@ private:
     std::recursive_mutex mutex_;
     std::map<int32_t, std::shared_ptr<struct AudioAppRouterContext>> appContexts_;
     AudioAppSelectDevice systemSelectDevice_;
+    AudioSelectDeviceInfo recognitionSelectDevice_;
     std::list<int32_t> inputPriorityList_;
     std::list<int32_t> outputPriorityList_;
 };
