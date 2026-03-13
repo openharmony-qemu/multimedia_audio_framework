@@ -166,5 +166,27 @@ void AudioSceneManager::SetPhoneCallOrChatSceneTriggerUid(int32_t uid)
     }
     phoneCallOrChatSceneTriggerUid_ = uid;
 }
+
+int32_t AudioSceneManager::GetAudioSceneOwnerUid()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return ownerUid_;
+}
+
+void AudioSceneManager::SetAudioSceneOwnerUid(const int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("ownerUid_: %{public}d, uid: %{public}d", ownerUid_, uid);
+    ownerUid_ = uid;
+    if (uid == AUDIO_UID) {
+        ownerUid_ = ANCO_SERVICE_BROKER_UID;
+    }
+}
+
+bool AudioSceneManager::IsInAudioCallScene()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return ownerUid_ != 0;
+}
 }
 }

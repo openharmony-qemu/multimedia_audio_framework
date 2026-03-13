@@ -837,5 +837,11 @@ void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
         capabilities_.push_back(cap);
     }
 }
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioDeviceDescriptor::CreateSimpleDescriptor() const
+{
+    return std::make_shared<AudioDeviceSimpleDescriptor>(deviceType_, deviceRole_, deviceId_, networkId_);
+}
+
 } // AudioStandard
 } // namespace OHOS
