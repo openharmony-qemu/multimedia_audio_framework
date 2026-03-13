@@ -1002,5 +1002,13 @@ void AudioPipeManager::UpdateNewDeviceDesc(std::shared_ptr<AudioStreamDescriptor
     streamDesc->UpdateNewDeviceWithoutCheck(newDeviceDesc);
 }
 
+void AudioPipeManager::UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc)
+{
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    streamDesc->UpdateNewDevice(newDeviceDesc);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
