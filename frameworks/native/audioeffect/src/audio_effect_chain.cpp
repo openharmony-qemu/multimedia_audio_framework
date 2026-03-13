@@ -752,7 +752,7 @@ void AudioEffectChain::SetSuperLoudnessMode(const std::string &superLoudnessMode
 void AudioEffectChain::SetFrontendAppType(const std::string &frontendAppType)
 {
     CHECK_AND_RETURN_LOG(StringConverter(frontendAppType, frontendAppType_),
-        "convert invalid outdoorMode: %{public}s", frontendAppType.c_str());
+        "convert invalid frontendAppType: %{public}s", frontendAppType.c_str());
 }
 } // namespace AudioStandard
 } // namespace OHOS
