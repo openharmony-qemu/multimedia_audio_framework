@@ -944,11 +944,15 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
         return streamPropInfo->channelLayout_ == matchStreamInfo.channelLayout;
     };
     matchInfos = SelectStreamPropInfo(info->dynamicStreamPropInfos_, limitFunc);
-    // second match channels, when channelLayout mismatching and not equal to UNKNOWN, use STEREO by default
+    // second match channels, when channelLayout mismatching, use streamProp with largest channels
     if (matchInfos.empty()) {
         AUDIO_INFO_LOG("not match channelLayout, match channels");
-        matchStreamInfo.channels = matchStreamInfo.channelLayout != CH_LAYOUT_UNKNOWN ?
-            STEREO : matchStreamInfo.channels;
+        matchStreamInfo.channels = AudioChannel::STEREO;
+        for (auto streamProp : info->dynamicStreamPropInfos_) {
+            CHECK_AND_CONTINUE(streamProp != nullptr);
+            matchStreamInfo.channels = streamProp->channels_ > matchStreamInfo.channels ?
+                streamProp->channels_ : matchStreamInfo.channels;
+        }
         limitFunc = [&matchStreamInfo](std::shared_ptr<PipeStreamPropInfo> streamPropInfo) {
             CHECK_AND_RETURN_RET(streamPropInfo != nullptr, false);
             return streamPropInfo->channels_ == matchStreamInfo.channels;

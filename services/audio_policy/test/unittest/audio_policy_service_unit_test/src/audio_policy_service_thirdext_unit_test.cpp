@@ -100,23 +100,23 @@ static std::vector<GetDynamicInfoTestData> testData = {
     },
     {
         { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
-        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
     },
     {
         { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
-        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+        SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
     },
     {
         { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
-        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
     },
     {
         { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_7POINT1 },
-        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+        SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
     },
     {
         { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
-        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_STEREO, STEREO
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
     },
     {
         { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
@@ -124,11 +124,11 @@ static std::vector<GetDynamicInfoTestData> testData = {
     },
     {
         { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S16LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
-        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+        SAMPLE_S16LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
     },
     {
         { SAMPLE_RATE_192000, ENCODING_PCM, SAMPLE_S24LE, CHANNEL_8, CH_LAYOUT_UNKNOWN },
-        SAMPLE_S16LE, SAMPLE_RATE_96000, CH_LAYOUT_STEREO, STEREO
+        SAMPLE_S24LE, SAMPLE_RATE_48000, CH_LAYOUT_7POINT1POINT4, CHANNEL_12
     },
 };
 
@@ -1830,13 +1830,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_001,
     channels = AudioChannel::CHANNEL_5;
     AudioStreamInfo temp_0(static_cast<AudioSamplingRate>(sampleRate), ENCODING_PCM, format, channels);
     defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, temp_0);
-    EXPECT_EQ(true, isEqual(channelVec[0], sampleRateVec[0], defaultStreamProp));
+    EXPECT_EQ(true, isEqual(channelVec[3], sampleRateVec[3], defaultStreamProp));
 
     sampleRate = 41000;
     channels = AudioChannel::STEREO;
     AudioStreamInfo temp_1(static_cast<AudioSamplingRate>(sampleRate), ENCODING_PCM, format, channels);
     defaultStreamProp = manager.GetDynamicStreamPropInfoFromPipe(info, temp_1);
-    EXPECT_EQ(true, isEqual(channelVec[5], sampleRateVec[5], defaultStreamProp));
+    EXPECT_EQ(true, isEqual(channelVec[3], sampleRateVec[3], defaultStreamProp));
 
     sampleRate = 44100;
     channels = AudioChannel::STEREO;
