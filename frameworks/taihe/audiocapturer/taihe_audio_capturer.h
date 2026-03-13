@@ -65,6 +65,7 @@ public:
     taihe::array<AudioDeviceDescriptor> GetCurrentInputDevices();
     AudioCapturerChangeInfo GetCurrentAudioCapturerChangeInfo();
     void SetInputDeviceToAccessory();
+    void SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
 
     void OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback);
     void OnStateChange(callback_view<void(AudioState)> callback);

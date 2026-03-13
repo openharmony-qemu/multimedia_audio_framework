@@ -5913,5 +5913,15 @@ int32_t AudioPolicyServer::NotifyStreamSilentChange(uint32_t streamId)
     AudioZoneService::GetInstance().NotifyStreamSilentChange(streamId);
     return SUCCESS;
 }
+
+int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("interruptService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    return interruptService_->SetAudioSessionBehavior(callerPid, behavior);
+}
 } // namespace AudioStandard
 } // namespace OHOS

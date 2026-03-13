@@ -296,7 +296,9 @@ bool AudioSessionService::ShouldAudioSessionProcessHintType(InterruptHint hintTy
            hintType == INTERRUPT_HINT_DUCK ||
            hintType == INTERRUPT_HINT_UNDUCK ||
            hintType == INTERRUPT_HINT_MUTE_SUGGESTION ||
-           hintType == INTERRUPT_HINT_UNMUTE_SUGGESTION;
+           hintType == INTERRUPT_HINT_UNMUTE_SUGGESTION ||
+           hintType == INTERRUPT_HINT_MUTE ||
+           hintType == INTERRUPT_HINT_UNMUTE;
 }
 
 bool AudioSessionService::ShouldAudioStreamProcessHintType(InterruptHint hintType)
@@ -306,7 +308,9 @@ bool AudioSessionService::ShouldAudioStreamProcessHintType(InterruptHint hintTyp
            hintType == INTERRUPT_HINT_DUCK ||
            hintType == INTERRUPT_HINT_UNDUCK ||
            hintType == INTERRUPT_HINT_MUTE_SUGGESTION ||
-           hintType == INTERRUPT_HINT_UNMUTE_SUGGESTION;
+           hintType == INTERRUPT_HINT_UNMUTE_SUGGESTION ||
+           hintType == INTERRUPT_HINT_MUTE ||
+           hintType == INTERRUPT_HINT_UNMUTE;
 }
 
 std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t callerPid)
@@ -331,6 +335,8 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
         fakeAudioInterrupt.streamId = session->second->GetFakeStreamId();
         fakeAudioInterrupt.audioFocusType.streamType = session->second->GetFakeStreamType();
         fakeAudioInterrupt.streamUsage = session->second->GetSessionStreamUsage();
+        auto sessionBehaviors = session->second->GetSessionBehaviors();
+        fakeAudioInterrupt.behaviorFlags_.muteWhenInterruptFlag = sessionBehaviors.muteWhenInterruptFlag;
     } else {
         AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
     }
@@ -659,6 +665,32 @@ bool AudioSessionService::IsMuteSuggestionWhenMixEnabled(int32_t callerPid)
     }
 
     return session->second->IsMuteSuggestionWhenMixEnabled();
+}
+
+int32_t AudioSessionService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    CHECK_AND_RETURN_RET_LOG(session != sessionMap_.end() && session->second != nullptr, ERROR_ILLEGAL_STATE,
+        "The audio session of pid %{public}d has not been created", callerPid);
+
+    std::shared_ptr<AudioSession> audioSession = session->second;
+    CHECK_AND_RETURN_RET_LOG(audioSession->IsSceneParameterSet(), ERROR_ILLEGAL_STATE,
+        "The audio session of pid %{public}d not set audio session scene", callerPid);
+
+    return audioSession->SetAudioSessionBehavior(behavior);
+}
+
+AudioSessionActiveBehaviors AudioSessionService::GetSessionBehaviors(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session == sessionMap_.end() || session->second == nullptr) {
+        AUDIO_WARNING_LOG("The audio session of pid %{public}d has not been created", callerPid);
+        return {};
+    }
+
+    return session->second->GetSessionBehaviors();
 }
 
 } // namespace AudioStandard

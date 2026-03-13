@@ -177,5 +177,10 @@ void AudioSessionManager::OnAudioSessionStateChanged(const AudioSessionStateChan
     AudioSessionClientManager::GetInstance().OnAudioSessionStateChanged(stateChangedEvent);
 }
 
+int32_t AudioSessionManager::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    return AudioSessionClientManager::GetInstance().SetAudioSessionBehavior(behavior);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -732,6 +732,40 @@ int32_t AudioRendererImpl::GetLatency(AudioLatencyType type)
     return static_cast<int32_t>(latencyMs);
 }
 
+void AudioRendererImpl::SetIndependentAudioSessionStrategy(
+    const AudioSessionStrategy &strategy, const uint32_t behavior)
+{
+    if (audioRenderer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        return;
+    }
+    OHOS::AudioStandard::AudioSessionStrategy audioSessionStrategy;
+    int32_t result = TaiheParamUtils::GetAudioSessionStrategy(audioSessionStrategy, strategy);
+    if (result != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "GetAudioSessionStrategy failed");
+        return;
+    }
+    switch (audioSessionStrategy.concurrencyMode) {
+        case OHOS::AudioStandard::AudioConcurrencyMode::DEFAULT:
+        case OHOS::AudioStandard::AudioConcurrencyMode::MIX_WITH_OTHERS:
+        case OHOS::AudioStandard::AudioConcurrencyMode::DUCK_OTHERS:
+        case OHOS::AudioStandard::AudioConcurrencyMode::PAUSE_OTHERS:
+            break;
+        default:
+            AUDIO_ERR_LOG("concurrencyMode is invalid");
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "concurrencyMode is invalid");
+            return;
+    }
+    CHECK_AND_RETURN_RET_LOG(
+        behavior < (static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invaild behavior param");
+    int32_t ret = audioRenderer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetIndependentAudioSessionStrategy failed");
+        return;
+    }
+}
+
 void AudioRendererImpl::RegisterRendererCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioRendererImpl *taiheRenderer)
 {

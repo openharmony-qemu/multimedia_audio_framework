@@ -155,6 +155,7 @@ public:
 
     AudioScene GetHighestPriorityAudioSceneFromAllZones();
     int32_t FindAudioZoneByStreamId(const uint32_t streamId);
+    int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -305,6 +306,8 @@ private:
         const AudioFocusEntry &focusEntry);
     bool CanMixForActiveSession(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         const AudioFocusEntry &focusEntry);
+    bool CapturerMixForSessionBehavior(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt);
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
@@ -320,13 +323,15 @@ private:
     void RemoveAllPlaceholderInterrupt(std::list<int32_t> &removeFocusInfoPidList);
     bool IsLowestPriorityRecording(const AudioInterrupt &audioInterrupt);
     bool IsRecordingInterruption(const AudioInterrupt &audioInterrupt);
-    void SetLatestMuteState(const InterruptEventInternal &interruptEvent, const uint32_t &streamId);
+    void SetLatestMuteState(const uint32_t &streamId, bool muteFlag);
+
     void CheckIncommingFoucsValidity(AudioFocusEntry &focusEntry, const AudioInterrupt &incomingInterrupt,
         std::vector<SourceType> incomingConcurrentSources);
     bool IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt);
     bool HadVoipStatus(const AudioInterrupt &audioInterrupt, const std::list<std::pair<AudioInterrupt, AudioFocuState>>
         &audioFocusInfoList);
+    void HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag);
 
     AudioStreamType GetStreamInFocusInternal(const int32_t uid, const int32_t zoneId, bool returnDefault = false);
 

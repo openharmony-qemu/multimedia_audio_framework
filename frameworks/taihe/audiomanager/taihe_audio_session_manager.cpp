@@ -879,4 +879,22 @@ void AudioSessionManagerImpl::UnregisterAvailableDeviceChangeCallback(std::share
         AUDIO_ERR_LOG("UnregisterAvailableDeviceChangeCallback: availableDeviceChangeCallbackTaihe_ is null");
     }
 }
+
+void AudioSessionManagerImpl::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    if (audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "can not get session");
+        return;
+    }
+    CHECK_AND_RETURN_RET_LOG(
+        behavior < (static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invalid behavior param");
+ 
+    int32_t ret = audioSessionMngr_->SetAudioSessionBehavior(behavior);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    }
+}
 } // namespace ANI::Audio

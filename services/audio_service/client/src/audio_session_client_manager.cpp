@@ -308,6 +308,18 @@ void AudioSessionClientManager::OnAudioSessionStateChanged(const AudioSessionSta
     restoreParams_.OnAudioSessionStateChanged(stateChangedEvent.stateChangeHint);
 }
 
+int32_t AudioSessionClientManager::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    int32_t result = AudioPolicyManager::GetInstance().SetAudioSessionBehavior(behavior);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "SetAudioSessionBehavior failed, result:%{public}d", result);
+
+    RegisterAudioPolicyServerDiedCb();
+    restoreParams_.RecordAudioSessionOpt(AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_BEHAVIOR,
+        behavior);
+    return result;
+}
+
 bool AudioSessionClientManager::Restore()
 {
     AUDIO_INFO_LOG("start restore audio session manager params.");
@@ -473,6 +485,13 @@ bool AudioSessionRestoreParams::RestoreParams()
             bool enable = static_cast<bool>((*it)->optValue);
             ret = AudioPolicyManager::GetInstance().EnableMuteSuggestionWhenMixWithOthers(enable);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore MuteSuggestion params failed, ret:%{public}d",
+                ret);
+        }
+
+        if ((*it)->type == AudioSessionRestoreParams::OperationType::AUDIO_SESSION_SET_BEHAVIOR) {
+            uint32_t behavior = static_cast<uint32_t>((*it)->optValue);
+            ret = AudioPolicyManager::GetInstance().SetAudioSessionBehavior(behavior);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Restore Behavior params failed, ret:%{public}d",
                 ret);
         }
     }

@@ -444,11 +444,30 @@ int32_t AudioInterruptService::DeactivateStreamsInAudioSession(
     }
 
     // If the application deactivates a session, the streams managed by session needs to be stoped.
+    // and be unmuted if the session is muted.
     if (handler_ != nullptr) {
         AUDIO_INFO_LOG("Send InterruptCallbackEvent to all streams for pid %{public}d", callerPid);
-        InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        InterruptEventInternal stopInterruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+        InterruptEventInternal unmuteInterruptEvent {INTERRUPT_TYPE_END, INTERRUPT_FORCE, INTERRUPT_HINT_UNMUTE, 1.0f};
+        bool sessionIsMuted = false;
+        auto itZone = zonesMap_.find(zoneId);
+        CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+            ERROR, "can not find zone");
+        std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
+        auto isPresent = [callerPid] (const std::pair<AudioInterrupt, AudioFocuState> &pair) {
+            return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
+        };
+        auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isPresent);
+        if (iter != audioFocusInfoList.end() && iter->second == MUTED) {
+            AUDIO_INFO_LOG("Need to unmute all streams for pid %{public}d", callerPid);
+            sessionIsMuted = true;
+        }
+
         for (auto &it : streamsInSession) {
-            handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, it.streamId);
+            handler_->SendInterruptEventWithStreamIdCallback(stopInterruptEvent, it.streamId);
+            if (sessionIsMuted) {
+                SendInterruptEventCallback(unmuteInterruptEvent, it.streamId, it);
+            }
         }
     }
 
@@ -640,6 +659,32 @@ bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInte
     return true;
 }
 
+bool AudioInterruptService::CapturerMixForSessionBehavior(const AudioInterrupt &incomingInterrupt,
+    const AudioInterrupt &activeInterrupt)
+{
+    if (incomingInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID ||
+        activeInterrupt.audioFocusType.sourceType == SOURCE_TYPE_INVALID) {
+        return false;
+    }
+    if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid) &&
+        sessionService_.GetSessionBehaviors(incomingInterrupt.pid).voipNoPrivacyFlag &&
+        incomingInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AUDIO_INFO_LOG("Incoming VOIP capturer can mix with other capturer because of session behavior.");
+        return true;
+    }
+    if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid) &&
+        sessionService_.GetSessionBehaviors(activeInterrupt.pid).voipNoPrivacyFlag &&
+        activeInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AUDIO_INFO_LOG("Active VOIP capturer can mix with other capturer because of session behavior.");
+        return true;
+    }
+    if (activeInterrupt.behaviorFlags_.voipNoPrivacyFlag || incomingInterrupt.behaviorFlags_.voipNoPrivacyFlag) {
+        AUDIO_INFO_LOG("Two capturers can mix because of VOIP capturer independently activated session behavior");
+        return true;
+    }
+    return false;
+}
+
 bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
@@ -647,6 +692,10 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
         sessionService_.IsSystemAppWithMixStrategy(activeInterrupt)) {
         AUDIO_INFO_LOG("System app can mix with others anyway, incomingPid: %{public}d, activePid: %{public}d",
             incomingInterrupt.pid, activeInterrupt.pid);
+        return true;
+    }
+
+    if (CapturerMixForSessionBehavior(incomingInterrupt, activeInterrupt)) {
         return true;
     }
 
@@ -688,6 +737,18 @@ bool AudioInterruptService::CanMixForSession(const AudioInterrupt &incomingInter
 bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
+    if (incomingInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+        if (IsIncomingStreamLowPriority(focusEntry)) {
+            bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+            AUDIO_INFO_LOG("Incoming stream activates independent MIX strategy and is low priority."
+                " isSameType: %{public}d.", isSameType);
+            return isSameType;
+        }
+        AUDIO_INFO_LOG("The independent concurrencyMode mode of incoming stream is MIX_WITH_OTHERS."
+            " Skip the interrupt operation");
+        return true;
+    }
     if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
         // The strategy of activated AudioSession is the one with the highest priority.
         AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
@@ -722,6 +783,18 @@ bool AudioInterruptService::CanMixForIncomingSession(const AudioInterrupt &incom
 bool AudioInterruptService::CanMixForActiveSession(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, const AudioFocusEntry &focusEntry)
 {
+    if (activeInterrupt.independentStrategy.concurrencyMode == AudioConcurrencyMode::MIX_WITH_OTHERS) {
+        if (IsActiveStreamLowPriority(focusEntry)) {
+            bool isSameType = AudioSessionService::IsSameTypeForAudioSession(
+                incomingInterrupt.audioFocusType.streamType, activeInterrupt.audioFocusType.streamType);
+            AUDIO_INFO_LOG("Active stream activates independent MIX strategy and is low priority."
+                " isSameType: %{public}d.", isSameType);
+            return isSameType;
+        }
+        AUDIO_INFO_LOG("The independent concurrencyMode mode of active stream is MIX_WITH_OTHERS."
+            " Skip the interrupt operation");
+        return true;
+    }
     if (sessionService_.IsAudioSessionActivated(activeInterrupt.pid)) {
         // The strategy of activated AudioSession is the one with the highest priority.
         AudioConcurrencyMode concurrencyMode = sessionService_.GetSessionStrategy(activeInterrupt.pid);
@@ -1577,9 +1650,16 @@ void AudioInterruptService::UpdateHintTypeForExistingSession(const AudioInterrup
     };
 
     AudioConcurrencyMode concurrencyMode = incomingInterrupt.sessionStrategy.concurrencyMode;
-    if (focusEntry.actionOn == CURRENT && sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
-        concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
-        if (sessionService_.IsSystemApp(incomingInterrupt.pid)) {
+    if (focusEntry.actionOn == CURRENT) {
+        bool modeUpdate = false;
+        if (incomingInterrupt.independentStrategy.concurrencyMode != AudioConcurrencyMode::INVALID) {
+            concurrencyMode = incomingInterrupt.independentStrategy.concurrencyMode;
+            modeUpdate = true;
+        } else if (sessionService_.IsAudioSessionActivated(incomingInterrupt.pid)) {
+            concurrencyMode = sessionService_.GetSessionStrategy(incomingInterrupt.pid);
+            modeUpdate = true;
+        }
+        if (modeUpdate && sessionService_.IsSystemApp(incomingInterrupt.pid)) {
             const auto &modeToHint = modeToHintMap.find(concurrencyMode);
             if (modeToHint != modeToHintMap.end()) {
                 AUDIO_INFO_LOG("Update hint type for system app anyway, pid: %{public}d, strategy: %{public}d",
@@ -2823,8 +2903,14 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         RemoveStreamIdSuggestionRecord(streamId);
     }
 
-    if (audioInterrupt.strategy == InterruptStrategy::MUTE) {
-        SetLatestMuteState(interruptEvent, streamId);
+    if ((interruptEvent.hintType == INTERRUPT_HINT_MUTE || interruptEvent.hintType == INTERRUPT_HINT_UNMUTE)) {
+        bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
+        if (audioInterrupt.behaviorFlags_.muteWhenInterruptFlag) {
+            HandleMuteSessionBehavior(audioInterrupt, muteFlag);
+        }
+        if (audioInterrupt.strategy == InterruptStrategy::MUTE) {
+            SetLatestMuteState(streamId, muteFlag);
+        }
     }
 
     if (handler_ == nullptr) {

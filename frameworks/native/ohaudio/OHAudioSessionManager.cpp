@@ -407,6 +407,19 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
     return ohAudioSessionManager->EnableMuteSuggestionWhenMixWithOthers(enable);
 }
 
+OH_AudioCommon_Result OH_AudioSessionManager_SetBehavior(
+    OH_AudioSessionManager *audioSessionManager, uint32_t behavior)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioSessionManager is nullptr");
+    OHAudioSessionManager* ohAudioSessionManager = convertManager(audioSessionManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioSessionManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioSessionManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(behavior < (OH_AudioSession_BehaviorFlags::MUTE_WHEN_INTERRUPTED << 1),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "param behavior is invalid");
+    return ohAudioSessionManager->SetAudioSessionBehavior(behavior);
+}
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -845,6 +858,18 @@ OH_AudioCommon_Result OHAudioSessionManager::EnableMuteSuggestionWhenMixWithOthe
     if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to EnableMuteSuggestionWhenMixWithOthers.");
         return ret == ERROR_ILLEGAL_STATE ? AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE : AUDIOCOMMON_RESULT_ERROR_SYSTEM;
+    }
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioSessionManager::SetAudioSessionBehavior(const uint32_t behavior)
+{
+    CHECK_AND_RETURN_RET_LOG(audioSessionManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioSessionManager_ is null");
+    int32_t ret = audioSessionManager_->SetAudioSessionBehavior(behavior);
+    if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
+        AUDIO_ERR_LOG("failed to SetAudioSessionBehavior.");
+        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
     }
     return AUDIOCOMMON_RESULT_SUCCESS;
 }

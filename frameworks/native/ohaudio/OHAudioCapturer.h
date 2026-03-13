@@ -17,6 +17,7 @@
 #define OH_AUDIO_CAPTURER_H
 
 #include "native_audiocapturer.h"
+#include "native_audio_session_base.h"
 #include "audio_capturer.h"
 #include "audio_common_log.h"
 
@@ -217,6 +218,7 @@ public:
     int32_t StartPlaybackCapture(OH_AudioCapturer* capturer,
         OH_AudioCapturer_OnPlaybackCaptureStartCallback callback, void* userData);
     bool IsModernInnerCapturer();
+    int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
 
 private:
     std::shared_ptr<AudioCapturer> audioCapturer_;

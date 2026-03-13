@@ -27,6 +27,7 @@ public:
         AUDIO_SESSION_ACTIVATE,
         AUDIO_SESSION_SET_SCENE,
         AUDIO_SESSION_MUTE_SUGGESTION,
+        AUDIO_SESSION_SET_BEHAVIOR,
     };
 
     struct AudioSessionAction {
@@ -327,6 +328,17 @@ public:
      * @since 23
      */
     bool IsOtherMediaPlaying();
+
+    /**
+     * @brief Set audio session behavior parameters (supporting multiple flag combinations)
+     *
+     * @param behavior behavior is used to adjust the focus behavior,
+     * which can be a single flag or a bitwise OR combination of multiple flags in AudioSessionBehaviorFlags.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 24
+     */
+    int32_t SetAudioSessionBehavior(const uint32_t behavior);
 
     int32_t PreferBluetoothAndNearlinkRecord(BluetoothAndNearlinkPreferredRecordCategory category);
 

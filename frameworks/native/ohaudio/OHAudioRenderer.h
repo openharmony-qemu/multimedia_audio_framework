@@ -17,6 +17,7 @@
 #define OH_AUDIO_RENDERER_H
 
 #include "native_audiorenderer.h"
+#include "native_audio_session_base.h"
 #include "audio_renderer.h"
 #include "audio_common_log.h"
 
@@ -268,6 +269,7 @@ public:
     bool GetSilentModeAndMixWithOthers();
 
     StreamUsage GetOriginalStreamUsage();
+    int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
 private:
     void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
         AudioEncodingType encodingType);

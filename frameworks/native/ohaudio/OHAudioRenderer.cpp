@@ -489,6 +489,35 @@ OH_AudioStream_Result OH_AudioRenderer_GetLatency(OH_AudioRenderer* renderer,
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_SetIndependentAudioSessionStrategy(
+    OH_AudioRenderer* renderer, const OH_AudioSession_Strategy *strategy, uint32_t behavior)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(strategy != nullptr,
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "strategy is nullptr");
+    CHECK_AND_RETURN_RET_LOG(behavior < (OH_AudioSession_BehaviorFlags::MUTE_WHEN_INTERRUPTED << 1),
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "param behavior is invalid");
+
+    OHOS::AudioStandard::AudioSessionStrategy audioStrategy;
+    audioStrategy.concurrencyMode =
+        static_cast<OHOS::AudioStandard::AudioConcurrencyMode>(strategy->concurrencyMode);
+    switch (audioStrategy.concurrencyMode) {
+        case OHOS::AudioStandard::AudioConcurrencyMode::DEFAULT:
+        case OHOS::AudioStandard::AudioConcurrencyMode::MIX_WITH_OTHERS:
+        case OHOS::AudioStandard::AudioConcurrencyMode::DUCK_OTHERS:
+        case OHOS::AudioStandard::AudioConcurrencyMode::PAUSE_OTHERS:
+            break;
+        default:
+            AUDIO_ERR_LOG("concurrencyMode is invalid");
+            return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+    int32_t ret = audioRenderer->SetIndependentAudioSessionStrategy(audioStrategy, behavior);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS,
+        AUDIOSTREAM_ERROR_ILLEGAL_STATE, "Set independent audio session strategy failed");
+    return AUDIOSTREAM_SUCCESS;
+}
+
 namespace OHOS {
 namespace AudioStandard {
 OHAudioRenderer::OHAudioRenderer()
@@ -1100,6 +1129,13 @@ StreamUsage OHAudioRenderer::GetOriginalStreamUsage()
 ErrorCallbackType OHAudioRenderer::GetRendererErrorCallbackType()
 {
     return errorCallbackType_;
+}
+
+int32_t OHAudioRenderer::SetIndependentAudioSessionStrategy(
+    const AudioSessionStrategy &strategy, const uint32_t behavior)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

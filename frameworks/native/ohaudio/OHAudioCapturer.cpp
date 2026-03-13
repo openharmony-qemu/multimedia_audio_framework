@@ -256,6 +256,35 @@ OH_AudioStream_Result OH_AudioCapturer_GetFramesRead(OH_AudioCapturer* capturer,
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
+    OH_AudioCapturer* capturer, const OH_AudioSession_Strategy *strategy, uint32_t behavior)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
+    CHECK_AND_RETURN_RET_LOG(strategy != nullptr,
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "strategy is nullptr");
+    CHECK_AND_RETURN_RET_LOG(behavior < (OH_AudioSession_BehaviorFlags::MUTE_WHEN_INTERRUPTED << 1),
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "param behavior is invalid");
+
+    OHOS::AudioStandard::AudioSessionStrategy audioStrategy;
+    audioStrategy.concurrencyMode =
+        static_cast<OHOS::AudioStandard::AudioConcurrencyMode>(strategy->concurrencyMode);
+    switch (audioStrategy.concurrencyMode) {
+        case OHOS::AudioStandard::AudioConcurrencyMode::DEFAULT:
+        case OHOS::AudioStandard::AudioConcurrencyMode::MIX_WITH_OTHERS:
+        case OHOS::AudioStandard::AudioConcurrencyMode::DUCK_OTHERS:
+        case OHOS::AudioStandard::AudioConcurrencyMode::PAUSE_OTHERS:
+            break;
+        default:
+            AUDIO_ERR_LOG("concurrencyMode is invalid");
+            return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+    int32_t ret = audioCapturer->SetIndependentAudioSessionStrategy(audioStrategy, behavior);
+    CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS,
+        AUDIOSTREAM_ERROR_ILLEGAL_STATE, "Set independent audio session strategy failed");
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OH_AudioCapturer_GetOverflowCount(OH_AudioCapturer* capturer, uint32_t* count)
 {
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
@@ -745,6 +774,13 @@ bool OHAudioCapturer::IsModernInnerCapturer()
     CHECK_AND_RETURN_RET(audioCapturer_->GetCapturerInfo(capturerInfo) == SUCCESS, false);
     CHECK_AND_RETURN_RET(capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE && isModernInnerCapturer_, false);
     return true;
+}
+
+int32_t OHAudioCapturer::SetIndependentAudioSessionStrategy(
+    const AudioSessionStrategy &strategy, const uint32_t behavior)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->SetIndependentAudioSessionStrategy(strategy, behavior);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
