@@ -3074,7 +3074,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
             caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
     }
 
-    streamDesc->UpdateNewDevice(devices);
+    pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
     if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         !streamDesc->oldDeviceDescs_.empty() && streamDesc->oldDeviceDescs_.front() &&
         streamDesc->oldDeviceDescs_.front()->deviceType_ != devices[0]->deviceType_) {
@@ -3094,7 +3094,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     auto devices = audioRouterCenter_.FetchOutputDevices(streamDesc->GetRenderUsage(),
         GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
 
-    streamDesc->UpdateNewDeviceWithoutCheck(devices);
+    pipeManager_->UpdateNewDeviceDesc(streamDesc, devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->GetSessionId());
     if (streamDesc->IsMediaScene() && devices[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
