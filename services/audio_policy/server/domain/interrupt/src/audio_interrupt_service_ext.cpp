@@ -524,10 +524,10 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         removeFocusInfo = false;
-        auto it = std::find(muteAudioFocus_[incomingInterrupt.streamId].begin(),
-            muteAudioFocus_[incomingInterrupt.streamId].end(), audioFocusInfo);
-        if (it == muteAudioFocus_[incomingInterrupt.streamId].end()) {
-            muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
+        auto& focusList = muteAudioFocus_[incomingInterrupt.streamId];
+        auto it = std::find(focusList.begin(), focusList.end(), audioFocusInfo);
+        if (it == focusList.end()) {
+            focusList.push_back(audioFocusInfo);
         }
         AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
     }
