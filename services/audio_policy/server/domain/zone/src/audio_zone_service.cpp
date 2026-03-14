@@ -834,8 +834,8 @@ void AudioZoneService::NotifyStreamSilentChange(uint32_t streamId)
     CHECK_AND_CALL_FUNC_RETURN(tmp != nullptr,
         AUDIO_INFO_LOG("interruptService_ tmp is nullptr"));
 
-    uint32_t zoneId = tmp->FindAudioZoneByStreamId(streamId);
-    JUDGE_AND_INFO_LOG(zoneId != 0, "deactive interrupt of zone %{public}d", zoneId);
+    int32_t zoneId = tmp->FindAudioZoneByStreamId(streamId);
+    JUDGE_AND_INFO_LOG(zoneId != 0, "NotifyStreamSilentChange of zone %{public}d", zoneId);
     CHECK_AND_CALL_FUNC_RETURN(CheckIsZoneValid(zoneId),
         AUDIO_INFO_LOG("zone id %{public}d is not valid", zoneId));
     
