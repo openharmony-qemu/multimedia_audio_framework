@@ -3241,7 +3241,7 @@ int32_t AudioServer::CreateHdiSourcePort(const std::string &deviceClass, const s
         "refused for %{public}d", callingUid);
 
     captureId = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(deviceClass,
-        static_cast<SourceType>(attr.sourceType), idInfo, true);
+        static_cast<SourceType>(attr.sourceType), idInfo, true, attr.routeFlag);
     CHECK_AND_RETURN_RET(captureId != HDI_INVALID_ID, SUCCESS);
     std::shared_ptr<IAudioCaptureSource> source = HdiAdapterManager::GetInstance().GetCaptureSource(captureId, true);
     if (source == nullptr) {

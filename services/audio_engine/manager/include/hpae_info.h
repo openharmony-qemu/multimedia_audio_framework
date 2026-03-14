@@ -174,6 +174,7 @@ struct HpaeSourceInfo {
     AudioSamplingRate micInSamplingRate = SAMPLE_RATE_8000;
     AudioSampleFormat micInFormat = INVALID_WIDTH;
     AudioChannel micInChannels = CHANNEL_UNKNOW;
+    uint32_t routeFlag = 0;
 };
 
 static inline int32_t GetSizeFromFormat(int32_t format)

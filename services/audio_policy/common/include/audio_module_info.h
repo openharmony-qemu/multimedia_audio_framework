@@ -158,6 +158,7 @@ struct AudioModuleInfo {
      * split stream, sent a few empty chunk when stream pause or stop
      */
     std::optional<bool> needEmptyChunk;
+    uint32_t routeFlag;
 };
 
 } // namespace AudioStandard

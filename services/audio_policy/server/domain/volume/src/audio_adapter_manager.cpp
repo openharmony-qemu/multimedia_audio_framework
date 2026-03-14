@@ -1456,6 +1456,8 @@ AudioIOHandle AudioAdapterManager::OpenPaAudioPort(std::shared_ptr<AudioPipeInfo
     } else if (pipeInfo->pipeRole_ == PIPE_ROLE_INPUT) {
         std::string idInfo = GetHdiSourceIdInfo(pipeInfo->moduleInfo_);
         IAudioSourceAttr attr = GetAudioSourceAttr(pipeInfo->moduleInfo_);
+        attr.routeFlag = pipeInfo->routeFlag_;
+        pipeInfo->moduleInfo_.routeFlag = pipeInfo->routeFlag_;
         result = audioServerProxy_->CreateHdiSourcePort(pipeInfo->moduleInfo_.className, idInfo, attr, ioHandle);
     } else {
         AUDIO_ERR_LOG("Invalid pipe role: %{public}u", pipeInfo->pipeRole_);

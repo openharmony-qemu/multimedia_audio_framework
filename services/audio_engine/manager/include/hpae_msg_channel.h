@@ -137,6 +137,7 @@ struct HpaeDfxNodeInfo {
     std::string deviceName;
     std::string nodeName;
     SourceType sourceType;
+    uint32_t routeFlag = 0;
 };
 
 struct OffloadCallbackData {

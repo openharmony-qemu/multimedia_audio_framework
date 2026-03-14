@@ -779,6 +779,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.sourceType = sourceInfo_.sourceType;
+    nodeInfo.routeFlag = sourceInfo_.routeFlag;
     mainMicType_ = sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER ? HPAE_SOURCE_MIC_EC : HPAE_SOURCE_MIC;
     
     UpdateSourceInputNodeInfoForRecognition(nodeInfo);

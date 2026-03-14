@@ -117,6 +117,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
     AudioSampleFormat formatMicIn = AudioSampleFormat::INVALID_WIDTH;
     uint32_t sampleRateMicIn = 0;
     uint32_t channelMicIn = 0;
+    uint32_t routeFlag = 0;
     bool isPrimarySinkExist_ = true;
 
     // struct should use Marshalling Serialization
@@ -141,7 +142,11 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteUint8(static_cast<uint8_t>(formatEc)) &&
             parcel.WriteUint32(sampleRateEc) &&
             parcel.WriteUint32(channelEc) &&
-            parcel.WriteString(hdiSourceType);
+            parcel.WriteString(hdiSourceType) &&
+            parcel.WriteUint8(static_cast<uint8_t>(formatMicIn)) &&
+            parcel.WriteUint32(sampleRateMicIn) &&
+            parcel.WriteUint32(channelMicIn) &&
+            parcel.WriteUint32(routeFlag);
     }
 
     static IAudioSourceAttr *Unmarshalling(Parcel &parcel)
@@ -174,6 +179,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->formatMicIn = static_cast<AudioSampleFormat>(parcel.ReadUint8());
         attr->sampleRateMicIn = parcel.ReadUint32();
         attr->channelMicIn = parcel.ReadUint32();
+        attr->routeFlag = parcel.ReadUint32();
         return attr;
     }
 } IAudioSourceAttr;

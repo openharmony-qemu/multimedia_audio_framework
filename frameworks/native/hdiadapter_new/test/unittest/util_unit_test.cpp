@@ -101,7 +101,8 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_003, TestSize.Level1)
     std::string pipeName = "test";
 
     SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_AI, pipeName);
-    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_AI);
     EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT));
 }
 
@@ -116,7 +117,8 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_004, TestSize.Level1)
     std::string pipeName = "test";
 
     SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_UNPROCESS, pipeName);
-    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_UNPROCESS);
     EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_UNPROCESS));
 }
 
@@ -131,7 +133,8 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_005, TestSize.Level1)
     std::string pipeName = "test";
 
     SolePipe::SetSolePipeSourceInfo(SOURCE_TYPE_INVALID, AUDIO_INPUT_FLAG_NORMAL, pipeName);
-    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_INVALID,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_NORMAL);
     EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
 }
 
@@ -145,7 +148,8 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_006, TestSize.Level1)
     IdHandler &idHandler = IdHandler::GetInstance();
     std::string pipeName = "test";
 
-    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_VOICE_CALL);
+    uint32_t id = idHandler.GetCaptureIdByDeviceClass("primary", SOURCE_TYPE_VOICE_CALL,
+        HDI_ID_INFO_DEFAULT, AUDIO_INPUT_FLAG_NORMAL);
     EXPECT_EQ(id idHandler.GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT));
 }
 
