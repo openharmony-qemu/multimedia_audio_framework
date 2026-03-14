@@ -470,38 +470,12 @@ int32_t AudioInterruptService::EnableMuteSuggestionWhenMixWithOthers(int32_t cal
     return sessionService_.EnableMuteSuggestionWhenMixWithOthers(callerPid, enable);
 }
 
-void AudioInterruptService::RemoveInterruptFocusInfoList(
-    const std::pair<AudioInterrupt, AudioFocuState> &audioFocusInfo, std::list<int32_t> &removeFocusInfoPidList)
+bool AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
 {
-    AudioInterrupt activeInterrupt = audioFocusInfo.first;
-    int32_t zoneId = zoneManager_.FindZoneByPid(activeInterrupt.pid);
-    auto itZone = zonesMap_.find(zoneId);
-    CHECK_AND_RETURN_LOG((itZone != zonesMap_.end() && itZone->second != nullptr), "can not find zone");
-
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> tmpFocusInfoList {};
-    tmpFocusInfoList = itZone->second->audioFocusInfoList;
-    auto iterActive = std::find_if(tmpFocusInfoList.begin(), tmpFocusInfoList.end(),
-        [&activeInterrupt](const std::pair<AudioInterrupt, AudioFocuState>& item) {
-            return item.first.streamId == activeInterrupt.streamId;
-    });
-    if (iterActive != tmpFocusInfoList.end()) {
-        RemoveFocusInfo(iterActive, tmpFocusInfoList, itZone->second, removeFocusInfoPidList);
-    }
-    itZone->second->audioFocusInfoList = tmpFocusInfoList;
-
-    for (auto&[streamId, activeFocusList] : muteAudioFocus_) {
-        activeFocusList.remove_if([&activeInterrupt](const std::pair<AudioInterrupt, AudioFocuState>& pair) {
-            return pair.first.streamId == activeInterrupt.streamId;
-        });
-    }
-}
-
-void AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
-{
+    bool ret = false;
     if (interruptDfx_ != nullptr) {
         interruptDfx_->NotifyStreamSilentChange(streamId);
     }
-    std::unique_lock<std::mutex> lock(mutex_);
     if (muteAudioFocus_.count(streamId) > 0) {
         std::list<std::pair<AudioInterrupt, AudioFocuState>> tempMuteList(muteAudioFocus_[streamId]);
         std::list<int32_t> removeFocusInfoPidList = {};
@@ -511,13 +485,15 @@ void AudioInterruptService::NotifyStreamSilentChange(uint32_t streamId)
             AUDIO_INFO_LOG("NotifyStreamSilentChange:streamId %{public}d is stopped by streamId: %{public}d",
                 activeInterrupt.streamId, streamId);
             SendInterruptEventCallback(interruptEvent, activeInterrupt.streamId, activeInterrupt);
-            RemoveInterruptFocusInfoList(audioFocusInfo, removeFocusInfoPidList);
+            int32_t zoneId = FindAudioZoneByStreamId(activeInterrupt.streamId);
+            DeactivateAudioInterrupt(zoneId, activeInterrupt);
+            ret = true;
         }
         muteAudioFocus_.erase(streamId);
         AUDIO_INFO_LOG("StreamId: %{public}d has been removed from muteAudioFocus_ record, "
             "now record size: %{public}zu", streamId, muteAudioFocus_.size());
-        RemoveAllPlaceholderInterrupt(removeFocusInfoPidList);
     }
+    return ret;
 }
 
 void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
@@ -548,7 +524,11 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         removeFocusInfo = false;
-        muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
+        auto it = std:find(muteAudioFocus_[incomingInterrupt.streamId].begin(),
+            muteAudioFocus_[incomingInterrupt.streamId].end(), audioFocusInfo);
+        if (it == muteAudioFocus_[incomingInterrupt.streamId].end()) {
+            muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
+        }
         AUDIO_INFO_LOG("%{public}s update muteCheck focusStrategy", bundleName.c_str());
     }
 }
