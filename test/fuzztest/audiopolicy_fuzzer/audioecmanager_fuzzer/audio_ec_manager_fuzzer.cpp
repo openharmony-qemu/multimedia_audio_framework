@@ -218,15 +218,6 @@ void CloseUsbArmDeviceFuzzTest(FuzzedDataProvider& fdp)
     ecManager.CloseUsbArmDevice(device);
 }
 
-void ActivateArmDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioEcManager& ecManager(AudioEcManager::GetInstance());
-    int32_t ecEnableState = g_fuzzUtils.GetData<bool>();
-    ecManager.Init(ecEnableState, 0);
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    ecManager.ActivateArmDevice(deviceDesc);
-}
-
 void UpdateArmModuleInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     std::vector<std::string> addressList = {
@@ -555,7 +546,6 @@ void Test(FuzzedDataProvider& fdp)
     ShouldOpenMicRefFuzzTest,
     GetAudioEcInfoFuzzTest,
     PresetArmIdleInputFuzzTest,
-    ActivateArmDeviceFuzzTest,
     CloseUsbArmDeviceFuzzTest,
     UpdateArmModuleInfoFuzzTest,
     GetTargetSourceTypeAndMatchingFlagFuzzTest,

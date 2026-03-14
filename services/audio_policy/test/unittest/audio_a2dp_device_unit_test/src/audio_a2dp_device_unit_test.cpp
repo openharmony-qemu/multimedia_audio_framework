@@ -373,5 +373,56 @@ HWTEST_F(AudioA2dpDeviceUnitTest, CheckHearingAidDeviceExist_001, TestSize.Level
     result = AudioA2dpDevice::GetInstance().CheckHearingAidDeviceExist(device);
     EXPECT_FALSE(result);
 }
+
+/**
+* @tc.name  : GetA2dpModuleInfo_001
+* @tc.desc  : Test GetA2dpModuleInfo with source type
+*/
+HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_001, TestSize.Level1)
+{
+    // Arrange
+    AudioStreamInfo audioStreamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
+        AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
+    AudioModuleInfo moduleInfo;
+    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+
+    // Act
+    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+
+    // Assert
+    EXPECT_EQ(moduleInfo.channels, "2");
+    EXPECT_EQ(moduleInfo.rate, "44100");
+    EXPECT_EQ(moduleInfo.format, "AUDIO_FORMAT_PCM_16_BIT");
+    EXPECT_GT(moduleInfo.bufferSize.size(), 0);
+    EXPECT_EQ(moduleInfo.role, "source");
+    EXPECT_EQ(moduleInfo.renderInIdleState, "1");
+    EXPECT_EQ(moduleInfo.sinkLatency, "0");
+}
+
+/**
+* @tc.name  : GetA2dpModuleInfo_002
+* @tc.desc  : Test GetA2dpModuleInfo with sink type
+*/
+HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_002, TestSize.Level1)
+{
+    // Arrange
+    AudioStreamInfo audioStreamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
+        AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
+    AudioModuleInfo moduleInfo;
+    SourceType sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
+
+    // Act
+    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+
+    // Assert
+    EXPECT_EQ(moduleInfo.channels, "2");
+    EXPECT_EQ(moduleInfo.rate, "44100");
+    EXPECT_EQ(moduleInfo.format, "AUDIO_FORMAT_PCM_16_BIT");
+    EXPECT_GT(moduleInfo.bufferSize.size(), 0);
+    EXPECT_NE(moduleInfo.role, "source");
+    EXPECT_NE(moduleInfo.renderInIdleState, "1");
+    EXPECT_NE(moduleInfo.sinkLatency, "0");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

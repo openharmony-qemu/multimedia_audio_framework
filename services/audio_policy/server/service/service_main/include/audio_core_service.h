@@ -220,7 +220,7 @@ public:
             AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray);
         void ReloadSourceForEffectV3(
             AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
-private:
+    private:
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
 
@@ -251,7 +251,6 @@ private:
     void ResetAudioEcInfo();
 
     void PresetArmIdleInput(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
-    void ActivateArmDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     void CloseUsbArmDevice(const AudioDeviceDescriptor &device);
     void GetTargetSourceTypeAndMatchingFlag(SourceType source, SourceType &targetSource, bool &useMatchingPropInfo);
 
@@ -276,6 +275,8 @@ private:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void SetOpenedNormalSourceSessionId(uint64_t sessionId);
     uint64_t GetOpenedNormalSourceSessionId();
+    void SetUsbSinkModuleInfo(AudioModuleInfo &moduleInfo);
+    void SetUsbSourceModuleInfo(AudioModuleInfo &moduleInfo);
 
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
@@ -419,7 +420,6 @@ private:
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     bool IsA2dpOffloadStream(uint sessionId);
-    int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     int32_t SetRendererTarget(RenderTarget target, RenderTarget lastTarget, uint32_t sessionId);
     int32_t StartInjection(uint32_t sessionId);
     void RemoveIdForInjector(uint32_t sessionId);
@@ -428,7 +428,6 @@ private:
     int32_t A2dpOffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
     bool InVideoCommFastBlockList(const std::string &bundleName);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
-    void HandleNearlinkErrResultAsync(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc);
     void HandleDeviceConfigChanged(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     void DeactivateRemoteDevice(const std::string &networkId, DeviceType deviceType);
     void NotifyRemoteRouteStateChange(const std::string &networkId, DeviceType deviceType, bool enable);
@@ -490,32 +489,11 @@ private:
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
     void UpdateInputDeviceWhenStopping(int32_t uid);
-    int32_t BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &desc,
-        const AudioStreamDeviceChangeReasonExt reason, std::string encryptMacAddr);
-    int32_t ActivateA2dpDeviceWhenDescEnabled(shared_ptr<AudioDeviceDescriptor> desc,
-        const AudioStreamDeviceChangeReasonExt reason);
-    int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
-        const AudioStreamDeviceChangeReasonExt reason);
-    int32_t ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    void HandleNearlinkErrResult(int32_t result, shared_ptr<AudioDeviceDescriptor> devDesc, bool isVoiceType);
-    int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
-        std::string networkId, std::string sinkName, SourceType sourceType);
-    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
-        const AudioStreamInfo& audioStreamInfo, std::string networkId, std::string sinkName,
-        SourceType sourceType);
     void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
         const AudioStreamDeviceChangeReasonExt reason);
-    AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
-        uint32_t &paIndex);
-    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
-        SourceType sourceType);
     void RecordSelectDevice(const std::string &history);
     std::string ParsePreferredInputDeviceHistory(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
-    int32_t SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
-    int32_t LoadHearingAidModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
-        std::string networkId, std::string sinkName, SourceType sourceType);
     int32_t SetSleVoiceStatusFlag(AudioScene audioScene);
 #ifdef BLUETOOTH_ENABLE
     void RegisterBluetoothDeathCallback();
@@ -680,7 +658,6 @@ private:
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, bool isRunning = true);
     int32_t ForceRemoveSleStreamType(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void WriteScoStateFaultEvent(const std::shared_ptr<AudioDeviceDescriptor> &devDesc);
     void FetchOutputDevicesForDescs(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -851,7 +828,6 @@ private:
     };
     bool isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
-    bool isActivateA2dpDeviceForLog_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
     // key:sessionId value:adapterName, use for getting pipe when release
     std::unordered_map<uint32_t, std::string> sessionWithInputPipeAdapterName_;

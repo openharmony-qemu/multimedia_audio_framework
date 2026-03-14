@@ -340,21 +340,6 @@ void BluetoothScoFetchFuzzTest()
     audioCoreService->BluetoothScoFetch(streamDesc);
 }
 
-void BluetoothDeviceFetchOutputHandleFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    deviceDesc->deviceType_ = DeviceTypeVec[deviceTypeCount];
-    desc->newDeviceDescs_.push_back(deviceDesc);
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    std::string encryptMacAddr = "abc";
-    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
-}
-
 void HandleAudioCaptureStateFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -366,45 +351,6 @@ void HandleAudioCaptureStateFuzzTest()
         static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
     streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = GetData<SourceType>();
     audioCoreService->HandleAudioCaptureState(mode, streamChangeInfo);
-}
-
-void ActivateA2dpDeviceWhenDescEnabledFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    desc->isEnable_ = GetData<uint32_t>() % NUM_2;
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->ActivateA2dpDeviceWhenDescEnabled(desc, reason);
-}
-
-void ReloadA2dpAudioPortFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    AudioModuleInfo moduleInfo;
-    std::vector<std::string> roleList = {"abc", "link"};
-    uint32_t roleListCount = GetData<uint32_t>() % roleList.size();
-    moduleInfo.role = roleList[roleListCount];
-    uint32_t deviceTypeCount = GetData<uint32_t>() % roleList.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    AudioStreamInfo audioStreamInfo;
-    std::string networkId = "abc";
-    std::string sinkName = "abc";
-    SourceType sourceType = GetData<SourceType>();
-    audioCoreService->ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo,
-        networkId, sinkName, sourceType);
-}
-
-void LoadA2dpModuleFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    AudioStreamInfo audioStreamInfo;
-    std::string networkId = "abc";
-    std::string sinkName = "abc";
-    SourceType sourceType = GetData<SourceType>();
-    audioCoreService->LoadA2dpModule(deviceType, audioStreamInfo, networkId, sinkName, sourceType);
 }
 
 void IsSameDeviceFuzzTest()
@@ -439,18 +385,6 @@ void IsSameDeviceFuzzTest()
     deviceInfo.a2dpOffloadFlag_ = static_cast<BluetoothOffloadState>(GetData<uint8_t>() % a2dpOffloadFlagCount);
 
     audioCoreService->IsSameDevice(desc, deviceInfo);
-}
-
-void GetA2dpModuleInfoFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    AudioModuleInfo moduleInfo;
-    std::vector<std::string> roleList = {"abc", "link", "source"};
-    uint32_t roleListCount = GetData<uint32_t>() % roleList.size();
-    moduleInfo.role = roleList[roleListCount];
-    AudioStreamInfo audioStreamInfo;
-    SourceType sourceType = GetData<SourceType>();
-    audioCoreService->GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
 }
 
 void HasLowLatencyCapabilityFuzzTest()
@@ -553,22 +487,6 @@ void AudioCoreServicePrivateRemoveUnusedPipeFuzzTest()
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
     audioCoreService->RemoveUnusedPipe();
     audioCoreService->RemoveUnusedRecordPipe();
-}
-
-void AudioCoreServicePrivateLoadA2dpModuleFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr || DeviceTypeVec.size() == 0 || g_testSourceTypes.size() == 0) {
-        return;
-    }
-
-    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    AudioStreamInfo audioStreamInfo;
-    std::string networkId = "abc";
-    std::string sinkName = "abc";
-    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
-
-    audioCoreService->LoadA2dpModule(deviceType, audioStreamInfo, networkId, sinkName, sourceType);
 }
 
 void AudioCoreServicePrivateMoveToNewOutputDeviceFuzzTest()
@@ -1124,7 +1042,6 @@ void HandleA2dpSuspendWhenFetchFuzzTest()
     audioCoreService->UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
     audioCoreService->FetchRendererPipesAndExecute(streamDescs, reason);
     audioCoreService->CheckRingAndVoipScene(reason);
-    audioCoreService->ActivateA2dpDevice(audioDeviceDescriptor, reason);
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
     audioStreamDescriptor->streamAction_ = static_cast<AudioStreamAction>(GetData<uint8_t>() % streamActionCount);
@@ -1160,12 +1077,6 @@ void GetVoiceCallMuteDurationFuzzTest()
     uint32_t paIndex = GetData<uint32_t>();
     audioCoreService->CheckModuleForHearingAid(paIndex);
     audioCoreService->CheckAndUpdateHearingAidCall(type);
-    bool engineFlag = GetData<bool>();
-    AudioModuleInfo moduleInfo;
-    std::vector<std::string> roleList = {"abc", "link", "source"};
-    uint32_t roleListCount = GetData<uint32_t>() % roleList.size();
-    moduleInfo.role = roleList[roleListCount];
-    audioCoreService->ReloadOrOpenAudioPort(engineFlag, moduleInfo, paIndex);
     int32_t sessionId = GetData<int32_t>();
     std::vector<SourceOutput> sourceOutputs;
     SourceOutput sourceOutput;
@@ -1213,8 +1124,6 @@ void UpdateSessionConnectionStateFuzzTest()
     bool isRunning = GetData<bool>();
     audioCoreService->DeactivateBluetoothDevice(isRunning);
     int32_t result = GetData<int32_t>();
-    bool isVoiceType = GetData<bool>();
-    audioCoreService->HandleNearlinkErrResult(result, audioDeviceDescriptor, isVoiceType);
     std::unique_ptr<ConcurrentCaptureDfxResult> DfxResult;
     audioCoreService->WriteCapturerConcurrentMsg(audioStreamDescriptor, DfxResult);
     std::vector<std::shared_ptr<AudioStreamDescriptor>> outputDescs;
@@ -1223,7 +1132,6 @@ void UpdateSessionConnectionStateFuzzTest()
     audioCoreService->PlayBackToInjection(sessionId);
     audioCoreService->InjectionToPlayBack(sessionId);
     audioCoreService->WriteScoStateFaultEvent(audioDeviceDescriptor);
-    audioCoreService->HandleNearlinkErrResultAsync(result, audioDeviceDescriptor);
     AudioScene lastAudioScene = GetData<AudioScene>();
     AudioScene audioScene = GetData<AudioScene>();
     audioCoreService->IsCallOrRingToDefault(lastAudioScene, audioScene);
@@ -1242,10 +1150,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateOnPnpDeviceStatusUpdatedFuzzTest,
     AudioCoreServicePrivateOnDeviceConfigurationChangedFuzzTest,
     AudioCoreServicePrivateOpenRemoteAudioDeviceFuzzTest,
-    ActivateA2dpDeviceWhenDescEnabledFuzzTest,
-    LoadA2dpModuleFuzzTest,
-    ReloadA2dpAudioPortFuzzTest,
-    GetA2dpModuleInfoFuzzTest,
     IsSameDeviceFuzzTest,
     ProcessOutputPipeNewFuzzTest,
     HasLowLatencyCapabilityFuzzTest,
@@ -1255,7 +1159,6 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateGetEncryptAddrFuzzTest,
     AudioCoreServicePrivateUpdateDefaultOutputDeviceWhenStoppingFuzzTest,
     AudioCoreServicePrivateUpdateInputDeviceWhenStoppingFuzzTest,
-    AudioCoreServicePrivateLoadA2dpModuleFuzzTest,
     AudioCoreServicePrivateRemoveUnusedPipeFuzzTest,
     AudioCoreServicePrivateIsStreamBelongToUidFuzzTest,
     AudioCoreServicePrivateMoveToNewOutputDeviceFuzzTest,

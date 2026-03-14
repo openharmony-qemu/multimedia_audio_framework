@@ -548,10 +548,8 @@ void SleAudioDeviceManagerResetSleStreamTypeCountFuzzTest(FuzzedDataProvider& fd
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    auto deviceDesc = make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
-    deviceDesc->macAddress_ = "test_device";
-    manager.ResetSleStreamTypeCount(deviceDesc);
+    std::string deviceAddr = "test_device";
+    manager.ResetSleStreamTypeCount(deviceAddr);
 }
 
 void SleAudioDeviceManagerGetNearlinkStreamTypeMapByDeviceFuzzTest(FuzzedDataProvider& fdp)

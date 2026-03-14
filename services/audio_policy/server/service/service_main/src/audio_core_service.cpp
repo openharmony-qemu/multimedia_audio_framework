@@ -47,9 +47,6 @@ const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
 static const unsigned int BUFFER_CALC_20MS = 20;
 static const std::string CHECK_VIDEO_COMM_SELECTION = "audio_video_comm_fast_blocklist";
-static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
-static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
-static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int32_t REFETCH_DEVICE = 4;
 static const int64_t RING_DUAL_END_DELAY_US = 100000;
 static constexpr int32_t MAX_TRY = 100;
@@ -419,6 +416,16 @@ uint64_t AudioCoreService::GetOpenedNormalSourceSessionId()
     return sessionIdUsedToOpenSource_;
 }
 
+void AudioCoreService::SetUsbSinkModuleInfo(AudioModuleInfo &moduleInfo)
+{
+    usbSinkModuleInfo_ = moduleInfo;
+}
+
+void AudioCoreService::SetUsbSourceModuleInfo(AudioModuleInfo &moduleInfo)
+{
+    usbSourceModuleInfo_ = moduleInfo;
+}
+
 void AudioCoreService::SetOpenedNormalSourceSessionId(uint64_t sessionId)
 {
     AUDIO_INFO_LOG("set normal source sessionId: %{public}" PRIu64, sessionId);
@@ -454,13 +461,11 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0
         && streamDesc->newDeviceDescs_.front() != nullptr, ERR_NULL_POINTER, "Invalid deviceDesc");
 
-    ActivateOutputDevice(streamDesc);
-
     // Bluetooth may be inactive (paused ringtone stream at Speaker switches to A2dp)
-    std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
-    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,
-        AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
-    CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
+    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        auto ret = ActivateOutputDevice(streamDesc, AudioStreamDeviceChangeReason::UNKNOWN);
+        CHECK_AND_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED);
+    }
 
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
@@ -3285,48 +3290,6 @@ void AudioCoreService::PresetArmIdleInput(const std::shared_ptr<AudioDeviceDescr
         }
         audioConfigManager_.UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
     }
-}
-
-void AudioCoreService::ActivateArmDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
-{
-    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "AudioDeviceDescriptor is nullptr");
-    std::string address = deviceDesc->GetMacAddress();
-    DeviceRole role = deviceDesc->getRole();
-    AUDIO_INFO_LOG("address=%{public}s, role=%{public}d",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(address).c_str(), role);
-    string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
-    CHECK_AND_RETURN_LOG(address != activeArmAddr, "usb device addr already active");
-    std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
-    CHECK_AND_RETURN_LOG(ret, "GetModuleListByType empty");
-    for (auto &moduleInfo : moduleInfoList) {
-        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
-        if (configRole != role) {continue;}
-        AUDIO_INFO_LOG("[module_reload]: module[%{public}s], role[%{public}d]", moduleInfo.name.c_str(), role);
-        if (!(isEcFeatureEnable_ && role == INPUT_DEVICE) && audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
-            audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
-                AudioPolicyUtils::GetInstance().GetSinkPortName(audioActiveDevice_.GetCurrentOutputDeviceType()));
-            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name);
-        }
-        UpdateArmModuleInfo(deviceDesc, moduleInfo);
-        if (isEcFeatureEnable_) {
-            if (role == OUTPUT_DEVICE) {
-                int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-                CHECK_AND_RETURN_LOG(ret == SUCCESS,
-                    "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-                usbSinkModuleInfo_ = moduleInfo;
-            } else {
-                AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
-                usbSourceModuleInfo_ = moduleInfo;
-                audioConfigManager_.UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
-            }
-        } else {
-            int32_t ret = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS,
-                "Load usb %{public}s failed %{public}d", moduleInfo.role.c_str(), ret);
-        }
-    }
-    activeArmAddr = address;
 }
 
 void AudioCoreService::CloseUsbArmDevice(const AudioDeviceDescriptor &device)
