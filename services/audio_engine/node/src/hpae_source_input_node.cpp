@@ -113,7 +113,8 @@ void HpaeSourceInputNode::UpdateSourceInputMapCancatMicEc()
 
 void HpaeSourceInputNode::SetConcatMicEcFlag(HpaeNodeInfo &nodeInfo)
 {
-    CHECK_AND_RETURN(nodeInfo.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT);
+    CHECK_AND_RETURN((nodeInfo.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) ||
+        nodeInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
     concatMicEcFlag_ = true;
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumperMap_.emplace(nodeInfo.sourceBufferType, std::make_unique<HpaePcmDumper>(

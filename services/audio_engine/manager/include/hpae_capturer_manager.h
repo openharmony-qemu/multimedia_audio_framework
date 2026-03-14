@@ -115,6 +115,9 @@ private:
     void StopOuputNode();
     void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, CapturerState state,
         uint32_t appUid = INVALID_UID, bool mute = false);
+    void UpdateSourceAttr(IAudioSourceAttr &attr);
+    void UpdateSourceInputNodeInfoForRecognition(HpaeNodeInfo &nodeInfo);
+    void UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo);
 
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;

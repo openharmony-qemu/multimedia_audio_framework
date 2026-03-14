@@ -122,6 +122,8 @@ private:
     bool IsCaptureInvalid(void) override;
     static AudioInputType MappingAudioInputType(std::string hdiSourceType);
     uint32_t GenerateUniqueIDByHdiSource(AudioInputType hdiSource) const;
+    void UpdateRawSampleAttr(struct AudioSampleAttributes &param);
+    void UpdateEcSampleAttr(struct AudioSampleAttributes &param);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

@@ -977,6 +977,35 @@ void AudioCaptureSource::InitEcOrMicRefAttr(const IAudioSourceAttr &attr)
     }
 }
 
+void AudioCaptureSource::UpdateRawSampleAttr(struct AudioSampleAttributes &param)
+{
+    if (attr_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        param.rawSampleAttributes.rawFormat = ConvertToHdiFormat(attr_.formatMicIn);
+        param.rawSampleAttributes.rawSampleRate = attr_.sampleRateMicIn;
+        param.rawSampleAttributes.rawChannelLayout = GetChannelLayoutByChannelCount(attr_.channelMicIn);
+        AUDIO_INFO_LOG("raw info:[%{public}u_%{public}u_%{public}u] ec info:[%{public}u_%{public}u_%{public}u]",
+            attr_.sampleRateMicIn, attr_.channelMicIn, attr_.formatMicIn,
+            attr_.sampleRateEc, attr_.channelEc, attr_.formatEc);
+    }
+}
+
+void AudioCaptureSource::UpdateEcSampleAttr(struct AudioSampleAttributes &param)
+{
+    param.ecSampleAttributes.ecInterleaved = true;
+    param.ecSampleAttributes.ecFormat = ConvertToHdiFormat(attr_.formatEc);
+    param.ecSampleAttributes.ecSampleRate = attr_.sampleRateEc;
+    param.ecSampleAttributes.ecChannelCount = attr_.channelEc;
+    param.ecSampleAttributes.ecChannelLayout = GetChannelLayoutByChannelCount(attr_.channelEc);
+    param.ecSampleAttributes.ecPeriod = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
+    param.ecSampleAttributes.ecFrameSize = PCM_16_BIT * param.ecSampleAttributes.ecChannelCount / PCM_8_BIT;
+    param.ecSampleAttributes.ecIsBigEndian = false;
+    param.ecSampleAttributes.ecIsSignedData = true;
+    param.ecSampleAttributes.ecStartThreshold =
+        DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.ecSampleAttributes.ecFrameSize);
+    param.ecSampleAttributes.ecStopThreshold = INT_MAX;
+    param.ecSampleAttributes.ecSilenceThreshold = AUDIO_BUFFER_SIZE;
+}
+
 void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param)
 {
     param.format = AUDIO_FORMAT_TYPE_PCM_16_BIT;
@@ -1015,20 +1044,9 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     CheckAcousticEchoCancelerSupported(attr_.sourceType, param.sourceType);
 
     if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {
-        param.ecSampleAttributes.ecInterleaved = true;
-        param.ecSampleAttributes.ecFormat = ConvertToHdiFormat(attr_.formatEc);
-        param.ecSampleAttributes.ecSampleRate = attr_.sampleRateEc;
-        param.ecSampleAttributes.ecChannelCount = attr_.channelEc;
-        param.ecSampleAttributes.ecChannelLayout = GetChannelLayoutByChannelCount(attr_.channelEc);
-        param.ecSampleAttributes.ecPeriod = DEEP_BUFFER_CAPTURE_PERIOD_SIZE;
-        param.ecSampleAttributes.ecFrameSize = PCM_16_BIT * param.ecSampleAttributes.ecChannelCount / PCM_8_BIT;
-        param.ecSampleAttributes.ecIsBigEndian = false;
-        param.ecSampleAttributes.ecIsSignedData = true;
-        param.ecSampleAttributes.ecStartThreshold =
-            DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.ecSampleAttributes.ecFrameSize);
-        param.ecSampleAttributes.ecStopThreshold = INT_MAX;
-        param.ecSampleAttributes.ecSilenceThreshold = AUDIO_BUFFER_SIZE;
+        UpdateEcSampleAttr(param);
     }
+    UpdateRawSampleAttr(param);
 }
 
 void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)

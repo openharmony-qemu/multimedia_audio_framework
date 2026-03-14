@@ -1846,6 +1846,304 @@ HWTEST_F(HpaeCapturerManagerTest, HandleAppsEnhanceMuteState_003, TestSize.Level
     EXPECT_EQ(SUCCESS, capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false));
     WaitForMsgProcessing(capturerManager);
 }
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test SourceTypeVoiceRecognitionConstruct_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, SourceTypeVoiceRecognitionConstruct_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->sourceInfo_.micInSamplingRate, SAMPLE_RATE_16000);
+    EXPECT_EQ(capturerManager->sourceInfo_.micInFormat, SAMPLE_S16LE);
+    EXPECT_EQ(capturerManager->sourceInfo_.micInChannels, CHANNEL_4);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test SourceTypeVoiceRecognitionConstruct_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, SourceTypeVoiceRecognitionConstruct_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_NE(capturerManager->sourceInfo_.micInSamplingRate, SAMPLE_RATE_16000);
+    EXPECT_NE(capturerManager->sourceInfo_.micInFormat, SAMPLE_S16LE);
+    EXPECT_NE(capturerManager->sourceInfo_.micInChannels, CHANNEL_4);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager UpdateSourceAttr API
+ * tc.type   : FUNC
+ * tc.number : UpdateSourceAttr_001
+ * tc.desc   : Test UpdateSourceAttr with voice recognition source type
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceAttr_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    IAudioSourceAttr attr;
+    capturerManager->CreateSourceAttr(attr);
+    capturerManager->UpdateSourceAttr(attr);
+
+    EXPECT_EQ(attr.formatMicIn == sourceInfo.micInFormat, true);
+    EXPECT_EQ(attr.sampleRateMicIn == sourceInfo.micInSamplingRate, true);
+    EXPECT_EQ(attr.channelMicIn == sourceInfo.micInChannels, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager UpdateSourceAttr API
+ * tc.type   : FUNC
+ * tc.number : UpdateSourceAttr_002
+ * tc.desc   : Test UpdateSourceAttr without voice recognition source type
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceAttr_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_MIC;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    
+    IAudioSourceAttr attr;
+    capturerManager->CreateSourceAttr(attr);
+    capturerManager->UpdateSourceAttr(attr);
+
+    EXPECT_EQ(attr.sampleRate == sourceInfo.samplingRate, true);
+    EXPECT_EQ(attr.channel == sourceInfo.channels, true);
+    EXPECT_EQ(attr.format == sourceInfo.format, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager UpdateSourceAttr API
+ * tc.type   : FUNC
+ * tc.number : UpdateSourceAttr_003
+ * tc.desc   : Test UpdateSourceAttr with hasEcConfig
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceAttr_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_MIC;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_4;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    capturerManager->mainMicType_ = HPAE_SOURCE_MIC_EC;
+    
+    IAudioSourceAttr attr;
+    capturerManager->CreateSourceAttr(attr);
+    capturerManager->UpdateSourceAttr(attr);
+
+    EXPECT_EQ(attr.formatEc == sourceInfo.ecFormat, true);
+    EXPECT_EQ(attr.sampleRateEc == sourceInfo.ecSamplingRate, true);
+    EXPECT_EQ(attr.channelEc == sourceInfo.ecChannels, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager UpdateSourceAttr API
+ * tc.type   : FUNC
+ * tc.number : UpdateSourceAttr_004
+ * tc.desc   : Test UpdateSourceAttr with hasEcConfig
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceAttr_004, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_MIC;
+    
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    capturerManager->mainMicType_ = HPAE_SOURCE_MIC;
+    
+    IAudioSourceAttr attr;
+    capturerManager->CreateSourceAttr(attr);
+    capturerManager->UpdateSourceAttr(attr);
+
+    EXPECT_EQ(attr.format == sourceInfo.format, true);
+    EXPECT_EQ(attr.sampleRate == sourceInfo.samplingRate, true);
+    EXPECT_EQ(attr.channel == sourceInfo.channels, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateSourceInputNodeInfoForRecognition_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForRecognition_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    nodeInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
+
+    EXPECT_EQ((uint8_t)nodeInfo.channels, (uint8_t)sourceInfo.micInChannels + (uint8_t)sourceInfo.channels);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateSourceInputNodeInfoForRecognition_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForRecognition_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
+
+    EXPECT_EQ(nodeInfo.channels == STEREO, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateSourceInputNodeInfoForRecognition_003
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateSourceInputNodeInfoForRecognition_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_16;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    capturerManager->UpdateSourceInputNodeInfoForRecognition(nodeInfo);
+
+    EXPECT_EQ(nodeInfo.channels == (AudioChannel)((uint8_t)sourceInfo.micInChannels + (uint8_t)sourceInfo.channels),
+        false);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateClusterNodeInfoForRecognition_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForRecognition_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_4;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_4;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    nodeInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    capturerManager->UpdateClusterNodeInfoForRecognition(nodeInfo);
+
+    uint8_t totalChannels = static_cast<uint8_t>(sourceInfo.micInChannels) +
+        static_cast<uint8_t>(sourceInfo.channels) + static_cast<uint8_t>(sourceInfo.ecChannels);
+    EXPECT_EQ((uint8_t)nodeInfo.channels, totalChannels);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateClusterNodeInfoForRecognition_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForRecognition_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    capturerManager->UpdateClusterNodeInfoForRecognition(nodeInfo);
+
+    EXPECT_EQ(nodeInfo.channels == STEREO, true);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test UpdateClusterNodeInfoForRecognition_003
+ */
+HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForRecognition_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    sourceInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    sourceInfo.micInSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.micInFormat = SAMPLE_S16LE;
+    sourceInfo.micInChannels = CHANNEL_16;
+    sourceInfo.ecSamplingRate = SAMPLE_RATE_16000;
+    sourceInfo.ecFormat = SAMPLE_S16LE;
+    sourceInfo.ecChannels = CHANNEL_16;
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeNodeInfo nodeInfo;
+    InitNodeInfo(nodeInfo);
+    capturerManager->UpdateClusterNodeInfoForRecognition(nodeInfo);
+
+    uint8_t totalChannels = static_cast<uint8_t>(sourceInfo.micInChannels) +
+        static_cast<uint8_t>(sourceInfo.channels) + static_cast<uint8_t>(sourceInfo.ecChannels);
+    EXPECT_EQ(nodeInfo.channels == (AudioChannel)totalChannels, false);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS
