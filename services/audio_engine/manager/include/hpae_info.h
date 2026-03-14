@@ -170,6 +170,10 @@ struct HpaeSourceInfo {
     uint32_t openMicSpeaker = 0;
     std::string macAddress = "";
     std::string busAddress = "";
+    // micin for voice recognition
+    AudioSamplingRate micInSamplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat micInFormat = INVALID_WIDTH;
+    AudioChannel micInChannels = CHANNEL_UNKNOW;
     uint32_t routeFlag = 0;
 };
 

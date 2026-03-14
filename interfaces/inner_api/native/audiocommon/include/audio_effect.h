@@ -59,6 +59,7 @@ enum HdiSetParamCommandCode {
     HDI_OUTDOOR_MODE = 16,
     HDI_SUPER_LOUDNESS_MODE = 17,
     HDI_SYSTEMLOAD_STATE = 18,
+    HDI_FRONTEND_APP_TYPE = 19,
 };
 
 enum AudioEarphoneProduct : int32_t {
@@ -702,6 +703,7 @@ enum AudioEffectChainSetParamIndex {
     OUTDOOR_MODE = 15,
     SUPER_LOUDNESS_MODE = 16,
     SYSTEMLOAD_STATE_INDEX = 17,
+    FRONTEND_APP_TYPE = 18,
     MAX_PARAM_INDEX,
 };
 
@@ -853,6 +855,7 @@ struct AudioEnhanceParam {
     uint32_t volumeInfo;
     uint32_t foldState;
     uint32_t powerState;
+    uint32_t appsMuteState;
     const char *preDevice;
     const char *postDevice;
     const char *sceneType;

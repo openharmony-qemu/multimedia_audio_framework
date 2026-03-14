@@ -246,6 +246,12 @@ uint64_t HpaeCaptureEffectNode::GetLatency(uint32_t sessionId)
     return 0;
 }
 
+int32_t HpaeCaptureEffectNode::SetAppsEnhanceMuteState(bool isMute)
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERROR, "audioEnhanceChainManager is nullptr");
+    return audioEnhanceChainManager->SetAppsMuteStateToChainById(sceneKeyCode_, isMute);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

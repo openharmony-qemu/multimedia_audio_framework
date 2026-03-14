@@ -29,6 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
+static constexpr size_t EXPECTED_RET_SAMPLES = 3840;
 int32_t PC_ENABLE_STATE = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
 
 HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
@@ -89,17 +90,19 @@ void HpaeSourceOutputNode::ApplyHighpassFilter(HpaePcmBuffer *inputPcmBuffer)
     CHECK_AND_RETURN_LOG(frameCount > 0, "invalid frameCount: %{public}d", frameCount);
     int32_t nbSamples = filterChannelCount_ * frameCount;
     std::vector<float> inputSamples(nbSamples);
-    int32_t ret = memcpy_s(inputSamples.data(), static_cast<size_t>(nbSamples) * sizeof(float), pcmData,
-        static_cast<size_t>(nbSamples) * sizeof(float));
+    size_t samplesPerVec = static_cast<size_t>(nbSamples) * sizeof(float);
+    int32_t ret = memcpy_s(inputSamples.data(), samplesPerVec, pcmData, samplesPerVec);
     CHECK_AND_RETURN_LOG(ret == 0, "copy pcmData to filter input failed: %{public}d", ret);
 
     std::vector<float> filteredSamples(nbSamples);
     CHECK_AND_RETURN_LOG(highpassFilter_ != nullptr, "highpassFilter_ is nullptr");
     ret = highpassFilter_->ApplyFilter(inputSamples, filteredSamples);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "filter apply failed: %{public}d", ret);
-
-    ret = memcpy_s(inputPcmBuffer->GetPcmDataBuffer(), static_cast<size_t>(nbSamples) * sizeof(float),
-        filteredSamples.data(), static_cast<size_t>(nbSamples) * sizeof(float));
+    CHECK_AND_RETURN_LOG(filteredSamples.size() == EXPECTED_RET_SAMPLES,
+        "filteredSamples size:%{public}zu, expect 3840", filteredSamples.size());
+    filteredSamples = std::vector<float>(filteredSamples.end() - static_cast<size_t>(nbSamples),
+        filteredSamples.end());
+    ret = memcpy_s(inputPcmBuffer->GetPcmDataBuffer(), samplesPerVec, filteredSamples.data(), samplesPerVec);
     CHECK_AND_RETURN_LOG(ret == 0, "copy filtered samples failed: %{public}d", ret);
 }
 

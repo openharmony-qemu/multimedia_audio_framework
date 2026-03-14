@@ -148,6 +148,7 @@ private:
     static napi_value GetCallback(size_t argc, napi_value *argv);
     static napi_value SetTarget(napi_env env, napi_callback_info info);
     static napi_value GetTarget(napi_env env, napi_callback_info info);
+    static napi_value SetIndependentAudioSessionStrategy(napi_env env, napi_callback_info info);
 
     static napi_status WriteArrayBufferToNative(std::shared_ptr<AudioRendererAsyncContext> context);
 

@@ -40,6 +40,11 @@ struct AudioSessionDeactiveEvent {
     AudioSessionDeactiveReason deactiveReason;
 };
 
+struct AudioSessionActiveBehaviors {
+    bool voipNoPrivacyFlag = false;   // VOIP_PRIVACY_TYPE_PUBLIC
+    bool muteWhenInterruptFlag = false;  // MUTE_WHEN_INTERRUPT
+};
+
 enum class AudioSessionType {
     DEFAULT = 0,
     MEDIA = 1,
@@ -137,6 +142,18 @@ enum class AudioSessionStateChangeHint {
      * @since 23
      */
     UNMUTE_SUGGESTION = 7,
+
+    /**
+     * Mute the playback.
+     * @since 24
+     */
+    MUTE = 8,
+ 
+    /**
+     * Unmute the playback.
+     * @since 24
+     */
+    UNMUTE = 9,
 };
 
 /**
@@ -149,6 +166,37 @@ struct AudioSessionStateChangedEvent {
      * @since 20
      */
     AudioSessionStateChangeHint stateChangeHint;
+};
+
+/**
+ * Enumerates audio session behavior flags.
+ * @enum { int }
+ * @syscap SystemCapability.Multimedia.Audio.Core
+ * @stagemodelonly
+ * @since 24 dynamic&static
+ */
+enum class AudioSessionBehaviorFlags {
+    /**
+     * Default behavior, used to clear behavior settings.
+     * @syscap SystemCapability.Multimedia.Audio.Core
+     * @stagemodelonly
+     * @since 24 dynamic&static
+     */
+    DEFAULT = 0x00000000,
+    /**
+     * Non-privacy VoIP, allows being recorded.
+     * @syscap SystemCapability.Multimedia.Audio.Core
+     * @stagemodelonly
+     * @since 26 dynamic&static
+     */
+    VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
+    /**
+     * When the audio stream is interrupted by the system, perform forcible mute instead.
+     * @syscap SystemCapability.Multimedia.Audio.Core
+     * @stagemodelonly
+     * @since 24 dynamic&static
+     */
+    MUTE_WHEN_INTERRUPTED = 0x00000002,
 };
 } // namespace AudioStandard
 } // namespace OHOS

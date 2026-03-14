@@ -211,6 +211,7 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
     InitMuteStatusMap(isFirstBoot);
     InitSafeStatus(isFirstBoot);
     InitSafeTime(isFirstBoot);
+    InitLegacyHighVolumeCheckTime(isFirstBoot);
 
     if (isNeedCopySystemUrlData_) {
         CloneSystemSoundUrl();
@@ -2764,6 +2765,36 @@ int32_t AudioAdapterManager::SetDeviceSafeTime(DeviceType deviceType, int64_t ti
     return SUCCESS;
 }
 
+void AudioAdapterManager::InitLegacyHighVolumeCheckTime(bool isFirstBoot)
+{
+    int32_t notifyVolumeLevel = VolumeUtils::GetLegacyVolumeNotificationLevel();
+    if (isFirstBoot && notifyVolumeLevel > 0) {
+        int64_t time = 0;
+        CHECK_AND_RETURN_LOG(volumeDataMaintainer_.GetLegacyHighVolumeTime(time),
+            "init legacy high volume check time failed");
+        legacyHighVolumeCheckTime_ = time;
+        AUDIO_INFO_LOG("init legacy high volume check time: %{public}" PRIu64, legacyHighVolumeCheckTime_.load());
+    }
+}
+
+int32_t AudioAdapterManager::SetLegacyHighVolumeCheckTime(int64_t checkTime)
+{
+    legacyHighVolumeCheckTime_ = checkTime;
+    CHECK_AND_RETURN_RET_LOG(volumeDataMaintainer_.SaveLegacyHighVolumeTime(checkTime), ERROR,
+        "save legacy high volume time failed");
+    return SUCCESS;
+}
+
+int64_t AudioAdapterManager::GetLegacyHighVolumeCheckTime()
+{
+    CHECK_AND_RETURN_RET(legacyHighVolumeCheckTime_ <= 0, legacyHighVolumeCheckTime_);
+    int64_t time = 0;
+    CHECK_AND_RETURN_RET_LOG(volumeDataMaintainer_.GetLegacyHighVolumeTime(time), 0,
+        "get legacy high volume check time failed");
+    legacyHighVolumeCheckTime_ = time;
+    return legacyHighVolumeCheckTime_;
+}
+
 int32_t AudioAdapterManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t volume)
 {
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
@@ -3553,6 +3584,8 @@ void AudioAdapterManager::QueryDeviceVolumeBehavior(std::shared_ptr<AudioDeviceD
 {
     VolumeBehavior behavior;
     CHECK_AND_RETURN_LOG(desc != nullptr, "QueryDeviceVolumeBehavior desc is null");
+    CHECK_AND_RETURN_LOG(AudioVolumeUtils::GetInstance().IsDistributedDevice(desc),
+        "QueryDeviceVolumeBehavior desc is not dmsdp");
     CHECK_AND_RETURN_LOG(deviceVolumeBehaviorListener_ != nullptr,
         "QueryDeviceVolumeBehavior deviceVolumeBehaviorListener_ is null");
     (void)deviceVolumeBehaviorListener_->OnQueryDeviceVolumeBehavior(behavior);
@@ -3670,11 +3703,16 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     auto streamDescs = AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescsInfo();
     std::set<std::pair<std::string, AudioStreamType>> setedVolume;
     for (auto &streamDesc : streamDescs) {
+        CHECK_AND_CONTINUE(streamDesc != nullptr);
         AudioStreamType newStreamType = streamType;
         auto device = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(device != nullptr && device->GetName() == desc->GetName());
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != HILINK_MODE);
+
+        CHECK_AND_CONTINUE(VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage) ==
+            VolumeUtils::GetVolumeTypeFromStreamType(newStreamType));
+
         RedirectVolumeType(streamDesc, newStreamType);
         for (auto &tempDesc : streamDesc->newDeviceDescs_) {
             CHECK_AND_CONTINUE(tempDesc != nullptr);

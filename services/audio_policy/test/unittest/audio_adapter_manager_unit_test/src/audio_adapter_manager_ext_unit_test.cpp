@@ -603,5 +603,21 @@ HWTEST_F(AudioAdapterManagerExtUnitTest, GetStreamMuteInternal, TestSize.Level4)
     EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_RING), false);
     EXPECT_EQ(audioAdapterManager->GetStreamMuteInternal(desc, STREAM_MUSIC), false);
 }
+
+/**
+* @tc.name: LegacyHighVolumeCheckTime_001
+* @tc.desc: Test SetLegacyHighVolumeCheckTime and GetLegacyHighVolumeCheckTime
+* @tc.type: FUNC
+* @tc.require: #ICDC94
+*/
+HWTEST_F(AudioAdapterManagerExtUnitTest, LegacyHighVolumeCheckTime_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+
+    int64_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    EXPECT_EQ(audioAdapterManager->SetLegacyHighVolumeCheckTime(now), ERROR);
+    EXPECT_EQ(audioAdapterManager->GetLegacyHighVolumeCheckTime(), now);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -794,6 +794,23 @@ public:
      */
     virtual int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) const = 0;
 
+    /**
+     * @brief Set focus policy independent of audiosession.
+     *
+     * @param strategy Audio session strategy.
+     * @param behavior behavior is used to adjust the focus behavior,
+     * which can be a single flag or a bitwise OR combination of multiple flags in AudioSessionBehaviorFlags.
+     * @return Returns {@link SUCCESS} if the getting is successful; returns an error code defined
+     * in {@link audio_errors.h} otherwise.
+     * @since 24
+     */
+    virtual int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior)
+    {
+        (void)strategy;
+        (void)behavior;
+        return 0;
+    }
+
     virtual uint32_t GetOverflowCount() const = 0;
 
     virtual int32_t SetInputDevice(DeviceType deviceType) const = 0;

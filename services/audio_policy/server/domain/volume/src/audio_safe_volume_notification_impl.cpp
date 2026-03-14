@@ -91,12 +91,19 @@ static void SetActionButton(int32_t notificationId, const std::string& buttonNam
     Notification::NotificationRequest& request)
 {
     auto want = std::make_shared<AAFwk::Want>();
-    if (notificationId == RESTORE_VOLUME_NOTIFICATION_ID) {
-        AUDIO_INFO_LOG("SetActionButton AUDIO_RESTORE_VOLUME_EVENT.");
-        want->SetAction(AUDIO_RESTORE_VOLUME_EVENT);
-    } else {
-        AUDIO_INFO_LOG("SetActionButton AUDIO_INCREASE_VOLUME_EVENT.");
-        want->SetAction(AUDIO_INCREASE_VOLUME_EVENT);
+    switch (notificationId) {
+        case RESTORE_VOLUME_NOTIFICATION_ID:
+            AUDIO_INFO_LOG("SetActionButton AUDIO_RESTORE_VOLUME_EVENT.");
+            want->SetAction(AUDIO_RESTORE_VOLUME_EVENT);
+            break;
+        case LEGACY_HIGH_VOLUME_NOTIFICATION_ID:
+            AUDIO_INFO_LOG("SetActionButton AUDIO_LEGACY_HIGH_VOLUME_EVENT.");
+            want->SetAction(AUDIO_LEGACY_HIGH_VOLUME_EVENT);
+            break;
+        default:
+            AUDIO_INFO_LOG("SetActionButton AUDIO_INCREASE_VOLUME_EVENT.");
+            want->SetAction(AUDIO_INCREASE_VOLUME_EVENT);
+            break;
     }
     std::vector<std::shared_ptr<AAFwk::Want>> wants;
     wants.push_back(want);
@@ -120,12 +127,19 @@ static void SetActionButton(int32_t notificationId, const std::string& buttonNam
 static void SetExtraParam(int32_t notificationId, Notification::NotificationRequest& request)
 {
     std::shared_ptr<AAFwk::WantParams> wantParams = std::make_shared<AAFwk::WantParams>();
-    if (notificationId == RESTORE_VOLUME_NOTIFICATION_ID) {
-        AUDIO_INFO_LOG("SetExtraParam AUDIO_RESTORE_VOLUME_EVENT.");
-        wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_RESTORE_VOLUME_EVENT));
-    } else {
-        AUDIO_INFO_LOG("SetExtraParam AUDIO_INCREASE_VOLUME_EVENT.");
-        wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_INCREASE_VOLUME_EVENT));
+    switch (notificationId) {
+        case RESTORE_VOLUME_NOTIFICATION_ID:
+            AUDIO_INFO_LOG("SetExtraParam AUDIO_RESTORE_VOLUME_EVENT.");
+            wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_RESTORE_VOLUME_EVENT));
+            break;
+        case LEGACY_HIGH_VOLUME_NOTIFICATION_ID:
+            AUDIO_INFO_LOG("SetExtraParam AUDIO_LEGACY_HIGH_VOLUME_EVENT.");
+            wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_LEGACY_HIGH_VOLUME_EVENT));
+            break;
+        default:
+            AUDIO_INFO_LOG("SetExtraParam AUDIO_INCREASE_VOLUME_EVENT.");
+            wantParams->SetParam(SAVE_VOLUME_SYS_ABILITY_NAME, AAFwk::String::Box(AUDIO_INCREASE_VOLUME_EVENT));
+            break;
     }
 
     request.SetAdditionalData(wantParams);
@@ -349,6 +363,59 @@ Global::Resource::RState AudioLoudVolumeNotificationImpl::GetMediaDataByName(con
         ResourceManagerAdapter::GetInstance()->GetMediaDataByName(name, len, outValue, density);
     IPCSkeleton::SetCallingIdentity(identity);
     return rstate;
+}
+
+bool AudioLegacyHighVolumeNotificationImpl::SetTitleAndText(
+    std::shared_ptr<Notification::NotificationNormalContent> content)
+{
+    CHECK_AND_RETURN_RET_LOG(content != nullptr, false, "notification normal content is null");
+    content->SetText(GetSystemStringByName(LEGACY_HIGH_VOLUME_NOTIFICATION_HINT));
+    return true;
+}
+
+std::string AudioLegacyHighVolumeNotificationImpl::GetSystemStringByName(const std::string &name)
+{
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    std::string result = ResourceManagerAdapter::GetInstance()->GetSystemStringByName(name);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return result;
+}
+
+void AudioLegacyHighVolumeNotificationImpl::PublishLegacyHighVolumeNotification()
+{
+    std::shared_ptr<Notification::NotificationNormalContent> normalContent =
+        std::make_shared<Notification::NotificationNormalContent>();
+    CHECK_AND_RETURN_LOG(normalContent != nullptr, "get notification normal content nullptr");
+    CHECK_AND_RETURN_LOG(SetTitleAndText(normalContent), "set notification text error");
+    std::shared_ptr<Notification::NotificationContent> content =
+        std::make_shared<Notification::NotificationContent>(normalContent);
+    CHECK_AND_RETURN_LOG(content != nullptr, "create notification content nullptr");
+
+    Notification::NotificationRequest request;
+    SetBasicOption(LEGACY_HIGH_VOLUME_NOTIFICATION_ID, request);
+    request.SetContent(content);
+    request.SetNotificationId(LEGACY_HIGH_VOLUME_NOTIFICATION_ID);
+    request.SetIsDoNotDisturbByPassed(true);
+
+    std::string buttonName = GetSystemStringByName(SAFE_VOLUME_INCREASE_VOL_BUTTON_ID);
+    if (!buttonName.empty()) {
+        SetActionButton(LEGACY_HIGH_VOLUME_NOTIFICATION_ID, buttonName, request);
+    }
+
+    SetExtraParam(LEGACY_HIGH_VOLUME_NOTIFICATION_ID, request);
+
+    auto ret = Notification::NotificationHelper::PublishNotification(request);
+    AUDIO_INFO_LOG("legacy high volume publish notification result: %{public}d", ret);
+}
+
+void AudioLegacyHighVolumeNotificationImpl::CancelLegacyHighVolumeNotification()
+{
+    auto ret = Notification::NotificationHelper::CancelNotification(LEGACY_HIGH_VOLUME_NOTIFICATION_ID);
+    AUDIO_INFO_LOG("legacy high volume cancel notification result: %{public}d", ret);
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    ResourceManagerAdapter::GetInstance()->ReleaseSystemResourceManager();
+    IPCSkeleton::SetCallingIdentity(identity);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

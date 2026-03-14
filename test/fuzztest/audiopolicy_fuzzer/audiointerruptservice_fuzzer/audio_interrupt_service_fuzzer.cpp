@@ -1254,13 +1254,9 @@ void SetLatestMuteStateFuzzTest(const uint8_t *rawData, size_t size)
     if (interruptService == nullptr) {
         return;
     }
-    InterruptEventInternal interruptEvent = {};
-    interruptEvent.eventType = *reinterpret_cast<const InterruptType *>(rawData);
-    interruptEvent.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
-    interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
-    interruptEvent.duckVolume = 0;
     uint32_t streamId = *reinterpret_cast<const uint32_t *>(rawData);
-    interruptService->SetLatestMuteState(interruptEvent, streamId);
+    bool muteFlag = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    interruptService->SetLatestMuteState(streamId, muteFlag);
 }
  
 void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)

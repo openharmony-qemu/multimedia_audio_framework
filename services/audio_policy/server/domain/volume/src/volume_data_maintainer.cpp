@@ -32,6 +32,7 @@ const std::string AUDIO_SAFE_VOLUME_STATE_SLE = "audio_safe_volume_state_sle";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS = "unsafe_volume_music_active_ms";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_BT = "unsafe_volume_music_active_ms_bt";
 const std::string UNSAFE_VOLUME_MUSIC_ACTIVE_MS_SLE = "unsafe_volume_music_active_ms_sle";
+const std::string LEGACY_HIGH_VOLUME_CHECK_TIME_S = "legacy_high_volume_check_time_s";
 const std::string UNSAFE_VOLUME_LEVEL = "unsafe_volume_level";
 const std::string UNSAFE_VOLUME_LEVEL_BT = "unsafe_volume_level_bt";
 const std::string UNSAFE_VOLUME_LEVEL_SLE = "unsafe_volume_level_sle";
@@ -368,6 +369,22 @@ bool VolumeDataMaintainer::GetSafeStatus(DeviceType deviceType, SafeStatus &safe
         SaveSafeStatus(deviceType, static_cast<SafeStatus>(value));
     }
     safeStatus = static_cast<SafeStatus>(value);
+    return true;
+}
+
+bool VolumeDataMaintainer::SaveLegacyHighVolumeTime(int64_t time)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = settingProvider.PutLongValue(LEGACY_HIGH_VOLUME_CHECK_TIME_S, time, "secure");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "save legacy high volume to db error");
+    return true;
+}
+
+bool VolumeDataMaintainer::GetLegacyHighVolumeTime(int64_t &time)
+{
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = settingProvider.GetLongValue(LEGACY_HIGH_VOLUME_CHECK_TIME_S, time, "secure");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "get legacy high volume from db failed");
     return true;
 }
 

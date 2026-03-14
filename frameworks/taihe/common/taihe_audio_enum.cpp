@@ -399,6 +399,10 @@ static const std::map<OHOS::AudioStandard::AudioSessionStateChangeHint,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_MUTE_SUGGESTION},
     {OHOS::AudioStandard::AudioSessionStateChangeHint::UNMUTE_SUGGESTION,
         AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE_SUGGESTION},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::MUTE,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_MUTE},
+    {OHOS::AudioStandard::AudioSessionStateChangeHint::UNMUTE,
+        AudioSessionStateChangeHint::key_t::AUDIO_SESSION_STATE_CHANGE_HINT_UNMUTE},
 };
 
 static const std::map<OHOS::AudioStandard::OutputDeviceChangeRecommendedAction,

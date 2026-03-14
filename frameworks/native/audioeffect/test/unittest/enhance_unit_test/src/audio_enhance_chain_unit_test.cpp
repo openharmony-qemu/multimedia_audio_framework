@@ -44,7 +44,8 @@ std::shared_ptr<AudioEnhanceChain> CreateNewChain()
 {
     const uint64_t chainId = 0x1234;
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0,
+        "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 4, 2 };
 
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
@@ -346,7 +347,8 @@ HWTEST(AudioEnhanceChainUnitTest, ApplyEmptyEnhanceChain, TestSize.Level1)
 {
     const uint64_t chainId = 0x3456;
     std::string scene = "SCENE_VOIP_UP";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0,
+        "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, true, 48000, 2, 2, true, 48000, 4, 2 };
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
     EXPECT_NE(chain, nullptr);
@@ -408,7 +410,7 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_MicChannelsLessThanDefau
 {
     const uint64_t chainId = 0x5678; // 0x5678 for test chainid
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0,  // 20 for volume, 3 for state
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
         "DEVICE_TYPE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 };
 
@@ -421,7 +423,7 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_MicChannelsEqualDefault,
 {
     const uint64_t chainId = 0x5679; // 0x5679 for test chainid
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, // 20 for volume, 3 for state
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
         "DEVICE_TYPE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr =
         { 48000, 4, 4, false, 48000, 2, 2, false, 48000, 4, 4 }; // 48000 for rate, 4 for ch and format
@@ -435,7 +437,7 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_MicChannelsGreaterThanDe
 {
     const uint64_t chainId = 0x5680; // 0x5680 for test chainid
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, // 20 for volume, 3 for state
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
         "DEVICE_TYPE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr =
         { 48000, 6, 6, false, 48000, 2, 2, false, 48000, 6, 6 }; // 48000 for rate, 6 and 2 for ch and format
@@ -449,7 +451,7 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_PreDeviceNotDefault, Tes
 {
     const uint64_t chainId = 0x5681; // 0x5681 for test chainid
     std::string scene = "SCENE_TEST";
-    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, // 20 for volume, 3 for state
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 0, // 20 for volume, 3 for state
         "DEVICE_OTHER", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
     const AudioEnhanceDeviceAttr deviceAttr =
         { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 2, 2 }; // 48000 for rate, 2 for ch and format
@@ -457,6 +459,67 @@ HWTEST(AudioEnhanceChainUnitTest, InitAudioEnhanceChain_PreDeviceNotDefault, Tes
     auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
     EXPECT_NE(chain, nullptr);
     EXPECT_EQ(chain->GetChainId(), chainId);
+}
+
+HWTEST(AudioEnhanceChainUnitTest, SetAppsMuteStateSucc, TestSize.Level1)
+{
+    auto chain = CreateNewChain();
+    EXPECT_NE(chain, nullptr);
+
+    // Test set apps mute state without effect module
+    uint32_t appsMuteState = 1;
+    EXPECT_EQ(chain->SetAppsMuteState(appsMuteState), SUCCESS);
+
+    AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
+    CreateModuleForChain(chain, &lib);
+
+    // Test set apps mute state with effect module
+    EXPECT_EQ(chain->SetAppsMuteState(appsMuteState), SUCCESS);
+
+    // Test set same state again (no update)
+    EXPECT_EQ(chain->SetAppsMuteState(appsMuteState), SUCCESS);
+
+    // Test set different state
+    uint32_t newMuteState = 0;
+    EXPECT_EQ(chain->SetAppsMuteState(newMuteState), SUCCESS);
+
+    chain->ReleaseAllEnhanceModule();
+}
+
+HWTEST(AudioEnhanceChainUnitTest, SetAppsMuteStateWithDifferentValues, TestSize.Level1)
+{
+    auto chain = CreateNewChain();
+    EXPECT_NE(chain, nullptr);
+
+    AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
+    CreateModuleForChain(chain, &lib);
+
+    // Test various mute state values
+    std::vector<uint32_t> muteStates = { 0, 1, 2, 10, 100, UINT32_MAX };
+    for (auto state : muteStates) {
+        EXPECT_EQ(chain->SetAppsMuteState(state), SUCCESS);
+    }
+
+    chain->ReleaseAllEnhanceModule();
+}
+
+HWTEST(AudioEnhanceChainUnitTest, SetAppsMuteStateWithAlgoParam, TestSize.Level1)
+{
+    const uint64_t chainId = 0x1234;
+    std::string scene = "SCENE_TEST";
+    // algoParam includes appsMuteState field
+    const AudioEnhanceParamAdapter algoParam = { 0, 20, 3, 0, 1,
+        "DEVICE_MIC", "SPEAKER", "SCENE_VOIP_UP", "DEVICE_NAME" };
+    const AudioEnhanceDeviceAttr deviceAttr = { 48000, 2, 2, false, 48000, 2, 2, false, 48000, 4, 2 };
+
+    auto chain = std::make_shared<AudioEnhanceChain>(chainId, scene, PRIOR_SCENE, algoParam, deviceAttr);
+    EXPECT_NE(chain, nullptr);
+
+    // Test set same state as initial state (should not update)
+    EXPECT_EQ(chain->SetAppsMuteState(1), SUCCESS);
+
+    // Test set different state
+    EXPECT_EQ(chain->SetAppsMuteState(0), SUCCESS);
 }
 } // AudioStandard
 } // OHOS

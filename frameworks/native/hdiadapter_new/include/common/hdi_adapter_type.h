@@ -114,6 +114,9 @@ typedef struct IAudioSourceAttr : public Parcelable {
     uint32_t sampleRateEc = 0;
     uint32_t channelEc = 0;
     std::string hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    AudioSampleFormat formatMicIn = AudioSampleFormat::INVALID_WIDTH;
+    uint32_t sampleRateMicIn = 0;
+    uint32_t channelMicIn = 0;
     uint32_t routeFlag = 0;
     bool isPrimarySinkExist_ = true;
 
@@ -170,6 +173,9 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->sampleRateEc = parcel.ReadUint32();
         attr->channelEc = parcel.ReadUint32();
         attr->hdiSourceType = parcel.ReadString();
+        attr->formatMicIn = static_cast<AudioSampleFormat>(parcel.ReadUint8());
+        attr->sampleRateMicIn = parcel.ReadUint32();
+        attr->channelMicIn = parcel.ReadUint32();
         attr->routeFlag = parcel.ReadUint32();
         return attr;
     }

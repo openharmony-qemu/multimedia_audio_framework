@@ -193,6 +193,7 @@ void AudioPolicyService::SubscribeSafeVolumeEvent()
     EventFwk::MatchingSkills matchingSkills;
     matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
     matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
+    matchingSkills.AddEvent(AUDIO_LEGACY_HIGH_VOLUME_EVENT);
     EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
     auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo,
         std::bind(&AudioPolicyService::OnReceiveEvent, this, std::placeholders::_1));

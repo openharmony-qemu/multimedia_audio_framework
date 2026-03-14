@@ -72,6 +72,8 @@ public:
         const std::string &extraSceneType) = 0;
 
     virtual int32_t SendInitCommand() = 0;
+
+    virtual int32_t SetAppsMuteStateToChainById(uint64_t sceneKeyCode, bool isMute) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

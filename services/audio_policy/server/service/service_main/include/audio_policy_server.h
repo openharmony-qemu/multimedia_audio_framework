@@ -762,6 +762,7 @@ public:
     void HandleDataShareReadyEvent();
     int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes) override;
+    int32_t SetAudioSessionBehavior(const uint32_t behavior) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -908,6 +909,7 @@ private:
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
         const AudioSessionStrategy &strategy, const bool isStandalone);
     bool IsScreenOnAdjustVolume();
+    bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;

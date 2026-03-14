@@ -17,6 +17,7 @@
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
+#include <chrono>
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -399,6 +400,42 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_017, TestSize.Level4)
 
     audioPolicyServer_->audioPolicyServerHandler_.reset();
     EXPECT_EQ(audioPolicyServer_->SetCallbackStreamUsageInfo(streamUsages), AUDIO_ERR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_018
+* @tc.desc  : Test ShouldNotifyForLegacyVolume.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_018, TestSize.Level4)
+{
+    VolumeUtils::SetLegacyVolumeNotificationLevel(-1);
+    EXPECT_FALSE(audioPolicyServer_->ShouldNotifyForLegacyVolume(15));
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_019
+* @tc.desc  : Test ShouldNotifyForLegacyVolume with unchecked state.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_019, TestSize.Level4)
+{
+    VolumeUtils::SetLegacyVolumeNotificationLevel(5);
+    audioPolicyServer_->audioVolumeManager_.audioPolicyManager_.SetLegacyHighVolumeCheckTime(0);
+    EXPECT_TRUE(audioPolicyServer_->ShouldNotifyForLegacyVolume(10));
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_020
+* @tc.desc  : Test ShouldNotifyForLegacyVolume with checked state.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_020, TestSize.Level4)
+{
+    VolumeUtils::SetLegacyVolumeNotificationLevel(5);
+    int64_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    audioPolicyServer_->audioVolumeManager_.audioPolicyManager_.SetLegacyHighVolumeCheckTime(currentTime);
+    EXPECT_TRUE(audioPolicyServer_->ShouldNotifyForLegacyVolume(10));
 }
 } // AudioStandard
 } // OHOS

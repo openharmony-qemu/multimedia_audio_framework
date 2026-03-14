@@ -77,6 +77,8 @@ public:
     bool IsSystemApp(void) const;
     void EnableMuteSuggestionWhenMixWithOthers(bool enable);
     bool IsMuteSuggestionWhenMixEnabled();
+    int32_t SetAudioSessionBehavior(const uint32_t behavior);
+    AudioSessionActiveBehaviors GetSessionBehaviors();
 
 private:
     StreamUsage GetStreamUsageInner();
@@ -105,6 +107,7 @@ private:
     AudioDeviceManager &deviceManager_;
     bool isSystemApp_ {false};
     bool isMuteSuggestionEnabled_ = false;
+    AudioSessionActiveBehaviors behaviorFlags_ {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

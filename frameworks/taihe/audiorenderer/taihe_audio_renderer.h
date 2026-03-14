@@ -83,6 +83,7 @@ public:
     int32_t GetLatency(AudioLatencyType type);
     void SetTargetSync(RenderTarget target);
     RenderTarget GetTarget();
+    void SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior);
 
     void OnStateChange(callback_view<void(AudioState)> callback);
     void OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback);

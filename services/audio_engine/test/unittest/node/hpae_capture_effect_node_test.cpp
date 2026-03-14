@@ -435,6 +435,52 @@ DECLARE_HPAE_CAPTURE_EFFECT_NODE_TEST(SAMPLE_F32LE, SAMPLE_RATE_48000, CHANNEL_1
 DECLARE_HPAE_CAPTURE_EFFECT_NODE_TEST(SAMPLE_F32LE, SAMPLE_RATE_44100, CHANNEL_12, testCreate_098)
 DECLARE_HPAE_CAPTURE_EFFECT_NODE_TEST(SAMPLE_S16LE, SAMPLE_RATE_48000, CHANNEL_16, testCreate_099)
 DECLARE_HPAE_CAPTURE_EFFECT_NODE_TEST(SAMPLE_F32LE, SAMPLE_RATE_48000, CHANNEL_16, testCreate_100)
+
+/*
+ * tc.name   : Test SetAppsEnhanceMuteState API
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_101
+ * tc.desc   : Test SetAppsEnhanceMuteState with valid node
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_101, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+
+    // Test SetAppsEnhanceMuteState without effect created
+    // Should return error because sceneKeyCode_ is 0 (not set)
+    EXPECT_EQ(hpaeCaptureEffectNode->SetAppsEnhanceMuteState(true), ERROR);
+    EXPECT_EQ(hpaeCaptureEffectNode->SetAppsEnhanceMuteState(false), ERROR);
+}
+
+/*
+ * tc.name   : Test SetAppsEnhanceMuteState API
+ * tc.type   : FUNC
+ * tc.number : HpaeCaptureEffectNodeTest_102
+ * tc.desc   : Test SetAppsEnhanceMuteState with different mute states
+ */
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_102, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    nodeInfo.statusCallback = testStatuscallback;
+    std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+
+    CaptureEffectAttr attr = {
+        .micChannels = STEREO,
+        .ecChannels = STEREO,
+        .micRefChannels = STEREO,
+    };
+
+    // Create capture effect (this will set sceneKeyCode_)
+    uint64_t sceneKeyCode = 12345;
+    EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectCreate(sceneKeyCode, attr), 0);
+
+    // Test SetAppsEnhanceMuteState after effect release
+    EXPECT_EQ(hpaeCaptureEffectNode->CaptureEffectRelease(sceneKeyCode), 0);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

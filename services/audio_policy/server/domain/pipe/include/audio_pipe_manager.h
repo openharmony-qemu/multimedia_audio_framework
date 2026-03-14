@@ -113,6 +113,8 @@ public:
     void AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateNewDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

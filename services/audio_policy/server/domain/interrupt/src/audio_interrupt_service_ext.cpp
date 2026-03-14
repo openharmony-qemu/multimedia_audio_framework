@@ -133,13 +133,8 @@ uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
     return callingUid_;
 }
 
-void AudioInterruptService::SetLatestMuteState(const InterruptEventInternal &interruptEvent,
-    const uint32_t &streamId)
+void AudioInterruptService::SetLatestMuteState(const uint32_t &streamId, bool muteFlag)
 {
-    CHECK_AND_RETURN_LOG(interruptEvent.hintType == INTERRUPT_HINT_MUTE ||
-        interruptEvent.hintType == INTERRUPT_HINT_UNMUTE, "unsupported hintType: %{public}d",
-        interruptEvent.hintType);
-    bool muteFlag = interruptEvent.hintType == INTERRUPT_HINT_MUTE;
     AudioServerProxy::GetInstance().SetLatestMuteState(streamId, muteFlag);
     streamCollector_.CapturerMutedFlagChange(streamId, muteFlag);
     policyServer_->SetSourceOutputStreamMuteByStreamId(streamId, muteFlag);
@@ -149,7 +144,9 @@ void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &c
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
     if (currentInterrupt.strategy == InterruptStrategy::DEFAULT &&
-        incomingInterrupt.strategy == InterruptStrategy::DEFAULT) {
+        incomingInterrupt.strategy == InterruptStrategy::DEFAULT &&
+        !(currentInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == CURRENT) &&
+        !(incomingInterrupt.behaviorFlags_.muteWhenInterruptFlag && focusEntry.actionOn == INCOMING)) {
         return;
     }
 
@@ -563,6 +560,28 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
     SendInterruptEventCallback(forceUnmute, sessionId, audioInterrupt);
     AudioServerProxy::GetInstance().SetLatestMuteState(sessionId, 0);
     streamCollector_.CapturerMutedFlagChange(sessionId, 0);
+}
+
+int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    return sessionService_.SetAudioSessionBehavior(callerPid, behavior);
+}
+ 
+void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)
+{
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        AUDIO_INFO_LOG("Handle all streams in the session of pid:%{public}d, mute:%{public}d",
+            audioInterrupt.pid, muteFlag);
+        const auto &interruptsInSession = sessionService_.GetStreams(audioInterrupt.pid);
+        for (auto &interrupt : interruptsInSession) {
+            SetNonInterruptMute(interrupt.streamId, muteFlag);
+        }
+    } else if (audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
+        SetLatestMuteState(audioInterrupt.streamId, muteFlag);
+    } else {
+        SetNonInterruptMute(audioInterrupt.streamId, muteFlag);
+    }
 }
 }
 } // namespace OHOS
