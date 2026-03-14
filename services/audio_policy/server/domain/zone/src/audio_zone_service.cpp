@@ -838,7 +838,7 @@ void AudioZoneService::NotifyStreamSilentChange(uint32_t streamId)
     JUDGE_AND_INFO_LOG(zoneId != 0, "NotifyStreamSilentChange of zone %{public}d", zoneId);
     CHECK_AND_CALL_FUNC_RETURN(CheckIsZoneValid(zoneId),
         AUDIO_INFO_LOG("zone id %{public}d is not valid", zoneId));
-    
+
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
     if (tmp->NotifyStreamSilentChange(streamId)) {
