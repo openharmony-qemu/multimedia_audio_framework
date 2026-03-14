@@ -416,10 +416,10 @@ int32_t HpaeSourceInputNode::GetCapturerSourceAdapter(
     captureId_ = HDI_INVALID_ID;
     if (info.empty()) {
         captureId_ = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(
-            deviceClass, sourceType, HDI_ID_INFO_DEFAULT, true);
+            deviceClass, sourceType, HDI_ID_INFO_DEFAULT, true, GetNodeInfo().routeFlag);
     } else {
         captureId_ = HdiAdapterManager::GetInstance().GetCaptureIdByDeviceClass(
-            deviceClass, sourceType, info, true);
+            deviceClass, sourceType, info, true, GetNodeInfo().routeFlag);
     }
     audioCapturerSource_ = HdiAdapterManager::GetInstance().GetCaptureSource(captureId_, true);
     if (audioCapturerSource_ == nullptr) {

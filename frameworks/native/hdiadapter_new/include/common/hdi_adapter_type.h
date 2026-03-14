@@ -114,6 +114,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
     uint32_t sampleRateEc = 0;
     uint32_t channelEc = 0;
     std::string hdiSourceType = "AUDIO_INPUT_DEFAULT_TYPE";
+    uint32_t routeFlag = 0;
     bool isPrimarySinkExist_ = true;
 
     // struct should use Marshalling Serialization
@@ -138,7 +139,8 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteUint8(static_cast<uint8_t>(formatEc)) &&
             parcel.WriteUint32(sampleRateEc) &&
             parcel.WriteUint32(channelEc) &&
-            parcel.WriteString(hdiSourceType);
+            parcel.WriteString(hdiSourceType) &&
+            parcel.WriteUint32(routeFlag);
     }
 
     static IAudioSourceAttr *Unmarshalling(Parcel &parcel)
@@ -168,6 +170,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
         attr->sampleRateEc = parcel.ReadUint32();
         attr->channelEc = parcel.ReadUint32();
         attr->hdiSourceType = parcel.ReadString();
+        attr->routeFlag = parcel.ReadUint32();
         return attr;
     }
 } IAudioSourceAttr;

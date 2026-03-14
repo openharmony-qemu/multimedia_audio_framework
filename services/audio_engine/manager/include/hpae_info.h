@@ -170,6 +170,7 @@ struct HpaeSourceInfo {
     uint32_t openMicSpeaker = 0;
     std::string macAddress = "";
     std::string busAddress = "";
+    uint32_t routeFlag = 0;
 };
 
 static inline int32_t GetSizeFromFormat(int32_t format)

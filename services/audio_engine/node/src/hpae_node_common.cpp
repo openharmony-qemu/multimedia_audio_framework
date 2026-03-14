@@ -396,6 +396,7 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     sourceInfo.micRefChannels = static_cast<AudioChannel>(StringToNum(audioModuleInfo.micRefChannels));
     sourceInfo.openMicSpeaker = static_cast<uint32_t>(StringToNum(audioModuleInfo.OpenMicSpeaker));
     sourceInfo.micRefFrameLen = FRAME_LEN_20MS * (sourceInfo.micRefSamplingRate / MS_PER_SECOND);
+    sourceInfo.routeFlag = audioModuleInfo.routeFlag;
     return SUCCESS;
 }
 
@@ -427,7 +428,8 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
             sourceInfo.micRefFrameLen,
             sourceInfo.micRefSamplingRate,
             sourceInfo.micRefFormat,
-            sourceInfo.micRefChannels);
+            sourceInfo.micRefChannels,
+            sourceInfo.routeFlag);
     };
     return getKey(info) != getKey(oldInfo);
 }

@@ -53,7 +53,8 @@ public:
     uint32_t GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info = HDI_ID_INFO_DEFAULT,
         bool isResident = false, bool tryCreate = true);
     uint32_t GetCaptureIdByDeviceClass(const std::string &deviceClass, const SourceType sourceType,
-        const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false, bool tryCreate = true);
+        const std::string &info = HDI_ID_INFO_DEFAULT, bool isResident = false,
+        uint32_t routeFlag = 0, bool tryCreate = true);
     void ReleaseId(uint32_t &id);
 
     std::shared_ptr<IAudioRenderSink> GetRenderSink(uint32_t renderId, bool tryCreate = false);
