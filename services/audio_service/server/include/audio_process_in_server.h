@@ -193,6 +193,7 @@ public:
     int32_t SetStaticRenderRate(uint32_t renderRate) override;
 
     int32_t ResetStaticPlayPosition() override;
+    int32_t SetMuteHint(bool mute) override;
 public:
     const AudioProcessConfig processConfig_;
 

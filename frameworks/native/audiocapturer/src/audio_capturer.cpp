@@ -1194,6 +1194,17 @@ int32_t AudioCapturerPrivate::SetInterruptStrategy(InterruptStrategy strategy)
     return SUCCESS;
 }
 
+int32_t AudioCapturerPrivate::SetMuteHint(bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(GetStatus() == CAPTURER_RUNNING, ERR_ILLEGAL_STATE,
+        "SetMuteHint only support running state");
+
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+
+    return currentStream->SetMuteHint(mute);
+}
+
 int32_t AudioCapturerPrivate::SetCaptureMode(AudioCaptureMode captureMode)
 {
     AUDIO_INFO_LOG("Capture mode: %{public}d", captureMode);

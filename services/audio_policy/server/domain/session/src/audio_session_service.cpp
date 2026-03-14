@@ -22,6 +22,7 @@
 #include "audio_utils.h"
 #include "audio_stream_id_allocator.h"
 #include "audio_stream_collector.h"
+#include "audio_effect_service.h"
 #include "ipc_skeleton.h"
 #include "audio_session_device_info.h"
 
@@ -665,6 +666,44 @@ bool AudioSessionService::IsMuteSuggestionWhenMixEnabled(int32_t callerPid)
     }
 
     return session->second->IsMuteSuggestionWhenMixEnabled();
+}
+
+int32_t AudioSessionService::SetAudioSessionCapturerMuteHint(int32_t callerPid, bool mute)
+{
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> currentCapturerInfos;
+    AudioStreamCollector::GetAudioStreamCollector().GetCurrentCapturerChangeInfos(currentCapturerInfos);
+    AudioEffectService::GetAudioEffectService().PruneInvalidAppMuteHintState(currentCapturerInfos);
+
+    std::vector<uint32_t> runningCapturerStreamIds;
+    for (const auto &capturerInfo : currentCapturerInfos) {
+        if (capturerInfo == nullptr) {
+            continue;
+        }
+        if (capturerInfo->capturerState != CAPTURER_RUNNING) {
+            continue;
+        }
+        if (capturerInfo->clientPid != callerPid && capturerInfo->callerPid != callerPid) {
+            continue;
+        }
+        runningCapturerStreamIds.emplace_back(static_cast<uint32_t>(capturerInfo->sessionId));
+    }
+    CHECK_AND_RETURN_RET_LOG(!runningCapturerStreamIds.empty(), ERROR_ILLEGAL_STATE,
+        "no running capturer stream for pid %{public}d", callerPid);
+
+    bool hasAppConfigured = false;
+    for (auto streamId : runningCapturerStreamIds) {
+        bool isApplied = AudioEffectService::GetAudioEffectService()
+            .SetAppConfiguredSessionMuteHintIfNoCapturerOverride(streamId, mute);
+        if (!isApplied) {
+            continue;
+        }
+        hasAppConfigured = true;
+    }
+    if (!hasAppConfigured) {
+        AUDIO_INFO_LOG("all running capturer streams are overridden by app capturer-level mute hint");
+    }
+    AudioEffectService::GetAudioEffectService().EvaluateVoipBypassByAppMuteHint(currentCapturerInfos);
+    return SUCCESS;
 }
 
 int32_t AudioSessionService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)

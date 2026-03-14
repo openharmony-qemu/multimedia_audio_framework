@@ -194,6 +194,7 @@ public:
     OH_AudioCommon_Result UnsetAudioSessionCurrentDeviceChangeCallback(
         OH_AudioSession_CurrentOutputDeviceChangedCallback callback);
     OH_AudioCommon_Result EnableMuteSuggestionWhenMixWithOthers(bool enable);
+    OH_AudioCommon_Result SetCapturerMuteHint(bool mute);
     OH_AudioCommon_Result SetAudioSessionBehavior(const uint32_t behavior);
 
 private:

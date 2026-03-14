@@ -838,5 +838,176 @@ HWTEST(AudioEffectServiceTest, AddSupportedAudioEnhancePropertyByDevice, TestSiz
         mergedSet);
     EXPECT_EQ(result, AUDIO_OK);
 }
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: MuteHintPriority_001.
+* @tc.desc  : Capturer-level mute hint should override session-level mute hint.
+*/
+HWTEST(AudioEffectServiceTest, MuteHintPriority_001, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    uint32_t streamId = 1001;
+
+    audioEffectService_->SetAppConfiguredCapturerMuteHint(streamId, false);
+    bool applied = audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(streamId, true);
+    EXPECT_FALSE(applied);
+    EXPECT_FALSE(audioEffectService_->GetEffectiveAppMuteHint(streamId));
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: MuteHintPriority_002.
+* @tc.desc  : Session-level mute hint should work when no capturer-level override exists.
+*/
+HWTEST(AudioEffectServiceTest, MuteHintPriority_002, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    uint32_t streamId = 1002;
+
+    bool applied = audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(streamId, true);
+    EXPECT_TRUE(applied);
+    EXPECT_TRUE(audioEffectService_->GetEffectiveAppMuteHint(streamId));
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: EvaluateVoipBypassByAppMuteHint_001.
+* @tc.desc  : Bypass decision should be based on all running voip streams.
+*/
+HWTEST(AudioEffectServiceTest, EvaluateVoipBypassByAppMuteHint_001, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+
+    auto voipInfo1 = std::make_shared<AudioCapturerChangeInfo>();
+    voipInfo1->sessionId = 2001;
+    voipInfo1->capturerState = CAPTURER_RUNNING;
+    voipInfo1->capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    auto voipInfo2 = std::make_shared<AudioCapturerChangeInfo>();
+    voipInfo2->sessionId = 2002;
+    voipInfo2->capturerState = CAPTURER_RUNNING;
+    voipInfo2->capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerInfos = { voipInfo1, voipInfo2 };
+    audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(2001, true);
+    audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(2002, true);
+    audioEffectService_->EvaluateVoipBypassByAppMuteHint(capturerInfos);
+    EXPECT_TRUE(audioEffectService_->isVoipBypassByAppMuteHintStateValid_);
+    EXPECT_TRUE(audioEffectService_->currentVoipBypassByAppMuteHint_);
+    EXPECT_EQ(audioEffectService_->lastVoipBypassTriggerSessionId_, 2001);
+
+    audioEffectService_->SetAppConfiguredCapturerMuteHint(2002, false);
+    audioEffectService_->EvaluateVoipBypassByAppMuteHint(capturerInfos);
+    EXPECT_TRUE(audioEffectService_->isVoipBypassByAppMuteHintStateValid_);
+    EXPECT_FALSE(audioEffectService_->currentVoipBypassByAppMuteHint_);
+    EXPECT_EQ(audioEffectService_->lastVoipBypassTriggerSessionId_, 2002);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: EvaluateVoipBypassByAppMuteHint_002.
+* @tc.desc  : Bypass should be disabled if any running voip stream has no mute hint config.
+*/
+HWTEST(AudioEffectServiceTest, EvaluateVoipBypassByAppMuteHint_002, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+
+    auto voipInfo1 = std::make_shared<AudioCapturerChangeInfo>();
+    voipInfo1->sessionId = 2101;
+    voipInfo1->capturerState = CAPTURER_RUNNING;
+    voipInfo1->capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    auto voipInfo2 = std::make_shared<AudioCapturerChangeInfo>();
+    voipInfo2->sessionId = 2102;
+    voipInfo2->capturerState = CAPTURER_RUNNING;
+    voipInfo2->capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerInfos = { voipInfo1, voipInfo2 };
+    audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(2101, true);
+    audioEffectService_->EvaluateVoipBypassByAppMuteHint(capturerInfos);
+    EXPECT_TRUE(audioEffectService_->isVoipBypassByAppMuteHintStateValid_);
+    EXPECT_FALSE(audioEffectService_->currentVoipBypassByAppMuteHint_);
+    EXPECT_EQ(audioEffectService_->lastVoipBypassTriggerSessionId_, 2102);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: EvaluateVoipBypassByAppMuteHint_003.
+* @tc.desc  : Bypass should be disabled when a voip stream turns from non-running to running without app mute hint.
+*/
+HWTEST(AudioEffectServiceTest, EvaluateVoipBypassByAppMuteHint_003, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+
+    auto voipInfo1 = std::make_shared<AudioCapturerChangeInfo>();
+    voipInfo1->sessionId = 2201;
+    voipInfo1->capturerState = CAPTURER_RUNNING;
+    voipInfo1->capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    auto voipInfo2 = std::make_shared<AudioCapturerChangeInfo>();
+    voipInfo2->sessionId = 2202;
+    voipInfo2->capturerState = CAPTURER_STOPPED;
+    voipInfo2->capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerInfos = { voipInfo1, voipInfo2 };
+    audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(2201, true);
+    audioEffectService_->EvaluateVoipBypassByAppMuteHint(capturerInfos);
+    EXPECT_TRUE(audioEffectService_->currentVoipBypassByAppMuteHint_);
+    EXPECT_EQ(audioEffectService_->lastVoipBypassTriggerSessionId_, 2201);
+
+    voipInfo2->capturerState = CAPTURER_RUNNING;
+    audioEffectService_->EvaluateVoipBypassByAppMuteHint(capturerInfos);
+    EXPECT_FALSE(audioEffectService_->currentVoipBypassByAppMuteHint_);
+    EXPECT_EQ(audioEffectService_->lastVoipBypassTriggerSessionId_, 2202);
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: EvaluateVoipBypassByAppMuteHint_004.
+* @tc.desc  : Bypass should be disabled when muted voip stream is removed from snapshot.
+*/
+HWTEST(AudioEffectServiceTest, EvaluateVoipBypassByAppMuteHint_004, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+
+    auto voipInfo = std::make_shared<AudioCapturerChangeInfo>();
+    voipInfo->sessionId = 2301;
+    voipInfo->capturerState = CAPTURER_RUNNING;
+    voipInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerInfos = { voipInfo };
+    audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(2301, true);
+    audioEffectService_->EvaluateVoipBypassByAppMuteHint(capturerInfos);
+    EXPECT_TRUE(audioEffectService_->currentVoipBypassByAppMuteHint_);
+    EXPECT_EQ(audioEffectService_->lastVoipBypassTriggerSessionId_, 2301);
+
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> emptyCapturerInfos;
+    audioEffectService_->PruneInvalidAppMuteHintState(emptyCapturerInfos);
+    audioEffectService_->EvaluateVoipBypassByAppMuteHint(emptyCapturerInfos);
+    EXPECT_FALSE(audioEffectService_->currentVoipBypassByAppMuteHint_);
+    EXPECT_EQ(audioEffectService_->lastVoipBypassTriggerSessionId_, 2301);
+    EXPECT_FALSE(audioEffectService_->GetEffectiveAppMuteHint(2301));
+}
+
+/**
+* @tc.name  : Test AudioEffectService.
+* @tc.number: PruneInvalidAppMuteHintState_001.
+* @tc.desc  : Mute hint states should be removed when stream disappears from collector snapshot.
+*/
+HWTEST(AudioEffectServiceTest, PruneInvalidAppMuteHintState_001, TestSize.Level4)
+{
+    auto audioEffectService_ = std::make_shared<AudioEffectService>();
+    audioEffectService_->SetAppConfiguredCapturerMuteHint(3001, true);
+    audioEffectService_->SetAppConfiguredSessionMuteHintIfNoCapturerOverride(3002, true);
+
+    auto activeInfo = std::make_shared<AudioCapturerChangeInfo>();
+    activeInfo->sessionId = 3001;
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerInfos = { activeInfo };
+
+    audioEffectService_->PruneInvalidAppMuteHintState(capturerInfos);
+    EXPECT_TRUE(audioEffectService_->GetEffectiveAppMuteHint(3001));
+    EXPECT_FALSE(audioEffectService_->GetEffectiveAppMuteHint(3002));
+}
 } // namespace AudioStandard
 } // namespace OHOS

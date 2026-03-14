@@ -526,6 +526,15 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
+int32_t CapturerInServer::SetMuteHint(bool mute)
+{
+    uint32_t sessionId = 0;
+    int32_t ret = GetSessionId(sessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetMuteHint failed to get sessionId");
+
+    return CoreServiceHandler::GetInstance().SetCapturerMuteHint(sessionId, mute);
+}
+
 bool CapturerInServer::CheckBGCapture()
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;

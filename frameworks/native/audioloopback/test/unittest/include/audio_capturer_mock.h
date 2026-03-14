@@ -82,6 +82,7 @@ public:
     MOCK_METHOD(FastStatus, GetFastStatus, (), (override));
     MOCK_METHOD(int32_t, SetAudioSourceConcurrency, (const std::vector<SourceType> &targetSources), (override));
     MOCK_METHOD(int32_t, SetInterruptStrategy, (InterruptStrategy strategy), (override));
+    MOCK_METHOD(int32_t, SetMuteHint, (bool mute), (override));
     MOCK_METHOD(void, SetInterruptEventCallbackType, (InterruptEventCallbackType callbackType), (override));
     MOCK_METHOD(int32_t, StartImpl, (), (override));
     MOCK_METHOD(int32_t, StopImpl, (), (const, override));

@@ -441,6 +441,16 @@ bool FastAudioStream::GetMute()
     return processClient_->GetMute();
 }
 
+int32_t FastAudioStream::SetMuteHint(bool mute)
+{
+    AUDIO_INFO_LOG("FastAudioStream: SetMuteHint %{public}s", mute ? "true" : "false");
+    CHECK_AND_RETURN_RET_LOG(eMode_ == AUDIO_MODE_RECORD, ERR_NOT_SUPPORTED,
+        "FastAudioStream: SetMuteHint not supported in playback mode");
+    CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,
+        "FastAudioStream: failed: null process");
+    return processClient_->SetMuteHint(mute);
+}
+
 int32_t FastAudioStream::SetSourceDuration(int64_t duration)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED,

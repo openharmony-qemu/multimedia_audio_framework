@@ -611,6 +611,13 @@ bool RendererInClientInner::GetMute()
     return std::abs(muteVolume_ - 0.0f) <= std::numeric_limits<float>::epsilon();
 }
 
+int32_t RendererInClientInner::SetMuteHint(bool mute)
+{
+    AUDIO_WARNING_LOG("SetMuteHint is only supported for capturer, sessionId:%{public}d mute:%{public}d",
+        sessionId_, mute);
+    return ERR_NOT_SUPPORTED;
+}
+
 int32_t RendererInClientInner::SetRenderRate(AudioRendererRate renderRate)
 {
     if (rendererRate_ == renderRate) {

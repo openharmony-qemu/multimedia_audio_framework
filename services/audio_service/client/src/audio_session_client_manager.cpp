@@ -273,6 +273,12 @@ int32_t AudioSessionClientManager::EnableMuteSuggestionWhenMixWithOthers(bool en
     return result;
 }
 
+int32_t AudioSessionClientManager::SetCapturerMuteHint(bool mute)
+{
+    AUDIO_INFO_LOG("set capturer mute hint, mute:%{public}d", mute);
+    return AudioPolicyManager::GetInstance().SetAudioSessionCapturerMuteHint(mute);
+}
+
 void AudioSessionClientManager::RegisterAudioPolicyServerDiedCb()
 {
     std::lock_guard<std::mutex> lock(sessionManagerRestoreMutex_);

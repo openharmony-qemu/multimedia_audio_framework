@@ -178,5 +178,11 @@ int32_t CoreServiceHandler::CaptureConcurrentCheck(const uint32_t sessionID)
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     return iCoreServiceProvider_->CaptureConcurrentCheck(sessionID);
 }
+
+int32_t CoreServiceHandler::SetCapturerMuteHint(uint32_t sessionId, bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    return iCoreServiceProvider_->SetCapturerMuteHint(sessionId, mute);
+}
 } // namespace AudioStandard
 } // namespace OHOS

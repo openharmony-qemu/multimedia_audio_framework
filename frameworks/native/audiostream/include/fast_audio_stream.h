@@ -107,6 +107,7 @@ public:
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
     int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
+    int32_t SetMuteHint(bool mute) override;
     int32_t SetSourceDuration(int64_t duration) override;
     float GetVolume() override;
     int32_t SetDuckVolume(float volume) override;

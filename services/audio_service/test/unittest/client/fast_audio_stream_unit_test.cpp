@@ -59,6 +59,7 @@ public:
 
     MOCK_METHOD(int32_t, SetMute, (bool mute), (override));
     MOCK_METHOD(bool, GetMute, (), (override));
+    MOCK_METHOD(int32_t, SetMuteHint, (bool mute), (override));
 
     MOCK_METHOD(uint32_t, GetUnderflowCount, (), (override));
     MOCK_METHOD(uint32_t, GetOverflowCount, (), (override));
@@ -429,6 +430,58 @@ HWTEST_F(FastSystemStreamUnitTest, SetMute_001, TestSize.Level1)
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     int32_t res = fastAudioStream->SetMute(false, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API in playback mode
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_001
+ * @tc.desc  : Test SetMuteHint returns ERR_NOT_SUPPORTED in playback mode.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetMuteHint_001, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    int32_t res = fastAudioStream->SetMuteHint(true);
+    EXPECT_EQ(res, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API in record mode without process
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_002
+ * @tc.desc  : Test SetMuteHint returns ERR_OPERATION_FAILED when process is null.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetMuteHint_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    int32_t res = fastAudioStream->SetMuteHint(true);
+    EXPECT_EQ(res, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API in record mode with process
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_003
+ * @tc.desc  : Test SetMuteHint calls process client and returns its result.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetMuteHint_003, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
+    ASSERT_NE(fastAudioStream, nullptr);
+
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    fastAudioStream->processClient_ = mockProcessClient;
+    EXPECT_CALL(*mockProcessClient, SetMuteHint(true)).WillOnce(Return(SUCCESS));
+
+    int32_t res = fastAudioStream->SetMuteHint(true);
+    EXPECT_EQ(res, SUCCESS);
 }
 
 /**

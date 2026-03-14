@@ -69,6 +69,7 @@ private:
         Timestamp timeStamp;
         uint32_t overflowCount;
         bool muteWhenInterrupted;
+        bool muteHint;
     };
 
     static napi_status InitAudioCapturer(napi_env env, napi_value &constructor);
@@ -105,6 +106,7 @@ private:
     static napi_value SetInputDeviceToAccessory(napi_env env, napi_callback_info info);
     static napi_value GetOverflowCountSync(napi_env env, napi_callback_info info);
     static napi_value SetWillMuteWhenInterrupted(napi_env env, napi_callback_info info);
+    static napi_value SetMuteHint(napi_env env, napi_callback_info info);
     static napi_value SetIndependentAudioSessionStrategy(napi_env env, napi_callback_info info);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *argv, const std::string &cbName);

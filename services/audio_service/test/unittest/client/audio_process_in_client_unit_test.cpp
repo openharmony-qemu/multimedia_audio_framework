@@ -55,6 +55,7 @@ public:
     MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
     MOCK_METHOD(int32_t, SetSourceDuration, (int64_t duration), (override));
     MOCK_METHOD(int32_t, SetUnderrunCount, (uint32_t underrunCnt), (override));
+    MOCK_METHOD(int32_t, SetMuteHint, (bool mute), (override));
 
     MOCK_METHOD(int32_t, SaveAdjustStreamVolumeInfo,
         (float volume, uint32_t sessionId, const std::string &adjustTime, uint32_t code), (override));
@@ -141,7 +142,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_001, TestSize.Lev
     AudioService *g_audioServicePtr = AudioService::GetInstance();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
@@ -164,7 +164,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_002, TestSize.Lev
     AudioService *g_audioServicePtr = AudioService::GetInstance();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
     bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
@@ -2034,6 +2033,53 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_096, TestSize.Lev
     DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
     auto ret = ptrAudioProcessInClientInner->SetSilentModeAndMixWithOthers(defaultOutputDevice);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_SetMuteHint_001
+ * @tc.desc  : Test AudioProcessInClientInner::SetMuteHint with null processProxy_.
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_SetMuteHint_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    ptrAudioProcessInClientInner->processProxy_ = nullptr;
+    int32_t ret = ptrAudioProcessInClientInner->SetMuteHint(true);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_SetMuteHint_002
+ * @tc.desc  : Test AudioProcessInClientInner::SetMuteHint forwards to processProxy_.
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_SetMuteHint_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    auto mockIAudioProcess = sptr<MockIAudioProcess>::MakeSptr();
+    ptrAudioProcessInClientInner->processProxy_ = mockIAudioProcess;
+    EXPECT_CALL(*mockIAudioProcess, SetMuteHint(true)).Times(1).WillOnce(Return(SUCCESS));
+
+    int32_t ret = ptrAudioProcessInClientInner->SetMuteHint(true);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

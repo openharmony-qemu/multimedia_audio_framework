@@ -95,6 +95,7 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfo", GetAudioTimestampInfo),
         DECLARE_NAPI_FUNCTION("getAudioTimestampInfoSync", GetAudioTimestampInfoSync),
         DECLARE_NAPI_FUNCTION("setWillMuteWhenInterrupted", SetWillMuteWhenInterrupted),
+        DECLARE_NAPI_FUNCTION("setMuteHint", SetMuteHint),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("setIndependentAudioSessionStrategy", SetIndependentAudioSessionStrategy),
@@ -1025,6 +1026,45 @@ napi_value NapiAudioCapturer::SetWillMuteWhenInterrupted(napi_env env, napi_call
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetWillMuteWhenInterrupted", executor, complete);
+}
+
+napi_value NapiAudioCapturer::SetMuteHint(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioCapturerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("failed: no memory");
+        NapiAudioError::ThrowError(env, "SetMuteHint failed : no memory", NAPI_ERR_ILLEGAL_STATE);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->muteHint, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get muteHint failed",
+            NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioCapturer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioCapturer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioCapturerStatus(napiAudioCapturer, context),
+            "AudioCapturer state is error.");
+        CHECK_AND_RETURN_LOG(napiAudioCapturer->audioCapturer_ != nullptr, "audioCapturer_ is nullptr");
+        context->intValue = napiAudioCapturer->audioCapturer_->SetMuteHint(context->muteHint);
+        if (context->intValue == ERROR_ILLEGAL_STATE) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+            return;
+        }
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetMuteHint failed", NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetMuteHint", executor, complete);
 }
 
 napi_value NapiAudioCapturer::GetOverflowCountSync(napi_env env, napi_callback_info info)

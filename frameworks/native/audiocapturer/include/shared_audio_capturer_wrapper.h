@@ -273,6 +273,13 @@ public:
         return sharedAudioCapturer_->SetInterruptStrategy(strategy);
     }
 
+    int32_t SetMuteHint(bool mute) override
+    {
+        CHECK_AND_RETURN_RET_LOG(sharedAudioCapturer_ != nullptr,
+            ERR_MEMORY_ALLOC_FAILED, "sharedAudioCapturer_ is nullptr");
+        return sharedAudioCapturer_->SetMuteHint(mute);
+    }
+
     FastStatus GetFastStatus() override
     {
         return FASTSTATUS_NORMAL;

@@ -5679,6 +5679,59 @@ HWTEST(AudioPolicyUnitTest, NotifyFreezeStateChange_004, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioPolicyServer::SetAudioSessionCapturerMuteHint.
+* @tc.number: SetAudioSessionCapturerMuteHint_001
+* @tc.desc  : Test SetAudioSessionCapturerMuteHint when there is no running capturer in current session.
+*/
+HWTEST(AudioPolicyUnitTest, SetAudioSessionCapturerMuteHint_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t ret = server->SetAudioSessionCapturerMuteHint(true);
+    EXPECT_EQ(ret, ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::SetAudioSessionCapturerMuteHint.
+* @tc.number: SetAudioSessionCapturerMuteHint_002
+* @tc.desc  : Test SetAudioSessionCapturerMuteHint policy service path.
+*/
+HWTEST(AudioPolicyUnitTest, SetAudioSessionCapturerMuteHint_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto server = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t ret = server->SetAudioSessionCapturerMuteHint(false);
+    EXPECT_NE(ret, ERR_UNKNOWN);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer::RegisteredTrackerClientDied.
+* @tc.number: RegisteredTrackerClientDied_001
+* @tc.desc  : Test tracker death path should trigger mute-hint reevaluation and prune stale state.
+*/
+HWTEST(AudioPolicyUnitTest, RegisteredTrackerClientDied_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    constexpr uint32_t testStreamId = 900001;
+    server->audioEffectService_.SetAppConfiguredCapturerMuteHint(testStreamId, true);
+    EXPECT_TRUE(server->audioEffectService_.GetEffectiveAppMuteHint(testStreamId));
+
+    constexpr pid_t nonExistPid = 199991;
+    constexpr pid_t nonExistUid = 199992;
+    server->RegisteredTrackerClientDied(nonExistPid, nonExistUid);
+
+    EXPECT_FALSE(server->audioEffectService_.GetEffectiveAppMuteHint(testStreamId));
+}
+
+/**
 * @tc.name  : Test AudioPolicyServer::ResetAllProxy.
 * @tc.number: ResetAllProxy_001
 * @tc.desc  : Test ResetAllProxy with invalid callerUid.

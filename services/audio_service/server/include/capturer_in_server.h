@@ -42,6 +42,7 @@ public:
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
     int32_t GetSessionId(uint32_t &sessionId);
+    int32_t SetMuteHint(bool mute);
     int32_t Start();
     int32_t Pause();
     int32_t Flush();

@@ -19,6 +19,7 @@
 #include "pa_capturer_stream_impl.h"
 #include "pa_adapter_manager.h"
 #include "capturer_in_server.h"
+#include "core_service_handler.h"
 
 using namespace testing::ext;
 
@@ -1459,6 +1460,48 @@ HWTEST_F(CapturerInServerUnitTest, ResolveBufferBaseAndGetServerSpanSize_001, Te
                     buffer, spanSizeInFrame, engineTotalSizeInFrame);
  
     EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint.
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_001
+ * @tc.desc  : Test SetMuteHint returns failed when stream is null.
+ */
+HWTEST_F(CapturerInServerUnitTest, SetMuteHint_001, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer_, nullptr);
+
+    int32_t result = capturerInServer_->SetMuteHint(true);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint.
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_002
+ * @tc.desc  : Test SetMuteHint returns ERROR when core provider is not configured.
+ */
+HWTEST_F(CapturerInServerUnitTest, SetMuteHint_002, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_NE(capturerInServer_, nullptr);
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    capturerInServer_->streamIndex_ = 1000;
+
+    auto &coreServiceHandler = CoreServiceHandler::GetInstance();
+    auto originProvider = coreServiceHandler.iCoreServiceProvider_;
+    coreServiceHandler.iCoreServiceProvider_ = nullptr;
+
+    int32_t result = capturerInServer_->SetMuteHint(true);
+    EXPECT_EQ(result, ERROR);
+
+    coreServiceHandler.iCoreServiceProvider_ = originProvider;
 }
 } // namespace AudioStandard
 } // namespace OHOS

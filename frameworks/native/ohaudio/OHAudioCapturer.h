@@ -194,6 +194,7 @@ public:
     int32_t GetBufferDesc(BufferDesc &bufDesc) const;
     int32_t Enqueue(const BufferDesc &bufDesc) const;
     int32_t SetInputDevice(DeviceType deviceType);
+    int32_t SetMuteHint(bool mute);
     FastStatus GetFastStatus();
     uint32_t GetOverflowCount() const;
 

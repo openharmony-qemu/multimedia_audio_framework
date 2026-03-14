@@ -126,6 +126,7 @@ public:
         uint32_t GenerateSessionId() override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
+        int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -414,6 +415,8 @@ private:
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
     uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
     int32_t CaptureConcurrentCheck(uint32_t sessionId);
+    int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute);
+    void ReEvaluateVoipBypassByAppMuteHint();
     void SetFirstScreenOn();
     bool IsDupDeviceChange(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void FetchOutputDupDevice(std::string caller, uint32_t sessionId,

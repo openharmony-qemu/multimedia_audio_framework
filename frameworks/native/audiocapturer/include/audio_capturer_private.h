@@ -107,6 +107,7 @@ public:
 
     int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) override;
     int32_t SetInterruptStrategy(InterruptStrategy strategy) override;
+    int32_t SetMuteHint(bool mute) override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 

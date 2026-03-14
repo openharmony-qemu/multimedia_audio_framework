@@ -187,6 +187,7 @@ public:
     virtual int32_t SetMute(bool mute, StateChangeCmdType cmdType) = 0;
     virtual int32_t SetBackMute(bool backMute) = 0;
     virtual bool GetMute() = 0;
+    virtual int32_t SetMuteHint(bool mute) = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;

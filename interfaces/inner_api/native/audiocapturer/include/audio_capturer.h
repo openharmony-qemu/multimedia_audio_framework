@@ -821,6 +821,12 @@ public:
 
     virtual int32_t SetInterruptStrategy(InterruptStrategy strategy) = 0;
 
+    virtual int32_t SetMuteHint(bool mute)
+    {
+        (void)mute;
+        return 0;
+    }
+
     virtual void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
     {
         (void)callbackType;

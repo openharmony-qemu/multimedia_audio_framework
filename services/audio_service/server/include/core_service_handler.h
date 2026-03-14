@@ -56,6 +56,7 @@ public:
     void RebuildCaptureInjector(uint32_t sessionId);
     void OnCheckActiveMusicTime(const std::string &reason);
     int32_t CaptureConcurrentCheck(uint32_t sessionID);
+    int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

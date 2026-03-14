@@ -512,6 +512,15 @@ int32_t IpcStreamInServer::SetMute(bool isMute)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::SetMuteHint(bool mute)
+{
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_ != nullptr) {
+        return capturerInServer_->SetMuteHint(mute);
+    }
+    AUDIO_ERR_LOG("mode is not record or capturer is null");
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::SetDuckFactor(float duckFactor, uint32_t durationMs)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
