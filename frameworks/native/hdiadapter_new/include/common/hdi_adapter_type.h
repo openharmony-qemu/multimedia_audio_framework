@@ -143,6 +143,9 @@ typedef struct IAudioSourceAttr : public Parcelable {
             parcel.WriteUint32(sampleRateEc) &&
             parcel.WriteUint32(channelEc) &&
             parcel.WriteString(hdiSourceType) &&
+            parcel.WriteUint8(static_cast<uint8_t>(formatMicIn)) &&
+            parcel.WriteUint32(sampleRateMicIn) &&
+            parcel.WriteUint32(channelMicIn) &&
             parcel.WriteUint32(routeFlag);
     }
 
