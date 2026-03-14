@@ -524,7 +524,7 @@ void AudioInterruptService::MuteCheckFocusStrategy(AudioFocusEntry& focusEntry,
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         interruptEvent.hintType = INTERRUPT_HINT_NONE;
         removeFocusInfo = false;
-        auto it = std:find(muteAudioFocus_[incomingInterrupt.streamId].begin(),
+        auto it = std::find(muteAudioFocus_[incomingInterrupt.streamId].begin(),
             muteAudioFocus_[incomingInterrupt.streamId].end(), audioFocusInfo);
         if (it == muteAudioFocus_[incomingInterrupt.streamId].end()) {
             muteAudioFocus_[incomingInterrupt.streamId].push_back(audioFocusInfo);
