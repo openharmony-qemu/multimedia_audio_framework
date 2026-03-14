@@ -828,16 +828,16 @@ void AudioZoneService::NotifyStreamSilentChange(uint32_t streamId)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     CHECK_AND_CALL_FUNC_RETURN(zoneClientManager_ != nullptr && interruptService_ != nullptr,
-        HILOG_COMM_ERROR("[DeactivateAudioInterrupt]zoneClientManager or interruptService is nullptr"));
+        AUDIO_INFO_LOG("zoneClientManager or interruptService is nullptr"));
 
     std::shared_ptr<AudioInterruptService> tmp = interruptService_;
     CHECK_AND_CALL_FUNC_RETURN(tmp != nullptr,
-        HILOG_COMM_ERROR("[DeactivateAudioInterrupt]interruptService_ tmp is nullptr"));
+        AUDIO_INFO_LOG("interruptService_ tmp is nullptr"));
 
     uint32_t zoneId = tmp->FindAudioZoneByStreamId(streamId);
     JUDGE_AND_INFO_LOG(zoneId != 0, "deactive interrupt of zone %{public}d", zoneId);
     CHECK_AND_CALL_FUNC_RETURN(CheckIsZoneValid(zoneId),
-        HILOG_COMM_ERROR("[DeactivateAudioInterrupt]zone id %{public}d is not valid", zoneId));
+        AUDIO_INFO_LOG("zone id %{public}d is not valid", zoneId));
     
     auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
         tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
