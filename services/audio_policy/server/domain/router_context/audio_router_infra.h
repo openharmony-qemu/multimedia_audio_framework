@@ -41,13 +41,17 @@ public:
     void RefreshSelectDevice(SelectDeviceType type, int32_t uid, 
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearAllSelectSelectDevice(SelectDeviceType type);
-    void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
     AudioSelectDeviceInfo GetHighestPrioritySelectDevice(SelectDeviceType type);
-    AudioSelectDeviceInfo GetStreamSelectDevice(int32_t uid, int32_t streamId, SelectDeviceType type);
     AudioSelectDeviceInfo GetRecognitionCaptureDevice();
+
+    void UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
+    void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamSelectDevice(int32_t uid, uint32 streamId);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
@@ -59,18 +63,17 @@ public:
     bool HasRunningSourceType(const std::vector<SourceType>& sourceTypes);
     bool HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes);
     bool HasRunningStreamUsage(const std::vector<StreamUsage>& streamUsages);
+    std::vector<SourceType> GetHighestPriorityRunningSourceTypes();
+    std::vector<StreamUsage> GetHighestPriorityRunningStreamUsages();
+    SourceType GetStreamSourceType(int32_t uid, uint32_t streamId);
+    StreamUsage GetStreamStreamUsage(int32_t uid, uint32_t streamId);
+    SourceType GetFirstAppRunningSourceType(int32_t uid);
 
     void UpdateAppForegroundState(int32_t uid, bool isForeground);
     void OnAppDied(int32_t uid);
 
     void Lock();
     void Unlock();
-
-    std::vector<SourceType> GetHighestPriorityRunningSourceTypes();
-    std::vector<StreamUsage> GetHighestPriorityRunningStreamUsages();
-    SourceType GetStreamSourceType(int32_t uid, uint32_t streamId);
-    StreamUsage GetStreamStreamUsage(int32_t uid, uint32_t streamId);
-    SourceType GetFirstAppRunningSourceType(int32_t uid);
 
 private:
     AudioRouterInfra() = default;

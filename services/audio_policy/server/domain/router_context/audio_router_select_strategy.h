@@ -51,6 +51,13 @@ public:
     virtual std::shared_ptr<AudioDeviceDescriptor> GetRecognitionInputDevice();
     virtual void SetRecognitionInputDevice(const std::shared_ptr<AudioDeviceDescriptor>& device);
 
+    void UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor>& device);
+    void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor>& device);
+    std::shared_ptr<AudioDeviceDescriptor> GetStreamSelectDevice(int32_t uid, uint32 streamId);
+    std::shared_ptr<AudioDeviceDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
+
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& simpleDesc);

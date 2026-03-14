@@ -238,38 +238,6 @@ AudioSelectDeviceInfo AudioRouterInfra::GetHighestPrioritySelectDevice(SelectDev
     }
 }
 
-AudioSelectDeviceInfo AudioRouterInfra::GetStreamSelectDevice(int32_t uid, int32_t streamId, SelectDeviceType type)
-{
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    auto it = appContexts_.find(uid);
-    if (it == appContexts_.end()) {
-        return AudioSelectDeviceInfo();
-    }
-
-    auto& appContext = it->second;
-    
-    if (type == SelectDeviceType::MEDIA_INPUT || type == SelectDeviceType::CALL_INPUT) {
-        auto streamIt = appContext->streamInputSelectDevices_.find(streamId);
-        if (streamIt != appContext->streamInputSelectDevices_.end()) {
-            AudioSelectDeviceInfo info;
-            info.device_ = streamIt->second;
-            info.selectTime_ = 0;
-            return info;
-        }
-    } else {
-        auto streamIt = appContext->streamOutputSelectDevices_.find(streamId);
-        if (streamIt != appContext->streamOutputSelectDevices_.end()) {
-            AudioSelectDeviceInfo info;
-            info.device_ = streamIt->second;
-            info.selectTime_ = 0;
-            return info;
-        }
-    }
-
-    return AudioSelectDeviceInfo();
-}
-
 AudioSelectDeviceInfo AudioRouterInfra::GetRecognitionCaptureDevice()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -585,6 +553,68 @@ SourceType AudioRouterInfra::GetFirstAppRunningSourceType(int32_t uid)
     return it->second->inputStreams_.begin()->second;
 }
 
+void AudioRouterInfra::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
+    }
+
+    auto& appContext = it->second;
+    appContext->streamSelectDevices_[streamId] = device;
+}
+
+void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32 streamId,
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
+    }
+    appContext->streamDefaultDevices_[streamId] = device;
+}
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamSelectDevice(int32_t uid,
+    uint32 streamId)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        return nullptr;
+    }
+
+    auto& appContext = it->second;
+    auto streamIt = appContext->streamSelectDevices_.find(streamId);
+    if (streamIt != appContext->streamSelectDevices_.end()) {
+        return nullptr;
+    }
+    return streamIt->second;
+}
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultDevice(int32_t uid,
+    uint32 streamId)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        return nullptr;
+    }
+
+    auto& appContext = it->second;
+    auto streamIt = appContext->streamDefaultDevices_.find(streamId);
+    if (streamIt != appContext->streamDefaultDevices_.end()) {
+        return nullptr;
+    }
+    return streamIt->second;
+}
+
 int64_t AudioRouterInfra::GetCurrentTimeMS() const
 {
     timespec tm {};
@@ -596,6 +626,5 @@ bool AudioRouterInfra::IsSystemUid(int32_t uid) const
 {
     return uid == SYSTEM_PID;
 }
-
 } 
 } 

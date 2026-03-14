@@ -157,7 +157,44 @@ void AudioRouterSelectStrategy::SetRecognitionCaptureDevice(
     auto simpleDesc = ConvertDeviceToSimple(device);
     AudioRouterInfra::GetInstance().SetRecognitionCaptureDevice(simpleDesc);
 }
+
+void AudioRouterSelectStrategy::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
+    const std::shared_ptr<AudioDeviceDescriptor>& device)
+{
+    auto simpleDesc = ConvertDeviceToSimple(device);
+    AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);   
 }
 
-} 
+void AudioRouterSelectStrategy::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
+    const std::shared_ptr<AudioDeviceDescriptor>& device)
+{
+    auto simpleDesc = ConvertDeviceToSimple(device);
+    AudioRouterInfra::GetInstance().UpdateStreamDefaultDevice(uid, streamId, simpleDesc);
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetStreamSelectDevice(
+    int32_t uid, uint32 streamId)
+{
+    AudioRouterInfra::GetInstance().Lock();
+    
+    auto simpleDesc = AudioRouterInfra::GetInstance().GetStreamSelectDevice(uid, streamId);
+    auto result = ConvertSimpleToDevice(simpleDesc);
+    
+    AudioRouterInfra::GetInstance().Unlock();
+    return result;
+}
+
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetStreamDefaultDevice(
+    int32_t uid, uint32_t streamId)
+{
+    AudioRouterInfra::GetInstance().Lock();
+    
+    auto simpleDesc = AudioRouterInfra::GetInstance().GetStreamDefaultDevice(uid, streamId);
+    auto result = ConvertSimpleToDevice(simpleDesc);
+    
+    AudioRouterInfra::GetInstance().Unlock();
+    return result;
+}
+
+}
 } 

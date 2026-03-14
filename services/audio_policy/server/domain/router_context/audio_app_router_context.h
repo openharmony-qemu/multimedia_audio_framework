@@ -46,8 +46,8 @@ struct AudioAppRouterContext {
     std::map<uint32_t, SourceType> inputStreams_;
     std::map<uint32_t, StreamUsage> outputStreams_;
 
-    std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> streamInputSelectDevices_;
-    std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> streamOutputSelectDevices_;
+    std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> streamSelectDevices_;
+    std::map<uint32_t, std::shared_ptr<AudioDeviceSimpleDescriptor>> streamDefaultDevices_;
 
     AudioAppRouterContext() = default;
     AudioAppRouterContext(int32_t pid, int32_t uid, bool isForeground)
