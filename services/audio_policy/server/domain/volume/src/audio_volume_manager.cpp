@@ -1950,15 +1950,20 @@ int32_t AudioVolumeManager::UpdateSafeVolumeByStrMode()
     userSelect_ = false;
     isDialogSelectDestroy_.store(false);
 
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (curOutputDeviceType != DEVICE_TYPE_BLUETOOTH_A2DP && curOutputDeviceType != DEVICE_TYPE_BLUETOOTH_SCO
+        && curOutputDeviceType != DEVICE_TYPE_NEARLINK) {
+        isBtFirstBoot_ = true;
+    }
+
     if (GetSystemVolumeLevel(STREAM_MUSIC) <= safeVolumeLevel) {
         AUDIO_INFO_LOG("current volume <= safe volume, don't update volume.");
         return SUCCESS;
     }
 
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-
     AUDIO_INFO_LOG("restore safe volume.");
     SetSystemVolumeExternal(STREAM_MUSIC, safeVolumeLevel);
+    audioPolicyManager_.UpdateSafeVolumeByS4();
     CheckLowerDeviceVolume(curOutputDeviceType);
     SetSafeVolumeCallback(STREAM_MUSIC, false);
     return SUCCESS;
