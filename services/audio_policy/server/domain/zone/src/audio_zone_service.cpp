@@ -826,8 +826,26 @@ void AudioZoneService::UpdateContextForAudioZone(int32_t zoneId, const AudioZone
 
 void AudioZoneService::NotifyStreamSilentChange(uint32_t streamId)
 {
-    CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
-    interruptService_->NotifyStreamSilentChange(streamId);
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    CHECK_AND_CALL_FUNC_RETURN(zoneClientManager_ != nullptr && interruptService_ != nullptr,
+        AUDIO_INFO_LOG("zoneClientManager or interruptService is nullptr"));
+
+    std::shared_ptr<AudioInterruptService> tmp = interruptService_;
+    CHECK_AND_CALL_FUNC_RETURN(tmp != nullptr,
+        AUDIO_INFO_LOG("interruptService_ tmp is nullptr"));
+
+    int32_t zoneId = tmp->FindAudioZoneByStreamId(streamId);
+    JUDGE_AND_INFO_LOG(zoneId != 0, "NotifyStreamSilentChange of zone %{public}d", zoneId);
+    CHECK_AND_CALL_FUNC_RETURN(CheckIsZoneValid(zoneId),
+        AUDIO_INFO_LOG("zone id %{public}d is not valid", zoneId));
+
+    auto reporters = AudioZoneInterruptReporter::CreateReporter(zoneId,
+        tmp, zoneClientManager_, AudioZoneInterruptReason::REMOTE_INJECT);
+    if (tmp->NotifyStreamSilentChange(streamId)) {
+        for (auto &report : reporters) {
+            report->ReportInterrupt();
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

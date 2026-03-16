@@ -149,7 +149,7 @@ public:
         const int32_t streamId, const InterruptEventInternal interruptEventResume);
     void OnUserUnlocked();
     void SetUserId(const int32_t newId, const int32_t oldId);
-    void NotifyStreamSilentChange(uint32_t streamId);
+    bool NotifyStreamSilentChange(uint32_t streamId);
     int32_t GetActiveAudioInterruptZone(int32_t &zoneId, AudioStreamType &streamType);
     std::future<void> stopFuture_;
 
