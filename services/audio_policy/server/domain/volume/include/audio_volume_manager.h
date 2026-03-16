@@ -69,6 +69,13 @@ struct VolumeUpdateOption {
     bool hasCheckLoudVolume = false;
 };
 
+struct VolInfoForUpdateMute {
+    AudioStreamType streamType;
+    int32_t volumeLevel;
+    bool mute;
+    int32_t zoneId = 0;
+};
+
 struct VolumeKeyEventRegistration {
     std::string keyType;  // Volume up or down
     int32_t subscriptionId;
@@ -128,6 +135,8 @@ public:
     int32_t SetSystemVolumeLevelWithOption(AudioStreamType streamType, int32_t volumeLevel,
         int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     bool GetStreamMuteInterface(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
+    int32_t GetSystemVolumeLevelInterface(AudioStreamType streamType, int32_t zoneId = 0);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::shared_ptr<LoudVolumeManager> GetLoudVolumeManager();
 #endif
@@ -217,7 +226,12 @@ private:
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
     bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
+    bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
+    void ProcUpdateRingerMode();
+    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
+    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
+        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,

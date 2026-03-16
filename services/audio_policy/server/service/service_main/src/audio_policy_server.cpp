@@ -1368,12 +1368,7 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelNoMuteState(AudioStreamType strea
 
 int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId)
 {
-    if (streamType == STREAM_ALL) {
-        streamType = STREAM_MUSIC;
-    }
-    int32_t volumeLevel =  audioVolumeManager_.GetSystemVolumeLevel(streamType, zoneId);
-    AUDIO_DEBUG_LOG("GetVolume streamType[%{public}d],volumeLevel[%{public}d]", streamType, volumeLevel);
-    return volumeLevel;
+    return audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId);
 }
 
 int32_t AudioPolicyServer::GetSelfAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel)
@@ -1837,56 +1832,6 @@ void AudioPolicyServer::ProcUpdateRingerMode()
     SetRingerModeInternal(ringerMode, true);
 }
 
-int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel,
-    const VolumeUpdateOption &option)
-{
-    bool isUpdateUi = option.isUpdateUi;
-    bool mute = option.mute;
-    int32_t zoneId = option.zoneId;
-
-    bool updateRingerMode = false;
-    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if ((streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) &&
-        volumeType == AudioStreamType::STREAM_RING) {
-        // Check whether the currentRingerMode is suitable for the ringtone volume level.
-        AudioRingerMode currentRingerMode = audioPolicyManager_.GetRingerMode();
-        if ((currentRingerMode == RINGER_MODE_NORMAL && volumeLevel == 0) ||
-            (currentRingerMode != RINGER_MODE_NORMAL && volumeLevel > 0)) {
-            // When isUpdateUi is false, the func is called by others. Need to verify permission.
-            if (!isUpdateUi && !VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
-                AUDIO_ERR_LOG("ACCESS_NOTIFICATION_POLICY_PERMISSION permission denied for ringtone volume!");
-                return ERR_PERMISSION_DENIED;
-            }
-            updateRingerMode = true;
-        }
-    }
-
-    int32_t previousVolume = GetSystemVolumeLevelInternal(streamType, zoneId);
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-    int32_t ret = audioVolumeManager_.SetSystemVolumeLevel(streamType, {volumeLevel, option.volumeDegree},
-        deviceDesc, zoneId);
-    if (ret == SUCCESS) {
-        std::string currentTime = GetTime();
-        int32_t appUid = IPCSkeleton::GetCallingUid();
-        AUDIO_INFO_LOG("SetSystemVolumeLevelInfo streamType: %{public}d, volumeLevel: %{public}d,"
-            " appUid: %{public}d, setTime: %{public}s",
-            streamType, volumeLevel, appUid, currentTime.c_str());
-        audioVolumeManager_.SaveSystemVolumeLevelInfo(streamType, volumeLevel, appUid, currentTime);
-        if (updateRingerMode) {
-            ProcUpdateRingerMode();
-        }
-        VolInfoForUpdateMute info = { streamType, volumeLevel, mute, zoneId };
-        UpdateMuteStateAccordingToVolLevel(info, isUpdateUi, deviceDesc, previousVolume);
-    } else if (ret == ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId, deviceDesc);
-        AUDIO_ERR_LOG("fail to set system volume level by safe vol");
-    } else {
-        AUDIO_ERR_LOG("fail to set system volume level, ret is %{public}d", ret);
-    }
-
-    return ret;
-}
-
 int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi, DeviceType deviceType)
 {
@@ -1897,7 +1842,7 @@ int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType strea
     } else {
         bool mute = audioVolumeManager_.GetStreamMuteInterface(streamType);
         VolumeUpdateOption option{isUpdateUi, mute};
-        ret = SetSingleStreamVolume(streamType, volumeLevel, option);
+        ret = audioVolumeManager_.SetSingleStreamVolume(streamType, volumeLevel, option);
     }
     return ret;
 }

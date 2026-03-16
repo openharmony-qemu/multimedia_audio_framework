@@ -2757,13 +2757,13 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
 
     int32_t volumeLevel = 1;
     VolumeUpdateOption option{true, false};
-    auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, option);
+    auto ret = server->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
+    ret = server->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, option);
+    ret = server->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 }
 

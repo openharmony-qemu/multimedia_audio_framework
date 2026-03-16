@@ -620,8 +620,8 @@ void AudioPolicyServerSetSingleStreamVolumeFuzztest()
     bool mute = GetData<bool>();
     int32_t zoneId = GetData<int32_t>();
     VolumeUpdateOption option{isUpdateUi, mute, zoneId};
-    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
-    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
+    audioPolicyServer->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
+    audioPolicyServer->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
         option);
 }
 
