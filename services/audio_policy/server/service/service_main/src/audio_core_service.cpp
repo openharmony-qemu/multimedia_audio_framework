@@ -20,6 +20,7 @@
 #include "system_ability.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_definition_adapter_info.h"
 #include "iservice_registry.h"
 #include "hdi_adapter_info.h"
 #include "audio_usb_manager.h"
@@ -56,6 +57,7 @@ static constexpr int32_t MAX_TRY = 100;
 static constexpr int32_t DELAY_MS = 100;
 static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
+static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
 
 static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_WIRED_HEADSET,
@@ -227,6 +229,63 @@ static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t 
         "Use normal for remote device or remotecast");
     AUDIO_INFO_LOG("remote offload active, music use offload");
     return true;
+}
+
+static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
+}
+
+static bool IsVoiceRecognitionIndependentRouteSupported()
+{
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    CHECK_AND_RETURN_RET(sourceStrategyMap != nullptr, false);
+    auto strategy = sourceStrategyMap->find(SOURCE_TYPE_VOICE_RECOGNITION);
+    CHECK_AND_RETURN_RET(strategy != sourceStrategyMap->end(), false);
+    return strategy->second.pipeName == PIPE_PRIMARY_INPUT_VOICE_RECOGNITION;
+}
+
+static void UpdateMicInEcModuleInfoByStreamDesc(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    AudioModuleInfo &moduleInfo)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    if (streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW) {
+        moduleInfo.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
+        moduleInfo.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
+        moduleInfo.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
+        if (formatToHpaeStr.count(streamDesc->ecStreamInfo_.format) > 0) {
+            moduleInfo.ecFormat = formatToHpaeStr[streamDesc->ecStreamInfo_.format];
+        }
+    } else {
+        moduleInfo.ecType = "";
+        moduleInfo.ecSamplingRate = "";
+        moduleInfo.ecChannels = "";
+        moduleInfo.ecFormat = "";
+    }
+
+    if (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW) {
+        moduleInfo.openMicRef = "1";
+        moduleInfo.micInRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micInChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatToHpaeStr.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micInFormat = formatToHpaeStr[streamDesc->micInStreamInfo_.format];
+        }
+        moduleInfo.micRefRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micRefChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatToHpaeStr.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micRefFormat = formatToHpaeStr[streamDesc->micInStreamInfo_.format];
+        }
+    } else {
+        moduleInfo.openMicRef = "0";
+        moduleInfo.micInRate = "";
+        moduleInfo.micInChannels = "";
+        moduleInfo.micInFormat = "";
+        moduleInfo.micRefRate = "";
+        moduleInfo.micRefChannels = "";
+        moduleInfo.micRefFormat = "";
+    }
 }
 
 bool AudioCoreService::isBtListenerRegistered = false;
@@ -479,6 +538,12 @@ int32_t AudioCoreService::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
+    if (IsVoiceRecognitionMicInEcRequested(streamDesc)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+            "micin/ec capture denied: no system permission");
+        CHECK_AND_RETURN_RET_LOG(IsVoiceRecognitionIndependentRouteSupported(), ERR_NOT_SUPPORTED,
+            "micin/ec capture denied: voice recognition independent route not supported");
+    }
     if (sessionId == 0) {
         streamDesc->sessionId_ = GenerateSessionId();
         sessionId = streamDesc->sessionId_;

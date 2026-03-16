@@ -931,6 +931,63 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_006, TestSize.Le
 }
 
 /**
+ * @tc.name: ConvertStreamDescToPipeInfo_007
+ * @tc.desc: Test ConvertStreamDescToPipeInfo with voice recognition micIn/ec module info.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_007, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
+    streamDesc->sessionId_ = 100;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->micInStreamInfo_.channels = CHANNEL_4;
+    streamDesc->micInStreamInfo_.format = SAMPLE_S16LE;
+    streamDesc->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->ecStreamInfo_.channels = STEREO;
+    streamDesc->ecStreamInfo_.format = SAMPLE_S16LE;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_INPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+
+    EXPECT_EQ(info.moduleInfo_.openMicRef, "1");
+    EXPECT_EQ(info.moduleInfo_.micInRate, "48000");
+    EXPECT_EQ(info.moduleInfo_.micInChannels, "4");
+    EXPECT_EQ(info.moduleInfo_.micInFormat, "s16");
+    EXPECT_EQ(info.moduleInfo_.micRefRate, "48000");
+    EXPECT_EQ(info.moduleInfo_.micRefChannels, "4");
+    EXPECT_EQ(info.moduleInfo_.micRefFormat, "s16");
+    EXPECT_EQ(info.moduleInfo_.ecType, std::to_string(EC_TYPE_SAME_ADAPTER));
+    EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "48000");
+    EXPECT_EQ(info.moduleInfo_.ecChannels, "2");
+    EXPECT_EQ(info.moduleInfo_.ecFormat, "s16");
+}
+
+/**
  * @tc.name: JudgeStreamAction_007
  * @tc.desc: Test JudgeStreamAction when return AUDIO_STREAM_ACTION_MOVE.
  * @tc.type: FUNC

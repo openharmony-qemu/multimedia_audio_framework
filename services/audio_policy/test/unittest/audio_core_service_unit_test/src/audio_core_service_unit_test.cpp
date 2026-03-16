@@ -69,6 +69,62 @@ static void GetPermission()
     }
 }
 
+static void GetNonSystemPermission()
+{
+    uint64_t tokenId;
+    constexpr int perNum = 1;
+    const char *perms[perNum] = {
+        "ohos.permission.MICROPHONE",
+    };
+
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = perNum,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "audio_core_service_unit_test_non_system",
+        .aplStr = "normal",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+}
+
+static void ResetSystemPermission()
+{
+    uint64_t tokenId;
+    constexpr int perNum = 10;
+    const char *perms[perNum] = {
+        "ohos.permission.MICROPHONE",
+        "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+        "ohos.permission.MANAGE_AUDIO_CONFIG",
+        "ohos.permission.MICROPHONE_CONTROL",
+        "ohos.permission.MODIFY_AUDIO_SETTINGS",
+        "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+        "ohos.permission.USE_BLUETOOTH",
+        "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+        "ohos.permission.RECORD_VOICE_CALL",
+        "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+    };
+
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = perNum,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "audio_core_service_unit_test",
+        .aplStr = "system_basic",
+    };
+    tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    g_hasPermission = true;
+}
+
 void AudioCoreServiceUnitTest::SetUpTestCase(void)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest::SetUpTestCase start-end");
@@ -316,6 +372,61 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_003, TestSize.Level1)
     uint32_t originalSessionId = 1;
     auto result = GetServerPtr()->eventEntry_->CreateCapturerClient(streamDesc, flag, originalSessionId);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_004
+* @tc.desc  : Test CreateCapturerClient - voice recognition micIn/ec requires system permission.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_004, TestSize.Level1)
+{
+    GetNonSystemPermission();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.channels = AudioChannel::CHANNEL_4;
+    streamDesc->ecStreamInfo_.channels = AudioChannel::STEREO;
+
+    AudioCoreService audioCoreService;
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    auto ret = audioCoreService.CreateCapturerClient(streamDesc, flag, sessionId);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+
+    ResetSystemPermission();
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_005
+* @tc.desc  : Test CreateCapturerClient - voice recognition micIn/ec needs independent route support.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_005, TestSize.Level1)
+{
+    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->emplace(SOURCE_TYPE_VOICE_RECOGNITION,
+        AudioSourceStrategyType {
+        "AUDIO_INPUT_VOICE_RECOGNITION_TYPE", // hdiSource
+        "primary", // adapterName
+        "primary_input", // pipeName
+        AUDIO_INPUT_FLAG_VOICE_RECOGNITION, // audioFlag
+        1 // priority
+        });
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.channels = AudioChannel::CHANNEL_4;
+    streamDesc->ecStreamInfo_.channels = AudioChannel::STEREO;
+
+    AudioCoreService audioCoreService;
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    auto ret = audioCoreService.CreateCapturerClient(streamDesc, flag, sessionId);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
 }
 
 /**

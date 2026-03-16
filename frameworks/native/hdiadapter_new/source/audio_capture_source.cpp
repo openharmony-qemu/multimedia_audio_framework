@@ -42,6 +42,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr uint32_t DECIMAL_BASE = 10;
+static constexpr uint32_t DEFAULT_RAW_CHANNEL_COUNT = 1;
+static constexpr uint32_t DEFAULT_MICIN_CHANNEL_COUNT = 4;
 static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
@@ -83,6 +85,67 @@ static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_
     {AudioChannelLayout::CH_LAYOUT_9POINT1POINT6, AudioChannel::CHANNEL_16},
     {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
 };
+
+static inline void ResolveVoiceRecognitionChannels(const IAudioSourceAttr &attr, uint32_t &rawChannels,
+    uint32_t &micInChannels)
+{
+    rawChannels = (attr.appChannel > 0) ? attr.appChannel : DEFAULT_RAW_CHANNEL_COUNT;
+    if (attr.micInChannel > 0) {
+        micInChannels = attr.micInChannel;
+    } else if (attr.appChannel == 0 && attr.channel > 0) {
+        // Compatibility fallback for legacy configs that reuse `channel` as micIn channel.
+        micInChannels = attr.channel;
+    } else {
+        micInChannels = DEFAULT_MICIN_CHANNEL_COUNT;
+    }
+}
+
+static bool ResolveVoiceRecognitionLayout(uint64_t frameLen, size_t bytesPerSample, uint32_t rawChannels,
+    uint32_t micInChannels, size_t &frameCount)
+{
+    if (frameLen == 0 || bytesPerSample == 0 || rawChannels == 0 || micInChannels == 0) {
+        return false;
+    }
+
+    const uint64_t totalChannels = static_cast<uint64_t>(rawChannels) + static_cast<uint64_t>(micInChannels);
+    const uint64_t frameSize = static_cast<uint64_t>(bytesPerSample) * totalChannels;
+    if (frameSize == 0 || frameLen % frameSize != 0) {
+        return false;
+    }
+    frameCount = static_cast<size_t>(frameLen / frameSize);
+    return frameCount > 0;
+}
+
+static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, char *dst, size_t bytesPerSample,
+    uint32_t rawChannels, uint32_t micInChannels)
+{
+    if (src == nullptr || dst == nullptr || frameLen == 0 || bytesPerSample == 0) {
+        return false;
+    }
+
+    size_t frameCount = 0;
+    if (!ResolveVoiceRecognitionLayout(frameLen, bytesPerSample, rawChannels, micInChannels, frameCount)) {
+        return false;
+    }
+
+    const size_t rawFrameSize = static_cast<size_t>(rawChannels) * bytesPerSample;
+    const size_t micInFrameSize = static_cast<size_t>(micInChannels) * bytesPerSample;
+    const size_t outputFrameSize = rawFrameSize + micInFrameSize;
+    const uint8_t *rawBase = reinterpret_cast<const uint8_t *>(src);
+    const uint8_t *micInBase = rawBase + frameCount * rawFrameSize;
+    uint8_t *dstBase = reinterpret_cast<uint8_t *>(dst);
+    for (size_t frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+        if (memcpy_s(dstBase + frameIndex * outputFrameSize, outputFrameSize, rawBase + frameIndex * rawFrameSize,
+            rawFrameSize) != EOK) {
+            return false;
+        }
+        if (memcpy_s(dstBase + frameIndex * outputFrameSize + rawFrameSize, outputFrameSize - rawFrameSize,
+            micInBase + frameIndex * micInFrameSize, micInFrameSize) != EOK) {
+            return false;
+        }
+    }
+    return true;
+}
 
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
@@ -239,6 +302,10 @@ int32_t AudioCaptureSource::Start(void)
         std::to_string(attr_.sampleRateEc) + "_" + std::to_string(attr_.channelEc) + "_" +
         std::to_string(attr_.formatEc) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, ecDumpFileName_, &ecDumpFile_);
+    micInDumpFileName_ = halName_ + "_source_micin_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
+        std::to_string(attr_.sampleRateMicin) + "_" + std::to_string(attr_.channelMicin) + "_" +
+        std::to_string(attr_.formatMicin) + ".pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, micInDumpFileName_, &micInDumpFile_);
     logUtilsTag_ = "AudioSource";
 
     if (started_.load()) {
@@ -427,11 +494,22 @@ void AudioCaptureSource::SetReplyBytesEc(FrameDesc *fdescEc, uint64_t &replyByte
 void AudioCaptureSource::ProcessEcFrame(FrameDesc *fdescEc, uint64_t &replyBytesEc, AudioCaptureFrameInfo &frameInfo)
 {
     CHECK_AND_RETURN(frameInfo.frameEc != nullptr);
-    if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, fdescEc->frameLen) != EOK) {
+    SetReplyBytesEc(fdescEc, replyBytesEc, frameInfo);
+    uint64_t copyLen = replyBytesEc < fdescEc->frameLen ? replyBytesEc : fdescEc->frameLen;
+    if (copyLen == 0) {
+        AUDIO_WARNING_LOG("ec dump skip, copyLen is 0, sourceType:%{public}d, frameInfo.replyBytesEc:%{public}" PRIu64
+            ", frameLen:%{public}" PRIu64, attr_.sourceType, frameInfo.replyBytesEc, fdescEc->frameLen);
+        return;
+    }
+    if (copyLen != replyBytesEc) {
+        AUDIO_WARNING_LOG("ec copyLen clamp, replyBytesEc:%{public}" PRIu64 ", frameLen:%{public}" PRIu64,
+            replyBytesEc, fdescEc->frameLen);
+        replyBytesEc = copyLen;
+    }
+    if (memcpy_s(fdescEc->frame, fdescEc->frameLen, frameInfo.frameEc, copyLen) != EOK) {
         AUDIO_ERR_LOG("copy desc ec fail");
     } else {
-        HdiDfxUtils::DumpData(fdescEc->frame, replyBytesEc, ecDumpFile_, ecDumpFileName_);
-        SetReplyBytesEc(fdescEc, replyBytesEc, frameInfo);
+        HdiDfxUtils::DumpData(fdescEc->frame, copyLen, ecDumpFile_, ecDumpFileName_);
     }
 }
 
@@ -450,7 +528,15 @@ void AudioCaptureSource::ProcessCapFrame(FrameDesc *fdesc, uint64_t &replyBytes,
     AudioCaptureFrameInfo &frameInfo)
 {
     CHECK_AND_RETURN(frameInfo.frame != nullptr);
-    if (memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, fdesc->frameLen) != EOK) {
+    bool interleaved = false;
+    if (attr_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        size_t bytesPerSample = static_cast<size_t>(GetByteSizeByFormat(attr_.format));
+        interleaved = InterleaveRawAndMicInFrame(frameInfo.frame, fdesc->frameLen, fdesc->frame, bytesPerSample);
+        if (!interleaved) {
+            AUDIO_WARNING_LOG("voice recognition interleave failed, fallback to direct copy");
+        }
+    }
+    if (!interleaved && memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, fdesc->frameLen) != EOK) {
         AUDIO_ERR_LOG("copy desc fail");
     } else {
         replyBytes = fdesc->frameLen;

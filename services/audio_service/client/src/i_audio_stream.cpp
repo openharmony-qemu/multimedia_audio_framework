@@ -245,6 +245,39 @@ int32_t IAudioStream::GetByteSizePerFrameWithEc(const AudioStreamParams &params,
     return SUCCESS;
 }
 
+int32_t IAudioStream::GetByteSizePerFrameWithMicInEc(const AudioStreamParams &params, size_t &result)
+{
+    result = 0;
+    size_t bitWidthSize = 0;
+    switch (params.format) {
+        case SAMPLE_U8:
+            bitWidthSize = 1; // size is 1
+            break;
+        case SAMPLE_S16LE:
+            bitWidthSize = 2; // size is 2
+            break;
+        case SAMPLE_S24LE:
+            bitWidthSize = 3; // size is 3
+            break;
+        case SAMPLE_S32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        case SAMPLE_F32LE:
+            bitWidthSize = 4; // size is 4
+            break;
+        default:
+            return ERR_INVALID_PARAM;
+            break;
+    }
+
+    size_t totalChannels = static_cast<size_t>(params.channels + params.micInChannels + params.ecChannels);
+    if (totalChannels < 1 || totalChannels > 16) { // 1 is min channel size, 16 is max channel size
+        return ERR_INVALID_PARAM;
+    }
+    result = bitWidthSize * totalChannels;
+    return SUCCESS;
+}
+
 bool IAudioStream::IsStreamSupported(int32_t streamFlags, const AudioStreamParams &params)
 {
     // 0 for normal stream

@@ -89,6 +89,8 @@ AudioStreamDescriptor::AudioStreamDescriptor(const std::shared_ptr<AudioStreamDe
     streamStatus_ = streamDescriptor->streamStatus_;
     streamAction_ = streamDescriptor->streamAction_;
     bundleName_ = streamDescriptor->bundleName_;
+    micInStreamInfo_ = streamDescriptor->micInStreamInfo_;
+    ecStreamInfo_ = streamDescriptor->ecStreamInfo_;
     ultraFastFlag_ = streamDescriptor->ultraFastFlag_;
 }
 
@@ -113,6 +115,8 @@ void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
     streamDesc.oldDeviceDescs_ = oldDeviceDescs_;
     streamDesc.newDeviceDescs_ = newDeviceDescs_;
     streamDesc.bundleName_ = bundleName_;
+    streamDesc.micInStreamInfo_ = micInStreamInfo_;
+    streamDesc.ecStreamInfo_ = ecStreamInfo_;
     streamDesc.ultraFastFlag_ = ultraFastFlag_;
 }
 
@@ -140,6 +144,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         WriteDeviceDescVectorToParcel(parcel, oldDeviceDescs_) &&
         WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_) &&
         parcel.WriteInt32(oldOriginalFlag_) &&
+        micInStreamInfo_.Marshalling(parcel) &&
         ecStreamInfo_.Marshalling(parcel) &&
         parcel.WriteUint8(ultraFastFlag_);
 }
@@ -173,6 +178,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->UnmarshallingDeviceDescVector(parcel, info->oldDeviceDescs_);
     info->UnmarshallingDeviceDescVector(parcel, info->newDeviceDescs_);
     info->oldOriginalFlag_ = parcel.ReadInt32();
+    info->micInStreamInfo_.UnmarshallingSelf(parcel);
     info->ecStreamInfo_.UnmarshallingSelf(parcel);
     info->ultraFastFlag_ = parcel.ReadUint8();
 

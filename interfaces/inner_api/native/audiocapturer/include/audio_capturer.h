@@ -56,6 +56,16 @@ struct AudioCapturerParams {
     AudioSampleFormat audioEcSampleFormat = SAMPLE_S16LE;
     /** Audio ec Channel Layout */
     AudioChannelLayout ecChannelLayout = CH_LAYOUT_UNKNOWN;
+    /** Audio codec format */
+    AudioEncodingType audioMicInEncoding = ENCODING_PCM;
+    /** micIn Sampling rate */
+    AudioSamplingRate micInSamplingRate = SAMPLE_RATE_44100;
+    /** Number of audio micIn channels */
+    AudioChannel audioMicInChannel = MONO;
+    /** audioMicInSampleFormat */
+    AudioSampleFormat audioMicInSampleFormat = SAMPLE_S16LE;
+    /** Audio micIn Channel Layout */
+    AudioChannelLayout micInChannelLayout = CH_LAYOUT_UNKNOWN;
 };
 
 class AudioCapturerCallback {
@@ -652,6 +662,32 @@ public:
      * @since 9
      */
     virtual int32_t GetBufferDesc(BufferDesc &bufDesc) = 0;
+
+    /**
+     * @brief Obtains deinterleaved buffer sizes for process/mic-in/ec data from the source buffer.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @param bufDesc Indicates the original buffer descriptor.
+     * @param processBufSize Indicates process data size in bytes.
+     * @param micInBufSize Indicates mic-in data size in bytes.
+     * @param ecBufSize Indicates ec data size in bytes.
+     * @return Returns {@link SUCCESS} if sizes are successfully obtained; returns an error code otherwise.
+     */
+    virtual int32_t GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
+        size_t &micInBufSize, size_t &ecBufSize) = 0;
+
+    /**
+     * @brief Deinterleaves process/mic-in/ec buffers from the source buffer.
+     * This API should only be used if CAPTURE_MODE_CALLBACK is needed.
+     *
+     * @param bufDesc Indicates the original buffer descriptor.
+     * @param processBufDesc Indicates process buffer descriptor.
+     * @param micInBufDesc Indicates mic-in buffer descriptor.
+     * @param ecBufferDesc Indicates ec buffer descriptor.
+     * @return Returns {@link SUCCESS} if deinterleave is successful; returns an error code otherwise.
+     */
+    virtual int32_t DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc &processBufDesc,
+        BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc) = 0;
 
     /**
      * @brief Enqueues used buffer to the bufferQueue for recording new data.

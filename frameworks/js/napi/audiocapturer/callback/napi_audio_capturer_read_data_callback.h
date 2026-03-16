@@ -18,6 +18,7 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include <vector>
 #include "napi_audio_capturer.h"
 #include "napi_audio_capturer_callbacks.h"
 
@@ -30,7 +31,9 @@ public:
     void OnReadData(size_t length) override;
 
     void AddCallbackReference(const std::string &callbackName, napi_value args);
-    void RemoveCallbackReference(napi_env env, napi_value callback);
+    void RemoveCallbackReference(napi_env env, napi_value callback, const std::string &callbackName);
+    bool HasCallbackReference(const std::string &callbackName);
+    bool HasAnyCallbackReference();
     void CreateReadDataTsfn(napi_env env);
 
 private:
@@ -38,6 +41,12 @@ private:
         std::shared_ptr<AutoRef> callback = nullptr;
         std::string callbackName = "unknown";
         BufferDesc bufDesc {};
+        size_t processDataLength = 0;
+        size_t micInDataLength = 0;
+        size_t ecDataLength = 0;
+        std::vector<uint8_t> processData;
+        std::vector<uint8_t> micInData;
+        std::vector<uint8_t> ecData;
         NapiAudioCapturer *capturerNapiObj;
         NapiCapturerReadDataCallback *readDataCallbackPtr;
     };
@@ -50,6 +59,7 @@ private:
     std::mutex mutex_;
     napi_env env_ = nullptr;
     std::shared_ptr<AutoRef> capturerReadDataCallback_ = nullptr;
+    std::shared_ptr<AutoRef> capturerReadMicInDataCallback_ = nullptr;
     NapiAudioCapturer *napiCapturer_;
     bool isCallbackInited_ = false;
     bool regAcReadDataTsfn_ = false;

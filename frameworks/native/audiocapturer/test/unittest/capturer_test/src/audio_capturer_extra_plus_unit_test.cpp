@@ -18,6 +18,7 @@
 #include <thread>
 #include <memory>
 #include <vector>
+#include <cstring>
 
 #include "audio_capturer.h"
 #include "audio_capturer_private.h"
@@ -84,6 +85,18 @@ public:
     float GetDuckVolume() override { return DUCK_VOLUME; }
 
     State state_ = State::RUNNING;
+};
+
+class TestAudioMicInEcStreamStub : public TestAudioStremStub {
+public:
+    explicit TestAudioMicInEcStreamStub(const AudioStreamParams &audioStreamParams) : params_(audioStreamParams) {}
+    int32_t GetAudioStreamInfo(AudioStreamParams &info) override
+    {
+        info = params_;
+        return SUCCESS;
+    }
+private:
+    AudioStreamParams params_ {};
 };
 
 class FastAudioStreamFork : public FastAudioStream {
@@ -623,6 +636,144 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_029, TestSize.Level1)
 
     capturer->SetFastStatusChangeCallback(fastStatusChangeCallback);
     EXPECT_NE(capturer->fastStatusChangeCallback_, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_030
+ * @tc.desc  : Test AudioCapturerPrivate::GetMicInBufferSize and DeinterleaveBuffer success path.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_030, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MUSIC, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+
+    AudioStreamParams streamParams = {};
+    streamParams.format = SAMPLE_S16LE;
+    streamParams.channels = MONO;
+    streamParams.micInChannels = CHANNEL_4;
+    streamParams.ecChannels = STEREO;
+    capturer->audioStream_ = std::make_shared<TestAudioMicInEcStreamStub>(streamParams);
+
+    int16_t interleaved[] = {
+        1, 2, 3, 4, 5, 6, 7,
+        11, 12, 13, 14, 15, 16, 17,
+    };
+    BufferDesc srcBufDesc {};
+    srcBufDesc.buffer = reinterpret_cast<uint8_t *>(interleaved);
+    srcBufDesc.bufLength = sizeof(interleaved);
+    srcBufDesc.dataLength = sizeof(interleaved);
+
+    size_t processBufSize = 0;
+    size_t micInBufSize = 0;
+    size_t ecBufSize = 0;
+    int32_t ret = capturer->GetMicInBufferSize(srcBufDesc, processBufSize, micInBufSize, ecBufSize);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(processBufSize, static_cast<size_t>(4));
+    EXPECT_EQ(micInBufSize, static_cast<size_t>(16));
+    EXPECT_EQ(ecBufSize, static_cast<size_t>(8));
+
+    std::vector<uint8_t> processBuf(processBufSize);
+    std::vector<uint8_t> micInBuf(micInBufSize);
+    std::vector<uint8_t> ecBuf(ecBufSize);
+    BufferDesc processBufDesc {};
+    processBufDesc.buffer = processBuf.data();
+    processBufDesc.bufLength = processBuf.size();
+    BufferDesc micInBufDesc {};
+    micInBufDesc.buffer = micInBuf.data();
+    micInBufDesc.bufLength = micInBuf.size();
+    BufferDesc ecBufDesc {};
+    ecBufDesc.buffer = ecBuf.data();
+    ecBufDesc.bufLength = ecBuf.size();
+
+    ret = capturer->DeinterleaveBuffer(srcBufDesc, processBufDesc, micInBufDesc, ecBufDesc);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::vector<int16_t> processExpected = {1, 11};
+    std::vector<int16_t> micInExpected = {2, 3, 4, 5, 12, 13, 14, 15};
+    std::vector<int16_t> ecExpected = {6, 7, 16, 17};
+    EXPECT_EQ(std::memcmp(processBuf.data(), processExpected.data(), processBuf.size()), 0);
+    EXPECT_EQ(std::memcmp(micInBuf.data(), micInExpected.data(), micInBuf.size()), 0);
+    EXPECT_EQ(std::memcmp(ecBuf.data(), ecExpected.data(), ecBuf.size()), 0);
+    EXPECT_EQ(processBufDesc.dataLength, processBufSize);
+    EXPECT_EQ(micInBufDesc.dataLength, micInBufSize);
+    EXPECT_EQ(ecBufDesc.dataLength, ecBufSize);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_031
+ * @tc.desc  : Test AudioCapturerPrivate::GetMicInBufferSize frame alignment validation.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_031, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MUSIC, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+
+    AudioStreamParams streamParams = {};
+    streamParams.format = SAMPLE_S16LE;
+    streamParams.channels = MONO;
+    streamParams.micInChannels = CHANNEL_4;
+    streamParams.ecChannels = STEREO;
+    capturer->audioStream_ = std::make_shared<TestAudioMicInEcStreamStub>(streamParams);
+
+    std::vector<uint8_t> invalidFrameData(13, 0); // one frame should be 14 bytes for 1+4+2 @ s16
+    BufferDesc srcBufDesc {};
+    srcBufDesc.buffer = invalidFrameData.data();
+    srcBufDesc.bufLength = invalidFrameData.size();
+    srcBufDesc.dataLength = invalidFrameData.size();
+    size_t processBufSize = 0;
+    size_t micInBufSize = 0;
+    size_t ecBufSize = 0;
+
+    int32_t ret = capturer->GetMicInBufferSize(srcBufDesc, processBufSize, micInBufSize, ecBufSize);
+    EXPECT_EQ(ret, ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_032
+ * @tc.desc  : Test AudioCapturerPrivate::DeinterleaveBuffer destination buffer validation.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_032, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MUSIC, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+
+    AudioStreamParams streamParams = {};
+    streamParams.format = SAMPLE_S16LE;
+    streamParams.channels = MONO;
+    streamParams.micInChannels = CHANNEL_4;
+    streamParams.ecChannels = STEREO;
+    capturer->audioStream_ = std::make_shared<TestAudioMicInEcStreamStub>(streamParams);
+
+    int16_t interleaved[] = {1, 2, 3, 4, 5, 6, 7};
+    BufferDesc srcBufDesc {};
+    srcBufDesc.buffer = reinterpret_cast<uint8_t *>(interleaved);
+    srcBufDesc.bufLength = sizeof(interleaved);
+    srcBufDesc.dataLength = sizeof(interleaved);
+
+    std::vector<uint8_t> processBuf(2);
+    std::vector<uint8_t> micInBuf(7); // should be 8 bytes for one frame
+    std::vector<uint8_t> ecBuf(4);
+    BufferDesc processBufDesc {};
+    processBufDesc.buffer = processBuf.data();
+    processBufDesc.bufLength = processBuf.size();
+    BufferDesc micInBufDesc {};
+    micInBufDesc.buffer = micInBuf.data();
+    micInBufDesc.bufLength = micInBuf.size();
+    BufferDesc ecBufDesc {};
+    ecBufDesc.buffer = ecBuf.data();
+    ecBufDesc.bufLength = ecBuf.size();
+
+    int32_t ret = capturer->DeinterleaveBuffer(srcBufDesc, processBufDesc, micInBufDesc, ecBufDesc);
+    EXPECT_EQ(ret, ERROR_INVALID_PARAM);
 }
 
 /**

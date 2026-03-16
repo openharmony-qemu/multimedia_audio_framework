@@ -71,6 +71,12 @@ static constexpr int CB_QUEUE_CAPACITY = 3;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 const float ERROR_VOLUME = -0.1f;
+
+inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
+{
+    return capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        (params.micInChannels > CHANNEL_UNKNOW || params.ecChannels > CHANNEL_UNKNOW);
+}
 }
 
 std::shared_ptr<CapturerInClient> CapturerInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
@@ -213,6 +219,10 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
             HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"));
+    } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithMicInEc(info, sizePerFrameInByte_) ==
+            SUCCESS, ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithMicInEc failed with invalid params"));
     } else {
         CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
@@ -442,6 +452,9 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
+    } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.micInChannels +
+            streamParams_.ecChannels);
     } else {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
     }

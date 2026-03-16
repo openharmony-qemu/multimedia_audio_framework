@@ -177,6 +177,18 @@ public:
         return sharedAudioCapturer_->GetBufferDesc(bufDesc);
     }
 
+    int32_t GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
+        size_t &micInBufSize, size_t &ecBufSize) override
+    {
+        return sharedAudioCapturer_->GetMicInBufferSize(bufDesc, processBufSize, micInBufSize, ecBufSize);
+    }
+
+    int32_t DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc &processBufDesc,
+        BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc) override
+    {
+        return sharedAudioCapturer_->DeinterleaveBuffer(bufDesc, processBufDesc, micInBufDesc, ecBufferDesc);
+    }
+
     int32_t Enqueue(const BufferDesc &bufDesc) override
     {
         return sharedAudioCapturer_->Enqueue(bufDesc);

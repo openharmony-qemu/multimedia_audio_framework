@@ -57,6 +57,14 @@ public:
     MOCK_METHOD(int32_t, SetCapturerReadCallback,
         (const std::shared_ptr<AudioCapturerReadCallback> &callback), (override));
     MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (override));
+    MOCK_METHOD(int32_t, GetMicInBufferSize, (BufferDesc &bufDesc, size_t &processBufSize,
+        size_t &micInBufSize, size_t &ecBufSize), (override));
+    MOCK_METHOD(int32_t, DeinterleaveBuffer, (BufferDesc &bufDesc, BufferDesc &processBufDesc,
+        BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc), (override));
+    MOCK_METHOD(int32_t, Enqueue, (const BufferDesc &bufDesc), (override));
+    MOCK_METHOD(int32_t, SetCapturerReadCallback,
+        (const std::shared_ptr<AudioCapturerReadCallback> &callback), (override));
+    MOCK_METHOD(int32_t, GetBufferDesc, (BufferDesc &bufDesc), (override));
     MOCK_METHOD(int32_t, Enqueue, (const BufferDesc &bufDesc), (override));
     MOCK_METHOD(int32_t, Clear, (), (const, override));
     MOCK_METHOD(int32_t, GetBufQueueState, (BufferQueueState &bufState), (const, override));

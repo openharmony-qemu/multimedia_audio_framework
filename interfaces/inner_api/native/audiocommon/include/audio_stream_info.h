@@ -132,6 +132,11 @@ struct AudioStreamParams {
     uint8_t ecFormat = 0;
     uint8_t ecChannels = 0;
     uint64_t ecChannelLayout = 0ULL;
+    uint32_t micInSamplingRate = 0;
+    uint8_t micInEncoding = 0;
+    uint8_t micInFormat = 0;
+    uint8_t micInChannels = 0;
+    uint64_t micInChannelLayout = 0ULL;
     uint8_t ultraFastFlag = 0;
 };
 
@@ -373,7 +378,8 @@ inline const std::vector<AudioChannel> CAPTURER_SUPPORTED_CHANNELS {
     CHANNEL_5,
     CHANNEL_6,
     CHANNEL_7,
-    CHANNEL_8
+    CHANNEL_8,
+    CHANNEL_9
 };
 
 

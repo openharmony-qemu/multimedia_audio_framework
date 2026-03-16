@@ -20,6 +20,7 @@
 #include "shared_audio_capturer_wrapper.h"
 
 #include <cinttypes>
+#include <cstring>
 
 #include "audio_capturer_private.h"
 #include "audio_errors.h"
@@ -42,6 +43,7 @@ static constexpr uint32_t BLOCK_INTERRUPT_OVERTIMES_IN_MS = 3000; // 3s
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 static constexpr int32_t UID_MEDIA_SA = 1013;
+static constexpr uint8_t AUDIO_MAX_CAPTURE_CHANNELS = 16;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -88,6 +90,9 @@ AudioCapturerPrivate::~AudioCapturerPrivate()
         audioStateChangeCallback_->HandleCapturerDestructor();
     }
     DumpFileUtil::CloseDumpFile(&dumpFile_);
+    DumpFileUtil::CloseDumpFile(&dumpProcessFile_);
+    DumpFileUtil::CloseDumpFile(&dumpMicInFile_);
+    DumpFileUtil::CloseDumpFile(&dumpEcFile_);
 }
 
 std::unique_ptr<AudioCapturer> AudioCapturer::Create(AudioStreamType audioStreamType)
@@ -150,7 +155,13 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
 }
 
 // LCOV_EXCL_START
-static inline bool checkEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
+static inline bool IsMicInEcRequested(const AudioCapturerOptions &capturerOptions)
+{
+    return capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW ||
+        capturerOptions.ecStreamInfo.channels > CHANNEL_UNKNOW;
+}
+
+static inline bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
         (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
@@ -158,9 +169,24 @@ static inline bool checkEcParam(SourceType sourceType, const AudioCapturerOption
         AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT"
             "can only be samplingRate and format same");
         return false;
-    } else {
-        return true;
     }
+
+    if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION && IsMicInEcRequested(capturerOptions)) {
+        if (capturerOptions.micInStreamInfo.channels > CHANNEL_UNKNOW &&
+            (capturerOptions.micInStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
+            capturerOptions.micInStreamInfo.format != capturerOptions.streamInfo.format)) {
+            AUDIO_ERR_LOG("Create failed: mic-in samplingRate and format should follow process stream");
+            return false;
+        }
+        if (capturerOptions.ecStreamInfo.channels > CHANNEL_UNKNOW &&
+            (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
+            capturerOptions.ecStreamInfo.format != capturerOptions.streamInfo.format)) {
+            AUDIO_ERR_LOG("Create failed: ec samplingRate and format should follow process stream");
+            return false;
+        }
+    }
+
+    return true;
 }
  
 static inline void FillEcParams(AudioCapturerParams &params, const AudioStreamInfo &ec)
@@ -169,6 +195,127 @@ static inline void FillEcParams(AudioCapturerParams &params, const AudioStreamIn
     params.ecSamplingRate = ec.samplingRate;
     params.audioEcChannel = (ec.channels == AudioChannel::CHANNEL_3) ? AudioChannel::STEREO : ec.channels;
     params.audioEcEncoding = ec.encoding;
+    params.ecChannelLayout = ec.channelLayout;
+}
+
+static inline void FillMicInParams(AudioCapturerParams &params, const AudioStreamInfo &micIn)
+{
+    params.audioMicInSampleFormat = micIn.format;
+    params.micInSamplingRate = micIn.samplingRate;
+    params.audioMicInChannel = (micIn.channels == AudioChannel::CHANNEL_3) ? AudioChannel::STEREO : micIn.channels;
+    params.audioMicInEncoding = micIn.encoding;
+    params.micInChannelLayout = micIn.channelLayout;
+}
+
+struct MicInEcBufferLayout {
+    size_t byteSizePerSample = 0;
+    size_t processChannels = 0;
+    size_t micInChannels = 0;
+    size_t ecChannels = 0;
+    size_t byteSizePerFrame = 0;
+};
+
+struct MicInEcBufferSizes {
+    size_t processBufSize = 0;
+    size_t micInBufSize = 0;
+    size_t ecBufSize = 0;
+};
+
+struct DeinterleaveTargetBuffers {
+    BufferDesc &processBufDesc;
+    BufferDesc &micInBufDesc;
+    BufferDesc &ecBufferDesc;
+};
+
+static inline int32_t ParseMicInEcBufferLayout(const AudioStreamParams &params, MicInEcBufferLayout &layout)
+{
+    int32_t sampleByteSize = GetFormatByteSize(params.format);
+    CHECK_AND_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM, "invalid sample format");
+    layout.processChannels = static_cast<size_t>(params.channels);
+    layout.micInChannels = static_cast<size_t>(params.micInChannels);
+    layout.ecChannels = static_cast<size_t>(params.ecChannels);
+    size_t totalChannels = layout.processChannels + layout.micInChannels + layout.ecChannels;
+    CHECK_AND_RETURN_RET_LOG(layout.processChannels > 0, ERROR_INVALID_PARAM, "invalid process channels");
+    CHECK_AND_RETURN_RET_LOG(totalChannels > layout.processChannels, ERROR_INVALID_PARAM,
+        "micIn and ec channels are not configured");
+    CHECK_AND_RETURN_RET_LOG(totalChannels <= AUDIO_MAX_CAPTURE_CHANNELS, ERROR_INVALID_PARAM,
+        "total channels over limit");
+    layout.byteSizePerSample = static_cast<size_t>(sampleByteSize);
+    layout.byteSizePerFrame = layout.byteSizePerSample * totalChannels;
+    return SUCCESS;
+}
+
+static inline int32_t GetMicInEcBufferLayoutFromStream(const std::shared_ptr<IAudioStream> &currentStream,
+    MicInEcBufferLayout &layout)
+{
+    AudioStreamParams audioStreamParams;
+    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
+    ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+    return SUCCESS;
+}
+
+static inline int32_t ValidateDeinterleaveOutputBuffer(const DeinterleaveTargetBuffers &targetBuffers,
+    const MicInEcBufferSizes &bufferSizes)
+{
+    CHECK_AND_RETURN_RET_LOG(targetBuffers.processBufDesc.buffer != nullptr &&
+        targetBuffers.processBufDesc.bufLength >= bufferSizes.processBufSize,
+        ERROR_INVALID_PARAM, "process buffer is invalid");
+    CHECK_AND_RETURN_RET_LOG(bufferSizes.micInBufSize == 0 || (targetBuffers.micInBufDesc.buffer != nullptr &&
+        targetBuffers.micInBufDesc.bufLength >= bufferSizes.micInBufSize),
+        ERROR_INVALID_PARAM, "micIn buffer is invalid");
+    CHECK_AND_RETURN_RET_LOG(bufferSizes.ecBufSize == 0 || (targetBuffers.ecBufferDesc.buffer != nullptr &&
+        targetBuffers.ecBufferDesc.bufLength >= bufferSizes.ecBufSize),
+        ERROR_INVALID_PARAM, "ec buffer is invalid");
+    return SUCCESS;
+}
+
+static inline int32_t DeinterleaveMicInEcFrames(const BufferDesc &srcBufDesc, const MicInEcBufferLayout &layout,
+    const MicInEcBufferSizes &bufferSizes, DeinterleaveTargetBuffers &targetBuffers)
+{
+    size_t processFrameSize = layout.processChannels * layout.byteSizePerSample;
+    size_t micInFrameSize = layout.micInChannels * layout.byteSizePerSample;
+    size_t ecFrameSize = layout.ecChannels * layout.byteSizePerSample;
+    size_t frameCount = bufferSizes.processBufSize / processFrameSize;
+    for (size_t frame = 0; frame < frameCount; ++frame) {
+        uint8_t *srcFramePos = srcBufDesc.buffer + frame * layout.byteSizePerFrame;
+        if (processFrameSize > 0) {
+            int32_t copyRet = memcpy_s(targetBuffers.processBufDesc.buffer + frame * processFrameSize, processFrameSize,
+                srcFramePos, processFrameSize);
+            CHECK_AND_RETURN_RET_LOG(copyRet == EOK, ERR_OPERATION_FAILED, "copy process frame failed");
+            srcFramePos += processFrameSize;
+        }
+        if (micInFrameSize > 0) {
+            int32_t copyRet = memcpy_s(targetBuffers.micInBufDesc.buffer + frame * micInFrameSize, micInFrameSize,
+                srcFramePos, micInFrameSize);
+            CHECK_AND_RETURN_RET_LOG(copyRet == EOK, ERR_OPERATION_FAILED, "copy micIn frame failed");
+            srcFramePos += micInFrameSize;
+        }
+        if (ecFrameSize > 0) {
+            int32_t copyRet = memcpy_s(targetBuffers.ecBufferDesc.buffer + frame * ecFrameSize, ecFrameSize,
+                srcFramePos, ecFrameSize);
+            CHECK_AND_RETURN_RET_LOG(copyRet == EOK, ERR_OPERATION_FAILED, "copy ec frame failed");
+        }
+    }
+    return SUCCESS;
+}
+
+static inline uint32_t GetClientDumpChannels(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &audioStreamParams, uint32_t appChannels)
+{
+    if (capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW)) {
+        return appChannels + static_cast<uint32_t>(audioStreamParams.micInChannels) +
+            static_cast<uint32_t>(audioStreamParams.ecChannels);
+    }
+    return appChannels;
+}
+
+static inline void FillEcAndMicInParams(AudioCapturerParams &params, const AudioCapturerOptions &capturerOptions)
+{
+    FillEcParams(params, capturerOptions.ecStreamInfo);
+    FillMicInParams(params, capturerOptions.micInStreamInfo);
 }
 
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
@@ -192,7 +339,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         return nullptr;
     }
 
-    if (!checkEcParam(sourceType, capturerOptions)) {
+    if (!CheckMicInEcParam(sourceType, capturerOptions)) {
         return nullptr;
     }
 
@@ -209,7 +356,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         capturerOptions.streamInfo.channels;
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
-    FillEcParams(params, capturerOptions.ecStreamInfo);
+    FillCreateCapturerParams(params, capturerOptions);
     auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
 
     if (capturer == nullptr) {
@@ -342,19 +489,63 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
 
     RegisterCapturerPolicyServiceDiedCallback(audioStream_);
 
-    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
-        AUDIO_ERR_LOG("GetAudioSessionID failed!");
-        return ERR_INVALID_INDEX;
-    }
-    // eg: 100009_44100_2_1_cap_client_out.pcm
-    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
-        std::to_string(params.audioChannel) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
+    ret = InitSessionAndOpenDumpFiles(params, audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSessionAndOpenDumpFiles failed");
 
     ret = InitInputDeviceChangeCallback();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Init input device change callback failed");
 
     return InitAudioInterruptCallback();
+}
+
+int32_t AudioCapturerPrivate::InitSessionAndOpenDumpFiles(const AudioCapturerParams &params,
+    const AudioStreamParams &audioStreamParams)
+{
+    if (audioStream_->GetAudioSessionID(sessionID_) != 0) {
+        AUDIO_ERR_LOG("GetAudioSessionID failed!");
+        return ERR_INVALID_INDEX;
+    }
+    uint32_t dumpChannels = GetClientDumpChannels(capturerInfo_, audioStreamParams,
+        static_cast<uint32_t>(params.audioChannel));
+    AUDIO_INFO_LOG("open cap_client_out dump, appChannels:%{public}u, micInChannels:%{public}u, "
+        "ecChannels:%{public}u, dumpChannels:%{public}u", static_cast<uint32_t>(params.audioChannel),
+        static_cast<uint32_t>(audioStreamParams.micInChannels), static_cast<uint32_t>(audioStreamParams.ecChannels),
+        dumpChannels);
+    OpenCaptureDumpFiles(params, audioStreamParams, dumpChannels);
+    return SUCCESS;
+}
+
+void AudioCapturerPrivate::OpenCaptureDumpFiles(const AudioCapturerParams &params,
+    const AudioStreamParams &audioStreamParams, uint32_t dumpChannels)
+{
+    // eg: 100009_44100_9_1_cap_client_out.pcm (voice recognition with micIn/ec)
+    std::string dumpFileName = std::to_string(sessionID_) + "_" + std::to_string(params.samplingRate) + "_" +
+        std::to_string(dumpChannels) + "_" + std::to_string(params.audioSampleFormat) + "_cap_client_out.pcm";
+    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
+    if (capturerInfo_.sourceType != SOURCE_TYPE_VOICE_RECOGNITION) {
+        return;
+    }
+    if (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW) {
+        std::string processDumpFileName = std::to_string(sessionID_) + "_" +
+            std::to_string(audioStreamParams.samplingRate) + "_" +
+            std::to_string(audioStreamParams.channels) + "_" +
+            std::to_string(audioStreamParams.format) + "_cap_client_process_out.pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, processDumpFileName, &dumpProcessFile_);
+    }
+    if (audioStreamParams.micInChannels > CHANNEL_UNKNOW) {
+        std::string micInDumpFileName = std::to_string(sessionID_) + "_" +
+            std::to_string(audioStreamParams.micInSamplingRate) + "_" +
+            std::to_string(audioStreamParams.micInChannels) + "_" +
+            std::to_string(audioStreamParams.micInFormat) + "_cap_client_micin_out.pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, micInDumpFileName, &dumpMicInFile_);
+    }
+    if (audioStreamParams.ecChannels > CHANNEL_UNKNOW) {
+        std::string ecDumpFileName = std::to_string(sessionID_) + "_" +
+            std::to_string(audioStreamParams.ecSamplingRate) + "_" +
+            std::to_string(audioStreamParams.ecChannels) + "_" +
+            std::to_string(audioStreamParams.ecFormat) + "_cap_client_ec_out.pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, ecDumpFileName, &dumpEcFile_);
+    }
 }
 
 IAudioStream::StreamClass AudioCapturerPrivate::SetCaptureInfo(AudioStreamParams &audioStreamParams)
@@ -377,6 +568,11 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.channels);
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
+    streamDesc->micInStreamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.micInFormat);
+    streamDesc->micInStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.micInSamplingRate);
+    streamDesc->micInStreamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.micInChannels);
+    streamDesc->micInStreamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.micInEncoding);
+    streamDesc->micInStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.micInChannelLayout);
     streamDesc->ecStreamInfo_.format = static_cast<AudioSampleFormat>(audioStreamParams.ecFormat);
     streamDesc->ecStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.ecSamplingRate);
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.ecChannels);
@@ -1229,6 +1425,76 @@ int32_t AudioCapturerPrivate::GetBufferDesc(BufferDesc &bufDesc)
     return ret;
 }
 
+int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
+    size_t &micInBufSize, size_t &ecBufSize)
+{
+    processBufSize = 0;
+    micInBufSize = 0;
+    ecBufSize = 0;
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "bufDesc buffer is null");
+
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+
+    AudioStreamParams audioStreamParams;
+    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
+
+    MicInEcBufferLayout layout {};
+    ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+
+    size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
+        bufDesc.dataLength : bufDesc.bufLength;
+    CHECK_AND_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
+        "buffer length is invalid");
+    CHECK_AND_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
+        "buffer length is not frame aligned");
+
+    size_t frameCount = validDataLength / layout.byteSizePerFrame;
+    processBufSize = frameCount * layout.processChannels * layout.byteSizePerSample;
+    micInBufSize = frameCount * layout.micInChannels * layout.byteSizePerSample;
+    ecBufSize = frameCount * layout.ecChannels * layout.byteSizePerSample;
+    return SUCCESS;
+}
+
+int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc &processBufDesc,
+    BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "bufDesc buffer is null");
+    MicInEcBufferSizes bufferSizes {};
+    int32_t ret = GetMicInBufferSize(bufDesc, bufferSizes.processBufSize, bufferSizes.micInBufSize,
+        bufferSizes.ecBufSize);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetMicInBufferSize failed");
+    DeinterleaveTargetBuffers targetBuffers {processBufDesc, micInBufDesc, ecBufferDesc};
+    ret = ValidateDeinterleaveOutputBuffer(targetBuffers, bufferSizes);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "output buffer is invalid");
+
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    MicInEcBufferLayout layout {};
+    ret = GetMicInEcBufferLayoutFromStream(currentStream, layout);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetMicInEcBufferLayoutFromStream failed");
+    ret = DeinterleaveMicInEcFrames(bufDesc, layout, bufferSizes, targetBuffers);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DeinterleaveMicInEcFrames failed");
+
+    processBufDesc.dataLength = bufferSizes.processBufSize;
+    micInBufDesc.dataLength = bufferSizes.micInBufSize;
+    ecBufferDesc.dataLength = bufferSizes.ecBufSize;
+    if (bufferSizes.processBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpProcessFile_, static_cast<void *>(processBufDesc.buffer),
+            bufferSizes.processBufSize);
+    }
+    if (bufferSizes.micInBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpMicInFile_, static_cast<void *>(micInBufDesc.buffer),
+            bufferSizes.micInBufSize);
+    }
+    if (bufferSizes.ecBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpEcFile_, static_cast<void *>(ecBufferDesc.buffer), bufferSizes.ecBufSize);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioCapturerPrivate::Enqueue(const BufferDesc &bufDesc)
 {
     AsyncCheckAudioCapturer("Enqueue");
@@ -2003,6 +2269,11 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GenerateStreamDesc(
     streamInfo.channels = static_cast<AudioChannel>(switchInfo.params.channels);
     streamInfo.encoding = static_cast<AudioEncodingType>(switchInfo.params.encoding);
     streamInfo.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
+    streamDesc->micInStreamInfo_.format = static_cast<AudioSampleFormat>(switchInfo.params.micInFormat);
+    streamDesc->micInStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.micInSamplingRate);
+    streamDesc->micInStreamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.micInChannels);
+    streamDesc->micInStreamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.micInEncoding);
+    streamDesc->micInStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.micInChannelLayout);
     streamDesc->ecStreamInfo_.format = static_cast<AudioSampleFormat>(switchInfo.params.ecFormat);
     streamDesc->ecStreamInfo_.samplingRate = static_cast<AudioSamplingRate>(switchInfo.params.ecSamplingRate);
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.ecChannels);

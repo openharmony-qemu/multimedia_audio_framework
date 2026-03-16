@@ -96,6 +96,8 @@ private:
     static napi_value GetAudioTimestampInfoSync(napi_env env, napi_callback_info info);
     static napi_value On(napi_env env, napi_callback_info info);
     static napi_value Off(napi_env env, napi_callback_info info);
+    static napi_value OnReadMicInData(napi_env env, napi_callback_info info);
+    static napi_value OffReadMicInData(napi_env env, napi_callback_info info);
     static napi_value GetCurrentInputDevices(napi_env env, napi_callback_info info);
     static napi_value GetCurrentAudioCapturerChangeInfo(napi_env env, napi_callback_info info);
     static napi_value GetCurrentMicrophones(napi_env env, napi_callback_info info);
@@ -128,7 +130,8 @@ private:
         const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer);
     static void UnregisterAudioCapturerInfoChangeCallback(napi_env env, size_t argc,
         const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer);
-    static void UnregisterCapturerReadDataCallback(napi_env env, size_t argc, napi_value *argv,
+    static void UnregisterCapturerReadDataCallback(napi_env env, size_t argc, const std::string &cbName,
+        napi_value *argv,
         NapiAudioCapturer *napiCapturer);
     static void UnregisterCapturerPeriodPositionCallback(napi_env env, size_t argc,
         const std::string &cbName, napi_value *argv, NapiAudioCapturer *napiCapturer);

@@ -180,6 +180,8 @@ private:
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
+    FILE *micIndumpFile_ = nullptr;
+    std::string micIndumpFileName_ = "";
     FILE *ecDumpFile_ = nullptr;
     std::string ecDumpFileName_ = "";
     DeviceType currentActiveDevice_ = DEVICE_TYPE_INVALID;
