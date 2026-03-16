@@ -30,8 +30,8 @@ using namespace testing;
 namespace {
 constexpr uint32_t DEFAULT_NODE_ID = 1234;
 constexpr uint32_t DEFAULT_FRAME_LEN = 960;
-constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
-constexpr uint32_t DEFAULT_CHANNELS = STEREO;
+constexpr AudioSamplingRate DEFAULT_SAMPLE_RATE = SAMPLE_RATE_48000;
+constexpr AudioChannel DEFAULT_CHANNELS = STEREO;
 }
 
 class HpaeLimiterNodeTest : public testing::Test {
@@ -349,8 +349,8 @@ HWTEST_F(HpaeLimiterNodeTest, initAudioLimiter_VariousConfigs, TestSize.Level0)
 {
     struct TestConfig {
         uint32_t frameLen;
-        uint32_t channels;
-        uint32_t sampleRate;
+        AudioChannel channels;
+        AudioSamplingRate sampleRate;
     };
 
     std::vector<TestConfig> configs = {
