@@ -988,6 +988,69 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_007, TestSize.Le
 }
 
 /**
+ * @tc.name: ConvertStreamDescToPipeInfo_008
+ * @tc.desc: Test ConvertStreamDescToPipeInfo with voice recognition when format mapping is missing.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_008, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
+    streamDesc->sessionId_ = 101;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "0";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+
+    // ec only + invalid ec format
+    streamDesc->micInStreamInfo_.channels = CHANNEL_UNKNOW;
+    streamDesc->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->ecStreamInfo_.channels = STEREO;
+    streamDesc->ecStreamInfo_.format = INVALID_WIDTH;
+    AudioPipeInfo ecOnlyInfo;
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, ecOnlyInfo);
+    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecType, std::to_string(EC_TYPE_SAME_ADAPTER));
+    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecSamplingRate, "48000");
+    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecChannels, "2");
+    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecFormat, "");
+    EXPECT_EQ(ecOnlyInfo.moduleInfo_.micInRate, "");
+    EXPECT_EQ(ecOnlyInfo.moduleInfo_.micRefRate, "");
+
+    // micIn only + invalid micIn format
+    streamDesc->ecStreamInfo_.channels = CHANNEL_UNKNOW;
+    streamDesc->micInStreamInfo_.samplingRate = SAMPLE_RATE_16000;
+    streamDesc->micInStreamInfo_.channels = CHANNEL_4;
+    streamDesc->micInStreamInfo_.format = INVALID_WIDTH;
+    AudioPipeInfo micOnlyInfo;
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, micOnlyInfo);
+    EXPECT_EQ(micOnlyInfo.moduleInfo_.micInRate, "16000");
+    EXPECT_EQ(micOnlyInfo.moduleInfo_.micInChannels, "4");
+    EXPECT_EQ(micOnlyInfo.moduleInfo_.micInFormat, "");
+    EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefRate, "16000");
+    EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefChannels, "4");
+    EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefFormat, "");
+    EXPECT_EQ(micOnlyInfo.moduleInfo_.ecType, "");
+}
+
+/**
  * @tc.name: JudgeStreamAction_007
  * @tc.desc: Test JudgeStreamAction when return AUDIO_STREAM_ACTION_MOVE.
  * @tc.type: FUNC

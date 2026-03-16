@@ -501,6 +501,83 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetAudioStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioStreamInfo_005
+ * @tc.desc  : Test SetAudioStreamInfo for SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT.
+ */
+HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_005, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::MONO;
+    info.ecChannels = AudioChannel::STEREO;
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetAudioStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioStreamInfo_006
+ * @tc.desc  : Test SetAudioStreamInfo for voice recognition micIn/ec request.
+ */
+HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_006, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::MONO;
+    info.micInChannels = AudioChannel::CHANNEL_4;
+    info.ecChannels = AudioChannel::STEREO;
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetAudioStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioStreamInfo_007
+ * @tc.desc  : Test SetAudioStreamInfo for invalid voice recognition micIn/ec params.
+ */
+HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_007, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = static_cast<AudioChannel>(8);
+    info.micInChannels = static_cast<AudioChannel>(8);
+    info.ecChannels = AudioChannel::STEREO; // total channels > 16
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    capturerInClientInner->state_ = NEW;
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_EQ(ret, ERROR_INVALID_PARAM);
+}
+
+/**
  * @tc.name  : Test GetAudioServerProxy API
  * @tc.type  : FUNC
  * @tc.number: GetAudioServerProxy_001
@@ -768,6 +845,48 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_001, TestSize.Level1)
     capturerInClientInner->capturerInfo_.capturerFlags = 1;
     AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
     EXPECT_NE(capturerInClientInner, nullptr);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig API
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_002
+ * @tc.desc  : Test ConstructConfig voice recognition channel merge.
+ */
+HWTEST(CapturerInClientUnitTest, ConstructConfig_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    capturerInClientInner->streamParams_.channels = AudioChannel::MONO;
+    capturerInClientInner->streamParams_.micInChannels = AudioChannel::CHANNEL_4;
+    capturerInClientInner->streamParams_.ecChannels = AudioChannel::STEREO;
+    AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
+    int32_t expectChannels = static_cast<int32_t>(capturerInClientInner->streamParams_.channels) +
+        static_cast<int32_t>(capturerInClientInner->streamParams_.micInChannels) +
+        static_cast<int32_t>(capturerInClientInner->streamParams_.ecChannels);
+    EXPECT_EQ(static_cast<int32_t>(ret.streamInfo.channels), expectChannels);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig API
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_003
+ * @tc.desc  : Test ConstructConfig unprocessed voice assistant channel merge.
+ */
+HWTEST(CapturerInClientUnitTest, ConstructConfig_003, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT;
+    capturerInClientInner->streamParams_.channels = AudioChannel::MONO;
+    capturerInClientInner->streamParams_.ecChannels = AudioChannel::STEREO;
+    AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
+    int32_t expectChannels = static_cast<int32_t>(capturerInClientInner->streamParams_.channels) +
+        static_cast<int32_t>(capturerInClientInner->streamParams_.ecChannels);
+    EXPECT_EQ(static_cast<int32_t>(ret.streamInfo.channels), expectChannels);
 }
 
 /**

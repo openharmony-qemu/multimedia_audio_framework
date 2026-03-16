@@ -390,5 +390,93 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithEc_007, TestSize.Level1)
     IAudioStream::GetByteSizePerFrameWithEc(params, result);
     EXPECT_EQ(result, 0); // (16 + 1) channels * 2 bytes per sample
 }
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicInEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicInEc_001
+ * @tc.desc  : Test GetByteSizePerFrameWithMicInEc with all valid formats.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicInEc_001, TestSize.Level1)
+{
+    std::vector<std::pair<AudioSampleFormat, size_t>> cases = {
+        {SAMPLE_U8, 1},
+        {SAMPLE_S16LE, 2},
+        {SAMPLE_S24LE, 3},
+        {SAMPLE_S32LE, 4},
+        {SAMPLE_F32LE, 4},
+    };
+    for (const auto &item : cases) {
+        AudioSampleFormat format = item.first;
+        size_t bytesPerSample = item.second;
+        AudioStreamParams params {};
+        params.samplingRate = SAMPLE_RATE_48000;
+        params.format = format;
+        params.channels = AudioChannel::MONO;
+        params.micInChannels = AudioChannel::CHANNEL_4;
+        params.ecChannels = AudioChannel::STEREO;
+        size_t result = 0;
+        int32_t ret = IAudioStream::GetByteSizePerFrameWithMicInEc(params, result);
+        EXPECT_EQ(ret, SUCCESS);
+        EXPECT_EQ(result, bytesPerSample * 7); // 1 + 4 + 2 channels
+    }
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicInEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicInEc_002
+ * @tc.desc  : Test GetByteSizePerFrameWithMicInEc with invalid format.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicInEc_002, TestSize.Level1)
+{
+    AudioStreamParams params {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = INVALID_WIDTH;
+    params.channels = AudioChannel::MONO;
+    params.micInChannels = AudioChannel::CHANNEL_4;
+    params.ecChannels = AudioChannel::STEREO;
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithMicInEc(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicInEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicInEc_003
+ * @tc.desc  : Test GetByteSizePerFrameWithMicInEc with zero total channels.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicInEc_003, TestSize.Level1)
+{
+    AudioStreamParams params {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = CHANNEL_UNKNOW;
+    params.micInChannels = CHANNEL_UNKNOW;
+    params.ecChannels = CHANNEL_UNKNOW;
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithMicInEc(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetByteSizePerFrameWithMicInEc API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrameWithMicInEc_004
+ * @tc.desc  : Test GetByteSizePerFrameWithMicInEc with total channels over limit.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrameWithMicInEc_004, TestSize.Level1)
+{
+    AudioStreamParams params {};
+    params.samplingRate = SAMPLE_RATE_48000;
+    params.format = SAMPLE_S16LE;
+    params.channels = static_cast<AudioChannel>(8);
+    params.micInChannels = static_cast<AudioChannel>(8);
+    params.ecChannels = AudioChannel::MONO; // total 17
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrameWithMicInEc(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
 } // namespace AudioStandard
 } // namespace OHOS

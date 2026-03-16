@@ -431,6 +431,49 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_005, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_006
+* @tc.desc  : Test CreateCapturerClient - voice recognition micIn/ec passes permission and route checks.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_006, TestSize.Level1)
+{
+    ResetSystemPermission();
+    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->emplace(SOURCE_TYPE_VOICE_RECOGNITION,
+        AudioSourceStrategyType {
+        "AUDIO_INPUT_VOICE_RECOGNITION_TYPE", // hdiSource
+        "primary", // adapterName
+        "primary_input_voice_recognition", // pipeName
+        AUDIO_INPUT_FLAG_VOICE_RECOGNITION, // audioFlag
+        1 // priority
+        });
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::MONO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.channels = AudioChannel::CHANNEL_4;
+    streamDesc->ecStreamInfo_.channels = AudioChannel::STEREO;
+
+    AudioCoreService audioCoreService;
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    auto ret = audioCoreService.CreateCapturerClient(streamDesc, flag, sessionId);
+    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: SetPreferredInputDeviceIfValid_001
 * @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
 */

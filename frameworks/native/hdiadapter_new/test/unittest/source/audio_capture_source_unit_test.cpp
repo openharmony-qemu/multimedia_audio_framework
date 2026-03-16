@@ -453,6 +453,119 @@ HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_003, TestSize.Level1)
 /**
 @tc.name : Test PrimarySource API
 @tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test ProcessCapFrame with voice recognition interleave success
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_001, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+    source_->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    source_->attr_.format = SAMPLE_S16LE;
+
+    std::vector<int8_t> src {
+        1, 2, 3, 4,                // raw: 2 frames * 1ch * s16
+        11, 12, 13, 14, 15, 16, 17, 18,
+        21, 22, 23, 24, 25, 26, 27, 28 // micIn: 2 frames * 4ch * s16
+    };
+    std::vector<int8_t> dst(src.size(), 0);
+    std::vector<int8_t> ec(1, 0);
+    FrameDesc fdesc = {
+        .frame = reinterpret_cast<char *>(dst.data()),
+        .frameLen = src.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = reinterpret_cast<char *>(ec.data()),
+        .frameLen = 0,
+    };
+    AudioCaptureFrameInfo frameInfo = {};
+    frameInfo.frame = src.data();
+    frameInfo.replyBytes = static_cast<uint64_t>(src.size());
+    uint64_t replyBytes = 0;
+
+    source_->ProcessCapFrame(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(replyBytes, src.size());
+
+    std::vector<int8_t> expected {
+        1, 2, 11, 12, 13, 14, 15, 16, 17, 18,
+        3, 4, 21, 22, 23, 24, 25, 26, 27, 28
+    };
+    EXPECT_EQ(dst, expected);
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test ProcessCapFrame when copyLen is 0
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_002, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+    source_->attr_.sourceType = SOURCE_TYPE_LIVE;
+
+    std::vector<int8_t> src {1, 2, 3, 4, 5, 6, 7, 8};
+    std::vector<int8_t> dst(8, 0x55); // 0x55: initialized marker
+    std::vector<int8_t> original = dst;
+    std::vector<int8_t> ec(4, 0);
+    FrameDesc fdesc = {
+        .frame = reinterpret_cast<char *>(dst.data()),
+        .frameLen = dst.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = reinterpret_cast<char *>(ec.data()),
+        .frameLen = ec.size(),
+    };
+    AudioCaptureFrameInfo frameInfo = {};
+    frameInfo.frame = src.data();
+    frameInfo.replyBytes = static_cast<uint64_t>(ec.size());
+    uint64_t replyBytes = 123; // 123: init check value
+
+    source_->ProcessCapFrame(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(replyBytes, 0);
+    EXPECT_EQ(dst, original);
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test ProcessCapFrame voice recognition interleave fallback
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_003, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+    source_->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    source_->attr_.format = SAMPLE_S16LE;
+
+    std::vector<int8_t> src {
+        1, 2, 3, 4, 5, 6, 7, 8, 9,
+        10, 11, 12, 13, 14, 15, 16, 17, 18
+    };
+    std::vector<int8_t> dst(20, 0);
+    std::vector<int8_t> ec(4, 0);
+    FrameDesc fdesc = {
+        .frame = reinterpret_cast<char *>(dst.data()),
+        .frameLen = dst.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = reinterpret_cast<char *>(ec.data()),
+        .frameLen = ec.size(),
+    };
+    AudioCaptureFrameInfo frameInfo = {};
+    frameInfo.frame = src.data();
+    frameInfo.replyBytes = static_cast<uint64_t>(src.size());
+    uint64_t replyBytes = 0;
+
+    source_->ProcessCapFrame(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(replyBytes, 14); // 18 - ec(4)
+    for (size_t i = 0; i < replyBytes; ++i) {
+        EXPECT_EQ(dst[i], src[i]);
+    }
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
 @tc.desc : Test CaptureFrameEC
 */
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)
