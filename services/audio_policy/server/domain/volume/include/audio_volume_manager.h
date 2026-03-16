@@ -58,6 +58,14 @@ struct AdjustVolumeInfo {
     std::string invocationTime;
 };
 
+struct VolumeUpdateOption {
+    bool isUpdateUi = false;
+    bool mute = false;
+    int32_t zoneId = 0;
+    int32_t volumeDegree = -1;
+    bool hasCheckLoudVolume = false;
+};
+
 struct VolumeKeyEventRegistration {
     std::string keyType;  // Volume up or down
     int32_t subscriptionId;
@@ -113,7 +121,10 @@ public:
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
         int32_t zoneId = 0);
     bool GetStreamMute(AudioStreamType streamType, int32_t zoneId = 0) const;
-
+    bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevelWithOption(AudioStreamType streamType, int32_t volumeLevel,
+        int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
+    bool GetStreamMuteInterface(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, VolumeScale &volume,
         bool internalCall = false);
 
@@ -201,7 +212,8 @@ private:
     int32_t DealWithEventVolume(const int32_t notificationId);
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
-
+    bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
@@ -221,6 +233,9 @@ private:
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
     volatile bool *sharedSleAbsVolumeScene_ = nullptr;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    int32_t loudVolumeSupportMode_ = 0;
+#endif
 
     int64_t activeSafeTimeBt_ = 0;
     int64_t activeSafeTime_ = 0;

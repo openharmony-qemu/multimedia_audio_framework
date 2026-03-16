@@ -133,6 +133,18 @@ HWTEST_F(AudioVolumeUtilsUnitTest, IsDistributedDevice, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test IsVolumeTypeValid.
+* @tc.number: IsVolumeTypeValid
+* @tc.desc  : Test IsVolumeTypeValid
+*/
+HWTEST_F(AudioVolumeUtilsUnitTest, IsVolumeTypeValid, TestSize.Level1)
+{
+    AudioVolumeUtils &utils = AudioVolumeUtils::GetInstance();
+    bool result = utils.IsVolumeTypeValid(static_cast<AudioStreamType>(-1));
+    EXPECT_FALSE(result);
+}
+
+/**
  * @tc.name  : Test GetDefaultVolumeLevel.
  * @tc.number: IsDeviceWithSafeVolume
  * @tc.desc  : Test IsDeviceWithSafeVolume.

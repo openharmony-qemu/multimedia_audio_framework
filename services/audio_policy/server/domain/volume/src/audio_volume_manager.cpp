@@ -34,6 +34,9 @@
 #include "audio_mute_factor_manager.h"
 #include "audio_active_device.h"
 #include "audio_volume_utils.h"
+#include "audio_zone_service.h"
+#include "ipc_skeleton.h"
+#include "audio_loud_volume_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -99,6 +102,23 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_EMERGENCY,
 #endif
     STREAM_ALL
+};
+
+static const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
+    STREAM_VOICE_ASSISTANT,
+    STREAM_VOICE_CALL,
+    STREAM_ACCESSIBILITY,
+    STREAM_RING,
+    STREAM_ALARM,
+    STREAM_VOICE_RING,
+    STREAM_ULTRASONIC,
+    // adjust the type of music from the head of list to end, make sure music is updated last.
+    // avoid interference from ring updates on special platform.
+    // when the device is switched to headset,ring and alarm is dualtone type.
+    // dualtone type use fixed volume curve of speaker.
+    // the ring and alarm are classified into the music group.
+    // the music volume becomes abnormal when the db value of music is modified.
+    STREAM_MUSIC
 };
 
 static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
@@ -1588,7 +1608,6 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneI
     return audioPolicyManager_.GetStreamMute(streamType);
 }
 
-
 void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId,
     std::string networkId, bool connected, int32_t mappingId)
 {
@@ -2038,6 +2057,73 @@ int32_t AudioVolumeManager::UpdateSafeVolumeByStrMode()
     CheckLowerDeviceVolume(curOutputDeviceType);
     SetSafeVolumeCallback(STREAM_MUSIC, false);
     return SUCCESS;
+}
+
+bool AudioVolumeManager::IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel)
+{
+    bool result = true;
+    if (volumeLevel < GetMinVolumeLevel(streamType) ||
+        volumeLevel > GetMaxVolumeLevel(streamType)) {
+        AUDIO_ERR_LOG("IsVolumeLevelValid: volumeLevel[%{public}d] is out of valid range for streamType[%{public}d]",
+            volumeLevel, streamType);
+        result = false;
+    }
+    return result;
+}
+
+bool AudioVolumeManager::GetStreamMuteInterface(AudioStreamType streamType, int32_t zoneId)
+{
+    if (streamType == STREAM_ALL) {
+        streamType = STREAM_MUSIC;
+    }
+    bool isMuted = GetStreamMute(streamType, zoneId);
+    AUDIO_DEBUG_LOG("GetMute streamType[%{public}d],mute[%{public}d]", streamType, isMuted);
+    return isMuted;
+}
+
+int32_t AudioVolumeManager::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel,
+    const VolumeUpdateOption &option)
+{
+    return SUCCESS;
+}
+
+bool AudioVolumeManager::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType)
+{
+    return true;
+}
+
+int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType streamType, int32_t volumeLevel,
+    int32_t zoneId, const VolumeUpdateOption &info)
+{
+    AUDIO_INFO_LOG("streamType: %{public}d, volumeLevel: %{public}d, hasCheckLoudVolume: %{public}d,"
+        " updateUi: %{public}d", streamType, volumeLevel, info.hasCheckLoudVolume, info.isUpdateUi);
+    bool adjustable = audioPolicyManager_.IsVolumeUnadjustable();
+    if (adjustable) {
+        AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
+        return ERR_OPERATION_FAILED;
+    }
+    bool mute = GetStreamMuteInterface(streamType, zoneId);
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT && !info.hasCheckLoudVolume) {
+        CheckLoudVolumeMode(mute, volumeLevel, streamType);
+    }
+#endif
+    VolumeUpdateOption option{info.isUpdateUi, mute, zoneId, info.volumeDegree};
+    if (streamType == STREAM_ALL) {
+        for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
+            bool isMutedForType = GetStreamMuteInterface(audioStreamType, zoneId);
+            AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
+                audioStreamType, isMutedForType, volumeLevel);
+            option.mute = isMutedForType;
+            int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, option);
+            if (setResult != SUCCESS && setResult != ERR_SET_VOL_FAILED_BY_SAFE_VOL &&
+                setResult != ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED) {
+                return setResult;
+            }
+        }
+        return SUCCESS;
+    }
+    return SetSingleStreamVolume(streamType, volumeLevel, option);
 }
 
 void AudioVolumeManager::RefreshActiveDeviceVolume()

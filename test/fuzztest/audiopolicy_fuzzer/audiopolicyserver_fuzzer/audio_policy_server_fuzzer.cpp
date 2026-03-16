@@ -258,21 +258,13 @@ void AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest()
     audioPolicyServer->SetVolumeInternalByKeyEvent(streamInFocus, zoneId, keyType);
 }
 
-void AudioPolicyServerIsVolumeTypeValidFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
-    audioPolicyServer->IsVolumeTypeValid(streamInFocus);
-}
-
 void AudioPolicyServerIsVolumeLevelValidFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
     int32_t volumeLevel = GetData<int32_t>();
-    audioPolicyServer->IsVolumeLevelValid(streamInFocus, volumeLevel);
+    audioPolicyServer->audioVolumeManager_.IsVolumeLevelValid(streamInFocus, volumeLevel);
 }
 
 void AudioPolicyServerIsRingerModeValidFuzzTest()
@@ -559,7 +551,7 @@ void AudioPolicyServerSetSelfAppVolumeLevelInternalFuzztest()
     audioPolicyServer->SetSelfAppVolumeLevelInternal(appUid, volumeLevel, isUpdateUi);
 }
 
-void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
+void AudioPolicyServerSetSystemVolumeLevelWithOptionFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -568,7 +560,7 @@ void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
     int32_t volumeLevel = 0;
     int32_t zoneId = GetData<int32_t>();
     VolumeUpdateOption info = { isUpdateUi };
-    audioPolicyServer->SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
+    audioPolicyServer->audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
 }
 
 void AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest()
@@ -2065,7 +2057,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerTriggerMuteCheckFuzzTest,
     AudioPolicyServerProcessVolumeKeyEventsFuzzTest,
     AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest,
-    AudioPolicyServerIsVolumeTypeValidFuzzTest,
     AudioPolicyServerIsVolumeLevelValidFuzzTest,
     AudioPolicyServerIsRingerModeValidFuzzTest,
     AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest,
@@ -2098,7 +2089,7 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetSystemVolumeDbFuzzTest,
     AudioPolicyServerSetSelfAppVolumeLevelFuzztest,
     AudioPolicyServerSetSelfAppVolumeLevelInternalFuzztest,
-    AudioPolicyServerSetSystemVolumeLevelInternalFuzztest,
+    AudioPolicyServerSetSystemVolumeLevelWithOptionFuzztest,
     AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest,
     AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest,
     AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest,

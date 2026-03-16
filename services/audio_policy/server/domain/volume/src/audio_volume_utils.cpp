@@ -249,6 +249,34 @@ bool AudioVolumeUtils::IsDistributedDevice(std::shared_ptr<AudioDeviceDescriptor
     return false;
 }
 
+bool AudioVolumeUtils::IsVolumeTypeValid(AudioStreamType streamType)
+{
+    bool result = false;
+    switch (streamType) {
+        case STREAM_MUSIC:
+        case STREAM_RING:
+        case STREAM_NOTIFICATION:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_SYSTEM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_ULTRASONIC:
+        case STREAM_NAVIGATION:
+        case STREAM_ALL:
+        case STREAM_VOICE_RING:
+        case STREAM_CAMCORDER:
+            result = true;
+            break;
+        default:
+            result = false;
+            AUDIO_ERR_LOG("IsVolumeTypeValid: streamType[%{public}d] is not supported", streamType);
+            break;
+    }
+    return result;
+}
+
 bool AudioVolumeUtils::IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is null");

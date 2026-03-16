@@ -67,14 +67,6 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
-struct VolumeUpdateOption {
-    bool isUpdateUi = false;
-    bool mute = false;
-    int32_t zoneId = 0;
-    int32_t volumeDegree = -1;
-    bool hasCheckLoudVolume = false;
-};
-
 struct VolInfoForUpdateMute {
     AudioStreamType streamType;
     int32_t volumeLevel;
@@ -819,8 +811,6 @@ private:
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
-    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
-        int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     int32_t SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);
@@ -840,9 +830,6 @@ private:
     void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
-    bool GetStreamMuteInternal(AudioStreamType streamType, int32_t zoneId = 0);
-    bool IsVolumeTypeValid(AudioStreamType streamType);
-    bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
     bool IsRingerModeValid(AudioRingerMode ringMode);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 

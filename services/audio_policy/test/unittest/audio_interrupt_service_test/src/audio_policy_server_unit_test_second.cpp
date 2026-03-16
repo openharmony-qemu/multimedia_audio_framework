@@ -284,7 +284,7 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_211, TestSize.Level1)
     audioPolicyServer->UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
     EXPECT_EQ(VolumeUtils::GetVolumeTypeFromStreamType(STREAM_MUSIC), AudioStreamType::STREAM_MUSIC);
     EXPECT_EQ(VolumeUtils::IsPCVolumeEnable(), false);
-    EXPECT_EQ(audioPolicyServer->GetStreamMuteInternal(STREAM_SYSTEM), false);
+    EXPECT_EQ(audioPolicyServer->audioVolumeManager_.GetStreamMuteInterface(STREAM_SYSTEM), false);
 }
 
 /**

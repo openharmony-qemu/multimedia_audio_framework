@@ -98,7 +98,9 @@ public:
     int32_t GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType);
     void GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
-    
+
+    bool IsVolumeTypeValid(AudioStreamType streamType);
+
     bool IsDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescriptor> desc);
 
