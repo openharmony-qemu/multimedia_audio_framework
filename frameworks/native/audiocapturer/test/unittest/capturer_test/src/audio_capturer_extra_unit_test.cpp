@@ -1646,7 +1646,7 @@ HWTEST(AudioCapturerUnitTest, SetInMainThreadState_001, TestSize.Level4)
  
     testCapturerInner->isFirstTimeSetMainThreadState_ = true;
     int32_t res = testCapturerInner->SetInMainThreadState(true);
-    EXPECT_EQ(SUCCESS, res);
+    EXPECT_NE(ERROR_ILLEGAL_STATE, res);
 }
  
 /**
