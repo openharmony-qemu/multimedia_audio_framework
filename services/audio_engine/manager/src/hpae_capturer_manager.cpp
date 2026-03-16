@@ -108,7 +108,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 
 void HpaeCapturerManager::UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo)
 {
-    CHECK_AND_RETURN(clusterNodeInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
+    CHECK_AND_RETURN(sourceInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION);
     // for recognition, mic = preprocess(1ch) + micin(4ch)
     uint8_t totalChannels = static_cast<uint8_t>(sourceInfo_.micInChannels) +
         static_cast<uint8_t>(sourceInfo_.channels) + static_cast<uint8_t>(sourceInfo_.ecChannels);
