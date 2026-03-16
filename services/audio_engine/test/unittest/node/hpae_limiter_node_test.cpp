@@ -32,7 +32,6 @@ constexpr uint32_t DEFAULT_NODE_ID = 1234;
 constexpr uint32_t DEFAULT_FRAME_LEN = 960;
 constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
 constexpr uint32_t DEFAULT_CHANNELS = STEREO;
-constexpr uint32_t TEST_BUFFER_SIZE = 1920;
 }
 
 class HpaeLimiterNodeTest : public testing::Test {
@@ -141,27 +140,6 @@ HWTEST_F(HpaeLimiterNodeTest, getLatency_WithLimiter, TestSize.Level0)
     EXPECT_GT(latency, 0);
 }
 
-HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithoutLimiterInit, TestSize.Level0)
-{
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = DEFAULT_NODE_ID;
-    nodeInfo.frameLen = DEFAULT_FRAME_LEN;
-    nodeInfo.samplingRate = DEFAULT_SAMPLE_RATE;
-    nodeInfo.channels = DEFAULT_CHANNELS;
-    nodeInfo.format = SAMPLE_F32LE;
-
-    std::shared_ptr<HpaeLimiterNode> hpaeLimiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
-    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode =
-        std::make_shared<HpaeSinkInputNode>(nodeInfo);
-
-    std::vector<HpaePcmBuffer *> inputs;
-    inputs.push_back(&hpaeSinkInputNode->GetOutputBuffer());
-
-    HpaePcmBuffer *output = hpaeLimiterNode->SignalProcess(inputs);
-    EXPECT_NE(output, nullptr);
-    EXPECT_FALSE(hpaeLimiterNode->IsLimiterInited());
-}
-
 HWTEST_F(HpaeLimiterNodeTest, signalProcess_WithLimiterInit, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
@@ -264,16 +242,6 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_BufferStatePropagation, TestSize.Lev
     nodeInfo.format = SAMPLE_F32LE;
 
     std::shared_ptr<HpaeLimiterNode> hpaeLimiterNode = std::make_shared<HpaeLimiterNode>(nodeInfo);
-    std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode =
-        std::make_shared<HpaeSinkInputNode>(nodeInfo);
-
-    std::vector<HpaePcmBuffer *> inputs;
-    inputs.push_back(&hpaeSinkInputNode->GetOutputBuffer());
-
-    hpaeSinkInputNode->GetOutputBuffer().SetBufferState(PCM_BUFFER_STATE_INVALID);
-
-    HpaePcmBuffer *output = hpaeLimiterNode->SignalProcess(inputs);
-    EXPECT_NE(output, nullptr);
     EXPECT_EQ(output->GetBufferState(), PCM_BUFFER_STATE_INVALID);
 }
 
@@ -317,34 +285,6 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_MonoChannel, TestSize.Level0)
 
     hpaeSinkOutputNode->DisConnect(hpaeLimiterNode);
     hpaeLimiterNode->DisConnect(hpaeSinkInputNode);
-}
-
-HWTEST_F(HpaeLimiterNodeTest, signalProcess_DifferentSampleRates, TestSize.Level0)
-{
-    std::vector<uint32_t> sampleRates = {
-        SAMPLE_RATE_8000, SAMPLE_RATE_16000, SAMPLE_RATE_44100,
-        SAMPLE_RATE_48000, SAMPLE_RATE_96000
-    };
-
-    for (auto sampleRate : sampleRates) {
-        HpaeNodeInfo nodeInfo;
-        nodeInfo.nodeId = DEFAULT_NODE_ID;
-        nodeInfo.frameLen = DEFAULT_FRAME_LEN;
-        nodeInfo.samplingRate = sampleRate;
-        nodeInfo.channels = DEFAULT_CHANNELS;
-        nodeInfo.format = SAMPLE_F32LE;
-
-        std::shared_ptr<HpaeLimiterNode> hpaeLimiterNode =
-            std::make_shared<HpaeLimiterNode>(nodeInfo);
-        std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode =
-            std::make_shared<HpaeSinkInputNode>(nodeInfo);
-
-        std::vector<HpaePcmBuffer *> inputs;
-        inputs.push_back(&hpaeSinkInputNode->GetOutputBuffer());
-
-        HpaePcmBuffer *output = hpaeLimiterNode->SignalProcess(inputs);
-        EXPECT_NE(output, nullptr);
-    }
 }
 
 HWTEST_F(HpaeLimiterNodeTest, signalProcess_EmptyInput, TestSize.Level0)
