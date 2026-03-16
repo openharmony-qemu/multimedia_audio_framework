@@ -232,25 +232,37 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
     loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(curNode_->GetNodeInfo(), nodeInfo);
     converterForLoudness_->SetDownmixNormalization(false);
+    // Only create limiter node for remote_offload
+    if (sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS) {
+        limiterNode_ = std::make_shared<HpaeLimiterNode>(nodeInfo);
+        // Setup AudioLimiter
+        if (limiterNode_->SetupAudioLimiter() != SUCCESS) {
+            AUDIO_WARNING_LOG("SessionId %{public}u, limiterNode_ SetupAudioLimiter failed!", outputNodeInfo.sessionId);
+        }
+        AUDIO_INFO_LOG("SessionId %{public}u, limiterNodeId %{public}u",
+            outputNodeInfo.sessionId, limiterNode_->GetNodeId());
+    }
     AUDIO_INFO_LOG("SessionId %{public}u, Success create offload nodes: "
-        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
-        outputNodeInfo.sessionId,
-        converterForLoudness_->GetNodeId(), loudnessGainNode_->GetNodeId(), converterForOutput_->GetNodeId());
+        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u,converterForOutputNodeId %{public}u",
+        outputNodeInfo.sessionId, converterForLoudness_->GetNodeId(),
+        loudnessGainNode_->GetNodeId(), converterForOutput_->GetNodeId());
     return SUCCESS;
 }
  
 int32_t HpaeOffloadRendererManager::DestroyOffloadNodes()
 {
     CHECK_AND_RETURN_RET_LOG(curNode_ != nullptr && converterForLoudness_ != nullptr && loudnessGainNode_ != nullptr &&
-        converterForOutput_ != nullptr, ERROR, "offload nodes not exist, fail to destroy offload nodes");
+        converterForOutput_ != nullptr, ERROR,
+        "offload nodes not exist, fail to destroy offload nodes");
     AUDIO_INFO_LOG("SessionId %{public}u, Success destroy offload nodes: "
-        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u, converterForOutputNodeId %{public}u",
+        "converterForLoudnessId %{public}u, loudnessGainNodeId %{public}u,limiterNodeId %{public}u,"
+        " converterForOutputNodeId %{public}u ",
         curNode_->GetSessionId(), converterForLoudness_->GetNodeId(), loudnessGainNode_->GetNodeId(),
-        converterForOutput_->GetNodeId());
+        limiterNode_ ? limiterNode_->GetNodeId() : 0, converterForOutput_->GetNodeId());
     converterForLoudness_ = nullptr;
     loudnessGainNode_ = nullptr;
     converterForOutput_ = nullptr;
-
+    limiterNode_ = nullptr;
     return SUCCESS;
 }
 
@@ -263,7 +275,13 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     // single stream manager
     sinkOutputNode_->Connect(converterForOutput_);
     // if there's no loudness algo, audio format will be converted to output device format at the first converternode
-    converterForOutput_->Connect(loudnessGainNode_);
+    converterForOutput_->Connect(limiterNode_);
+    if (limiterNode_) {
+        converterForOutput_->Connect(limiterNode_);
+        limiterNode_->Connect(loudnessGainNode_);
+    } else {
+        converterForOutput_->Connect(loudnessGainNode_);
+    }
     loudnessGainNode_->Connect(converterForLoudness_);
     loudnessGainNode_->SetLoudnessGain(curNode_->GetLoudnessGain());
     converterForLoudness_->Connect(curNode_);
@@ -298,7 +316,12 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     CHECK_AND_RETURN_RET(converterForLoudness_, SUCCESS);
     converterForLoudness_->DisConnect(curNode_);
     loudnessGainNode_->DisConnect(converterForLoudness_);
-    converterForOutput_->DisConnect(loudnessGainNode_);
+    if (limiterNode_) {
+        limiterNode_->DisConnect(loudnessGainNode_);
+        converterForOutput_->DisConnect(limiterNode_);
+    } else {
+        converterForOutput_->DisConnect(loudnessGainNode_);
+    }
     if (sinkOutputNode_ != nullptr) {
         sinkOutputNode_->DisConnect(converterForOutput_);
     }
@@ -872,6 +895,10 @@ void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &
 
     if (loudnessGainNode_) {
         processLatency += loudnessGainNode_->GetLatency();
+    }
+
+    if (limiterNode_) {
+        processLatency += limiterNode_->GetLatency();
     }
 
     if (converterForOutput_) {
