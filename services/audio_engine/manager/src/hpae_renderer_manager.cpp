@@ -573,10 +573,10 @@ void HpaeRendererManager::ConnectOutputCluster(uint32_t sessionId, HpaeProcessor
 void HpaeRendererManager::ConnectCoBufferFromConnectOutputCluster(HpaeProcessorType sceneType)
 {
     CHECK_AND_RETURN_LOG(sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr,
-        "no need DisConnect CoBufferNode, sceneType: %{public}d", static_cast<int32_t>(sceneType));
+        "no need Connect CoBufferNode, sceneType: %{public}d", static_cast<int32_t>(sceneType));
     CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType), "sceneCluster is nullptr, sceneType: %{public}d",
         static_cast<int32_t>(sceneType));
-    CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetPreOutNum() == 0, "no DisConnect, GetPreOutNum: %{public}d",
+    CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetPreOutNum() == 0, "no Connect, GetPreOutNum: %{public}d",
         static_cast<int32_t>(sceneClusterMap_[sceneType]->GetPreOutNum()));
     // outputCluster_->GetHdiLatency()->SetLatency()
     // In the future, coBuffer use the hdi latency
