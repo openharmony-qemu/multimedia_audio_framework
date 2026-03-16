@@ -1073,6 +1073,36 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetVolume_003, TestSize.Level4)
 }
 
 /**
+ * @tc.name   : Test SetVolumeDegree API
+ * @tc.type   : FUNC
+ * @tc.number : SetVolumeDegree_001
+ * @tc.desc   : Test SetVolumeDegree interface
+ */
+HWTEST(AudioVolumeClientManagerUnitTest, SetVolumeDegree_001, TestSize.Level1)
+{
+    const int32_t defaultUid = 0;
+    const int32_t degree = 50;
+    int32_t ret = ERROR;
+
+    ret = AudioVolumeClientManager::GetInstance().GetVolumeDegree(STREAM_ALL, defaultUid);
+    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
+
+    ret = AudioVolumeClientManager::GetInstance().SetVolumeDegree(STREAM_ALL, degree, defaultUid);
+    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
+
+    ret = AudioVolumeClientManager::GetInstance().GetVolumeDegree(STREAM_DEFAULT, defaultUid);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    ret = AudioVolumeClientManager::GetInstance().SetVolumeDegree(STREAM_DEFAULT, degree, defaultUid);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    int32_t degreeBefore = AudioVolumeClientManager::GetInstance().GetVolumeDegree(STREAM_SYSTEM, defaultUid);
+
+    ret = AudioVolumeClientManager::GetInstance().SetVolumeDegree(STREAM_SYSTEM, degreeBefore, defaultUid);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name   : Test SetVolumeWithDevice API
  * @tc.number : SetVolumeWithDevice_002
  * @tc.desc   : Test SetVolumeWithDevice interface

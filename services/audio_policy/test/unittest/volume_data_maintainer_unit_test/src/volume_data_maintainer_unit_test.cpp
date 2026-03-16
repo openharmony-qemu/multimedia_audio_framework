@@ -781,7 +781,7 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDb, TestSize.Level4)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
 
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    int32_t tmp = 0;
+    VolumeScale tmp = {0, 0, 0};
     EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
     
     desc->networkId_ = "111";
