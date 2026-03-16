@@ -312,7 +312,7 @@ static inline uint32_t GetClientDumpChannels(const AudioCapturerInfo &capturerIn
     return appChannels;
 }
 
-static inline void FillEcAndMicInParams(AudioCapturerParams &params, const AudioCapturerOptions &capturerOptions)
+static inline void FillCreateCapturerParams(AudioCapturerParams &params, const AudioCapturerOptions &capturerOptions)
 {
     FillEcParams(params, capturerOptions.ecStreamInfo);
     FillMicInParams(params, capturerOptions.micInStreamInfo);

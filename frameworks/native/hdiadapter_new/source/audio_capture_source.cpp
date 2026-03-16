@@ -42,8 +42,8 @@ namespace OHOS {
 namespace AudioStandard {
 
 static constexpr uint32_t DECIMAL_BASE = 10;
-static constexpr uint32_t DEFAULT_RAW_CHANNEL_COUNT = 1;
-static constexpr uint32_t DEFAULT_MICIN_CHANNEL_COUNT = 4;
+static constexpr uint32_t RAW_CHANNEL_COUNT = 1;
+static constexpr uint32_t MICIN_CHANNEL_COUNT = 4;
 static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
     {AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
     {AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
@@ -86,50 +86,34 @@ static const std::unordered_map<AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_
     {AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL, AudioChannel::CHANNEL_16},
 };
 
-static inline void ResolveVoiceRecognitionChannels(const IAudioSourceAttr &attr, uint32_t &rawChannels,
-    uint32_t &micInChannels)
+static bool ResolveVoiceRecognitionLayout(uint64_t frameLen, size_t bytesPerSample, size_t &frameCount)
 {
-    rawChannels = (attr.appChannel > 0) ? attr.appChannel : DEFAULT_RAW_CHANNEL_COUNT;
-    if (attr.micInChannel > 0) {
-        micInChannels = attr.micInChannel;
-    } else if (attr.appChannel == 0 && attr.channel > 0) {
-        // Compatibility fallback for legacy configs that reuse `channel` as micIn channel.
-        micInChannels = attr.channel;
-    } else {
-        micInChannels = DEFAULT_MICIN_CHANNEL_COUNT;
-    }
-}
-
-static bool ResolveVoiceRecognitionLayout(uint64_t frameLen, size_t bytesPerSample, uint32_t rawChannels,
-    uint32_t micInChannels, size_t &frameCount)
-{
-    if (frameLen == 0 || bytesPerSample == 0 || rawChannels == 0 || micInChannels == 0) {
+    if (frameLen == 0 || bytesPerSample == 0) {
         return false;
     }
 
-    const uint64_t totalChannels = static_cast<uint64_t>(rawChannels) + static_cast<uint64_t>(micInChannels);
-    const uint64_t frameSize = static_cast<uint64_t>(bytesPerSample) * totalChannels;
+    const uint64_t frameSize = static_cast<uint64_t>(bytesPerSample) * (RAW_CHANNEL_COUNT + MICIN_CHANNEL_COUNT);
     if (frameSize == 0 || frameLen % frameSize != 0) {
         return false;
     }
     frameCount = static_cast<size_t>(frameLen / frameSize);
     return frameCount > 0;
+
 }
 
-static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, char *dst, size_t bytesPerSample,
-    uint32_t rawChannels, uint32_t micInChannels)
+static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, char *dst, size_t bytesPerSample)
 {
     if (src == nullptr || dst == nullptr || frameLen == 0 || bytesPerSample == 0) {
         return false;
     }
 
     size_t frameCount = 0;
-    if (!ResolveVoiceRecognitionLayout(frameLen, bytesPerSample, rawChannels, micInChannels, frameCount)) {
+    if (!ResolveVoiceRecognitionLayout(frameLen, bytesPerSample, frameCount)) {
         return false;
     }
 
-    const size_t rawFrameSize = static_cast<size_t>(rawChannels) * bytesPerSample;
-    const size_t micInFrameSize = static_cast<size_t>(micInChannels) * bytesPerSample;
+    const size_t rawFrameSize = static_cast<size_t>(RAW_CHANNEL_COUNT) * bytesPerSample;
+    const size_t micInFrameSize = static_cast<size_t>(MICIN_CHANNEL_COUNT) * bytesPerSample;
     const size_t outputFrameSize = rawFrameSize + micInFrameSize;
     const uint8_t *rawBase = reinterpret_cast<const uint8_t *>(src);
     const uint8_t *micInBase = rawBase + frameCount * rawFrameSize;
@@ -145,8 +129,8 @@ static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, cha
         }
     }
     return true;
-}
 
+}
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
 {
@@ -303,8 +287,8 @@ int32_t AudioCaptureSource::Start(void)
         std::to_string(attr_.formatEc) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, ecDumpFileName_, &ecDumpFile_);
     micInDumpFileName_ = halName_ + "_source_micin_" + std::to_string(attr_.sourceType) + "_" + GetTime() + "_" +
-        std::to_string(attr_.sampleRateMicin) + "_" + std::to_string(attr_.channelMicin) + "_" +
-        std::to_string(attr_.formatMicin) + ".pcm";
+        std::to_string(attr_.sampleRateMicIn) + "_" + std::to_string(attr_.channelMicIn) + "_" +
+        std::to_string(attr_.formatMicIn) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, micInDumpFileName_, &micInDumpFile_);
     logUtilsTag_ = "AudioSource";
 

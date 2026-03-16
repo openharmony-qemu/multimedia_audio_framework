@@ -258,15 +258,9 @@ static void UpdateMicInEcModuleInfoByStreamDesc(const std::shared_ptr<AudioStrea
         if (formatToHpaeStr.count(streamDesc->ecStreamInfo_.format) > 0) {
             moduleInfo.ecFormat = formatToHpaeStr[streamDesc->ecStreamInfo_.format];
         }
-    } else {
-        moduleInfo.ecType = "";
-        moduleInfo.ecSamplingRate = "";
-        moduleInfo.ecChannels = "";
-        moduleInfo.ecFormat = "";
     }
 
     if (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW) {
-        moduleInfo.openMicRef = "1";
         moduleInfo.micInRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
         moduleInfo.micInChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
         if (formatToHpaeStr.count(streamDesc->micInStreamInfo_.format) > 0) {
@@ -277,14 +271,6 @@ static void UpdateMicInEcModuleInfoByStreamDesc(const std::shared_ptr<AudioStrea
         if (formatToHpaeStr.count(streamDesc->micInStreamInfo_.format) > 0) {
             moduleInfo.micRefFormat = formatToHpaeStr[streamDesc->micInStreamInfo_.format];
         }
-    } else {
-        moduleInfo.openMicRef = "0";
-        moduleInfo.micInRate = "";
-        moduleInfo.micInChannels = "";
-        moduleInfo.micInFormat = "";
-        moduleInfo.micRefRate = "";
-        moduleInfo.micRefChannels = "";
-        moduleInfo.micRefFormat = "";
     }
 }
 

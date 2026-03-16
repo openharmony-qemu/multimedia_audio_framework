@@ -58,7 +58,8 @@ static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStream
         (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
 }
 
-static void UpdateMicInEcModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, AudioModuleInfo &moduleInfo)
+static void UpdateMicInEcModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    AudioModuleInfo &moduleInfo)
 {
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
 

@@ -92,8 +92,8 @@ void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callb
         capturerReadDataCallback_ = cb;
         isCallbackInited_ = true;
     } else if (callbackName == READ_MICIN_DATA_CALLBACK_NAME) {
- 	         capturerReadMicInDataCallback_ = cb;
- 	         isCallbackInited_ = true;
+        capturerReadMicInDataCallback_ = cb;
+        isCallbackInited_ = true;
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
@@ -179,7 +179,7 @@ void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_va
 
 void NapiCapturerReadDataCallback::OnReadData(size_t length)
 {
-    std::lock_guardstd::mutex lock(mutex_);
+    std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(napiCapturer_ != nullptr, "Cannot find the reference to audio capturer napi");
     CHECK_AND_RETURN_LOG(napiCapturer_->audioCapturer_ != nullptr, "audioCapturer is null");
     if (!isCallbackInited_) {
