@@ -530,28 +530,6 @@ int32_t AudioPolicyServer::ReloadLoudVolumeMode(
         return AUDIO_INVALID_PARAM;
 }
 
-bool AudioPolicyServer::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType)
-{
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT || loudVolumeManager_ == nullptr) {
-        return false;
-    }
-    int32_t volumeLevelMax = -1;
-    GetMaxVolumeLevel(static_cast<int32_t>(streamType), volumeLevelMax);
-    int32_t deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-
-    int32_t keyCode = (volumeLevelMax > volumeLevel) ? OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN
-        : OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    keyCode = mute ? OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN : keyCode;
-    if (loudVolumeManager_->CheckLoudVolumeMode(volumeLevel, keyCode, streamType)) {
-        AUDIO_INFO_LOG("device %{public}d, stream %{public}d, loud volume mode operation",
-            deviceType, streamType);
-        return true;
-    }
-#endif
-    return false;
-}
-
 void AudioPolicyServer::ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus)
 {
     if (streamInFocus == AudioStreamType::STREAM_VOICE_ASSISTANT &&

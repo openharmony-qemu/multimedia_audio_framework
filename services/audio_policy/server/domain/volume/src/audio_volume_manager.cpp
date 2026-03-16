@@ -38,6 +38,10 @@
 #include "ipc_skeleton.h"
 #include "audio_loud_volume_manager.h"
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+#include "input_manager.h"
+#endif
+
 namespace OHOS {
 namespace AudioStandard {
 class CheckActiveMusicTimeAction : public AsyncActionHandler::AsyncAction {
@@ -2066,7 +2070,23 @@ int32_t AudioVolumeManager::SetSingleStreamVolume(AudioStreamType streamType, in
 
 bool AudioVolumeManager::CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType)
 {
-    return true;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    if (loudVolumeSupportMode_ == LOUD_VOLUME_NOT_SUPPORT || loudVolumeManager_ == nullptr) {
+        return false;
+    }
+    int32_t volumeLevelMax = GetMaxVolumeLevel(static_cast<AudioVolumeType>(streamType));
+    int32_t deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+
+    int32_t keyCode = (volumeLevelMax > volumeLevel) ? OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN
+        : OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    keyCode = mute ? OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN : keyCode;
+    if (loudVolumeManager_->CheckLoudVolumeMode(volumeLevel, keyCode, streamType)) {
+        AUDIO_INFO_LOG("device %{public}d, stream %{public}d, loud volume mode operation",
+            deviceType, streamType);
+        return true;
+    }
+#endif
+    return false;
 }
 
 int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType streamType, int32_t volumeLevel,
