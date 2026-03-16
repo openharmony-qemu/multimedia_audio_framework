@@ -25,11 +25,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
-static constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
-static constexpr uint32_t DEFAULT_FRAME_LEN = 960;
-static constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
-
 HpaeLimiterNode::HpaeLimiterNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
