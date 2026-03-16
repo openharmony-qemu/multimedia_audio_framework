@@ -101,7 +101,7 @@ public:
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
     void UpdateSleStreamTypeCount(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isRemoved = false);
-    void ResetSleStreamTypeCount(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    void ResetSleStreamTypeCount(const std::string &deviceAddr);
     std::unordered_map<uint32_t, std::unordered_set<uint32_t>> GetNearlinkStreamTypeMapByDevice(
         const std::string &deviceAddr);
 
@@ -112,6 +112,7 @@ public:
     int32_t GetVolumeDegreeByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
     int32_t GetVolumeLevelByVolumeType(AudioVolumeType volumeType, const AudioDeviceDescriptor &deviceDesc);
     bool GetMuteStatusByVolumeType(AudioVolumeType volumeType, const std::string &nearLinkDevice);
+    std::string GetActivatedDevice();
 
     uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid = INVALID_UID);
     uint32_t GetSleStreamTypeBySourceType(SourceType sourceType) const;

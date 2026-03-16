@@ -435,22 +435,22 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
     }
 }
 
-void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::string &deviceAddr)
 {
-    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+    CHECK_AND_RETURN_LOG(!deviceAddr.empty(), "deviceAddr is empty");
 
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
-    auto it = startedSleStreamType_.find(deviceDesc->macAddress_);
+    auto it = startedSleStreamType_.find(deviceAddr);
     CHECK_AND_RETURN_LOG(it != startedSleStreamType_.end(), "device %{public}s not found",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str());
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceAddr).c_str());
 
     for (const auto &pair : it->second) {
         uint32_t streamType = pair.first;
         CHECK_AND_CONTINUE_LOG(!pair.second.sessionIds.empty(), "sle streamType %{public}u has no session", streamType);
-        StopPlaying(deviceDesc->macAddress_, streamType);
+        StopPlaying(deviceAddr, streamType);
     }
 
-    SetActiveSinkDevice(deviceDesc->macAddress_, SLE_AUDIO_STREAM_NONE);
+    SetActiveSinkDevice(deviceAddr, SLE_AUDIO_STREAM_NONE);
 
     startedSleStreamType_.erase(it);
 }
@@ -550,6 +550,21 @@ bool SleAudioDeviceManager::GetMuteStatusByVolumeType(AudioVolumeType volumeType
         return false;
     }
     return false;
+}
+
+std::string SleAudioDeviceManager::GetActivatedDevice()
+{
+    std::string activatedDevice = "";
+    std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
+    for (const auto &devicePair : startedSleStreamType_) {
+        for (const auto &streamPair : devicePair.second) {
+            if (streamPair.second.isStarted) {
+                activatedDevice = devicePair.first;
+                break;
+            }
+        }
+    }
+    return activatedDevice;
 }
 } // namespace AudioStandard
 } // namespace OHOS

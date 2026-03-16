@@ -27,6 +27,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+}
 using namespace std;
 
 static std::string GetEncryptAddr(const std::string &addr)
@@ -205,5 +208,22 @@ bool AudioA2dpDevice::CheckHearingAidDeviceExist(const std::string& device)
     return configInfoPos != connectedHearingAidDeviceMap_.end();
 }
 
+void AudioA2dpDevice::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
+    SourceType sourceType)
+{
+    uint32_t bufferSize = audioStreamInfo.samplingRate *
+        AudioPolicyUtils::GetInstance().PcmFormatToBytes(audioStreamInfo.format) *
+        audioStreamInfo.channels / BT_BUFFER_ADJUSTMENT_FACTOR;
+    AUDIO_INFO_LOG("a2dp rate: %{public}d, format: %{public}d, channel: %{public}d",
+        audioStreamInfo.samplingRate, audioStreamInfo.format, audioStreamInfo.channels);
+    moduleInfo.channels = to_string(audioStreamInfo.channels);
+    moduleInfo.rate = to_string(audioStreamInfo.samplingRate);
+    moduleInfo.format = AudioPolicyUtils::GetInstance().ConvertToHDIAudioFormat(audioStreamInfo.format);
+    moduleInfo.bufferSize = to_string(bufferSize);
+    if (moduleInfo.role != "source") {
+        moduleInfo.renderInIdleState = "1";
+        moduleInfo.sinkLatency = "0";
+    }
+}
 }
 }

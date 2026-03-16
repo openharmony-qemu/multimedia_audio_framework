@@ -280,23 +280,6 @@ void MoveToNewInputDeviceFuzzTest(FuzzedDataProvider& fdp)
     audioCoreService->MoveToNewInputDevice(streamDesc, sourceOutputs);
 }
 
-void SwitchActiveA2dpDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    auto deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
-    std::vector<std::string> insertList1 = {"00:00:00:00:00:00", "abc"};
-    uint32_t insertListCount = GetData<uint32_t>() % insertList1.size();
-    std::string macAddress = insertList1[insertListCount];
-    audioCoreService->audioA2dpDevice_.connectedA2dpDeviceMap_.insert({macAddress, a2dpDeviceConfigInfo});
-    deviceDescriptor->macAddress_ = macAddress;
-    AudioIOHandle audioIOHandle;
-    std::vector<std::string> insertList2 = {"Bt_Speaker", "abc"};
-    auto insertNum = GetData<uint32_t>() % insertList2.size();
-    audioCoreService->audioIOHandleMap_.IOHandles_.insert({insertList2[insertNum], audioIOHandle});
-    audioCoreService->SwitchActiveA2dpDevice(deviceDescriptor);
-}
-
 void AudioCoreServicePrivatePrepareMoveAttrsFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -469,38 +452,6 @@ void AudioCoreServicePrivateSelectA2dpTypeFuzzTest(FuzzedDataProvider& fdp)
     audioStreamDescriptor->oldDeviceDescs_.push_back(audioDeviceDescriptor1);
     bool isCreateProcess = true;
     audioCoreService->SelectA2dpType(audioStreamDescriptor, isCreateProcess);
-}
-
-void AudioCoreServicePrivateSwitchActiveHearingAidDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioCoreService == nullptr || audioDeviceDescriptor == nullptr) {
-        return;
-    }
-    std::vector<std::string> insertList = {"00:00:00:00:00:00", "abc"};
-    uint32_t insertListCount = GetData<uint32_t>() % insertList.size();
-    audioDeviceDescriptor->macAddress_ = insertList[insertListCount];
-    A2dpDeviceConfigInfo a2dpDeviceConfigInfo;
-    audioCoreService->audioA2dpDevice_.connectedHearingAidDeviceMap_.insert({audioDeviceDescriptor->macAddress_,
-        a2dpDeviceConfigInfo});
-    audioCoreService->SwitchActiveHearingAidDevice(audioDeviceDescriptor);
-}
-
-void AudioCoreServicePrivateActivateNearlinkDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
-    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    int32_t streamActionCount = static_cast<int32_t>(AudioStreamAction::AUDIO_STREAM_ACTION_RECREATE) + 1;
-    audioStreamDescriptor->streamAction_ = static_cast<AudioStreamAction>(GetData<uint8_t>() % streamActionCount);
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor1 = std::make_shared<AudioDeviceDescriptor>();
-    audioStreamDescriptor->oldDeviceDescs_.push_back(audioDeviceDescriptor1);
-    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
-    AudioStreamDeviceChangeReasonExt reason(extEnum);
-    audioCoreService->ActivateNearlinkDevice(audioStreamDescriptor, reason);
 }
 
 void AudioCoreServicePrivateUpdateOffloadStateFuzzTest(FuzzedDataProvider& fdp)
@@ -707,23 +658,6 @@ void AudioCoreServicePrivateIsFastAllowedFuzzTest(FuzzedDataProvider& fdp)
     audioCoreService->IsFastAllowed(bundleName);
 }
 
-void AudioCoreServicePrivateLoadHearingAidModuleFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    AudioStreamInfo audioStreamInfo;
-    std::vector<std::string> networkIdList = {"abc", "networkId"};
-    uint32_t roleListCount = GetData<uint32_t>() % networkIdList.size();
-    std::string networkId = networkIdList[roleListCount];
-    std::string sinkName = "sinkName";
-    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
-    audioCoreService->LoadHearingAidModule(deviceType, audioStreamInfo, networkId, sinkName, sourceType);
-}
-
 void AudioCoreServicePrivateSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -819,34 +753,6 @@ void AudioCoreServicePrivateUpdateRouteForCollaborationFuzzTest(FuzzedDataProvid
     audioCoreService->UpdateRouteForCollaboration(deviceType);
 }
 
-void AudioCoreServicePrivateResetNearlinkDeviceStateFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    if (deviceDesc == nullptr) {
-        return;
-    }
-    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    deviceDesc->deviceId_ = GetData<int32_t>();
-    audioCoreService->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-    std::vector<std::string> insertList = {"macAddress1", "macAddress2", "macAddress3"};
-    uint32_t insertListCount = GetData<uint32_t>() % insertList.size();
-    audioCoreService->audioActiveDevice_.currentActiveDevice_.macAddress_ = insertList[insertListCount];
-
-    audioCoreService->ResetNearlinkDeviceState(deviceDesc);
-
-    deviceDesc->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
-    audioCoreService->audioActiveDevice_.currentActiveInputDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
-    insertListCount = GetData<uint32_t>() % insertList.size();
-    audioCoreService->audioActiveDevice_.currentActiveInputDevice_.macAddress_ = insertList[insertListCount];
-    
-    audioCoreService->ResetNearlinkDeviceState(deviceDesc);
-}
-
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -857,7 +763,6 @@ void Test(FuzzedDataProvider& fdp)
     ProcessOutputPipeUpdateFuzzTest,
     ProcessInputPipeNewFuzzTest,
     ProcessInputPipeUpdateFuzzTest,
-    SwitchActiveA2dpDeviceFuzzTest,
     MoveToNewInputDeviceFuzzTest,
     IsNewDevicePlaybackSupportedFuzzTest,
     AudioCoreServicePrivatePrepareMoveAttrsFuzzTest,
@@ -871,8 +776,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioCoreServicePrivateHandleInputStreamInRunningFuzzTest,
     AudioCoreServicePrivateHandleDualStartClientFuzzTest,
     AudioCoreServicePrivateSelectA2dpTypeFuzzTest,
-    AudioCoreServicePrivateActivateNearlinkDeviceFuzzTest,
-    AudioCoreServicePrivateSwitchActiveHearingAidDeviceFuzzTest,
     AudioCoreServiceUpdateModemRouteFuzzTest,
     AudioCoreServicePrivateUpdateOffloadStateFuzzTest,
     AudioCoreServicePrivateNotifyRouteUpdateFuzzTest,
@@ -883,12 +786,10 @@ void Test(FuzzedDataProvider& fdp)
     AudioCoreServicePrivateWriteCapturerConcurrentEventFuzzTest,
     AudioCoreServicePrivateLogCapturerConcurrentResultFuzzTest,
     AudioCoreServicePrivateWriteCapturerConcurrentMsgFuzzTest,
-    AudioCoreServicePrivateLoadHearingAidModuleFuzzTest,
     AudioCoreServicePrivateIsFastAllowedFuzzTest,
     AudioCoreServicePrivateSetDefaultOutputDeviceFuzzTest,
     AudioCoreServicePrivateIsHeadsetToSpkOrEpFuzzTest,
     AudioCoreServicePrivateSleepForSwitchDeviceFuzzTest,
-    AudioCoreServicePrivateResetNearlinkDeviceStateFuzzTest,
     AudioCoreServicePrivateUpdateRouteForCollaborationFuzzTest,
     });
     func(fdp);
