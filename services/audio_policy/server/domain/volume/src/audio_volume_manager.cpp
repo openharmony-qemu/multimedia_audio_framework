@@ -522,19 +522,22 @@ int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, con
     std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId)
 {
     VolumeScale buffedVolume = {volume.VolumeLevel(), volume.VolumeDegree(), GetMaxVolumeLevel(streamType)};
+    int32_t ret = ERROR;
+    do {
+        if (zoneId > 0) {
+            ret = audioPolicyManager_.SetZoneVolumeLevel(zoneId,
+                VolumeUtils::GetVolumeTypeFromStreamType(streamType), buffedVolume, volDeviceDesc);
+            break;
+        }
+        auto device = audioActiveDevice_.GetDeviceForVolume(streamType);
+        DeviceType curOutputDeviceType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_SPEAKER;
+        curOutputDeviceType_ = curOutputDeviceType;
+        ret = SetSystemVolumeExternal(streamType, buffedVolume);
+        if (ret != SUCCESS) {
+            ret = SetSystemVolumeLevelInternal(streamType, buffedVolume, volDeviceDesc);
+        }
+    } while (0);
     CheckReduceOtherActiveVolume(streamType, volume.VolumeLevel());
-    if (zoneId > 0) {
-        return audioPolicyManager_.SetZoneVolumeLevel(zoneId,
-            VolumeUtils::GetVolumeTypeFromStreamType(streamType), buffedVolume, volDeviceDesc);
-    }
-    auto device = audioActiveDevice_.GetDeviceForVolume(streamType);
-    DeviceType curOutputDeviceType = device != nullptr ? device->deviceType_ : DEVICE_TYPE_SPEAKER;
-    curOutputDeviceType_ = curOutputDeviceType;
-    int32_t ret = SetSystemVolumeExternal(streamType, buffedVolume);
-    if (ret == SUCCESS) {
-        return ret;
-    }
-    ret = SetSystemVolumeLevelInternal(streamType, buffedVolume, volDeviceDesc);
     return ret;
 }
 
