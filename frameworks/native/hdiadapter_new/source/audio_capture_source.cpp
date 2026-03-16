@@ -18,6 +18,7 @@
 #endif
 
 #include "source/audio_capture_source.h"
+#include <algorithm>
 #include <climits>
 #include <future>
 #include "parameters.h"
@@ -501,7 +502,8 @@ int32_t AudioCaptureSource::CheckFrameInfoLen(FrameDesc *fdesc, uint64_t &replyB
     AudioCaptureFrameInfo &frameInfo)
 {
     CHECK_AND_RETURN_RET(frameInfo.frame != nullptr, ERR_INVALID_READ);
-    if (frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
+    if (frameInfo.replyBytes < fdescEc->frameLen ||
+        frameInfo.replyBytes - fdescEc->frameLen < fdesc->frameLen) {
         replyBytes = 0;
         return ERR_INVALID_READ;
     }
@@ -512,18 +514,36 @@ void AudioCaptureSource::ProcessCapFrame(FrameDesc *fdesc, uint64_t &replyBytes,
     AudioCaptureFrameInfo &frameInfo)
 {
     CHECK_AND_RETURN(frameInfo.frame != nullptr);
+    uint64_t availableLen = 0;
+    if (frameInfo.replyBytes > fdescEc->frameLen) {
+        availableLen = frameInfo.replyBytes - fdescEc->frameLen;
+    }
+    uint64_t copyLen = std::min(fdesc->frameLen, availableLen);
+    if (copyLen == 0) {
+        replyBytes = 0;
+        AUDIO_WARNING_LOG("cap dump skip, copyLen is 0, frameInfo.replyBytes:%{public}" PRIu64
+            ", cap frameLen:%{public}" PRIu64 ", ec frameLen:%{public}" PRIu64,
+            frameInfo.replyBytes, fdesc->frameLen, fdescEc->frameLen);
+        return;
+    }
+    if (copyLen != fdesc->frameLen) {
+        AUDIO_WARNING_LOG("cap copyLen clamp, frameInfo.replyBytes:%{public}" PRIu64
+            ", cap frameLen:%{public}" PRIu64 ", ec frameLen:%{public}" PRIu64,
+            frameInfo.replyBytes, fdesc->frameLen, fdescEc->frameLen);
+    }
+
     bool interleaved = false;
     if (attr_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
         size_t bytesPerSample = static_cast<size_t>(GetByteSizeByFormat(attr_.format));
-        interleaved = InterleaveRawAndMicInFrame(frameInfo.frame, fdesc->frameLen, fdesc->frame, bytesPerSample);
+        interleaved = InterleaveRawAndMicInFrame(frameInfo.frame, copyLen, fdesc->frame, bytesPerSample);
         if (!interleaved) {
             AUDIO_WARNING_LOG("voice recognition interleave failed, fallback to direct copy");
         }
     }
-    if (!interleaved && memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, fdesc->frameLen) != EOK) {
+    if (!interleaved && memcpy_s(fdesc->frame, fdesc->frameLen, frameInfo.frame, copyLen) != EOK) {
         AUDIO_ERR_LOG("copy desc fail");
     } else {
-        replyBytes = fdesc->frameLen;
+        replyBytes = copyLen;
         HdiDfxUtils::PrintVolumeInfo(fdesc->frame, replyBytes, attr_, logUtilsTag_, volumeDataCount_);
         HdiDfxUtils::DumpData(fdesc->frame, replyBytes, dumpFile_, dumpFileName_);
     }

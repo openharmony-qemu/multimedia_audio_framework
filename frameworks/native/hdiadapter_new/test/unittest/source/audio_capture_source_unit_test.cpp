@@ -422,6 +422,37 @@ HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_002, TestSize.Level1)
 /**
 @tc.name : Test PrimarySource API
 @tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test CheckFrameInfoLen
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_003, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+
+    uint64_t replyBytes = 0;
+    std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    std::vector bufferEc{'8', '8', '8', '8', '8', '8', '8', '8'};
+    FrameDesc fdesc = {
+        .frame = buffer.data(),
+        .frameLen = buffer.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = bufferEc.data(),
+        .frameLen = bufferEc.size(),
+    };
+    struct AudioCaptureFrameInfo frameInfo = {
+        .frame = new int8_t[4],
+        .replyBytes = 4,
+    };
+    int32_t status = source_->CheckFrameInfoLen(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(status, ERR_INVALID_READ);
+    EXPECT_EQ(replyBytes, 0);
+    delete[] frameInfo.frame;
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
 @tc.desc : Test CaptureFrameEC
 */
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)
