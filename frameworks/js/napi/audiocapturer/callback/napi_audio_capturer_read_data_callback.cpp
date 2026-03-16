@@ -177,6 +177,46 @@ void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_va
     }
 }
 
+bool NapiCapturerReadDataCallback::PrepareMicInReadData(CapturerReadDataJsCallback &jsCb)
+{
+    size_t processBufSize = 0;
+    size_t micInBufSize = 0;
+    size_t ecBufSize = 0;
+    int32_t ret = napiCapturer_->audioCapturer_->GetMicInBufferSize(jsCb.bufDesc,
+        processBufSize, micInBufSize, ecBufSize);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetMicInBufferSize failed");
+        napiCapturer_->audioCapturer_->Enqueue(jsCb.bufDesc);
+        return false;
+    }
+    jsCb.processDataLength = processBufSize;
+    jsCb.micInDataLength = micInBufSize;
+    jsCb.ecDataLength = ecBufSize;
+    jsCb.processData.resize(processBufSize);
+    jsCb.micInData.resize(micInBufSize);
+    jsCb.ecData.resize(ecBufSize);
+
+    BufferDesc processBufDesc {};
+    BufferDesc micInBufDesc {};
+    BufferDesc ecBufDesc {};
+    processBufDesc.buffer = jsCb.processData.data();
+    processBufDesc.bufLength = jsCb.processData.size();
+    processBufDesc.dataLength = 0;
+    micInBufDesc.buffer = jsCb.micInData.data();
+    micInBufDesc.bufLength = jsCb.micInData.size();
+    micInBufDesc.dataLength = 0;
+    ecBufDesc.buffer = jsCb.ecData.data();
+    ecBufDesc.bufLength = jsCb.ecData.size();
+    ecBufDesc.dataLength = 0;
+    ret = napiCapturer_->audioCapturer_->DeinterleaveBuffer(jsCb.bufDesc, processBufDesc, micInBufDesc, ecBufDesc);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("DeinterleaveBuffer failed");
+        napiCapturer_->audioCapturer_->Enqueue(jsCb.bufDesc);
+        return false;
+    }
+    return true;
+}
+
 void NapiCapturerReadDataCallback::OnReadData(size_t length)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -218,47 +258,9 @@ void NapiCapturerReadDataCallback::OnReadData(size_t length)
     if (cb->bufDesc.buffer == nullptr) {
         return;
     }
-    if (length > cb->bufDesc.bufLength) {
-        cb->bufDesc.dataLength = cb->bufDesc.bufLength;
-    } else {
-        cb->bufDesc.dataLength = length;
-    }
-    if (targetCallbackName == READ_MICIN_DATA_CALLBACK_NAME) {
-        size_t processBufSize = 0;
-        size_t micInBufSize = 0;
-        size_t ecBufSize = 0;
-        int32_t ret = napiCapturer_->audioCapturer_->GetMicInBufferSize(cb->bufDesc,
-            processBufSize, micInBufSize, ecBufSize);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("GetMicInBufferSize failed");
-            napiCapturer_->audioCapturer_->Enqueue(cb->bufDesc);
-            return;
-        }
-        cb->processDataLength = processBufSize;
-        cb->micInDataLength = micInBufSize;
-        cb->ecDataLength = ecBufSize;
-        cb->processData.resize(processBufSize);
-        cb->micInData.resize(micInBufSize);
-        cb->ecData.resize(ecBufSize);
-
-        BufferDesc processBufDesc {};
-        BufferDesc micInBufDesc {};
-        BufferDesc ecBufDesc {};
-        processBufDesc.buffer = cb->processData.data();
-        processBufDesc.bufLength = cb->processData.size();
-        processBufDesc.dataLength = 0;
-        micInBufDesc.buffer = cb->micInData.data();
-        micInBufDesc.bufLength = cb->micInData.size();
-        micInBufDesc.dataLength = 0;
-        ecBufDesc.buffer = cb->ecData.data();
-        ecBufDesc.bufLength = cb->ecData.size();
-        ecBufDesc.dataLength = 0;
-        ret = napiCapturer_->audioCapturer_->DeinterleaveBuffer(cb->bufDesc, processBufDesc, micInBufDesc, ecBufDesc);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("DeinterleaveBuffer failed");
-            napiCapturer_->audioCapturer_->Enqueue(cb->bufDesc);
-            return;
-        }
+    cb->bufDesc.dataLength = (length > cb->bufDesc.bufLength) ? cb->bufDesc.bufLength : length;
+    if (targetCallbackName == READ_MICIN_DATA_CALLBACK_NAME && !PrepareMicInReadData(*cb)) {
+        return;
     }
 
     return OnJsCapturerReadDataCallback(cb);

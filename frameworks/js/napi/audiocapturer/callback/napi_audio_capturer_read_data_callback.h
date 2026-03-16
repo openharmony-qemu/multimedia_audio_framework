@@ -55,6 +55,7 @@ private:
     static void SafeJsCallbackCapturerReadDataWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void SafeJsCallbackCapturerReadDataWorkInner(CapturerReadDataJsCallback *event);
     void OnJsCapturerReadDataCallback(std::unique_ptr<CapturerReadDataJsCallback> &jsCb);
+    bool PrepareMicInReadData(CapturerReadDataJsCallback &jsCb);
 
     std::mutex mutex_;
     napi_env env_ = nullptr;

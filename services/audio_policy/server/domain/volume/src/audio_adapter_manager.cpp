@@ -2055,13 +2055,13 @@ static void UpdateSourceAttrWithMicInConfig(IAudioSourceAttr &attr, const AudioM
 {
     // When micIn stream attributes are configured, use them as capture source attributes.
     if (!audioModuleInfo.micInRate.empty()) {
-        attr.sampleRate = static_cast<uint32_t>(std::stoul(audioModuleInfo.micInRate));
+        attr.sampleRateMicIn = static_cast<uint32_t>(std::stoul(audioModuleInfo.micInRate));
     }
     if (!audioModuleInfo.micInChannels.empty()) {
-        attr.channel = static_cast<uint32_t>(std::stoul(audioModuleInfo.micInChannels));
+        attr.channelMicIn = static_cast<uint32_t>(std::stoul(audioModuleInfo.micInChannels));
     }
     if (!audioModuleInfo.micInFormat.empty()) {
-        attr.format = ParseSourceAudioSampleFormat(audioModuleInfo.micInFormat);
+        attr.formatMicIn = ParseSourceAudioSampleFormat(audioModuleInfo.micInFormat);
     }
 }
 

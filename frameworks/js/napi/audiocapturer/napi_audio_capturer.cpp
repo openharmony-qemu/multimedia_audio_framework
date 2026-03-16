@@ -1345,7 +1345,8 @@ void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_valu
         napiCapturer->capturerReadDataCallbackNapi_ = std::make_shared<NapiCapturerReadDataCallback>(env, napiCapturer);
         napiCapturer->audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
         CHECK_AND_RETURN_LOG(napiCapturer->capturerReadDataCallbackNapi_ != nullptr, "readDataNapi_ is nullptr");
-        int32_t ret = napiCapturer->audioCapturer_->SetCapturerReadCallback(napiCapturer->capturerReadDataCallbackNapi_);
+        int32_t ret = napiCapturer->audioCapturer_->
+            SetCapturerReadCallback(napiCapturer->capturerReadDataCallbackNapi_);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetCapturerCallback failed");
         std::shared_ptr<NapiCapturerReadDataCallback> cb =
             std::static_pointer_cast<NapiCapturerReadDataCallback>(napiCapturer->capturerReadDataCallbackNapi_);
