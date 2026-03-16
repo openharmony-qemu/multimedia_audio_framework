@@ -57,6 +57,13 @@ public:
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
     BluetoothAndNearlinkPreferredRecordCategory GetHighestPriorityPreferredInputCategory();
 
+    void UpdateCurrentOutputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetCurrentOutputDevice(int32_t uid);
+    void UpdateCurrentInputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetCurrentInputDevice(int32_t uid);
+
     void UpdateInputStreamState(int32_t uid, uint32_t streamId, SourceType sourceType, StreamState state);
     void UpdateOutputStreamState(int32_t uid, uint32_t streamId, StreamUsage streamUsage, StreamState state);
 

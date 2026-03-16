@@ -18,6 +18,8 @@
 #endif
 
 #include "audio_router_select_strategy.h"
+#include "audio_router_follow_strategy.h"
+#include "audio_router_independent_strategy.h"
 #include "audio_router_infra.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
@@ -25,6 +27,12 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+std::shared_ptr<AudioRouterSelectStrategy> AudioRouterSelectStrategy::GetInstance()
+{
+    // 这儿要根据配置以及是否PC模式决定走独立还是跟随策略todo
+    return std::make_shared<AudioRouterFollowStrategy>();
+}
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::ConvertSimpleToDevice(
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& simpleDesc)
@@ -43,6 +51,36 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterSelectStrategy::ConvertD
     }
     return std::make_shared<AudioDeviceSimpleDescriptor>(deviceDesc->deviceType_,
         deviceDesc->deviceRole_, deviceDesc->deviceId_, deviceDesc->networkId_);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::ConvertSimpleToDevice(
+    const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDesc)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    for (const auto& simpleDesc : simpleDescs) {
+        auto device = ConvertDeviceToSimple(simpleDesc);
+        if (device == nullptr) {
+            devices.clear();
+            return devices;
+        }
+        devices.push_back(device);
+    }
+    return devices;
+}
+
+std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterSelectStrategy::ConvertDeviceToSimple(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDesc)
+{
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> simpleDevices;
+    for (const auto& device : devices) {
+        auto simpleDesc = ConvertDeviceToSimple(device);
+        if (simpleDesc == nullptr) {
+            simpleDevices.clear();
+            return simpleDevices;
+        }
+        simpleDevices.push_back(simpleDesc);
+    }
+    return simpleDevices;
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::JudgeFinalSelectDevice(
@@ -162,7 +200,7 @@ void AudioRouterSelectStrategy::UpdateStreamSelectDevice(int32_t uid, uint32_t s
     const std::shared_ptr<AudioDeviceDescriptor>& device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
-    AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);   
+    AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);
 }
 
 void AudioRouterSelectStrategy::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
@@ -194,6 +232,42 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetStreamDefau
     
     AudioRouterInfra::GetInstance().Unlock();
     return result;
+}
+
+void AudioRouterSelectStrategy::UpdateCurrentOutputDevice(int32_t uid,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices)
+{
+    auto simpleDevices = ConvertDeviceToSimple(devices);
+    AudioRouterInfra::GetInstance().UpdateCurrentOutputDevice(uid, simpleDevices);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::GetCurrentOutputDevice(int32_t uid)
+{
+    AudioRouterInfra::GetInstance().Lock();
+    
+    auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentOutputDevice(uid);
+    auto devices = ConvertSimpleToDevice(simpleDescs);
+
+    AudioRouterInfra::GetInstance().Unlock();
+    return devices;
+}
+
+void AudioRouterSelectStrategy::UpdateCurrentInputDevice(int32_t uid,
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices)
+{
+    auto simpleDevices = ConvertDeviceToSimple(devices);
+    AudioRouterInfra::GetInstance().UpdateCurrentInputDevice(uid, simpleDevices);
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::GetCurrentInputDevice(int32_t uid)
+{
+    AudioRouterInfra::GetInstance().Lock();
+    
+    auto simpleDescs = AudioRouterInfra::GetInstance().GetCurrentInputDevice(uid);
+    auto devices = ConvertSimpleToDevice(simpleDescs);
+
+    AudioRouterInfra::GetInstance().Unlock();
+    return devices;
 }
 
 }

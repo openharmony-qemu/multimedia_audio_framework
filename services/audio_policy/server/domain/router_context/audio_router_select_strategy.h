@@ -30,6 +30,8 @@ class AudioRouterSelectStrategy {
 public:
     virtual ~AudioRouterSelectStrategy() = default;
 
+    static std::shared_ptr<AudioRouterSelectStrategy> GetInstance();
+
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId, 
         SourceType sourceType) = 0;
     virtual void SetMediaInputDevice(int32_t uid, uint32_t streamId, 
@@ -58,11 +60,22 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetStreamSelectDevice(int32_t uid, uint32 streamId);
     std::shared_ptr<AudioDeviceDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
 
+    void UpdateCurrentOutputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentOutputDevice(int32_t uid);
+    void UpdateCurrentInputDevice(int32_t uid,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentInputDevice(int32_t uid);
+
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& simpleDesc);
     std::shared_ptr<AudioDeviceSimpleDescriptor> ConvertDeviceToSimple(
         const std::shared_ptr<AudioDeviceDescriptor>& deviceDesc);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ConvertSimpleToDevice(
+        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDesc);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> ConvertDeviceToSimple(
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDesc);
 
     std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(
         const std::shared_ptr<AudioDeviceDescriptor>& desc, SourceType sourceType,

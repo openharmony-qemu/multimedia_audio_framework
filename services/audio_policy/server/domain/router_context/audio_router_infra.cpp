@@ -281,6 +281,60 @@ BluetoothAndNearlinkPreferredRecordCategory AudioRouterInfra::GetHighestPriority
     return GetPreferredInputCategory(highestUid);
 }
 
+void AudioRouterInfra::UpdateCurrentOutputDevice(int32_t uid,
+    const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        return;
+    }
+
+    auto& appContext = it->second;
+    appContext->currentOutputDevices_ = devices;
+}
+
+std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetCurrentOutputDevice(int32_t uid)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        return {};
+    }
+
+    auto& appContext = it->second;
+    return appContext->currentOutputDevices_;
+}
+
+void AudioRouterInfra::UpdateCurrentInputDevice(int32_t uid,
+    const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        return;
+    }
+
+    auto& appContext = it->second;
+    appContext->currentInputDevices_ = devices;
+}
+
+std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetCurrentInputDevice(int32_t uid)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = appContexts_.find(uid);
+    if (it == appContexts_.end()) {
+        return {};
+    }
+
+    auto& appContext = it->second;
+    return appContext->currentInputDevices_;
+}
+
 void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId, 
     SourceType sourceType, StreamState state)
 {
