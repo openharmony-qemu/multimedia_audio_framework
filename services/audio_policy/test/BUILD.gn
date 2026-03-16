@@ -4244,6 +4244,10 @@ ohos_unittest("audio_volume_manager_unit_test") {
   ]
 
   defines = [ "BLUETOOTH_ENABLE" ]
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
+  }
 }
 
 ohos_unittest("audio_volume_manager_ext_unit_test") {
@@ -4536,6 +4540,12 @@ ohos_unittest("audio_adapter_manager_ext_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+
+  defines = []
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+    external_deps += [ "input:libmmi-client" ]
+  }
 }
 
 ohos_unittest("audio_pipe_selector_unit_test") {

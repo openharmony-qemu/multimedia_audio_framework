@@ -395,24 +395,6 @@ void AudioVolumeManagerOnTimerExpiredFuzzTest(FuzzedDataProvider& fdp)
     audioVolumeManager.GetForceControlVolumeType();
 }
 
-void AudioVolumeManagerPublishLoudVolumeNotificationFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-    std::string reason = "testReason";
-    int32_t notificationId = g_fuzzUtils.GetData<int32_t>();
-    audioVolumeManager.OnCheckActiveMusicTime(reason);
-    audioVolumeManager.PublishLoudVolumeNotification(notificationId);
-}
-
-void AudioVolumeManagerSendLoudVolumeModeFuzzTest(FuzzedDataProvider& fdp)
-{
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-    LoudVolumeHoldType funcHoldType = g_fuzzUtils.GetData<LoudVolumeHoldType>();
-    bool state = g_fuzzUtils.GetData<bool>();
-    bool repeatTrigNotif = g_fuzzUtils.GetData<bool>();
-    audioVolumeManager.SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
-}
-
 void AudioVolumeManagerSetAppRingMutedFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
@@ -503,8 +485,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerResetRingerModeMuteFuzzTest,
     AudioVolumeManagerGetLoadFlagFuzzTest,
     AudioVolumeManagerOnTimerExpiredFuzzTest,
-    AudioVolumeManagerPublishLoudVolumeNotificationFuzzTest,
-    AudioVolumeManagerSendLoudVolumeModeFuzzTest,
     AudioVolumeManagerSetAppRingMutedFuzzTest,
     AudioVolumeManagerHandleA2dpAbsVolumeFuzzTest,
     AudioVolumeManagerCheckNearlinkActiveMusicTimeFuzzTest,

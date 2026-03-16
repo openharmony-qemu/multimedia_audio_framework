@@ -22,10 +22,6 @@
 #include "audio_stream_info.h"
 #include "iaudio_policy_interface.h"
 #include "audio_active_device.h"
-#include "audio_volume_manager.h"
-#include "media_monitor_manager.h"
-#include "media_monitor_info.h"
-
 
 namespace OHOS {
 namespace AudioStandard {
@@ -43,18 +39,22 @@ class LoudVolumeManager {
 public:
     explicit LoudVolumeManager();
     virtual ~LoudVolumeManager();
-    int32_t loudVolumeSupportMode_ = 0;
     bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus, SetLoudVolMode setVolMode);
     bool ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldType, SetLoudVolMode setVolMode);
+    bool CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
+private:
     void SetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool state);
     bool ClearLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType);
     bool GetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool &state);
-    bool CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
     bool IsSkipCloseLoudVolType(AudioStreamType streamType);
     bool FindLoudVolStreamTypeEnable(AudioStreamType streamType, LoudVolumeHoldType &funcHoldType);
+    void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
+    void PublishLoudVolumeNotification(int32_t notificationId);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
 private:
-    AudioVolumeManager &audioVolumeManager_;
     AudioActiveDevice &audioActiveDevice_;
+    IAudioPolicyInterface& audioPolicyManager_;
+    int32_t loudVolumeSupportMode_ = 0;
     int32_t triggerTime = 0;
     int64_t upTriggerTimeMSec = 0;
     std::mutex loudVolTrigTimeMutex_;

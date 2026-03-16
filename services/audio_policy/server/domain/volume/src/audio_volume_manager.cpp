@@ -153,6 +153,17 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
     if (forceControlVolumeTypeMonitor_ == nullptr) {
         forceControlVolumeTypeMonitor_ = std::make_shared<ForceControlVolumeTypeMonitor>();
     }
+
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
+    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
+        loudVolumeManager_ = std::make_shared<LoudVolumeManager>();
+        if (loudVolumeManager_ == nullptr) {
+            AUDIO_ERR_LOG("loudVolumeManager_ is nullptr");
+            return false;
+        }
+    }
+#endif
     return true;
 }
 void AudioVolumeManager::DeInit(void)
@@ -176,6 +187,12 @@ void AudioVolumeManager::DeInit(void)
     audioPolicyServerHandler_ = nullptr;
 }
 
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+std::shared_ptr<LoudVolumeManager> AudioVolumeManager::GetLoudVolumeManager()
+{
+    return loudVolumeManager_;
+}
+#endif
 void AudioVolumeManager::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
 {
     asyncHandler_ = handler;
@@ -397,46 +414,6 @@ bool AudioVolumeManager::DeviceIsSupportSafeVolume()
             AUDIO_INFO_LOG("current device unsupport safe volume:%{public}d", curOutputDeviceType);
             return false;
     }
-}
-
-void AudioVolumeManager::PublishLoudVolumeNotification(int32_t notificationId)
-{
-    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
-    if (libHandle == nullptr) {
-        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
-        return;
-    }
-    CreateLoudVolumeNotification *createLoudVolumeNotificationImpl =
-        reinterpret_cast<CreateLoudVolumeNotification*>(dlsym(libHandle, "CreateLoudVolumeNotificationImpl"));
-    if (createLoudVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("createLoudVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    AudioLoudVolumeNotification *audioLoudVolumeNotificationImpl = createLoudVolumeNotificationImpl();
-    if (audioLoudVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("audioLoudVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    audioLoudVolumeNotificationImpl->PublishLoudVolumeNotification(notificationId);
-    delete audioLoudVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-}
-
-void AudioVolumeManager::SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif)
-{
-    if (state && repeatTrigNotif) {
-        const int INSTANT_NOTIFICATION_ID = 6;
-        PublishLoudVolumeNotification(INSTANT_NOTIFICATION_ID);
-    }
-    audioPolicyManager_.SendLoudVolumeModeToDsp(funcHoldType, state);
 }
 
 int32_t AudioVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)

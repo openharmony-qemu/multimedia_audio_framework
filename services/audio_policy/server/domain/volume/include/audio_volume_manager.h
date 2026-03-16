@@ -42,6 +42,9 @@
 #include "audio_connected_device.h"
 #include "audio_offload_stream.h"
 #include "audio_policy_state_monitor.h"
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+#include "audio_loud_volume_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -125,6 +128,9 @@ public:
     int32_t SetSystemVolumeLevelWithOption(AudioStreamType streamType, int32_t volumeLevel,
         int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     bool GetStreamMuteInterface(AudioStreamType streamType, int32_t zoneId = 0);
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    std::shared_ptr<LoudVolumeManager> GetLoudVolumeManager();
+#endif
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, VolumeScale &volume,
         bool internalCall = false);
 
@@ -161,7 +167,6 @@ public:
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
-    void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     int32_t UpdateSafeVolumeByStrMode();
@@ -200,7 +205,6 @@ private:
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
-    void PublishLoudVolumeNotification(int32_t notificationId);
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
@@ -235,6 +239,7 @@ private:
     volatile bool *sharedSleAbsVolumeScene_ = nullptr;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     int32_t loudVolumeSupportMode_ = 0;
+    std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
 
     int64_t activeSafeTimeBt_ = 0;

@@ -264,13 +264,7 @@ void AudioPolicyServer::OnDump()
 void AudioPolicyServer::Init()
 {
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-    if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
-        loudVolumeManager_ = std::make_shared<LoudVolumeManager>();
-        if (loudVolumeManager_ == nullptr) {
-            AUDIO_ERR_LOG("loudVolumeManager_ is nullptr");
-            return;
-        }
-    }
+    loudVolumeManager_ = audioVolumeManager_.GetLoudVolumeManager();
 #endif
     interruptService_ = std::make_shared<AudioInterruptService>();
     interruptService_->Init(this);
