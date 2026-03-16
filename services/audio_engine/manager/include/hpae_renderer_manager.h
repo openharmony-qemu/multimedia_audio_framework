@@ -188,7 +188,6 @@ private:
     int64_t lastOnUnderrunTime_ = 0;
     int64_t lastSessionStateChangeTime_ = 0;
     bool coBufferNodeIsConnected_ = false;
-    bool coBufferNodeIsConnectedBt_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
