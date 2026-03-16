@@ -205,7 +205,6 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/ipc_proxy/src/audio_policy_client_holder.cpp",
     "server/infra/ipc_proxy/src/audio_server_proxy.cpp",
     "server/infra/state_monitor/audio_policy_state_monitor.cpp",
-    "server/infra/window/window_utils.cpp",
     "server/common/src/audio_group_handle.cpp",
     "server/common/src/audio_secure_hash.cpp",
     "server/service/service_main/src/audio_policy_server.cpp",
@@ -400,8 +399,6 @@ audio_ohos_library("audio_policy_service") {
     "power_manager:powermgr_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "window_manager:session_manager_lite",
-    "window_manager:libwm_lite",
     "init:libbeget_proxy",
   ]
 
@@ -411,6 +408,15 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
     sources += [ "server/domain/device/src/pnp/audio_usb_manager.cpp" ]
+  }
+
+  if (target_platform != "watch" && target_platform != "glasses") {
+    defines += [ "HAS_WINDOW_MANAGER" ]
+    external_deps += [
+      "window_manager:session_manager_lite",
+      "window_manager:libwm_lite",
+    ]
+    sources += [ "server/infra/window/window_utils.cpp" ]
   }
 
   if (audio_framework_feature_detect_soundbox) {

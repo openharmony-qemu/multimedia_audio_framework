@@ -23,7 +23,6 @@ namespace AudioStandard {
 class WindowUtils {
 public:
     static bool CheckWindowState(const int32_t pid);
-    static int32_t CheckVirtualDisplay(const int32_t pid, bool &isVirtualDisplay);
 };
 }
 }

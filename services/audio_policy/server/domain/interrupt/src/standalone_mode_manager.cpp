@@ -20,7 +20,9 @@
 #include "audio_log.h"
 #include "audio_session_info.h"
 #include "audio_bundle_manager.h"
+#ifdef HAS_WINDOW_MANAGER
 #include "window_manager_lite.h"
+#endif
 #include "audio_volume.h"
 #include "audio_interrupt_service.h"
 
@@ -166,6 +168,7 @@ int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
 
 bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
 {
+#ifdef HAS_WINDOW_MANAGER
     std::lock_guard<std::recursive_mutex> lock(mutex_);
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(appUid);
     if (bundleName.empty()) {
@@ -185,6 +188,7 @@ bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
             return true;
         }
     }
+#endif
     return false;
 }
 

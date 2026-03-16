@@ -27,7 +27,7 @@ namespace OHOS {
 namespace AudioStandard {
 const uint64_t VIRTUAL_DISPLAY_ID = 1000;
 
-int32_t WindowUtils::CheckVirtualDisplay(const int32_t pid, bool &isVirtualDisplay)
+static int32_t CheckVirtualDisplay(const int32_t pid, bool &isVirtualDisplay)
 {
     std::vector<sptr<Rosen::WindowVisibilityInfo>> infos;
     Rosen::WMError ret = Rosen::WindowManagerLite::GetInstance().GetVisibilityWindowInfo(infos);
