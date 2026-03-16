@@ -387,6 +387,8 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_019, TestSize.Level1)
         std::make_shared<AudioDeviceDescriptor>(DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
     bool ret = audioSession->IsSessionOutputDeviceChanged(desc);
     EXPECT_TRUE(ret);
+    ret = audioSession->IsSessionOutputDeviceChanged(desc);
+    EXPECT_FALSE(ret);
 }
 
 /**
