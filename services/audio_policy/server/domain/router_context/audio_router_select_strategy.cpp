@@ -58,7 +58,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::C
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (const auto& simpleDesc : simpleDescs) {
-        auto device = ConvertDeviceToSimple(simpleDesc);
+        auto device = ConvertSimpleToDevice(simpleDesc);
         if (device == nullptr) {
             devices.clear();
             return devices;
