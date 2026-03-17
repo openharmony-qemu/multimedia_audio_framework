@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "napi_param_utils.h"
 #include <cstring>
+#include <memory>
 #include <new>
 
 namespace OHOS {
@@ -36,26 +37,27 @@ static napi_status CreateExternalArrayBufferProperty(const napi_env &env, const 
         return napi_invalid_arg;
     }
     size_t allocLen = (bufferLen > 0) ? bufferLen : 1;
-    uint8_t *externalData = new (std::nothrow) uint8_t[allocLen];
+    std::unique_ptr<uint8_t[]> externalData(new (std::nothrow) uint8_t[allocLen]);
     CHECK_AND_RETURN_RET_LOG(externalData != nullptr, napi_generic_failure,
         "CreateExternalArrayBufferProperty alloc failed");
     if (bufferLen > 0) {
-        if (memcpy_s(externalData, allocLen, bufferData, bufferLen)) {
-            delete[] externalData;
+        if (memcpy_s(externalData.get(), allocLen, bufferData, bufferLen)) {
             AUDIO_ERR_LOG("CreateExternalArrayBufferProperty memcpy_s failed");
             return napi_generic_failure;
         }
     }
 
     napi_value value = nullptr;
-    napi_status status = napi_create_external_arraybuffer(env, externalData, bufferLen,
+    napi_status status = napi_create_external_arraybuffer(env, externalData.get(), bufferLen,
         [](napi_env env, void *data, void *hint) {
             delete[] static_cast<uint8_t *>(data);
         }, nullptr, &value);
     if (status != napi_ok) {
-        delete[] externalData;
         return status;
     }
+    // Ownership has been transferred to Node.js via the external ArrayBuffer finalizer.
+    (void)externalData.release();
+
     status = napi_set_named_property(env, result, fieldStr, value);
     if (status != napi_ok) {
         AUDIO_ERR_LOG("napi_set_named_property failed");

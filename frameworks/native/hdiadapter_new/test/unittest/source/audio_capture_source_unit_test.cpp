@@ -504,8 +504,8 @@ HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_002, TestSize.Level1)
     source_->attr_.sourceType = SOURCE_TYPE_LIVE;
 
     std::vector<int8_t> src {1, 2, 3, 4, 5, 6, 7, 8};
-    std::vector<int8_t> dst(8, 0x55); // 0x55: initialized marker
-    std::vector<int8_t> original = dst;
+    std::vector<int8_t> dst {0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 0x5C};
+    std::vector<int8_t> expected {0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 0x5C};
     std::vector<int8_t> ec(4, 0);
     FrameDesc fdesc = {
         .frame = reinterpret_cast<char *>(dst.data()),
@@ -517,12 +517,13 @@ HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_002, TestSize.Level1)
     };
     AudioCaptureFrameInfo frameInfo = {};
     frameInfo.frame = src.data();
-    frameInfo.replyBytes = static_cast<uint64_t>(ec.size());
+    frameInfo.replyBytes = static_cast<uint64_t>(ec.size() - 1);
     uint64_t replyBytes = 123; // 123: init check value
 
     source_->ProcessCapFrame(&fdesc, replyBytes, &fdescEc, frameInfo);
     EXPECT_EQ(replyBytes, 0);
-    EXPECT_EQ(dst, original);
+    EXPECT_EQ(dst, expected);
+    EXPECT_NE(dst[0], src[0]);
 }
 
 /**
