@@ -40,7 +40,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
         simpleDesc = systemSelectInfo.device_;
     } else {
-        auto selectResult = GetSelectDeviceByPriority(uid, streamId, SelectDeviceType::MEDIA_INPUT, true);
+        auto selectResult = GetSelectDeviceByPriority(uid, streamId, SelectDeviceType::MEDIA_INPUT);
         simpleDesc = selectResult.device_;
         category = routerInfra.GetPreferredInputCategory(uid);
 
