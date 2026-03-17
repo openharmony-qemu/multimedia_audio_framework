@@ -41,16 +41,17 @@ public:
     void RefreshSelectDevice(SelectDeviceType type, int32_t uid, 
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearAllSelectSelectDevice(SelectDeviceType type);
+    void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
     AudioSelectDeviceInfo GetHighestPrioritySelectDevice(SelectDeviceType type);
-    AudioSelectDeviceInfo GetRecognitionCaptureDevice();
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetRecognitionCaptureDevice();
 
     void UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamSelectDevice(int32_t uid, uint32 streamId);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamSelectDevice(int32_t uid, uint32_t streamId);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
@@ -78,6 +79,7 @@ public:
 
     void UpdateAppForegroundState(int32_t uid, bool isForeground);
     void OnAppDied(int32_t uid);
+    bool IsSystemUid(int32_t uid) const;
 
     void Lock();
     void Unlock();
@@ -88,7 +90,7 @@ private:
     AudioRouterInfra(const AudioRouterInfra&) = delete;
     AudioRouterInfra& operator=(const AudioRouterInfra&) = delete;
 
-    void RefreshSystemSelectDevice(SelectDeviceType type, int32_t uid, 
+    void RefreshSystemSelectDevice(SelectDeviceType type, 
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void RefreshAppSelectDevice(SelectDeviceType type, int32_t uid, 
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);

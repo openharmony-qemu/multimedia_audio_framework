@@ -209,7 +209,7 @@ void AudioRouterFollowStrategy::ClearCallOutputDevice(int32_t uid, uint32_t stre
         routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_OUTPUT);
     } else if (uid == SYSTEM_UID || uid == callOwnerUid) {
         routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, callOwnerUid, nullptr);
-        routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, AudioRouterInfra::SYSTEM_UID, nullptr);
+        routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, SYSTEM_UID, nullptr);
     } else {
         routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, uid, nullptr);
     }

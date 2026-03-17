@@ -54,7 +54,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterSelectStrategy::ConvertD
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::ConvertSimpleToDevice(
-    const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDesc)
+    const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDescs)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (const auto& simpleDesc : simpleDescs) {
@@ -69,10 +69,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::C
 }
 
 std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterSelectStrategy::ConvertDeviceToSimple(
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDesc)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDescs)
 {
     std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> simpleDevices;
-    for (const auto& device : devices) {
+    for (const auto& device : deviceDescs) {
         auto simpleDesc = ConvertDeviceToSimple(device);
         if (simpleDesc == nullptr) {
             simpleDevices.clear();
@@ -189,7 +189,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetRecognition
     return result;
 }
 
-void AudioRouterSelectStrategy::SetRecognitionCaptureDevice(
+void AudioRouterSelectStrategy::SetRecognitionInputDevice(
     const std::shared_ptr<AudioDeviceDescriptor>& device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
@@ -211,7 +211,7 @@ void AudioRouterSelectStrategy::UpdateStreamDefaultDevice(int32_t uid, uint32_t 
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetStreamSelectDevice(
-    int32_t uid, uint32 streamId)
+    int32_t uid, uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
     

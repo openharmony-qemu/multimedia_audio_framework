@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid, 
+void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid,
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -40,7 +40,7 @@ void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid,
     }
 }
 
-void AudioRouterInfra::RefreshSystemSelectDevice(SelectDeviceType type, 
+void AudioRouterInfra::RefreshSystemSelectDevice(SelectDeviceType type,
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     int64_t currentTime = GetCurrentTimeMs();
@@ -158,7 +158,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type)
                 context->appSelectDevice_.callInput_.selectTime_ = 0;
                 break;
             case SelectDeviceType::CALL_OUTPUT:
-                context-> .callOutput_.device_ = nullptr;
+                context->appSelectDevice_.callOutput_.device_ = nullptr;
                 context->appSelectDevice_.callOutput_.selectTime_ = 0;
                 break;
             default:
@@ -172,7 +172,14 @@ void AudioRouterInfra::SetRecognitionCaptureDevice(
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    recognitionSelectDevice_ = device;
+    recognitionSelectDevice_.device_ = device;
+    recognitionSelectDevice_.selectTime_ = GetCurrentTimeMs();
+}
+
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetRecognitionCaptureDevice()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return recognitionSelectDevice_.device_;
 }
 
 AudioSelectDeviceInfo AudioRouterInfra::GetSystemSelectDevice(SelectDeviceType type)
@@ -236,12 +243,6 @@ AudioSelectDeviceInfo AudioRouterInfra::GetHighestPrioritySelectDevice(SelectDev
         int32_t highestUid = outputPriorityList_.front();
         return GetAppSelectDevice(type, highestUid);
     }
-}
-
-AudioSelectDeviceInfo AudioRouterInfra::GetRecognitionCaptureDevice()
-{
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    return recognitionSelectDevice_;
 }
 
 void AudioRouterInfra::UpdatePreferredInputCategory(int32_t uid, 
@@ -621,7 +622,7 @@ void AudioRouterInfra::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
     appContext->streamSelectDevices_[streamId] = device;
 }
 
-void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32 streamId,
+void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -630,11 +631,13 @@ void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32 streamId,
     if (it == appContexts_.end()) {
         it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
     }
+
+    auto& appContext = it->second;
     appContext->streamDefaultDevices_[streamId] = device;
 }
 
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamSelectDevice(int32_t uid,
-    uint32 streamId)
+    uint32_t streamId)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -652,7 +655,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamSelectDe
 }
 
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultDevice(int32_t uid,
-    uint32 streamId)
+    uint32_t streamId)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -669,8 +672,11 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultD
     return streamIt->second;
 }
 
-int64_t AudioRouterInfra::GetCurrentTimeMS() const
+int64_t AudioRouterInfra::GetCurrentTimeMs() const
 {
+    constexpr int32_t MS_PER_S = 1000;
+    constexpr int32_t NS_PER_MS = 1000000;
+
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
     return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
@@ -680,5 +686,6 @@ bool AudioRouterInfra::IsSystemUid(int32_t uid) const
 {
     return uid == SYSTEM_PID;
 }
+
 } 
 } 

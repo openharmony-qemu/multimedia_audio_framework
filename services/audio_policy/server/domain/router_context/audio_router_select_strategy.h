@@ -57,7 +57,7 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor>& device);
     void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor>& device);
-    std::shared_ptr<AudioDeviceDescriptor> GetStreamSelectDevice(int32_t uid, uint32 streamId);
+    std::shared_ptr<AudioDeviceDescriptor> GetStreamSelectDevice(int32_t uid, uint32_t streamId);
     std::shared_ptr<AudioDeviceDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
 
     void UpdateCurrentOutputDevice(int32_t uid,
@@ -73,9 +73,9 @@ protected:
     std::shared_ptr<AudioDeviceSimpleDescriptor> ConvertDeviceToSimple(
         const std::shared_ptr<AudioDeviceDescriptor>& deviceDesc);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ConvertSimpleToDevice(
-        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDesc);
+        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDescs);
     std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> ConvertDeviceToSimple(
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDesc);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDescs);
 
     std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(
         const std::shared_ptr<AudioDeviceDescriptor>& desc, SourceType sourceType,
