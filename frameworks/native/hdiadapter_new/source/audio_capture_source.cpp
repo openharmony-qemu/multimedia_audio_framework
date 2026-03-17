@@ -99,7 +99,6 @@ static bool ResolveVoiceRecognitionLayout(uint64_t frameLen, size_t bytesPerSamp
     }
     frameCount = static_cast<size_t>(frameLen / frameSize);
     return frameCount > 0;
-
 }
 
 static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, char *dst, size_t bytesPerSample)
@@ -130,8 +129,8 @@ static bool InterleaveRawAndMicInFrame(const int8_t *src, uint64_t frameLen, cha
         }
     }
     return true;
-
 }
+
 AudioCaptureSource::AudioCaptureSource(const uint32_t captureId, const std::string &halName)
     : captureId_(captureId), halName_(halName)
 {

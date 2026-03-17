@@ -37,12 +37,13 @@ static napi_status CreateExternalArrayBufferProperty(const napi_env &env, const 
         return napi_invalid_arg;
     }
     size_t allocLen = (bufferLen > 0) ? bufferLen : 1;
-    std::unique_ptr<uint8_t[]> externalData(new (std::nothrow) uint8_t[allocLen]);
+    std::unique_ptr<uint8_t[]> externalData = std::make_unique<uint8_t[]>(allocLen);
     CHECK_AND_RETURN_RET_LOG(externalData != nullptr, napi_generic_failure,
         "CreateExternalArrayBufferProperty alloc failed");
     if (bufferLen > 0) {
-        if (memcpy_s(externalData.get(), allocLen, bufferData, bufferLen)) {
-            AUDIO_ERR_LOG("CreateExternalArrayBufferProperty memcpy_s failed");
+        errno_t copyRet = memcpy_s(externalData.get(), allocLen, bufferData, bufferLen);
+        if (copyRet != EOK) {
+            AUDIO_ERR_LOG("CreateExternalArrayBufferProperty memcpy_s failed, ret:%{public}d", copyRet);
             return napi_generic_failure;
         }
     }
