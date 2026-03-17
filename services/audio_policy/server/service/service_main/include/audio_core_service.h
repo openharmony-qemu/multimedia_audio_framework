@@ -17,6 +17,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <unordered_set>
 
 #include "audio_policy_server_handler.h"
 #include "i_core_service_provider.h"
@@ -119,6 +120,7 @@ public:
         int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning, bool skipForce = false) override;
+        int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         std::string GetModuleNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
@@ -582,7 +584,9 @@ private:
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) const;
+    bool CheckOffloadPipeUidAllowed(const std::shared_ptr<AudioStreamDescriptor> &streamDesc, int32_t realUid) const;
     bool IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    bool IsOffloadAllowedForUid(uint32_t uid) const;
     bool IsStreamSupportDirect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool IsNewDevicePlaybackSupported(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -666,6 +670,7 @@ private:
     // For offload
     void CheckAndUpdateOffloadEnableForStream(
         OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
 
     void WriteCapturerConcurrentEvent(const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     void LogCapturerConcurrentResult(const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
@@ -809,6 +814,7 @@ private:
     std::atomic<bool> isOffloadInRelease_[OFFLOAD_TYPE_NUM] = {};
     std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
+    std::unordered_set<uint32_t> offloadAllowedUids_;
 
     // route update callback
     std::unordered_map<uint32_t, RouteUpdateCallbackInfo> routeUpdateCallback_;

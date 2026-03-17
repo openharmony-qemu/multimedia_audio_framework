@@ -1025,6 +1025,17 @@ bool AudioCoreService::IsStreamBelongToUid(const uid_t uid, const uint32_t sessi
     return true;
 }
 
+int32_t AudioCoreService::SetOffloadAllowedForUid(uint32_t uid, bool allowed)
+{
+    if (allowed) {
+        offloadAllowedUids_.insert(uid);
+    } else {
+        offloadAllowedUids_.erase(uid);
+    }
+    AUDIO_INFO_LOG("Set offload allowed uid, uid: %{public}u, allowed: %{public}d", uid, allowed);
+    return SUCCESS;
+}
+
 void AudioCoreService::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
@@ -1970,6 +1981,23 @@ float AudioCoreService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t 
     return audioPolicyManager_.GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
 }
 
+bool AudioCoreService::CheckOffloadPipeUidAllowed(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    int32_t realUid) const
+{
+    if (realUid == AUDIO_EXT_UID) {
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "the extra uid not support offload.");
+        return false;
+    }
+    if (!policyConfigMananger_.NeedUidCheckForOffloadPipe(streamDesc)) {
+        return true;
+    }
+    if (IsOffloadAllowedForUid(realUid)) {
+        return true;
+    }
+    JUDGE_AND_INFO_LOG(isCreateProcess_, "uid %{public}d is not allowed for uid-gated offload pipe.", realUid);
+    return false;
+}
+
 bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportLowpower");
@@ -1977,10 +2005,8 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because renderInfo not support offload.");
         return false;
     }
-    if (GetRealUid(streamDesc) == AUDIO_EXT_UID) {
-        JUDGE_AND_INFO_LOG(isCreateProcess_, "the extra uid not support offload.");
-        return false;
-    }
+    int32_t realUid = GetRealUid(streamDesc);
+    CHECK_AND_RETURN_RET(CheckOffloadPipeUidAllowed(streamDesc, realUid), false);
     if (streamDesc->streamInfo_.channels > STEREO &&
         (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MOVIE ||
          streamDesc->rendererInfo_.originalFlag != AUDIO_FLAG_PCM_OFFLOAD)) {
@@ -2022,6 +2048,11 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return false;
     }
     return true;
+}
+
+bool AudioCoreService::IsOffloadAllowedForUid(uint32_t uid) const
+{
+    return offloadAllowedUids_.find(uid) != offloadAllowedUids_.end();
 }
 
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,

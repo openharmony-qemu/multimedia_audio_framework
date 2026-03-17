@@ -147,6 +147,7 @@ public:
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
     uint32_t suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
+    bool needUidCheck_ = false;
     bool supportEncodingEac3_ = false;
     bool supportMultSupMode_ = false;
     bool allUsbDeviceDisable_ = false;

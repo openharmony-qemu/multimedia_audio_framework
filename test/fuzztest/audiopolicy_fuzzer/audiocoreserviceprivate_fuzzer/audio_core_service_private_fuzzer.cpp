@@ -245,6 +245,31 @@ void AudioCoreServicePrivateOnPnpDeviceStatusUpdatedFuzzTest()
     audioCoreService->OnPnpDeviceStatusUpdated(desc, true);
 }
 
+void AudioCoreServicePrivateUidGatedOffloadFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+
+    uint32_t uid = GetData<uint32_t>();
+    bool allowed = GetData<bool>();
+    audioCoreService->SetOffloadAllowedForUid(uid, allowed);
+    audioCoreService->IsOffloadAllowedForUid(uid);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(streamDesc != nullptr);
+    streamDesc->rendererInfo_.isOffloadAllowed = true;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->callerUid_ = static_cast<int32_t>(uid);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    CHECK_AND_RETURN(deviceDesc != nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    audioCoreService->IsStreamSupportLowpower(streamDesc);
+}
+
 void AudioCoreServicePrivateOnDeviceStatusUpdatedFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -1163,6 +1188,7 @@ TestFuncs g_testFuncs[] = {
     GetVoiceCallMuteDurationFuzzTest,
     UpdateSessionConnectionStateFuzzTest,
     AudioCoreServicePrivateActivateInputDeviceFuzzTest,
+    AudioCoreServicePrivateUidGatedOffloadFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -263,6 +263,11 @@ bool AudioStreamManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
     return AudioPolicyManager::GetInstance().IsOffloadPlaybackSupported(streamInfo, streamUsage);
 }
 
+int32_t AudioStreamManager::SetOffloadAllowedForUid(uint32_t uid, bool allowed)
+{
+    return AudioPolicyManager::GetInstance().SetOffloadAllowedForUid(uid, allowed);
+}
+
 int32_t AudioStreamManager::GetHardwareOutputSamplingRate(std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     int32_t result = 0;

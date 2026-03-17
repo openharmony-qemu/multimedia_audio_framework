@@ -272,5 +272,17 @@ HWTEST(AudioStreamManagerUnitTest, IsIntelligentNoiseReductionEnabledForCurrentD
 
     EXPECT_EQ(result, false);
 }
+
+/**
+ * @tc.name  : Test SetOffloadAllowedForUid API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadAllowedForUid_001
+ * @tc.desc  : Test SetOffloadAllowedForUid interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, SetOffloadAllowedForUid_001, TestSize.Level1)
+{
+    int32_t result = AudioStreamManager::GetInstance()->SetOffloadAllowedForUid(1905, true);
+    EXPECT_NE(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

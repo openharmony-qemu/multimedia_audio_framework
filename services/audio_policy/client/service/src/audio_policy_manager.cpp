@@ -1203,6 +1203,13 @@ int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const in
     return gsp->SetAppConcurrencyMode(appUid, mode);
 }
 
+int32_t AudioPolicyManager::SetOffloadAllowedForUid(uint32_t uid, bool allowed)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetOffloadAllowedForUid(uid, allowed);
+}
+
 int32_t AudioPolicyManager::SetAppSilentOnDisplay(const int32_t displayId)
 {
     CHECK_AND_RETURN_RET_LOG((displayId > 0 || displayId == -1), -1,
