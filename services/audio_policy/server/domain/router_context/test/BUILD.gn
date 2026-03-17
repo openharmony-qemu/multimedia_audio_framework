@@ -25,7 +25,7 @@ module_output_path = "audio_framework/audio_framework_policy/audio_policy"
 ohos_unittest("audio_router_context_test") {
   module_out_path = module_output_path
   include_dirs = [
-    "./test/",
+    "./",
   ]
 
   use_exceptions = true
@@ -65,8 +65,8 @@ ohos_unittest("audio_router_context_test") {
     "eventhandler:libeventhandler",
   ]
 
-  sources = [ "./test/audio_router_context_test_util.cpp",
-    "./test/audio_router_follow_strategy_unit_test.cpp",
+  sources = [ "./audio_router_context_test_util.cpp",
+    "./audio_router_follow_strategy_unit_test.cpp",
   ]
 
   deps = [
