@@ -161,7 +161,7 @@ static inline bool IsMicInEcRequested(const AudioCapturerOptions &capturerOption
         capturerOptions.ecStreamInfo.channels > CHANNEL_UNKNOW;
 }
 
-static inline bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
+static bool CheckMicInEcParam(SourceType sourceType, const AudioCapturerOptions &capturerOptions)
 {
     if (sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT &&
         (capturerOptions.ecStreamInfo.samplingRate != capturerOptions.streamInfo.samplingRate ||
@@ -227,7 +227,7 @@ struct DeinterleaveTargetBuffers {
     BufferDesc &ecBufferDesc;
 };
 
-static inline int32_t ParseMicInEcBufferLayout(const AudioStreamParams &params, MicInEcBufferLayout &layout)
+static int32_t ParseMicInEcBufferLayout(const AudioStreamParams &params, MicInEcBufferLayout &layout)
 {
     int32_t sampleByteSize = GetFormatByteSize(params.format);
     CHECK_AND_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM, "invalid sample format");
@@ -271,7 +271,7 @@ static inline int32_t ValidateDeinterleaveOutputBuffer(const DeinterleaveTargetB
     return SUCCESS;
 }
 
-static inline int32_t DeinterleaveMicInEcFrames(const BufferDesc &srcBufDesc, const MicInEcBufferLayout &layout,
+static int32_t DeinterleaveMicInEcFrames(const BufferDesc &srcBufDesc, const MicInEcBufferLayout &layout,
     const MicInEcBufferSizes &bufferSizes, DeinterleaveTargetBuffers &targetBuffers)
 {
     size_t processFrameSize = layout.processChannels * layout.byteSizePerSample;
