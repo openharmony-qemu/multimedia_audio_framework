@@ -4343,7 +4343,8 @@ int32_t AudioPolicyServer::IsSpatializationEnabled(const std::string &address, b
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     if (!hasSystemPermission) {
-        return false;
+        ret = false;
+        return ERR_PERMISSION_DENIED;
     }
     ret = audioSpatializationService_.IsSpatializationEnabled(address);
     return SUCCESS;
