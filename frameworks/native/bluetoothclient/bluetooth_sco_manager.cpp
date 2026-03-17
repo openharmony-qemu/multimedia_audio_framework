@@ -262,6 +262,7 @@ int32_t BluetoothScoManager::ProcConnectReqWhenConnecting(ScoCategory scoCategor
     if (!IsNeedSwitchScoCategory(scoCategory) && isSameDevice) {
         AUDIO_INFO_LOG("connect category %{public}d current category %{public}d for device %{public}s",
             scoCategory, currentScoCategory_, GetEncryptAddr(device.GetDeviceAddr()).c_str());
+        cacheReq_ = nullptr;
         return SUCCESS;
     }
     return SaveRequestToCache(true, scoCategory, device, "ProcConnectReqWhenConnecting");
