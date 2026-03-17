@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "audio_errors.h"
 #include "audio_stream_change_info.h"
 #include "microphone_descriptor.h"
 #include "timestamp.h"
@@ -674,7 +675,14 @@ public:
      * @return Returns {@link SUCCESS} if sizes are successfully obtained; returns an error code otherwise.
      */
     virtual int32_t GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
-        size_t &micInBufSize, size_t &ecBufSize) = 0;
+        size_t &micInBufSize, size_t &ecBufSize)
+    {
+        (void)bufDesc;
+        (void)processBufSize;
+        (void)micInBufSize;
+        (void)ecBufSize;
+        return ERR_NOT_SUPPORTED;
+    }
 
     /**
      * @brief Deinterleaves process/mic-in/ec buffers from the source buffer.
@@ -687,7 +695,14 @@ public:
      * @return Returns {@link SUCCESS} if deinterleave is successful; returns an error code otherwise.
      */
     virtual int32_t DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc &processBufDesc,
-        BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc) = 0;
+        BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc)
+    {
+        (void)bufDesc;
+        (void)processBufDesc;
+        (void)micInBufDesc;
+        (void)ecBufferDesc;
+        return ERR_NOT_SUPPORTED;
+    }
 
     /**
      * @brief Enqueues used buffer to the bufferQueue for recording new data.
