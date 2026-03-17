@@ -550,6 +550,7 @@ bool AudioDeviceManager::UpdateExistDeviceDescriptor(const std::shared_ptr<Audio
 
     auto iter = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (iter != connectedDevices_.end()) {
+        deviceDescriptor->deviceId_ = (*iter)->deviceId_;
         **iter = deviceDescriptor;
         UpdateDeviceInfo(*iter);
         return true;
