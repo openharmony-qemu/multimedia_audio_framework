@@ -61,6 +61,7 @@ public:
     mutable std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDupDeviceDescs_ = {};
     std::string bundleName_ = "";
     int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
+    AudioStreamInfo micInStreamInfo_ = {};
     AudioStreamInfo ecStreamInfo_ = {};
 
     AudioStreamDescriptor() = default;

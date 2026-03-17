@@ -51,6 +51,41 @@ static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
     {SAMPLE_F32LE, "f32"},
 };
 
+static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
+}
+
+static void UpdateMicInEcModuleInfo(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    AudioModuleInfo &moduleInfo)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+
+    if (streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW) {
+        moduleInfo.ecType = std::to_string(EC_TYPE_SAME_ADAPTER);
+        moduleInfo.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
+        moduleInfo.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
+        if (formatStrToHpae.count(streamDesc->ecStreamInfo_.format) > 0) {
+            moduleInfo.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
+        }
+    }
+
+    if (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW) {
+        moduleInfo.micInRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micInChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatStrToHpae.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micInFormat = formatStrToHpae[streamDesc->micInStreamInfo_.format];
+        }
+        moduleInfo.micRefRate = std::to_string(streamDesc->micInStreamInfo_.samplingRate);
+        moduleInfo.micRefChannels = std::to_string(streamDesc->micInStreamInfo_.channels);
+        if (formatStrToHpae.count(streamDesc->micInStreamInfo_.format) > 0) {
+            moduleInfo.micRefFormat = formatStrToHpae[streamDesc->micInStreamInfo_.format];
+        }
+    }
+}
+
 static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
     CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
@@ -827,7 +862,10 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         info.moduleInfo_.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
         info.moduleInfo_.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
         info.moduleInfo_.ecFormat = formatStrToHpae[streamDesc->ecStreamInfo_.format];
+    } else if (IsVoiceRecognitionMicInEcRequested(streamDesc)) {
+        UpdateMicInEcModuleInfo(streamDesc, info.moduleInfo_);
     }
+
     info.moduleInfo_.lib = pipeInfoPtr->paProp_.lib_;
     info.moduleInfo_.role = pipeInfoPtr->paProp_.role_;
     info.moduleInfo_.name = pipeInfoPtr->paProp_.moduleName_;

@@ -50,6 +50,19 @@ describe("AudioStreamManagerJsTest", function () {
     capturerInfo: AudioCapturerInfo,
   }
 
+  let PreferredInputDevice = {
+    deviceRole: 1,
+    networkId: "LocalDevice",
+  }
+
+  function getCapturerOptionsForReadMicInData() {
+    return {
+      streamInfo: AudioStreamInfo,
+      capturerInfo: AudioCapturerInfo,
+      preferredInputDevice: PreferredInputDevice,
+    };
+  }
+
   beforeAll(async function () {
     console.info(TAG + "AudioStreamManagerJsTest:beforeAll called");
   })
@@ -1542,6 +1555,103 @@ describe("AudioStreamManagerJsTest", function () {
       expect(e.code).assertEqual(ERROR_INVALID_PARAM);
       done();
       return;
+    }
+  });
+
+  /*
+   * @tc.name:audioCapturerReadMicInData001
+   * @tc.desc:Verify onReadMicInData/offReadMicInData can register and unregister callback
+   * @tc.type: FUNC
+   */
+  it("audioCapturerReadMicInData001", 0, async function (done) {
+    let audioCapturer = null;
+    const readMicInDataCallback = (data) => {
+      console.info(`${TAG} audioCapturerReadMicInData001 callback: ${JSON.stringify(data)}`);
+    };
+
+    try {
+      audioCapturer = await audio.createAudioCapturer(getCapturerOptionsForReadMicInData());
+      expect(typeof audioCapturer.onReadMicInData).assertEqual("function");
+      expect(typeof audioCapturer.offReadMicInData).assertEqual("function");
+
+      audioCapturer.onReadMicInData(readMicInDataCallback);
+      audioCapturer.offReadMicInData(readMicInDataCallback);
+      expect(true).assertTrue();
+    } catch (e) {
+      console.error(`${TAG} audioCapturerReadMicInData001 ERROR: ${e.message}`);
+      expect().assertFail();
+    } finally {
+      if (audioCapturer !== null) {
+        try {
+          await audioCapturer.release();
+        } catch (releaseError) {
+          console.error(`${TAG} audioCapturerReadMicInData001 release ERROR: ${releaseError.message}`);
+        }
+      }
+      done();
+    }
+  });
+
+  /*
+   * @tc.name:audioCapturerReadMicInData002
+   * @tc.desc:Verify onReadMicInData rejects invalid callback type
+   * @tc.type: FUNC
+   */
+  it("audioCapturerReadMicInData002", 0, async function (done) {
+    let audioCapturer = null;
+
+    try {
+      audioCapturer = await audio.createAudioCapturer(getCapturerOptionsForReadMicInData());
+      audioCapturer.onReadMicInData(1);
+      expect(false).assertTrue();
+    } catch (e) {
+      console.info(`${TAG} audioCapturerReadMicInData002 PASS: ${e.message}`);
+      expect(e.code).assertEqual(ERROR_INPUT_INVALID);
+    } finally {
+      if (audioCapturer !== null) {
+        try {
+          await audioCapturer.release();
+        } catch (releaseError) {
+          console.error(`${TAG} audioCapturerReadMicInData002 release ERROR: ${releaseError.message}`);
+        }
+      }
+      done();
+    }
+  });
+
+  /*
+   * @tc.name:audioCapturerReadMicInData003
+   * @tc.desc:Verify readData and readMicInData can both be registered and removed
+   * @tc.type: FUNC
+   */
+  it("audioCapturerReadMicInData003", 0, async function (done) {
+    let audioCapturer = null;
+    const readDataCallback = (data) => {
+      console.info(`${TAG} audioCapturerReadMicInData003 readData callback`);
+    };
+    const readMicInDataCallback = (data) => {
+      console.info(`${TAG} audioCapturerReadMicInData003 readMicInData callback`);
+    };
+
+    try {
+      audioCapturer = await audio.createAudioCapturer(getCapturerOptionsForReadMicInData());
+      audioCapturer.on('readData', readDataCallback);
+      audioCapturer.on('readMicInData', readMicInDataCallback);
+      audioCapturer.off('readMicInData', readMicInDataCallback);
+      audioCapturer.off('readData', readDataCallback);
+      expect(true).assertTrue();
+    } catch (e) {
+      console.error(`${TAG} audioCapturerReadMicInData003 ERROR: ${e.message}`);
+      expect().assertFail();
+    } finally {
+      if (audioCapturer !== null) {
+        try {
+          await audioCapturer.release();
+        } catch (releaseError) {
+          console.error(`${TAG} audioCapturerReadMicInData003 release ERROR: ${releaseError.message}`);
+        }
+      }
+      done();
     }
   });
 })

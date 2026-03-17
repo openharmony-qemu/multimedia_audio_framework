@@ -97,6 +97,8 @@ napi_status NapiAudioCapturer::InitAudioCapturer(napi_env env, napi_value &const
         DECLARE_NAPI_FUNCTION("setWillMuteWhenInterrupted", SetWillMuteWhenInterrupted),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+        DECLARE_NAPI_FUNCTION("onReadMicInData", OnReadMicInData),
+        DECLARE_NAPI_FUNCTION("offReadMicInData", OffReadMicInData),
         DECLARE_NAPI_FUNCTION("setIndependentAudioSessionStrategy", SetIndependentAudioSessionStrategy),
         DECLARE_NAPI_GETTER("state", GetState),
     };
@@ -1138,6 +1140,28 @@ napi_value NapiAudioCapturer::On(napi_env env, napi_callback_info info)
     return RegisterCallback(env, jsThis, argv, callbackName);
 }
 
+napi_value NapiAudioCapturer::OnReadMicInData(napi_env env, napi_callback_info info)
+{
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = { nullptr };
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM), "napi_get_cb_info failed");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argc request failed");
+
+    napi_valuetype handler = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &handler);
+    CHECK_AND_RETURN_RET_LOG(handler == napi_function,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of callback must be function"), "handler invalid");
+
+    napi_value cbArgs[ARGS_TWO] = { nullptr, nullptr };
+    cbArgs[PARAM1] = argv[PARAM0];
+    return RegisterCallback(env, jsThis, cbArgs, READ_MICIN_DATA_CALLBACK_NAME);
+}
+
 napi_value NapiAudioCapturer::RegisterCallback(napi_env env, napi_value jsThis,
     napi_value *argv, const std::string &cbName)
 {
@@ -1165,7 +1189,7 @@ napi_value NapiAudioCapturer::RegisterCallback(napi_env env, napi_value jsThis,
         RegisterAudioCapturerDeviceChangeCallback(env, argv, cbName, napiCapturer);
     } else if (!cbName.compare(AUDIO_CAPTURER_CHANGE_CALLBACK_NAME)) {
         RegisterAudioCapturerInfoChangeCallback(env, argv, cbName, napiCapturer);
-    } else if (!cbName.compare(READ_DATA_CALLBACK_NAME)) {
+    } else if (!cbName.compare(READ_DATA_CALLBACK_NAME) || !cbName.compare(READ_MICIN_DATA_CALLBACK_NAME)) {
         RegisterCapturerReadDataCallback(env, argv, cbName, napiCapturer);
     } else {
         bool unknownCallback = true;
@@ -1317,17 +1341,22 @@ void NapiAudioCapturer::RegisterAudioCapturerInfoChangeCallback(napi_env env, na
 void NapiAudioCapturer::RegisterCapturerReadDataCallback(napi_env env, napi_value *argv, const std::string &cbName,
     NapiAudioCapturer *napiCapturer)
 {
-    CHECK_AND_RETURN_LOG(napiCapturer->capturerReadDataCallbackNapi_ == nullptr, "readData already subscribed.");
+    if (napiCapturer->capturerReadDataCallbackNapi_ == nullptr) {
+        napiCapturer->capturerReadDataCallbackNapi_ = std::make_shared<NapiCapturerReadDataCallback>(env, napiCapturer);
+        napiCapturer->audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
+        CHECK_AND_RETURN_LOG(napiCapturer->capturerReadDataCallbackNapi_ != nullptr, "readDataNapi_ is nullptr");
+        int32_t ret = napiCapturer->audioCapturer_->
+            SetCapturerReadCallback(napiCapturer->capturerReadDataCallbackNapi_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetCapturerCallback failed");
+        std::shared_ptr<NapiCapturerReadDataCallback> cb =
+            std::static_pointer_cast<NapiCapturerReadDataCallback>(napiCapturer->capturerReadDataCallbackNapi_);
+        cb->CreateReadDataTsfn(env);
+    }
 
-    napiCapturer->capturerReadDataCallbackNapi_ = std::make_shared<NapiCapturerReadDataCallback>(env, napiCapturer);
-    napiCapturer->audioCapturer_->SetCaptureMode(CAPTURE_MODE_CALLBACK);
-    CHECK_AND_RETURN_LOG(napiCapturer->capturerReadDataCallbackNapi_ != nullptr, "readDataNapi_ is nullptr");
-    int32_t ret = napiCapturer->audioCapturer_->SetCapturerReadCallback(napiCapturer->capturerReadDataCallbackNapi_);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetCapturerCallback failed");
     std::shared_ptr<NapiCapturerReadDataCallback> cb =
         std::static_pointer_cast<NapiCapturerReadDataCallback>(napiCapturer->capturerReadDataCallbackNapi_);
+    CHECK_AND_RETURN_LOG(!cb->HasCallbackReference(cbName), "%{public}s already subscribed.", cbName.c_str());
     cb->AddCallbackReference(cbName, argv[PARAM1]);
-    cb->CreateReadDataTsfn(env);
 
 #ifndef IOS_PLATFORM
     if ((!firstRegReadCbCalled_.exchange(true, std::memory_order_relaxed)) &&
@@ -1369,6 +1398,28 @@ napi_value NapiAudioCapturer::Off(napi_env env, napi_callback_info info)
     return UnregisterCallback(env, jsThis, argc, argv, callbackName);
 }
 
+napi_value NapiAudioCapturer::OffReadMicInData(napi_env env, napi_callback_info info)
+{
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = { nullptr };
+    napi_value jsThis = nullptr;
+    napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_SYSTEM), "napi_get_cb_info failed");
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argc request failed");
+
+    napi_valuetype handler = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &handler);
+    CHECK_AND_RETURN_RET_LOG(handler == napi_function,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        "incorrect parameter types: The type of callback must be function"), "handler invalid");
+
+    napi_value cbArgs[ARGS_TWO] = { nullptr, nullptr };
+    cbArgs[PARAM1] = argv[PARAM0];
+    return UnregisterCallback(env, jsThis, ARGS_TWO, cbArgs, READ_MICIN_DATA_CALLBACK_NAME);
+}
+
 napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
     const std::string &cbName)
 {
@@ -1392,8 +1443,8 @@ napi_value NapiAudioCapturer::UnregisterCallback(napi_env env, napi_value jsThis
         UnregisterAudioCapturerDeviceChangeCallback(env, argc, cbName, argv, napiCapturer);
     } else if (!cbName.compare(AUDIO_CAPTURER_CHANGE_CALLBACK_NAME)) {
         UnregisterAudioCapturerInfoChangeCallback(env, argc, cbName, argv, napiCapturer);
-    } else if (!cbName.compare(READ_DATA_CALLBACK_NAME)) {
-        UnregisterCapturerReadDataCallback(env, argc, argv, napiCapturer);
+    } else if (!cbName.compare(READ_DATA_CALLBACK_NAME) || !cbName.compare(READ_MICIN_DATA_CALLBACK_NAME)) {
+        UnregisterCapturerReadDataCallback(env, argc, cbName, argv, napiCapturer);
     } else {
         bool unknownCallback = true;
         CHECK_AND_RETURN_RET_LOG(!unknownCallback, NapiAudioError::ThrowErrorAndReturn(env,
@@ -1483,7 +1534,8 @@ void NapiAudioCapturer::UnregisterAudioCapturerInfoChangeCallback(napi_env env, 
     AUDIO_DEBUG_LOG("UnregisterAudioCapturerInfoChangeCallback is successful");
 }
 
-void NapiAudioCapturer::UnregisterCapturerReadDataCallback(napi_env env, size_t argc, napi_value *argv,
+void NapiAudioCapturer::UnregisterCapturerReadDataCallback(napi_env env, size_t argc, const std::string &cbName,
+    napi_value *argv,
     NapiAudioCapturer *napiCapturer)
 {
     napi_value callback = nullptr;
@@ -1496,7 +1548,10 @@ void NapiAudioCapturer::UnregisterCapturerReadDataCallback(napi_env env, size_t 
 
     std::shared_ptr<NapiCapturerReadDataCallback> cb =
         std::static_pointer_cast<NapiCapturerReadDataCallback>(napiCapturer->capturerReadDataCallbackNapi_);
-    cb->RemoveCallbackReference(env, callback);
+    cb->RemoveCallbackReference(env, callback, cbName);
+    if (!cb->HasAnyCallbackReference()) {
+        napiCapturer->capturerReadDataCallbackNapi_ = nullptr;
+    }
 
     AUDIO_INFO_LOG("Unregister Callback is successful");
 }

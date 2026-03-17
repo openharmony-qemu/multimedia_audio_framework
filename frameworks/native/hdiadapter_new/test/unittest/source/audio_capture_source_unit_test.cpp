@@ -422,6 +422,151 @@ HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_002, TestSize.Level1)
 /**
 @tc.name : Test PrimarySource API
 @tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test CheckFrameInfoLen
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, CheckFrameInfoLen_003, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+
+    uint64_t replyBytes = 0;
+    std::vector buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    std::vector bufferEc{'8', '8', '8', '8', '8', '8', '8', '8'};
+    FrameDesc fdesc = {
+        .frame = buffer.data(),
+        .frameLen = buffer.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = bufferEc.data(),
+        .frameLen = bufferEc.size(),
+    };
+    struct AudioCaptureFrameInfo frameInfo = {
+        .frame = new int8_t[4],
+        .replyBytes = 4,
+    };
+    int32_t status = source_->CheckFrameInfoLen(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(status, ERR_INVALID_READ);
+    EXPECT_EQ(replyBytes, 0);
+    delete[] frameInfo.frame;
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test ProcessCapFrame with voice recognition interleave success
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_001, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+    source_->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    source_->attr_.format = SAMPLE_S16LE;
+
+    std::vector<int8_t> src {
+        1, 2, 3, 4,                // raw: 2 frames * 1ch * s16
+        11, 12, 13, 14, 15, 16, 17, 18,
+        21, 22, 23, 24, 25, 26, 27, 28 // micIn: 2 frames * 4ch * s16
+    };
+    std::vector<int8_t> dst(src.size(), 0);
+    std::vector<int8_t> ec(1, 0);
+    FrameDesc fdesc = {
+        .frame = reinterpret_cast<char *>(dst.data()),
+        .frameLen = src.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = reinterpret_cast<char *>(ec.data()),
+        .frameLen = 0,
+    };
+    AudioCaptureFrameInfo frameInfo = {};
+    frameInfo.frame = src.data();
+    frameInfo.replyBytes = static_cast<uint64_t>(src.size());
+    uint64_t replyBytes = 0;
+
+    source_->ProcessCapFrame(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(replyBytes, src.size());
+
+    std::vector<int8_t> expected {
+        1, 2, 11, 12, 13, 14, 15, 16, 17, 18,
+        3, 4, 21, 22, 23, 24, 25, 26, 27, 28
+    };
+    EXPECT_EQ(dst, expected);
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test ProcessCapFrame when copyLen is 0
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_002, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+    source_->attr_.sourceType = SOURCE_TYPE_LIVE;
+
+    std::vector<int8_t> src {1, 2, 3, 4, 5, 6, 7, 8};
+    std::vector<int8_t> dst {0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 0x5C};
+    std::vector<int8_t> expected {0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0x5B, 0x5C};
+    std::vector<int8_t> ec(4, 0);
+    FrameDesc fdesc = {
+        .frame = reinterpret_cast<char *>(dst.data()),
+        .frameLen = dst.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = reinterpret_cast<char *>(ec.data()),
+        .frameLen = ec.size(),
+    };
+    AudioCaptureFrameInfo frameInfo = {};
+    frameInfo.frame = src.data();
+    frameInfo.replyBytes = static_cast<uint64_t>(ec.size() - 1);
+    uint64_t replyBytes = 123; // 123: init check value
+
+    source_->ProcessCapFrame(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(replyBytes, 0);
+    EXPECT_EQ(dst, expected);
+    EXPECT_NE(dst[0], src[0]);
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
+@tc.desc : Test ProcessCapFrame voice recognition interleave fallback
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, ProcessCapFrame_003, TestSize.Level1)
+{
+    auto source_ = std::make_shared<AudioCaptureSource>(10004, "device001");
+    ASSERT_NE(source_, nullptr);
+    source_->attr_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    source_->attr_.format = SAMPLE_S16LE;
+
+    std::vector<int8_t> src {
+        1, 2, 3, 4, 5, 6, 7, 8, 9,
+        10, 11, 12, 13, 14, 15, 16, 17, 18
+    };
+    std::vector<int8_t> dst(20, 0);
+    std::vector<int8_t> ec(4, 0);
+    FrameDesc fdesc = {
+        .frame = reinterpret_cast<char *>(dst.data()),
+        .frameLen = dst.size(),
+    };
+    FrameDesc fdescEc = {
+        .frame = reinterpret_cast<char *>(ec.data()),
+        .frameLen = ec.size(),
+    };
+    AudioCaptureFrameInfo frameInfo = {};
+    frameInfo.frame = src.data();
+    frameInfo.replyBytes = static_cast<uint64_t>(src.size());
+    uint64_t replyBytes = 0;
+
+    source_->ProcessCapFrame(&fdesc, replyBytes, &fdescEc, frameInfo);
+    EXPECT_EQ(replyBytes, 14); // 18 - ec(4)
+    for (size_t i = 0; i < replyBytes; ++i) {
+        EXPECT_EQ(dst[i], src[i]);
+    }
+}
+
+/**
+@tc.name : Test PrimarySource API
+@tc.number : PrimarySourceUnitTest_015
 @tc.desc : Test CaptureFrameEC
 */
 HWTEST_F(AudioCaptureSourceUnitTest, CaptureFrameWithEc_001, TestSize.Level1)

@@ -19,10 +19,53 @@
 #include "js_native_api.h"
 #include "napi_audio_capturer_read_data_callback.h"
 #include "audio_capturer_log.h"
+#include "audio_errors.h"
+#include "napi_param_utils.h"
+#include <cstring>
+#include <memory>
+#include <new>
 
 namespace OHOS {
 namespace AudioStandard {
 static const int32_t READ_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
+
+static napi_status CreateExternalArrayBufferProperty(const napi_env &env, const char *fieldStr, size_t bufferLen,
+    const uint8_t *bufferData, napi_value &result)
+{
+    if (bufferLen > 0 && bufferData == nullptr) {
+        AUDIO_ERR_LOG("CreateExternalArrayBufferProperty invalid input buffer");
+        return napi_invalid_arg;
+    }
+    size_t allocLen = (bufferLen > 0) ? bufferLen : 1;
+    std::unique_ptr<uint8_t[]> externalData = std::make_unique<uint8_t[]>(allocLen);
+    CHECK_AND_RETURN_RET_LOG(externalData != nullptr, napi_generic_failure,
+        "CreateExternalArrayBufferProperty alloc failed");
+    if (bufferLen > 0) {
+        errno_t copyRet = memcpy_s(externalData.get(), allocLen, bufferData, bufferLen);
+        if (copyRet != EOK) {
+            AUDIO_ERR_LOG("CreateExternalArrayBufferProperty memcpy_s failed, ret:%{public}d", copyRet);
+            return napi_generic_failure;
+        }
+    }
+
+    napi_value value = nullptr;
+    napi_status status = napi_create_external_arraybuffer(env, externalData.get(), bufferLen,
+        [](napi_env env, void *data, void *hint) {
+            delete[] static_cast<uint8_t *>(data);
+        }, nullptr, &value);
+    if (status != napi_ok) {
+        return status;
+    }
+    // Ownership has been transferred to Node.js via the external ArrayBuffer finalizer.
+    (void)externalData.release();
+
+    status = napi_set_named_property(env, result, fieldStr, value);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("napi_set_named_property failed");
+        return status;
+    }
+    return status;
+}
 
 NapiCapturerReadDataCallback::NapiCapturerReadDataCallback(napi_env env, NapiAudioCapturer *napiCapturer)
     : env_(env), napiCapturer_(napiCapturer)
@@ -51,6 +94,9 @@ void NapiCapturerReadDataCallback::AddCallbackReference(const std::string &callb
     if (callbackName == READ_DATA_CALLBACK_NAME) {
         capturerReadDataCallback_ = cb;
         isCallbackInited_ = true;
+    } else if (callbackName == READ_MICIN_DATA_CALLBACK_NAME) {
+        capturerReadMicInDataCallback_ = cb;
+        isCallbackInited_ = true;
     } else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
@@ -66,55 +112,158 @@ void NapiCapturerReadDataCallback::CreateReadDataTsfn(napi_env env)
         CaptureReadDataTsfnFinalize, nullptr, SafeJsCallbackCapturerReadDataWork, &acReadDataTsfn_);
 }
 
-void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_value callback)
+bool NapiCapturerReadDataCallback::HasCallbackReference(const std::string &callbackName)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    isCallbackInited_ = false;
+    if (callbackName == READ_DATA_CALLBACK_NAME) {
+        return capturerReadDataCallback_ != nullptr;
+    }
+    if (callbackName == READ_MICIN_DATA_CALLBACK_NAME) {
+        return capturerReadMicInDataCallback_ != nullptr;
+    }
+    return false;
+}
+
+bool NapiCapturerReadDataCallback::HasAnyCallbackReference()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return capturerReadDataCallback_ != nullptr || capturerReadMicInDataCallback_ != nullptr;
+}
+
+void NapiCapturerReadDataCallback::RemoveCallbackReference(napi_env env, napi_value callback,
+    const std::string &callbackName)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_ptr<AutoRef> targetCallback = nullptr;
+    if (callbackName == READ_DATA_CALLBACK_NAME) {
+        targetCallback = capturerReadDataCallback_;
+    } else if (callbackName == READ_MICIN_DATA_CALLBACK_NAME) {
+        targetCallback = capturerReadMicInDataCallback_;
+    } else {
+        AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
+        return;
+    }
+
+    CHECK_AND_RETURN_LOG(targetCallback != nullptr, "target callback is nullptr");
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
     if (callback == nullptr) {
-        napi_status ret = napi_delete_reference(env, capturerReadDataCallback_->cb_);
+        napi_status ret = napi_delete_reference(env, targetCallback->cb_);
         CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
         AUDIO_INFO_LOG("Remove Js Callback");
-        capturerReadDataCallback_->cb_ = nullptr;
+        targetCallback->cb_ = nullptr;
+        if (callbackName == READ_DATA_CALLBACK_NAME) {
+            capturerReadDataCallback_ = nullptr;
+        } else {
+            capturerReadMicInDataCallback_ = nullptr;
+        }
+        isCallbackInited_ = (capturerReadDataCallback_ != nullptr || capturerReadMicInDataCallback_ != nullptr);
         return;
     }
 
-    napi_get_reference_value(env, capturerReadDataCallback_->cb_, &copyValue);
+    napi_get_reference_value(env, targetCallback->cb_, &copyValue);
     CHECK_AND_RETURN_LOG(copyValue != nullptr, "copyValue is nullptr");
     CHECK_AND_RETURN_LOG(napi_strict_equals(env, callback, copyValue, &isEquals) == napi_ok,
         "get napi_strict_equals failed");
     if (isEquals) {
         AUDIO_INFO_LOG("found JS Callback, delete it!");
-        napi_status status = napi_delete_reference(env, capturerReadDataCallback_->cb_);
+        napi_status status = napi_delete_reference(env, targetCallback->cb_);
         CHECK_AND_RETURN_LOG(status == napi_ok, "deleting reference for callback failed");
-        capturerReadDataCallback_->cb_ = nullptr;
+        targetCallback->cb_ = nullptr;
+        if (callbackName == READ_DATA_CALLBACK_NAME) {
+            capturerReadDataCallback_ = nullptr;
+        } else {
+            capturerReadMicInDataCallback_ = nullptr;
+        }
+        isCallbackInited_ = (capturerReadDataCallback_ != nullptr || capturerReadMicInDataCallback_ != nullptr);
     }
+}
+
+bool NapiCapturerReadDataCallback::PrepareMicInReadData(CapturerReadDataJsCallback &jsCb)
+{
+    size_t processBufSize = 0;
+    size_t micInBufSize = 0;
+    size_t ecBufSize = 0;
+    int32_t ret = napiCapturer_->audioCapturer_->GetMicInBufferSize(jsCb.bufDesc,
+        processBufSize, micInBufSize, ecBufSize);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("GetMicInBufferSize failed");
+        napiCapturer_->audioCapturer_->Enqueue(jsCb.bufDesc);
+        return false;
+    }
+    jsCb.processDataLength = processBufSize;
+    jsCb.micInDataLength = micInBufSize;
+    jsCb.ecDataLength = ecBufSize;
+    jsCb.processData.resize(processBufSize);
+    jsCb.micInData.resize(micInBufSize);
+    jsCb.ecData.resize(ecBufSize);
+
+    BufferDesc processBufDesc {};
+    BufferDesc micInBufDesc {};
+    BufferDesc ecBufDesc {};
+    processBufDesc.buffer = jsCb.processData.data();
+    processBufDesc.bufLength = jsCb.processData.size();
+    processBufDesc.dataLength = 0;
+    micInBufDesc.buffer = jsCb.micInData.data();
+    micInBufDesc.bufLength = jsCb.micInData.size();
+    micInBufDesc.dataLength = 0;
+    ecBufDesc.buffer = jsCb.ecData.data();
+    ecBufDesc.bufLength = jsCb.ecData.size();
+    ecBufDesc.dataLength = 0;
+    ret = napiCapturer_->audioCapturer_->DeinterleaveBuffer(jsCb.bufDesc, processBufDesc, micInBufDesc, ecBufDesc);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("DeinterleaveBuffer failed");
+        napiCapturer_->audioCapturer_->Enqueue(jsCb.bufDesc);
+        return false;
+    }
+    return true;
 }
 
 void NapiCapturerReadDataCallback::OnReadData(size_t length)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_LOG(capturerReadDataCallback_ != nullptr, "Cannot find the reference of readData callback");
+    CHECK_AND_RETURN_LOG(napiCapturer_ != nullptr, "Cannot find the reference to audio capturer napi");
+    CHECK_AND_RETURN_LOG(napiCapturer_->audioCapturer_ != nullptr, "audioCapturer is null");
+    if (!isCallbackInited_) {
+        BufferDesc emptyDesc {};
+        napiCapturer_->audioCapturer_->GetBufferDesc(emptyDesc);
+        if (emptyDesc.buffer != nullptr) {
+            napiCapturer_->audioCapturer_->Enqueue(emptyDesc);
+        }
+        return;
+    }
+
+    std::shared_ptr<AutoRef> targetCallback = nullptr;
+    std::string targetCallbackName = READ_DATA_CALLBACK_NAME;
+    if (capturerReadMicInDataCallback_ != nullptr) {
+        targetCallback = capturerReadMicInDataCallback_;
+        targetCallbackName = READ_MICIN_DATA_CALLBACK_NAME;
+    } else if (capturerReadDataCallback_ != nullptr) {
+        targetCallback = capturerReadDataCallback_;
+    }
+    if (targetCallback == nullptr) {
+        BufferDesc emptyDesc {};
+        napiCapturer_->audioCapturer_->GetBufferDesc(emptyDesc);
+        if (emptyDesc.buffer != nullptr) {
+            napiCapturer_->audioCapturer_->Enqueue(emptyDesc);
+        }
+        return;
+    }
 
     std::unique_ptr<CapturerReadDataJsCallback> cb = std::make_unique<CapturerReadDataJsCallback>();
-    cb->callback = capturerReadDataCallback_;
-    cb->callbackName = READ_DATA_CALLBACK_NAME;
+    cb->callback = targetCallback;
+    cb->callbackName = targetCallbackName;
     cb->bufDesc.buffer = nullptr;
     cb->capturerNapiObj = napiCapturer_;
     cb->readDataCallbackPtr = this;
-
-    CHECK_AND_RETURN_LOG(napiCapturer_ != nullptr, "Cannot find the reference to audio capturer napi");
-    CHECK_AND_RETURN_LOG(napiCapturer_->audioCapturer_ != nullptr, "audioCapturer is null");
     napiCapturer_->audioCapturer_->GetBufferDesc(cb->bufDesc);
     if (cb->bufDesc.buffer == nullptr) {
         return;
     }
-    if (length > cb->bufDesc.bufLength) {
-        cb->bufDesc.dataLength = cb->bufDesc.bufLength;
-    } else {
-        cb->bufDesc.dataLength = length;
+    cb->bufDesc.dataLength = (length > cb->bufDesc.bufLength) ? cb->bufDesc.bufLength : length;
+    if (targetCallbackName == READ_MICIN_DATA_CALLBACK_NAME && !PrepareMicInReadData(*cb)) {
+        return;
     }
 
     return OnJsCapturerReadDataCallback(cb);
@@ -188,7 +337,6 @@ void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWorkInner(Captu
 {
     CHECK_AND_RETURN_LOG(event != nullptr, "capture read data event is nullptr");
     CHECK_AND_RETURN_LOG(event->readDataCallbackPtr != nullptr, "CapturerReadDataCallback is already released");
-    CHECK_AND_RETURN_LOG(event->readDataCallbackPtr->isCallbackInited_, "the callback has been dereferenced");
     std::string request = event->callbackName;
     CHECK_AND_RETURN_LOG(event->callback != nullptr, "event is nullptr");
     napi_env env = event->callback->env_;
@@ -203,19 +351,38 @@ void NapiCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWorkInner(Captu
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "%{public}s get reference value failed",
             request.c_str());
         napi_value args[ARGS_ONE] = { nullptr };
-        nstatus = napi_create_external_arraybuffer(env, event->bufDesc.buffer, event->bufDesc.dataLength,
-            [](napi_env env, void *data, void *hint) {}, nullptr, &args[PARAM0]);
-        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
-            "%{public}s callback fail to create buffer", request.c_str());
+        if (request == READ_MICIN_DATA_CALLBACK_NAME) {
+            nstatus = napi_create_object(env, &args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+                "%{public}s callback fail to create object", request.c_str());
+            nstatus = CreateExternalArrayBufferProperty(env, "data", event->processDataLength,
+                event->processData.data(), args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s callback fail to create data buffer",
+                request.c_str());
+            nstatus = CreateExternalArrayBufferProperty(env, "micInData", event->micInDataLength,
+                event->micInData.data(), args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s callback fail to create micInData buffer",
+                request.c_str());
+            if (event->ecDataLength > 0) {
+                nstatus = CreateExternalArrayBufferProperty(env, "ecData", event->ecDataLength,
+                    event->ecData.data(), args[PARAM0]);
+                CHECK_AND_BREAK_LOG(nstatus == napi_ok, "%{public}s callback fail to create ecData buffer",
+                    request.c_str());
+            }
+        } else {
+            nstatus = napi_create_external_arraybuffer(env, event->bufDesc.buffer, event->bufDesc.dataLength,
+                [](napi_env env, void *data, void *hint) {}, nullptr, &args[PARAM0]);
+            CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
+                "%{public}s callback fail to create buffer", request.c_str());
+        }
         const size_t argCount = 1;
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok, "fail to call %{public}s callback", request.c_str());
-
-        CHECK_AND_BREAK_LOG(event->capturerNapiObj != nullptr && event->capturerNapiObj->audioCapturer_ != nullptr,
-            "audioCapturer_ is null");
-        event->capturerNapiObj->audioCapturer_->Enqueue(event->bufDesc);
     } while (0);
+    if (event->capturerNapiObj != nullptr && event->capturerNapiObj->audioCapturer_ != nullptr) {
+        event->capturerNapiObj->audioCapturer_->Enqueue(event->bufDesc);
+    }
     napi_close_handle_scope(env, scope);
 }
 } // namespace AudioStandard

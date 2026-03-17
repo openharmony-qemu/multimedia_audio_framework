@@ -482,6 +482,11 @@ napi_status NapiParamUtils::GetEcStreamInfo(const napi_env &env, AudioStreamInfo
     return napi_ok;
 }
 
+napi_status NapiParamUtils::GetMicInStreamInfo(const napi_env &env, AudioStreamInfo *micInStreamInfo, napi_value in)
+{
+    return GetEcStreamInfo(env, micInStreamInfo, in);
+}
+
 napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStreamInfo &streamInfo, napi_value &result)
 {
     napi_status status = napi_create_object(env, &result);
@@ -808,6 +813,19 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
     CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
     opts->preferredInputDevice = device;
+
+    if (napi_get_named_property(env, in, "micInStreamInfo", &result) == napi_ok) {
+        AudioStreamInfo *targetMicInStreamInfo = &(opts->micInStreamInfo);
+        if (opts->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
+            targetMicInStreamInfo = &(opts->streamInfo);
+            AUDIO_INFO_LOG("ParseCapturerOptions, sourceType is UNPROCESSED_VOICE_ASSISTANT, "
+                "micInStreamInfo is mapped to streamInfo");
+        }
+        status = GetMicInStreamInfo(env, targetMicInStreamInfo, result);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseMicInStreamInfo failed");
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without micInStreamInfo");
+    }
 
     if (napi_get_named_property(env, in, "ecStreamInfo", &result) == napi_ok) {
         status = GetEcStreamInfo(env, &(opts->ecStreamInfo), result);

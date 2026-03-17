@@ -66,6 +66,10 @@ public:
     AudioCaptureMode GetCaptureMode()const override;
     int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
     int32_t GetBufferDesc(BufferDesc &bufDesc) override;
+    int32_t GetMicInBufferSize(BufferDesc &bufDesc, size_t &processBufSize,
+        size_t &micInBufSize, size_t &ecBufSize) override;
+    int32_t DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc &processBufDesc,
+        BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc) override;
     int32_t Enqueue(const BufferDesc &bufDesc) override;
     int32_t Clear()const override;
     int32_t GetBufQueueState(BufferQueueState &bufState)const override;
@@ -143,6 +147,12 @@ public:
         audioStreamParams.ecEncoding = params.audioEcEncoding;
         audioStreamParams.ecChannelLayout = params.ecChannelLayout;
 
+        audioStreamParams.micInFormat = params.audioMicInSampleFormat;
+        audioStreamParams.micInSamplingRate = params.micInSamplingRate;
+        audioStreamParams.micInChannels = params.audioMicInChannel;
+        audioStreamParams.micInEncoding = params.audioMicInEncoding;
+        audioStreamParams.micInChannelLayout = params.micInChannelLayout;
+
         return audioStreamParams;
     }
 
@@ -177,6 +187,10 @@ private:
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
     uint32_t GetOverflowCountInner() const;
     CapturerState GetStatusInner() const;
+    int32_t InitSessionAndOpenDumpFiles(const AudioCapturerParams &params,
+        const AudioStreamParams &audioStreamParams);
+    void OpenCaptureDumpFiles(const AudioCapturerParams &params, const AudioStreamParams &audioStreamParams,
+        uint32_t dumpChannels);
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     IAudioStream::StreamClass SetCaptureInfo(AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GenerateStreamDesc(
@@ -211,6 +225,9 @@ private:
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     mutable std::mutex signalDetectAgentMutex_;
     FILE *dumpFile_ = nullptr;
+    FILE *dumpProcessFile_ = nullptr;
+    FILE *dumpMicInFile_ = nullptr;
+    FILE *dumpEcFile_ = nullptr;
     AudioCaptureMode audioCaptureMode_ = CAPTURE_MODE_NORMAL;
     std::mutex setCapturerCbMutex_;
     mutable std::shared_mutex capturerMutex_;

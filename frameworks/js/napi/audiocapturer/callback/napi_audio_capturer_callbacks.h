@@ -32,6 +32,7 @@ const std::string PERIOD_REACH_CALLBACK_NAME = "periodReach";
 const std::string INPUTDEVICE_CHANGE_CALLBACK_NAME = "inputDeviceChange";
 const std::string AUDIO_CAPTURER_CHANGE_CALLBACK_NAME = "audioCapturerChange";
 const std::string READ_DATA_CALLBACK_NAME = "readData";
+const std::string READ_MICIN_DATA_CALLBACK_NAME = "readMicInData";
 
 class NapiAudioCapturerCallback : public AudioCapturerCallback, public NapiAudioCapturerCallbackInner {
 public:

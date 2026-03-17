@@ -2029,14 +2029,16 @@ static AudioSampleFormat ParseSinkAudioSampleFormat(const std::string &format)
 
 static AudioSampleFormat ParseSourceAudioSampleFormat(const std::string &format)
 {
-    if (format == "u8") {
+    if (format == "u8" || format == "s8") {
         return SAMPLE_U8;
-    } else if (format == "s16le" || format == "s16be") {
+    } else if (format == "s16le" || format == "s16be" || format == "s16") {
         return SAMPLE_S16LE;
-    } else if (format == "s24le" || format == "s24be") {
+    } else if (format == "s24le" || format == "s24be" || format == "s24") {
         return SAMPLE_S24LE;
-    } else if (format == "s32le" || format == "s32be") {
+    } else if (format == "s32le" || format == "s32be" || format == "s32") {
         return SAMPLE_S32LE;
+    } else if (format == "f32le" || format == "f32be" || format == "f32") {
+        return SAMPLE_F32LE;
     }
     return SAMPLE_S16LE;
 }
@@ -2047,6 +2049,20 @@ static bool IsBigEndian(const std::string &format)
         return true;
     }
     return false;
+}
+
+static void UpdateSourceAttrWithMicInConfig(IAudioSourceAttr &attr, const AudioModuleInfo &audioModuleInfo)
+{
+    // When micIn stream attributes are configured, use them as capture source attributes.
+    if (!audioModuleInfo.micInRate.empty()) {
+        attr.sampleRateMicIn = static_cast<uint32_t>(std::stoul(audioModuleInfo.micInRate));
+    }
+    if (!audioModuleInfo.micInChannels.empty()) {
+        attr.channelMicIn = static_cast<uint32_t>(std::stoul(audioModuleInfo.micInChannels));
+    }
+    if (!audioModuleInfo.micInFormat.empty()) {
+        attr.formatMicIn = ParseSourceAudioSampleFormat(audioModuleInfo.micInFormat);
+    }
 }
 
 IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audioModuleInfo) const
@@ -2125,6 +2141,9 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     if (!audioModuleInfo.sourceType.empty()) {
         attr.sourceType = std::stoi(audioModuleInfo.sourceType);
     }
+
+    UpdateSourceAttrWithMicInConfig(attr, audioModuleInfo);
+
     if ((!audioModuleInfo.ecType.empty()) && static_cast<uint32_t>(std::stoul(audioModuleInfo.ecType)) ==
         HDI_EC_SAME_ADAPTER) {
         attr.hasEcConfig = true;

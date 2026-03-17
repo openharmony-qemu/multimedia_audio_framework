@@ -46,6 +46,12 @@
           "visible": true
         }
       ],
+      "reqPermissions": [
+        {
+          "name": "ohos.permission.MICROPHONE",
+          "reason": "use ohos.permission.MICROPHONE"
+        }
+      ],
       "js": [
         {
           "pages": [
