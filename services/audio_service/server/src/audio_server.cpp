@@ -1058,7 +1058,7 @@ bool AudioServer::UpdateAudioParameterInfo(const std::string &key, const std::st
         }
         char *subkey = std::strtok(param, "=");
         char *strvalue = std::strtok(NULL, "=");
-        CHECK_AND_RETURN_RET_LOG(subkey == nullptr || strvalue == nullptr, false, "subkey and strvalue is nullptr");
+        CHECK_AND_RETURN_RET_LOG(!(subkey == nullptr || strvalue == nullptr), false, "subkey and strvalue is nullptr");
         RecognizeAudioEffectType(key, (std::string)subkey, (std::string)strvalue);
         AUDIO_INFO_LOG("LOUD_VOLUMN_MODE mainkey = %{public}s, key = %{public}s, value = %{public}s",
             key.c_str(), subkey, strvalue);
