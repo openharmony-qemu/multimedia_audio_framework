@@ -157,6 +157,11 @@ int32_t AudioSessionManager::EnableMuteSuggestionWhenMixWithOthers(bool enable)
     return AudioSessionClientManager::GetInstance().EnableMuteSuggestionWhenMixWithOthers(enable);
 }
 
+int32_t AudioSessionManager::SetCapturerMuteHint(bool mute)
+{
+    return AudioSessionClientManager::GetInstance().SetCapturerMuteHint(mute);
+}
+
 void AudioSessionManager::RegisterAudioPolicyServerDiedCb()
 {
     AudioSessionClientManager::GetInstance().RegisterAudioPolicyServerDiedCb();

@@ -3271,6 +3271,24 @@ HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_003, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetCapturerMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetCapturerMuteHint_001
+ * @tc.desc  : Test SetCapturerMuteHint returns ERROR when core service provider is null.
+ */
+HWTEST(AudioServiceUnitTest, SetCapturerMuteHint_001, TestSize.Level1)
+{
+    auto &coreServiceHandler = CoreServiceHandler::GetInstance();
+    auto originProvider = coreServiceHandler.iCoreServiceProvider_;
+    coreServiceHandler.iCoreServiceProvider_ = nullptr;
+
+    int32_t ret = coreServiceHandler.SetCapturerMuteHint(1001, true);
+    EXPECT_EQ(ret, ERROR);
+
+    coreServiceHandler.iCoreServiceProvider_ = originProvider;
+}
+
+/**
  * @tc.name  : Test GetMaxAmplitude API
  * @tc.type  : FUNC
  * @tc.number: GetMaxAmplitude_002

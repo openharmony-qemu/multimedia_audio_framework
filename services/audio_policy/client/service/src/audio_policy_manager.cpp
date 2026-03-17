@@ -2708,6 +2708,13 @@ int32_t AudioPolicyManager::EnableMuteSuggestionWhenMixWithOthers(bool enable)
     return gsp->EnableMuteSuggestionWhenMixWithOthers(enable);
 }
 
+int32_t AudioPolicyManager::SetAudioSessionCapturerMuteHint(bool mute)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioSessionCapturerMuteHint(mute);
+}
+
 AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

@@ -317,6 +317,7 @@ interface IAudioPolicy {
     void AddUidUsagesToAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void RemoveUidUsagesFromAudioZone([in] int zoneId, [in] int uid, [in] Set<int> usages);
     void EnableMuteSuggestionWhenMixWithOthers([in] boolean enable);
+    void SetAudioSessionCapturerMuteHint([in] boolean mute);
     void IsOtherMediaPlaying([out] boolean retIsExistence);
     void GetAudioSceneFromAllZones([out] int audioScene);
     void UpdateContextForAudioZone([in] int zoneId, [in] AudioZoneContext context);

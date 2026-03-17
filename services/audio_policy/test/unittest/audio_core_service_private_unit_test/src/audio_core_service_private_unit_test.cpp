@@ -4206,5 +4206,95 @@ HWTEST_F(AudioCoreServicePrivateTest, WriteScoStateFaultEvent_001, TestSize.Leve
     );
     EXPECT_EQ(ret, 0);
 }
+
+/**
+ * @tc.name  : SetCapturerMuteHint_001
+ * @tc.number: SetCapturerMuteHint_001
+ * @tc.desc  : Test AudioCoreService::SetCapturerMuteHint returns invalid param when session does not exist.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, SetCapturerMuteHint_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->streamCollector_.audioCapturerChangeInfos_.clear();
+    audioCoreService->audioEffectService_.appConfiguredCapturerMuteHint_.clear();
+    audioCoreService->audioEffectService_.appConfiguredSessionMuteHint_.clear();
+
+    int32_t ret = audioCoreService->SetCapturerMuteHint(7001, true);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : SetCapturerMuteHint_002
+ * @tc.number: SetCapturerMuteHint_002
+ * @tc.desc  : Test AudioCoreService::SetCapturerMuteHint returns illegal state when capturer is not running.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, SetCapturerMuteHint_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->streamCollector_.audioCapturerChangeInfos_.clear();
+    audioCoreService->audioEffectService_.appConfiguredCapturerMuteHint_.clear();
+    audioCoreService->audioEffectService_.appConfiguredSessionMuteHint_.clear();
+
+    auto capturerInfo = std::make_shared<AudioCapturerChangeInfo>();
+    ASSERT_NE(capturerInfo, nullptr);
+    capturerInfo->sessionId = 7002;
+    capturerInfo->capturerState = CAPTURER_STOPPED;
+    capturerInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCoreService->streamCollector_.audioCapturerChangeInfos_.push_back(capturerInfo);
+
+    int32_t ret = audioCoreService->SetCapturerMuteHint(7002, true);
+    EXPECT_EQ(ret, ERROR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : SetCapturerMuteHint_003
+ * @tc.number: SetCapturerMuteHint_003
+ * @tc.desc  : Test AudioCoreService::SetCapturerMuteHint succeeds for running session and updates effect state.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, SetCapturerMuteHint_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->streamCollector_.audioCapturerChangeInfos_.clear();
+    audioCoreService->audioEffectService_.appConfiguredCapturerMuteHint_.clear();
+    audioCoreService->audioEffectService_.appConfiguredSessionMuteHint_.clear();
+
+    auto capturerInfo = std::make_shared<AudioCapturerChangeInfo>();
+    ASSERT_NE(capturerInfo, nullptr);
+    capturerInfo->sessionId = 7003;
+    capturerInfo->capturerState = CAPTURER_RUNNING;
+    capturerInfo->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioCoreService->streamCollector_.audioCapturerChangeInfos_.push_back(capturerInfo);
+
+    int32_t ret = audioCoreService->SetCapturerMuteHint(7003, true);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_TRUE(audioCoreService->audioEffectService_.GetEffectiveAppMuteHint(7003));
+}
+
+/**
+ * @tc.name  : ReEvaluateVoipBypassByAppMuteHint_001
+ * @tc.number: ReEvaluateVoipBypassByAppMuteHint_001
+ * @tc.desc  : Test AudioCoreService::ReEvaluateVoipBypassByAppMuteHint prunes stale mute hint state.
+ */
+HWTEST_F(AudioCoreServicePrivateTest, ReEvaluateVoipBypassByAppMuteHint_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    audioCoreService->streamCollector_.audioCapturerChangeInfos_.clear();
+    audioCoreService->audioEffectService_.appConfiguredCapturerMuteHint_.clear();
+    audioCoreService->audioEffectService_.appConfiguredSessionMuteHint_.clear();
+
+    audioCoreService->audioEffectService_.SetAppConfiguredCapturerMuteHint(7010, true);
+    EXPECT_TRUE(audioCoreService->audioEffectService_.GetEffectiveAppMuteHint(7010));
+
+    audioCoreService->ReEvaluateVoipBypassByAppMuteHint();
+    EXPECT_FALSE(audioCoreService->audioEffectService_.GetEffectiveAppMuteHint(7010));
+}
 } // namespace AudioStandard
 } // namespace OHOS

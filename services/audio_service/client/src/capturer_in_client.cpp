@@ -741,6 +741,12 @@ bool CapturerInClientInner::GetMute()
     return false;
 }
 
+int32_t CapturerInClientInner::SetMuteHint(bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "ipcStream is null");
+    return ipcStream_->SetMuteHint(mute);
+}
+
 int32_t CapturerInClientInner::SetDuckVolume(float volume)
 {
     AUDIO_WARNING_LOG("only for renderer");

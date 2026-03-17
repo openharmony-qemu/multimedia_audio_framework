@@ -2113,6 +2113,56 @@ HWTEST(IpcStreamInServerUnitTest, SetMute_001, TestSize.Level3)
 }
 
 /**
+ * @tc.name  : Test SetMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_001
+ * @tc.desc  : Test SetMuteHint returns failed in playback mode.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetMuteHint_001, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    auto ret = ipcStreamInServerRet.SetMuteHint(true);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_002
+ * @tc.desc  : Test SetMuteHint returns failed when capturer is null.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetMuteHint_002, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    auto ret = ipcStreamInServerRet.SetMuteHint(true);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_003
+ * @tc.desc  : Test SetMuteHint returns failed when session is invalid in capturer.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetMuteHint_003, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    auto ret = ipcStreamInServerRet.SetMuteHint(true);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
  * @tc.name  : Test SetDuckFactor API
  * @tc.type  : FUNC
  * @tc.number: SetDuckFactor_001

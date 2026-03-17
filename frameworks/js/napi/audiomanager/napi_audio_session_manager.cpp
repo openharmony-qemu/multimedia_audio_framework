@@ -104,6 +104,7 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setBluetoothAndNearlinkPreferredRecordCategory", PreferBluetoothAndNearlinkRecord),
         DECLARE_NAPI_FUNCTION("getBluetoothAndNearlinkPreferredRecordCategory", GetPreferBluetoothAndNearlinkRecord),
         DECLARE_NAPI_FUNCTION("enableMuteSuggestionWhenMixWithOthers", EnableMuteSuggestionWhenMixWithOthers),
+        DECLARE_NAPI_FUNCTION("setCaptureMuteHint", SetCaptureMuteHint),
         DECLARE_NAPI_FUNCTION("isOtherMediaPlaying", IsOtherMediaPlaying),
         DECLARE_NAPI_FUNCTION("setAudioSessionBehavior", SetAudioSessionBehavior),
     };
@@ -1095,6 +1096,44 @@ napi_value NapiAudioSessionMgr::EnableMuteSuggestionWhenMixWithOthers(napi_env e
     }
 
     return result;
+}
+
+napi_value NapiAudioSessionMgr::SetCaptureMuteHint(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioSessionMgrAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetCaptureMuteHint failed : no memory");
+        NapiAudioError::ThrowError(env, "SetCaptureMuteHint failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueBoolean(env, context->isTrue, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get mute hint failed",
+            NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioSessionMgr*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiSessionMgr = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioSessionStatus(napiSessionMgr, context), "AudioSession state is error.");
+        context->intValue = napiSessionMgr->audioSessionMngr_->SetCapturerMuteHint(context->isTrue);
+        if (context->intValue == ERROR_ILLEGAL_STATE) {
+            context->SignError(NAPI_ERR_ILLEGAL_STATE);
+            return;
+        }
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetCaptureMuteHint failed",
+            NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetCaptureMuteHint", executor, complete);
 }
 
 napi_value NapiAudioSessionMgr::SetAudioSessionScene(napi_env env, napi_callback_info info)

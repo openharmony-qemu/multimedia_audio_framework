@@ -64,4 +64,5 @@ interface ICoreServiceProviderIpc {
     void OnCheckActiveMusicTime([in] String reason);
     [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
     void GetModuleNameBySessionId([in] unsigned int sessionID, [out] String name);
+    void SetCapturerMuteHint([in] unsigned int sessionId, [in] boolean mute);
 }

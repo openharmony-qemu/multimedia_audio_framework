@@ -21,9 +21,14 @@
 
 #include "audio_device_type.h"
 #include "audio_effect_map.h"
+#include "i_hpae_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr uint32_t INVALID_TRIGGER_SESSION_ID = 0;
+}
+
 const std::set<std::string> STREAM_USAGE_SET = {
     "STREAM_USAGE_UNKNOWN",
     "STREAM_USAGE_MEDIA",
@@ -789,5 +794,131 @@ int32_t AudioEffectService::AddSupportedAudioEnhancePropertyByDevice(const Devic
 {
     return AddSupportedPropertyByDeviceInner(deviceType, mergedSet, device2EnhancePropertySet_);
 }
-} // namespce AudioStandard
+
+void AudioEffectService::PruneInvalidAppMuteHintState(
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerInfos)
+{
+    std::lock_guard<std::mutex> lock(appMuteHintMutex_);
+    std::unordered_set<uint32_t> validStreamIds;
+    for (const auto &capturerInfo : capturerInfos) {
+        if (capturerInfo == nullptr) {
+            continue;
+        }
+        validStreamIds.emplace(static_cast<uint32_t>(capturerInfo->sessionId));
+    }
+
+    for (auto it = appConfiguredCapturerMuteHint_.begin(); it != appConfiguredCapturerMuteHint_.end();) {
+        if (validStreamIds.count(it->first) == 0) {
+            it = appConfiguredCapturerMuteHint_.erase(it);
+            continue;
+        }
+        ++it;
+    }
+
+    for (auto it = appConfiguredSessionMuteHint_.begin(); it != appConfiguredSessionMuteHint_.end();) {
+        if (validStreamIds.count(it->first) == 0) {
+            it = appConfiguredSessionMuteHint_.erase(it);
+            continue;
+        }
+        ++it;
+    }
+}
+
+void AudioEffectService::SetAppConfiguredCapturerMuteHint(uint32_t streamId, bool appMuteHint)
+{
+    std::lock_guard<std::mutex> lock(appMuteHintMutex_);
+    appConfiguredCapturerMuteHint_[streamId] = appMuteHint;
+}
+
+bool AudioEffectService::SetAppConfiguredSessionMuteHintIfNoCapturerOverride(uint32_t streamId, bool appMuteHint)
+{
+    std::lock_guard<std::mutex> lock(appMuteHintMutex_);
+    if (appConfiguredCapturerMuteHint_.count(streamId) != 0) {
+        AUDIO_INFO_LOG("app session mute hint ignored, streamId %{public}u has app capturer-level override", streamId);
+        return false;
+    }
+    appConfiguredSessionMuteHint_[streamId] = appMuteHint;
+    return true;
+}
+
+bool AudioEffectService::GetEffectiveAppMuteHint(uint32_t streamId) const
+{
+    std::lock_guard<std::mutex> lock(appMuteHintMutex_);
+    return GetEffectiveAppMuteHintLocked(streamId);
+}
+
+bool AudioEffectService::GetEffectiveAppMuteHintLocked(uint32_t streamId) const
+{
+    auto capturerIter = appConfiguredCapturerMuteHint_.find(streamId);
+    if (capturerIter != appConfiguredCapturerMuteHint_.end()) {
+        return capturerIter->second;
+    }
+    auto sessionIter = appConfiguredSessionMuteHint_.find(streamId);
+    if (sessionIter != appConfiguredSessionMuteHint_.end()) {
+        return sessionIter->second;
+    }
+    return false;
+}
+
+bool AudioEffectService::IsVoipCapturerInfo(const std::shared_ptr<AudioCapturerChangeInfo> &capturerInfo) const
+{
+    CHECK_AND_RETURN_RET(capturerInfo != nullptr, false);
+    return capturerInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION;
+}
+
+void AudioEffectService::EvaluateVoipBypassByAppMuteHint(
+    const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerInfos)
+{
+    std::lock_guard<std::mutex> lock(appMuteHintMutex_);
+    bool hasRunningVoipStream = false;
+    bool allRunningVoipAppMuteHint = true;
+    uint32_t triggerSessionId = INVALID_TRIGGER_SESSION_ID;
+    for (const auto &capturerInfo : capturerInfos) {
+        if (capturerInfo == nullptr || capturerInfo->capturerState != CAPTURER_RUNNING ||
+            !IsVoipCapturerInfo(capturerInfo)) {
+            continue;
+        }
+        hasRunningVoipStream = true;
+        uint32_t streamId = static_cast<uint32_t>(capturerInfo->sessionId);
+        if (triggerSessionId == INVALID_TRIGGER_SESSION_ID) {
+            triggerSessionId = streamId;
+        }
+        if (!GetEffectiveAppMuteHintLocked(streamId)) {
+            allRunningVoipAppMuteHint = false;
+            triggerSessionId = streamId;
+            break;
+        }
+    }
+    bool enable = hasRunningVoipStream && allRunningVoipAppMuteHint;
+    if (!enable && triggerSessionId == INVALID_TRIGGER_SESSION_ID) {
+        // No running VOIP stream in current snapshot; reuse the last VOIP trigger stream.
+        triggerSessionId = lastVoipBypassTriggerSessionId_;
+    }
+    UpdateVoipByAppMuteHintLocked(enable, triggerSessionId);
+}
+
+void AudioEffectService::UpdateVoipBypassByAppMuteHint(bool enable)
+{
+    std::lock_guard<std::mutex> lock(appMuteHintMutex_);
+    UpdateVoipByAppMuteHintLocked(enable, lastVoipBypassTriggerSessionId_);
+}
+
+void AudioEffectService::UpdateVoipByAppMuteHintLocked(bool enable, uint32_t triggerSessionId)
+{
+    if (isVoipBypassByAppMuteHintStateValid_ && currentVoipBypassByAppMuteHint_ == enable) {
+        return;
+    }
+    isVoipBypassByAppMuteHintStateValid_ = true;
+    currentVoipBypassByAppMuteHint_ = enable;
+    if (triggerSessionId != INVALID_TRIGGER_SESSION_ID) {
+        lastVoipBypassTriggerSessionId_ = triggerSessionId;
+    }
+    if (lastVoipBypassTriggerSessionId_ == INVALID_TRIGGER_SESSION_ID) {
+        AUDIO_WARNING_LOG("skip SetAppsEnhanceMuteState due to invalid trigger session, enable:%{public}d", enable);
+        return;
+    }
+    HPAE::IHpaeManager::GetHpaeManager().SetAppsEnhanceMuteState(lastVoipBypassTriggerSessionId_, enable);
+    AUDIO_INFO_LOG("voip bypass trigger by app-configured mute hint, enable:%{public}d", enable);
+}
+} // namespace AudioStandard
 } // namespace OHOS

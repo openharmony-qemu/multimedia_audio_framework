@@ -155,5 +155,11 @@ int32_t CoreServiceProviderWrapper::CaptureConcurrentCheck(const uint32_t sessio
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     return coreServiceWorker_->CaptureConcurrentCheck(sessionId);
 }
+
+int32_t CoreServiceProviderWrapper::SetCapturerMuteHint(uint32_t sessionId, bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    return coreServiceWorker_->SetCapturerMuteHint(sessionId, mute);
+}
 } // namespace AudioStandard
 } // namespace OHOS

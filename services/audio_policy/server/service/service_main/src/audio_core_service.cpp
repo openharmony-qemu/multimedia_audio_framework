@@ -2106,6 +2106,34 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
     return SUCCESS;
 }
 
+int32_t AudioCoreService::SetCapturerMuteHint(uint32_t sessionId, bool mute)
+{
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> currentCapturerInfos;
+    streamCollector_.GetCurrentCapturerChangeInfos(currentCapturerInfos);
+    audioEffectService_.PruneInvalidAppMuteHintState(currentCapturerInfos);
+
+    auto iter = std::find_if(currentCapturerInfos.begin(), currentCapturerInfos.end(),
+        [sessionId](const std::shared_ptr<AudioCapturerChangeInfo> &capturerInfo) {
+            return capturerInfo != nullptr && capturerInfo->sessionId == static_cast<int32_t>(sessionId);
+        });
+    CHECK_AND_RETURN_RET_LOG(iter != currentCapturerInfos.end(), ERR_INVALID_PARAM,
+        "sessionId %{public}u not found", sessionId);
+    CHECK_AND_RETURN_RET_LOG((*iter)->capturerState == CAPTURER_RUNNING, ERROR_ILLEGAL_STATE,
+        "sessionId %{public}u is not running", sessionId);
+
+    audioEffectService_.SetAppConfiguredCapturerMuteHint(sessionId, mute);
+    audioEffectService_.EvaluateVoipBypassByAppMuteHint(currentCapturerInfos);
+    return SUCCESS;
+}
+
+void AudioCoreService::ReEvaluateVoipBypassByAppMuteHint()
+{
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> currentCapturerInfos;
+    streamCollector_.GetCurrentCapturerChangeInfos(currentCapturerInfos);
+    audioEffectService_.PruneInvalidAppMuteHintState(currentCapturerInfos);
+    audioEffectService_.EvaluateVoipBypassByAppMuteHint(currentCapturerInfos);
+}
+
 void AudioCoreService::SetFirstScreenOn()
 {
     isFirstScreenOn_ = true;

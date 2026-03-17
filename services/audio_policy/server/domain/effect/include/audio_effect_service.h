@@ -19,6 +19,7 @@
 #include "audio_policy_log.h"
 #include "audio_effect.h"
 #include "audio_effect_config_parser.h"
+#include "audio_stream_change_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,6 +48,12 @@ public:
         std::set<std::pair<std::string, std::string>> &mergedSet);
     int32_t AddSupportedAudioEnhancePropertyByDevice(const DeviceType& deviceType,
         std::set<std::pair<std::string, std::string>> &mergedSet);
+    void PruneInvalidAppMuteHintState(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerInfos);
+    void SetAppConfiguredCapturerMuteHint(uint32_t streamId, bool appMuteHint);
+    bool SetAppConfiguredSessionMuteHintIfNoCapturerOverride(uint32_t streamId, bool appMuteHint);
+    bool GetEffectiveAppMuteHint(uint32_t streamId) const;
+    void EvaluateVoipBypassByAppMuteHint(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerInfos);
+    void UpdateVoipBypassByAppMuteHint(bool enable);
 
 private:
     OriginalEffectConfig oriEffectConfig_;
@@ -78,7 +85,17 @@ private:
     int32_t AddSupportedPropertyByDeviceInner(const DeviceType& deviceType,
         std::set<std::pair<std::string, std::string>> &mergedSet,
         const std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> &device2PropertySet);
+    bool IsVoipCapturerInfo(const std::shared_ptr<AudioCapturerChangeInfo> &capturerInfo) const;
+    bool GetEffectiveAppMuteHintLocked(uint32_t streamId) const;
+    void UpdateVoipByAppMuteHintLocked(bool enable, uint32_t triggerSessionId);
+
+    mutable std::mutex appMuteHintMutex_;
+    std::unordered_map<uint32_t, bool> appConfiguredCapturerMuteHint_;
+    std::unordered_map<uint32_t, bool> appConfiguredSessionMuteHint_;
+    bool currentVoipBypassByAppMuteHint_ = false;
+    bool isVoipBypassByAppMuteHintStateValid_ = false;
+    uint32_t lastVoipBypassTriggerSessionId_ = 0;
 };
-} // namespce AudioStandard
+} // namespace AudioStandard
 } // namespace OHOS
 #endif // ST_AUDIO_EFFECT_SERVICE_H

@@ -105,6 +105,7 @@ private:
     static napi_value PreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
     static napi_value GetPreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
     static napi_value EnableMuteSuggestionWhenMixWithOthers(napi_env env, napi_callback_info info);
+    static napi_value SetCaptureMuteHint(napi_env env, napi_callback_info info);
     static napi_value SetAudioSessionBehavior(napi_env env, napi_callback_info info);
 
     static void RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,

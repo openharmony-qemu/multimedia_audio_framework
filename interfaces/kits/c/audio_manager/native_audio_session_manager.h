@@ -739,6 +739,21 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
     OH_AudioSessionManager *audioSessionManager, bool enable);
 
 /**
+ * @brief Sets mute hint for all running capturer streams in current audio session.
+ *
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ *     returned by the {@link #OH_AudioManager_GetAudioSessionManager}.
+ * @param mute Sets true to hint all running capturer streams as muted.
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} If the execution is successful.
+ *     or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} Parameter validation fails.
+ *     or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} No running capturer stream exists in current session.
+ *     or {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} Audio client call audio service error, system internal error.
+ * @since 23
+ */
+OH_AudioCommon_Result OH_AudioSessionManager_SetCapturerMuteHint(
+    OH_AudioSessionManager *audioSessionManager, bool mute);
+
+/**
  * @brief Returns if there is any other application playing audio in media usage, including media session activated.
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}

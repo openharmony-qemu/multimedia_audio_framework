@@ -110,6 +110,8 @@ public:
 
     virtual bool GetMute() = 0;
 
+    virtual int32_t SetMuteHint(bool mute) = 0;
+
     virtual uint32_t GetUnderflowCount() = 0;
 
     virtual uint32_t GetOverflowCount() = 0;

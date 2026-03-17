@@ -1568,5 +1568,14 @@ int32_t AudioProcessInServer::ResetStaticPlayPosition()
     staticBufferProvider_->NeedProcessFadeIn();
     return SUCCESS;
 }
+
+int32_t AudioProcessInServer::SetMuteHint(bool mute)
+{
+    if (processConfig_.audioMode != AUDIO_MODE_RECORD) {
+        AUDIO_WARNING_LOG("SetMuteHint only supported in record mode");
+        return ERR_NOT_SUPPORTED;
+    }
+    return CoreServiceHandler::GetInstance().SetCapturerMuteHint(sessionId_, mute);
+}
 } // namespace AudioStandard
 } // namespace OHOS

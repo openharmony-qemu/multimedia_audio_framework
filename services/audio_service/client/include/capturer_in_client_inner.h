@@ -90,6 +90,7 @@ public:
     int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
     int32_t SetBackMute(bool backMute) override;
     bool GetMute() override;
+    int32_t SetMuteHint(bool mute) override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;

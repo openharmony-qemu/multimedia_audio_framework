@@ -113,6 +113,8 @@ public:
 
     bool GetMute() override;
 
+    int32_t SetMuteHint(bool mute) override;
+
     int32_t SetSourceDuration(int64_t duration) override;
 
     uint32_t GetUnderflowCount() override;
@@ -542,6 +544,12 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
 bool AudioProcessInClientInner::GetMute()
 {
     return std::abs(muteVolumeInFloat_ - 0.0f) <= std::numeric_limits<float>::epsilon();
+}
+
+int32_t AudioProcessInClientInner::SetMuteHint(bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "processProxy_ is null");
+    return processProxy_->SetMuteHint(mute);
 }
 
 int32_t AudioProcessInClientInner::SetSourceDuration(int64_t duration)

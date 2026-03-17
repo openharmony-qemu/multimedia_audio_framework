@@ -115,6 +115,20 @@ OH_AudioStream_Result OH_AudioCapturer_SetInputDevice(
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioCapturer_SetMuteHint(OH_AudioCapturer* capturer, bool mute)
+{
+    OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
+    CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert Capturer failed");
+    int32_t ret = audioCapturer->SetMuteHint(mute);
+    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
+        return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
+    }
+    if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM) {
+        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+    return ret == OHOS::AudioStandard::SUCCESS ? AUDIOSTREAM_SUCCESS : AUDIOSTREAM_ERROR_SYSTEM;
+}
+
 OH_AudioStream_Result OH_AudioCapturer_GetFastStatus(OH_AudioCapturer *capturer,
     OH_AudioStream_FastStatus *status)
 {
@@ -449,6 +463,12 @@ int32_t OHAudioCapturer::SetInputDevice(DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
     return audioCapturer_->SetInputDevice(deviceType);
+}
+
+int32_t OHAudioCapturer::SetMuteHint(bool mute)
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
+    return audioCapturer_->SetMuteHint(mute);
 }
 
 FastStatus OHAudioCapturer::GetFastStatus()

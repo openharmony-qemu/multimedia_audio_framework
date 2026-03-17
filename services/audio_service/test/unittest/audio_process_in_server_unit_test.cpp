@@ -19,6 +19,7 @@
 #include "audio_service.h"
 #include "audio_device_info.h"
 #include "oh_audio_buffer.h"
+#include "core_service_handler.h"
 #include <gmock/gmock.h>
 
 using namespace testing::ext;
@@ -2802,6 +2803,46 @@ HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_003, TestSize.Level1)
     CapturerState capturerState = CAPTURER_RUNNING;
     bool result = audioProcessInServer->TurnOnMicIndicator(capturerState);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_001
+ * @tc.desc  : Test SetMuteHint returns not supported in playback mode.
+ */
+HWTEST(AudioProcessInServerUnitTest, SetMuteHint_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    int32_t ret = audioProcessInServerRet.SetMuteHint(true);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_002
+ * @tc.desc  : Test SetMuteHint returns ERROR when core service provider is null.
+ */
+HWTEST(AudioProcessInServerUnitTest, SetMuteHint_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    auto &coreServiceHandler = CoreServiceHandler::GetInstance();
+    auto originProvider = coreServiceHandler.iCoreServiceProvider_;
+    coreServiceHandler.iCoreServiceProvider_ = nullptr;
+
+    int32_t ret = audioProcessInServerRet.SetMuteHint(true);
+    EXPECT_EQ(ret, ERROR);
+
+    coreServiceHandler.iCoreServiceProvider_ = originProvider;
 }
 } // namespace AudioStandard
 } // namespace OHOS

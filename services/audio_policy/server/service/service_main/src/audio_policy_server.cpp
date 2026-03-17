@@ -40,6 +40,7 @@
 #include "audio_bluetooth_manager.h"
 #include "istandard_audio_zone_client.h"
 #include "audio_bundle_manager.h"
+#include "audio_session_service.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_client_holder.h"
 #include "va_device_broker_stub_impl.h"
@@ -3427,6 +3428,10 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
     GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     int32_t ret = eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    if (ret == SUCCESS && mode == AUDIO_MODE_RECORD) {
+        // ReEvaluate bypass whenever capturer state changes, including non-running -> running transition.
+        coreService_->ReEvaluateVoipBypassByAppMuteHint();
+    }
     return ret;
 }
 
@@ -3516,17 +3521,22 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectRendererDevice(uid);
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
-    std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
-    eventEntry_->RegisteredTrackerClientDied(uid, pid);
-    eventEntry_->ClearSelectedInputDeviceByUid(uid);
-    eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
-        BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
+    {
+        std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
+        eventEntry_->RegisteredTrackerClientDied(uid, pid);
+        eventEntry_->ClearSelectedInputDeviceByUid(uid);
+        eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
+            BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
 
-    auto filter = [&pid](int val) {
-        return pid == val;
-    };
-    clientDiedListenerState_.erase(std::remove_if(clientDiedListenerState_.begin(), clientDiedListenerState_.end(),
-        filter), clientDiedListenerState_.end());
+        auto filter = [&pid](int val) {
+            return pid == val;
+        };
+        clientDiedListenerState_.erase(std::remove_if(clientDiedListenerState_.begin(), clientDiedListenerState_.end(),
+            filter), clientDiedListenerState_.end());
+    }
+
+    // Keep mute-hint state and bypass decision consistent with stream cleanup after tracker death.
+    coreService_->ReEvaluateVoipBypassByAppMuteHint();
 }
 
 void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
@@ -5345,6 +5355,12 @@ int32_t AudioPolicyServer::EnableMuteSuggestionWhenMixWithOthers(bool enable)
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     return interruptService_->EnableMuteSuggestionWhenMixWithOthers(callerPid, enable);
+}
+
+int32_t AudioPolicyServer::SetAudioSessionCapturerMuteHint(bool mute)
+{
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    return sessionService_.SetAudioSessionCapturerMuteHint(callerPid, mute);
 }
 
 int32_t AudioPolicyServer::GetDefaultOutputDevice(int32_t &deviceType)

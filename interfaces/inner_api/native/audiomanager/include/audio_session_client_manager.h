@@ -345,6 +345,8 @@ public:
     BluetoothAndNearlinkPreferredRecordCategory GetPreferBluetoothAndNearlinkRecord();
 
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
+
+    int32_t SetCapturerMuteHint(bool mute);
 private:
     AudioSessionClientManager() = default;
     ~AudioSessionClientManager() = default;

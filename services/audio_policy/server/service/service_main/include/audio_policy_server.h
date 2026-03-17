@@ -282,6 +282,7 @@ public:
     int32_t SetAudioSessionScene(int32_t audioSessionScene) override;
 
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable) override;
+    int32_t SetAudioSessionCapturerMuteHint(bool mute) override;
 
     int32_t GetDefaultOutputDevice(int32_t &deviceType) override;
 

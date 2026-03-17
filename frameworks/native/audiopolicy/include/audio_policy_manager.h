@@ -309,6 +309,7 @@ public:
         const std::optional<std::shared_ptr<AudioSessionCurrentInputDeviceChangedCallback>> &deviceChangedCallback);
 
     int32_t EnableMuteSuggestionWhenMixWithOthers(bool enable);
+    int32_t SetAudioSessionCapturerMuteHint(bool mute);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);

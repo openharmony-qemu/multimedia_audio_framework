@@ -185,6 +185,8 @@ public:
 
     virtual int32_t SetMute(bool isMute) override { return (isMute ? SUCCESS : ERROR); }
 
+    virtual int32_t SetMuteHint(bool mute) override { return SUCCESS; }
+
     virtual int32_t SetDuckFactor(float duckFactor, uint32_t durationMs) override { return 0; }
 
     virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method,
@@ -2119,6 +2121,38 @@ HWTEST(CapturerInClientUnitTest, Read_002, TestSize.Level1)
     capturerInClientInner->readLogTimes_ = VALUE_TEN;
     int32_t ret = capturerInClientInner->Read(buffer, userSize, isBlockingRead);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_001
+ * @tc.desc  : Test SetMuteHint returns failed when ipcStream is null.
+ */
+HWTEST(CapturerInClientUnitTest, SetMuteHint_001, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->ipcStream_ = nullptr;
+
+    int32_t ret = capturerInClientInner->SetMuteHint(true);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetMuteHint API
+ * @tc.type  : FUNC
+ * @tc.number: SetMuteHint_002
+ * @tc.desc  : Test SetMuteHint forwards call to ipc stream.
+ */
+HWTEST(CapturerInClientUnitTest, SetMuteHint_002, TestSize.Level1)
+{
+    auto capturerInClientInner = std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->ipcStream_ = new IpcStreamTest();
+
+    int32_t ret = capturerInClientInner->SetMuteHint(true);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
