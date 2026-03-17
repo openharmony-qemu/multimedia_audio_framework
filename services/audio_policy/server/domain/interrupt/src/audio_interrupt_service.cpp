@@ -1991,9 +1991,12 @@ void AudioInterruptService::SendActiveInterruptEvent(const uint32_t activeStream
         HILOG_COMM_INFO("[SendActiveInterruptEvent]OnInterrupt for active streamId:%{public}d, hintType:%{public}d. "
             "By streamId:%{public}d", activeStreamId, interruptEvent.hintType, incomingInterrupt.streamId);
         SendInterruptEventCallback(interruptEvent, activeStreamId, activeInterrupt);
-        // focus remove or state change
-        SendFocusChangeEvent(ZONEID_DEFAULT, AudioPolicyServerHandler::NONE_CALLBACK_CATEGORY,
-            incomingInterrupt);
+        // focus remove or state change. When focus stopped, notify remote to abandon focus
+        if (interruptEvent.hintType == INTERRUPT_HINT_STOP) {
+            SendFocusChangeEvent(ZONEID_DEFAULT, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY, activeInterrupt);
+        } else {
+            SendFocusChangeEvent(ZONEID_DEFAULT, AudioPolicyServerHandler::NONE_CALLBACK_CATEGORY, incomingInterrupt);
+        }
     }
 }
 

@@ -1110,6 +1110,9 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_037, TestSize.
 
     interruptEvent.hintType = INTERRUPT_HINT_NONE;
     audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+
+    interruptEvent.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
 }
 
 /**
