@@ -157,7 +157,7 @@ bool OH_AudioStreamManager_IsIntelligentNoiseReductionEnabledForCurrentDevice(
  * @param streamInfo reference of stream info structure to describe basic audio format.
  * @param usage stream usage type used to decide the audio device and pipe type selection result.
  * @return {@code true} if multichannel playback is supported in this situation.
- * @since 20
+ * @since 26.0.0
  */
 bool OH_AudioStreamManager_IsMultichannelPlaybackSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage);
@@ -171,7 +171,7 @@ bool OH_AudioStreamManager_IsMultichannelPlaybackSupported(
  * @param streamInfo reference of stream info structure to describe basic audio format.
  * @param usage stream usage type used to decide the audio device and pipe type selection result.
  * @return {@code true} if direct playback is supported in this situation.
- * @since 20
+ * @since 26.0.0
  */
 bool OH_AudioStreamManager_IsDirectPlaybackSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage);
@@ -185,7 +185,7 @@ bool OH_AudioStreamManager_IsDirectPlaybackSupported(
  * @param streamInfo reference of stream info structure to describe basic audio format.
  * @param usage stream usage type used to decide the audio device and pipe type selection result.
  * @return {@code true} if offload playback is supported in this situation.
- * @since 20
+ * @since 26.0.0
  */
 bool OH_AudioStreamManager_IsOffloadPlaybackSupported(
     OH_AudioStreamManager *streamManager, OH_AudioStreamInfo *streamInfo, OH_AudioStream_Usage usage);
