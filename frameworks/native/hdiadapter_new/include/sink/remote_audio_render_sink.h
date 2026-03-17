@@ -20,7 +20,7 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_map>
-#include <v1_0/iaudio_manager.h>
+#include <v2_0/iaudio_manager.h>
 #include <thread>
 #include <shared_mutex>
 #include "audio_utils.h"
@@ -29,11 +29,11 @@
 
 namespace OHOS {
 namespace AudioStandard {
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCategory RemoteAudioCategory;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioRender RemoteIAudioRender;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat RemoteAudioFormat;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes RemoteAudioSampleAttributes;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioCategory RemoteAudioCategory;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioRender RemoteIAudioRender;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioFormat RemoteAudioFormat;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioSampleAttributes RemoteAudioSampleAttributes;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
 
 class RemoteAudioRenderSink : public IAudioRenderSink, public IDeviceManagerCallback,
     public std::enable_shared_from_this<RemoteAudioRenderSink> {

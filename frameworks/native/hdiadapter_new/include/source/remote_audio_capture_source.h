@@ -19,17 +19,17 @@
 #include "source/i_audio_capture_source.h"
 #include <iostream>
 #include <cstring>
-#include <v1_0/iaudio_manager.h>
+#include <v2_0/iaudio_manager.h>
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
 
 namespace OHOS {
 namespace AudioStandard {
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCategory RemoteAudioCategory;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCapture RemoteIAudioCapture;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat RemoteAudioFormat;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes RemoteAudioSampleAttributes;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioCategory RemoteAudioCategory;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioCapture RemoteIAudioCapture;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioFormat RemoteAudioFormat;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioSampleAttributes RemoteAudioSampleAttributes;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
 
 class RemoteAudioCaptureSource : public IAudioCaptureSource, public IDeviceManagerCallback,
     public std::enable_shared_from_this<RemoteAudioCaptureSource> {

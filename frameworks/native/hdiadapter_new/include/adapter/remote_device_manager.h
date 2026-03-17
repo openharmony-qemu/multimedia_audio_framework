@@ -21,23 +21,23 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
-#include <v1_0/iaudio_manager.h>
-#include <v1_0/iaudio_callback.h>
-#include <v1_0/audio_types.h>
+#include <v2_0/iaudio_manager.h>
+#include <v2_0/iaudio_callback.h>
+#include <v2_0/audio_types.h>
 #include "audio_info.h"
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
 
 namespace OHOS {
 namespace AudioStandard {
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioAdapter RemoteIAudioAdapter;
-typedef struct OHOS::HDI::DistributedAudio::Audio::V1_0::AudioAdapterDescriptor RemoteAudioAdapterDescriptor;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback RemoteIAudioCallback;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCallbackType RemoteAudioCallbackType;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey RemoteAudioExtParamKey;
-typedef enum OHOS::HDI::DistributedAudio::Audio::V1_0::AudioPortDirection RemoteAudioPortDirection;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioManager RemoteIAudioManager;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioRouteNode RemoteAudioRouteNode;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioAdapter RemoteIAudioAdapter;
+typedef struct OHOS::HDI::DistributedAudio::Audio::V2_0::AudioAdapterDescriptor RemoteAudioAdapterDescriptor;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioCallback RemoteIAudioCallback;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioCallbackType RemoteAudioCallbackType;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioExtParamKey RemoteAudioExtParamKey;
+typedef enum OHOS::HDI::DistributedAudio::Audio::V2_0::AudioPortDirection RemoteAudioPortDirection;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioManager RemoteIAudioManager;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioRouteNode RemoteAudioRouteNode;
 
 class RemoteAdapterHdiCallback final : public RemoteIAudioCallback {
 public:
