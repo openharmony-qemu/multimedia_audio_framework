@@ -393,7 +393,9 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     AUDIO_INFO_LOG("Current output device %{public}d, update route %{public}d, reason %{public}d",
         curDesc.deviceType_, descs.front()->deviceType_, static_cast<int32_t>(reason));
 
-    auto streamDesc = pipeManager_->GetModemCommunicationMap().begin()->second;
+    auto modemMap = pipeManager_->GetModemCommunicationMap();
+    CHECK_AND_RETURN_LOG(!modemMap.empty(), "modem communication map is empty");
+    auto streamDesc = modemMap.begin()->second;
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
     ActivateOutputDevice(streamDesc, reason);
 
