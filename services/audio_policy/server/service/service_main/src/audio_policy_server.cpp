@@ -5142,6 +5142,10 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     int32_t res = audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
@@ -5154,6 +5158,10 @@ int32_t AudioPolicyServer::GetSupportedAudioEnhanceProperty(AudioEnhanceProperty
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     int32_t res = audioPolicyService_.GetSupportedAudioEnhanceProperty(propertyArray);
     size_t size = propertyArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR,
@@ -5165,6 +5173,10 @@ int32_t AudioPolicyServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &pr
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
 }
 
@@ -5175,6 +5187,10 @@ int32_t AudioPolicyServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArr
         ERROR_INVALID_PARAM, "set audio enhance property array size invalid");
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioPolicyService_.SetAudioEnhanceProperty(propertyArray);
 }
 
@@ -5185,6 +5201,10 @@ int32_t AudioPolicyServer::SetAudioEffectProperty(const AudioEffectPropertyArray
         ERROR_INVALID_PARAM, "set audio effect property array size invalid");
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioPolicyService_.SetAudioEffectProperty(propertyArray);
 }
 
@@ -5192,6 +5212,10 @@ int32_t AudioPolicyServer::GetAudioEffectProperty(AudioEffectPropertyArray &prop
 {
     bool ret = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    if (!VerifyPermission(MANAGE_SYSTEM_AUDIO_EFFECTS)) {
+        AUDIO_ERR_LOG("MANAGE_SYSTEM_AUDIO_EFFECTS permission check failed");
+        return ERR_PERMISSION_DENIED;
+    }
     int32_t res = audioPolicyService_.GetAudioEffectProperty(propertyArray);
     size_t size = propertyArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT, ERROR, "size invalid.");
