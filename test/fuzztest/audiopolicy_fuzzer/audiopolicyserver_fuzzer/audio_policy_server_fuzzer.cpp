@@ -594,11 +594,11 @@ void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest()
     int32_t volumeLevel = 0;
     bool mute = false;
     VolInfoForUpdateMute muteInfo = { streamType, volumeLevel, mute, zoneId };
-    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(muteInfo, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(muteInfo, isUpdateUi);
     volumeLevel = 1;
     mute = true;
     VolInfoForUpdateMute unmuteInfo = { streamType, volumeLevel, mute, zoneId };
-    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(unmuteInfo, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(unmuteInfo, isUpdateUi);
 }
 
 void AudioPolicyServerProcUpdateRingerModeFuzztest()

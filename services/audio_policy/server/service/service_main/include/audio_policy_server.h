@@ -662,10 +662,7 @@ public:
         int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0, int32_t previousVolume = -1);
-    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
-        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
 
-    void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
 
     int32_t SetCollaborativePlaybackEnabledForDevice(

@@ -1153,7 +1153,7 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_001, TestSize.Lev
     int32_t volumeLevel = 1;
     bool mute = true;
     VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
+    ptrAudioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1171,7 +1171,7 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_002, TestSize.Lev
     int32_t volumeLevel = 0;
     bool mute = false;
     VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
+    ptrAudioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1189,7 +1189,7 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_003, TestSize.Lev
     int32_t volumeLevel = 1;
     bool mute = false;
     VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
+    ptrAudioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -2739,10 +2739,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_134, TestSize.Level1)
 
     server->coreService_ = std::make_shared<AudioCoreService>();
     server->supportVibrator_ = true;
-    server->ProcUpdateRingerMode();
+    server->audioVolumeManager_.ProcUpdateRingerMode();
 
     server->supportVibrator_ = false;
-    server->ProcUpdateRingerMode();
+    server->audioVolumeManager_.ProcUpdateRingerMode();
 }
 
 /**

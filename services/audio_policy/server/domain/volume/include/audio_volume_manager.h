@@ -135,8 +135,15 @@ public:
     int32_t SetSystemVolumeLevelWithOption(AudioStreamType streamType, int32_t volumeLevel,
         int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     bool GetStreamMuteInterface(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t GetSystemVolumeLevelNoMuteStateInterface(AudioStreamType streamType);
+    int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
+    int32_t GetSystemVolumeDegreeInterface(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
     int32_t GetSystemVolumeLevelInterface(AudioStreamType streamType, int32_t zoneId = 0);
+    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
+    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
+        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::shared_ptr<LoudVolumeManager> GetLoudVolumeManager();
 #endif
@@ -228,10 +235,6 @@ private:
     bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     void ProcUpdateRingerMode();
-    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
-        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
-    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
@@ -255,6 +258,7 @@ private:
     int32_t loudVolumeSupportMode_ = 0;
     std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
+    bool supportVibrator_ = false;
 
     int64_t activeSafeTimeBt_ = 0;
     int64_t activeSafeTime_ = 0;
