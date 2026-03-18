@@ -563,8 +563,6 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelInternal(AudioStreamType streamT
     std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc)
 {
     VolumeScale buffedVolume = volume;
-    CHECK_AND_RETURN_RET_LOG(buffedVolume.IsVolumeDegreeValid(GetMinVolumeDegree(streamType), MAX_VOLUME_DEGREE),
-        ERR_INVALID_PARAM, "invalid input, volumeDegree:[%{public}d]", buffedVolume.VolumeDegree());
     int32_t volumeLevel = buffedVolume.VolumeLevel();
     int32_t result = ERROR;
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
