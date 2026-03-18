@@ -135,7 +135,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(sco));
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, sco);
 
     auto stream1Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC);
     ASSERT_NE(stream1Result, nullptr);
@@ -147,7 +147,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(stream2Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(stream2Result->deviceId_, mic->deviceId_);
 
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
 
     stream1Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC);
     ASSERT_NE(stream1Result, nullptr);
@@ -465,7 +465,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(earpiece));
+    strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, earpiece);
 
     auto stream1Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, STREAM_USAGE_MEDIA);
     ASSERT_NE(stream1Result, nullptr);
@@ -477,7 +477,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(stream2Result->deviceType_, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(stream2Result->deviceId_, speaker->deviceId_);
 
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
+    strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
 
     stream1Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, STREAM_USAGE_MEDIA);
     ASSERT_NE(stream1Result, nullptr);
@@ -606,7 +606,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(sco));
+    strategy.SetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, sco);
 
     auto stream1Result = strategy.GetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     ASSERT_NE(stream1Result, nullptr);
@@ -618,7 +618,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(stream2Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(stream2Result->deviceId_, mic->deviceId_);
 
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
+    strategy.SetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
 
     stream1Result = strategy.GetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     ASSERT_NE(stream1Result, nullptr);
@@ -747,7 +747,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(earpiece));
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, earpiece);
 
     auto stream1Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     ASSERT_NE(stream1Result, nullptr);
@@ -759,7 +759,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(stream2Result->deviceType_, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(stream2Result->deviceId_, speaker->deviceId_);
 
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, nullptr);
 
     stream1Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     ASSERT_NE(stream1Result, nullptr);
