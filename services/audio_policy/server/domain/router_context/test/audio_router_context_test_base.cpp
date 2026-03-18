@@ -1,19 +1,20 @@
-#include "audio_router_context_test_util.h"
+#include "audio_router_context_test_base.h"
 #include "audio_device_manager.h"
+#include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-void TearDown(void)
+void AudioRouterContextTestBase::TearDown(void)
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     for (auto &device : addDevices_) {
-        deviceManager->RemoveNewDevice(device);
+        deviceManager.RemoveNewDevice(device);
     }
     addDevices_.clear();
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestUtil::CreateDeviceDescriptor(
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestBase::CreateDeviceDescriptor(
     DeviceType deviceType, DeviceRole deviceRole, const std::string &macAddress)
 {
     auto desc = std::make_shared<AudioDeviceDescriptor>(deviceType, deviceRole);
@@ -25,18 +26,17 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestUtil::CreateDeviceD
     desc->deviceId_ = AudioPolicyUtils::startDeviceId++;
     return desc;
 }
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestUtil::AddDeviceDescriptor(
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestBase::AddDeviceDescriptor(
     DeviceType deviceType, DeviceRole deviceRole, const std::string &macAddress)
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto device = CreateDeviceDescriptor(deviceType, deviceRole, macAddress);
-    ASSERT_NE(device, nullptr);
     deviceManager.AddNewDevice(device);
     addDevices_.push_back(device);
     return device;
 }
 
-void AudioRouterContextTestUtil::SimulateBluetoothHeadsetConnect(const std::string &macAddress)
+void AudioRouterContextTestBase::SimulateBluetoothHeadsetConnect(const std::string &macAddress)
 {
     AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, macAddress);
     AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, macAddress);
@@ -44,7 +44,7 @@ void AudioRouterContextTestUtil::SimulateBluetoothHeadsetConnect(const std::stri
     AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, macAddress);
 }
 
-void AudioRouterContextTestUtil::SimulateWiredHeadsetConnect(const std::string &macAddress)
+void AudioRouterContextTestBase::SimulateWiredHeadsetConnect(const std::string &macAddress)
 {  
     AddDeviceDescriptor(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE, macAddress);
     CreateDeviceDescriptor(DEVICE_TYPE_WIRED_HEADSET, INPUT_DEVICE, macAddress);

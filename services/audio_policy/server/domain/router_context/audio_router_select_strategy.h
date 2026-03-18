@@ -35,7 +35,7 @@ public:
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId, 
         SourceType sourceType) = 0;
     virtual void SetMediaInputDevice(int32_t uid, uint32_t streamId, 
-        SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId, 
          StreamUsage streamUsage) = 0;

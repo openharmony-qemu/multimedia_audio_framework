@@ -10,28 +10,28 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioRouterContextTestBase {
+class AudioRouterContextTestBase : public testing::Test {
 public:
     static void SetUpTestCase(void) {}
     static void TearDownTestCase(void) {}
     void SetUp(void) {}
     void TearDown(void);
 
-    static void SimulateBluetoothHeadsetConnect(const std::string &macAddress);
-    static void SimulateWiredHeadsetConnect(const std::string &macAddress);
-    static std::shared_ptr<AudioDeviceDescriptor> CreateDeviceDescriptor(
+    void SimulateBluetoothHeadsetConnect(const std::string &macAddress);
+    void SimulateWiredHeadsetConnect(const std::string &macAddress);
+    std::shared_ptr<AudioDeviceDescriptor> CreateDeviceDescriptor(
         DeviceType deviceType, DeviceRole deviceRole, const std::string &macAddress);
-    static std::shared_ptr<AudioDeviceDescriptor> AddDeviceDescriptor(
+    std::shared_ptr<AudioDeviceDescriptor> AddDeviceDescriptor(
         DeviceType deviceType, DeviceRole deviceRole, const std::string &macAddress);
 
 public:
-    constexpr int32_t TEST_APP_UID_10001 = 10001;
-    constexpr int32_t TEST_APP_UID_10002 = 10002;
-    constexpr int32_t TEST_APP_UID_10003 = 10003;
-    constexpr int32_t TEST_STREAM_INVALID_ID = 0;
-    constexpr int32_t TEST_STREAM_ID_1 = 1;
-    constexpr int32_t TEST_STREAM_ID_2 = 2;
-    constexpr int32_t TEST_STREAM_ID_3 = 3;
+    static constexpr int32_t TEST_APP_UID_10001 = 10001;
+    static constexpr int32_t TEST_APP_UID_10002 = 10002;
+    static constexpr int32_t TEST_APP_UID_10003 = 10003;
+    static constexpr int32_t TEST_STREAM_INVALID_ID = 0;
+    static constexpr int32_t TEST_STREAM_ID_1 = 1;
+    static constexpr int32_t TEST_STREAM_ID_2 = 2;
+    static constexpr int32_t TEST_STREAM_ID_3 = 3;
 
 protected:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> addDevices_;

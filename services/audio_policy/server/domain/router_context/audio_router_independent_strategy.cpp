@@ -68,8 +68,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
     return result;
 }
 
-void AudioRouterIndependentStrategy::SetMediaInputDevice(int32_t uid, 
-    uint32_t streamId, SourceType sourceType, const std::shared_ptr<AudioDeviceDescriptor>& device)
+void AudioRouterIndependentStrategy::SetMediaInputDevice(int32_t uid, uint32_t streamId,
+    const std::shared_ptr<AudioDeviceDescriptor>& device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc);

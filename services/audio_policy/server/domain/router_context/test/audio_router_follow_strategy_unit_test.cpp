@@ -3,6 +3,7 @@
 #include "audio_device_manager.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
+#include "audio_router_infra.h"
 
 using namespace testing::ext;
 
@@ -15,8 +16,8 @@ class AudioRouterFollowStrategyUnitTest : public AudioRouterContextTestBase {
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_001, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
  
     AudioRouterFollowStrategy strategy;
     
@@ -44,8 +45,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_002, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto scoInput = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE,
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto scoInput = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE,
         "00:00:00:00:00:02");
  
     AudioRouterFollowStrategy strategy;
@@ -74,18 +75,20 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_003, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
 
     AudioRouterFollowStrategy strategy;
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
-    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     EXPECT_EQ(app10002Result, nullptr);
 }
 
@@ -93,42 +96,49 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
-
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
+        StreamState::STARTED);
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE, StreamState::STARTED);
-
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_CAMCORDER);
     EXPECT_EQ(app10001Result, nullptr);
 
-    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_CAMCORDER);
     EXPECT_EQ(app10002Result, nullptr);
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE, StreamState::STOPPED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
+        StreamState::STOPPED);
 
-    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_CAMCORDER);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
-    app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_VOICE_MESSAGE);
     ASSERT_NE(app10002Result, nullptr);
     EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10002Result->deviceId_, mic->deviceId_);
 
     routerInfra.OnAppDied(TEST_APP_UID_10001);
 
-    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_CAMCORDER);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
-    app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_VOICE_MESSAGE);
     EXPECT_EQ(app10002Result, nullptr);
 }
 
@@ -136,25 +146,29 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STOPPED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STOPPED);
 
-    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
@@ -164,25 +178,28 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
 
     strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, nullptr);
 
-    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
@@ -192,17 +209,19 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
@@ -212,17 +231,19 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_CAMCORDER, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_CAMCORDER,
+        StreamState::STARTED);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
@@ -232,17 +253,19 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_LIVE, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_LIVE,
+        StreamState::STARTED);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
@@ -252,24 +275,27 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_HIGH_QUALITY);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP_IN);
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_LOW_LATENCY);
 
-    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
@@ -279,38 +305,45 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
+        StreamState::STARTED);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10002, PREFERRED_LOW_LATENCY);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 
-    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_VOICE_MESSAGE);
     ASSERT_NE(app10002Result, nullptr);
     EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10002Result->deviceId_, sco->deviceId_);
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE, StreamState::STOPPED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
+        StreamState::STOPPED);
 
-    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
-    app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_VOICE_MESSAGE);
     ASSERT_NE(app10002Result, nullptr);
     EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10002Result->deviceId_, mic->deviceId_);
@@ -320,25 +353,29 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_VOICE_MESSAGE, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_VOICE_MESSAGE,
+        StreamState::STARTED);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_VOICE_MESSAGE);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_VOICE_MESSAGE, StreamState::STOPPED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_VOICE_MESSAGE,
+        StreamState::STOPPED);
 
-    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_VOICE_MESSAGE);
     EXPECT_EQ(app10001Result, nullptr);
 }
 
@@ -346,14 +383,15 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::CreateDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    mic->connectState_ = DISCONNECTED;
+    auto mic = CreateDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    mic->connectState_ = DEACTIVE_CONNECTED;
 
     AudioRouterFollowStrategy strategy;
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_NONE);
 }
@@ -362,15 +400,17 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_NONE);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
@@ -380,21 +420,226 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
-    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC, StreamState::STARTED);
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        StreamState::STARTED);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_HIGH_QUALITY);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
-    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_001, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
+
+    auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
+
+    auto appResult = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(appResult, nullptr);
+    EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(appResult->deviceId_, earpiece->deviceId_);
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
+
+    systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(systemResult, nullptr);
+
+    appResult = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(appResult, nullptr);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_002, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+
+    auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(app10001Result, nullptr);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(app10001Result->deviceId_, speaker->deviceId_);
+
+    auto app10002Result = strategy.GetCallOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(app10002Result, nullptr);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_003, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+
+    auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(app10001Result, nullptr);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(app10001Result->deviceId_, speaker->deviceId_);
+
+    auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_004, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, nullptr);
+
+    auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(systemResult, nullptr);
+
+    auto appResult = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(appResult, nullptr);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_005, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, nullptr);
+
+    auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(app10001Result, nullptr);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_006, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+    strategy.SetCallOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID, earpiece);
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, speaker);
+
+    auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(app10001Result, nullptr);
+
+    auto app10002Result = strategy.GetCallOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(app10002Result, nullptr);
+
+    auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(systemResult->deviceId_, speaker->deviceId_);
+}
+
+HWTEST_F(AudioRouterFollowStrategyudiUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_007, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
+
+    auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(app10001Result, nullptr);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(app10001Result->deviceId_, earpiece->deviceId_);
+
+    auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_008, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+
+    auto invalidUidResult = strategy.GetCallOutputDevice(INVALID_UID, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(invalidUidResult, nullptr);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_009, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
+
+    auto invalidUidResult = strategy.GetCallOutputDevice(INVALID_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(invalidUidResult, nullptr);
+    EXPECT_EQ(invalidUidResult->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(invalidUidResult->deviceId_, earpiece->deviceId_);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_010, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+
+    auto noneDevice = std::make_shared<AudioDeviceDescriptor>();
+    noneDevice->deviceType_ = DEVICE_TYPE_NONE;
+
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, noneDevice);
+
+    auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(app10001Result, nullptr);
 }
 
 } 

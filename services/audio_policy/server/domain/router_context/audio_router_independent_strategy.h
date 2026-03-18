@@ -28,7 +28,7 @@ public:
 
     std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId, 
         SourceType sourceType) override;
-    void SetMediaInputDevice(int32_t uid, uint32_t streamId, SourceType sourceType,
+    void SetMediaInputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor>& device) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId, 

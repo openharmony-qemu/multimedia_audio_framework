@@ -65,7 +65,7 @@ ohos_unittest("audio_router_context_test") {
     "eventhandler:libeventhandler",
   ]
 
-  sources = [ "./audio_router_context_test_util.cpp",
+  sources = [ "./audio_router_context_test_base.cpp",
     "./audio_router_follow_strategy_unit_test.cpp",
   ]
 
