@@ -127,7 +127,7 @@ private:
     int64_t lastOverflowTime_ = 0;
     bool resetTime_ = false;
     uint64_t resetTimestamp_ = 0;
-    uint32_t overFlowLogFlag_ = 0;
+    int32_t overFlowLogFlag_ = 0;
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     size_t cacheSizeInBytes_ = 0;
     std::unique_ptr<uint8_t []> dischargeBuffer_ = nullptr;
