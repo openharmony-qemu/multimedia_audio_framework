@@ -301,7 +301,8 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
             DeleteProcessCluster(nodeInfo.sessionId);
             CreateProcessClusterAndConnect(nodeInfo);
         }
-    } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId)) {
+    } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId) &&
+        node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);
         DisConnectInputSession(nodeInfo.sessionId);
         ConnectInputSession(nodeInfo.sessionId);
