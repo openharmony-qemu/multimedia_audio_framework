@@ -225,114 +225,6 @@ HWTEST_F(AudioCoreServicePrivateTest, ScoInputDeviceFetchedForRecongnition_005, 
 }
 
 /**
- * @tc.name  : Test BluetoothScoFetch.
- * @tc.number: BluetoothScoFetch_001
- * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
- */
-HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_001, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-    audioDeviceDescriptor->isVrSupported_ = true;
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RELEASED;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
-
-    audioCoreService->BluetoothScoFetch(streamDesc);
-    EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
-}
-
-/**
- * @tc.name  : Test BluetoothScoFetch.
- * @tc.number: BluetoothScoFetch_002
- * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
- */
-HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_002, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-    audioDeviceDescriptor->isVrSupported_ = true;
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RUNNING;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
-
-    audioCoreService->BluetoothScoFetch(streamDesc);
-    EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
-}
-
-/**
- * @tc.name  : Test BluetoothScoFetch.
- * @tc.number: BluetoothScoFetch_003
- * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
- */
-HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_003, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-    audioDeviceDescriptor->isVrSupported_ = false;
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RELEASED;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
-
-    audioCoreService->BluetoothScoFetch(streamDesc);
-    EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
-}
-
-/**
- * @tc.name  : Test BluetoothScoFetch.
- * @tc.number: BluetoothScoFetch_004
- * @tc.desc  : Test AudioCoreService::BluetoothScoFetch()
- */
-HWTEST_F(AudioCoreServicePrivateTest, BluetoothScoFetch_004, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceDescriptor->macAddress_ = "00:11:22:33:44:55";
-    audioDeviceDescriptor->networkId_ = LOCAL_NETWORK_ID;
-    audioDeviceDescriptor->isVrSupported_ = false;
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RUNNING;
-    streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    audioCoreService->streamCollector_.AddCapturerStream(streamChangeInfo);
-
-    audioCoreService->BluetoothScoFetch(streamDesc);
-    EXPECT_EQ(Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType), true);
-}
-
-/**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_009
  * @tc.desc  : Test AudioCoreService::CheckModemScene()
@@ -765,24 +657,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_040, TestSize.Leve
 
     audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_043
- * @tc.desc  : Test AudioCoreService::BluetoothScoFetch
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_043, TestSize.Level1)
-{
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-
-    auto audioCoreService = AudioCoreService::GetCoreService();
-
-    audioCoreService->BluetoothScoFetch(streamDesc);
-
-    EXPECT_NE(audioCoreService, nullptr);
 }
 
 /**

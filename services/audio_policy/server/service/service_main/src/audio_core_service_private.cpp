@@ -340,38 +340,6 @@ int32_t AudioCoreService::ScoInputDeviceFetchedForRecongnition(bool handleFlag, 
     return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
 }
 
-void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc)
-{
-    Trace trace("AudioCoreService::BluetoothScoFetch");
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
-        streamDesc->newDeviceDescs_[0] != nullptr, "invalid streamDesc");
-    shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_[0];
-    int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
-        desc->exceptionFlag_ = true;
-        audioDeviceManager_.UpdateDevicesListInfo(
-            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchInputDeviceAndRoute("BluetoothScoFetch");
-        return;
-    }
-
-    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
-        return;
-    }
-    bool hasRunningRecognitionCapturerStream = pipeManager_->HasRunningRecognitionCapturerStream();
-    if (desc->isVrSupported_ &&
-        (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType) || hasRunningRecognitionCapturerStream)) {
-        ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_, desc->isVrSupported_);
-    } else {
-        ret = Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), true);
-    }
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("sco [%{public}s] is not connected yet",
-            GetEncryptAddr(desc->macAddress_).c_str());
-    }
-}
-
 void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -1891,63 +1859,6 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
     HILOG_COMM_INFO("[PipeExecInfo] Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
     return id;
-}
-
-bool AudioCoreService::RecoverFetchedDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
-{
-    for (auto &streamDesc : streamDescs) {
-        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "Stream desc is nullptr");
-        pipeManager_->UpdateNewDeviceDesc(streamDesc, streamDesc->oldDeviceDescs_);
-    }
-
-    return true;
-}
-
-int32_t AudioCoreService::HandleScoOutputDeviceFetched(
-    shared_ptr<AudioDeviceDescriptor> &desc, const AudioStreamDeviceChangeReasonExt reason)
-{
-    AUDIO_INFO_LOG("In");
-    Trace trace("AudioCoreService::HandleScoOutputDeviceFetched");
-#ifdef BLUETOOTH_ENABLE
-    int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
-    if (ret != SUCCESS) {
-        RecoverFetchedDescs(pipeManager_->GetAllOutputStreamDescs());
-        AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
-        desc->exceptionFlag_ = true;
-        audioDeviceManager_.UpdateDevicesListInfo(
-            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchOutputDeviceAndRoute("HandleScoOutputDeviceFetched_1", reason);
-        return ERROR;
-    }
-    Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
-#endif
-    AUDIO_INFO_LOG("out");
-    return SUCCESS;
-}
-
-int32_t AudioCoreService::HandleScoOutputDeviceFetched(
-    shared_ptr<AudioStreamDescriptor> &streamDesc, const AudioStreamDeviceChangeReasonExt reason)
-{
-    AUDIO_INFO_LOG("In");
-    Trace trace("AudioCoreService::HandleScoOutputDeviceFetched");
-#ifdef BLUETOOTH_ENABLE
-    std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
-    int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
-    if (ret != SUCCESS) {
-        RecoverFetchedDescs(pipeManager_->GetAllOutputStreamDescs());
-        AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
-        desc->exceptionFlag_ = true;
-        audioDeviceManager_.UpdateDevicesListInfo(
-            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchOutputDeviceAndRoute("HandleScoOutputDeviceFetched_2", reason);
-        return ERROR;
-    }
-    if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
-        Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
-    }
-#endif
-    AUDIO_INFO_LOG("out");
-    return SUCCESS;
 }
 
 int32_t AudioCoreService::GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc)

@@ -330,16 +330,6 @@ void CheckModemSceneFuzzTest()
     audioCoreService->CheckModemScene(modemDescs, reason);
 }
 
-void BluetoothScoFetchFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->capturerInfo_.sourceType = GetData<SourceType>();
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioCoreService->BluetoothScoFetch(streamDesc);
-}
-
 void HandleAudioCaptureStateFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -648,27 +638,6 @@ void AudioCoreServicePrivateHandleStreamStatusToCapturerStateFuzzTest()
         AudioStreamStatus status = testAudioStreamStatus[i];
         audioCoreService->HandleStreamStatusToCapturerState(status);
     }
-}
-
-void AudioCoreServicePrivateHandleScoOutputDeviceFetchedFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-
-    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    AudioStreamDeviceChangeReasonExt reason;
-    audioCoreService->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    if (audioCoreService->audioA2dpOffloadManager_ == nullptr) {
-        return;
-    }
-
-    shared_ptr<AudioStreamDescriptor> streamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
-    streamDescs.push_back(streamDescriptor);
-    audioCoreService->HandleScoOutputDeviceFetched(desc, reason);
-    audioCoreService->HandleScoOutputDeviceFetched(streamDescriptor, reason);
 }
 
 void AudioCoreServicePrivateSendA2dpConnectedWhileRunningFuzzTest()
@@ -1050,7 +1019,6 @@ void HandleA2dpSuspendWhenFetchFuzzTest()
     audioCoreService->ProcessOutputPipeReload(pipeInfo, flag, reason);
     audioCoreService->MoveToNewOutputDevice(audioStreamDescriptor, pipeInfo, reason);
     audioCoreService->UpdateRingerOrAlarmerDualDeviceOutputRouter(audioStreamDescriptor);
-    audioCoreService->RecoverFetchedDescs(streamDescs);
 }
 
 void GetVoiceCallMuteDurationFuzzTest()
@@ -1191,10 +1159,8 @@ TestFuncs g_testFuncs[] = {
     AudioCoreServicePrivateUpdateModemRoute,
     HandleA2dpSuspendWhenFetchFuzzTest,
     ScoInputDeviceFetchedForRecongnitionFuzzTest,
-    BluetoothScoFetchFuzzTest,
     CheckModemSceneFuzzTest,
     GetVoiceCallMuteDurationFuzzTest,
-    AudioCoreServicePrivateHandleScoOutputDeviceFetchedFuzzTest,
     UpdateSessionConnectionStateFuzzTest,
     AudioCoreServicePrivateActivateInputDeviceFuzzTest,
 };
