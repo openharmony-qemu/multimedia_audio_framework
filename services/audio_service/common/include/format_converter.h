@@ -77,6 +77,10 @@ public:
     static int32_t F32StereoToS16Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
     // to S24 Stereo
+    static int32_t S16MonoToS24Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S16StereoToS24Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S32MonoToS24Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S32StereoToS24Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS24Stereo(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
     // to S32 Stereo
@@ -89,6 +93,14 @@ public:
     // to S16 Mono
     static int32_t S16StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
     static int32_t F32StereoToS16Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+
+    // to S24 Mono
+    static int32_t S16MonoToS24Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S16StereoToS24Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S32MonoToS24Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t S32StereoToS24Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32MonoToS24Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
+    static int32_t F32StereoToS24Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
 
     // to F32 Mono
     static int32_t S16MonoToF32Mono(const BufferDesc &srcDesc, const BufferDesc &dstDesc);
@@ -112,6 +124,7 @@ private:
     static void InitToS32StereoHandlers(FormatHandlerMap& handlers);
     static void InitToF32StereoHandlers(FormatHandlerMap& handlers);
     static void InitToS16MonoHandlers(FormatHandlerMap& handlers);
+    static void InitToS24MonoHandlers(FormatHandlerMap& handlers);
     static void InitToF32MonoHandlers(FormatHandlerMap& handlers);
 
     static FormatHandlerMap formatHandlers;
