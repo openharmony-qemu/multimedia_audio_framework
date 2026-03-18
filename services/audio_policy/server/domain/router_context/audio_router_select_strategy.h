@@ -55,7 +55,7 @@ public:
 
     void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor>& device);
-    std::shared_ptr<AudioDeviceDescriptor> GetStreamSelectDevice(int32_t uid, uint32_t streamId);
+    std::shared_ptr<AudioDeviceDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
 
     void UpdateCurrentOutputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices);

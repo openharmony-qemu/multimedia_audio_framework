@@ -313,12 +313,10 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
         StreamState::STARTED);
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
         StreamState::STARTED);
-
-    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
-
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10002, PREFERRED_LOW_LATENCY);
 
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
@@ -387,13 +385,11 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     mic->connectState_ = DEACTIVE_CONNECTED;
 
     AudioRouterFollowStrategy strategy;
-
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_MIC);
-    ASSERT_NE(app10001Result, nullptr);
-    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(app10001Result, nullptr);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_014, TestSize.Level1) {
@@ -411,9 +407,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
 
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_MIC);
-    ASSERT_NE(app10001Result, nullptr);
-    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
+    EXPECT_EQ(app10001Result, nullptr);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_015, TestSize.Level1) {
@@ -616,11 +610,11 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     ASSERT_NE(invalidUidResult, nullptr);
     EXPECT_EQ(invalidUidResult->deviceType_, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(invalidUidResult->deviceId_, speaker->deviceId_);
+    sceneManager.SetAudioSceneOwnerUid(0);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_009, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    auto &sceneManager = AudioSceneManager::GetInstance();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
     auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
@@ -636,7 +630,6 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_010, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    auto &sceneManager = AudioSceneManager::GetInstance();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
     auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");

@@ -146,7 +146,7 @@ AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrateg
     result.device_ = nullptr;
     result.source_ = SelectDeviceSource::NONE;
 
-    if (streamId != static_cast<uint32_t>(-1)) {
+    if (streamId != 0) {
         auto streamSelectDevice = routerInfra.GetStreamSelectDevice(uid, streamId);
         if (streamSelectDevice != nullptr) {
             result.device_ = streamSelectDevice;
