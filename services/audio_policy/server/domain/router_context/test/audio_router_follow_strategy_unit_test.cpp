@@ -570,7 +570,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(systemResult->deviceId_, speaker->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyudiUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_007, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_007, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
