@@ -166,6 +166,8 @@ void HpaeProcessCluster::CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &
 
 void HpaeProcessCluster::CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo)
 {
+    CHECK_AND_RETURN_LOG(!SafeGetMap(idConverterMap_, sessionId),
+        "sessionId %{public}d converterNode already exist", sessionId);
     AudioBasicFormat basicFormat;
     if (renderEffectNode_ != nullptr) {
         renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);

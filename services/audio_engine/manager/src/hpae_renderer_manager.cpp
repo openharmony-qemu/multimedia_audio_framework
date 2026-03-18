@@ -287,7 +287,8 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
                     sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
             }
             DeleteProcessClusterInner(nodeInfo.sessionId, nodeInfo.sceneType);
-            CreateProcessCluster(nodeInfo);
+            sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+            sceneClusterMap_[HPAE_SCENE_EFFECT_NONE]->AudioRendererCreate(nodeInfo, sinkInfo_);
         } else if (node->connectedProcessorType_ == HPAE_SCENE_EFFECT_NONE &&
             processClusterDecision != USE_NONE_PROCESSCLUSTER &&
             GetProcessorType(nodeInfo.sessionId) == HPAE_SCENE_EFFECT_NONE) {
@@ -300,7 +301,8 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
             DeleteProcessCluster(nodeInfo.sessionId);
             CreateProcessClusterAndConnect(nodeInfo);
         }
-    } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId)) {
+    } else if (node->connectedProcessorType_ != GetProcessorType(nodeInfo.sessionId) &&
+        node->GetState() == HPAE_SESSION_RUNNING) {
         AUDIO_INFO_LOG("sessionId: %{public}u need to refresh %{public}d", nodeInfo.sessionId, processClusterDecision);
         DisConnectInputSession(nodeInfo.sessionId);
         ConnectInputSession(nodeInfo.sessionId);
