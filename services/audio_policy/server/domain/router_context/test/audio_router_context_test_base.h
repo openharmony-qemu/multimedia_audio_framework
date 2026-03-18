@@ -28,6 +28,7 @@ public:
     static constexpr int32_t TEST_APP_UID_10001 = 10001;
     static constexpr int32_t TEST_APP_UID_10002 = 10002;
     static constexpr int32_t TEST_APP_UID_10003 = 10003;
+    static constexpr int32_t TEST_APP_UID_MAX = TEST_APP_UID_10003 + 1;
     static constexpr int32_t TEST_STREAM_INVALID_ID = 0;
     static constexpr int32_t TEST_STREAM_ID_1 = 1;
     static constexpr int32_t TEST_STREAM_ID_2 = 2;

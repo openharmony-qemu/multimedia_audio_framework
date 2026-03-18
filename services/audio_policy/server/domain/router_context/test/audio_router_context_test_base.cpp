@@ -1,6 +1,7 @@
 #include "audio_router_context_test_base.h"
 #include "audio_device_manager.h"
 #include "audio_policy_utils.h"
+#include "audio_router_infra.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -12,6 +13,16 @@ void AudioRouterContextTestBase::TearDown(void)
         deviceManager.RemoveNewDevice(device);
     }
     addDevices_.clear();
+
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::MEDIA_INPUT);
+    routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
+    routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_INPUT);
+    routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_OUTPUT);
+    for (int i = TEST_APP_UID_10001; i < TEST_APP_UID_MAX; i++) {
+        routerInfra.OnAppDied(i);
+    }
+    routerInfra.SetRecognitionCaptureDevice(nullptr);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestBase::CreateDeviceDescriptor(
