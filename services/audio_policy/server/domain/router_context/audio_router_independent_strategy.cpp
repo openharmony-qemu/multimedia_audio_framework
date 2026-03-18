@@ -93,6 +93,7 @@ void AudioRouterIndependentStrategy::SetMediaOutputDevice(int32_t uid, uint32_t 
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid, simpleDesc);
+    AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, uid, simpleDesc);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallInputDevice(int32_t uid, uint32_t streamId)
@@ -110,6 +111,7 @@ void AudioRouterIndependentStrategy::SetCallInputDevice(int32_t uid,
     uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor>& device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
+    AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc);
     AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::CALL_INPUT, uid, simpleDesc);
 }
 
@@ -128,6 +130,7 @@ void AudioRouterIndependentStrategy::SetCallOutputDevice(int32_t uid,
     uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor>& device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
+    AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid, simpleDesc);
     AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, uid, simpleDesc);
 }
 
