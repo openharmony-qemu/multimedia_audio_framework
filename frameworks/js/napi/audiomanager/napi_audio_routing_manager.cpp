@@ -745,6 +745,7 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(
 
 napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceByFilter(napi_env env, napi_callback_info info)
 {
+    
     auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
     if (context == nullptr) {
         AUDIO_ERR_LOG("GetPreferredOutputDeviceByFilter failed : no memory");
