@@ -275,7 +275,6 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     // single stream manager
     sinkOutputNode_->Connect(converterForOutput_);
     // if there's no loudness algo, audio format will be converted to output device format at the first converternode
-    converterForOutput_->Connect(limiterNode_);
     if (limiterNode_) {
         converterForOutput_->Connect(limiterNode_);
         limiterNode_->Connect(loudnessGainNode_);
