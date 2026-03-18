@@ -28,10 +28,13 @@
 namespace OHOS {
 namespace AudioStandard {
 
-std::shared_ptr<AudioRouterSelectStrategy> AudioRouterSelectStrategy::GetInstance()
+AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 {
+    static AudioRouterIndependentStrategy independent;
+    static AudioRouterFollowStrategy follow;
+
     // 这儿要根据配置以及是否PC模式决定走独立还是跟随策略todo
-    return std::make_shared<AudioRouterFollowStrategy>();
+    return follow;
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::ConvertSimpleToDevice(

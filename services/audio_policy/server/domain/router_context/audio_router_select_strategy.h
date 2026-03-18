@@ -30,7 +30,7 @@ class AudioRouterSelectStrategy {
 public:
     virtual ~AudioRouterSelectStrategy() = default;
 
-    static std::shared_ptr<AudioRouterSelectStrategy> GetInstance();
+    static AudioRouterSelectStrategy& GetInstance();
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId, 
         SourceType sourceType) = 0;

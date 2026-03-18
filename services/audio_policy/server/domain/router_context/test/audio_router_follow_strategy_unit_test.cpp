@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "audio_router_context_test_base.h"
 #include "audio_router_follow_strategy.h"
 #include "audio_device_manager.h"
@@ -185,7 +186,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
         StreamState::STARTED);
 
     strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
-
+    usleep(10000); // sleep 10ms
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
