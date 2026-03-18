@@ -17,8 +17,8 @@ class AudioRouterIndependentStrategyUnitTest : public AudioRouterContextTestBase
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaInput_001, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -46,8 +46,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaInput_002, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -76,8 +76,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaInput_003, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -103,8 +103,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaInput_004, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -129,13 +129,13 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, AudioRouterContextTestUtil::ConvertDeviceToSimple(sco));
+    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(sco));
 
     auto stream1Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC);
     ASSERT_NE(stream1Result, nullptr);
@@ -158,8 +158,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaInput_006, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -174,8 +174,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaInput_006, TestSize.Level1
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaInput_007, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -190,8 +190,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaInput_007, TestSize.Level1
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaOutput_001, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -206,8 +206,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaOutput_001, TestSize.Level
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaOutput_002, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -222,8 +222,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, MediaOutput_002, TestSize.Level
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AppMediaInput_001, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -238,8 +238,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AppMediaInput_001, TestSize.Lev
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AppMediaInput_002, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -254,8 +254,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AppMediaInput_002, TestSize.Lev
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AppMediaOutput_001, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -270,8 +270,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AppMediaOutput_001, TestSize.Le
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AppMediaOutput_002, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -287,9 +287,9 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, Preference_001, TestSize.Level1
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -314,9 +314,9 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, Preference_002, TestSize.Level1
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -347,8 +347,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, Preference_002, TestSize.Level1
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_003, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -376,8 +376,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_004, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -406,8 +406,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_005, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -433,8 +433,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_006, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -459,13 +459,13 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, AudioRouterContextTestUtil::ConvertDeviceToSimple(earpiece));
+    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(earpiece));
 
     auto stream1Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, STREAM_USAGE_MEDIA);
     ASSERT_NE(stream1Result, nullptr);
@@ -488,8 +488,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_003, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -517,8 +517,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_004, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -547,8 +547,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_005, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -574,8 +574,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_006, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -600,13 +600,13 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto mic = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, AudioRouterContextTestUtil::ConvertDeviceToSimple(sco));
+    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(sco));
 
     auto stream1Result = strategy.GetCallInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     ASSERT_NE(stream1Result, nullptr);
@@ -629,8 +629,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_003, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -658,8 +658,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_004, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -688,8 +688,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_005, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -715,8 +715,8 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_006, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -741,13 +741,13 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
-    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
     strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
-    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, AudioRouterContextTestUtil::ConvertDeviceToSimple(earpiece));
+    routerInfra.UpdateStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, ConvertDeviceToSimple(earpiece));
 
     auto stream1Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     ASSERT_NE(stream1Result, nullptr);
