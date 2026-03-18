@@ -633,16 +633,37 @@ void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortInd
     AUDIO_INFO_LOG("Injector::UpdateAudioPortInfo finish.");
 }
 
-void ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::string &productId)
+int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
     lock_guard<mutex> lock(lock_);
+    return IHpaeManager::GetHpaeManager().UpdateCollaborativeProductId(productId);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    collaborativeUpdateResult_ = ERROR;
+    isFinishCollaborativeUpdate_ = false;
     IHpaeManager::GetHpaeManager().UpdateCollaborativeProductId(productId);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishCollaborativeUpdate_;
+    });
+    if (!stopWaiting) {
+        AUDIO_WARNING_LOG("wait for notify timeout");
+        return ERROR;
+    }
+    return collaborativeUpdateResult_;
 }
 
 void ProAudioServiceAdapterImpl::LoadCollaborationConfig()
 {
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().LoadCollaborationConfig();
+}
+
+void ProAudioServiceAdapterImpl::OnGetCollaborativeUpdateCb(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    AUDIO_INFO_LOG("Result: %{public}d", result);
+    isFinishCollaborativeUpdate_ = true;
+    collaborativeUpdateResult_ = result;
+    callbackCV_.notify_all();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

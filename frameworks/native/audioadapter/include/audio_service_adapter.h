@@ -279,7 +279,7 @@ public:
      *
      * @return {@link true} if support, {@link false} otherwise
      */
-    virtual void UpdateCollaborativeProductId(const std::string &productId) = 0;
+    virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
 
     /**
      * @brief Load Collaboration Config

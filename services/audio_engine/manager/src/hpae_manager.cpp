@@ -2795,13 +2795,16 @@ std::vector<uint32_t> HpaeManager::GetAllCaptureSession(const std::string &name)
     return sessionIds;
 }
 
-void HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
+int32_t HpaeManager::UpdateCollaborativeProductId(const std::string &productId)
 {
-    auto request = [productId]() {
-        HpaePolicyManager::GetInstance().UpdateCollaborativeProductId(productId);
+    auto request = [this, productId]() {
+        int32_t result = HpaePolicyManager::GetInstance().UpdateCollaborativeProductId(productId);
+        auto serviceCallback = serviceCallback_.lock();
+        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
+        serviceCallback->OnGetCollaborativeUpdateCb(result);
     };
-
     SendRequest(request, __func__);
+    return SUCCESS;
 }
 
 void HpaeManager::LoadCollaborationConfig()

@@ -3351,6 +3351,16 @@ bool AudioPolicyManager::IsCollaborativePlaybackSupported()
     return support;
 }
 
+bool AudioPolicyManager::IsCollaborativePlaybackSupportedForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    bool isSupported = false;
+    gsp->IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice, isSupported);
+    return isSupported;
+}
+
 bool AudioPolicyManager::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {

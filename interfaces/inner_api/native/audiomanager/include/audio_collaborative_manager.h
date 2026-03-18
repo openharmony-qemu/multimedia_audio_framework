@@ -32,6 +32,14 @@ public:
     bool IsCollaborativePlaybackSupported();
 
     /**
+     * @brief Check whether the collaborative is supported for the some device
+     *
+     * @return If the collboration is supported return true,  otherwise, return false.
+     * @since 24
+     */
+    bool IsCollaborativePlaybackSupportedForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
+
+    /**
      * @brief Set the collboration enabled or disabled by the specified device.
      *
      * @return Returns success or not

@@ -33,6 +33,7 @@ public:
     static AudioCollaborativeManager CreateCollaborativeManagerWrapper();
 
     bool IsCollaborativePlaybackSupported();
+    bool IsCollaborativePlaybackSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
     bool IsCollaborativePlaybackEnabledForDevice(AudioDeviceDescriptor deviceDescriptor);
     void SetCollaborativePlaybackEnabledForDeviceSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
 

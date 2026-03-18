@@ -67,6 +67,28 @@ bool AudioCollaborativeService::IsCollaborativePlaybackSupported()
     return isCollaborativePlaybackSupported_;
 }
 
+bool AudioCollaborativeService::IsCollaborativePlaybackSupportedForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    if (!isCollaborativePlaybackSupported_ || selectedAudioDevice == nullptr) {
+        return false;
+    }
+#ifdef BLUETOOTH_ENABLE
+    std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
+    Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(selectedAudioDevice->macAddress_);
+    std::string productId;
+    device.GetDeviceProductId(productId);
+    int ret = audioPolicyManager_.UpdateCollaborativeProductId(productId);
+    if (ret != SUCCESS) {
+        AUDIO_INFO_LOG("IsCollaborativePlaybackSupportedForDevice false productId: %{public}s update ret=%{public}d",
+            productId.c_str(), ret);
+        return false;
+    }
+    return true;
+#endif
+    return false;
+}
+
 void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice)
 {
     AUDIO_INFO_LOG("UpdateCurrentDevice Entered, seletedAudioDevice.deviceType_: %{public}d",
@@ -199,10 +221,10 @@ AudioCollaborativeService::~AudioCollaborativeService()
     AUDIO_ERR_LOG("~AudioCollaborativeService");
 }
 
-void AudioCollaborativeService::UpdateCollaborativeProductId(const std::string &productId)
+int32_t AudioCollaborativeService::UpdateCollaborativeProductId(const std::string &productId)
 {
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
-    audioPolicyManager_.UpdateCollaborativeProductId(productId);
+    return audioPolicyManager_.UpdateCollaborativeProductId(productId);
 }
 
 void AudioCollaborativeService::LoadCollaborationConfig()

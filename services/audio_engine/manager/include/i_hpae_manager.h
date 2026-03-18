@@ -157,8 +157,7 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) = 0;
     virtual int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) = 0;
-
-    virtual void UpdateCollaborativeProductId(const std::string &productId) = 0;
+    virtual int32_t UpdateCollaborativeProductId(const std::string &productId) = 0;
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
     virtual void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;

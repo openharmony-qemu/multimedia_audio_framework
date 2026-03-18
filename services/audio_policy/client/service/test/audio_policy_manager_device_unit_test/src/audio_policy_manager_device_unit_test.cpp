@@ -349,5 +349,36 @@ HWTEST(AudioPolicyManagerDevice, RegisterPreferredDeviceSetCallback_002, TestSiz
     EXPECT_EQ(ret, SUCCESS);
     MockNative::Resume();
 }
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: IsCollaborativePlaybackSupportedForDevice_001.
+ * @tc.desc  : Test IsCollaborativePlaybackSupportedForDevice.
+ */
+HWTEST(AudioPolicyManagerDevice, IsCollaborativePlaybackSupportedForDevice_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    bool result = audioPolicyManager_->IsCollaborativePlaybackSupportedForDevice(nullptr);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManagerDevice.
+ * @tc.number: IsCollaborativePlaybackSupportedForDevice_002.
+ * @tc.desc  : Test IsCollaborativePlaybackSupportedForDevice.
+ */
+HWTEST(AudioPolicyManagerDevice, IsCollaborativePlaybackSupportedForDevice_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_TRUE(device != nullptr);
+    device->macAddress_ = "8C-32-23-23-6C-12";
+
+    bool result = audioPolicyManager_->IsCollaborativePlaybackSupportedForDevice(device);
+    EXPECT_FALSE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -18,6 +18,7 @@
 
 #include "gtest/gtest.h"
 #include "audio_policy_manager.h"
+#include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_log.h"
 #include "iservice_registry.h"

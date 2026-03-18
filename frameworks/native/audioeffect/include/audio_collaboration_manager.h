@@ -32,6 +32,7 @@
 #include "audio_effect_chain.h"
 #include "audio_info.h"
 #include "audio_effect_chain_manager.h"
+#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,19 +42,21 @@ public:
     AudioCollaborationManager();
     ~AudioCollaborationManager();
     static AudioCollaborationManager *GetInstance();
-    void UpdateCollaborativeProductId(const std::string &productId);
+    int32_t UpdateCollaborativeProductId(const std::string &productId);
     void LoadCollaborationConfig();
     int32_t GetCollaborationLatency();
 
 private:
     void updateLatencyInner();
-    void LoadCollaborationConfigInner();
+    void LoadCollaborationConfigInner(const std::shared_ptr<AudioXmlNode> node);
+    void LoadCollaborationLatencyInner(const std::shared_ptr<AudioXmlNode> secondNode, const std::string productId);
     std::mutex collaborationMutex_;
     int32_t latencyMs_ = 0;
     std::string productId_ = "default";
     AudioTwsMode twsMode_ = TWS_MODE_DEFAULT;
-    AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
     std::unordered_map<std::string, std::map<AudioTwsMode, int32_t>> collaborativeLatencyConfig_;
+    std::unordered_map<std::string, std::string> collaborativeEarphoneNameConfig_;
+    std::unordered_map<std::string, int32_t> collaborativeEarphoneProductConfig_;
 };
 
 }  // namespace AudioStandard

@@ -50,6 +50,8 @@ public:
 
     virtual void HandleSourceAudioStreamRemoved(uint32_t sessionId) = 0;
 
+    virtual void OnGetCollaborativeUpdateCb(int32_t result) = 0;
+
     virtual ~AudioServiceHpaeCallback()
     {}
 };

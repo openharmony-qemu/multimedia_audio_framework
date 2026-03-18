@@ -96,8 +96,10 @@ int32_t AudioA2dpDeviceBehavior::SwitchActiveA2dpDevice(std::shared_ptr<AudioDev
     Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(deviceDesc->macAddress_);
     std::string productId;
     device.GetDeviceProductId(productId);
-    AudioCollaborativeService::GetAudioCollaborativeService().UpdateCollaborativeProductId(productId);
-    AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
+    result = AudioCollaborativeService::GetAudioCollaborativeService().UpdateCollaborativeProductId(productId);
+    if (result != SUCCESS) {
+        AUDIO_INFO_LOG("productId: %{public}s", productId.c_str());
+    }
 
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDesc->macAddress_);
     if (result != SUCCESS) {
