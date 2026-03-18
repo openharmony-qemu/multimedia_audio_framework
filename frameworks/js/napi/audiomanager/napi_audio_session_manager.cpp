@@ -1317,12 +1317,12 @@ napi_value NapiAudioSessionMgr::SetAudioSessionBehavior(napi_env env, napi_callb
 
     uint32_t behavior;
     napi_status status = NapiParamUtils::GetValueUInt32(env, behavior, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG((status == napi_ok), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+    CHECK_AND_RETURN_RET_LOG((status == napi_ok), NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: behavior wrong value"),
         "valueType invalid");
     CHECK_AND_RETURN_RET_LOG(
         behavior < (static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INPUT_INVALID,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "Parameter verification failed. behavior param is out of range"), "invaild behavior param");
 
     CHECK_AND_RETURN_RET_LOG(napiSessionMgr != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
