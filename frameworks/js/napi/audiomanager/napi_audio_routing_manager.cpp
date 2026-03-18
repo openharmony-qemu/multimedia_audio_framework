@@ -745,36 +745,35 @@ napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceForRendererInfoSync(
 
 napi_value NapiAudioRoutingManager::GetPreferredOutputDeviceByFilter(napi_env env, napi_callback_info info)
 {
-    
-    auto context = std::make_shared<AudioRoutingManagerAsyncContext>();
-    if (context == nullptr) {
-        AUDIO_ERR_LOG("GetPreferredOutputDeviceByFilter failed : no memory");
-        NapiAudioError::ThrowError(env, NAPI_ERR_NO_MEMORY);
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value argv[ARGS_ONE] = {};
+    auto *napiAudioRoutingManager = GetParamWithSync(env, info, argc, argv);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argCount invalid");
 
-    auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "Invalid arguments count.", NAPI_ERR_INVALID_PARAM);
-        context->status = NapiParamUtils::GetAudioRendererFilter(env, context->audioRendererFilter,
-            context->bArgTransFlag, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok,
-            "Parameter verification failed. Your usage in AudioRendererFilter is invalid.", NAPI_ERR_INVALID_PARAM);
-    };
-    context->GetCbInfo(env, info, inputParser);
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_object, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of audioRendererFilter must be object"),
+        "valueType invalid");
 
-    auto executor = [context]() {
-        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
-        auto obj = reinterpret_cast<NapiAudioRoutingManager*>(context->native);
-        ObjectRefMap objectGuard(obj);
-        auto *napiAudioRoutingManager = objectGuard.GetPtr();
-        CHECK_AND_RETURN_LOG(CheckAudioRoutingManagerStatus(napiAudioRoutingManager, context),
-            "context object state is error.");
-        context->deviceDescriptors = napiAudioRoutingManager->audioMngr_->GetOutputDevice(context->audioRendererFilter);
-    };
-    auto complete = [env, context](napi_value &output) {
-        NapiParamUtils::SetDeviceDescriptors(env, context->deviceDescriptors, output);
-    };
-    return NapiAsyncWork::Enqueue(env, context, "GetPreferredOutputDeviceByFilter", executor, complete);
+    sptr<AudioRendererFilter> audioRendererFilter = nullptr;
+    bool argTransFlag = false;
+    napi_status status = NapiParamUtils::GetAudioRendererFilter(env, audioRendererFilter, argTransFlag, argv[PARAM0]);
+    CHECK_AND_RETURN_RET(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "Parameter verification failed."));
+    CHECK_AND_RETURN_RET(audioRendererFilter != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INVALID_PARAM, "Parameter verification failed. The audioRendererFilter obj is NULL."));
+
+    vector<std::shared_ptr<AudioDeviceDescriptor>> outDeviceDescriptors;
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager != nullptr, result, "napiAudioRoutingManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRoutingManager->audioMngr_ != nullptr, result, "audioMngr_ nullptr");
+    outDeviceDescriptors = napiAudioRoutingManager->audioMngr_->GetOutputDevice(audioRendererFilter);
+
+    NapiParamUtils::SetDeviceDescriptors(env, outDeviceDescriptors, result);
+
+    return result;
 }
 
 napi_value NapiAudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(napi_env env, napi_callback_info info)
