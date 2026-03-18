@@ -5,6 +5,7 @@
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
 #include "audio_router_infra.h"
+#include "audio_scene_manager.h"
 
 using namespace testing::ext;
 
@@ -547,8 +548,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_006, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
@@ -575,14 +576,15 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_007, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto &sceneManager = AudioSceneManager::GetInstance();
 
-    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
     strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
-
+    sceneManager.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
     strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
 
     auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
@@ -594,30 +596,36 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     ASSERT_NE(systemResult, nullptr);
     EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_EARPIECE);
     EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
+    sceneManager.SetAudioSceneOwnerUid(0);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_008, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto &sceneManager = AudioSceneManager::GetInstance();
 
-    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
     strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
 
+    sceneManager.SetAudioSceneOwnerUid(TEST_APP_UID_10001);
+
     auto invalidUidResult = strategy.GetCallOutputDevice(INVALID_UID, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(invalidUidResult, nullptr);
+    ASSERT_NE(invalidUidResult, nullptr);
+    EXPECT_EQ(invalidUidResult->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(invalidUidResult->deviceId_, speaker->deviceId_);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_009, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto &sceneManager = AudioSceneManager::GetInstance();
 
-    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
-
     strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, earpiece);
 
     auto invalidUidResult = strategy.GetCallOutputDevice(INVALID_UID, TEST_STREAM_INVALID_ID);
@@ -628,9 +636,23 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_010, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto &sceneManager = AudioSceneManager::GetInstance();
 
-    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
-    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, speaker);
+
+    auto invalidUidResult = strategy.GetCallOutputDevice(INVALID_UID, TEST_STREAM_INVALID_ID);
+    EXPECT_EQ(invalidUidResult, nullptr);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_011, TestSize.Level1) {
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto earpiece = AudioRouterContextTestUtil::AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterFollowStrategy strategy;
 
