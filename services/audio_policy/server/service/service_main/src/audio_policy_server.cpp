@@ -280,6 +280,7 @@ void AudioPolicyServer::Init()
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
     audioPolicyService_.Init();
+    audioVolumeManager_.Init(audioPolicyServerHandler_, interruptService_);
 
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
@@ -2358,30 +2359,7 @@ int32_t AudioPolicyServer::SetRingerModeInner(AudioRingerMode ringMode)
 
 int32_t AudioPolicyServer::SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume)
 {
-    // PC ringmode not support silent or vibrate
-    AudioRingerMode ringerMode = VolumeUtils::IsPCVolumeEnable() ? RINGER_MODE_NORMAL : inputRingerMode;
-    AUDIO_INFO_LOG("Set ringer mode to %{public}d. hasUpdatedVolume %{public}d", ringerMode, hasUpdatedVolume);
-    int32_t ret = coreService_->SetRingerMode(ringerMode);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set ringer mode!");
-
-    if (!hasUpdatedVolume) {
-        // need to set volume according to ringermode
-        bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;
-        AudioInterrupt audioInterrupt;
-        int32_t zoneID = 0;
-        GetSessionInfoInFocus(audioInterrupt, zoneID);
-        audioVolumeManager_.SetStreamMute(STREAM_RING, muteState, audioInterrupt.streamUsage);
-        if (!muteState && GetSystemVolumeLevelInternal(STREAM_RING) == 0) {
-            // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
-            VolumeUpdateOption info = { false };
-            audioVolumeManager_.SetSystemVolumeLevelWithOption(STREAM_RING, 1, DEFAULT_ZONE_ID, info);
-        }
-    }
-
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringerMode);
-    }
-    return ret;
+    return audioVolumeManager_.SetRingerMode(inputRingerMode, hasUpdatedVolume);
 }
 
 #ifdef FEATURE_DTMF_TONE
@@ -2979,28 +2957,7 @@ int32_t AudioPolicyServer::GetAudioFocusInfoList(std::vector<std::map<AudioInter
 
 bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
 {
-    AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
-
-    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
-    if (callingUid == UID_AUDIO) {
-        return true;
-    }
-
-    if (!isRecording) {
-#ifdef AUDIO_BUILD_VARIANT_ROOT
-        // root user case for auto test
-        if (callingUid == ROOT_UID) {
-            return true;
-        }
-#endif
-        tokenId = IPCSkeleton::GetCallingTokenID();
-    }
-
-    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
-    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
-        false, "Permission denied [%{public}s]", permissionName.c_str());
-
-    return true;
+    return PermissionUtil::VerifyGeneralPermission(permissionName, tokenId, isRecording);
 }
 
 bool AudioPolicyServer::VerifyBluetoothPermission()

@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include "audio_policy_server.h"
 #include "audio_interrupt_service_second_unit_test.h"
+
 using namespace testing::ext;
 
 namespace OHOS {

@@ -775,7 +775,6 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr int32_t AUDIO_UID = 1041;
     static constexpr uint32_t MICPHONE_CALLER = 0;
-    static constexpr int32_t ROOT_UID = 0;
     static constexpr int32_t PREEMPT_UID = 7015;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
@@ -826,7 +825,7 @@ private:
     int32_t SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted);
 
     // Permission and privacy
-    bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
+    bool VerifyPermission(const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
     bool VerifyBluetoothPermission(const uid_t callingUid);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,

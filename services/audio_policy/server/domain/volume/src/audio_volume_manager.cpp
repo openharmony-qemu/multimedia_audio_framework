@@ -37,6 +37,8 @@
 #include "audio_zone_service.h"
 #include "ipc_skeleton.h"
 #include "audio_loud_volume_manager.h"
+#include "audio_core_service.h"
+#include "audio_interrupt_service.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -70,6 +72,8 @@ static const int64_t MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S = 24 * 60 * 60; // 24h
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 constexpr uint32_t SYSTEM_APP_VOLUME_PERSIST_DELAY_MS = 1000; // 1s
 const int32_t DUAL_TONE_RING_VOLUME = 0;
+constexpr int32_t DEFAULT_ZONE_ID = 0;
+
 static std::string GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
@@ -139,9 +143,11 @@ static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
     STREAM_WAKEUP,
 };
 
-bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler)
+bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler,
+    std::shared_ptr<AudioInterruptService> interruptService)
 {
     audioPolicyServerHandler_ = audioPolicyServerHandler;
+    interruptService_ = interruptService;
     if (policyVolumeMap_ == nullptr) {
         size_t mapSize = IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume) + sizeof(bool) + sizeof(bool);
         AUDIO_INFO_LOG("InitSharedVolume create shared volume map with size %{public}zu", mapSize);
@@ -2068,14 +2074,35 @@ bool AudioVolumeManager::GetStreamMuteInterface(AudioStreamType streamType, int3
     return isMuted;
 }
 
-bool AudioVolumeManager::VerifyPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
+int32_t AudioVolumeManager::SetRingerMode(AudioRingerMode inputRingerMode, bool hasUpdatedVolume)
 {
-    return true;
-}
+    // PC ringmode not support silent or vibrate
+    AudioRingerMode ringerMode = VolumeUtils::IsPCVolumeEnable() ? RINGER_MODE_NORMAL : inputRingerMode;
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d. hasUpdatedVolume %{public}d", ringerMode, hasUpdatedVolume);
+    std::shared_ptr<AudioCoreService> coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_UNKNOWN, "coreService is nullptr");
+    int32_t ret = coreService->SetRingerMode(ringerMode);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set ringer mode!");
 
-int32_t AudioVolumeManager::SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume)
-{
-    return SUCCESS;
+    if (!hasUpdatedVolume) {
+        // need to set volume according to ringermode
+        bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;
+        AudioInterrupt audioInterrupt;
+        int32_t zoneID = 0;
+        CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERR_UNKNOWN, "interruptService is nullptr");
+        interruptService_->GetSessionInfoInFocus(audioInterrupt, zoneID);
+        SetStreamMute(STREAM_RING, muteState, audioInterrupt.streamUsage);
+        if (!muteState && GetSystemVolumeLevelInterface(STREAM_RING) == 0) {
+            // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
+            VolumeUpdateOption info = { false };
+            SetSystemVolumeLevelWithOption(STREAM_RING, 1, DEFAULT_ZONE_ID, info);
+        }
+    }
+
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringerMode);
+    }
+    return ret;
 }
 
 void AudioVolumeManager::ProcUpdateRingerMode()
@@ -2088,7 +2115,7 @@ void AudioVolumeManager::ProcUpdateRingerMode()
     }
     AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
     // Update ringer mode but no need to update volume again.
-    SetRingerModeInternal(ringerMode, true);
+    SetRingerMode(ringerMode, true);
 }
 
 void AudioVolumeManager::UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool &isUpdateUi,
@@ -2193,7 +2220,7 @@ int32_t AudioVolumeManager::SetSingleStreamVolume(AudioStreamType streamType, in
         if ((currentRingerMode == RINGER_MODE_NORMAL && volumeLevel == 0) ||
             (currentRingerMode != RINGER_MODE_NORMAL && volumeLevel > 0)) {
             // When isUpdateUi is false, the func is called by others. Need to verify permission.
-            if (!isUpdateUi && !VerifyPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
+            if (!isUpdateUi && !PermissionUtil::VerifyGeneralPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
                 AUDIO_ERR_LOG("ACCESS_NOTIFICATION_POLICY_PERMISSION permission denied for ringtone volume!");
                 return ERR_PERMISSION_DENIED;
             }

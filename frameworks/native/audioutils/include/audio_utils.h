@@ -56,6 +56,7 @@ namespace AudioStandard {
 const uint32_t STRING_BUFFER_SIZE = 4096;
 const size_t MILLISECOND_PER_SECOND = 1000;
 const uint32_t AUDIO_ID = 1041;
+constexpr int32_t ROOT_UID = 0;
 constexpr uint32_t BASE_HEX = 16;
 static constexpr int32_t DEFAULT_FAST_SPAN_SIZE_INT_IN_MS = 5;
 static constexpr float DEFAULT_FAST_SPAN_SIZE_FLOAT_IN_MS = 5.0;
@@ -173,6 +174,8 @@ public:
     static bool VerifySelfPermission();
     static bool VerifySystemPermission();
     static bool VerifyPermission(const std::string &permissionName, uint32_t tokenId);
+    static bool VerifyGeneralPermission(
+        const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
     static bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);

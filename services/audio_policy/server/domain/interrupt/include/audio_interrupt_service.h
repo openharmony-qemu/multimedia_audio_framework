@@ -28,7 +28,6 @@
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "audio_interrupt_info.h"
 #include "audio_policy_server_handler.h"
-#include "audio_policy_server.h"
 #include "audio_session_service.h"
 #include "client_type_manager.h"
 #include "audio_interrupt_dfx_collector.h"
@@ -53,7 +52,7 @@ struct CachedFocusInfo {
 };
 
 class AudioPolicyServerHandler;
-
+class AudioPolicyServer;
 class SessionTimeOutCallback;
 
 class AudioInterruptService : public std::enable_shared_from_this<AudioInterruptService>,

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include "audio_interrupt_service.h"
 #include "sle_audio_device_manager.h"
 #include "audio_volume_manager_ext_unit_test.h"
 
@@ -31,11 +31,12 @@ void AudioVolumeManagerExtUnitTest::TearDownTestCase(void) {}
 
 void AudioVolumeManagerExtUnitTest::SetUp(void)
 {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler(
         DelayedSingleton<AudioPolicyServerHandler>::GetInstance());
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.Init(audioPolicyServerHandler);
+    audioVolumeManager.Init(audioPolicyServerHandler, interruptService);
 }
 
 void AudioVolumeManagerExtUnitTest::TearDown(void)

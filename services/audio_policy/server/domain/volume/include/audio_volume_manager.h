@@ -49,6 +49,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class AudioInterruptService;
 class ForceControlVolumeTypeMonitor;
 
 using InternalDeviceType = DeviceType;
@@ -95,7 +96,8 @@ public:
         static AudioVolumeManager instance;
         return instance;
     }
-    bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler);
+    bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler,
+        std::shared_ptr<AudioInterruptService> interruptService);
     void DeInit(void);
 
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
@@ -136,7 +138,7 @@ public:
         int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     bool GetStreamMuteInterface(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetSystemVolumeLevelNoMuteStateInterface(AudioStreamType streamType);
-    int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
+    int32_t SetRingerMode(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
     int32_t GetSystemVolumeDegreeInterface(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
     int32_t GetSystemVolumeLevelInterface(AudioStreamType streamType, int32_t zoneId = 0);
@@ -233,7 +235,6 @@ private:
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
     bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
-    bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     void ProcUpdateRingerMode();
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
@@ -259,6 +260,7 @@ private:
     std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
     bool supportVibrator_ = false;
+    std::shared_ptr<AudioInterruptService> interruptService_;
 
     int64_t activeSafeTimeBt_ = 0;
     int64_t activeSafeTime_ = 0;

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#include "audio_interrupt_service.h"
 #include "sle_audio_device_manager.h"
 #include "audio_volume_manager_unit_test.h"
 
@@ -31,11 +31,12 @@ void AudioVolumeManagerUnitTest::TearDownTestCase(void) {}
 
 void AudioVolumeManagerUnitTest::SetUp(void)
 {
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler(
         DelayedSingleton<AudioPolicyServerHandler>::GetInstance());
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    audioVolumeManager.Init(audioPolicyServerHandler);
+    audioVolumeManager.Init(audioPolicyServerHandler, interruptService);
 }
 
 void AudioVolumeManagerUnitTest::TearDown(void)
@@ -1365,10 +1366,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_063, TestSize.Level1)
     EXPECT_EQ(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
 
     bool ret;
-    ret = audioVolumeManager->Init(nullptr);
+    ret = audioVolumeManager->Init(nullptr, nullptr);
     EXPECT_EQ(ret, true);
     EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
-    ret = audioVolumeManager->Init(nullptr);
+    ret = audioVolumeManager->Init(nullptr, nullptr);
     EXPECT_EQ(ret, true);
     EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
     audioVolumeManager->DeInit();
