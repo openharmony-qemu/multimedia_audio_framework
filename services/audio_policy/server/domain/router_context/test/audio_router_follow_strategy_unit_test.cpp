@@ -133,9 +133,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_CAMCORDER);
-    ASSERT_NE(app10001Result, nullptr);
-    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
+    EXPECT_EQ(app10001Result, nullptr);
 
     app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_VOICE_MESSAGE);
@@ -360,9 +358,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_VOICE_MESSAGE,
         StreamState::STARTED);
-
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
-
     strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
 
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
@@ -376,7 +372,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_VOICE_MESSAGE);
-    EXPECT_EQ(app10001Result, nullptr);
+    ASSERT_NE(app10001Result, nullptr);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_013, TestSize.Level1) {
@@ -559,10 +557,14 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     strategy.SetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, speaker);
 
     auto app10001Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10001Result, nullptr);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(systemResult->deviceId_, speaker->deviceId_);
 
     auto app10002Result = strategy.GetCallOutputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID);
-    EXPECT_EQ(app10002Result, nullptr);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(systemResult->deviceId_, speaker->deviceId_);
 
     auto systemResult = strategy.GetCallOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
     ASSERT_NE(systemResult, nullptr);
