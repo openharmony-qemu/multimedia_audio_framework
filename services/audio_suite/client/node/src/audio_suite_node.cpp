@@ -38,6 +38,8 @@ AudioNode::AudioNode(AudioNodeType nodeType, AudioFormat audioFormat)
     audioNodeInfo_.audioFormat = audioFormat;
     audioNodeInfo_.inPcmFormat = PcmBufferFormat(audioFormat.rate, audioFormat.audioChannelInfo.numChannels,
         audioFormat.audioChannelInfo.channelLayout, audioFormat.format);
+    audioNodeInfo_.outPcmFormat = PcmBufferFormat(audioFormat.outRate, audioFormat.outAudioChannelInfo.numChannels,
+        audioFormat.outAudioChannelInfo.channelLayout, audioFormat.outFormat);
 }
 
 int32_t AudioNode::Init()
@@ -221,6 +223,8 @@ void AudioNode::SetAudioNodeFormat(AudioFormat audioFormat)
     audioNodeInfo_.audioFormat = audioFormat;
     audioNodeInfo_.inPcmFormat = PcmBufferFormat(audioFormat.rate, audioFormat.audioChannelInfo.numChannels,
         audioFormat.audioChannelInfo.channelLayout, audioFormat.format);
+    audioNodeInfo_.outPcmFormat = PcmBufferFormat(audioFormat.outRate, audioFormat.outAudioChannelInfo.numChannels,
+        audioFormat.outAudioChannelInfo.channelLayout, audioFormat.outFormat);
 }
 
 void AudioNode::SetAudioNodeVolume(float volume)
@@ -246,6 +250,11 @@ AudioFormat AudioNode::GetAudioNodeFormat()
 const PcmBufferFormat &AudioNode::GetAudioNodeInPcmFormat()
 {
     return audioNodeInfo_.inPcmFormat;
+}
+
+const PcmBufferFormat &AudioNode::GetAudioNodeOutPcmFormat()
+{
+    return audioNodeInfo_.outPcmFormat;
 }
 
 uint32_t AudioNode::GetAudioNodeId()

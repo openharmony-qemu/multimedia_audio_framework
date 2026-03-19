@@ -140,10 +140,8 @@ public:
             GTEST_SKIP() << "not support all node types, skip this test";
         }
         AudioFormat audioFormat = {
-            {CH_LAYOUT_STEREO, STEREO},
-            SAMPLE_S16LE,
-            SAMPLE_RATE_48000
-        };
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000,
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000};
         node_ = std::make_shared<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
         node_->InitOutputStream();
         node_->nodeNeedDataDuration_ = NEED_DATA_LENGTH;
@@ -260,10 +258,8 @@ HWTEST_F(AudioSuiteProcessNodeTest, DoProcessGetBypassTest, TestSize.Level0)
 HWTEST_F(AudioSuiteProcessNodeTest, FlushTest, TestSize.Level0)
 {
     AudioFormat audioFormat = {
-        {CH_LAYOUT_STEREO, STEREO},
-        SAMPLE_S16LE,
-        SAMPLE_RATE_48000
-    };
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000,
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000};
 
     std::unique_ptr<TestAudioSuiteProcessNode> node;
     node = std::make_unique<TestAudioSuiteProcessNode>(NODE_TYPE_NOISE_REDUCTION, audioFormat);
@@ -292,10 +288,8 @@ HWTEST_F(AudioSuiteProcessNodeTest, FlushTest, TestSize.Level0)
 HWTEST_F(AudioSuiteProcessNodeTest, CheckEffectNodeOvertimeCountTest_001, TestSize.Level0)
 {
     AudioFormat audioFormat = {
-        {CH_LAYOUT_STEREO, STEREO},
-        SAMPLE_S16LE,
-        SAMPLE_RATE_48000
-    };
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000,
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000};
 
     std::unique_ptr<TestAudioSuiteProcessNode> node =
         std::make_unique<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
@@ -350,10 +344,8 @@ HWTEST_F(AudioSuiteProcessNodeTest, CheckEffectNodeOvertimeCountTest_001, TestSi
 HWTEST_F(AudioSuiteProcessNodeTest, InitFormatConverters_Default, TestSize.Level0)
 {
     AudioFormat audioFormat = {
-        {CH_LAYOUT_STEREO, STEREO},
-        SAMPLE_S16LE,
-        SAMPLE_RATE_48000
-    };
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000,
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000};
     std::unique_ptr<TestAudioSuiteProcessNode> node =
         std::make_unique<TestAudioSuiteProcessNode>(NODE_TYPE_EQUALIZER, audioFormat);
     auto ret = node->InitFormatConverters();
@@ -365,10 +357,8 @@ HWTEST_F(AudioSuiteProcessNodeTest, InitFormatConverters_Default, TestSize.Level
 HWTEST_F(AudioSuiteProcessNodeTest, InitFormatConverters_AudioSeparation, TestSize.Level0)
 {
     AudioFormat audioFormat = {
-        {CH_LAYOUT_STEREO, STEREO},
-        SAMPLE_S16LE,
-        SAMPLE_RATE_48000
-    };
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000,
+            {CH_LAYOUT_STEREO, STEREO}, SAMPLE_S16LE, SAMPLE_RATE_48000};
     std::unique_ptr<TestAudioSuiteProcessNode> node =
         std::make_unique<TestAudioSuiteProcessNode>(NODE_TYPE_AUDIO_SEPARATION, audioFormat);
     auto ret = node->InitFormatConverters();

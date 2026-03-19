@@ -55,6 +55,8 @@ private:
     uint32_t singleRequestSize_ = 0;
     uint32_t inPcmDataGetSize_ = 0;
     uint32_t nextNodeNeedDataLength_ = 0;
+    //For convert the input sampleRate from 11025 to 16000
+    AudioSuiteFormatConversion inputConverter_;
 };
 }
 }

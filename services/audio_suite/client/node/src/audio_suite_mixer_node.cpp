@@ -31,15 +31,13 @@ static constexpr AudioChannel DEFAULT_CHANNEL_COUNT = STEREO;
 static constexpr AudioChannelLayout DEFAULT_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 }
 
-AudioSuiteMixerNode::AudioSuiteMixerNode(uint32_t threadCount)
+AudioSuiteMixerNode::AudioSuiteMixerNode()
     : AudioSuiteProcessNode(AudioNodeType::NODE_TYPE_AUDIO_MIXER,
-          AudioFormat{{DEFAULT_CHANNEL_LAYOUT, DEFAULT_CHANNEL_COUNT}, DEFAULT_SAMPLE_FORMAT, DEFAULT_SAMPLE_RATE}),
-      pullThreadPool_(std::make_unique<ThreadPool>("AudioSuitePullPool")),
+          AudioFormat{{DEFAULT_CHANNEL_LAYOUT, DEFAULT_CHANNEL_COUNT}, DEFAULT_SAMPLE_FORMAT, DEFAULT_SAMPLE_RATE,
+          {DEFAULT_CHANNEL_LAYOUT, DEFAULT_CHANNEL_COUNT}, DEFAULT_SAMPLE_FORMAT, DEFAULT_SAMPLE_RATE}),
       tmpOutput_(
           PcmBufferFormat{DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_COUNT, DEFAULT_CHANNEL_LAYOUT, DEFAULT_SAMPLE_FORMAT})
 {
-    pullThreadPool_->SetMaxTaskNum(threadCount);
-    pullThreadPool_->Start(threadCount);
 }
 
 AudioSuiteMixerNode::~AudioSuiteMixerNode()
@@ -53,6 +51,7 @@ void AudioSuiteMixerNode::SetAudioNodeFormat(AudioFormat audioFormat)
 
     AudioFormat currentFormat = GetAudioNodeFormat();
     currentFormat.rate = audioFormat.rate;
+    currentFormat.outRate = audioFormat.rate;
     AudioNode::SetAudioNodeFormat(currentFormat);
     AUDIO_INFO_LOG("numChannels:%{public}u, sampleFormat:%{public}u, sampleRate:%{public}d",
         currentFormat.audioChannelInfo.numChannels, currentFormat.format, currentFormat.rate);
@@ -98,7 +97,6 @@ int32_t AudioSuiteMixerNode::DeInit()
     AUDIO_INFO_LOG("AudioSuiteMixerNode::DeInit begin");
 
     limiter_.reset();
-    StopPullPool();
 
     AUDIO_INFO_LOG("AudioSuiteMixerNode::DeInit end");
     return SUCCESS;
@@ -130,85 +128,6 @@ std::vector<AudioSuitePcmBuffer *> AudioSuiteMixerNode::SignalProcess(const std:
         reinterpret_cast<float *>(algoOutput_[0]));
  
     return intermediateResult_;
-}
-
-void AudioSuiteMixerNode::StopPullPool()
-{
-    if (pullThreadPool_ != nullptr) {
-        pullThreadPool_->Stop();
-        pullThreadPool_.reset();
-    }
-}
-
-std::vector<std::future<AudioSuiteMixerNode::PullResult>> AudioSuiteMixerNode::SubmitPullTasks()
-{
-    std::vector<std::future<PullResult>> futures;
-    futures.reserve(preNodes_.size());
-
-    for (auto& weakNode : preNodes_) {
-        auto node = weakNode.lock();
-        if (!node) {
-            continue;
-        }
-        futures.emplace_back(pullThreadPool_->Submit([this, node]() -> PullResult {
-            PullResult r;
-            r.preNode = node;
-            auto data =
-                node->PullOutputData(GetAudioNodeInPcmFormat(), !GetNodeBypassStatus(), requestPreNodeDuration_);
-            if (!data.empty() && data[0] != nullptr) {
-                r.ok = true;
-                r.data = std::move(data);
-                r.isFinished = r.data[0]->GetIsFinished();
-            }
-            return r;
-        }));
-    }
-    return futures;
-}
-
-bool AudioSuiteMixerNode::CollectPullResults(std::vector<AudioSuitePcmBuffer*>& preOutputs,
-    std::vector<std::future<PullResult>>& futures)
-{
-    bool isFinished = true;
-
-    for (auto& f : futures) {
-        PullResult r = f.get();
-        if (!r.ok || r.preNode == nullptr) {
-            continue;
-        }
-        if (finishedPrenodeSet.find(r.preNode) != finishedPrenodeSet.end()) {
-            AUDIO_DEBUG_LOG(
-                "current node type is %{public}d, it's prenode type = %{public}d is finished, skip this node.",
-                GetNodeType(), r.preNode->GetNodeType());
-            continue;
-        }
-        // Check if data is empty to avoid invalid pointer access
-        if (r.data.empty()) {
-            isFinished = isFinished && r.isFinished;
-            continue;
-        }
-        if (r.data[0]->GetIsFinished()) {
-            finishedPrenodeSet.insert(r.preNode);
-        }
-        isFinished = isFinished && r.isFinished;
-        for (auto* ptr : r.data) {
-            if (ptr) {
-                preOutputs.push_back(ptr);
-            }
-        }
-    }
-
-    return isFinished;
-}
-
-void AudioSuiteMixerNode::ReadProcessNodePreOutputData()
-{
-    preNodeResult_.clear();
-    auto futures = SubmitPullTasks();
-    bool isFinished = CollectPullResults(preNodeResult_, futures);
-
-    AUDIO_DEBUG_LOG("set node type = %{public}d isFinished status: %{public}d.", GetNodeType(), isFinished);
-    SetAudioNodeDataFinishedFlag(isFinished);
 }
 
 }  // namespace AudioSuite

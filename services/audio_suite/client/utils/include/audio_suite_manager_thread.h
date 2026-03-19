@@ -35,6 +35,9 @@ public:
     void DeactivateThread();
     void Run();
     void Notify();
+    int32_t CreateGroup();
+    void ReleaseGroup();
+    void SetWorkGroupId(int32_t workGroupId);
     bool IsRunning() const
     {
         return running_.load();
@@ -45,12 +48,17 @@ public:
     }
 
 private:
+    void AddThread();
+    void RemoveThread();
+    void Start();
+    void Stop();
     std::atomic<bool> running_ = false;
     std::atomic<bool> recvSignal_ = false;
     IAudioSuiteManagerThread *m_audioSuiteManager = nullptr;
     std::condition_variable condition_;
     std::mutex mutex_;
     std::thread thread_;
+    int32_t workGroupId_ = -1;
 };
 
 }  // namespace AudioSuite

@@ -37,9 +37,9 @@ using OHOS::AudioStandard::HPAE::HpaeNoLockQueue;
 using OHOS::AudioStandard::HPAE::Request;
 
 namespace {
-static const uint32_t MAX_INPUT_NODE_NUM = 5;
+static const uint32_t MAX_INPUT_NODE_NUM = 15;
 static const uint32_t MAX_OUTPUT_NODE_NUM = 1;
-static const uint32_t MAX_EFFECT_NODE_NUM = 5;
+static const uint32_t MAX_EFFECT_NODE_NUM = 15;
 static const uint32_t MAX_MIX_NODE_NUM = 3;
 static const uint32_t MAX_AUDIO_SEPARATION_NODE_NUM = 1;
 }
@@ -88,6 +88,7 @@ public:
     bool IsMsgProcessing() override;
     void HandleMsg() override;
     void SendRequest(Request &&request, std::string funcName);
+    void SetWorkGroupId(int32_t workGroupId);
 
 private:
     bool IsInit();
@@ -113,13 +114,6 @@ private:
     int32_t GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat);
     void CheckRenderFrameTime(int32_t frameDurationMS, uint64_t processDurationUS);
     void CheckRenderFrameOverTimeCount();
-    // for DDL, set deadline for renderframe
-    void CreateDdlGroup();
-    void ReleaseDdlGroup();
-    void AddDdlThread();
-    void RemoveDdlThread();
-    void StartDdl(int32_t frameDurationMS);
-    void StopDdl();
 
 private:
     static std::mutex allocateIdLock;
