@@ -233,6 +233,7 @@ bool TonePlayerImpl::StopTone()
 bool TonePlayerImpl::Release()
 {
     std::unique_lock<std::mutex> lock(optMutex_);
+    CHECK_AND_RETURN_RET_LOG(toneState_ != TONE_RELEASED, false, "Release audioRenderer_ failed");
     toneState_ = TONE_RELEASED;
     lock.unlock();
     if (audioRenderer_ != nullptr) {
