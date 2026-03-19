@@ -84,7 +84,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_003,
-    TestSize.Level1)、
+    TestSize.Level1)
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
