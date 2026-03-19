@@ -814,6 +814,13 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
     opts->preferredInputDevice = device;
 
+    if (napi_get_named_property(env, in, "processedStreamInfo", &result) == napi_ok) {
+        status = GetStreamInfo(env, &(opts->streamInfo), result);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseProcessedStreamInfo failed");
+    } else {
+        AUDIO_INFO_LOG("ParseCapturerOptions, without processedStreamInfo");
+    }
+
     if (napi_get_named_property(env, in, "micInStreamInfo", &result) == napi_ok) {
         AudioStreamInfo *targetMicInStreamInfo = &(opts->micInStreamInfo);
         if (opts->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
