@@ -115,7 +115,7 @@ void AudioRouterInfra::ClearAllSelectSelectDevice(SelectDeviceType type)
 void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-
+-
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
             systemSelectDevice_.mediaInput_.device_ = nullptr;
@@ -648,7 +648,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamSelectDe
 
     auto& appContext = it->second;
     auto streamIt = appContext->streamSelectDevices_.find(streamId);
-    if (streamIt != appContext->streamSelectDevices_.end()) {
+    if (streamIt == appContext->streamSelectDevices_.end()) {
         return nullptr;
     }
     return streamIt->second;
@@ -666,7 +666,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultD
 
     auto& appContext = it->second;
     auto streamIt = appContext->streamDefaultDevices_.find(streamId);
-    if (streamIt != appContext->streamDefaultDevices_.end()) {
+    if (streamIt == appContext->streamDefaultDevices_.end()) {
         return nullptr;
     }
     return streamIt->second;
