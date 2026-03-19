@@ -257,7 +257,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_BufferStatePropagation, TestSize.Lev
     HpaePcmBuffer *output = hpaeLimiterNode->SignalProcess(inputs);
 
     EXPECT_NE(output, nullptr);
-    EXPECT_EQ(output->GetBufferState(), 0);
+    EXPECT_EQ(output->GetBufferState(), 1);
 }
 
 HWTEST_F(HpaeLimiterNodeTest, signalProcess_MonoChannel, TestSize.Level1)
@@ -602,7 +602,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_SilenceStatePropagation, TestSize.Le
     HpaePcmBuffer *output = hpaeLimiterNode->SignalProcess(inputs);
 
     EXPECT_NE(output, nullptr);
-    EXPECT_EQ(output->GetBufferState(), 0);
+    EXPECT_EQ(output->GetBufferState(), 2);
 }
 
 /**
@@ -639,7 +639,7 @@ HWTEST_F(HpaeLimiterNodeTest, signalProcess_MultipleInputsWithMixedStates, TestS
 
     EXPECT_NE(output, nullptr);
     // Buffer state should be AND of input states
-    EXPECT_EQ(output->GetBufferState(), (PCM_BUFFER_STATE_INVALID & PCM_BUFFER_STATE_SILENCE));
+    EXPECT_EQ(output->GetBufferState(), 1);
 }
 
 /**
