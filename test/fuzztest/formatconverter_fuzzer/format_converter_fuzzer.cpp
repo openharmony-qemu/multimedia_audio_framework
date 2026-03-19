@@ -483,7 +483,7 @@ void S32MonoToS24MonoFuzzTest()
     uint8_t dstBuffer[BUFFER_SIZE_3] = {0};
     srcDesc.bufLength = BUFFER_SIZE_4;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_3
+    dstDesc.bufLength = BUFFER_SIZE_3;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32MonoToS24Mono(srcDesc, dstDesc);
 }
