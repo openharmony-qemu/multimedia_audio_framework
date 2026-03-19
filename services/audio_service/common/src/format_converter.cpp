@@ -39,6 +39,7 @@ constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (BIT_32 - 1));
 constexpr size_t FORMAT_S24_BYTES = 3;
 constexpr int64_t INT24_MAX = (1 << (BIT_24 - 1)) - 1;
 constexpr int64_t INT24_MIN = -(1 << (BIT_24 - 1));
+constexpr size_t STEREO = 2;
 }
 
 static float CapMax(float v)
@@ -659,7 +660,7 @@ int32_t FormatConverter::S16MonoToS24Stereo(const BufferDesc &srcDesc, const Buf
 {
     CHECK_AND_RETURN_RET(srcDesc.buffer != nullptr, -1);
     CHECK_AND_RETURN_RET(dstDesc.buffer != nullptr, -1);
-    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / sizeof(int16_t) * FORMAT_S24_BYTES == dstDesc.bufLength / 2 &&
+    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / sizeof(int16_t) * FORMAT_S24_BYTES == dstDesc.bufLength / STEREO &&
         dstDesc.bufLength % FORMAT_S24_BYTES == 0, -1, "Buffer len not match");
     int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
     uint8_t *dstPtr = dstDesc.buffer;
@@ -704,7 +705,7 @@ int32_t FormatConverter::S32MonoToS24Stereo(const BufferDesc &srcDesc, const Buf
 {
     CHECK_AND_RETURN_RET(srcDesc.buffer != nullptr, -1);
     CHECK_AND_RETURN_RET(dstDesc.buffer != nullptr, -1);
-    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / sizeof(int32_t) * FORMAT_S24_BYTES == dstDesc.bufLength / 2 &&
+    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / sizeof(int32_t) * FORMAT_S24_BYTES == dstDesc.bufLength / STEREO &&
         dstDesc.bufLength % FORMAT_S24_BYTES == 0, -1, "Buffer len not match");
     int32_t *srcPtr = reinterpret_cast<int32_t *>(srcDesc.buffer);
     uint8_t *dstPtr = dstDesc.buffer;
@@ -790,7 +791,7 @@ int32_t FormatConverter::S16StereoToS24Mono(const BufferDesc &srcDesc, const Buf
 {
     CHECK_AND_RETURN_RET(srcDesc.buffer != nullptr, -1);
     CHECK_AND_RETURN_RET(dstDesc.buffer != nullptr, -1);
-    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / 2 / sizeof(int16_t) * FORMAT_S24_BYTES == dstDesc.bufLength &&
+    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / STEREO / sizeof(int16_t) * FORMAT_S24_BYTES == dstDesc.bufLength &&
         dstDesc.bufLength % FORMAT_S24_BYTES == 0, -1, "Buffer len not match");
     int16_t *srcPtr = reinterpret_cast<int16_t *>(srcDesc.buffer);
     uint8_t *dstPtr = dstDesc.buffer;
@@ -835,7 +836,7 @@ int32_t FormatConverter::S32StereoToS24Mono(const BufferDesc &srcDesc, const Buf
 {
     CHECK_AND_RETURN_RET(srcDesc.buffer != nullptr, -1);
     CHECK_AND_RETURN_RET(dstDesc.buffer != nullptr, -1);
-    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / 2 / sizeof(int32_t) * FORMAT_S24_BYTES == dstDesc.bufLength &&
+    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / STEREO / sizeof(int32_t) * FORMAT_S24_BYTES == dstDesc.bufLength &&
         dstDesc.bufLength % FORMAT_S24_BYTES == 0, -1, "Buffer len not match");
     int32_t *srcPtr = reinterpret_cast<int32_t *>(srcDesc.buffer);
     uint8_t *dstPtr = dstDesc.buffer;
@@ -879,7 +880,7 @@ int32_t FormatConverter::F32StereoToS24Mono(const BufferDesc &srcDesc, const Buf
 {
     CHECK_AND_RETURN_RET(srcDesc.buffer != nullptr, -1);
     CHECK_AND_RETURN_RET(dstDesc.buffer != nullptr, -1);
-    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / 2 / sizeof(float) * FORMAT_S24_BYTES == dstDesc.bufLength &&
+    CHECK_AND_RETURN_RET_LOG(srcDesc.bufLength / STEREO / sizeof(float) * FORMAT_S24_BYTES == dstDesc.bufLength &&
         dstDesc.bufLength % FORMAT_S24_BYTES == 0, -1, "Buffer len not match");
     float *srcPtr = reinterpret_cast<float *>(srcDesc.buffer);
     uint8_t *dstPtr = dstDesc.buffer;
