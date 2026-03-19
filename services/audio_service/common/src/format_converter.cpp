@@ -39,7 +39,6 @@ constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (BIT_32 - 1));
 constexpr size_t FORMAT_S24_BYTES = 3;
 constexpr int64_t INT24_MAX = (1 << (BIT_24 - 1)) - 1;
 constexpr int64_t INT24_MIN = -(1 << (BIT_24 - 1));
-constexpr size_t STEREO = 2;
 }
 
 static float CapMax(float v)
