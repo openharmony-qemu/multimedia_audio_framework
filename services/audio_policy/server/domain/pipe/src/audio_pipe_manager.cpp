@@ -288,7 +288,6 @@ AudioStreamInfo AudioPipeManager::DecideStreamInfo(const std::shared_ptr<AudioPi
             return streamInfo;
         }
         streamInfo.samplingRate = static_cast<AudioSamplingRate>(rate);
-        CHECK_AND_RETURN_RET(streamInfo.samplingRate > AudioSamplingRate::SAMPLE_RATE_48000, streamInfo);
         const std::string &format = pipeInfo->moduleInfo_.format;
         auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
         CHECK_AND_RETURN_RET_LOG(it != AudioDefinitionPolicyUtils::formatStrToEnum.end(), streamInfo,
