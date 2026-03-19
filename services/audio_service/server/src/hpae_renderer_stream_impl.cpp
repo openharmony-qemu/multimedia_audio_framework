@@ -346,16 +346,10 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(const std::string &deviceCla
 int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency)
 {
-    std::string currentDeviceClass;
-    std::string currentDeviceNetId;
-    {
-        std::lock_guard<std::mutex> lock(firstStreamDataMutex_);
-        currentDeviceClass = deviceClass_;
-        currentDeviceNetId = deviceNetId_;
-    }
-    CHECK_AND_RETURN_RET(currentDeviceClass == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
 
-    std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(currentDeviceClass, currentDeviceNetId);
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
     uint64_t framesUS;
     int64_t timeSec;
