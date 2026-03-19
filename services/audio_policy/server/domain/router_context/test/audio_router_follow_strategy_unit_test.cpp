@@ -15,7 +15,8 @@ namespace AudioStandard {
 class AudioRouterFollowStrategyUnitTest : public AudioRouterContextTestBase {
 };
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_001, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_001, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE,
@@ -27,26 +28,31 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
 
     strategy.SetMediaOutputDevice(SYSTEM_UID, 1, earpiece);
 
-    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, STREAM_USAGE_MEDIA);
+    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        STREAM_USAGE_MEDIA);
     ASSERT_NE(systemResult, nullptr);
     EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_EARPIECE);
     EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
 
-    auto appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, STREAM_USAGE_MEDIA);
+    auto appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        STREAM_USAGE_MEDIA);
     ASSERT_NE(appResult, nullptr);
     EXPECT_EQ(appResult->deviceType_, DEVICE_TYPE_EARPIECE);
     EXPECT_EQ(appResult->deviceId_, earpiece->deviceId_);
 
     strategy.SetMediaOutputDevice(SYSTEM_UID, 1, nullptr);
 
-    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, STREAM_USAGE_MEDIA);
+    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID,
+        STREAM_USAGE_MEDIA);
     EXPECT_EQ(systemResult, nullptr);
 
-    appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, STREAM_USAGE_MEDIA);
+    appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        STREAM_USAGE_MEDIA);
     EXPECT_EQ(appResult, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_002, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_002, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE,
@@ -77,7 +83,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(appResult, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_003, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_003,
+    TestSize.Level1)、
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE,
@@ -98,7 +106,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10002Result, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_004, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_004, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -147,7 +156,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10002Result, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_005, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_005, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -181,7 +191,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_006, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_006, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -212,7 +223,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_007, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_007, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -237,7 +249,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_008, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_008, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -262,7 +275,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_009, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_009, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -287,7 +301,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10001Result->deviceId_, a2dpIn->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_010, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_010, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -317,7 +332,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_011, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_011, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -363,7 +379,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10002Result->deviceId_, mic->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_012, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_012, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -393,7 +410,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_013, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_013, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -408,7 +426,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10001Result, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_014, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_014, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -426,7 +445,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10001Result, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_015, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_015, TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
@@ -449,7 +469,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_001, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_001,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -478,7 +500,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(appResult, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_002, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_002,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -497,7 +521,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(app10002Result, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_003, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_003,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -520,7 +546,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_004, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_004,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -539,7 +567,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(appResult, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_005, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_005,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -555,7 +585,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(app10001Result, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_006, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_006,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -584,7 +616,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(systemResult->deviceId_, speaker->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_007, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_007,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &sceneManager = AudioSceneManager::GetInstance();
 
@@ -609,7 +643,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     sceneManager.SetAudioSceneOwnerUid(0);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_008, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_008,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     auto &sceneManager = AudioSceneManager::GetInstance();
 
@@ -629,7 +665,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     sceneManager.SetAudioSceneOwnerUid(0);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_009, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_009,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -644,7 +682,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(invalidUidResult->deviceId_, earpiece->deviceId_);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_010, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_010,
+    TestSize.Level1)
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
@@ -657,7 +697,9 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(invalidUidResult, nullptr);
 }
 
-HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_011, TestSize.Level1) {
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_011,
+    TestSize.Level1) 
+{
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
     auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:00:01");
