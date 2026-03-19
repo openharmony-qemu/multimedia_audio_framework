@@ -233,7 +233,7 @@ int32_t HpaeOffloadRendererManager::CreateOffloadNodes()
     converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(curNode_->GetNodeInfo(), nodeInfo);
     converterForLoudness_->SetDownmixNormalization(false);
     // Only create limiter node for remote_offload
-    if (sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS) {
+    if (sinkInfo_.deviceClass == REMOTE_OFFLOAD_DEVICE_CLASS && curNode_->GetChannelCount() > STEREO) {
         limiterNode_ = std::make_shared<HpaeLimiterNode>(nodeInfo);
         // Setup AudioLimiter
         if (limiterNode_->SetupAudioLimiter() != SUCCESS) {

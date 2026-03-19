@@ -2842,7 +2842,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
+    streamInfo.channels = CHANNEL_6;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
     streamInfo.frameLen = FRAME_LENGTH_960;
@@ -2855,6 +2855,50 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSi
     // Verify limiterNode_ is created for remote_offload device
     EXPECT_NE(offloadManager->limiterNode_, nullptr);
     EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test LimiterNode CreateForRemoteOffload 002
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_CreateForRemoteOffload_002
+ * @tc.desc  : Test limiterNode_ is created for remote_offload device.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = "remote_offload";
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "source_file_io_48000_2_s16le.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->IsInit(), true);
+
+    // Create stream to trigger CreateOffloadNodes
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is created for remote_offload device
+    EXPECT_EQ(offloadManager->limiterNode_, nullptr);
 
     WaitForMsgProcessing(offloadManager);
     EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
@@ -2880,7 +2924,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_NotCreateForNonRemoteOffload_001, 
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
+    streamInfo.channels = CHANNEL_6;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
     streamInfo.frameLen = FRAME_LENGTH_960;
@@ -2923,7 +2967,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
+    streamInfo.channels = CHANNEL_6;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
     streamInfo.frameLen = FRAME_LENGTH_960;
@@ -2973,7 +3017,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize
 
     // Create and start stream to trigger ConnectInputSession
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
+    streamInfo.channels = CHANNEL_6;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
     streamInfo.frameLen = FRAME_LENGTH_960;
@@ -3027,7 +3071,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.L
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
+    streamInfo.channels = CHANNEL_6;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
     streamInfo.frameLen = FRAME_LENGTH_960;
@@ -3085,7 +3129,7 @@ HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Le
 
     // Create stream to trigger CreateOffloadNodes
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
+    streamInfo.channels = CHANNEL_6;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
     streamInfo.format = SAMPLE_F32LE;
     streamInfo.frameLen = FRAME_LENGTH_960;
