@@ -732,6 +732,8 @@ public:
     int32_t RegisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     int32_t UnregisterPreferredDeviceSetCallback(const std::shared_ptr<PreferredDeviceSetCallback> &callback);
     bool IsCollaborativePlaybackSupported();
+    bool IsCollaborativePlaybackSupportedForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     int32_t SetCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
     bool IsCollaborativePlaybackEnabledForDevice(

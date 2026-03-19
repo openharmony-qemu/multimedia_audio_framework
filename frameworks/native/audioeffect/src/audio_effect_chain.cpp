@@ -724,7 +724,7 @@ void AudioEffectChain::SetAbsVolumeStateToEffectChain(const bool absVolumeState)
     absVolumeState_ = absVolumeState;
 }
 
-void AudioEffectChain::SetEarphoneProduct(AudioEarphoneProduct earphoneProduct)
+void AudioEffectChain::SetEarphoneProduct(int32_t earphoneProduct)
 {
     earphoneProduct_ = earphoneProduct;
 }

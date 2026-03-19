@@ -241,11 +241,11 @@ bool HpaePolicyManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayout 
     return audioEffectChainManager->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
-void HpaePolicyManager::UpdateCollaborativeProductId(const std::string &productId)
+int32_t HpaePolicyManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     AudioCollaborationManager *audioCollaborationManager = AudioCollaborationManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioCollaborationManager != nullptr, "null audioCollaborationManager");
-    audioCollaborationManager->UpdateCollaborativeProductId(productId);
+    CHECK_AND_RETURN_RET_LOG(audioCollaborationManager != nullptr, ERR_ILLEGAL_STATE, "null audioCollaborationManager");
+    return audioCollaborationManager->UpdateCollaborativeProductId(productId);
 }
 
 void HpaePolicyManager::LoadCollaborationConfig()

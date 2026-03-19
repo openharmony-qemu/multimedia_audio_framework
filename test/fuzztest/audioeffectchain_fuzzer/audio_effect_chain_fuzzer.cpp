@@ -1196,7 +1196,7 @@ void IsChannelLayoutSupportedForDspEffectFuzzTest()
 
 void UpdateEarphoneProductFuzzTest()
 {
-    AudioEarphoneProduct earphoneProduct = EARPHONE_PRODUCT_NONE;
+    int32_t earphoneProduct = 0;
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     if (audioEffectChainManager == nullptr) {
         return;

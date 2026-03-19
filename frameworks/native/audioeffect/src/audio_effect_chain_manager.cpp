@@ -97,7 +97,7 @@ AudioEffectChainManager::AudioEffectChainManager()
     deviceType_ = DEVICE_TYPE_SPEAKER;
     deviceSink_ = DEFAULT_DEVICE_SINK;
     spatialDeviceType_ = EARPHONE_TYPE_OTHERS;
-    earphoneProduct_ = EARPHONE_PRODUCT_NONE;
+    earphoneProduct_ = 0;
     isInitialized_ = false;
     defaultPropertyMap_.clear();
 #ifdef SENSOR_ENABLE
@@ -2127,7 +2127,7 @@ bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelL
     return true;
 }
 
-void AudioEffectChainManager::UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct)
+void AudioEffectChainManager::UpdateEarphoneProduct(int32_t earphoneProduct)
 {
     //send earphone device type to ap
     std::lock_guard<std::mutex> lock(dynamicMutex_);

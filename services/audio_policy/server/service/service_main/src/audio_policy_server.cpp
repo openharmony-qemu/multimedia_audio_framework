@@ -5782,6 +5782,18 @@ int32_t AudioPolicyServer::IsCollaborativePlaybackSupported(bool &ret)
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::IsCollaborativePlaybackSupportedForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &isSupported)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        isSupported = false;
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &enabled)
 {

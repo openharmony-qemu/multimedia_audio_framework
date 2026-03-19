@@ -643,10 +643,10 @@ int32_t HpaeManagerImpl::PeekAudioData(
     return manager_->PeekAudioData(sinkPortIndex, buffer, bufferSize, streamInfo);
 }
 
-void HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &productId)
+int32_t HpaeManagerImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
-    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    manager_->UpdateCollaborativeProductId(productId);
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->UpdateCollaborativeProductId(productId);
 }
 
 void HpaeManagerImpl::LoadCollaborationConfig()

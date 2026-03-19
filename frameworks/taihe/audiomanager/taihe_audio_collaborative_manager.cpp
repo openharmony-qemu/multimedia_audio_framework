@@ -67,6 +67,39 @@ bool AudioCollaborativeManagerImpl::IsCollaborativePlaybackSupported()
     return isCollaborativeSupported;
 }
 
+bool AudioCollaborativeManagerImpl::IsCollaborativePlaybackSupportedForDevice(AudioDeviceDescriptor deviceDescriptor)
+{
+    AUDIO_DEBUG_LOG("in");
+    bool isCollaborativeSupported = false;
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return isCollaborativeSupported;
+    }
+    bool argTransFlag = true;
+    std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> selectedAudioDevice =
+        std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
+    int32_t status = TaiheParamUtils::GetAudioDeviceDescriptor(selectedAudioDevice, argTransFlag, deviceDescriptor);
+    if (status != AUDIO_OK || !argTransFlag) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceDescriptor must be interface AudioDeviceDescriptor");
+        AUDIO_ERR_LOG("invalid parameter");
+        return isCollaborativeSupported;
+    }
+    if ((selectedAudioDevice->deviceType_ != OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP) ||
+        (selectedAudioDevice->connectState_ != OHOS::AudioStandard::ConnectState::CONNECTED)) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
+            "invalid arguments, device is not A2DP or device is not connected");
+        AUDIO_ERR_LOG("invalid parameter");
+        return isCollaborativeSupported;
+    }
+    if (audioCollaborativeMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCollaborativeMngr_ is nullptr");
+        return isCollaborativeSupported;
+    }
+    isCollaborativeSupported = audioCollaborativeMngr_->IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice);
+    return isCollaborativeSupported;
+}
+
 bool AudioCollaborativeManagerImpl::IsCollaborativePlaybackEnabledForDevice(AudioDeviceDescriptor deviceDescriptor)
 {
     AUDIO_DEBUG_LOG("in");

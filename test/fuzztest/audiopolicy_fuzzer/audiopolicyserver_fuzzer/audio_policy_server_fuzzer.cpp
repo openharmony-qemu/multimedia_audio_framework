@@ -1335,6 +1335,17 @@ void AudioPolicyServerIsCollaborativePlaybackSupportedFuzzTest()
     audioPolicyServer->IsCollaborativePlaybackSupported(ret);
 }
 
+void AudioPolicyServerIsCollaborativePlaybackSupportedForDeviceFuzzTest()
+{
+    auto audioPolicyServer = GetServerPtr();
+    CHECK_AND_RETURN(audioPolicyServer != nullptr);
+
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    bool isSupported = GetData<bool>();
+
+    audioPolicyServer->IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice, isSupported);
+}
+
 void AudioPolicyServerIsCollaborativePlaybackEnabledForDeviceFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -2179,6 +2190,7 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerSetSleAudioOperationCallbackFuzzTest,
     AudioPolicyServerSetCollaborativePlaybackEnabledForDeviceFuzzTest,
     AudioPolicyServerIsCollaborativePlaybackSupportedFuzzTest,
+    AudioPolicyServerIsCollaborativePlaybackSupportedForDeviceFuzzTest,
     AudioPolicyServerIsCollaborativePlaybackEnabledForDeviceFuzzTest,
     AudioPolicyServerCallRingtoneLibraryFuzzTest,
     SetAndUnsetDistributedRoutingRoleCallbackFuzzTest,

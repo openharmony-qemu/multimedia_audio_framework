@@ -65,6 +65,7 @@ audio_ohos_library("audio_effect") {
   install_enable = true
 
   configs = [ ":audio_effect_config" ]
+  configs += [ "//build/config/compiler:exceptions" ]
 
   sources = [
     "src/audio_effect_chain.cpp",

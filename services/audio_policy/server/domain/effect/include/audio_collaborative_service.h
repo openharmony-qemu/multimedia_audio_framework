@@ -38,6 +38,8 @@ public:
     }
     void Init(const std::vector<EffectChain> &effectChains);
     bool IsCollaborativePlaybackSupported();
+    bool IsCollaborativePlaybackSupportedForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     bool IsCollaborativePlaybackEnabledForDevice(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice);
     // only function to change map state
@@ -46,7 +48,7 @@ public:
     // current device change, map state unchanged
     void UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice);
     bool GetRealCollaborativeState();
-    void UpdateCollaborativeProductId(const std::string &productId);
+    int32_t UpdateCollaborativeProductId(const std::string &productId);
     bool IsCollaborativePlaybackOpenedOrReservedForDevice(
         const AudioDeviceDescriptor &selectedAudioDevice);
     void UpdateCollaborativeStateToHdi(bool collaborativeState);

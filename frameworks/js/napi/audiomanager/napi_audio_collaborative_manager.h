@@ -48,6 +48,7 @@ private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
     static napi_value Construct(napi_env env, napi_callback_info info);
     static napi_value IsCollaborativePlaybackSupported(napi_env env, napi_callback_info info);
+    static napi_value IsCollaborativePlaybackSupportedForDevice(napi_env env, napi_callback_info info);
     static napi_value IsCollaborativePlaybackEnabledForDevice(napi_env env, napi_callback_info info);
     static napi_value SetCollaborativePlaybackEnabledForDevice(napi_env env, napi_callback_info info);
     static napi_value UpdateCollaborativeEnabled(

@@ -366,7 +366,14 @@ void HandleSourceAudioStreamRemovedFuzzTest()
     impl_->HandleSourceAudioStreamRemoved(sessionId);
 }
 
-typedef void (*TestFuncs[32])();
+void OnGetCollaborativeUpdateCbFuzzTest()
+{
+    SetUp();
+    int32_t result = GetData<int32_t>();
+    impl_->OnGetCollaborativeUpdateCb(result);
+}
+
+typedef void (*TestFuncs[33])();
 
 TestFuncs g_testFuncs = {
     OpenAudioPortFuzzTest,
@@ -401,6 +408,7 @@ TestFuncs g_testFuncs = {
     OnGetAudioEnhancePropertyCbV3FuzzTest,
     OnGetAudioEnhancePropertyCbFuzzTest,
     HandleSourceAudioStreamRemovedFuzzTest,
+    OnGetCollaborativeUpdateCbFuzzTest,
 };
 
 bool FuzzTest(const uint8_t *rawData, size_t size)

@@ -4179,10 +4179,10 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateEarphoneProduct_001, TestSize.Leve
 
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"1", nullptr});
-    AudioEarphoneProduct earphoneProduct = EARPHONE_PRODUCT_DOVE;
+    int32_t earphoneProduct = 1;
     AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct);
     EXPECT_EQ(audioEffectChain->earphoneProduct_, earphoneProduct);
-    earphoneProduct = EARPHONE_PRODUCT_ROBIN;
+    earphoneProduct = 2;
     AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct);
     EXPECT_EQ(audioEffectChain->earphoneProduct_, earphoneProduct);
     AudioEffectChainManager::GetInstance()->ResetInfo();

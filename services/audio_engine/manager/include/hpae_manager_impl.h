@@ -153,7 +153,7 @@ public:
         const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex, const SourceType &sourceType) override;
     int32_t PeekAudioData(
         const uint32_t &sinkPortIndex, uint8_t *buffer, size_t bufferSize, AudioStreamInfo &streamInfo) override;
-    void UpdateCollaborativeProductId(const std::string &productId) override;
+    int32_t UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
     
     // interface for auxiliarySink

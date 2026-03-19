@@ -145,7 +145,7 @@ public:
     int32_t DeleteStreamVolume(const std::string StringSessionID);
     bool ExistAudioEffectChainArm(const std::string sceneType, const AudioEffectMode effectMode);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
-    void UpdateEarphoneProduct(AudioEarphoneProduct earphoneProduct);
+    void UpdateEarphoneProduct(int32_t earphoneProduct);
     void SetBypassSpatializationForStereo(bool bypass);
     bool IsSpatializationEnabledForChains();
     bool IsDownSamplingForSpatialization(const std::string &sceneType);
@@ -252,7 +252,7 @@ private:
     bool absVolumeState_ = true;
     int32_t currDspStreamUsage_ = -2;
     AudioEffectScene currDspSceneType_ = SCENE_INITIAL;
-    AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
+    int32_t earphoneProduct_ = 0;
     bool bypassSpatializationForStereo_ = false;
     bool isNeedInitEffectBuffer_ = true;
 

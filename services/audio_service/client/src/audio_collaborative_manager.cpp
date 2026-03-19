@@ -47,6 +47,12 @@ bool AudioCollaborativeManager::IsCollaborativePlaybackSupported()
     return AudioPolicyManager::GetInstance().IsCollaborativePlaybackSupported();
 }
 
+bool AudioCollaborativeManager::IsCollaborativePlaybackSupportedForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    return AudioPolicyManager::GetInstance().IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice);
+}
+
 bool AudioCollaborativeManager::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {

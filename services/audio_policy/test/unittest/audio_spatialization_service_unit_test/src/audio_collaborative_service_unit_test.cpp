@@ -201,5 +201,64 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_006, TestS
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
 }
+
+/**
+* @tc.name  : Test Su.
+* @tc.number: AudioCollaborativeService_007
+* @tc.desc  : Test isCollaborativePlaybackSupportedForDevice.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_007, TestSize.Level0)
+{
+    std::vector<std::string> applyVec;
+    EffectChain effectChain1(BLUETOOTH_EFFECT_CHAIN_NAME, applyVec, AUDIO_COLLABORATIVE_SERVICE_LABEL);
+    EffectChain effectChain2(BLUETOOTH_EFFECT_CHAIN_NAME, applyVec, TEST_LABEL);
+    EffectChain effectChain3(TEST_NAME, applyVec, TEST_LABEL);
+    std::vector<EffectChain> effectChains = { effectChain1, effectChain2, effectChain3 };
+    audioCollaborativeServicePtr_->Init(effectChains);
+    EXPECT_TRUE(audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_);
+
+    const std::shared_ptr<AudioDeviceDescriptor> AudioDevice1 = std::make_shared<AudioDeviceDescriptor>();
+    AudioDevice1->macAddress_ = testAddr1;
+    bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupportedForDevice(AudioDevice1);
+    EXPECT_EQ(isSupported, false);
+}
+
+/**
+* @tc.name  : Test Su.
+* @tc.number: AudioCollaborativeService_008
+* @tc.desc  : Test isCollaborativePlaybackSupportedForDevice.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_008, TestSize.Level0)
+{
+    audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = false;
+    bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupportedForDevice(nullptr);
+    EXPECT_EQ(isSupported, false);
+}
+
+/**
+* @tc.name  : Test Su.
+* @tc.number: AudioCollaborativeService_009
+* @tc.desc  : Test isCollaborativePlaybackSupportedForDevice.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_009, TestSize.Level0)
+{
+    audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
+    bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupportedForDevice(nullptr);
+    EXPECT_EQ(isSupported, false);
+}
+
+/**
+* @tc.name  : Test Su.
+* @tc.number: AudioCollaborativeService_010
+* @tc.desc  : Test isCollaborativePlaybackSupportedForDevice.
+*/
+HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_010, TestSize.Level0)
+{
+    audioCollaborativeServicePtr_->isCollaborativePlaybackSupported_ = true;
+    const std::shared_ptr<AudioDeviceDescriptor> AudioDevice = std::make_shared<AudioDeviceDescriptor>();
+    AudioDevice->macAddress_ = testAddr1;
+    bool isSupported = audioCollaborativeService_.IsCollaborativePlaybackSupportedForDevice(AudioDevice);
+    EXPECT_EQ(isSupported, false);
+}
 } // AudioStandard
 } // OHOS

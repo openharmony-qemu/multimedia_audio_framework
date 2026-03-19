@@ -94,6 +94,11 @@ void HpaeAudioServiceCallbackUnitTest::OnGetAudioEnhancePropertyCb(int32_t resul
 void HpaeAudioServiceCallbackUnitTest::HandleSourceAudioStreamRemoved(uint32_t sessionId)
 {}
 
+void HpaeAudioServiceCallbackUnitTest::OnGetCollaborativeUpdateCb(int32_t result)
+{
+    getCollaborativeUpdateResult_ = result;
+}
+
 int32_t HpaeAudioServiceCallbackUnitTest::GetPortId() const noexcept
 {
     return portId_;
@@ -162,6 +167,11 @@ std::vector<SourceOutput> HpaeAudioServiceCallbackUnitTest::GetSourceOutputs() c
 std::vector<SinkInfo> HpaeAudioServiceCallbackUnitTest::GetSinks() const noexcept
 {
     return sinks_;
+}
+
+int32_t HpaeAudioServiceCallbackUnitTest::GetGetCollaborativeUpdateResult() const noexcept
+{
+    return getCollaborativeUpdateResult_;
 }
  
 }  // namespace AudioStandard

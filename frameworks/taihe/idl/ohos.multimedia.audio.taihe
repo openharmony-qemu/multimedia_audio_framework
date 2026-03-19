@@ -1423,6 +1423,8 @@ function CreateAudioLoopbackSync(mode: AudioLoopbackMode): AudioLpback;
 interface AudioCollaborativeManager {
   IsCollaborativePlaybackSupported(): bool;
 
+  IsCollaborativePlaybackSupportedForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
+
   IsCollaborativePlaybackEnabledForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
 
   @gen_promise("setCollaborativePlaybackEnabledForDevice")

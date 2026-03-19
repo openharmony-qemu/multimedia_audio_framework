@@ -686,6 +686,9 @@ public:
 
     int32_t IsCollaborativePlaybackSupported(bool &ret) override;
 
+    int32_t IsCollaborativePlaybackSupportedForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &isSupported) override;
+
     int32_t RestoreDistributedDeviceInfo() override;
 
     bool IsPublishCalled() const;

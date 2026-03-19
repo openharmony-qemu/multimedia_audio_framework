@@ -3793,10 +3793,10 @@ void AudioAdapterManager::SetOffloadVolumeForStreamVolumeChange(int32_t sessionI
     SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
 }
 
-void AudioAdapterManager::UpdateCollaborativeProductId(const std::string &productId)
+int32_t AudioAdapterManager::UpdateCollaborativeProductId(const std::string &productId)
 {
-    CHECK_AND_RETURN_LOG(audioServiceAdapter_, "audioServiceAdapter is null");
-    audioServiceAdapter_->UpdateCollaborativeProductId(productId);
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_, ERROR, "audioServiceAdapter is null");
+    return audioServiceAdapter_->UpdateCollaborativeProductId(productId);
 }
 
 void AudioAdapterManager::LoadCollaborationConfig()

@@ -22,7 +22,6 @@
 #include "audio_errors.h"
 #include "audio_effect_log.h"
 #include "audio_utils.h"
-#include "audio_xml_parser.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,11 +33,6 @@ static std::map<std::string, AudioTwsMode> twsModeMap = {
     {"default", TWS_MODE_DEFAULT},
     {"listen", TWS_MODE_LISTEN},
     {"hitws", TWS_MODE_HITWS},
-};
-
-static std::map<std::string, AudioEarphoneProduct> productIdToEarphoneMap = {
-    {"00014B", EARPHONE_PRODUCT_DOVE},
-    {"000167", EARPHONE_PRODUCT_ROBIN},
 };
 
 enum XML_ERROR {
@@ -62,22 +56,29 @@ AudioCollaborationManager *AudioCollaborationManager::GetInstance()
     return &audioCollaborationManager;
 }
 
-void AudioCollaborationManager::UpdateCollaborativeProductId(const std::string &productId)
+int32_t AudioCollaborationManager::UpdateCollaborativeProductId(const std::string &productId)
 {
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     auto pos = productId.find('_');
     std::string temProductId = (pos == std::string::npos) ? productId : productId.substr(0, pos);
-    CHECK_AND_RETURN_LOG(productId_ != temProductId, "same productId, return.");
-    productId_ = temProductId;
-    if (productIdToEarphoneMap.find(productId_) != productIdToEarphoneMap.end()) {
-        earphoneProduct_ = productIdToEarphoneMap[productId_];
-    } else {
-        AUDIO_INFO_LOG("productId no found in productIdToEarphoneMap");
+    if (productId_ == temProductId) {
+        return SUCCESS;
     }
+
+    int32_t earphoneProduct = 0;
+    if (collaborativeEarphoneProductConfig_.find(temProductId) != collaborativeEarphoneProductConfig_.end()) {
+        earphoneProduct = collaborativeEarphoneProductConfig_[temProductId];
+        productId_ = temProductId;
+    } else {
+        AUDIO_INFO_LOG("productId %{public}s no found in collaborativeEarphoneProductConfig_", temProductId.c_str());
+        return ERROR;
+    }
+
     updateLatencyInner();
-    AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct_);
+    AudioEffectChainManager::GetInstance()->UpdateEarphoneProduct(earphoneProduct);
     AUDIO_INFO_LOG("productId: %{public}s, earphoneProduct: %{public}d, latencyMs: %{public}d",
-        productId_.c_str(), earphoneProduct_, latencyMs_);
+        productId_.c_str(), earphoneProduct, latencyMs_);
+    return SUCCESS;
 }
 
 void AudioCollaborationManager::LoadCollaborationConfig()
@@ -85,7 +86,9 @@ void AudioCollaborationManager::LoadCollaborationConfig()
     std::lock_guard<std::mutex> lock(collaborationMutex_);
     AUDIO_INFO_LOG("begin loadCollaborationConfig");
     collaborativeLatencyConfig_.clear();
-    LoadCollaborationConfigInner();
+    std::shared_ptr<AudioXmlNode> node = AudioXmlNode::Create();
+    node->Config(AUDIO_COLLABORATION_CONFIG_FILE, nullptr, XML_PARSE_ERROR | XML_PARSE_NOWARNING);
+    LoadCollaborationConfigInner(node);
 
     for (auto iter1 : collaborativeLatencyConfig_) {
         for (auto iter2 : iter1.second) {
@@ -93,62 +96,99 @@ void AudioCollaborationManager::LoadCollaborationConfig()
                 iter1.first.c_str(), iter2.first, iter2.second);
         }
     }
+
+    for (auto iter1 : collaborativeEarphoneNameConfig_) {
+        AUDIO_INFO_LOG("productId: %{public}s, name: %{public}s",
+            iter1.first.c_str(), iter1.second.c_str());
+    }
+
+    for (auto iter1 : collaborativeEarphoneProductConfig_) {
+        AUDIO_INFO_LOG("productId: %{public}s, type: %{public}d",
+            iter1.first.c_str(), iter1.second);
+    }
 }
 
-void AudioCollaborationManager::LoadCollaborationConfigInner()
+void AudioCollaborationManager::LoadCollaborationConfigInner(const std::shared_ptr<AudioXmlNode> node)
 {
-    std::shared_ptr<AudioXmlNode> firstNode = AudioXmlNode::Create();
-    firstNode->Config(AUDIO_COLLABORATION_CONFIG_FILE, nullptr, XML_PARSE_ERROR | XML_PARSE_NOWARNING);
-    if (!firstNode->IsNodeValid()) {
+    if (node == nullptr) {
+        return;
+    }
+    if (!node->IsNodeValid()) {
         AUDIO_ERR_LOG("could not parse file %{public}s", AUDIO_COLLABORATION_CONFIG_FILE);
         return;
     }
 
-    firstNode->MoveToChildren();
-    while (firstNode->IsNodeValid()) {
-        if (!firstNode->IsElementNode()) {
-            firstNode->MoveToNext();
-            continue;
-        }
-        
-        if (!firstNode->CompareName("product")) {
-            firstNode->MoveToNext();
-            continue;
-        }
+    node->MoveToChildren();
+    while (node->IsNodeValid()) {
         std::string productId;
-        if (firstNode->GetProp("name", productId) != SUCCESS) {
-            AUDIO_ERR_LOG("product node without name");
-            firstNode->MoveToNext();
+        std::string earphoneType;
+        std::string earphoneName;
+        if (!node->IsElementNode() || !node->CompareName("product") ||
+            node->GetProp("id", productId) != SUCCESS || node->GetProp("product", earphoneType) != SUCCESS ||
+            node->GetProp("name", earphoneName) != SUCCESS) {
+            AUDIO_ERR_LOG("product node without id or product or name");
+            node->MoveToNext();
             continue;
         }
-        auto &modeMap = collaborativeLatencyConfig_[productId];
-        std::shared_ptr<AudioXmlNode> secondNode = firstNode->GetCopyNode();
-        secondNode->MoveToChildren();
 
-        while (secondNode->IsNodeValid()) {
-            if (!secondNode->IsElementNode()) {
-                secondNode->MoveToNext();
-                continue;
-            }
-
-            if (!secondNode->CompareName("tws_mode")) {
-                secondNode->MoveToNext();
-                continue;
-            }
-            std::string twsMode;
-            std::string latency;
-            if ((secondNode->GetProp("name", twsMode) != SUCCESS) ||
-                (secondNode->GetProp("latency_ms", latency) != SUCCESS)) {
-                AUDIO_ERR_LOG("twsMode node without name or latency");
-                secondNode->MoveToNext();
-                continue;
-            }
-
-            modeMap.insert_or_assign(twsModeMap[twsMode], std::stoi(latency));
-            secondNode->MoveToNext();
+        try {
+            collaborativeEarphoneProductConfig_[productId] = std::stoi(earphoneType);
+        } catch (const std::invalid_argument& e) {
+            AUDIO_ERR_LOG("Invalid earphoneType:%{public}s", earphoneType.c_str());
+            node->MoveToNext();
+            continue;
+        } catch (const std::out_of_range& e) {
+            AUDIO_ERR_LOG("Out of range earphoneType:%{public}s", earphoneType.c_str());
+            node->MoveToNext();
+            continue;
         }
 
-        firstNode->MoveToNext();
+        collaborativeEarphoneNameConfig_[productId] = earphoneName;
+
+        std::shared_ptr<AudioXmlNode> secondNode = node->GetCopyNode();
+        secondNode->MoveToChildren();
+        LoadCollaborationLatencyInner(secondNode, productId);
+        node->MoveToNext();
+    }
+}
+
+void AudioCollaborationManager::LoadCollaborationLatencyInner(const std::shared_ptr<AudioXmlNode> secondNode,
+                                                              const std::string productId)
+{
+    if (secondNode == nullptr) {
+        return;
+    }
+    auto &modeMap = collaborativeLatencyConfig_[productId];
+    while (secondNode->IsNodeValid()) {
+        if (!secondNode->IsElementNode() || !secondNode->CompareName("tws_mode")) {
+            secondNode->MoveToNext();
+            continue;
+        }
+
+        std::string twsMode;
+        std::string latency;
+        if ((secondNode->GetProp("name", twsMode) != SUCCESS) ||
+            (secondNode->GetProp("latency_ms", latency) != SUCCESS)) {
+            AUDIO_ERR_LOG("twsMode node without name or latency");
+            secondNode->MoveToNext();
+            continue;
+        }
+
+        auto it = twsModeMap.find(twsMode);
+        if (it == twsModeMap.end()) {
+            AUDIO_ERR_LOG("Invalid twsMode:%{public}s", twsMode.c_str());
+            secondNode->MoveToNext();
+            continue;
+        }
+
+        try {
+            modeMap.insert_or_assign(it->second, std::stoi(latency));
+        } catch (const std::invalid_argument& e) {
+            AUDIO_ERR_LOG("Invalid lantency:%{public}s", latency.c_str());
+        } catch (const std::out_of_range& e) {
+            AUDIO_ERR_LOG("Out of range lantency:%{public}s", latency.c_str());
+        }
+        secondNode->MoveToNext();
     }
 }
 

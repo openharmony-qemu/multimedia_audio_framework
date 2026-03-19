@@ -81,7 +81,7 @@ public:
     void SetCurrChannelLayoutNoCheck(const uint64_t channelLayout);
     void updateDumpName();
     void SetAbsVolumeStateToEffectChain(const bool absVolumeState);
-    void SetEarphoneProduct(AudioEarphoneProduct earphoneProduct);
+    void SetEarphoneProduct(int32_t earphoneProduct);
     void SetOutdoorMode(const std::string &outdoorMode);
     void SetSuperLoudnessMode(const std::string &superLoudnessMode);
     bool IsEffectChainFading();
@@ -129,7 +129,7 @@ private:
     uint64_t currchannelLayoutNoCheck_ = CH_LAYOUT_STEREO;
     std::vector<float> effectBuffer_;
     bool absVolumeState_ = true;
-    AudioEarphoneProduct earphoneProduct_ = EARPHONE_PRODUCT_NONE;
+    int32_t earphoneProduct_ = 0;
     int32_t outdoorMode_ = 0;
     int32_t superLoudnessMode_ = 0;
     int32_t frontendAppType_ = 0;
