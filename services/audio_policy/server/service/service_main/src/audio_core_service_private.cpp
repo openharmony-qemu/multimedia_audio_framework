@@ -1810,6 +1810,7 @@ void AudioCoreService::TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStr
         streamDesc->sessionId_, streamDesc->callerPid_, streamDesc->routeFlag_);
 
     if (audioPolicyServerHandler_ != nullptr) {
+        pipeManager_->AddSingleSwitchStream(streamDesc->sessionId_, streamDesc);
         audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(streamDesc->appInfo_.appPid,
             streamDesc->sessionId_, streamDesc->routeFlag_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     } else {
