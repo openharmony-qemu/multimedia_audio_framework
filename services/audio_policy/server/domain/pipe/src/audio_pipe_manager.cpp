@@ -342,7 +342,7 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllOutp
     for (auto &it : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
         CHECK_AND_CONTINUE(it->pipeRole_ == PIPE_ROLE_OUTPUT);
-        for (auto &desc : it->streamDescriptors_) {
+        for (auto desc : it->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
             std::shared_ptr<AudioStreamDescriptor> tmp = std::make_shared<AudioStreamDescriptor>();
             tmp->newDeviceDescs_ = desc->newDeviceDescs_;
