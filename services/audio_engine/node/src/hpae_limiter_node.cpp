@@ -68,11 +68,9 @@ int32_t HpaeLimiterNode::InitAudioLimiter()
     int32_t ret = limiter_->SetConfig(GetFrameLen() * GetChannelCount() * sizeof(float), sizeof(float),
         GetSampleRate(), GetChannelCount());
     if (ret == SUCCESS) {
-        isLimiterInited_ = true;
         AUDIO_INFO_LOG("NodeId: %{public}d, limiter init success!", GetNodeId());
     } else {
         limiter_ = nullptr;
-        isLimiterInited_ = false;
         AUDIO_ERR_LOG("NodeId: %{public}d, limiter init failed!", GetNodeId());
     }
     return ret;
@@ -88,33 +86,18 @@ HpaePcmBuffer *HpaeLimiterNode::SignalProcess(const std::vector<HpaePcmBuffer *>
 {
     Trace trace("HpaeLimiterNode::SignalProcess");
     limiterOutput_.Reset();
-
-    if (limiter_ == nullptr || !isLimiterInited_) {
-        // Limiter not initialized, pass through input
-        for (auto input : inputs) {
-            limiterOutput_ += *input;
-            limiterOutput_.SetBufferState(limiterOutput_.GetBufferState() & input->GetBufferState());
-        }
-        return &limiterOutput_;
+    CHECK_AND_RETURN_RET_LOG((!inputs.empty()) && inputs[0], &limiterOutput_,
+        "NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
+    if (limiter_ == nullptr) {
+        Trace trace("HpaeLimiterNode::SignalProcess::NoneLimiter");
+        return inputs[0];
     }
-
+    uint32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
     // Process with limiter
-    uint32_t bufferState = PCM_BUFFER_STATE_INVALID | PCM_BUFFER_STATE_SILENCE;
-    for (auto input : inputs) {
-        // Limiter requires float format and processes in-place
-        // Get the raw data size for processing
-        uint32_t totalSamples = GetFrameLen() * GetChannelCount();
-
-        // Apply limiter processing
-        limiter_->Process(totalSamples, input->GetPcmDataBuffer(), limiterOutput_.GetPcmDataBuffer());
-
-        bufferState &= input->GetBufferState();
-    }
-
-    limiterOutput_.SetBufferState(bufferState);
+    limiter_->Process(bufferSize, inputs[0]->GetPcmDataBuffer(), limiterOutput_.GetPcmDataBuffer());
+    limiterOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &limiterOutput_;
 }
-
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -45,7 +45,6 @@ private:
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer limiterOutput_;
-    bool isLimiterInited_ = false;
 };
 
 }  // namespace HPAE
