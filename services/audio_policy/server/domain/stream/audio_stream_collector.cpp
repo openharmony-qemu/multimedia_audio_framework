@@ -603,8 +603,6 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(AudioDeviceDescriptor &ou
         if (!(*it)->outputDeviceInfo.IsSameDeviceInfo(outputDeviceInfo)) {
             AUDIO_DEBUG_LOG("UpdateRendererDeviceInfo: old device: %{public}d new device: %{public}d",
                 (*it)->outputDeviceInfo.deviceType_, outputDeviceInfo.deviceType_);
-            CHECK_AND_CONTINUE_LOG(!AudioZoneService::GetInstance().CheckDeviceInAudioZone(
-                (*it)->outputDeviceInfo), "skip callback when device in zone");
             (*it)->outputDeviceInfo = outputDeviceInfo;
             deviceInfoUpdated = true;
         }
