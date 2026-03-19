@@ -38,7 +38,7 @@ AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::ConvertSimpleToDevice(
-    const std::shared_ptr<AudioDeviceSimpleDescriptor>& simpleDesc)
+    const std::shared_ptr<AudioDeviceSimpleDescriptor> &simpleDesc)
 {
     if (simpleDesc == nullptr) {
         return nullptr;
@@ -47,7 +47,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::ConvertSimpleT
 }
 
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterSelectStrategy::ConvertDeviceToSimple(
-    const std::shared_ptr<AudioDeviceDescriptor>& deviceDesc)
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
     if (deviceDesc == nullptr) {
         return nullptr;
@@ -57,10 +57,10 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterSelectStrategy::ConvertD
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::ConvertSimpleToDevice(
-    const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDescs)
+    const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> &simpleDescs)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
-    for (const auto& simpleDesc : simpleDescs) {
+    for (const auto &simpleDesc : simpleDescs) {
         auto device = ConvertSimpleToDevice(simpleDesc);
         if (device == nullptr) {
             devices.clear();
@@ -72,10 +72,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::C
 }
 
 std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterSelectStrategy::ConvertDeviceToSimple(
-    const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDescs)
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> simpleDevices;
-    for (const auto& device : deviceDescs) {
+    for (const auto &device : deviceDescs) {
         auto simpleDesc = ConvertDeviceToSimple(device);
         if (simpleDesc == nullptr) {
             simpleDevices.clear();
@@ -87,7 +87,7 @@ std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterSelectStrat
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::JudgeFinalSelectDevice(
-    const std::shared_ptr<AudioDeviceDescriptor>& desc, SourceType sourceType,
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
     if (desc == nullptr) {
@@ -100,7 +100,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::JudgeFinalSele
         return isConnected ? desc : std::make_shared<AudioDeviceDescriptor>();
     }
 
-    bool isHighQuality = (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_CAMCORDER || 
+    bool isHighQuality = (sourceType == SOURCE_TYPE_MIC || sourceType == SOURCE_TYPE_CAMCORDER ||
                         sourceType == SOURCE_TYPE_LIVE || category == PREFERRED_HIGH_QUALITY);
 
     if (isHighQuality) {
@@ -134,16 +134,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetPreferDevic
         return nullptr;
     }
 
-    std::sort(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(), 
-        [](const auto& desc1, const auto& desc2) {
+    std::sort(audioDeviceDescriptors.begin(), audioDeviceDescriptors.end(),
+        [](const auto &desc1, const auto &desc2) {
             return desc1->connectTimeStamp_ < desc2->connectTimeStamp_;
         });
-    
+
     return audioDeviceDescriptors.back();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetFinalOutputDeviceForMedia(
-    const std::shared_ptr<AudioDeviceDescriptor>& desc)
+    const std::shared_ptr<AudioDeviceDescriptor> &desc)
 {
     if (desc == nullptr) {
         return nullptr;
@@ -193,14 +193,14 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetRecognition
 }
 
 void AudioRouterSelectStrategy::SetRecognitionInputDevice(
-    const std::shared_ptr<AudioDeviceDescriptor>& device)
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     AudioRouterInfra::GetInstance().SetRecognitionCaptureDevice(simpleDesc);
 }
 
 void AudioRouterSelectStrategy::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
-    const std::shared_ptr<AudioDeviceDescriptor>& device)
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     AudioRouterInfra::GetInstance().UpdateStreamDefaultDevice(uid, streamId, simpleDesc);

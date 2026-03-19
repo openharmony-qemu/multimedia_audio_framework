@@ -32,59 +32,58 @@ public:
 
     static AudioRouterSelectStrategy& GetInstance();
 
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId, 
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId,
         SourceType sourceType) = 0;
-    virtual void SetMediaInputDevice(int32_t uid, uint32_t streamId, 
-        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+    virtual void SetMediaInputDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId, 
-         StreamUsage streamUsage) = 0;
-    virtual void SetMediaOutputDevice(int32_t uid, uint32_t streamId, 
-        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId,
+        StreamUsage streamUsage) = 0;
+    virtual void SetMediaOutputDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallInputDevice(int32_t uid, uint32_t streamId) = 0;
-    virtual void SetCallInputDevice(int32_t uid, uint32_t streamId, 
-        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+    virtual void SetCallInputDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallOutputDevice(int32_t uid, uint32_t streamId) = 0;
-    virtual void SetCallOutputDevice(int32_t uid, uint32_t streamId, 
-        const std::shared_ptr<AudioDeviceDescriptor>& device) = 0;
+    virtual void SetCallOutputDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetRecognitionInputDevice();
-    virtual void SetRecognitionInputDevice(const std::shared_ptr<AudioDeviceDescriptor>& device);
+    virtual void SetRecognitionInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
 
     void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
-        const std::shared_ptr<AudioDeviceDescriptor>& device);
+        const std::shared_ptr<AudioDeviceDescriptor> &device);
     std::shared_ptr<AudioDeviceDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
 
     void UpdateCurrentOutputDevice(int32_t uid,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentOutputDevice(int32_t uid);
     void UpdateCurrentInputDevice(int32_t uid,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& devices);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentInputDevice(int32_t uid);
 
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(
-        const std::shared_ptr<AudioDeviceSimpleDescriptor>& simpleDesc);
+        const std::shared_ptr<AudioDeviceSimpleDescriptor> &simpleDesc);
     std::shared_ptr<AudioDeviceSimpleDescriptor> ConvertDeviceToSimple(
-        const std::shared_ptr<AudioDeviceDescriptor>& deviceDesc);
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ConvertSimpleToDevice(
-        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& simpleDescs);
+        const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> &simpleDescs);
     std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> ConvertDeviceToSimple(
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& deviceDescs);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
     std::shared_ptr<AudioDeviceDescriptor> JudgeFinalSelectDevice(
-        const std::shared_ptr<AudioDeviceDescriptor>& desc, SourceType sourceType,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc, SourceType sourceType,
         BluetoothAndNearlinkPreferredRecordCategory category);
     std::shared_ptr<AudioDeviceDescriptor> GetPreferDevice(
         BluetoothAndNearlinkPreferredRecordCategory category);
 
     std::shared_ptr<AudioDeviceDescriptor> GetFinalOutputDeviceForMedia(
-        const std::shared_ptr<AudioDeviceDescriptor>& desc);
+        const std::shared_ptr<AudioDeviceDescriptor> &desc);
     std::shared_ptr<AudioDeviceDescriptor> GetFinalOutputDeviceForCall(
-        const std::shared_ptr<AudioDeviceDescriptor>& desc);
-
+        const std::shared_ptr<AudioDeviceDescriptor> &desc);
 };
 
 } 

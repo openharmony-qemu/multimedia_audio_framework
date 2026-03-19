@@ -26,23 +26,23 @@ public:
     AudioRouterIndependentStrategy() = default;
     ~AudioRouterIndependentStrategy() override = default;
 
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId, 
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaInputDevice(int32_t uid, uint32_t streamId,
         SourceType sourceType) override;
     void SetMediaInputDevice(int32_t uid, uint32_t streamId,
-        const std::shared_ptr<AudioDeviceDescriptor>& device) override;
+        const std::shared_ptr<AudioDeviceDescriptor> &device) override;
 
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId, 
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId,
         StreamUsage streamUsage) override;
     void SetMediaOutputDevice(int32_t uid, uint32_t streamId,
-        const std::shared_ptr<AudioDeviceDescriptor>& device) override;
+        const std::shared_ptr<AudioDeviceDescriptor> &device) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetCallInputDevice(int32_t uid, uint32_t streamId) override;
-    void SetCallInputDevice(int32_t uid, uint32_t streamId, 
-        const std::shared_ptr<AudioDeviceDescriptor>& device) override;
+    void SetCallInputDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device) override;
 
     std::shared_ptr<AudioDeviceDescriptor> GetCallOutputDevice(int32_t uid, uint32_t streamId) override;
-    void SetCallOutputDevice(int32_t uid, uint32_t streamId, 
-        const std::shared_ptr<AudioDeviceDescriptor>& device) override;
+    void SetCallOutputDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device) override;
 
 private:
     enum class SelectDeviceSource {
@@ -57,7 +57,7 @@ private:
         SelectDeviceSource source_;
     };
 
-    SelectDeviceResult GetSelectDeviceByPriority(int32_t uid, uint32_t streamId, 
+    SelectDeviceResult GetSelectDeviceByPriority(int32_t uid, uint32_t streamId,
         SelectDeviceType type);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetSelectDevice(int32_t uid, uint32_t streamId,
         SelectDeviceType type);

@@ -17,8 +17,10 @@ class AudioRouterIndependentStrategyUnitTest : public AudioRouterContextTestBase
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaInput_001, TestSize.Level1) {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
-    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE,
+        "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE,
+        "00:00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 

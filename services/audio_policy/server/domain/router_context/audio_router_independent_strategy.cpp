@@ -24,16 +24,16 @@
 namespace OHOS {
 namespace AudioStandard {
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaInputDevice(int32_t uid, 
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaInputDevice(int32_t uid,
     uint32_t streamId, SourceType sourceType)
 {
     AudioRouterInfra::GetInstance().Lock();
 
-    auto& routerInfra = AudioRouterInfra::GetInstance();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
 
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
     SourceType effectiveSourceType = sourceType;
-    BluetoothAndNearlinkPreferredRecordCategory category = 
+    BluetoothAndNearlinkPreferredRecordCategory category =
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 
     if (routerInfra.IsSystemUid(uid)) {
@@ -47,10 +47,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
         if (selectResult.source_ == SelectDeviceSource::STREAM) {
             effectiveSourceType = routerInfra.GetStreamSourceType(uid, streamId);
         } else if (selectResult.source_ == SelectDeviceSource::APP) {
-            effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
+             effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
         }
 
-        if (simpleDesc == nullptr) {  
+        if (simpleDesc == nullptr) {
             simpleDesc = ConvertDeviceToSimple(GetPreferDevice(category));
             effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
         }
@@ -69,7 +69,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
 }
 
 void AudioRouterIndependentStrategy::SetMediaInputDevice(int32_t uid, uint32_t streamId,
-    const std::shared_ptr<AudioDeviceDescriptor>& device)
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     if (uid != SYSTEM_UID && streamId != 0) {
@@ -93,7 +93,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaO
 }
 
 void AudioRouterIndependentStrategy::SetMediaOutputDevice(int32_t uid, uint32_t streamId,
-    const std::shared_ptr<AudioDeviceDescriptor>& device)
+    const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     if (uid != SYSTEM_UID && streamId != 0) {
@@ -115,10 +115,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallIn
     return result;
 }
 
-void AudioRouterIndependentStrategy::SetCallInputDevice(int32_t uid, 
-    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor>& device)
+void AudioRouterIndependentStrategy::SetCallInputDevice(int32_t uid,
+    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    return SetMediaInputDevice(uid, streamId, device);
+    SetMediaInputDevice(uid, streamId, device);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallOutputDevice(int32_t uid, uint32_t streamId)
@@ -132,10 +132,10 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallOu
     return result;
 }
 
-void AudioRouterIndependentStrategy::SetCallOutputDevice(int32_t uid, 
-    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor>& device)
+void AudioRouterIndependentStrategy::SetCallOutputDevice(int32_t uid,
+    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
-    return SetMediaOutputDevice(uid, streamId, device);
+    SetMediaOutputDevice(uid, streamId, device);
 }
 
 AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrategy::GetSelectDeviceByPriority(
