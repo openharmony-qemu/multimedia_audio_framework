@@ -115,7 +115,7 @@ void AudioRouterInfra::ClearAllSelectSelectDevice(SelectDeviceType type)
 void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
--
+
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
             systemSelectDevice_.mediaInput_.device_ = nullptr;
