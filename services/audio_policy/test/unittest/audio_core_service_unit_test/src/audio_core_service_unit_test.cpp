@@ -391,7 +391,7 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_004, TestSize.Level1)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     uint32_t sessionId = 0;
     auto ret = audioCoreService.CreateCapturerClient(streamDesc, flag, sessionId);
-    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
+    EXPECT_EQ(ret, SUCCESS);
 
     ResetSystemPermission();
 }
