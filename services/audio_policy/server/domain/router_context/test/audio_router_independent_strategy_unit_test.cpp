@@ -289,7 +289,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, Preference_001, TestSize.Level1
 
     auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
     auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -316,7 +316,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, Preference_002, TestSize.Level1
 
     auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
     auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
-    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:03");
+    auto a2dpIn = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP_IN, INPUT_DEVICE, "00:00:00:00:00:02");
 
     AudioRouterIndependentStrategy strategy;
 
@@ -330,6 +330,7 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, Preference_002, TestSize.Level1
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_CAMCORDER, StreamState::STARTED);
+    routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_HIGH_QUALITY);
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, SOURCE_TYPE_CAMCORDER);
     ASSERT_NE(app10001Result, nullptr);
