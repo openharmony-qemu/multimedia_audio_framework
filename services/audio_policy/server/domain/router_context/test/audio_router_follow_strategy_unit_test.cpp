@@ -713,7 +713,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_011,
-    TestSize.Level1) 
+    TestSize.Level1)
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
@@ -733,5 +733,5 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(app10001Result, nullptr);
 }
 
-} 
-} 
+}
+}

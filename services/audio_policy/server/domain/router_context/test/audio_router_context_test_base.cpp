@@ -71,10 +71,10 @@ void AudioRouterContextTestBase::SimulateBluetoothHeadsetConnect(const std::stri
 }
 
 void AudioRouterContextTestBase::SimulateWiredHeadsetConnect(const std::string &macAddress)
-{  
+{
     AddDeviceDescriptor(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE, macAddress);
     CreateDeviceDescriptor(DEVICE_TYPE_WIRED_HEADSET, INPUT_DEVICE, macAddress);
 }
 
-} 
-} 
+}
+}

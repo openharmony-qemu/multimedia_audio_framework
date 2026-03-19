@@ -32,7 +32,6 @@ void AudioRouterInfra::RefreshSelectDevice(SelectDeviceType type, int32_t uid,
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
     bool isSystem = IsSystemUid(uid);
-
     if (isSystem) {
         RefreshSystemSelectDevice(type, device);
     } else {
@@ -68,7 +67,7 @@ void AudioRouterInfra::RefreshSystemSelectDevice(SelectDeviceType type,
     }
 }
 
-void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid, 
+void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid,
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     int64_t currentTime = GetCurrentTimeMs();
@@ -245,7 +244,7 @@ AudioSelectDeviceInfo AudioRouterInfra::GetHighestPrioritySelectDevice(SelectDev
     }
 }
 
-void AudioRouterInfra::UpdatePreferredInputCategory(int32_t uid, 
+void AudioRouterInfra::UpdatePreferredInputCategory(int32_t uid,
     BluetoothAndNearlinkPreferredRecordCategory category)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -336,7 +335,7 @@ std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetC
     return appContext->currentInputDevices_;
 }
 
-void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId, 
+void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId,
     SourceType sourceType, StreamState state)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -357,7 +356,7 @@ void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId,
     AdjustInputPriority(uid, hasRunningStream, appContext->isForeground_, false);
 }
 
-void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId, 
+void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
     StreamUsage streamUsage, StreamState state)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -535,7 +534,7 @@ void AudioRouterInfra::OnAppDied(int32_t uid)
     outputPriorityList_.remove(uid);
 }
 
-void AudioRouterInfra::AdjustInputPriority(int32_t uid, bool hasRunningStream, 
+void AudioRouterInfra::AdjustInputPriority(int32_t uid, bool hasRunningStream,
     bool isForeground, bool isSelfSelecting)
 {
     if (isSelfSelecting) {
@@ -554,7 +553,7 @@ void AudioRouterInfra::AdjustInputPriority(int32_t uid, bool hasRunningStream,
     }
 }
 
-void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream, 
+void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream,
     bool isForeground, bool isSelfSelecting)
 {
     if (isSelfSelecting) {
@@ -674,12 +673,12 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultD
 
 int64_t AudioRouterInfra::GetCurrentTimeMs() const
 {
-    constexpr int32_t MS_PER_S = 1000;
-    constexpr int32_t NS_PER_MS = 1000000;
+    constexpr int32_t msPerS = 1000;
+    constexpr int32_t nsPerMs = 1000000;
 
     timespec tm {};
     clock_gettime(CLOCK_MONOTONIC, &tm);
-    return tm.tv_sec * MS_PER_S + (tm.tv_nsec / NS_PER_MS);
+    return tm.tv_sec * msPerS + (tm.tv_nsec / nsPerMs);
 }
 
 bool AudioRouterInfra::IsSystemUid(int32_t uid) const
@@ -687,5 +686,5 @@ bool AudioRouterInfra::IsSystemUid(int32_t uid) const
     return uid == SYSTEM_PID;
 }
 
-} 
-} 
+}
+}

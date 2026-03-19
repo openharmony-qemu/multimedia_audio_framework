@@ -44,13 +44,13 @@ struct AudioAppSelectDevice {
     AudioSelectDeviceInfo mediaOutput_;
     AudioSelectDeviceInfo callInput_;
     AudioSelectDeviceInfo callOutput_;
-    BluetoothAndNearlinkPreferredRecordCategory preferredInputCategory_ = 
+    BluetoothAndNearlinkPreferredRecordCategory preferredInputCategory_ =
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 
     AudioAppSelectDevice() = default;
     ~AudioAppSelectDevice() = default;
 };
 
-} 
-} 
-#endif 
+}
+}
+#endif

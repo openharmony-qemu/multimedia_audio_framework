@@ -34,8 +34,6 @@ enum class StreamState {
 };
 
 struct AudioAppRouterContext {
-    int32_t pid_ = 0;
-    int32_t uid_ = 0;
     bool isForeground_ = true;
 
     std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> currentInputDevices_;
@@ -51,10 +49,10 @@ struct AudioAppRouterContext {
 
     AudioAppRouterContext() = default;
     AudioAppRouterContext(int32_t pid, int32_t uid, bool isForeground)
-        : pid_(pid), uid_(uid), isForeground_(isForeground) {}
+        : isForeground_(isForeground) {}
     ~AudioAppRouterContext() = default;
 };
 
-} 
-} 
-#endif 
+}
+}
+#endif

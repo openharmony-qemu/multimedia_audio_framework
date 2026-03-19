@@ -887,5 +887,5 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(stream1Result->deviceId_, speaker->deviceId_);
 }
 
-} 
+}
 }

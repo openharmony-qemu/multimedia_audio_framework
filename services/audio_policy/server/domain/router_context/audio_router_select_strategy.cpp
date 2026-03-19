@@ -128,7 +128,6 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetPreferDevic
     };
     auto audioDeviceDescriptors =
         AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevicesByTypesAndRole(types, INPUT_DEVICE);
-    
     if (audioDeviceDescriptors.empty()) {
         AUDIO_INFO_LOG("No bluetooth or nearlink devices available");
         return nullptr;
@@ -255,4 +254,4 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::G
 }
 
 }
-} 
+}

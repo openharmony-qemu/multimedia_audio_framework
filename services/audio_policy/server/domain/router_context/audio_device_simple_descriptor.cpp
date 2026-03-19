@@ -38,5 +38,5 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceSimpleDescriptor::GetOnlineDev
     return nullptr;
 }
 
-} 
-} 
+}
+}

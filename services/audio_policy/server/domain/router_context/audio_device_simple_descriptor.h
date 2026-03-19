@@ -64,6 +64,6 @@ public:
     std::shared_ptr<AudioDeviceDescriptor> GetOnlineDeviceDescriptor() const;
 };
 
-} 
-} 
-#endif 
+}
+}
+#endif

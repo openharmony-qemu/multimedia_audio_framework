@@ -86,6 +86,6 @@ protected:
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
 };
 
-} 
-} 
-#endif 
+}
+}
+#endif

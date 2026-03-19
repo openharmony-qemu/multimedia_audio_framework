@@ -55,6 +55,6 @@ private:
         const std::shared_ptr<AudioDeviceDescriptor> &device);
 };
 
-} 
-} 
-#endif 
+}
+}
+#endif

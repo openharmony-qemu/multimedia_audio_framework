@@ -38,7 +38,7 @@ public:
         return instance;
     }
 
-    void RefreshSelectDevice(SelectDeviceType type, int32_t uid, 
+    void RefreshSelectDevice(SelectDeviceType type, int32_t uid,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearAllSelectSelectDevice(SelectDeviceType type);
     void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
@@ -90,9 +90,9 @@ private:
     AudioRouterInfra(const AudioRouterInfra&) = delete;
     AudioRouterInfra& operator=(const AudioRouterInfra&) = delete;
 
-    void RefreshSystemSelectDevice(SelectDeviceType type, 
+    void RefreshSystemSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    void RefreshAppSelectDevice(SelectDeviceType type, int32_t uid, 
+    void RefreshAppSelectDevice(SelectDeviceType type, int32_t uid,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearSystemSelectDevice(SelectDeviceType type);
     void ClearAllAppSelectDevice(SelectDeviceType type);
@@ -110,6 +110,6 @@ private:
     std::list<int32_t> outputPriorityList_;
 };
 
-} 
-} 
-#endif 
+}
+}
+#endif

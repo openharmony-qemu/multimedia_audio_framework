@@ -41,13 +41,13 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
         simpleDesc = systemSelectInfo.device_;
     } else {
         auto selectResult = GetSelectDeviceByPriority(uid, streamId, SelectDeviceType::MEDIA_INPUT);
-        simpleDesc = selectResult.device_;
+        simpleDesc = selectResult.device;
         category = routerInfra.GetPreferredInputCategory(uid);
 
-        if (selectResult.source_ == SelectDeviceSource::STREAM) {
+        if (selectResult.source == SelectDeviceSource::STREAM) {
             effectiveSourceType = routerInfra.GetStreamSourceType(uid, streamId);
-        } else if (selectResult.source_ == SelectDeviceSource::APP) {
-             effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
+        } else if (selectResult.source == SelectDeviceSource::APP) {
+            effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
         }
 
         if (simpleDesc == nullptr) {
@@ -80,7 +80,7 @@ void AudioRouterIndependentStrategy::SetMediaInputDevice(int32_t uid, uint32_t s
     }
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaOutputDevice(int32_t uid, 
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaOutputDevice(int32_t uid,
     uint32_t streamId, StreamUsage streamUsage)
 {
     AudioRouterInfra::GetInstance().Lock();
@@ -104,7 +104,8 @@ void AudioRouterIndependentStrategy::SetMediaOutputDevice(int32_t uid, uint32_t 
     }
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallInputDevice(int32_t uid, uint32_t streamId)
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallInputDevice(int32_t uid,
+    uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
     
@@ -121,7 +122,8 @@ void AudioRouterIndependentStrategy::SetCallInputDevice(int32_t uid,
     SetMediaInputDevice(uid, streamId, device);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallOutputDevice(int32_t uid, uint32_t streamId)
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallOutputDevice(int32_t uid,
+    uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
     
@@ -143,30 +145,30 @@ AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrateg
 {
     auto& routerInfra = AudioRouterInfra::GetInstance();
     SelectDeviceResult result;
-    result.device_ = nullptr;
-    result.source_ = SelectDeviceSource::NONE;
+    result.device = nullptr;
+    result.source = SelectDeviceSource::NONE;
 
     if (streamId != 0) {
         auto streamSelectDevice = routerInfra.GetStreamSelectDevice(uid, streamId);
         if (streamSelectDevice != nullptr) {
-            result.device_ = streamSelectDevice;
-            result.source_ = SelectDeviceSource::STREAM;
+            result.device = streamSelectDevice;
+            result.source = SelectDeviceSource::STREAM;
         }
     }
 
     if (result.device_ == nullptr) {
         auto appSelectInfo = routerInfra.GetAppSelectDevice(type, uid);
         if (appSelectInfo.device_ != nullptr) {
-            result.device_ = appSelectInfo.device_;
-            result.source_ = SelectDeviceSource::APP;
+            result.device = appSelectInfo.device_;
+            result.source = SelectDeviceSource::APP;
         }
     }
 
     if (result.device_ == nullptr) {
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(type);
         if (systemSelectInfo.device_ != nullptr) {
-            result.device_ = systemSelectInfo.device_;
-            result.source_ = SelectDeviceSource::SYSTEM;
+            result.device = systemSelectInfo.device_;
+            result.source = SelectDeviceSource::SYSTEM;
         }
     }
 
@@ -185,10 +187,10 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterIndependentStrategy::Get
         simpleDesc = systemSelectInfo.device_;
     } else {
         auto selectResult = GetSelectDeviceByPriority(uid, streamId, type);
-        simpleDesc = selectResult.device_;
+        simpleDesc = selectResult.device;
     }
     return simpleDesc;
 }
 
-} 
-} 
+}
+}

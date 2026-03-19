@@ -83,7 +83,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     return simpleDesc;
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputDevice(int32_t uid, 
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputDevice(int32_t uid,
     uint32_t streamId, SourceType sourceType)
 {
     AudioRouterInfra::GetInstance().Lock();
@@ -93,7 +93,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     std::shared_ptr<AudioDeviceDescriptor> result = nullptr;
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
     SourceType effectiveSourceType = sourceType;
-    BluetoothAndNearlinkPreferredRecordCategory category = 
+    BluetoothAndNearlinkPreferredRecordCategory category =
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE;
 
     if (!routerInfra.GetHighestPriorityRunningSourceTypes().empty()) {
@@ -122,7 +122,7 @@ void AudioRouterFollowStrategy::SetMediaInputDevice(int32_t uid, uint32_t stream
     }
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaOutputDevice(int32_t uid, 
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaOutputDevice(int32_t uid,
     uint32_t streamId, StreamUsage streamUsage)
 {
     auto systemSelectInfo = AudioRouterInfra::GetInstance().GetSystemSelectDevice(SelectDeviceType::MEDIA_OUTPUT);
@@ -170,7 +170,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputD
             auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::CALL_OUTPUT);
             simpleDesc = systemSelectInfo.device_;
         }
-    } else {  
+    } else {
         simpleDesc = GetCallLatestOutputDevice(uid);
     }
     
@@ -182,9 +182,9 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetCallOutputD
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetCallLatestOutputDevice(int32_t uid)
 {
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
-    auto& routerInfra = AudioRouterInfra::GetInstance();
-    auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::CALL_OUTPUT, uid);
-    
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::CALL_OUTPUT, uid); 
     if (appSelectInfo.device_ != nullptr) {
         simpleDesc = appSelectInfo.device_;
     } else {
@@ -240,5 +240,5 @@ void AudioRouterFollowStrategy::RefreshCallOutputDevice(int32_t uid, uint32_t st
     routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, uid, simpleDesc);
 }
 
-} 
-} 
+}
+}

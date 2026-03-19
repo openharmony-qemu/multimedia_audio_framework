@@ -53,6 +53,6 @@ protected:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> addDevices_;
 };
 
-} 
-} 
-#endif 
+}
+}
+#endif
