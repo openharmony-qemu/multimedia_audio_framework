@@ -67,7 +67,6 @@ private:
     int32_t ProcConnectReqWhenDisconnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t ProcConnectReqWhenConnected(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t ProcConnectReqWhenConnecting(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
-    int32_t ProcConnectReqWhenDiconnecting(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     int32_t ProcDisconnectReqWhenConnected(const BluetoothRemoteDevice &device);
     int32_t ProcDisconnectReqWhenConnecting(const BluetoothRemoteDevice &device);
     bool IsNeedSwitchScoCategory(ScoCategory scoCategory);
