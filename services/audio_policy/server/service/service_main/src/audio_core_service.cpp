@@ -2986,8 +2986,12 @@ int32_t AudioCoreService::ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &
 
 int32_t AudioCoreService::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
-    AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
+    std::string adapterName = GetAdapterNameBySessionId(sessionId);
+    AUDIO_INFO_LOG("prepare reload session: %{public}u at adapter: %{public}s with operation: %{public}d",
+        sessionId, adapterName.c_str(), operation);
     CHECK_AND_RETURN_RET_LOG(!hearingAidReloadFlag_, SUCCESS, "no need to reload session for hearingAid");
+    CHECK_AND_RETURN_RET_LOG(
+        adapterName.empty() || adapterName == ADAPTER_TYPE_PRIMARY, SUCCESS, "Skip reload for non-primary adapter.");
     if (sessionWithInputPipeRouteFlag_.count(sessionId) != 0) {
         return ReloadCapturerSessionForInputPipe(sessionId, operation);
     }
