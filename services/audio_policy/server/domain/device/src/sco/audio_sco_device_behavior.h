@@ -33,6 +33,9 @@ public:
 private:
     int32_t HandleScoOutputDeviceFetched(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
+    int32_t BluetoothScoInputFetch(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
+        ConnectState connectState, bool isVrSupported);
     bool RecoverFetchedDescs(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 };
 } // namespace AudioStandard
