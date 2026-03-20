@@ -334,7 +334,9 @@ void NoneMixEngine::MixStreams()
         cvFading_.notify_all();
     }
     DoRenderFrame(audioBuffer, index, appUid);
-    StandbySleep();
+    if (isVoip_) {
+        StandbySleep();
+    }
 }
 
 int32_t NoneMixEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
