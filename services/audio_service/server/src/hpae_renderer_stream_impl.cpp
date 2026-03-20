@@ -346,6 +346,8 @@ int32_t HpaeRendererStreamImpl::GetSinkLatencyInner(const std::string &deviceCla
 int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency)
 {
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    // latencyMutex_ begin
     CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
 
     std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
@@ -361,8 +363,6 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePos
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail");
 
     // Here, latency and sampling count are calculated, and latency is exposed to the client as 0.
-    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-    // latencyMutex_ begin
     latency = static_cast<uint64_t>(curLatencyUS) * usedSampleRate_ / AUDIO_US_PER_S;
 
     uint64_t frames = framesUS * usedSampleRate_ / AUDIO_US_PER_S;
