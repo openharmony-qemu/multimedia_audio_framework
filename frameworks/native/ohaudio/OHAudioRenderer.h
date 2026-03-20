@@ -20,6 +20,7 @@
 #include "native_audio_session_base.h"
 #include "audio_renderer.h"
 #include "audio_common_log.h"
+#include "OHAudioDeviceDescriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -252,6 +253,7 @@ public:
     void SetInterruptMode(InterruptMode mode);
     int32_t GetKeepRunning(bool &keepRunning);
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) const;
+    int32_t SelectOutputDevice(OH_AudioDeviceDescriptor *desc) const;
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
     FastStatus GetFastStatus();
 

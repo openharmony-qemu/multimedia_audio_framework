@@ -16,7 +16,9 @@
 #ifndef OH_AUDIO_COMMON_H
 #define OH_AUDIO_COMMON_H
 
+#include "native_audio_common.h"
 #include "audio_stream_info.h"
+#include "OHAudioDeviceDescriptor.h"
 #include "multimedia/native_audio_channel_layout.h"
 
 namespace OHOS {
@@ -24,6 +26,8 @@ namespace AudioStandard {
 class OHAudioCommon {
 public:
     static AudioChannel ConvertLayoutToChannel(OH_AudioChannelLayout layout);
+    static OH_AudioCommon_Result ConvertResult(int32_t ret);
+    static std::shared_ptr<AudioDeviceDescriptor> ConvertDevice(OH_AudioDeviceDescriptor *desc);
 private:
     OHAudioCommon() = default;
     ~OHAudioCommon() = default;

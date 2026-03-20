@@ -337,6 +337,7 @@ ohos_shared_library("audio_policy_manager") {
     "client/src/audio_session_client_manager.cpp",
     "client/src/audio_spatialization_manager.cpp",
     "client/src/audio_devices_client_manager.cpp",
+    "client/src/audio_device_enhance_manager.cpp",
     "client/src/audio_system_client_policy_manager.cpp",
     "client/src/audio_interrupt_client_manager.cpp",
     "client/src/audio_volume_client_manager.cpp",

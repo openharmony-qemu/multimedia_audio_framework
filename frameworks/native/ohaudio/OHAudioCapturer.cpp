@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "OHAudioDeviceDescriptor.h"
+#include "OHAudioCommon.h"
 static const int32_t START_RESULT_SUCCESS = 0;
 
 using OHOS::AudioStandard::Timestamp;
@@ -487,6 +488,12 @@ int32_t OHAudioCapturer::Enqueue(const BufferDesc &bufDesc) const
 {
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERROR, "capturer client is nullptr");
     return audioCapturer_->Enqueue(bufDesc);
+}
+
+int32_t OHAudioCapturer::SelectInputDevice(OH_AudioDeviceDescriptor *desc) const
+{
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, ERR_INVALID_PARAM, "capturer client is nullptr");
+    return audioCapturer_->SelectInputDevice(OHAudioCommon::ConvertDevice(desc));
 }
 
 uint32_t OHAudioCapturer::GetOverflowCount() const

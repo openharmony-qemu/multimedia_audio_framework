@@ -113,6 +113,7 @@ public:
     float GetMinStreamVolume() const override;
     float GetMaxStreamVolume() const override;
     int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const override;
+    int32_t SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override;
     uint32_t GetUnderflowCount() const override;
     int32_t SetTarget(RenderTarget target) override;
     RenderTarget GetTarget() const override;
@@ -198,6 +199,7 @@ public:
     std::shared_ptr<IAudioStream> audioStream_;
     bool abortRestore_ = false;
     mutable bool isStillZeroStreamVolume_ = false;
+    mutable std::shared_ptr<AudioDeviceDescriptor> selectedDevice_ = nullptr;
     StaticBufferInfo staticBufferInfo_{};
 
     explicit AudioRendererPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
@@ -210,6 +212,7 @@ public:
     AudioRendererPrivate &operator=(AudioRendererPrivate &&) = delete;
 
 private:
+    int32_t SelectOutputDeviceInner(const std::shared_ptr<AudioDeviceDescriptor> &desc) const;
     int32_t StartImpl(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
     int32_t StopImpl() override;
     int32_t FlushImpl() const override;

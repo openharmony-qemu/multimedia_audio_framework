@@ -49,6 +49,8 @@ public:
 
     int32_t uid = -1;
     AudioCapturerInfo capturerInfo = {SOURCE_TYPE_INVALID, 0};
+    int32_t audioDeviceSelectMode = 0;
+    int32_t streamId = -1;
 
     bool Marshalling(Parcel &parcel) const override;
     static AudioCapturerFilter *Unmarshalling(Parcel &in);

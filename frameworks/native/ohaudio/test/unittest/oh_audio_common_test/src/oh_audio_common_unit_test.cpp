@@ -29,6 +29,39 @@ void OHAudioCommonUnitTest::SetUp(void) { }
 void OHAudioCommonUnitTest::TearDown(void) { }
 
 /**
+ * @tc.name  : Test ConvertResult.
+ * @tc.number: ConvertResult_001
+ * @tc.desc  : Test ConvertResult success branch.
+ */
+HWTEST(OHAudioCommonUnitTest, ConvertResult_001, TestSize.Level0)
+{
+    auto result = OHAudioCommon::ConvertResult(SUCCESS);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ConvertResult.
+ * @tc.number: ConvertResult_002
+ * @tc.desc  : Test ConvertResult invalid parameter branch.
+ */
+HWTEST(OHAudioCommonUnitTest, ConvertResult_002, TestSize.Level0)
+{
+    auto result = OHAudioCommon::ConvertResult(ERR_INVALID_PARAM);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test ConvertResult.
+ * @tc.number: ConvertResult_003
+ * @tc.desc  : Test ConvertResult system error branch.
+ */
+HWTEST(OHAudioCommonUnitTest, ConvertResult_003, TestSize.Level0)
+{
+    auto result = OHAudioCommon::ConvertResult(ERR_OPERATION_FAILED);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
+}
+
+/**
  * @tc.name  : Test ConvertLayoutToChannel.
  * @tc.number: ConvertLayoutToChannel_001
  * @tc.desc  : Test ConvertLayoutToChannel.

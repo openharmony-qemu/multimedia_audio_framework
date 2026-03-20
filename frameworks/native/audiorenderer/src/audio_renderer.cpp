@@ -33,6 +33,7 @@
 #include "audio_scope_exit.h"
 #include "volume_tools.h"
 #include "app_bundle_manager.h"
+#include "audio_stream_types.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -64,6 +65,7 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
 static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
+static constexpr int32_t APP_SELECT_INDEPENDENT = 1;
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -2100,6 +2102,25 @@ float AudioRendererPrivate::GetMinStreamVolume() const
     return AudioPolicyManager::GetInstance().GetMinStreamVolume();
 }
 
+int32_t AudioRendererPrivate::SelectOutputDeviceInner(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = { desc };
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr, ERR_OPERATION_FAILED, "create renderer filter failed");
+
+    audioRendererFilter->uid = static_cast<int32_t>(getuid());
+    audioRendererFilter->streamId = static_cast<int32_t>(sessionID_);
+    audioRendererFilter->rendererInfo = rendererInfo_;
+    return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
+        APP_SELECT_INDEPENDENT);
+}
+
+int32_t AudioRendererPrivate::SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
+{
+    selectedDevice_ = desc;
+    return SelectOutputDeviceInner(selectedDevice_);
+}
+
 float AudioRendererPrivate::GetMaxStreamVolume() const
 {
     return AudioPolicyManager::GetInstance().GetMaxStreamVolume();
@@ -2799,6 +2820,9 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
     restoreResult = SwitchToTargetStream(audioStream_->GetStreamClass(), restoreInfo);
     HILOG_COMM_INFO("[RestoreAudioInLoop]Set restore status when server died, restore result %{public}d",
         restoreResult);
+    CHECK_AND_RETURN(restoreResult);
+    CHECK_AND_RETURN(selectedDevice_ != nullptr);
+    SelectOutputDeviceInner(selectedDevice_);
     return;
 }
 
