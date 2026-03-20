@@ -1364,6 +1364,11 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         if (changeInfo->rendererState != RENDERER_RUNNING) {
             continue;
         }
+        if (volumeType == STREAM_ALL) {
+            AUDIO_INFO_LOG("For STREAM_ALL matched clientUid: %{public}d sessionId: %{public}d",
+                changeInfo->clientUID, changeInfo->sessionId);
+            return true;
+        }
         AudioVolumeType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage);
         if (rendererVolumeType == STREAM_VOICE_ASSISTANT) {
