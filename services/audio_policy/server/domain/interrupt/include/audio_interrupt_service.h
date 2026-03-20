@@ -155,6 +155,7 @@ public:
 
     AudioScene GetHighestPriorityAudioSceneFromAllZones();
     int32_t FindAudioZoneByStreamId(const uint32_t streamId);
+    bool IsAudioStreamActive(const AudioFocuState &state);
     int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior);
 
 private:
