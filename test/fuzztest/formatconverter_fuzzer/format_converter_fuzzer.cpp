@@ -51,9 +51,16 @@ namespace AudioStandard {
 using namespace std;
 
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-const int32_t BUFFER_SIZE_SMALL = 2;
-const int32_t BUFFER_SIZE_MEDIUM = 4;
-const int32_t BUFFER_SIZE_LARGE = 8;
+
+const size_t ERROR_BUFFER_SIZE = 1;
+const size_t S16MONO_BUFFER_SIZE = 2;
+const size_t S16STEREO_BUFFER_SIZE = 4;
+const size_t S24MONO_BUFFER_SIZE = 3;
+const size_t S24STEREO_BUFFER_SIZE = 6;
+const size_t S32MONO_BUFFER_SIZE = 4;
+const size_t S32STEREO_BUFFER_SIZE = 8;
+const size_t F32MONO_BUFFER_SIZE = 4;
+const size_t F32STEREO_BUFFER_SIZE = 8;
 
 typedef void (*TestFuncs)();
 
@@ -61,14 +68,14 @@ void S16StereoToF32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = ERROR_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = S32STEREO_BUFFER_SIZE;
     FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
 }
 
@@ -76,14 +83,14 @@ void S16StereoToF32MonoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S32MONO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = ERROR_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S32MONO_BUFFER_SIZE;
     FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
 }
 
@@ -91,14 +98,14 @@ void F32MonoToS16StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    uint8_t srcBuffer[F32MONO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = F32MONO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = ERROR_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
 }
 
@@ -106,14 +113,14 @@ void F32StereoToS16StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_LARGE;
+    uint8_t srcBuffer[F32STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S32STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = ERROR_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
 }
 
@@ -121,11 +128,11 @@ void S16MonoToS16StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_SMALL;
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16MONO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = S32STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
     srcDesc.buffer = nullptr;
@@ -134,14 +141,14 @@ void S16MonoToS16StereoFuzzTest()
 
 void DataAccumulationFromVolumeFuzzTest()
 {
-    uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
-    BufferDesc srcDesc = {srcBuffer, BUFFER_SIZE_LARGE, BUFFER_SIZE_LARGE};
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    BufferDesc srcDesc = {srcBuffer, S32STEREO_BUFFER_SIZE, S32STEREO_BUFFER_SIZE};
     AudioStreamData srcData;
     srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
     srcData.bufferDesc = srcDesc;
     std::vector<AudioStreamData> srcDataList = {srcData};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
-    BufferDesc dstDesc = {dstBuffer, BUFFER_SIZE_LARGE, BUFFER_SIZE_LARGE};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    BufferDesc dstDesc = {dstBuffer, S32STEREO_BUFFER_SIZE, S32STEREO_BUFFER_SIZE};
     AudioStreamData dstData;
     dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
     dstData.bufferDesc = dstDesc;
@@ -153,12 +160,12 @@ void FormatConverterS32MonoToS16StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_LARGE;
+    srcDesc.bufLength = S32STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = S32STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
 }
@@ -167,12 +174,12 @@ void FormatConverterS32StereoToS16StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_LARGE;
+    srcDesc.bufLength = S32STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
 }
@@ -181,12 +188,12 @@ void FormatConverterS16StereoToS32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = S32STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16StereoToS32Stereo(srcDesc, dstDesc);
 }
@@ -195,12 +202,12 @@ void FormatConverterS16MonoToS32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_SMALL] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
+    uint8_t srcBuffer[S16MONO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_SMALL;
+    srcDesc.bufLength = S16MONO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = S32STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
 }
@@ -209,12 +216,12 @@ void FormatConverterS32MonoToS32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_LARGE;
+    dstDesc.bufLength = S32STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32MonoToS32Stereo(srcDesc, dstDesc);
     FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
@@ -224,26 +231,26 @@ void FormatConverterF32StereoToS32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32StereoToS32Stereo(srcDesc, dstDesc);
 }
 
 void DataAccumulationWithoutVolumeFuzzTest()
 {
-    uint8_t srcBuffer[BUFFER_SIZE_LARGE] = {0};
-    BufferDesc srcDesc = {srcBuffer, BUFFER_SIZE_LARGE, BUFFER_SIZE_LARGE};
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    BufferDesc srcDesc = {srcBuffer, S32STEREO_BUFFER_SIZE, S32STEREO_BUFFER_SIZE};
     AudioStreamData srcData;
     srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
     srcData.bufferDesc = srcDesc;
     std::vector<AudioStreamData> srcDataList = {srcData};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
-    BufferDesc dstDesc = {dstBuffer, BUFFER_SIZE_LARGE, BUFFER_SIZE_LARGE};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    BufferDesc dstDesc = {dstBuffer, S32STEREO_BUFFER_SIZE, S32STEREO_BUFFER_SIZE};
     AudioStreamData dstData;
     dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
     dstData.bufferDesc = dstDesc;
@@ -255,12 +262,12 @@ void F32StereoToF32MonoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32StereoToF32Mono(srcDesc, dstDesc);
 }
@@ -269,12 +276,12 @@ void F32StereoToS16MonoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32StereoToS16Mono(srcDesc, dstDesc);
 }
@@ -283,12 +290,12 @@ void S16MonoToF32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16MonoToF32Stereo(srcDesc, dstDesc);
 }
@@ -297,12 +304,12 @@ void S32MonoToF32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32MonoToF32Stereo(srcDesc, dstDesc);
 }
@@ -311,12 +318,12 @@ void S32StereoToF32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32StereoToF32Stereo(srcDesc, dstDesc);
 }
@@ -325,12 +332,12 @@ void F32MonoToF32StereoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::F32MonoToF32Stereo(srcDesc, dstDesc);
 }
@@ -339,12 +346,12 @@ void S16MonoToF32MonoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S16MonoToF32Mono(srcDesc, dstDesc);
 }
@@ -353,12 +360,12 @@ void S32MonoToF32MonoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32MonoToF32Mono(srcDesc, dstDesc);
 }
@@ -367,12 +374,12 @@ void S32StereoToF32MonoFuzzTest()
 {
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_MEDIUM] = {0};
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S16STEREO_BUFFER_SIZE] = {0};
 
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    dstDesc.bufLength = S16STEREO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::S32StereoToF32Mono(srcDesc, dstDesc);
 }
@@ -382,16 +389,159 @@ void GetFormatHandlersFuzzTest()
     FormatConverter::GetFormatHandlers();
 }
 
+void S16MonoToS24StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16MONO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16MONO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24STEREO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16MonoToS24Stereo(srcDesc, dstDesc);
+}
+
+void S16StereoToS24StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24STEREO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16StereoToS24Stereo(srcDesc, dstDesc);
+}
+
+void S32MonoToS24StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24STEREO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32MonoToS24Stereo(srcDesc, dstDesc);
+}
+
+void S32StereoToS24StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S32STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24STEREO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32StereoToS24Stereo(srcDesc, dstDesc);
+}
+
+void F32StereoToS24StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24STEREO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::F32StereoToS24Stereo(srcDesc, dstDesc);
+}
+
+void S16MonoToS24MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16MONO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24MONO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16MONO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24MONO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16MonoToS24Mono(srcDesc, dstDesc);
+}
+
+void S16StereoToS24MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24MONO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24MONO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16StereoToS24Mono(srcDesc, dstDesc);
+}
+
+void S32MonoToS24MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24MONO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24MONO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32MonoToS24Mono(srcDesc, dstDesc);
+}
+
+void S32StereoToS24MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24MONO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S32STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24MONO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32StereoToS24Mono(srcDesc, dstDesc);
+}
+
+void F32MonoToS24MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24MONO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24MONO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::F32MonoToS24Mono(srcDesc, dstDesc);
+}
+
+void F32StereoToS24MonoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S24MONO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S32STEREO_BUFFER_SIZE;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = S24MONO_BUFFER_SIZE;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::F32StereoToS24Mono(srcDesc, dstDesc);
+}
+
 void AutoConvertFuzzTest()
 {
     FormatKey key;
     BufferDesc srcDesc;
     BufferDesc dstDesc;
-    uint8_t srcBuffer[BUFFER_SIZE_MEDIUM] = {0};
-    uint8_t dstBuffer[BUFFER_SIZE_LARGE] = {0};
-    srcDesc.bufLength = BUFFER_SIZE_MEDIUM;
+    uint8_t srcBuffer[S16STEREO_BUFFER_SIZE] = {0};
+    uint8_t dstBuffer[S32STEREO_BUFFER_SIZE] = {0};
+    srcDesc.bufLength = S16STEREO_BUFFER_SIZE;
     srcDesc.buffer = srcBuffer;
-    dstDesc.bufLength = BUFFER_SIZE_SMALL;
+    dstDesc.bufLength = S16MONO_BUFFER_SIZE;
     dstDesc.buffer = dstBuffer;
     FormatConverter::AutoConvert(key, srcDesc, dstDesc);
 }
@@ -420,6 +570,17 @@ vector<TestFuncs> g_testFuncs = {
     S32MonoToF32MonoFuzzTest,
     S32StereoToF32MonoFuzzTest,
     GetFormatHandlersFuzzTest,
+    S16MonoToS24StereoFuzzTest,
+    S16StereoToS24StereoFuzzTest,
+    S32MonoToS24StereoFuzzTest,
+    S32StereoToS24StereoFuzzTest,
+    F32StereoToS24StereoFuzzTest,
+    S16MonoToS24MonoFuzzTest,
+    S16StereoToS24MonoFuzzTest,
+    S32MonoToS24MonoFuzzTest,
+    S32StereoToS24MonoFuzzTest,
+    F32MonoToS24MonoFuzzTest,
+    F32StereoToS24MonoFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS

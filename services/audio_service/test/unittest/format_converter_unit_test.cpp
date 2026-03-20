@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cstdint>
 #include <algorithm>
 #include <gtest/gtest.h>
 
@@ -33,6 +34,27 @@ constexpr size_t NUMBER8 = 8;
 constexpr float FLOAT_SCALE_16 = 1.0f / (1 << (16 - 1));
 constexpr float FLOAT_SCALE_32 = 1.0f / (1U << (32 - 1));
 constexpr int32_t VOLUME_DIV_NUMBER = 65536;
+constexpr float PCM_FLOAT_EPS = 1e-6f;
+constexpr size_t BIT_24 = 24;
+constexpr int64_t INT24_MAX = (1 << (BIT_24 - 1)) - 1;
+
+float CapMax(float v)
+{
+    float value = v;
+    if (v >= 1.0f) {
+        value = 1.0f - PCM_FLOAT_EPS;
+    } else if (v <= -1.0f) {
+        value = -1.0f + PCM_FLOAT_EPS;
+    }
+    return value;
+}
+
+int32_t ConvertFromFloatTo24Bit(const float a)
+{
+    float v = CapMax(a) * INT24_MAX;
+    return static_cast<int32_t>(v);
+}
+
 }
 class FormatConverterUnitTest : public testing::Test {
 public:
@@ -1584,6 +1606,463 @@ HWTEST_F(FormatConverterUnitTest, F32StereoToF32MonoTest_001, TestSize.Level1)
     srcBufferDesc.bufLength = 1;
     dstBufferDesc.bufLength = 4;
     ret = FormatConverter::F32StereoToF32Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16MonoToS24StereoTest_001
+ * @tc.desc  : Test S16MonoToS24Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S16MonoToS24StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int16_t> s16MonoData(frameCount);
+    std::vector<uint8_t> s24StereoData(frameCount * 2 * 3);
+
+    s16MonoData = {100, 200};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s16MonoData.data(), s16MonoData.size() * sizeof(int16_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24StereoData.data(), s24StereoData.size());
+
+    auto ret = FormatConverter::S16MonoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(static_cast<double>(100) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24StereoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[2], (expected0 >> 16) & 0xFF);
+    EXPECT_EQ(s24StereoData[3], expected0 & 0xFF);
+    EXPECT_EQ(s24StereoData[4], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[5], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(static_cast<double>(200) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[6], expected1 & 0xFF);
+    EXPECT_EQ(s24StereoData[7], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[8], (expected1 >> 16) & 0xFF);
+    EXPECT_EQ(s24StereoData[9], expected1 & 0xFF);
+    EXPECT_EQ(s24StereoData[10], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[11], (expected1 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 12;
+    ret = FormatConverter::S16MonoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16StereoToS24StereoTest_001
+ * @tc.desc  : Test S16StereoToS24Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S16StereoToS24StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int16_t> s16StereoData(frameCount * 2);
+    std::vector<uint8_t> s24StereoData(frameCount * 2 * 3);
+
+    s16StereoData = {100, 150, 200, 250};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s16StereoData.data(), s16StereoData.size() * sizeof(int16_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24StereoData.data(), s24StereoData.size());
+
+    auto ret = FormatConverter::S16StereoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(static_cast<double>(100) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24StereoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(static_cast<double>(150) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24StereoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[5], (expected1 >> 16) & 0xFF);
+    
+    int32_t expected2 = static_cast<int32_t>(static_cast<double>(200) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[6], expected2 & 0xFF);
+    EXPECT_EQ(s24StereoData[7], (expected2 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[8], (expected2 >> 16) & 0xFF);
+    
+    int32_t expected3 = static_cast<int32_t>(static_cast<double>(250) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[9], expected3 & 0xFF);
+    EXPECT_EQ(s24StereoData[10], (expected3 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[11], (expected3 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 12;
+    ret = FormatConverter::S16StereoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32MonoToS24StereoTest_001
+ * @tc.desc  : Test S32MonoToS24Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S32MonoToS24StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int32_t> s32MonoData(frameCount);
+    std::vector<uint8_t> s24StereoData(frameCount * 2 * 3);
+
+    s32MonoData = {1000, 2000};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32MonoData.data(), s32MonoData.size() * sizeof(int32_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24StereoData.data(), s24StereoData.size());
+
+    auto ret = FormatConverter::S32MonoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(static_cast<double>(1000) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24StereoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[2], (expected0 >> 16) & 0xFF);
+    EXPECT_EQ(s24StereoData[3], expected0 & 0xFF);
+    EXPECT_EQ(s24StereoData[4], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[5], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(static_cast<double>(2000) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[6], expected1 & 0xFF);
+    EXPECT_EQ(s24StereoData[7], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[8], (expected1 >> 16) & 0xFF);
+    EXPECT_EQ(s24StereoData[9], expected1 & 0xFF);
+    EXPECT_EQ(s24StereoData[10], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[11], (expected1 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 12;
+    ret = FormatConverter::S32MonoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32StereoToS24StereoTest_001
+ * @tc.desc  : Test S32StereoToS24Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, S32StereoToS24StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int32_t> s32StereoData(frameCount * 2);
+    std::vector<uint8_t> s24StereoData(frameCount * 2 * 3);
+
+    s32StereoData = {1000, 1500, 2000, 2500};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32StereoData.data(), s32StereoData.size() * sizeof(int32_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24StereoData.data(), s24StereoData.size());
+
+    auto ret = FormatConverter::S32StereoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(static_cast<double>(1000) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24StereoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(static_cast<double>(1500) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24StereoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[5], (expected1 >> 16) & 0xFF);
+    
+    int32_t expected2 = static_cast<int32_t>(static_cast<double>(2000) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[6], expected2 & 0xFF);
+    EXPECT_EQ(s24StereoData[7], (expected2 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[8], (expected2 >> 16) & 0xFF);
+    
+    int32_t expected3 = static_cast<int32_t>(static_cast<double>(2500) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24StereoData[9], expected3 & 0xFF);
+    EXPECT_EQ(s24StereoData[10], (expected3 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[11], (expected3 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 12;
+    ret = FormatConverter::S32StereoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32StereoToS24StereoTest_001
+ * @tc.desc  : Test F32StereoToS24Stereo
+ */
+HWTEST_F(FormatConverterUnitTest, F32StereoToS24StereoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<float> f32StereoData(frameCount * 2);
+    std::vector<uint8_t> s24StereoData(frameCount * 2 * 3);
+
+    f32StereoData = {0.5f, 0.6f, 0.7f, 0.8f};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24StereoData.data(), s24StereoData.size());
+
+    auto ret = FormatConverter::F32StereoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(0.5f * INT24_MAX);
+    EXPECT_EQ(s24StereoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24StereoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(0.6f * INT24_MAX);
+    EXPECT_EQ(s24StereoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24StereoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[5], (expected1 >> 16) & 0xFF);
+    
+    int32_t expected2 = static_cast<int32_t>(0.7f * INT24_MAX);
+    EXPECT_EQ(s24StereoData[6], expected2 & 0xFF);
+    EXPECT_EQ(s24StereoData[7], (expected2 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[8], (expected2 >> 16) & 0xFF);
+    
+    int32_t expected3 = static_cast<int32_t>(0.8f * INT24_MAX);
+    EXPECT_EQ(s24StereoData[9], expected3 & 0xFF);
+    EXPECT_EQ(s24StereoData[10], (expected3 >> 8) & 0xFF);
+    EXPECT_EQ(s24StereoData[11], (expected3 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 12;
+    ret = FormatConverter::F32StereoToS24Stereo(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16MonoToS24MonoTest_001
+ * @tc.desc  : Test S16MonoToS24Mono
+ */
+HWTEST_F(FormatConverterUnitTest, S16MonoToS24MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 3;
+    std::vector<int16_t> s16MonoData(frameCount);
+    std::vector<uint8_t> s24MonoData(frameCount * 3);
+
+    s16MonoData = {100, 150, 200};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s16MonoData.data(), s16MonoData.size() * sizeof(int16_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24MonoData.data(), s24MonoData.size());
+
+    auto ret = FormatConverter::S16MonoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(static_cast<double>(100) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24MonoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24MonoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(static_cast<double>(150) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24MonoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24MonoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[5], (expected1 >> 16) & 0xFF);
+    
+    int32_t expected2 = static_cast<int32_t>(static_cast<double>(200) / INT16_MAX * INT24_MAX);
+    EXPECT_EQ(s24MonoData[6], expected2 & 0xFF);
+    EXPECT_EQ(s24MonoData[7], (expected2 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[8], (expected2 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 9;
+    ret = FormatConverter::S16MonoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S16StereoToS24MonoTest_001
+ * @tc.desc  : Test S16StereoToS24Mono
+ */
+HWTEST_F(FormatConverterUnitTest, S16StereoToS24MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int16_t> s16StereoData(frameCount * 2);
+    std::vector<uint8_t> s24MonoData(frameCount * 3);
+
+    s16StereoData = {100, 150, 200, 250};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s16StereoData.data(), s16StereoData.size() * sizeof(int16_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24MonoData.data(), s24MonoData.size());
+
+    auto ret = FormatConverter::S16StereoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = (static_cast<int32_t>(static_cast<double>(100) / INT16_MAX * INT24_MAX) +
+        static_cast<int32_t>(static_cast<double>(150) / INT16_MAX * INT24_MAX)) / 2;
+    EXPECT_EQ(s24MonoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24MonoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = (static_cast<int32_t>(static_cast<double>(200) / INT16_MAX * INT24_MAX) +
+        static_cast<int32_t>(static_cast<double>(250) / INT16_MAX * INT24_MAX)) / 2;
+    EXPECT_EQ(s24MonoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24MonoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[5], (expected1 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 6;
+    ret = FormatConverter::S16StereoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32MonoToS24MonoTest_001
+ * @tc.desc  : Test S32MonoToS24Mono
+ */
+HWTEST_F(FormatConverterUnitTest, S32MonoToS24MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 3;
+    std::vector<int32_t> s32MonoData(frameCount);
+    std::vector<uint8_t> s24MonoData(frameCount * 3);
+
+    s32MonoData = {1000, 1500, 2000};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32MonoData.data(), s32MonoData.size() * sizeof(int32_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24MonoData.data(), s24MonoData.size());
+
+    auto ret = FormatConverter::S32MonoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(static_cast<double>(1000) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24MonoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24MonoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(static_cast<double>(1500) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24MonoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24MonoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[5], (expected1 >> 16) & 0xFF);
+    
+    int32_t expected2 = static_cast<int32_t>(static_cast<double>(2000) / INT32_MAX * INT24_MAX);
+    EXPECT_EQ(s24MonoData[6], expected2 & 0xFF);
+    EXPECT_EQ(s24MonoData[7], (expected2 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[8], (expected2 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 9;
+    ret = FormatConverter::S32MonoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: S32StereoToS24MonoTest_001
+ * @tc.desc  : Test S32StereoToS24Mono
+ */
+HWTEST_F(FormatConverterUnitTest, S32StereoToS24MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<int32_t> s32StereoData(frameCount * 2);
+    std::vector<uint8_t> s24MonoData(frameCount * 3);
+
+    s32StereoData = {1000, 1500, 2000, 2500};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(s32StereoData.data(), s32StereoData.size() * sizeof(int32_t));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24MonoData.data(), s24MonoData.size());
+
+    auto ret = FormatConverter::S32StereoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = (static_cast<int32_t>(static_cast<double>(1000) / INT32_MAX * INT24_MAX) +
+        static_cast<int32_t>(static_cast<double>(1500) / INT32_MAX * INT24_MAX)) / 2;
+    EXPECT_EQ(s24MonoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24MonoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = (static_cast<int32_t>(static_cast<double>(2000) / INT32_MAX * INT24_MAX) +
+        static_cast<int32_t>(static_cast<double>(2500) / INT32_MAX * INT24_MAX)) / 2;
+    EXPECT_EQ(s24MonoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24MonoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[5], (expected1 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 6;
+    ret = FormatConverter::S32StereoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32MonoToS24MonoTest_001
+ * @tc.desc  : Test F32MonoToS24Mono
+ */
+HWTEST_F(FormatConverterUnitTest, F32MonoToS24MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 3;
+    std::vector<float> f32MonoData(frameCount);
+    std::vector<uint8_t> s24MonoData(frameCount * 3);
+
+    f32MonoData = {0.5f, 0.6f, 0.7f};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(f32MonoData.data(), f32MonoData.size() * sizeof(float));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24MonoData.data(), s24MonoData.size());
+
+    auto ret = FormatConverter::F32MonoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(0.5f * INT24_MAX);
+    EXPECT_EQ(s24MonoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24MonoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(0.6f * INT24_MAX);
+    EXPECT_EQ(s24MonoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24MonoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[5], (expected1 >> 16) & 0xFF);
+    
+    int32_t expected2 = static_cast<int32_t>(0.7f * INT24_MAX);
+    EXPECT_EQ(s24MonoData[6], expected2 & 0xFF);
+    EXPECT_EQ(s24MonoData[7], (expected2 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[8], (expected2 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 9;
+    ret = FormatConverter::F32MonoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: F32StereoToS24MonoTest_001
+ * @tc.desc  : Test F32StereoToS24Mono
+ */
+HWTEST_F(FormatConverterUnitTest, F32StereoToS24MonoTest_001, TestSize.Level1)
+{
+    const size_t frameCount = 2;
+    std::vector<float> f32StereoData(frameCount * 2);
+    std::vector<uint8_t> s24MonoData(frameCount * 3);
+
+    f32StereoData = {0.5f, 0.6f, 0.7f, 0.8f};
+
+    BufferDesc srcBufferDesc = CreateBufferDesc(f32StereoData.data(), f32StereoData.size() * sizeof(float));
+    BufferDesc dstBufferDesc = CreateBufferDesc(s24MonoData.data(), s24MonoData.size());
+
+    auto ret = FormatConverter::F32StereoToS24Mono(srcBufferDesc, dstBufferDesc);
+    EXPECT_EQ(ret, 0);
+    
+    int32_t expected0 = static_cast<int32_t>(ConvertFromFloatTo24Bit(0.5f) + ConvertFromFloatTo24Bit(0.6f)) / 2;
+    EXPECT_EQ(s24MonoData[0], expected0 & 0xFF);
+    EXPECT_EQ(s24MonoData[1], (expected0 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[2], (expected0 >> 16) & 0xFF);
+    
+    int32_t expected1 = static_cast<int32_t>(ConvertFromFloatTo24Bit(0.7f) + ConvertFromFloatTo24Bit(0.8f)) / 2;
+    EXPECT_EQ(s24MonoData[3], expected1 & 0xFF);
+    EXPECT_EQ(s24MonoData[4], (expected1 >> 8) & 0xFF);
+    EXPECT_EQ(s24MonoData[5], (expected1 >> 16) & 0xFF);
+
+    srcBufferDesc.bufLength = 1;
+    dstBufferDesc.bufLength = 6;
+    ret = FormatConverter::F32StereoToS24Mono(srcBufferDesc, dstBufferDesc);
     EXPECT_EQ(ret, -1);
 }
 }  // namespace OHOS::AudioStandard
