@@ -3018,6 +3018,14 @@ int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int
     return ERR_UNKNOWN;
 }
 
+int32_t AudioPolicyServer::SetOffloadAllowedForUid(uint32_t uid, bool allowed)
+{
+    CHECK_AND_RETURN_RET_LOG(IPCSkeleton::GetCallingUid() == UID_RESOURCE_SCHEDULE_SERVICE,
+        ERR_PERMISSION_DENIED, "calling uid %{public}d not allowed", IPCSkeleton::GetCallingUid());
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_UNKNOWN, "eventEntry_ is nullptr");
+    return eventEntry_->SetOffloadAllowedForUid(uid, allowed);
+}
+
 int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 {
     if (interruptService_ != nullptr) {

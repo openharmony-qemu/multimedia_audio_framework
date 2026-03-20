@@ -76,6 +76,54 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
     AudioPolicyConfigData::GetInstance().UpdateDynamicStreamProps("remote", "offload_distributed_output", streamProps);
 }
 
+static void MakeUidCheckDeviceInfoMap(AudioPolicyConfigData &configData, AudioFlag routerFlag, bool needUidCheck)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    configData.Reorganize();
+
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->role_ = PIPE_ROLE_OUTPUT;
+    info->needUidCheck_ = needUidCheck;
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    ASSERT_NE(deviceInfo, nullptr);
+    deviceInfo->supportPipeMap_.insert({routerFlag, info});
+
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+}
+
+static void MakeUidCheckOffloadSupportDeviceInfoMap(AudioPolicyConfigData &configData, bool needUidCheck)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    configData.Reorganize();
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    ASSERT_NE(propInfo, nullptr);
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_STEREO;
+
+    std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
+    ASSERT_NE(info, nullptr);
+    info->role_ = PIPE_ROLE_OUTPUT;
+    info->supportFlags_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    info->needUidCheck_ = needUidCheck;
+    info->streamPropInfos_.push_back(propInfo);
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    ASSERT_NE(deviceInfo, nullptr);
+    deviceInfo->supportPipeMap_.insert({AUDIO_OUTPUT_FLAG_LOWPOWER, info});
+
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+}
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_001
@@ -2145,6 +2193,9 @@ HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Leve
     auto streamDesc = std::make_shared<AudioStreamDescriptor>();
     EXPECT_NE(streamDesc, nullptr);
     const int32_t AUDIO_EXT_UID = 1041;
+    streamDesc->rendererInfo_.isOffloadAllowed = true;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     streamDesc->callerUid_ = AUDIO_EXT_UID;
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower_003 end");
@@ -2165,11 +2216,236 @@ HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_004, TestSize.Leve
     EXPECT_NE(streamDesc, nullptr);
     const int32_t MEDIA_SERVICE_UID = 1013;
     const int32_t AUDIO_EXT_UID = 1041;
+    streamDesc->rendererInfo_.isOffloadAllowed = true;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
     streamDesc->callerUid_ = MEDIA_SERVICE_UID;
     streamDesc->appInfo_.appUid = AUDIO_EXT_UID;
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower_004 end");
     EXPECT_EQ(isSupportLowPower, false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: OffloadAllowedForUid_001
+ * @tc.desc  : Test AudioCoreService::SetOffloadAllowedForUid and IsOffloadAllowedForUid
+ */
+HWTEST_F(AudioCoreServicePrivateTest, OffloadAllowedForUid_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    constexpr uint32_t TEST_UID = 1905;
+    EXPECT_EQ(audioCoreService->IsOffloadAllowedForUid(TEST_UID), false);
+    EXPECT_EQ(audioCoreService->SetOffloadAllowedForUid(TEST_UID, true), SUCCESS);
+    EXPECT_EQ(audioCoreService->IsOffloadAllowedForUid(TEST_UID), true);
+    EXPECT_EQ(audioCoreService->SetOffloadAllowedForUid(TEST_UID, false), SUCCESS);
+    EXPECT_EQ(audioCoreService->IsOffloadAllowedForUid(TEST_UID), false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: NeedUidCheckForOffloadPipe_001
+ * @tc.desc  : Test AudioPolicyConfigManager::NeedUidCheckForOffloadPipe with combined lowpower flag
+ */
+HWTEST_F(AudioCoreServicePrivateTest, NeedUidCheckForOffloadPipe_001, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeUidCheckDeviceInfoMap(configData,
+        static_cast<AudioFlag>(AUDIO_OUTPUT_FLAG_LOWPOWER | AUDIO_OUTPUT_FLAG_DIRECT), true);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    bool needUidCheck = AudioPolicyConfigManager::GetInstance().NeedUidCheckForOffloadPipe(streamDesc);
+    EXPECT_EQ(needUidCheck, true);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: IsOffloadPlaybackSupported_001
+ * @tc.desc  : Test AudioPolicyConfigManager::IsOffloadPlaybackSupported returns false for uid-gated pipe
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsOffloadPlaybackSupported_001, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeUidCheckOffloadSupportDeviceInfoMap(configData, true);
+
+    AudioStreamInfo streamInfo {};
+    streamInfo.format = AudioSampleFormat::INVALID_WIDTH;
+    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000;
+    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {deviceDesc};
+
+    bool isSupported = AudioPolicyConfigManager::GetInstance().IsOffloadPlaybackSupported(
+        streamInfo, desc, STREAM_USAGE_MUSIC);
+    EXPECT_EQ(isSupported, false);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckOffloadPipeUidAllowed_001
+ * @tc.desc  : Test AudioCoreService::CheckOffloadPipeUidAllowed returns true when uid check is not needed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckOffloadPipeUidAllowed_001, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeUidCheckDeviceInfoMap(configData, AUDIO_OUTPUT_FLAG_LOWPOWER, false);
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    EXPECT_EQ(audioCoreService->CheckOffloadPipeUidAllowed(streamDesc, 200100), true);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckOffloadPipeUidAllowed_002
+ * @tc.desc  : Test AudioCoreService::CheckOffloadPipeUidAllowed returns false when uid is not allowed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckOffloadPipeUidAllowed_002, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeUidCheckDeviceInfoMap(configData, AUDIO_OUTPUT_FLAG_LOWPOWER, true);
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    EXPECT_EQ(audioCoreService->CheckOffloadPipeUidAllowed(streamDesc, 200100), false);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckOffloadPipeUidAllowed_003
+ * @tc.desc  : Test AudioCoreService::CheckOffloadPipeUidAllowed returns true when uid is allowed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckOffloadPipeUidAllowed_003, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeUidCheckDeviceInfoMap(configData, AUDIO_OUTPUT_FLAG_LOWPOWER, true);
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    EXPECT_EQ(audioCoreService->SetOffloadAllowedForUid(200101, true), SUCCESS);
+
+    EXPECT_EQ(audioCoreService->CheckOffloadPipeUidAllowed(streamDesc, 200101), true);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckOffloadPipeUidAllowed_004
+ * @tc.desc  : Test AudioCoreService::CheckOffloadPipeUidAllowed returns false for AUDIO_EXT_UID
+ */
+HWTEST_F(AudioCoreServicePrivateTest, CheckOffloadPipeUidAllowed_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    const int32_t AUDIO_EXT_UID = 1041;
+    EXPECT_EQ(audioCoreService->CheckOffloadPipeUidAllowed(streamDesc, AUDIO_EXT_UID), false);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: IsStreamSupportLowpower_005
+ * @tc.desc  : Test AudioCoreService::IsStreamSupportLowpower returns false when uid is not allowed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_005, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeUidCheckDeviceInfoMap(configData, AUDIO_OUTPUT_FLAG_LOWPOWER, true);
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->rendererInfo_.isOffloadAllowed = true;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->callerUid_ = 200100;
+
+    EXPECT_EQ(audioCoreService->IsStreamSupportLowpower(streamDesc), false);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: IsStreamSupportLowpower_006
+ * @tc.desc  : Test AudioCoreService::IsStreamSupportLowpower returns true when uid is allowed
+ */
+HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_006, TestSize.Level1)
+{
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    MakeUidCheckDeviceInfoMap(configData, AUDIO_OUTPUT_FLAG_LOWPOWER, true);
+
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->rendererInfo_.isOffloadAllowed = true;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->callerUid_ = 200101;
+
+    EXPECT_EQ(audioCoreService->SetOffloadAllowedForUid(streamDesc->callerUid_, true), SUCCESS);
+    EXPECT_EQ(audioCoreService->IsStreamSupportLowpower(streamDesc), true);
+
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.erase(deviceKey);
 }
 
 /**

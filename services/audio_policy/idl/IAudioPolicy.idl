@@ -295,6 +295,7 @@ interface IAudioPolicy {
     void GetMinVolumeDegree([in] int volumeType, [in] int deviceType, [out] int volumeDegree);
     void SetAncoSourceOutputStreamMute([in] int uid, [in] boolean setMute);
     void UpdateSafeVolumeByStrMode();
+    void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
     // AudioPolicyInterfaceCode end
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode

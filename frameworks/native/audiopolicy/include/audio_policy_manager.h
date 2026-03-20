@@ -712,6 +712,7 @@ public:
 
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
 
+    int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
     int32_t ForceStopAudioStream(StopAudioType audioType);
     bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage);

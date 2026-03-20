@@ -312,6 +312,34 @@ void GetDynamicStreamPropInfoFromPipeForViVidFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyConfigManager::GetInstance().GetDynamicStreamPropInfoFromPipeForViVid(info, streamInfo);
 }
 
+void NeedUidCheckForOffloadPipeFuzzTest(FuzzedDataProvider& fdp)
+{
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    CHECK_AND_RETURN(desc != nullptr);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    CHECK_AND_RETURN(deviceDesc != nullptr);
+    desc->newDeviceDescs_.push_back(deviceDesc);
+
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    configData.Reorganize();
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    CHECK_AND_RETURN(pipeInfo != nullptr);
+    pipeInfo->needUidCheck_ = g_fuzzUtils.GetData<bool>();
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    CHECK_AND_RETURN(deviceInfo != nullptr);
+    AudioFlag routeFlag = static_cast<AudioFlag>(AUDIO_OUTPUT_FLAG_LOWPOWER |
+        (g_fuzzUtils.GetData<bool>() ? AUDIO_OUTPUT_FLAG_DIRECT : AUDIO_FLAG_NONE));
+    deviceInfo->supportPipeMap_.insert({routeFlag, pipeInfo});
+
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap[deviceKey] = deviceInfoSet;
+    AudioPolicyConfigManager::GetInstance().NeedUidCheckForOffloadPipe(desc);
+    configData.deviceInfoMap.erase(deviceKey);
+}
+
 void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
@@ -338,6 +366,7 @@ void Test(FuzzedDataProvider& fdp)
     MatchStreamPropInfoFuzzTest,
     GetStreamPropInfoForMultiChannelFuzzTest,
     GetDynamicStreamPropInfoFromPipeForViVidFuzzTest,
+    NeedUidCheckForOffloadPipeFuzzTest,
     });
     func(fdp);
 }

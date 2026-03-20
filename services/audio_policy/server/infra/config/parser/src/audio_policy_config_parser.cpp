@@ -319,6 +319,8 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         } else {
             pipeInfo->suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
         }
+    } else if (attributeInfo.name_ == "need_uid_check") {
+        pipeInfo->needUidCheck_ = (attributeInfo.value_ == "true");
     } else if (attributeInfo.name_ == "support_ultra_fast") {
         AUDIO_INFO_LOG("Support ultra fast");
         supportUltraFast_ = (attributeInfo.value_ == "true");

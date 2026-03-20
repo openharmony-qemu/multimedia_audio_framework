@@ -297,6 +297,7 @@ public:
         bool isUpdatedAudioStrategy) override;
 
     int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0) override;
+    int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed) override;
 
     int32_t SetAppSilentOnDisplay(const int32_t displayId = -1) override;
 

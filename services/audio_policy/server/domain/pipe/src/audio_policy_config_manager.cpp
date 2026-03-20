@@ -1175,6 +1175,7 @@ bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamI
         CHECK_AND_CONTINUE(pipeIt.second != nullptr);
 
         CHECK_AND_CONTINUE(pipeIt.second->supportFlags_ & flag);
+        CHECK_AND_RETURN_RET(!pipeIt.second->needUidCheck_, false);
         
         // consider the logic of path support under format conversion
         AudioSampleFormat tempFormat = streamInfo.format;
@@ -1223,6 +1224,26 @@ bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &strea
     }
 
     return isSupported;
+}
+
+bool AudioPolicyConfigManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!desc->newDeviceDescs_.empty(), false, "newDeviceDescs is empty");
+    auto newDeviceDesc = desc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_RET_LOG(newDeviceDesc != nullptr, false, "newDeviceDesc is nullptr");
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
+        newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->routeFlag_);
+    CHECK_AND_RETURN_RET(deviceInfo != nullptr, false);
+
+    for (const auto &[flag, pipeInfo] : deviceInfo->supportPipeMap_) {
+        CHECK_AND_CONTINUE(pipeInfo != nullptr);
+        CHECK_AND_CONTINUE((flag & AUDIO_OUTPUT_FLAG_LOWPOWER) == AUDIO_OUTPUT_FLAG_LOWPOWER);
+        if (pipeInfo->needUidCheck_) {
+            return true;
+        }
+    }
+    return false;
 }
 }
 }

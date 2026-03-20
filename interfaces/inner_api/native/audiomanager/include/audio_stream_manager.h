@@ -256,6 +256,8 @@ public:
      */
     bool IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage streamUsage);
 
+    int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
+
     /**
      * @brief Gets sampling rate for hardware output.
      *
