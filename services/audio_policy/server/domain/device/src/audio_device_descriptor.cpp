@@ -808,8 +808,8 @@ DeviceStreamInfo AudioDeviceDescriptor::GetDeviceStreamInfo(void) const
 
 void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
 {
-    capabilities_.clear();
     if (deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != LOCAL_NETWORK_ID) {
+        capabilities_.clear();
         for (const auto &deviceStreamInfo : audioStreamInfo_) {
             AudioStreamInfo cap;
             AudioChannelLayout channelLayout = !deviceStreamInfo.channelLayout.empty() ?
@@ -828,11 +828,8 @@ void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
             capabilities_.push_back(cap);
         }
     } else if (deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
+        capabilities_.clear();
         AudioStreamInfo cap(AudioSamplingRate::SAMPLE_RATE_16000, AudioEncodingType::ENCODING_PCM,
-            AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
-        capabilities_.push_back(cap);
-    } else {
-        AudioStreamInfo cap(AudioSamplingRate::SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM,
             AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
         capabilities_.push_back(cap);
     }
