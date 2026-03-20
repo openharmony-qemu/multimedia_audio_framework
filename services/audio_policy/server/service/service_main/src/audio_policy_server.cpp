@@ -2336,7 +2336,8 @@ int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capt
 
 int32_t AudioPolicyServer::IsStreamActive(int32_t streamType, bool &active)
 {
-    active = audioSceneManager_.IsStreamActive(static_cast<AudioStreamType>(streamType));
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
+    active = audioSceneManager_.IsStreamActive(volumeType);
     return SUCCESS;
 }
 
