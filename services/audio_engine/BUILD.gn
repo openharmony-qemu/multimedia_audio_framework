@@ -194,6 +194,7 @@ ohos_shared_library("audio_engine_node") {
     "node/src/hpae_remote_sink_output_node.cpp",
     "node/src/hpae_remote_output_cluster.cpp",
     "node/src/hpae_virtual_process_cluster.cpp",
+    "node/src/hpae_limiter_node.cpp",
   ]
 
   deps = [

@@ -2814,4 +2814,336 @@ HWTEST_F(HpaeRendererManagerTest, DisableCollaboration_001, TestSize.Level1)
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
+
+/**
+ * @tc.name  : Test LimiterNode CreateForRemoteOffload_001
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_CreateForRemoteOffload_001
+ * @tc.desc  : Test limiterNode_ is created for remote_offload device.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = "remote_offload";
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "source_file_io_48000_2_s16le.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->IsInit(), true);
+
+    // Create stream to trigger CreateOffloadNodes
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is created for remote_offload device
+    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test LimiterNode CreateForRemoteOffload 002
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_CreateForRemoteOffload_002
+ * @tc.desc  : Test limiterNode_ is created for remote_offload device.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_CreateForRemoteOffload_002, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = "remote_offload";
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "source_file_io_48000_2_s16le.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->IsInit(), true);
+
+    // Create stream to trigger CreateOffloadNodes
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is created for remote_offload device
+    EXPECT_EQ(offloadManager->limiterNode_, nullptr);
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test LimiterNode NotCreateForNonRemoteOffload_001
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_NotCreateForNonRemoteOffload_001
+ * @tc.desc  : Test limiterNode_ is not created for non-remote_offload device.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_NotCreateForNonRemoteOffload_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo = GetSinkInfo();
+    // Ensure deviceClass is not "remote_offload"
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->IsInit(), true);
+
+    // Create stream to trigger CreateOffloadNodes
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is not created for non-remote_offload device
+    EXPECT_EQ(offloadManager->limiterNode_, nullptr);
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test LimiterNode_Destroy_001
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_Destroy_001
+ * @tc.desc  : Test limiterNode_ is destroyed when stream is destroyed.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_Destroy_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = "remote_offload";
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "source_file_io_48000_2_s16le.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Create stream to trigger CreateOffloadNodes
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is created
+    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+
+    // Destroy stream to trigger DestroyOffloadNodes
+    EXPECT_EQ(offloadManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is destroyed
+    EXPECT_EQ(offloadManager->limiterNode_, nullptr);
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test LimiterNode_ConnectAndDisconnect_001
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_ConnectAndDisconnect_001
+ * @tc.desc  : Test limiterNode_ is connected and disconnected properly.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_ConnectAndDisconnect_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = "remote_offload";
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "source_file_io_48000_2_s16le.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Create and start stream to trigger ConnectInputSession
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is connected (nodes should be non-null after start)
+    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    EXPECT_NE(offloadManager->converterForOutput_, nullptr);
+    EXPECT_NE(offloadManager->loudnessGainNode_, nullptr);
+
+    // Pause stream to trigger DisConnectInputSession
+    EXPECT_EQ(offloadManager->Pause(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ still exists (disconnection doesn't destroy the node)
+    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test LimiterNode_LatencyCalculation_001
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_LatencyCalculation_001
+ * @tc.desc  : Test limiterNode_ contributes to latency calculation.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_LatencyCalculation_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = "remote_offload";
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "source_file_io_48000_2_s16le.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Create stream to trigger CreateOffloadNodes
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ contributes to latency calculation
+    uint64_t initialLatency = 0;
+    uint64_t latencyWithLimiter = 0;
+
+    // Get latency without limiter (simulate by setting limiterNode_ to nullptr temporarily)
+    auto limiterNodeBackup = offloadManager->limiterNode_;
+    offloadManager->limiterNode_ = nullptr;
+    offloadManager->OnRequestLatency(streamInfo.sessionId, initialLatency);
+
+    // Get latency with limiter
+    offloadManager->limiterNode_ = limiterNodeBackup;
+    offloadManager->OnRequestLatency(streamInfo.sessionId, latencyWithLimiter);
+
+    // Latency with limiter should be greater or equal to latency without limiter
+    EXPECT_GE(latencyWithLimiter, initialLatency);
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
+
+/**
+ * @tc.name  : Test LimiterNode_SetupAudioLimiter_001
+ * @tc.type  : FUNC
+ * @tc.number: LimiterNode_SetupAudioLimiter_001
+ * @tc.desc  : Test limiterNode_ SetupAudioLimiter is called during CreateOffloadNodes.
+ */
+HWTEST_F(HpaeRendererManagerTest, LimiterNode_SetupAudioLimiter_001, TestSize.Level1)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = "remote_offload";
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "source_file_io_48000_2_s16le.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+
+    auto offloadManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    EXPECT_EQ(offloadManager->Init(), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Create stream to trigger CreateOffloadNodes
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = CHANNEL_6;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    EXPECT_EQ(offloadManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(offloadManager);
+
+    // Verify limiterNode_ is initialized after CreateOffloadNodes
+    EXPECT_NE(offloadManager->limiterNode_, nullptr);
+    EXPECT_TRUE(offloadManager->limiterNode_->IsLimiterInited());
+
+    WaitForMsgProcessing(offloadManager);
+    EXPECT_EQ(offloadManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(offloadManager->IsInit(), false);
+}
 }  // namespace

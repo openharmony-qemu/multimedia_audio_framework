@@ -28,6 +28,7 @@
 #include "hpae_msg_channel.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
+#include "hpae_limiter_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -128,6 +129,7 @@ private:
     std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = nullptr;
     std::unique_ptr<HpaeOffloadSinkOutputNode> sinkOutputNode_ = nullptr;
     std::shared_ptr<HpaeRenderEffectNode> renderNoneEffectNode_ = nullptr;
+    std::shared_ptr<HpaeLimiterNode> limiterNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;

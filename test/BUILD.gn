@@ -104,6 +104,7 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_sink_virtual_output_node_test",
     "../services/audio_engine/test/unittest:hpae_virtual_process_cluster_test",
     "../services/audio_engine/test/unittest:hpae_source_output_node_highpass_test",
+    "../services/audio_engine/test/unittest:hpae_limiter_node_test",
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_dump_pcm_unit_test",
