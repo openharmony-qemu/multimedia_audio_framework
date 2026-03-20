@@ -432,6 +432,7 @@ private:
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass,
         const std::string &networkId = LOCAL_NETWORK_ID);
     bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
+    bool GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
     int32_t GetStreamVolumeInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
