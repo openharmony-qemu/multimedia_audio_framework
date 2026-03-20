@@ -893,7 +893,7 @@ void AudioSessionManagerImpl::SetAudioSessionBehavior(const uint32_t behavior)
  
     int32_t ret = audioSessionMngr_->SetAudioSessionBehavior(behavior);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, ret = %{public}d", ret);
+        AUDIO_ERR_LOG("SetAudioSessionBehavior Failed, ret = %{public}d", ret);
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE);
     }
 }
