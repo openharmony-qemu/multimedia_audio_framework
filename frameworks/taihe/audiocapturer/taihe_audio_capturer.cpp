@@ -592,7 +592,7 @@ void AudioCapturerImpl::SetIndependentAudioSessionStrategy(
     const AudioSessionStrategy &strategy, const uint32_t behavior)
 {
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
         return;
     }
     OHOS::AudioStandard::AudioSessionStrategy audioSessionStrategy;
@@ -617,7 +617,7 @@ void AudioCapturerImpl::SetIndependentAudioSessionStrategy(
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invaild behavior param");
     int32_t ret = audioCapturer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetIndependentAudioSessionStrategy failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetIndependentAudioSessionStrategy failed");
         return;
     }
 }
