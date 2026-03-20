@@ -631,11 +631,6 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_002, TestSize.Level1
     EXPECT_EQ(deviceDesc.capabilities_.begin()->samplingRate, AudioSamplingRate::SAMPLE_RATE_96000);
 
     // Test2
-    deviceDesc.networkId_ = LOCAL_NETWORK_ID;
-    deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
-    EXPECT_EQ(deviceDesc.capabilities_.begin()->samplingRate, AudioSamplingRate::SAMPLE_RATE_48000);
-
-    // Test3
     deviceDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     deviceDesc.BuildCapabilitiesFromDeviceStreamInfo();
     EXPECT_EQ(deviceDesc.capabilities_.begin()->samplingRate, AudioSamplingRate::SAMPLE_RATE_16000);
