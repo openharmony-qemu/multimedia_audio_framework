@@ -596,6 +596,17 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_018, TestSize.
     audioInterruptService->zonesMap_[0] = audioInterruptZone;
     ret = audioInterruptService->GetStreamInFocusInternal(uid, 0);
     EXPECT_EQ(audioInterruptService->defaultVolumeType_, ret);
+
+    audioInterrupt.audioFocusType.streamType = STREAM_ALARM;
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, ACTIVE});
+    audioInterruptService->zonesMap_[0] = audioInterruptZone;
+    ret = audioInterruptService->GetStreamInFocusInternal(uid, 0);
+    EXPECT_EQ(STREAM_ALARM, ret);
+
+    audioInterruptZone->audioFocusInfoList.front().first.deviceTag = "abc";
+    ret = audioInterruptService->GetStreamInFocusInternal(uid, 0);
+    EXPECT_EQ(STREAM_MUSIC, ret);
 }
 
 /**
