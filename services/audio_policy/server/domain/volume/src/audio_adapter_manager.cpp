@@ -703,7 +703,7 @@ int32_t AudioAdapterManager::SetAppVolumeMutedDB(int32_t appUid, bool muted)
 int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERR_INVALID_PARAM, "device is null");
-    int32_t muteFactor = GetStreamMuteInternal(device, streamType) ? 0 : 1;
+    int32_t muteFactor = GetStreamMuteForVolumeSet(device, streamType) ? 0 : 1;
     int32_t volumeLevel = GetStreamVolumeInternal(device, streamType) * muteFactor;
     // Save volume in local prop for bootanimation
     SaveRingtoneVolumeToLocal(device, streamType, volumeLevel);
@@ -769,7 +769,7 @@ void AudioAdapterManager::SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> 
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     std::lock_guard<std::mutex> lock(audioVolumeMutex_);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    bool isMuted = GetStreamMuteInternal(device, volumeType);
+    bool isMuted = GetStreamMuteForVolumeSet(device, volumeType);
     isMuted = VolumeUtils::IsVolumeFixEnable() ? false : isMuted;
     int32_t volumeLevel = GetStreamVolumeInternal(device, volumeType) * (isMuted ? 0 : 1);
     if (device->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene() && volumeType == STREAM_MUSIC) {
@@ -858,6 +858,7 @@ int32_t AudioAdapterManager::SetDoubleRingVolumeDb(const AudioStreamType &stream
     } else {
         volumeDb = CalculateVolumeDb(volumeLevel);
     }
+    AUDIO_INFO_LOG("SetDoubleRingVolumeDb: %{public}d, %{public}f", volumeLevel, volumeDb);
     SetAudioVolume(desc, streamType, volumeDb);
     return SUCCESS;
 }
@@ -989,6 +990,13 @@ bool AudioAdapterManager::GetStreamMute(AudioStreamType streamType)
 }
 
 bool AudioAdapterManager::GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioStreamType streamType)
+{
+    CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
+    return volumeDataMaintainer_.LoadMuteFromMap(device, streamType);
+}
+
+bool AudioAdapterManager::GetStreamMuteForVolumeSet(std::shared_ptr<AudioDeviceDescriptor> device,
     AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
