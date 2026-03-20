@@ -736,7 +736,7 @@ void AudioRendererImpl::SetIndependentAudioSessionStrategy(
     const AudioSessionStrategy &strategy, const uint32_t behavior)
 {
     if (audioRenderer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRenderer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRenderer_ is nullptr");
         return;
     }
     OHOS::AudioStandard::AudioSessionStrategy audioSessionStrategy;
@@ -761,7 +761,7 @@ void AudioRendererImpl::SetIndependentAudioSessionStrategy(
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invaild behavior param");
     int32_t ret = audioRenderer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetIndependentAudioSessionStrategy failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetIndependentAudioSessionStrategy failed");
         return;
     }
 }
