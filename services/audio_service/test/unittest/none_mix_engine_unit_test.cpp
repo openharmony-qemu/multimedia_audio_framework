@@ -19,6 +19,7 @@
 #include "manager/hdi_adapter_manager.h"
 #include "pro_renderer_stream_impl.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -1787,6 +1788,95 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_MixStreams_002, TestSize.Level1)
     engine->startFadein_ = true;
     engine->uChannel_ = 2;
     engine->uFormat_ = 2; // SAMPLE_S16LE 对应 sizeof(int16_t)
+
+    engine->MixStreams();
+    EXPECT_EQ(engine->writeCount_, 1);
+
+    delete[] desc.buffer;
+}
+
+/**
+ * @tc.name  : NoneMixEngine_MixStreams_Voip_003
+ * @tc.desc  : Test MixStreams with isVoip_ = true to trigger StandbySleep
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_MixStreams_Voip_003, TestSize.Level1)
+{
+    auto engine = std::make_shared<NoneMixEngine>();
+    EXPECT_NE(engine, nullptr);
+
+    AudioProcessConfig config;
+    auto stream = std::make_shared<ProRendererStreamImpl>(config, true);
+    engine->stream_ = stream;
+
+    BufferDesc desc;
+    desc.bufLength = 1024;
+    desc.buffer = new uint8_t[desc.bufLength]{0};
+    stream->EnqueueBuffer(desc);
+
+    engine->isVoip_ = true;
+    engine->uChannel_ = 2;
+    engine->uFormat_ = 2;
+    engine->fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
+    engine->writeCount_ = 0;
+
+    engine->MixStreams();
+    EXPECT_EQ(engine->writeCount_, 1);
+
+    delete[] desc.buffer;
+}
+
+/**
+ * @tc.name  : NoneMixEngine_MixStreams_NonVoip_004
+ * @tc.desc  : Test MixStreams with isVoip_ = false to skip StandbySleep
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_MixStreams_NonVoip_004, TestSize.Level1)
+{
+    auto engine = std::make_shared<NoneMixEngine>();
+    EXPECT_NE(engine, nullptr);
+
+    AudioProcessConfig config;
+    auto stream = std::make_shared<ProRendererStreamImpl>(config, true);
+    engine->stream_ = stream;
+
+    BufferDesc desc;
+    desc.bufLength = 1024;
+    desc.buffer = new uint8_t[desc.bufLength]{0};
+    stream->EnqueueBuffer(desc);
+
+    engine->isVoip_ = false;
+    engine->uChannel_ = 2;
+    engine->uFormat_ = 2;
+
+    engine->MixStreams();
+    EXPECT_EQ(engine->writeCount_, 1);
+
+    delete[] desc.buffer;
+}
+
+/**
+ * @tc.name  : NoneMixEngine_MixStreams_Voip_WithFadeout_005
+ * @tc.desc  : Test MixStreams with isVoip_ = true and fadeout enabled
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_MixStreams_Voip_WithFadeout_005, TestSize.Level1)
+{
+    auto engine = std::make_shared<NoneMixEngine>();
+    EXPECT_NE(engine, nullptr);
+
+    AudioProcessConfig config;
+    auto stream = std::make_shared<ProRendererStreamImpl>(config, true);
+    engine->stream_ = stream;
+
+    BufferDesc desc;
+    desc.bufLength = 1024;
+    desc.buffer = new uint8_t[desc.bufLength]{0};
+    stream->EnqueueBuffer(desc);
+
+    engine->isVoip_ = true;
+    engine->uChannel_ = 2;
+    engine->uFormat_ = 2;
+    engine->fwkSyncTime_ = static_cast<uint64_t>(ClockTime::GetCurNano());
+    engine->writeCount_ = 0;
+    engine->startFadeout_ = true;
 
     engine->MixStreams();
     EXPECT_EQ(engine->writeCount_, 1);
