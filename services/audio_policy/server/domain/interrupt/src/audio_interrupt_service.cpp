@@ -1524,6 +1524,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
 
     int32_t focusPriority = STREAM_DEFAULT_PRIORITY;
     uint32_t focusSession = 0;
+    std::string deviceTag = "";
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
         if ((iter->second != ACTIVE && iter->second != DUCK) ||
             (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
@@ -1545,6 +1546,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
                     focusPriority = curPriority;
                     streamInFocus = stream.audioFocusType.streamType;
                     focusSession = (iter->first).streamId;
+                    deviceTag = (iter->first).deviceTag;
                 }
             }
         } else {
@@ -1553,8 +1555,12 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
                 focusPriority = curPriority;
                 streamInFocus = (iter->first).audioFocusType.streamType;
                 focusSession = (iter->first).streamId;
+                deviceTag = (iter->first).deviceTag;
             }
         }
+    }
+    if (!deviceTag.empty() && streamInFocus == STREAM_ALARM) {
+        streamInFocus = STREAM_MUSIC;
     }
     JUDGE_AND_INFO_LOG(isGetFocusForLog_ == false, "focus session is %{public}d", focusSession);
     CHECK_AND_RETURN_RET_LOG(!returnDefault, streamInFocus, "return default");
