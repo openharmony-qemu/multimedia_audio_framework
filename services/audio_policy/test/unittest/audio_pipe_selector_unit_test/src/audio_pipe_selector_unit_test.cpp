@@ -1904,6 +1904,63 @@ HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_002, TestSize.Level1)
                                                             busPipeIter);
     EXPECT_NE(busPipeIter, newPipeInfoList.end());
 }
+
+/**
+ * @tc.name: HandleFindBusPipe_003
+ * @tc.desc: Test that when streamDesc is nullptr and busAddresses size is greater than 1,
+ *           the function returns safely without dereferencing nullptr.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_003, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "Speaker";
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->moduleInfo_ = moduleInfo;
+    newPipeInfoList.push_back(pipeInfo);
+
+    auto busPipeIter = newPipeInfoList.end();
+    AudioPipeSelector::GetPipeSelector()->HandleFindBusPipe({"Speaker", "MCH_Speaker"}, newPipeInfoList, nullptr,
+                                                            busPipeIter);
+    EXPECT_EQ(busPipeIter, newPipeInfoList.end());
+}
+
+/**
+ * @tc.name: HandleFindBusPipe_004
+ * @tc.desc: Test that for recording stream, bus pipe matching uses moduleInfo_.busAddress.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, HandleFindBusPipe_004, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.name = "MicModule";
+    moduleInfo.busAddress = "record_bus1";
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    pipeInfo->adapterName_ = "primary";
+    pipeInfo->moduleInfo_ = moduleInfo;
+    newPipeInfoList.push_back(pipeInfo);
+
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = INPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->newDeviceDescs_.front()->macAddress_ = "record_bus1";
+
+    auto busPipeIter = newPipeInfoList.end();
+    AudioPipeSelector::GetPipeSelector()->HandleFindBusPipe({"record_bus1"}, newPipeInfoList, streamDesc, busPipeIter);
+    EXPECT_NE(busPipeIter, newPipeInfoList.end());
+    EXPECT_EQ((*busPipeIter)->moduleInfo_.busAddress, "record_bus1");
+}
 #endif
 
 /**

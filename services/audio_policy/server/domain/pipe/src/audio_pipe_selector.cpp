@@ -275,6 +275,20 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
 }
 
 #ifdef MULTI_BUS_ENABLE
+bool AudioPipeSelector::IsRecordingPipeMatched(const std::vector<std::string> &busAddresses,
+                                               const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+                                               const std::string &adapterName,
+                                               const std::shared_ptr<AudioPipeInfo> &newPipeInfo)
+{
+    if (busAddresses.empty()) {
+        return IsPipeMatch(streamDesc, newPipeInfo, adapterName);
+    }
+
+    return std::any_of(busAddresses.begin(), busAddresses.end(), [&newPipeInfo](const auto &busAddress) {
+        return newPipeInfo->moduleInfo_.busAddress == busAddress;
+    });
+}
+
 void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAddresses,
                                           std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
                                           const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -283,10 +297,10 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
     auto FindPipe = [&](std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos, const auto &condition) {
                 return std::find_if(pipeInfos.begin(), pipeInfos.end(), condition);
     };
-    if (streamDesc->IsRecording()) {
+    if (streamDesc != nullptr && streamDesc->IsRecording()) {
         std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
         busPipeIter = FindPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
-            return IsPipeMatch(streamDesc, newPipeInfo, streamDescAdapterName);
+            return IsRecordingPipeMatched(busAddresses, streamDesc, streamDescAdapterName, newPipeInfo);
         });
     } else if (busAddresses.size() == 1) {
         // Vehicle system scenario enter.
@@ -1028,6 +1042,9 @@ bool AudioPipeSelector::FindExistingPipe(std::vector<std::shared_ptr<AudioPipeIn
         CHECK_AND_CONTINUE(pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
                                pipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
                                pipeInfo->audioStreamInfo_.channels == streamPropInfo->channels_);
+        if (streamDesc->IsRecording() && !pipeInfo->moduleInfo_.busAddress.empty()) {
+            CHECK_AND_CONTINUE(pipeInfoPtr->paProp_.busAddress_ == pipeInfo->moduleInfo_.busAddress);
+        }
 #else
         CHECK_AND_CONTINUE(IsPipeMatch(streamDesc, pipeInfo, adapterInfoPtr->adapterName));
 #endif
