@@ -168,6 +168,7 @@ void TonePlayerImpl::OnWriteData(size_t length)
 bool TonePlayerImpl::LoadTone(ToneType toneType)
 {
     std::lock_guard<std::mutex> lock(optMutex_);
+    CHECK_AND_RETURN_RET_LOG(toneState_ != TONE_RELEASED, false, "TonePlayerImpl is already released");
     AUDIO_INFO_LOG("LoadTone type: %{public}d", toneType);
     bool result = false;
     bool checkPermission = PermissionUtil::VerifySelfPermission();
@@ -200,6 +201,7 @@ bool TonePlayerImpl::LoadTone(ToneType toneType)
 bool TonePlayerImpl::StartTone()
 {
     std::lock_guard<std::mutex> lock(optMutex_);
+    CHECK_AND_RETURN_RET_LOG(toneState_ != TONE_RELEASED, false, "TonePlayerImpl is already released");
     AUDIO_INFO_LOG("STARTTONE ToneType %{public}d", toneType_);
     CHECK_AND_RETURN_RET_LOG(toneState_ == TONE_INIT || toneState_ == TONE_STOPPED, false,
         "Start audioRenderer_ is null");
@@ -217,6 +219,7 @@ bool TonePlayerImpl::StartTone()
 bool TonePlayerImpl::StopTone()
 {
     std::lock_guard<std::mutex> lock(optMutex_);
+    CHECK_AND_RETURN_RET_LOG(toneState_ != TONE_RELEASED, false, "TonePlayerImpl is already released");
     AUDIO_INFO_LOG("STOPTONE ToneType %{public}d", toneType_);
 
     if (!isRendererInited_ || audioRenderer_ == nullptr) {
