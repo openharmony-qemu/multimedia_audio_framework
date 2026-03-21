@@ -258,6 +258,7 @@ void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
+    routerInfra.Lock();
     for (const auto &device : devices) {
         if (device == nullptr) {
             continue;
@@ -278,6 +279,7 @@ void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr
             }
         }
     }
+    routerInfra.Unlock();
 }
 
 void AudioRouterSelectStrategy::ExcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -304,6 +306,7 @@ void AudioRouterSelectStrategy::UnexcludeDevices(const std::vector<std::shared_p
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
+    routerInfra.Lock();
     for (const auto &device : devices) {
         if (device == nullptr) {
             continue;
@@ -312,6 +315,7 @@ void AudioRouterSelectStrategy::UnexcludeDevices(const std::vector<std::shared_p
         auto simpleDesc = ConvertDeviceToSimple(device);
         routerInfra.UnexcludePairDevice(simpleDesc, usage);
     }
+    routerInfra.Unlock();
 }
 
 void AudioRouterSelectStrategy::UnexcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -330,19 +334,12 @@ void AudioRouterSelectStrategy::UnexcludePairDevice(const std::shared_ptr<AudioD
     }
 }
 
-bool AudioRouterSelectStrategy::IsDeviceExcluded(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+bool AudioRouterSelectStrategy::IsDeviceExcluded(const std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioDeviceUsage usage) const
 {
-    auto simpleDescs = ConvertDeviceToSimple(devices);
+    auto simpleDesc = ConvertDeviceToSimple(device);
     auto &routerInfra = AudioRouterInfra::GetInstance();
-
-    for (auto &simpleDesc : simpleDescs) {
-        if (routerInfra.IsDeviceExcluded(simpleDesc, usage)) {
-            return true;
-        }
-    }
-
-    return false;
+    return routerInfra.IsDeviceExcluded(simpleDesc, usage);
 }
 
 }

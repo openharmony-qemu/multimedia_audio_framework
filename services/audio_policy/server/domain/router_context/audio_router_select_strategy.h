@@ -68,7 +68,7 @@ public:
         AudioDeviceUsage usage);
     void UnexcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
         AudioDeviceUsage usage);
-    bool IsDeviceExcluded(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    bool IsDeviceExcluded(const std::shared_ptr<AudioDeviceDescriptor> &devices,
         AudioDeviceUsage usage) const;
 
 protected:

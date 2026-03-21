@@ -38,6 +38,7 @@ void AudioRouterContextTestBase::TearDown(void)
         routerInfra.OnAppDied(i);
     }
     routerInfra.SetRecognitionCaptureDevice(nullptr);
+    routerInfra.UnexcludeAllDevice();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestBase::CreateDeviceDescriptor(

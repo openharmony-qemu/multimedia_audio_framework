@@ -729,6 +729,9 @@ void AudioRouterInfra::ExcludeDevice(const std::shared_ptr<AudioDeviceSimpleDesc
     AudioDeviceUsage usage)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (device == nullptr) {
+        return;
+    }
 
     auto it = excludedDevices_.find(device);
     if (it == excludedDevices_.end()) {
@@ -742,6 +745,9 @@ void AudioRouterInfra::UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDe
     AudioDeviceUsage usage)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (device == nullptr) {
+        return;
+    }
 
     auto it = excludedDevices_.find(device);
     if (it == excludedDevices_.end()) {
@@ -754,10 +760,19 @@ void AudioRouterInfra::UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDe
     }
 }
 
+void AudioRouterInfra::UnexcludeAllDevice()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    excludedDevices_.clear();
+}
+
 bool AudioRouterInfra::IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
     AudioDeviceUsage usage) const
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
+    if (device == nullptr) {
+        return false;
+    }
 
     auto it = excludedDevices_.find(device);
     if (it == excludedDevices_.end()) {
