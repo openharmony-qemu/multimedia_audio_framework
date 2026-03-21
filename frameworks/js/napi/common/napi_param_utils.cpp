@@ -1677,5 +1677,25 @@ napi_status NapiParamUtils::GetAudioCapturerChangeInfo(const napi_env &env, Audi
     AUDIO_INFO_LOG("Parse AudioCapturerChangeInfo, without muted");
     return napi_ok;
 }
+
+napi_status NapiParamUtils::ToJsActiveStreamsVolumeInfo(const napi_env &env,
+    const std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo, napi_value &result)
+{
+    napi_value valueParam = nullptr;
+    napi_status status = napi_create_array_with_length(env, activeStreamsVolumeInfo.size(), &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create activeStreamVolumeInfo array failed");
+    for (size_t i = 0; i < activeStreamsVolumeInfo.size(); i++) {
+        (void)napi_create_object(env, &valueParam);
+        status = SetValueInt32(env, "volumeType",
+            NapiAudioEnum::GetJsAudioVolumeType(activeStreamsVolumeInfo[i].volumeType_), valueParam);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set volumeType failed");
+        status = SetValueInt32(env, "appVolume", activeStreamsVolumeInfo[i].systemAppVolumePercentage_, valueParam);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set systemAppVolumePercentage failed");
+        status = SetValueInt32(env, "clientUid", activeStreamsVolumeInfo[i].clientUid_, valueParam);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set clientUid failed");
+        napi_set_element(env, result, i, valueParam);
+    }
+    return status;
+}
 } // namespace AudioStandard
 } // namespace OHOS

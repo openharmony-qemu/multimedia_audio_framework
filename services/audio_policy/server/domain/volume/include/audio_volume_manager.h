@@ -96,6 +96,10 @@ public:
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
+    int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
+    int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
+    int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted);
+    int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
     bool IsAppRingMuted(int32_t appUid);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
@@ -158,6 +162,7 @@ public:
     void HandleLegacyHighVolumeNotification(VolumeNotifyActionType actionType,
         AudioStreamType streamType = STREAM_DEFAULT, int32_t volumeLevel = 0);
     bool IsLegacyHighVolumeChecked();
+    void FlushSystemAppVolume();
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -204,13 +209,14 @@ private:
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
     void HandleLegacyHighVolumeEvent();
-private:
     int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
         const VolumeScale &volume, std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
         const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void ScheduleSystemAppVolumePersist();
 
+private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
@@ -267,6 +273,9 @@ private:
     std::mutex defaultDeviceLoadMutex_;
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
     DeviceType curOutputDeviceType_ = DEVICE_TYPE_NONE;
+
+    std::atomic<bool> systemAppVolumeDirty_ {false};
+    std::atomic<bool> systemAppVolumeFlushScheduled_ {false};
 
     std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
         std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);

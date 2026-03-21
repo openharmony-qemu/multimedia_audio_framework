@@ -322,6 +322,12 @@ enum DeviceUsage: i32 {
   ALL_CALL_DEVICES = 12,
 }
 
+struct ActiveStreamVolumeInfo {
+  @readonly volumeType: AudioVolumeType;
+  @readonly appVolume: i32;
+  @readonly clientUid: i32;
+}
+
 interface AudioManager {
   @gen_promise("setExtraParameters")
   SetExtraParametersSync(mainKey: String, kvpairs: @record Map<String, String>): void;
@@ -558,6 +564,8 @@ interface AudioVolumeManager {
 
   @gen_promise("setSystemVolumePercentage")
   SetSystemVolumePercentageSync(volumeType: AudioVolumeType, percentage: i32): void;
+
+  GetActiveStreamsVolumeInfo(): Array<ActiveStreamVolumeInfo>;
 
   GetMinSystemVolumePercentage(volumeType: AudioVolumeType): i32;
 

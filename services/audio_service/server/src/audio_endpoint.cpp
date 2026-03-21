@@ -55,6 +55,7 @@ namespace {
     static constexpr int64_t LINK_RECORDER_DELAY_STOP_HDI_TIME_NS = 2000000000; // 2000ms = 2000 * 1000 * 1000ns
     static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s = 1000 * 1000 * 1000ns
     static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS = 1000000000; // 1s
+    static constexpr int64_t ULTRA_FAST_MINIMUM_AHEAD_TIME_NS = 3000000; // 3ms
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 1500; // 1.5s
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     static constexpr int64_t DURATION = 5000000; // 5ms
@@ -763,6 +764,8 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const AudioDeviceDescriptor &dev
     spanDuration_ = static_cast<int64_t>(dstSpanSizeInframe_) * AUDIO_NS_PER_SECOND /
         static_cast<int64_t>(dstStreamInfo_.samplingRate);
     int64_t temp = spanDuration_ / 5 * 3; // 3/5 spanDuration
+    // To prevent audio pop in ultra fast scenarios, the minimum ahead time is consistent with normal fast(3ms)
+    temp = isEndpointUltraFast_ && temp < ULTRA_FAST_MINIMUM_AHEAD_TIME_NS ? ULTRA_FAST_MINIMUM_AHEAD_TIME_NS : temp;
     int64_t setTime = -1;
     int64_t maxSetTime = (static_cast<int64_t>(dstTotalSizeInframe_ - dstSpanSizeInframe_)) *
         AUDIO_NS_PER_SECOND / static_cast<int64_t>(dstStreamInfo_.samplingRate);
@@ -1463,9 +1466,10 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
         streamType, appUid, processList_[i]->GetAudioSessionId()));
     float mdmMuteFactor = AudioMuteFactorManager::GetInstance().GetMdmMuteStatus();
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(appUid, volumeMode);
+    float systemAppVolume = AudioVolume::GetInstance()->GetSystemAppVolume(appUid, streamType);
     int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
         processBufferList_[i]->GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
-    float baseVolume = volumeFromOhaudioBuffer * appVolume * doNotDisturbStatusVolume * mdmMuteFactor;
+    float baseVolume = volumeFromOhaudioBuffer * appVolume * systemAppVolume * doNotDisturbStatusVolume * mdmMuteFactor;
 
     VolumeResult result;
     if (deviceInfo_.networkId_ != LOCAL_NETWORK_ID || (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP

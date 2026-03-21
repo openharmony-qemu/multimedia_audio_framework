@@ -142,6 +142,10 @@ const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_AAM_CONN_SVC
 };
 const std::string NEARLINK_LIST = "audio_nearlink_list";
+constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
+constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
+constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
+constexpr int32_t VOLUME_PERCENTAGE_UNSET = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -1224,25 +1228,72 @@ int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetAppVolumeLevel: No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    return SetAppVolumeMutedInternal(appUid, muted, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid());
+    if (bundleName == SCENE_BOARD_PACKAGE_NAME) {
+        return SetSystemAppVolumeMutedForUidInternal(appUid, muted);
+    }
+    return SetSelfAppVolumeMutedInternal(appUid, muted, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
 }
 
-int32_t AudioPolicyServer::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag)
+int32_t AudioPolicyServer::SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted)
 {
-    if (!PermissionUtil::VerifySystemPermission()) {
-        AUDIO_ERR_LOG("SetAppVolumeLevel: No system permission");
-        return ERR_PERMISSION_DENIED;
-    }
-    if (!IsVolumeLevelValid(STREAM_APP, volumeLevel)) {
-        return ERR_INVALID_PARAM;
-    }
+    bool appliedSystemAppMuteStatus = false;
+    audioVolumeManager_.IsSystemAppVolumeMuted(appUid, appliedSystemAppMuteStatus);
+    AUDIO_INFO_LOG("appUid: %{public}d, new mute: %{public}d, old mute: %{public}d",
+        appUid, muted, appliedSystemAppMuteStatus);
+    // Skip setting if mute status is already up-to-date
+    CHECK_AND_RETURN_RET(appliedSystemAppMuteStatus != muted, SUCCESS);
+
+    int32_t ret = audioVolumeManager_.SetSystemAppVolumeMuted(appUid, muted);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set systemAppVolume mute");
+
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
+    int32_t volumePercentage = 0;
+    audioVolumeManager_.GetSystemAppVolumePercentage(appUid, volumePercentage);
+    volumeEvent.volume = muted ? 0 : volumePercentage;
+    volumeEvent.updateUi = true;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
+    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
+    return ret;
+}
+
+int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(volumePercentage >= MIN_VOLUME_PERCENTAGE && volumePercentage <= MAX_VOLUME_PERCENTAGE,
+        ERR_INVALID_PARAM, "volume percentage range error");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    return SetAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+    return SetSystemAppVolumePercentageForUidInternal(appUid, volumePercentage);
+}
+
+int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage)
+{
+    int32_t appliedVolumePercentage = VOLUME_PERCENTAGE_UNSET;
+    GetSystemAppVolumePercentageForUidInternal(appUid, appliedVolumePercentage);
+    AUDIO_INFO_LOG("appUid: %{public}d, new percentage: %{public}d, old percentage: %{public}d",
+        appUid, volumePercentage, appliedVolumePercentage);
+    // Skip setting if volume percentage is already up-to-date
+    CHECK_AND_RETURN_RET(appliedVolumePercentage != volumePercentage, SUCCESS);
+
+    int32_t ret = audioVolumeManager_.SetSystemAppVolumePercentage(appUid, volumePercentage);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system app volume percentage");
+
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
+    volumeEvent.volume = volumePercentage;
+    volumeEvent.updateUi = true;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
+    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
+    return ret;
 }
 
 int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
@@ -1335,13 +1386,17 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32
     return streamInFocus;
 }
 
-int32_t AudioPolicyServer::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
+int32_t AudioPolicyServer::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage)
 {
-    AUDIO_INFO_LOG("GetAppVolumeLevel appUid : %{public}d", appUid);
-    if (!PermissionUtil::VerifySystemPermission()) {
-        return ERR_PERMISSION_DENIED;
-    }
-    return GetAppVolumeLevelInternal(appUid, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    return GetSystemAppVolumePercentageForUidInternal(appUid, volumePercentage);
+}
+
+int32_t AudioPolicyServer::GetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t &volumePercentage)
+{
+    int32_t ret = audioVolumeManager_.GetSystemAppVolumePercentage(appUid, volumePercentage);
+    AUDIO_INFO_LOG("appUid[%{public}d], volumePercentage[%{public}d]", appUid, volumePercentage);
+    return ret;
 }
 // LCOV_EXCL_STOP
 
@@ -1349,7 +1404,7 @@ int32_t AudioPolicyServer::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
     AUDIO_INFO_LOG("enter");
     int32_t appUid = IPCSkeleton::GetCallingUid();
-    return GetAppVolumeLevelInternal(appUid, volumeLevel);
+    return GetSelfAppVolumeLevelInternal(appUid, volumeLevel);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel)
@@ -1391,10 +1446,10 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamTy
     return volumeLevel;
 }
 
-int32_t AudioPolicyServer::GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel)
+int32_t AudioPolicyServer::GetSelfAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel)
 {
     int32_t ret = audioVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
-    AUDIO_DEBUG_LOG("GetAppVolume appUid[%{public}d],volumeLevel[%{public}d]", appUid, volumeLevel);
+    AUDIO_DEBUG_LOG("GetSelfAppVolume appUid[%{public}d],volumeLevel[%{public}d]", appUid, volumeLevel);
     return ret;
 }
 
@@ -1712,14 +1767,26 @@ int32_t AudioPolicyServer::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t vo
     }
     int32_t appUid = IPCSkeleton::GetCallingUid();
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    return SetAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+    return SetSelfAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
 }
 
-int32_t AudioPolicyServer::SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
+int32_t AudioPolicyServer::SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
 {
-    AUDIO_INFO_LOG("SetAppVolumeLevelInternal appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
+    AUDIO_INFO_LOG("appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
         appUid, volumeLevel, isUpdateUi);
-    return SetAppSingleStreamVolume(appUid, volumeLevel, isUpdateUi);
+    int32_t ret = audioPolicyService_.SetAppVolumeLevel(appUid, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
+
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_APP;
+    volumeEvent.volume = volumeLevel;
+    volumeEvent.updateUi = isUpdateUi;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
+    audioPolicyServerHandler_->SendSelfAppVolumeChangeCallback(appUid, volumeEvent);
+    return ret;
 }
 
 int32_t AudioPolicyServer::SetAppRingMutedInternal(int32_t appUid, bool muted)
@@ -1730,10 +1797,9 @@ int32_t AudioPolicyServer::SetAppRingMutedInternal(int32_t appUid, bool muted)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi)
+int32_t AudioPolicyServer::SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi)
 {
-    AUDIO_INFO_LOG("SetAppVolumeLevelInternal appUid: %{public}d, muted: %{public}d, updateUi: %{public}d",
-        appUid, muted, isUpdateUi);
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d, updateUi: %{public}d", appUid, muted, isUpdateUi);
     int32_t ret = audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume mute");
     return ret;
@@ -1747,8 +1813,11 @@ int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isM
         AUDIO_ERR_LOG("only for system app");
         return ERR_PERMISSION_DENIED;
     }
-    int32_t ret = audioVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
-    return ret;
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid());
+    if (bundleName == SCENE_BOARD_PACKAGE_NAME) {
+        return audioVolumeManager_.IsSystemAppVolumeMuted(appUid, isMute);
+    }
+    return audioVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
 }
 // LCOV_EXCL_STOP
 
@@ -1868,24 +1937,6 @@ void AudioPolicyServer::ProcUpdateRingerMode()
     AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
     // Update ringer mode but no need to update volume again.
     SetRingerModeInternal(ringerMode, true);
-}
-
-int32_t AudioPolicyServer::SetAppSingleStreamVolume(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
-{
-    int32_t ret = audioPolicyService_.SetAppVolumeLevel(appUid, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
-
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = STREAM_APP;
-    volumeEvent.volume = volumeLevel;
-    volumeEvent.updateUi = isUpdateUi;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendAppVolumeChangeCallback(appUid, volumeEvent);
-    }
-    return ret;
 }
 
 int32_t AudioPolicyServer::SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel,
@@ -3407,7 +3458,7 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
     int appVolume = 0;
-    GetAppVolumeLevel(callerUid, appVolume);
+    GetSelfAppVolumeLevelInternal(callerUid, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     AUDIO_DEBUG_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
@@ -3451,7 +3502,7 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
         }
     }
     int appVolume = 0;
-    GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
+    GetSelfAppVolumeLevelInternal(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     int32_t ret = eventEntry_->UpdateTracker(mode, streamChangeInfo);
     if (ret == SUCCESS && mode == AUDIO_MODE_RECORD) {
@@ -6021,6 +6072,15 @@ int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     return interruptService_->SetAudioSessionBehavior(callerPid, behavior);
+}
+
+int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    AUDIO_INFO_LOG("enter");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
+    return coreService_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

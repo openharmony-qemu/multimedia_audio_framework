@@ -85,6 +85,7 @@ constexpr uint64_t MIN_FAST_CBBUF_IN_USEC = 2500;
 constexpr size_t FIXED_BUFFER_SIZE = 128 * 1024; // 128K
 
 constexpr int32_t FAST_DUAL_CAP_ID = 100000;
+constexpr int32_t SYSTEM_APP_VOLUME_DEFAULT_PERCENTAGE = 100;
 
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
@@ -2297,6 +2298,46 @@ struct AudioInterruptResult {
           ownerPid(-1),
           retCode(0)
     {
+    }
+};
+
+struct ActiveStreamVolumeInfo : public Parcelable {
+    AudioVolumeType volumeType_ = STREAM_MUSIC;
+    int32_t systemAppVolumePercentage_ = SYSTEM_APP_VOLUME_DEFAULT_PERCENTAGE;
+    int32_t clientUid_ = INVALID_UID;
+
+    ActiveStreamVolumeInfo() = default;
+
+    ActiveStreamVolumeInfo(AudioVolumeType type, int32_t volumePercentage, int32_t uid)
+        : volumeType_(type), systemAppVolumePercentage_(volumePercentage), clientUid_(uid) {}
+
+    bool operator==(const ActiveStreamVolumeInfo &other) const
+    {
+        return volumeType_ == other.volumeType_ &&
+            systemAppVolumePercentage_ == other.systemAppVolumePercentage_ &&
+            clientUid_ == other.clientUid_;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(volumeType_));
+        parcel.WriteInt32(systemAppVolumePercentage_);
+        parcel.WriteInt32(clientUid_);
+        return true;
+    }
+
+    static ActiveStreamVolumeInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) ActiveStreamVolumeInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        int32_t volumeTypeInt = parcel.ReadInt32();
+        info->volumeType_ = static_cast<AudioVolumeType>(volumeTypeInt);
+        info->systemAppVolumePercentage_ = parcel.ReadInt32();
+        info->clientUid_ = parcel.ReadInt32();
+        return info;
     }
 };
 } // namespace AudioStandard

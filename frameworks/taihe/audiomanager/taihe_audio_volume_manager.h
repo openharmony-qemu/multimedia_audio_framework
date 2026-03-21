@@ -73,6 +73,7 @@ public:
     int32_t GetSystemVolumePercentage(AudioVolumeType volumeType);
     void SetSystemVolumePercentageSync(AudioVolumeType volumeType, int32_t percentage);
     int32_t GetMinSystemVolumePercentage(AudioVolumeType volumeType);
+    array<ActiveStreamVolumeInfo> GetActiveStreamsVolumeInfo();
     void OnVolumePercentageChange(callback_view<void(VolumeEvent const& data)> callback);
     void OffVolumePercentageChange(optional_view<callback<void(VolumeEvent const& data)>> callback);
 

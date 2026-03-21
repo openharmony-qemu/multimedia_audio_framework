@@ -44,6 +44,9 @@ const int PARAM0 = 0;
 const int PARAM1 = 1;
 const int PARAM2 = 2;
 
+constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
+constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
+
 /* check condition related to argc/argv, return and logging. */
 #define NAPI_CHECK_ARGS_RETURN_VOID(context, condition, message, code)               \
     do {                                                               \
@@ -220,6 +223,8 @@ public:
     static bool CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType);
     static napi_status GetAudioDeviceTypeArray(const napi_env &env, std::vector<DeviceType> &deviceTypeVector,
         napi_value in);
+    static napi_status ToJsActiveStreamsVolumeInfo(const napi_env &env,
+        const std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo, napi_value &result);
 };
 } // namespace AudioStandard
 } // namespace OHOS

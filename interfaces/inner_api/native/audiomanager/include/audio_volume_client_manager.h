@@ -49,15 +49,14 @@ public:
     int32_t SetVolumeWithDevice(AudioVolumeType volumeType, int32_t volume, DeviceType deviceType);
 
     /**
-     * @brief Set the app volume.
+     * @brief Set the system-controlled app volume percentage for the specified UID.
      *
      * @param appUid app uid.
-     * @param volume The volume to be set for the current uid app.
-     * @param flag Is need update ui
+     * @param volumePercentage The volume percentage (0-100) to be set for the current uid app.
      * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      */
-    int32_t SetAppVolume(const int32_t appUid, const int32_t volume, const int32_t flag = 0);
+    int32_t SetSystemAppVolumePercentageForUid(const int32_t appUid, const int32_t volumePercentage);
 
     /**
      * @brief Set self app volume.
@@ -69,13 +68,14 @@ public:
     int32_t SetSelfAppVolume(const int32_t volume, const int32_t flag = 0);
 
     /**
-     * @brief Get uid app volume.
+     * @brief Get the system-controlled app volume percentage of the specified application.
      *
      * @param appUid App uid.
-     * @param volumeLevel App volume level.
-     * @return Get app volume result
+     * @param volumePercent Output parameter, used to return the queried volume percentage value (0-100).
+     * @return Returns {@link SUCCESS} if volume is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
      */
-    int32_t GetAppVolume(int32_t appUid, int32_t &volumeLevel) const;
+    int32_t GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) const;
 
     /**
      * @brief Get the uid app volume.
@@ -559,6 +559,15 @@ public:
      * @since 8
      */
     int32_t GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &info);
+
+    /**
+     * @brief Get volume information of all currently active streams
+     *
+     * @return Active streams volume information
+     * @since 24
+     */
+    int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+
 private:
     AudioVolumeClientManager();
     virtual ~AudioVolumeClientManager();

@@ -2763,27 +2763,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_134, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_135
-* @tc.desc  : Test SetAppSingleStreamVolume.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_135, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    int32_t appUid = 0;
-    int32_t volumeLevel = 1;
-    server->audioPolicyServerHandler_ = nullptr;
-    auto ret = server->SetAppSingleStreamVolume(appUid, volumeLevel, true);
-    EXPECT_EQ(ret, SUCCESS);
-
-    server->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    ret = server->SetAppSingleStreamVolume(appUid, volumeLevel, true);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_136
 * @tc.desc  : Test SetSingleStreamVolume.
 */

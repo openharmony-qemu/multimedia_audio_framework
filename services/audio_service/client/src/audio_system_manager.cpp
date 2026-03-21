@@ -195,14 +195,14 @@ int32_t AudioSystemManager::SetSelfAppVolume(int32_t volume, int32_t flag)
 }
 
 // LCOV_EXCL_START
-int32_t AudioSystemManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t flag)
+int32_t AudioSystemManager::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
 {
-    return AudioVolumeClientManager::GetInstance().SetAppVolume(appUid, volume, flag);
+    return AudioVolumeClientManager::GetInstance().SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
-int32_t AudioSystemManager::GetAppVolume(int32_t appUid, int32_t &volumeLevel) const
+int32_t AudioSystemManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) const
 {
-    return AudioVolumeClientManager::GetInstance().GetAppVolume(appUid, volumeLevel);
+    return AudioVolumeClientManager::GetInstance().GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
 int32_t AudioSystemManager::GetSelfAppVolume(int32_t &volumeLevel) const
@@ -1008,6 +1008,11 @@ int32_t AudioSystemManager::GetMinVolumeDegree(AudioVolumeType volumeType)
 int32_t AudioSystemManager::UpdateSafeVolumeByStrMode()
 {
     return AudioVolumeClientManager::GetInstance().UpdateSafeVolumeByStrMode();
+}
+
+int32_t AudioSystemManager::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    return AudioVolumeClientManager::GetInstance().GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

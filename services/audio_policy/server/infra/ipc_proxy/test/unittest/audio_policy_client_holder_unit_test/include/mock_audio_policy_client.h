@@ -40,7 +40,9 @@ public:
                 (const DeviceChangeAction& deviceChangeAction), (override));
     MOCK_METHOD(ErrCode, OnDeviceInfoUpdate,
                 (const DeviceChangeAction& deviceChangeAction), (override));
-    MOCK_METHOD(ErrCode, OnAppVolumeChanged,
+    MOCK_METHOD(ErrCode, OnSelfAppVolumeChanged,
+                (int32_t appUid, const VolumeEvent& volumeEvent), (override));
+    MOCK_METHOD(ErrCode, OnSystemAppVolumeChanged,
                 (int32_t appUid, const VolumeEvent& volumeEvent), (override));
     MOCK_METHOD(ErrCode, OnActiveVolumeTypeChanged,
                 (int32_t volumeType), (override));

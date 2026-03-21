@@ -105,6 +105,12 @@ public:
     int32_t GetAppVolume(int32_t appUid);
     bool IsSetAppVolume(int32_t appUid);
 
+    void SetSystemAppVolume(int32_t appUid, int32_t volumeLevel);
+    int32_t GetSystemAppVolume(int32_t appUid);
+    void SetSystemAppVolumeMuted(int32_t appUid, bool muted);
+    bool IsSystemAppVolumeMuted(int32_t appUid);
+    bool IsSetSystemAppVolume(int32_t appUid);
+
     bool GetMuteAffected(int32_t &affected);
     bool GetMuteTransferStatus(bool &status);
     bool SetMuteAffectedToMuteStatusDataBase(int32_t affected);
@@ -159,6 +165,11 @@ public:
         AudioStreamType streamType, int32_t volumeDegree);
     int32_t LoadVolumeDegreeFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType);
+
+    int32_t SaveSystemAppVolumeLevelToDb();
+    int32_t LoadSystemAppVolumeLevelFromDb(std::unordered_map<std::string, int32_t> &systemAppVolumeLevelMap);
+    int32_t SaveSystemAppVolumeMuteStatusToDb();
+    int32_t LoadSystemAppVolumeMuteStatusFromDb(std::unordered_map<std::string, bool> &systemAppVolumeMuteStatusMap);
     
     int32_t CheckVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
     int32_t CheckMuteState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
@@ -201,6 +212,8 @@ private:
         std::unordered_map<AudioStreamType, bool>> volumeUpdateStateMap_;
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
+    std::unordered_map<int32_t, int32_t> systemAppVolumeLevelMap_; // save system-controlled app volume level
+    std::unordered_map<int32_t, bool> systemAppVolumeMuteStatusMap_; // save system-controlled app volume mute status
     std::vector<AudioStreamType> volumeList_;
     std::shared_ptr<AudioDeviceDescriptor> ringerDevice_ =
         std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);

@@ -1227,7 +1227,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_056, TestSize.Le
 /**
 * @tc.name  : Test AudioPolicyClientStubImpl.
 * @tc.number: AudioPolicyClientStubImpl_057
-* @tc.desc  : Test OnAppVolumeChanged.
+* @tc.desc  : Test OnSelfAppVolumeChanged.
 */
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_057, TestSize.Level1)
 {
@@ -1241,13 +1241,13 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_057, TestSize.Le
     audioPolicyClient->appVolumeChangeForUidCallback_.push_back({appUid1, cb});
 
     VolumeEvent volumeEvent;
-    audioPolicyClient->OnAppVolumeChanged(appUid0, volumeEvent);
+    audioPolicyClient->OnSelfAppVolumeChanged(appUid0, volumeEvent);
 }
 
 /**
 * @tc.name  : Test AudioPolicyClientStubImpl.
 * @tc.number: AudioPolicyClientStubImpl_058
-* @tc.desc  : Test OnAppVolumeChanged.
+* @tc.desc  : Test OnSelfAppVolumeChanged.
 */
 HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_058, TestSize.Level1)
 {
@@ -1261,7 +1261,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_058, TestSize.Le
     audioPolicyClient->selfAppVolumeChangeCallback_.push_back({appUid1, cb});
 
     VolumeEvent volumeEvent;
-    audioPolicyClient->OnAppVolumeChanged(appUid0, volumeEvent);
+    audioPolicyClient->OnSelfAppVolumeChanged(appUid0, volumeEvent);
 }
 
 /**

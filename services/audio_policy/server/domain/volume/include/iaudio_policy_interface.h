@@ -74,6 +74,18 @@ public:
 
     virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
 
+    virtual int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
+
+    virtual int32_t SetSystemAppVolumeLevel(int32_t appUid, int32_t volumeLevel) = 0;
+
+    virtual int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted) = 0;
+
+    virtual int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute) = 0;
+
+    virtual void SaveSystemAppVolumeLevelToDb() = 0;
+
+    virtual void SaveSystemAppVolumeMuteStatusToDbAsync() = 0;
+
     virtual int32_t SetAppRingMuted(int32_t appUid, bool muted) = 0;
 
     virtual bool IsAppRingMuted(int32_t appUid) = 0;
@@ -272,6 +284,7 @@ public:
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
+    virtual void RegisterAppIndividualVolumeEnableObserver() = 0;
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;

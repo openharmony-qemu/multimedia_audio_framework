@@ -804,20 +804,20 @@ int32_t AudioVolumeClientManager::SetSelfAppVolume(int32_t volume, int32_t flag)
 }
 
 // LCOV_EXCL_START
-int32_t AudioVolumeClientManager::SetAppVolume(int32_t appUid, int32_t volume, int32_t flag)
+int32_t AudioVolumeClientManager::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
 {
-    AUDIO_INFO_LOG("enter AudioSystemManager::SetAppVolume");
+    AUDIO_INFO_LOG("enter");
     bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "SetAppVolume: No system permission");
-    return AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volume);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
-int32_t AudioVolumeClientManager::GetAppVolume(int32_t appUid, int32_t &volumeLevel) const
+int32_t AudioVolumeClientManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) const
 {
-    AUDIO_INFO_LOG("enter AudioSystemManager::GetAppVolume");
+    AUDIO_INFO_LOG("enter");
     bool ret = PermissionUtil::VerifySelfPermission();
-    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "GetAppVolume: No system permission");
-    return AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
 int32_t AudioVolumeClientManager::GetSelfAppVolume(int32_t &volumeLevel) const
@@ -893,6 +893,15 @@ int32_t AudioVolumeClientManager::SetActiveVolumeTypeCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
         "SetActiveVolumeTypeCallback: callback is nullptr");
     return AudioPolicyManager::GetInstance().SetActiveVolumeTypeCallback(callback);
+}
+
+int32_t AudioVolumeClientManager::GetActiveStreamsVolumeInfo(
+    std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    AUDIO_INFO_LOG("enter");
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioPolicyManager::GetInstance().GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -324,11 +324,11 @@ int32_t AudioPolicyManager::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t v
     return gsp->SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
 }
 
-int32_t AudioPolicyManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag)
+int32_t AudioPolicyManager::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
+    return gsp->SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
 int32_t AudioPolicyManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
@@ -338,11 +338,11 @@ int32_t AudioPolicyManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     return gsp->SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
 
-int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute)
+int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->IsAppVolumeMute(appUid, muted, isMute);
+    return gsp->IsAppVolumeMute(appUid, owned, isMute);
 }
 
 int32_t AudioPolicyManager::SetAppRingMuted(int32_t appUid, bool muted)
@@ -504,11 +504,11 @@ int32_t AudioPolicyManager::GetSelfAppVolumeLevel(int32_t &volumeLevel)
     return gsp->GetSelfAppVolumeLevel(volumeLevel);
 }
 
-int32_t AudioPolicyManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
+int32_t AudioPolicyManager::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->GetAppVolumeLevel(appUid, volumeLevel);
+    return gsp->GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
 }
 
 int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid)
@@ -3607,6 +3607,14 @@ int32_t AudioPolicyManager::SetAudioSessionBehavior(const uint32_t behavior)
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "RegisterPolicyCallbackClientFunc failed");
     }
     return gsp->SetAudioSessionBehavior(behavior);
+}
+
+int32_t AudioPolicyManager::GetActiveStreamsVolumeInfo(
+    std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

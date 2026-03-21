@@ -52,7 +52,8 @@ public:
         ABANDON_CATEGORY_EVENT,
         FOCUS_INFOCHANGE,
         RINGER_MODEUPDATE_EVENT,
-        APP_VOLUME_CHANGE_EVENT,
+        SELF_APP_VOLUME_CHANGE_EVENT,
+        SYSTEM_APP_VOLUME_CHANGE_EVENT,
         ACTIVE_VOLUME_TYPE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT,
         MIC_STATE_CHANGE_EVENT_WITH_CLIENTID,
@@ -182,7 +183,8 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
     bool SendActiveVolumeTypeChangeCallback(const AudioVolumeType &volumeType);
-    bool SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
+    bool SendSelfAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
+    bool SendSystemAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent);
     bool SendMicStateUpdatedCallback(const MicStateChangeEvent &micStateChangeEvent);
     bool SendMicStateWithClientIdCallback(const MicStateChangeEvent &micStateChangeEvent, int32_t clientId);
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
@@ -284,7 +286,8 @@ private:
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleSelfAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleSystemAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioZoneEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleActiveVolumeTypeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);

@@ -132,6 +132,10 @@ public:
     static AudioDeviceDescriptor MakeEmptyDeviceDescriptor();
     static CurrentInputDeviceChangedEvent SetValueCurrentInputDeviceChangedEvent(
         const OHOS::AudioStandard::CurrentInputDeviceChangedEvent &event);
+    static taihe::array<ActiveStreamVolumeInfo> ToTaiheActiveStreamsVolumeInfo(
+        const std::vector<OHOS::AudioStandard::ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+    static ActiveStreamVolumeInfo ToTaiheActiveStreamVolumeInfo(
+        const OHOS::AudioStandard::ActiveStreamVolumeInfo &src);
 
     template<typename E>
     static std::shared_ptr<uintptr_t> TypeCallback(callback_view<void(E)> callback)

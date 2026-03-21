@@ -1980,6 +1980,25 @@ void AudioStreamCollector::GetPlayingMediaRendererChangeInfos(
     }
 }
 
+std::vector<std::pair<int32_t, AudioStreamType>> AudioStreamCollector::GetActiveStreams()
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    std::vector<std::pair<int32_t, AudioStreamType>> result;
+    for (auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->rendererState == RENDERER_RUNNING) {
+            int32_t uid = changeInfo->clientUID;
+            AudioStreamType streamType = GetStreamType(
+                changeInfo->rendererInfo.contentType, changeInfo->rendererInfo.streamUsage);
+            std::pair streamPair {uid, streamType};
+            if (std::find(result.begin(), result.end(), streamPair) == result.end()) {
+                result.push_back(streamPair);
+                AUDIO_INFO_LOG("clientUID: %{public}d, streamType: %{public}d", uid, streamType);
+            }
+        }
+    }
+    return result;
+}
+
 bool AudioStreamCollector::IsVoipStreamActive()
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);

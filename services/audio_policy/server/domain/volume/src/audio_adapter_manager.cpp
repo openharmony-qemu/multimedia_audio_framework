@@ -34,6 +34,7 @@
 #include "audio_spatialization_service.h"
 #include "audio_manager_listener_stub_impl.h"
 #include "audio_format_utils.h"
+#include "audio_bundle_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -43,6 +44,7 @@ namespace OHOS {
 namespace AudioStandard {
 static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
 static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
+constexpr const char *APP_INDIVIDUAL_VOLUME_ENABLE = "app_individual_volume_enable";
 mutex g_deviceVolumeBehaviorListenerMutex;
 
 static const std::vector<DeviceType> VOLUME_GROUP_TYPE_LIST = {
@@ -212,6 +214,7 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
     InitSafeStatus(isFirstBoot);
     InitSafeTime(isFirstBoot);
     InitLegacyHighVolumeCheckTime(isFirstBoot);
+    InitSystemAppVolume(isFirstBoot);
 
     if (isNeedCopySystemUrlData_) {
         CloneSystemSoundUrl();
@@ -417,6 +420,84 @@ int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
         appUid, muted);
     volumeDataMaintainer_.SetAppVolumeMuted(appUid, muted);
     return SetAppVolumeMutedDB(appUid, muted);
+}
+
+int32_t AudioAdapterManager::GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
+{
+    if (volumeDataMaintainer_.IsSetSystemAppVolume(appUid)) {
+        volumeLevel = volumeDataMaintainer_.IsSystemAppVolumeMuted(appUid) ?
+            0 : volumeDataMaintainer_.GetSystemAppVolume(appUid);
+    } else {
+        volumeLevel = APP_DEFAULT_VOLUME_LEVEL;
+    }
+    AUDIO_INFO_LOG("uid:%{public}d, volumeLevel:%{public}d", appUid, volumeLevel);
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::SetSystemAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
+{
+    AUDIO_INFO_LOG("appUid: %{public}d, volumeLevel: %{public}d", appUid, volumeLevel);
+    volumeDataMaintainer_.SetSystemAppVolume(appUid, volumeLevel);
+    bool muted = volumeLevel > 0 ? false : true;
+    volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, muted);
+    return SetSystemAppVolumeDb(appUid);
+}
+
+int32_t AudioAdapterManager::SetSystemAppVolumeDb(int32_t appUid)
+{
+    int32_t volumeLevel = volumeDataMaintainer_.IsSystemAppVolumeMuted(appUid) ?
+        0 : volumeDataMaintainer_.GetSystemAppVolume(appUid);
+    auto desc = audioActiveDevice_.GetDeviceForVolume(appUid);
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "desc is null");
+    float volumeDb = CalculateVolumeDbNonlinear(STREAM_APP, desc->deviceType_, volumeLevel);
+    SetSystemAppAudioVolume(appUid, volumeDb);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_NULL_POINTER, "audioVolume handle null");
+    AUDIO_INFO_LOG("volumeDb:%{public}f volumeLevel:%{public}d device:%{public}s isDs:%{public}d",
+        volumeDb, volumeLevel, desc->GetName().c_str(), desc->IsDistributedSpeaker());
+    if (desc->IsDistributedSpeaker()) {
+        SetOffloadVolume(STREAM_MUSIC, volumeDb, REMOTE_CLASS, desc->networkId_);
+    } else {
+        SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
+    }
+    return SUCCESS;
+}
+
+void AudioAdapterManager::SetSystemAppAudioVolume(int32_t appUid, float volumeDb)
+{
+    std::lock_guard<std::mutex> lock(audioVolumeMutex_);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+    bool isMuted = volumeDataMaintainer_.IsSystemAppVolumeMuted(appUid);
+    int32_t systemAppVolumeLevel = volumeDataMaintainer_.GetSystemAppVolume(appUid) * (isMuted ? 0 : 1);
+    SystemAppVolume systemAppVolume(appUid, volumeDb, systemAppVolumeLevel, isMuted);
+    audioVolume->SetSystemAppVolume(systemAppVolume);
+}
+
+int32_t AudioAdapterManager::SetSystemAppVolumeMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
+    volumeDataMaintainer_.SetSystemAppVolumeMuted(appUid, muted);
+    return SetSystemAppVolumeDb(appUid);
+}
+
+int32_t AudioAdapterManager::IsSystemAppVolumeMuted(int32_t appUid, bool &isMute)
+{
+    isMute = volumeDataMaintainer_.IsSystemAppVolumeMuted(appUid);
+    AUDIO_INFO_LOG("appUid: %{public}d, isMute: %{public}d", appUid, isMute);
+    return SUCCESS;
+}
+
+void AudioAdapterManager::SaveSystemAppVolumeLevelToDb()
+{
+    volumeDataMaintainer_.SaveSystemAppVolumeLevelToDb();
+}
+
+void AudioAdapterManager::SaveSystemAppVolumeMuteStatusToDbAsync()
+{
+    std::thread([this]() {
+        volumeDataMaintainer_.SaveSystemAppVolumeMuteStatusToDb();
+    }).detach();
 }
 
 int32_t AudioAdapterManager::SetAppRingMuted(int32_t appUid, bool muted)
@@ -2740,6 +2821,17 @@ int64_t AudioAdapterManager::GetCurentDeviceSafeTime(DeviceType deviceType)
     return -1;
 }
 
+void AudioAdapterManager::InitSystemAppVolume(bool isFirstBoot)
+{
+    AUDIO_INFO_LOG("enter");
+    CHECK_AND_RETURN_LOG(isDataShareReady_ == true, "DataShare not ready");
+    HandleAppIndividualVolumeSettingChanged();
+    if (!isFirstBoot) {
+        RestoreSystemAppVolumeLevel();
+        RestoreSystemAppVolumeMuteStatus();
+    }
+}
+
 int32_t AudioAdapterManager::GetRestoreVolumeLevel(DeviceType deviceType)
 {
     switch (deviceType) {
@@ -3336,6 +3428,7 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
     UpdateVolumeForStreams();
     DealDoNotDisturbStatus();
     DealDoNotDisturbStatusWhiteList();
+    HandleAppIndividualVolumeSettingChanged();
 }
 
 void AudioAdapterManager::MuteMediaWhenAccountsChanged()
@@ -3542,6 +3635,44 @@ void AudioAdapterManager::MdmMuteSwitchCallback(bool isMute)
             DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
             float volumeFloat = isMute ? 0 : GetSystemVolumeInDb(streamType, volumeLevel, curOutputDeviceType);
             AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, volumeFloat);
+        }
+    }
+}
+
+void AudioAdapterManager::RegisterAppIndividualVolumeEnableObserver()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc handleAppIndividualVolumeSettingChanged = [&](const std::string &key) {
+        HandleAppIndividualVolumeSettingChanged();
+    };
+    sptr observer = settingProvider.CreateObserver(APP_INDIVIDUAL_VOLUME_ENABLE,
+        handleAppIndividualVolumeSettingChanged);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    CHECK_AND_RETURN_LOG(ret == ERR_OK, "Register AppIndividualVolumeEnable fail");
+    AUDIO_INFO_LOG("Register AppIndividualVolumeEnable success");
+}
+
+void AudioAdapterManager::HandleAppIndividualVolumeSettingChanged()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t appIndividualVolumeEnabledInt = 0;
+    int32_t ret = settingProvider.GetIntValue(APP_INDIVIDUAL_VOLUME_ENABLE,
+        appIndividualVolumeEnabledInt, "system");
+    bool appIndividualVolumeEnabled = appIndividualVolumeEnabledInt == 1 ? true : false;
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "GetIntValue failed");
+    AUDIO_INFO_LOG("appVolumeEnable:%{public}d", appIndividualVolumeEnabled);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume is nullptr");
+    audioVolume->HandleAppIndividualVolumeSettingChanged(appIndividualVolumeEnabled);
+    std::set<int32_t> appUidSet = audioVolume->GetStreamVolumeAppUids();
+    for (const auto &appUid : appUidSet) {
+        auto desc = audioActiveDevice_.GetDeviceForVolume(appUid);
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
+        float volumeDb = 1.0f;
+        if (desc->IsDistributedSpeaker()) {
+            SetOffloadVolume(STREAM_MUSIC, volumeDb, REMOTE_CLASS, desc->networkId_);
+        } else {
+            SetOffloadVolume(STREAM_MUSIC, volumeDb, OFFLOAD_CLASS);
         }
     }
 }
@@ -3929,6 +4060,44 @@ void AudioAdapterManager::UpdateVolumeWhenPassThroughDeviceConnect(std::shared_p
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
     SetOffloadVolume(STREAM_MUSIC, 1.0, REMOTE_CLASS, device->networkId_);
     RegistAdapterManagerCallback(device->networkId_);
+}
+
+int32_t AudioAdapterManager::RestoreSystemAppVolumeLevel()
+{
+    std::unordered_map<std::string, int32_t> systemAppVolumeLevelMap = {};
+    int32_t ret = volumeDataMaintainer_.LoadSystemAppVolumeLevelFromDb(systemAppVolumeLevelMap);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "load system app volume level fail");
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t userId = settingProvider.GetCurrentUserId();
+    for (const auto &[bundleName, level] : systemAppVolumeLevelMap) {
+        bool isInstall = true;
+        AudioBundleManager::IsBundleInstalled(bundleName, userId, 0, isInstall);
+        if (!isInstall) continue;
+        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId);
+        CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "GetUidByBundleName failed");
+        SetSystemAppVolumeLevel(uid, level);
+    }
+    volumeDataMaintainer_.SaveSystemAppVolumeLevelToDb();
+    return SUCCESS;
+}
+
+int32_t AudioAdapterManager::RestoreSystemAppVolumeMuteStatus()
+{
+    std::unordered_map<std::string, bool> systemAppVolumeMuteStatusMap;
+    int32_t ret = volumeDataMaintainer_.LoadSystemAppVolumeMuteStatusFromDb(systemAppVolumeMuteStatusMap);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "load system app volume mute status fail");
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t userId = settingProvider.GetCurrentUserId();
+    for (const auto &[bundleName, muteStatus] : systemAppVolumeMuteStatusMap) {
+        bool isInstall = true;
+        AudioBundleManager::IsBundleInstalled(bundleName, userId, 0, isInstall);
+        if (!isInstall) continue;
+        int32_t uid = AudioBundleManager::GetUidByBundleName(bundleName, userId);
+        CHECK_AND_CONTINUE_LOG(uid >= SUCCESS, "GetUidByBundleName failed");
+        SetSystemAppVolumeMuted(uid, muteStatus);
+    }
+    volumeDataMaintainer_.SaveSystemAppVolumeMuteStatusToDb();
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

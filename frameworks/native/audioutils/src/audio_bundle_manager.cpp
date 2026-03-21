@@ -173,5 +173,27 @@ std::string AudioBundleManager::GetBundleNameByToken(const uint32_t tokenIdNum)
         return tokenInfo.processName;
     }
 }
+
+int32_t AudioBundleManager::IsBundleInstalled(
+    const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled)
+{
+    AudioXCollie audioXCollie("AudioBundleManager::IsBundleInstalled",
+        GET_BUNDLE_TIME_OUT_SECONDS, nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    WatchTimeout guard("AudioBundleManager:IsBundleInstalled");
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(systemAbilityManager != nullptr, ERR_NULL_POINTER, "systemAbilityManager is nullptr");
+    guard.CheckCurrTimeout();
+
+    sptr<IRemoteObject> remoteObject = systemAbilityManager->CheckSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    CHECK_AND_RETURN_RET_PRELOG(remoteObject != nullptr, ERR_NULL_POINTER, "remoteObject is nullptr");
+
+    sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = OHOS::iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
+    CHECK_AND_RETURN_RET_LOG(bundleMgrProxy != nullptr, ERR_NULL_POINTER, "bundleMgrProxy is nullptr");
+
+    WatchTimeout reguard("bundleMgrProxy->IsBundleInstalled:IsBundleInstalled");
+    int32_t ret = bundleMgrProxy->IsBundleInstalled(bundleName, userId, appIndex, isInstalled);
+    reguard.CheckCurrTimeout();
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

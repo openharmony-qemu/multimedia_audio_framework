@@ -67,7 +67,9 @@ public:
 
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
-    int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);
+    int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
+
+    int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage);
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
@@ -77,7 +79,7 @@ public:
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
-    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
+    int32_t GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage);
 
     int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel);
 
@@ -761,6 +763,7 @@ public:
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes);
     int32_t NotifyStreamSilentChange(uint32_t streamId);
     int32_t SetAudioSessionBehavior(const uint32_t behavior);
+    int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
 
 private:
     AudioPolicyManager() {}

@@ -49,6 +49,7 @@ private:
         bool isTrue;
         int32_t volLevel;
         int32_t volDegree;
+        int32_t volPercent; // 0-100
         int32_t appUid;
         bool isOwned;
         std::string networkId;
@@ -64,9 +65,9 @@ private:
         size_t &argc, napi_value *args);
     static napi_value GetVolumeGroupInfos(napi_env env, napi_callback_info info);
     static napi_value SetAppVolumePercentage(napi_env env, napi_callback_info info);
-    static napi_value SetAppVolumePercentageForUid(napi_env env, napi_callback_info info);
+    static napi_value SetSystemAppVolumePercentageForUid(napi_env env, napi_callback_info info);
     static napi_value GetAppVolumePercentage(napi_env env, napi_callback_info info);
-    static napi_value GetAppVolumePercentageForUid(napi_env env, napi_callback_info info);
+    static napi_value GetSystemAppVolumePercentageForUid(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupInfosSync(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupManager(napi_env env, napi_callback_info info);
     static napi_value GetVolumeGroupManagerSync(napi_env env, napi_callback_info info);
@@ -130,6 +131,7 @@ private:
     static napi_value GetSystemVolumePercentage(napi_env env, napi_callback_info info);
     static napi_value SetSystemVolumePercentage(napi_env env, napi_callback_info info);
     static napi_value GetMinSystemVolumePercentage(napi_env env, napi_callback_info info);
+    static napi_value GetActiveStreamsVolumeInfo(napi_env env, napi_callback_info info);
 
     AudioSystemManager *audioSystemMngr_;
 

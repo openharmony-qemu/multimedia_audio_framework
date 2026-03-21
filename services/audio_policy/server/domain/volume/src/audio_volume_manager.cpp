@@ -51,8 +51,17 @@ private:
     const std::string reason_;
 };
 
+class FlushSystemAppVolumeAction : public AsyncActionHandler::AsyncAction {
+public:
+    void Exec() override
+    {
+        AudioVolumeManager::GetInstance().FlushSystemAppVolume();
+    }
+};
+
 static const int64_t MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S = 24 * 60 * 60; // 24h
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
+constexpr uint32_t SYSTEM_APP_VOLUME_PERSIST_DELAY_MS = 1000; // 1s
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -430,6 +439,64 @@ int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
     int32_t result = audioPolicyManager_.IsAppVolumeMute(appUid, owned, isMute);
     return result;
+}
+
+int32_t AudioVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage)
+{
+    // For system-controlled app volume, the volumeLevel range is 0-100.
+    int32_t volumeLevel = volumePercentage;
+    int32_t ret = audioPolicyManager_.SetSystemAppVolumeLevel(appUid, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set system app volume level fail");
+    systemAppVolumeDirty_ = true;
+    ScheduleSystemAppVolumePersist();
+    return SUCCESS;
+}
+
+void AudioVolumeManager::ScheduleSystemAppVolumePersist()
+{
+    if (systemAppVolumeFlushScheduled_.exchange(true)) {
+        return;
+    }
+
+    auto action = std::make_shared<FlushSystemAppVolumeAction>();
+    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
+    AsyncActionHandler::AsyncActionDesc desc;
+    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
+    desc.delayTimeMs = SYSTEM_APP_VOLUME_PERSIST_DELAY_MS;
+    CHECK_AND_CALL_FUNC_RETURN_LOG(asyncHandler_ != nullptr,
+        systemAppVolumeFlushScheduled_ = false, "asyncHandler_ is nullptr");
+    asyncHandler_->PostAsyncAction(desc);
+}
+
+void AudioVolumeManager::FlushSystemAppVolume()
+{
+    if (systemAppVolumeDirty_) {
+        audioPolicyManager_.SaveSystemAppVolumeLevelToDb();
+        systemAppVolumeDirty_ = false;
+    }
+    systemAppVolumeFlushScheduled_ = false;
+}
+
+int32_t AudioVolumeManager::GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage)
+{
+    int32_t volumeLevel = 0;
+    int32_t ret = audioPolicyManager_.GetSystemAppVolumeLevel(appUid, volumeLevel);
+    // For system-controlled app volume, the volumeLevel range is 0-100.
+    volumePercentage = volumeLevel;
+    return ret;
+}
+
+int32_t AudioVolumeManager::SetSystemAppVolumeMuted(int32_t appUid, bool muted)
+{
+    int32_t ret = audioPolicyManager_.SetSystemAppVolumeMuted(appUid, muted);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set system app mute status fail");
+    audioPolicyManager_.SaveSystemAppVolumeMuteStatusToDbAsync();
+    return ret;
+}
+
+int32_t AudioVolumeManager::IsSystemAppVolumeMuted(int32_t appUid, bool &isMute)
+{
+    return audioPolicyManager_.IsSystemAppVolumeMuted(appUid, isMute);
 }
 
 int32_t AudioVolumeManager::SetAppRingMuted(int32_t appUid, bool muted)
