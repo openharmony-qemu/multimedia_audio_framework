@@ -103,34 +103,44 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
     }
 }
 
-void AudioRouterInfra::ClearAllSelectSelectDevice(SelectDeviceType type)
+void AudioRouterInfra::ClearAllSelectSelectDevice(SelectDeviceType type,
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
-    ClearSystemSelectDevice(type);
-    ClearAllAppSelectDevice(type);
+    ClearSystemSelectDevice(type, device);
+    ClearAllAppSelectDevice(type, device);
 }
 
-void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type)
+void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type,
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
-            systemSelectDevice_.mediaInput_.device_ = nullptr;
-            systemSelectDevice_.mediaInput_.selectTime_ = 0;
+            if (device == nullptr || device == systemSelectDevice_.mediaInput_.device_) {
+                systemSelectDevice_.mediaInput_.device_ = nullptr;
+                systemSelectDevice_.mediaInput_.selectTime_ = 0;
+            }
             break;
         case SelectDeviceType::MEDIA_OUTPUT:
-            systemSelectDevice_.mediaOutput_.device_ = nullptr;
-            systemSelectDevice_.mediaOutput_.selectTime_ = 0;
+            if (device == nullptr || device == systemSelectDevice_.mediaOutput_.device_) {
+                systemSelectDevice_.mediaOutput_.device_ = nullptr;
+                systemSelectDevice_.mediaOutput_.selectTime_ = 0;
+            }
             break;
         case SelectDeviceType::CALL_INPUT:
-            systemSelectDevice_.callInput_.device_ = nullptr;
-            systemSelectDevice_.callInput_.selectTime_ = 0;
+            if (device == nullptr || device == systemSelectDevice_.callInput_.device_) {
+                systemSelectDevice_.callInput_.device_ = nullptr;
+                systemSelectDevice_.callInput_.selectTime_ = 0;
+            }
             break;
         case SelectDeviceType::CALL_OUTPUT:
-            systemSelectDevice_.callOutput_.device_ = nullptr;
-            systemSelectDevice_.callOutput_.selectTime_ = 0;
+            if (device == nullptr || device == systemSelectDevice_.callOutput_.device_) {
+                systemSelectDevice_.callOutput_.device_ = nullptr;
+                systemSelectDevice_.callOutput_.selectTime_ = 0;
+            }
             break;
         default:
             AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
@@ -138,27 +148,37 @@ void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type)
     }
 }
 
-void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type)
+void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
     for (auto& [uid, context] : appContexts_) {
+        auto &appSelect = context->appSelectDevice_;
         switch (type) {
             case SelectDeviceType::MEDIA_INPUT:
-                context->appSelectDevice_.mediaInput_.device_ = nullptr;
-                context->appSelectDevice_.mediaInput_.selectTime_ = 0;
+                if (device == nullptr || device == appSelect.mediaInput_.device_) {
+                    appSelect.mediaInput_.device_ = nullptr;
+                    appSelect.mediaInput_.selectTime_ = 0;
+                }
                 break;
             case SelectDeviceType::MEDIA_OUTPUT:
-                context->appSelectDevice_.mediaOutput_.device_ = nullptr;
-                context->appSelectDevice_.mediaOutput_.selectTime_ = 0;
+                if (device == nullptr || device == appSelect.mediaOutput_.device_) {
+                    appSelect.mediaOutput_.device_ = nullptr;
+                    appSelect.mediaOutput_.selectTime_ = 0;
+                }
                 break;
             case SelectDeviceType::CALL_INPUT:
-                context->appSelectDevice_.callInput_.device_ = nullptr;
-                context->appSelectDevice_.callInput_.selectTime_ = 0;
+                if (device == nullptr || device == appSelect.callInput_.device_) {
+                    appSelect.callInput_.device_ = nullptr;
+                    appSelect.callInput_.selectTime_ = 0;
+                }
                 break;
             case SelectDeviceType::CALL_OUTPUT:
-                context->appSelectDevice_.callOutput_.device_ = nullptr;
-                context->appSelectDevice_.callOutput_.selectTime_ = 0;
+                if (device == nullptr || device == appSelect.callOutput_.device_) {
+                    appSelect.callOutput_.device_ = nullptr;
+                    appSelect.callOutput_.selectTime_ = 0;
+                }
                 break;
             default:
                 AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
@@ -166,6 +186,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type)
         }
     }
 }
+
 
 void AudioRouterInfra::SetRecognitionCaptureDevice(
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device)
@@ -669,6 +690,24 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultD
         return nullptr;
     }
     return streamIt->second;
+}
+
+void AudioRouterInfra::ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    for (auto &[uid, context] : appContexts_) {
+        auto &streamSelectDevices = context->streamSelectDevices_;
+        auto it = streamSelectDevices.begin();
+        while (it != streamSelectDevices.end()) {
+            if (it->second != nullptr && it->second->deviceType_ == device->deviceType_ &&
+                it->second->deviceId_ == device->deviceId_) {
+                it = streamSelectDevices.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
 }
 
 int64_t AudioRouterInfra::GetCurrentTimeMs() const

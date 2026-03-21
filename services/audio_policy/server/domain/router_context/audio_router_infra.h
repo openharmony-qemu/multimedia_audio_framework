@@ -41,7 +41,8 @@ public:
 
     void RefreshSelectDevice(SelectDeviceType type, int32_t uid,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    void ClearAllSelectSelectDevice(SelectDeviceType type);
+    void ClearAllSelectSelectDevice(SelectDeviceType type,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device = nullptr);
     void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
@@ -54,6 +55,7 @@ public:
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamSelectDevice(int32_t uid, uint32_t streamId);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
+    void ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
@@ -102,8 +104,10 @@ private:
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void RefreshAppSelectDevice(SelectDeviceType type, int32_t uid,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    void ClearSystemSelectDevice(SelectDeviceType type);
-    void ClearAllAppSelectDevice(SelectDeviceType type);
+    void ClearSystemSelectDevice(SelectDeviceType type,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
+    void ClearAllAppSelectDevice(SelectDeviceType type,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void AdjustInputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     bool HasRunningInputStream(int32_t uid);

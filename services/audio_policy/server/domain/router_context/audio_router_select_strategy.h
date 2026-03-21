@@ -64,6 +64,13 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetCurrentInputDevice(int32_t uid);
 
+    void ExcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        AudioDeviceUsage usage);
+    void UnexcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        AudioDeviceUsage usage);
+    bool IsDeviceExcluded(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+        AudioDeviceUsage usage) const;
+
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &simpleDesc);
@@ -84,6 +91,11 @@ protected:
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
     std::shared_ptr<AudioDeviceDescriptor> GetFinalOutputDeviceForCall(
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    
+    void ExcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+        AudioDeviceUsage usage);
+    void UnexcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioDeviceUsage usage);
 };
 
 }

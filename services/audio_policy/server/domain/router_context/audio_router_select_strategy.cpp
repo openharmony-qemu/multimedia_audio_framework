@@ -253,5 +253,97 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::G
     return devices;
 }
 
+void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    AudioDeviceUsage usage)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    for (const auto &device : devices) {
+        if (device == nullptr) {
+            continue;
+        }
+        ExcludePairDevice(device, usage);
+        auto simpleDesc = ConvertDeviceToSimple(device);
+        routerInfra.ExcludeDevice(simpleDesc, usage);
+
+        std::vector<std::pair<AudioDeviceUsage, SelectDeviceType> types[] {
+            { MEDIA_OUTPUT_DEVICES, SelectDeviceType::MEDIA_OUTPUT },
+            { MEDIA_INPUT_DEVICES, SelectDeviceType::MEDIA_INPUT },
+            { CALL_OUTPUT_DEVICES, SelectDeviceType::CALL_OUTPUT },
+            { CALL_INPUT_DEVICES, SelectDeviceType::CALL_INPUT },
+        };
+        for (const auto type : types) {
+            if (usage & type.first != 0) {
+                routerInfra.ClearAllSelectSelectDevice(type.second, simpleDesc);
+            }
+        }
+    }
+}
+
+void AudioRouterSelectStrategy::ExcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioDeviceUsage usage)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    if (device->pairDeviceDescriptor_ != nullptr) {
+        if (usage & MEDIA_OUTPUT_DEVICES) {
+            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            routerInfra.ExcludeDevice(simplePairDesc, MEDIA_INPUT_DEVICES);
+            routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::MEDIA_INPUT, simplePairDesc);
+        } else if (usage & CALL_OUTPUT_DEVICES) {
+            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            routerInfra.ExcludeDevice(simplePairDesc, CALL_INPUT_DEVICES);
+            routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_INPUT, simplePairDesc);
+        }
+    }
+}
+
+
+void AudioRouterSelectStrategy::UnexcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    AudioDeviceUsage usage)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    for (const auto &device : devices) {
+        if (device == nullptr) {
+            continue;
+        }
+        UnexcludePairDevice(device, usage);
+        auto simpleDesc = ConvertDeviceToSimple(device);
+        routerInfra.UnexcludePairDevice(simpleDesc, usage);
+    }
+}
+
+void AudioRouterSelectStrategy::UnexcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
+    AudioDeviceUsage usage)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    if (device->pairDeviceDescriptor_ != nullptr) {
+        if (usage & MEDIA_OUTPUT_DEVICES) {
+            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            routerInfra.UnexcludeDevice(simplePairDesc, MEDIA_INPUT_DEVICES);
+        } else if (usage & CALL_OUTPUT_DEVICES) {
+            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            routerInfra.UnexcludeDevice(simplePairDesc, CALL_INPUT_DEVICES);
+        }
+    }
+}
+
+bool AudioRouterSelectStrategy::IsDeviceExcluded(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
+    AudioDeviceUsage usage) const
+{
+    auto simpleDescs = ConvertDeviceToSimple(devices);
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    for (auto &simpleDesc : simpleDescs) {
+        if (routerInfra.IsDeviceExcluded(simpleDesc, usage)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 }
 }
