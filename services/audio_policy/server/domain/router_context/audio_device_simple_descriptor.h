@@ -61,6 +61,14 @@ public:
         return !(*this == other);
     }
 
+    bool operator<(const AudioDeviceSimpleDescriptor& other) const
+    {
+        if (deviceType_ == other.deviceType_) {
+            return deviceId_ < other.deviceId_;
+        }
+        return deviceType_ < other.deviceType_;
+    }
+
     std::shared_ptr<AudioDeviceDescriptor> GetOnlineDeviceDescriptor() const;
 };
 

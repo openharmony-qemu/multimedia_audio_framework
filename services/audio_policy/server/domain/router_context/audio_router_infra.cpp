@@ -686,5 +686,47 @@ bool AudioRouterInfra::IsSystemUid(int32_t uid) const
     return uid == SYSTEM_PID;
 }
 
+void AudioRouterInfra::ExcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
+    AudioDeviceUsage usage)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = excludedDevices_.find(device);
+    if (it == excludedDevices_.end()) {
+        excludedDevices_[device] = usage;
+    } else {
+        it->second = it->second | usage;
+    }
+}
+
+void AudioRouterInfra::UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
+    AudioDeviceUsage usage)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = excludedDevices_.find(device);
+    if (it == excludedDevices_.end()) {
+        return;
+    }
+
+    it->second = it->second & ~usage;
+    if (it->second == 0) {
+        excludedDevices_.erase(it);
+    }
+}
+
+bool AudioRouterInfra::IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
+    AudioDeviceUsage usage) const
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    auto it = excludedDevices_.find(device);
+    if (it == excludedDevices_.end()) {
+        return false;
+    }
+
+    return (it->second & usage) != 0;
+}
+
 }
 }

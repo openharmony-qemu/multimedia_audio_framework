@@ -26,6 +26,7 @@
 #include "audio_device_simple_descriptor.h"
 #include "audio_source_type.h"
 #include "audio_stream_info.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,6 +58,13 @@ public:
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     BluetoothAndNearlinkPreferredRecordCategory GetPreferredInputCategory(int32_t uid);
     BluetoothAndNearlinkPreferredRecordCategory GetHighestPriorityPreferredInputCategory();
+
+    void ExcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
+        AudioDeviceUsage usage);
+    void UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
+        AudioDeviceUsage usage);
+    bool IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
+        AudioDeviceUsage usage) const;
 
     void UpdateCurrentOutputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
@@ -102,10 +110,27 @@ private:
     bool HasRunningOutputStream(int32_t uid);
     int64_t GetCurrentTimeMs() const;
 
+    struct CompareExcludedSimpleDevice {
+        bool operator()(const std::shared_ptr<AudioDeviceSimpleDescriptor> &a,
+            const std::shared_ptr<AudioDeviceSimpleDescriptor> &b) const
+        {
+            if (a == nullptr && b == nullptr) {
+                return false;
+            } else if (a == nullptr) {
+                return true;
+            } else if (b == nullptr) {
+                return false;
+            }
+            return a < b;
+        }
+    };
+
     std::recursive_mutex mutex_;
     std::map<int32_t, std::shared_ptr<struct AudioAppRouterContext>> appContexts_;
     AudioAppSelectDevice systemSelectDevice_;
     AudioSelectDeviceInfo recognitionSelectDevice_;
+    std::map<std::shared_ptr<AudioDeviceSimpleDescriptor>, AudioDeviceUsage,
+        CompareExcludedSimpleDevice> excludedDevices_;
     std::list<int32_t> inputPriorityList_;
     std::list<int32_t> outputPriorityList_;
 };
