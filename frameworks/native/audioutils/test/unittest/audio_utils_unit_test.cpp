@@ -246,8 +246,15 @@ HWTEST(AudioUtilsUnitTest, GetSysPara_001, TestSize.Level1)
  */
 HWTEST(AudioUtilsUnitTest, GetEcEnableParam_001, TestSize.Level1)
 {
+    // 测试设置为true
+    SetParameter("const.multimedia.audio.fwk_ec.enable", "true");
     bool ret = GetEcEnableParam();
-    EXPECT_EQ(ret, GetBoolParameter("const.multimedia.audio.fwk_ec.enable", false));
+    EXPECT_EQ(ret, true);
+
+    // 测试设置为false
+    SetParameter("const.multimedia.audio.fwk_ec.enable", "false");
+    ret = GetEcEnableParam();
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -258,8 +265,15 @@ HWTEST(AudioUtilsUnitTest, GetEcEnableParam_001, TestSize.Level1)
  */
 HWTEST(AudioUtilsUnitTest, GetHasEarpieceParam_001, TestSize.Level1)
 {
+    // 测试设置为true
+    SetParameter("const.multimedia.audio.has_earpiece", "true");
     bool ret = GetHasEarpieceParam();
-    EXPECT_EQ(ret, GetBoolParameter("const.multimedia.audio.has_earpiece", false));
+    EXPECT_EQ(ret, true);
+
+    // 测试设置为false
+    SetParameter("const.multimedia.audio.has_earpiece", "false");
+    ret = GetHasEarpieceParam();
+    EXPECT_EQ(ret, false);
 }
 
 /**
