@@ -731,11 +731,6 @@ void AudioServer::OnStart()
         AUDIO_ERR_LOG("start err");
         WriteServiceStartupError();
     }
-    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
-    GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 0) {
-        isFastControlled_ = false;
-    }
     int32_t audioCacheState = 0;
     GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
     if (audioCacheState != 0) {
@@ -2046,7 +2041,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         appUid = callingUid;
     }
     if (IsNormalIpcStream(config)) {
-        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", isFastControlled_);
+        AUDIO_INFO_LOG("Create normal ipc stream, isFastControlled: %{public}d", GetFastControlParam());
         int32_t ret = 0;
         sptr<IpcStreamInServer> ipcStream = AudioService::GetInstance()->GetIpcStream(config, ret);
         if (ipcStream == nullptr) {

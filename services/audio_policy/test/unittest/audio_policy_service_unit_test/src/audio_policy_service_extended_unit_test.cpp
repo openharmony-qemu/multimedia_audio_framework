@@ -15,6 +15,7 @@
 
 #include "audio_policy_service_extended_unit_test.h"
 #include "get_server_util.h"
+#include "audio_utils.h"
 
 #include <thread>
 #include <memory>
@@ -339,11 +340,11 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, SubscribeSafeVolumeEvent, TestSize.
 /**
 * @tc.name  : Test AudioPolicyService.
 * @tc.number: getFastControlParam
-* @tc.desc  : Test getFastControlParam.
+* @tc.desc  : Test AudioUtils::GetFastControlParam.
 */
 HWTEST_F(AudioPolicyServiceExtendedUnitTest, getFastControlParam, TestSize.Level1)
 {
-    bool ret = AudioPolicyService::GetAudioPolicyService().getFastControlParam();
+    bool ret = GetFastControlParam();
     EXPECT_EQ(ret, true);
 }
 

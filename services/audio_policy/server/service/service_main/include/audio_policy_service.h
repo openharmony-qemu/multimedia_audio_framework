@@ -57,7 +57,6 @@
 #include "audio_a2dp_offload_manager.h"
 #include "audio_iohandle_map.h"
 #include "audio_router_map.h"
-#include "audio_policy_config_manager.h"
 #include "audio_connected_device.h"
 #include "audio_tone_manager.h"
 #include "audio_microphone_descriptor.h"
@@ -240,7 +239,7 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
-    bool getFastControlParam();
+
 
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
@@ -256,8 +255,8 @@ public:
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
-    int32_t GetEcEnableState();
     AudioScene GetAudioSceneFromAllZones();
+
 
     int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
 private:
@@ -276,7 +275,6 @@ private:
         audioGlobalConfigManager_(AudioGlobalConfigManager::GetAudioGlobalConfigManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
-        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
         audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
         audioToneManager_(AudioToneManager::GetInstance()),
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
@@ -316,7 +314,6 @@ private:
     int32_t GetVoipDeviceInfo(const AudioProcessConfig &config, AudioDeviceDescriptor &deviceInfo, int32_t type,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &preferredDeviceList);
 
-    bool LoadAudioPolicyConfig();
     void CreateRecoveryThread();
 
     void LoadHdiEffectModel();
@@ -340,7 +337,6 @@ private:
     const int32_t G_UNKNOWN_PID = -1;
     int32_t dAudioClientUid = 3055;
     int32_t maxRendererInstances_ = 128;
-    bool isFastControlled_ = true;
     static constexpr int32_t MIN_SERVICE_COUNT = 2;
     std::bitset<MIN_SERVICE_COUNT> serviceFlag_;
     std::mutex serviceFlagMutex_;
@@ -407,7 +403,6 @@ private:
 
     AudioIOHandleMap& audioIOHandleMap_;
     AudioRouteMap& audioRouteMap_;
-    AudioPolicyConfigManager& audioConfigManager_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioToneManager& audioToneManager_;
     AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;

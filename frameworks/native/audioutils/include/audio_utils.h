@@ -35,6 +35,7 @@
 #include "audio_info.h"
 #include "audio_stream_info.h"
 #include "audio_common_utils.h"
+#include "audio_params_utils.h"
 
 #define AUDIO_MS_PER_SECOND 1000
 #define AUDIO_US_PER_SECOND 1000000
@@ -261,8 +262,6 @@ bool StringConverterFloat(const std::string &str, float &result);
 bool SetSysPara(const std::string& key, int32_t value);
 template <typename T>
 bool GetSysPara(const char *key, T &value);
-
-int32_t GetEngineFlag();
 
 enum AudioDumpFileType {
     AUDIO_APP = 0,

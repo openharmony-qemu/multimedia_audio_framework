@@ -510,7 +510,6 @@ private:
     std::vector<std::pair<std::string,
         std::vector<std::pair<std::string, std::string>>>> audioExtraParameterCacheVector_;
 
-    bool isFastControlled_ = true;
     int32_t maxRendererStreamCntPerUid_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     // Temporary resolution to avoid pcm driver problem

@@ -15,7 +15,7 @@
 
 #include "get_server_util.h"
 #include "audio_policy_service_thirdext_unit_test.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
@@ -1225,13 +1225,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerAppStateTest_001, TestSi
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
-* @tc.number: AudioPolicyConfigManager_001
-* @tc.desc  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
+* @tc.number: AudioCoreConfigManager_001
+* @tc.desc  : Test AudioCoreConfigManager.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioCoreConfigManager_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(), false);
     EXPECT_EQ(audioConfigManager_.Init(true), true);
 
@@ -1245,11 +1245,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_001, TestSiz
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
-* @tc.number: AudioPolicyConfigManager_002
-* @tc.desc  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
+* @tc.number: AudioCoreConfigManager_002
+* @tc.desc  : Test AudioCoreConfigManager.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioCoreConfigManager_002, TestSize.Level1)
 {
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     size_t adapterMapSize = configData.adapterInfoMap.size();
@@ -1261,7 +1261,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSiz
         adapterSizeMap.insert({item.first, sizePair});
     }
 
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
     configData.Reorganize();
 
@@ -1292,11 +1292,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_002, TestSiz
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
-* @tc.number: AudioPolicyConfigManager_003
-* @tc.desc  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
+* @tc.number: AudioCoreConfigManager_003
+* @tc.desc  : Test AudioCoreConfigManager.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioCoreConfigManager_003, TestSize.Level1)
 {
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     size_t deviceMapSize = configData.deviceInfoMap.size();
@@ -1306,7 +1306,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
         deviceSizeMap.insert({pair.first, pair.second.size()});
     }
 
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
     configData.Reorganize();
 
@@ -1319,11 +1319,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_003, TestSiz
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
-* @tc.number: AudioPolicyConfigManager_004
-* @tc.desc  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
+* @tc.number: AudioCoreConfigManager_004
+* @tc.desc  : Test AudioCoreConfigManager.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_004, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioCoreConfigManager_004, TestSize.Level1)
 {
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     size_t adapterMapSize = configData.adapterInfoMap.size();
@@ -1335,7 +1335,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_004, TestSiz
         adapterSizeMap.insert({item.first, sizePair});
     }
 
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
     configData.Reorganize();
 
@@ -1347,11 +1347,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_004, TestSiz
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
-* @tc.number: AudioPolicyConfigManager_005
-* @tc.desc  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
+* @tc.number: AudioCoreConfigManager_005
+* @tc.desc  : Test AudioCoreConfigManager.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_005, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioCoreConfigManager_005, TestSize.Level1)
 {
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     size_t adapterMapSize = configData.adapterInfoMap.size();
@@ -1363,7 +1363,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_005, TestSiz
         adapterSizeMap.insert({item.first, sizePair});
     }
 
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
     configData.Reorganize();
 
@@ -1374,13 +1374,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_005, TestSiz
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
-* @tc.number: AudioPolicyConfigManager_006
-* @tc.desc  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
+* @tc.number: AudioCoreConfigManager_006
+* @tc.desc  : Test AudioCoreConfigManager.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioPolicyConfigManager_006, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioCoreConfigManager_006, TestSize.Level1)
 {
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
 
     PolicyGlobalConfigs gCfg;
@@ -1484,14 +1484,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceDescriptor_001, TestSize.L
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: GetStreamPropInfo_001
 * @tc.desc  : Test GetStreamPropInfo
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_001, TestSize.Level1)
 {
     uint32_t routerFlag = AUDIO_OUTPUT_FLAG_FAST;
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     configData.Reorganize();
@@ -1528,14 +1528,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_001, TestSize.Level
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: GetStreamPropInfo_002
 * @tc.desc  : Test GetStreamPropInfo
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_002, TestSize.Level1)
 {
     uint32_t routerFlag = AUDIO_OUTPUT_FLAG_MULTICHANNEL; // for multichannel_output
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     configData.Reorganize();
@@ -1581,14 +1581,14 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_002, TestSize.Level
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: GetStreamPropInfo_003
 * @tc.desc  : Test GetStreamPropInfo
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_003, TestSize.Level1)
 {
     uint32_t routerFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
     configData.Reorganize();
@@ -1638,13 +1638,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_003, TestSize.Level
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: UpdateBasicStreamInfo_001
 * @tc.desc  : Test UpdateBasicStreamInfo
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
     std::shared_ptr<AdapterPipeInfo> pipeInfo = nullptr;
@@ -1688,7 +1688,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.L
  */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -1707,7 +1707,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_001, TestSize.
  */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = SAMPLE_RATE_16000;
@@ -1726,7 +1726,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_002, TestSize.
  */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = SAMPLE_RATE_48000;
@@ -1745,7 +1745,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_003, TestSize.
  */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_004, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
     AudioStreamInfo streamInfo;
     streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -1763,7 +1763,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_004, TestSize.
  */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
 
     // Test various sampling rates that should be converted to 48000
     std::vector<AudioSamplingRate> testRates = {
@@ -1793,13 +1793,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateStreamSampleInfo_005, TestSize.
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: GetDynamicStreamPropInfoFromPipe_001
 * @tc.desc  : Test GetDynamicStreamPropInfoFromPipe
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     std::vector<AudioChannel> channelVec = {AudioChannel::MONO, AudioChannel::STEREO, AudioChannel::CHANNEL_3,
         AudioChannel::CHANNEL_4, AudioChannel::STEREO, AudioChannel::STEREO};
@@ -1853,13 +1853,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_001,
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: GetDynamicStreamPropInfoFromPipe_002
 * @tc.desc  : Test GetDynamicStreamPropInfoFromPipe
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_002, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     std::vector<AudioChannel> channelVec = {AudioChannel::MONO, AudioChannel::CHANNEL_8};
     std::vector<AudioChannelLayout> channelLayoutVec = {
@@ -1892,13 +1892,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_002,
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: GetDynamicStreamPropInfoFromPipe_003
 * @tc.desc  : Test GetDynamicStreamPropInfoFromPipe
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_003, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
 
     std::vector<StreamPropTestInfo> propVec = {
@@ -1919,13 +1919,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetDynamicStreamPropInfoFromPipe_003,
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: GetStreamPropInfoFromPipe_001
 * @tc.desc  : Test GetStreamPropInfoFromPipe
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfoFromPipe_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
 
     std::shared_ptr<AdapterPipeInfo> info = std::make_shared<AdapterPipeInfo>();
@@ -1946,13 +1946,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfoFromPipe_001, TestSi
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: ParseFormat_001
 * @tc.desc  : Test ParseFormat
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, ParseFormat_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     EXPECT_EQ(manager.ParseFormat("s16le"), SAMPLE_S16LE);
     EXPECT_EQ(manager.ParseFormat("s24le"), SAMPLE_S24LE);
@@ -1961,13 +1961,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ParseFormat_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.name  : Test AudioCoreConfigManager.
 * @tc.number: CheckDynamicCapturerConfig_001
 * @tc.desc  : Test CheckDynamicCapturerConfig
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckDynamicCapturerConfig_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
@@ -2304,7 +2304,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, ClearActiveHfpDevice_001, TestSize.Le
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
 
     AudioStreamInfo streamInfo;
@@ -2336,7 +2336,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_001, TestSize.Le
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_002, TestSize.Level1)
 {
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
 
     AudioStreamInfo streamInfo;
@@ -2367,7 +2367,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_002, TestSize.Le
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_003, TestSize.Level1)
 {
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
 
     AudioStreamInfo streamInfo;
@@ -2399,7 +2399,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_003, TestSize.Le
 */
 HWTEST_F(AudioPolicyServiceFourthUnitTest, GetFastStreamSupport_004, TestSize.Level1)
 {
-    AudioPolicyConfigManager &audioConfigManager_ = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &audioConfigManager_ = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(audioConfigManager_.Init(true), true);
 
     AudioStreamInfo streamInfo;

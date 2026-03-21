@@ -14,8 +14,11 @@
 */
 
 #include "audio_focus_parser_unit_test.h"
+#include "audio_policy_config_parser.h"
+#include "audio_utils.h"
 
 using namespace testing;
+
 using namespace testing::ext;
 
 namespace OHOS {
@@ -304,5 +307,93 @@ HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_011, TestSize.Level4
     std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> map;
     audioFocusParser_->AddAllowedFocusEntry(mockAudioXmlNode_, input, map);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyConfigParser.
+ * @tc.number: AudioFocusParserUnitTest_012
+ * @tc.desc  : Test GetHasEarpiece interface.
+ */
+HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_012, TestSize.Level4)
+{
+    AudioPolicyConfigParser parser(nullptr);
+    EXPECT_EQ(parser.GetHasEarpiece(), GetHasEarpieceParam());
+
+    parser.hasEarpiece_ = true;
+    EXPECT_TRUE(parser.GetHasEarpiece());
+
+    parser.hasEarpiece_ = false;
+    EXPECT_FALSE(parser.GetHasEarpiece());
+}
+
+/**
+ * @tc.name  : Test AudioPolicyConfigParser.
+ * @tc.number: AudioFocusParserUnitTest_013
+ * @tc.desc  : Test ParseDevices skips Earpiece_Out when hasEarpiece_ is false.
+ */
+HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_013, TestSize.Level4)
+{
+    AudioPolicyConfigParser parser(nullptr);
+    parser.hasEarpiece_ = false;
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+
+    EXPECT_CALL(*(mockAudioXmlNode_), MoveToChildren()).Times(1);
+    EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
+
+    std::string name = "Earpiece_Out";
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("name"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(name), Return(SUCCESS)));
+
+    EXPECT_CALL(*(mockAudioXmlNode_), MoveToNext()).Times(1);
+
+    parser.ParseDevices(mockAudioXmlNode_, adapterInfo);
+    EXPECT_TRUE(adapterInfo->deviceInfos.empty());
+}
+
+/**
+ * @tc.name  : Test AudioPolicyConfigParser.
+ * @tc.number: AudioFocusParserUnitTest_014
+ * @tc.desc  : Test ParseDevices keeps Earpiece_Out when hasEarpiece_ is true.
+ */
+HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_014, TestSize.Level4)
+{
+    AudioPolicyConfigParser parser(nullptr);
+    parser.hasEarpiece_ = true;
+    auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
+
+    EXPECT_CALL(*(mockAudioXmlNode_), MoveToChildren()).Times(1);
+    EXPECT_CALL(*(mockAudioXmlNode_), IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*(mockAudioXmlNode_), IsElementNode()).WillOnce(Return(true));
+
+    std::string name = "Earpiece_Out";
+    std::string preload = "true";
+    std::string type = "DEVICE_TYPE_EARPIECE";
+    std::string pin = "PIN_OUT_EARPIECE";
+    std::string role = "output";
+    std::string supportPipes = "primary_output";
+    std::string address = "";
+
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("name"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(name), Return(SUCCESS)));
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("preload"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(preload), Return(SUCCESS)));
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("type"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(type), Return(SUCCESS)));
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("pin"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(pin), Return(SUCCESS)));
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("role"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(role), Return(SUCCESS)));
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("supportPipes"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(supportPipes), Return(SUCCESS)));
+    EXPECT_CALL(*(mockAudioXmlNode_), GetProp(StrEq("address"), _))
+        .WillOnce(DoAll(SetArgReferee<1>(address), Return(ERROR)));
+
+    EXPECT_CALL(*(mockAudioXmlNode_), MoveToNext()).Times(1);
+
+    parser.ParseDevices(mockAudioXmlNode_, adapterInfo);
+    ASSERT_EQ(adapterInfo->deviceInfos.size(), 1);
+    EXPECT_EQ(adapterInfo->deviceInfos.front()->name_, "Earpiece_Out");
+    EXPECT_EQ(adapterInfo->deviceInfos.front()->type_, DEVICE_TYPE_EARPIECE);
+}
 } // namespace AudioStandard
-} // namespace OHOSu
+} // namespace OHOS

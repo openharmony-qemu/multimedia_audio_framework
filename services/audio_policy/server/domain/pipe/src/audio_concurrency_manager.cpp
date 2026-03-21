@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioConcurrencyService"
+#define LOG_TAG "AudioConcurrencyManager"
 #endif
 
 #include "audio_utils.h"
 #include "audio_stream_enum.h"
 #include "audio_stream_collector.h"
-#include "audio_concurrency_service.h"
+#include "audio_concurrency_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,15 +57,15 @@ static const std::map<std::pair<AudioMode, uint32_t>, AudioPipeType> g_pipeTypeM
     {{AUDIO_MODE_RECORD, AUDIO_INPUT_FLAG_NORMAL}, PIPE_TYPE_IN_NORMAL},
 };
 
-void AudioConcurrencyService::Init()
+void AudioConcurrencyManager::Init()
 {
-    AUDIO_INFO_LOG("AudioConcurrencyService Init");
+    AUDIO_INFO_LOG("AudioConcurrencyManager Init");
     std::unique_ptr<AudioConcurrencyParser> parser = std::make_unique<AudioConcurrencyParser>();
     CHECK_AND_RETURN_LOG(parser != nullptr, "Create audioConcurrency parser failed!");
     CHECK_AND_RETURN_LOG(!parser->LoadConfig(concurrencyConfigMap_), "Load audioConcurrency cfgMap failed!");
 }
 
-ConcurrencyAction AudioConcurrencyService::GetConcurrencyAction(
+ConcurrencyAction AudioConcurrencyManager::GetConcurrencyAction(
     const AudioPipeType existingPipe, const AudioPipeType commingPipe)
 {
     auto target = std::make_pair(existingPipe, commingPipe);
@@ -77,7 +77,7 @@ ConcurrencyAction AudioConcurrencyService::GetConcurrencyAction(
     return concurrencyConfigMap_.at(target);
 }
 
-AudioPipeType AudioConcurrencyService::GetPipeTypeByRouteFlag(uint32_t flag, AudioMode audioMode)
+AudioPipeType AudioConcurrencyManager::GetPipeTypeByRouteFlag(uint32_t flag, AudioMode audioMode)
 {
     for (const auto &priorityRule : g_priorityOrder) {
         if (priorityRule.first != audioMode) continue;

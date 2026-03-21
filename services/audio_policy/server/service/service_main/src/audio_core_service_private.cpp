@@ -25,6 +25,7 @@
 #include "hisysevent.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_utils.h"
 #include "iservice_registry.h"
 #include "hdi_adapter_info.h"
 #include "audio_usb_manager.h"
@@ -543,7 +544,7 @@ void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, co
 int32_t AudioCoreService::CheckModuleForHearingAid(uint32_t &paIndex)
 {
     std::list<AudioModuleInfo> moduleInfoList;
-    bool configRet = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_PRIMARY, moduleInfoList);
+    bool configRet = pipeManager_->GetModuleListByType(ClassType::TYPE_PRIMARY, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(configRet, ERR_OPERATION_FAILED, "HearingAid not exist in config");
     for (auto &moduleInfo : moduleInfoList) {
         if (moduleInfo.role != "source") { continue; }
@@ -1168,7 +1169,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     }
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc, false);
-    if (policyConfigMananger_.GetUpdateRouteSupport()) {
+    if (pipeManager_->GetUpdateRouteSupport()) {
         UpdateOutputRoute(streamDesc);
     }
 
@@ -1315,7 +1316,7 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
 
-    if (policyConfigMananger_.GetUpdateRouteSupport() &&
+    if (pipeManager_->GetUpdateRouteSupport() &&
         streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID) {
         audioActiveDevice_.UpdateActiveDeviceRoute(streamDesc->newDeviceDescs_.front()->deviceType_,
             DeviceFlag::INPUT_DEVICES_FLAG, streamDesc->newDeviceDescs_.front()->deviceName_,
@@ -1953,16 +1954,6 @@ void AudioCoreService::UpdateTrackerDeviceChange(const vector<std::shared_ptr<Au
     }
 }
 
-bool AudioCoreService::GetFastControlParam()
-{
-    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
-    GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 0) {
-        isFastControlled_ = false;
-    }
-    return isFastControlled_;
-}
-
 void AudioCoreService::StoreDistributedRoutingRoleInfo(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -2058,7 +2049,7 @@ bool AudioCoreService::IsOffloadAllowedForUid(uint32_t uid) const
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
-    CHECK_AND_RETURN_RET_LOG(policyConfigMananger_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
+    CHECK_AND_RETURN_RET_LOG(pipeManager_->GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
 
@@ -2789,10 +2780,9 @@ void AudioCoreService::SelectA2dpType(std::shared_ptr<AudioStreamDescriptor> &st
 
 bool AudioCoreService::GetDisableFastStreamParam()
 {
-    int32_t disableFastStream = 1; // default 1, set disableFastStream true
-    GetSysPara("persist.multimedia.audioflag.fastcontrolled", disableFastStream);
-    return disableFastStream == 0 ? false : true;
+    return GetFastControlParam();
 }
+
 
 bool AudioCoreService::IsFastAllowed(std::string &bundleName)
 {

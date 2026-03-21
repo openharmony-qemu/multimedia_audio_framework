@@ -5932,8 +5932,49 @@ HWTEST_F(AudioCoreServiceUnitTest, GetEcFeatureEnableAndMicRefFeatureEnable_001,
 }
 
 /**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: PipeManagerPassThrough_001
+* @tc.desc  : Test CoreService pass-through methods with PipeManager.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, PipeManagerPassThrough_001, TestSize.Level1)
+{
+    auto audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_TRUE(audioCoreService != nullptr);
+    auto pipeManager = audioCoreService->GetPipeManager();
+    ASSERT_TRUE(pipeManager != nullptr);
+
+    EXPECT_EQ(audioCoreService->GetFastFormat(), pipeManager->GetFastFormat());
+    EXPECT_EQ(audioCoreService->IsSupportInnerCaptureOffload(), pipeManager->IsSupportInnerCaptureOffload());
+    EXPECT_EQ(audioCoreService->GetMaxRendererInstances(), pipeManager->GetMaxRendererInstances());
+    EXPECT_EQ(audioCoreService->GetEnhancedRoutingSupported(), pipeManager->GetEnhancedRoutingSupported());
+
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> coreDeviceClassInfo = {};
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> pipeDeviceClassInfo = {};
+    audioCoreService->GetDeviceClassInfo(coreDeviceClassInfo);
+    pipeManager->GetDeviceClassInfo(pipeDeviceClassInfo);
+    EXPECT_EQ(coreDeviceClassInfo.size(), pipeDeviceClassInfo.size());
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: PipeManagerPassThrough_002
+* @tc.desc  : Test SetEcEnableState pass-through.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, PipeManagerPassThrough_002, TestSize.Level1)
+{
+    auto audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_TRUE(audioCoreService != nullptr);
+
+    audioCoreService->SetEcEnableState(false);
+    audioCoreService->SetEcEnableState(true);
+
+    EXPECT_TRUE(true);
+}
+
+/**
 * @tc.name  : Test AudioEcManager.
 * @tc.number: CloseNormalSourceAndGetSourceOpened_001
+
 * @tc.desc  : Test CloseNormalSource & GetSourceOpened interface.
 */
 HWTEST_F(AudioCoreServiceUnitTest, CloseNormalSourceAndGetSourceOpened_001, TestSize.Level1)

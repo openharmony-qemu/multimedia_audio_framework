@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef AUDIO_POLICY_CONFIG_MANAGER_H
-#define AUDIO_POLICY_CONFIG_MANAGER_H
+#ifndef AUDIO_CORE_CONFIG_MANAGER_H
+#define AUDIO_CORE_CONFIG_MANAGER_H
 
 #include <string>
 #include "singleton.h"
@@ -28,11 +28,11 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPolicyConfigManager {
+class AudioCoreConfigManager {
 public:
-    static AudioPolicyConfigManager& GetInstance()
+    static AudioCoreConfigManager& GetInstance()
     {
-        static AudioPolicyConfigManager instance;
+        static AudioCoreConfigManager instance;
         return instance;
     }
     bool Init(bool isRefresh = false);
@@ -126,11 +126,11 @@ public:
         AudioChannelLayout channelLayout);
     AudioPolicyConfigData &GetAudioPolicyConfigData() const { return audioPolicyConfig_; }
 
-    AudioPolicyConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+    AudioCoreConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())
     {
     }
-    ~AudioPolicyConfigManager()
+    ~AudioCoreConfigManager()
     {
     }
 private:
@@ -187,4 +187,4 @@ private:
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_POLICY_CONFIG_MANAGER_H
+#endif // AUDIO_CORE_CONFIG_MANAGER_H

@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioPolicyConfigManager"
+#define LOG_TAG "AudioCoreConfigManager"
 #endif
 
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 #include "audio_policy_config_parser.h"
 #include "audio_source_strategy_parser.h"
 #include "audio_policy_utils.h"
@@ -67,14 +67,15 @@ static AudioSamplingRate SelectMatchingSampleRate(const std::list<std::shared_pt
     return selectResult;
 }
 
-bool AudioPolicyConfigManager::Init(bool isRefresh)
+bool AudioCoreConfigManager::Init(bool isRefresh)
 {
     if (xmlHasLoaded_ && !isRefresh) {
         AUDIO_WARNING_LOG("Unexpected Duplicate Load AudioPolicyConfig!");
         return false;
     }
-    std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(this);
+    std::unique_ptr<AudioPolicyConfigParser> audioPolicyConfigParser = make_unique<AudioPolicyConfigParser>(*this);
     CHECK_AND_RETURN_RET_LOG(audioPolicyConfigParser != nullptr, false, "AudioPolicyConfigParser create failed");
+    hasEarpiece_ = audioPolicyConfigParser->GetHasEarpiece();
     bool ret = audioPolicyConfigParser->LoadConfiguration();
     if (!ret) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
@@ -94,12 +95,12 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
     return ret;
 }
 
-void AudioPolicyConfigManager::SetEcEnableState(bool ecEnableState)
+void AudioCoreConfigManager::SetEcEnableState(bool ecEnableState)
 {
     ecEnableState_ = ecEnableState;
 }
 
-void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
+void AudioCoreConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
 {
     AUDIO_INFO_LOG("AdapterInfo num [%{public}zu]", audioPolicyConfig_.adapterInfoMap.size());
     CHECK_AND_RETURN_LOG(!audioPolicyConfig_.adapterInfoMap.empty(),
@@ -112,7 +113,7 @@ void AudioPolicyConfigManager::OnAudioPolicyConfigXmlParsingCompleted()
     OnHasEarpiece();
 }
 
-void AudioPolicyConfigManager::OnXmlParsingCompleted(
+void AudioCoreConfigManager::OnXmlParsingCompleted(
     const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmlData)
 {
     AUDIO_INFO_LOG("device class num [%{public}zu]", xmlData.size());
@@ -121,28 +122,28 @@ void AudioPolicyConfigManager::OnXmlParsingCompleted(
     deviceClassInfo_ = xmlData;
 }
 
-void AudioPolicyConfigManager::OnAudioLatencyParsed(uint64_t latency)
+void AudioCoreConfigManager::OnAudioLatencyParsed(uint64_t latency)
 {
     audioLatencyInMsec_ = latency;
 }
 
-void AudioPolicyConfigManager::OnFastFormatParsed(AudioSampleFormat format)
+void AudioCoreConfigManager::OnFastFormatParsed(AudioSampleFormat format)
 {
     AUDIO_INFO_LOG("fast format is %{public}d", fastFormat_);
     fastFormat_ = format;
 }
 
-AudioSampleFormat AudioPolicyConfigManager::GetFastFormat() const
+AudioSampleFormat AudioCoreConfigManager::GetFastFormat() const
 {
     return fastFormat_;
 }
 
-void AudioPolicyConfigManager::OnSinkLatencyParsed(uint32_t latency)
+void AudioCoreConfigManager::OnSinkLatencyParsed(uint32_t latency)
 {
     sinkLatencyInMsec_ = latency;
 }
 
-void AudioPolicyConfigManager::OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData)
+void AudioCoreConfigManager::OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData)
 {
     AUDIO_INFO_LOG("group data num [%{public}zu]", volumeGroupData.size());
     CHECK_AND_RETURN_LOG(!volumeGroupData.empty(), "failed to parse xml file. Received data is empty");
@@ -150,7 +151,7 @@ void AudioPolicyConfigManager::OnVolumeGroupParsed(std::unordered_map<std::strin
     volumeGroupData_ = volumeGroupData;
 }
 
-void AudioPolicyConfigManager::OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData)
+void AudioCoreConfigManager::OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData)
 {
     AUDIO_INFO_LOG("group data num [%{public}zu]", interruptGroupData.size());
     CHECK_AND_RETURN_LOG(!interruptGroupData.empty(), "failed to parse xml file. Received data is empty");
@@ -158,60 +159,50 @@ void AudioPolicyConfigManager::OnInterruptGroupParsed(std::unordered_map<std::st
     interruptGroupData_ = interruptGroupData;
 }
 
-void AudioPolicyConfigManager::OnUpdateRouteSupport(bool isSupported)
+void AudioCoreConfigManager::OnUpdateRouteSupport(bool isSupported)
 {
     isUpdateRouteSupported_ = isSupported;
     isEnhancedRoutingSupported_ = isSupported;
 }
 
-void AudioPolicyConfigManager::SetEnhancedRoutingSupported(bool isSupported)
+void AudioCoreConfigManager::SetEnhancedRoutingSupported(bool isSupported)
 {
     isEnhancedRoutingSupported_ = isSupported;
 }
 
-void AudioPolicyConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
+void AudioCoreConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs_ = globalConfigs;
 }
 
-void AudioPolicyConfigManager::OnVoipConfigParsed(bool enableFastVoip)
+void AudioCoreConfigManager::OnVoipConfigParsed(bool enableFastVoip)
 {
     enableFastVoip_ = enableFastVoip;
 }
 
-void AudioPolicyConfigManager::OnMultSupMode(bool supportMultSupMode)
+void AudioCoreConfigManager::OnMultSupMode(bool supportMultSupMode)
 {
     supportMultSupMode_ = supportMultSupMode;
 }
 
-void AudioPolicyConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
+void AudioCoreConfigManager::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("show type: %{public}s", anahsShowType.c_str());
     AudioCoreService::GetCoreService()->OnUpdateAnahsSupport(anahsShowType);
 }
 
-void AudioPolicyConfigManager::OnUpdateEac3Support(bool isSupported)
+void AudioCoreConfigManager::OnUpdateEac3Support(bool isSupported)
 {
     isSupportEac3_ = isSupported;
 }
 
-void AudioPolicyConfigManager::OnHasEarpiece()
+void AudioCoreConfigManager::OnHasEarpiece()
 {
-    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
-    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
-    for (const auto &adapterInfo : adapterInfoMap) {
-        hasEarpiece_ = std::any_of(adapterInfo.second->deviceInfos.begin(), adapterInfo.second->deviceInfos.end(),
-            [](const auto& deviceInfo) {
-                return deviceInfo->type_ == DEVICE_TYPE_EARPIECE;
-            });
-        if (hasEarpiece_) {
-            break;
-        }
-    }
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
-void AudioPolicyConfigManager::OnSupportUltraFast(bool supportUltraFast)
+
+void AudioCoreConfigManager::OnSupportUltraFast(bool supportUltraFast)
 {
     supportUltraFast_ = supportUltraFast;
 }
@@ -234,7 +225,7 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
     }
 }
 
-void AudioPolicyConfigManager::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+void AudioCoreConfigManager::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
     const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
 {
     CHECK_AND_RETURN_LOG(deviceStreamInfo.size() > 0, "deviceStreamInfo is empty");
@@ -253,23 +244,23 @@ void AudioPolicyConfigManager::UpdateStreamPropInfo(const std::string &adapterNa
     audioPolicyConfig_.UpdateDynamicStreamProps(adapterName, pipeName, streamProps);
 }
 
-void AudioPolicyConfigManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
+void AudioCoreConfigManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
 {
     audioPolicyConfig_.ClearDynamicStreamProps(adapterName, pipeName);
 }
 
-void AudioPolicyConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
+void AudioCoreConfigManager::SetNormalVoipFlag(const bool &normalVoipFlag)
 {
     normalVoipFlag_ = normalVoipFlag;
 }
 
 
-bool AudioPolicyConfigManager::GetNormalVoipFlag()
+bool AudioCoreConfigManager::GetNormalVoipFlag()
 {
     return normalVoipFlag_;
 }
 
-bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList)
+bool AudioCoreConfigManager::GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList)
 {
     auto modulesPos = deviceClassInfo_.find(type);
     if (modulesPos != deviceClassInfo_.end()) {
@@ -279,18 +270,18 @@ bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<Aud
     return false;
 }
 
-void AudioPolicyConfigManager::UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo)
+void AudioCoreConfigManager::UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo)
 {
     dynamicCapturerConfig_[type] = moduleInfo;
 }
 
-void AudioPolicyConfigManager::GetDeviceClassInfo(
+void AudioCoreConfigManager::GetDeviceClassInfo(
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo)
 {
     deviceClassInfo = deviceClassInfo_;
 }
 
-std::string AudioPolicyConfigManager::GetGroupName(const std::string& deviceName, const GroupType type)
+std::string AudioCoreConfigManager::GetGroupName(const std::string& deviceName, const GroupType type)
 {
     std::string groupName = GROUP_NAME_NONE;
     if (type == VOLUME_TYPE) {
@@ -307,7 +298,7 @@ std::string AudioPolicyConfigManager::GetGroupName(const std::string& deviceName
     return groupName;
 }
 
-int32_t AudioPolicyConfigManager::GetMaxRendererInstances()
+int32_t AudioCoreConfigManager::GetMaxRendererInstances()
 {
     for (auto commonConfig : globalConfigs_.commonConfigs_) {
         if (commonConfig.name_ != MAX_RENDERERS_NAME) {
@@ -323,7 +314,7 @@ int32_t AudioPolicyConfigManager::GetMaxRendererInstances()
     return DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES;
 }
 
-int32_t AudioPolicyConfigManager::GetMaxCapturersInstances()
+int32_t AudioCoreConfigManager::GetMaxCapturersInstances()
 {
     for (auto commonConfig : globalConfigs_.commonConfigs_) {
         if (commonConfig.name_ != MAX_CAPTURERS_NAME) {
@@ -339,7 +330,7 @@ int32_t AudioPolicyConfigManager::GetMaxCapturersInstances()
     return DEFAULT_MAX_INPUT_NORMAL_INSTANCES;
 }
 
-int32_t AudioPolicyConfigManager::GetMaxFastRenderersInstances()
+int32_t AudioCoreConfigManager::GetMaxFastRenderersInstances()
 {
     for (auto commonConfig : globalConfigs_.commonConfigs_) {
         if (commonConfig.name_ != MAX_FAST_RENDERERS_NAME) {
@@ -355,7 +346,7 @@ int32_t AudioPolicyConfigManager::GetMaxFastRenderersInstances()
     return DEFAULT_MAX_FAST_NORMAL_INSTANCES;
 }
 
-bool AudioPolicyConfigManager::IsSupportInnerCaptureOffload()
+bool AudioCoreConfigManager::IsSupportInnerCaptureOffload()
 {
     if (isSupportInnerCaptureOffload_.has_value()) {
         return isSupportInnerCaptureOffload_.value();
@@ -373,7 +364,7 @@ bool AudioPolicyConfigManager::IsSupportInnerCaptureOffload()
     return isSupportInnerCaptureOffload_.value();
 }
 
-int32_t AudioPolicyConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
+int32_t AudioCoreConfigManager::GetVoipRendererFlag(const std::string &sinkPortName, const std::string &networkId,
     const AudioSamplingRate &samplingRate)
 {
     // VoIP stream has three mode for different products.
@@ -390,58 +381,62 @@ int32_t AudioPolicyConfigManager::GetVoipRendererFlag(const std::string &sinkPor
     return AUDIO_FLAG_NORMAL;
 }
 
-int32_t AudioPolicyConfigManager::GetAudioLatencyFromXml() const
+int32_t AudioCoreConfigManager::GetAudioLatencyFromXml() const
 {
     return audioLatencyInMsec_;
 }
 
-uint32_t AudioPolicyConfigManager::GetSinkLatencyFromXml() const
+uint32_t AudioCoreConfigManager::GetSinkLatencyFromXml() const
 {
     return sinkLatencyInMsec_;
 }
 
-void AudioPolicyConfigManager::GetAudioAdapterInfos(
+void AudioCoreConfigManager::GetAudioAdapterInfos(
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap)
 {
     audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
 }
 
-void AudioPolicyConfigManager::GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData)
+void AudioCoreConfigManager::GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData)
 {
     volumeGroupData = volumeGroupData_;
 }
 
-void AudioPolicyConfigManager::GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData)
+void AudioCoreConfigManager::GetInterruptGroupData(std::unordered_map<std::string, std::string>& interruptGroupData)
 {
     interruptGroupData = interruptGroupData_;
 }
 
-void AudioPolicyConfigManager::GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs)
+void AudioCoreConfigManager::GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs)
 {
     globalConfigs = globalConfigs_;
 }
 
-bool AudioPolicyConfigManager::GetVoipConfig()
+bool AudioCoreConfigManager::GetVoipConfig()
 {
     return enableFastVoip_;
 }
 
-bool AudioPolicyConfigManager::GetUpdateRouteSupport()
+bool AudioCoreConfigManager::GetUpdateRouteSupport()
 {
     return isUpdateRouteSupported_;
 }
 
-bool AudioPolicyConfigManager::GetEnhancedRoutingSupported()
+<<<<<<< ours
+bool AudioCoreConfigManager::GetEnhancedRoutingSupported()
 {
     return isEnhancedRoutingSupported_;
 }
 
-bool AudioPolicyConfigManager::GetAdapterInfoFlag()
+bool AudioCoreConfigManager::GetAdapterInfoFlag()
+=======
+bool AudioCoreConfigManager::GetAdapterInfoFlag()
+>>>>>>> theirs
 {
     return isAdapterInfoMap_.load();
 }
 
-bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info)
+bool AudioCoreConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info)
 {
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
     audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
@@ -454,17 +449,17 @@ bool AudioPolicyConfigManager::GetAdapterInfoByType(AudioAdapterType type, std::
     return true;
 }
 
-bool AudioPolicyConfigManager::GetHasEarpiece()
+bool AudioCoreConfigManager::GetHasEarpiece()
 {
     return hasEarpiece_;
 }
 
-bool AudioPolicyConfigManager::GetUltraFastFlag()
+bool AudioCoreConfigManager::GetUltraFastFlag()
 {
     return supportUltraFast_;
 }
 
-bool AudioPolicyConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
+bool AudioCoreConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     bool isSupported = false;
@@ -495,7 +490,7 @@ bool AudioPolicyConfigManager::IsFastStreamSupported(AudioStreamInfo &streamInfo
     return isSupported;
 }
 
-bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
+bool AudioCoreConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
     std::shared_ptr<AdapterDeviceInfo> &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, false, "deviceInfo is nullptr");
@@ -535,7 +530,7 @@ bool AudioPolicyConfigManager::GetFastStreamSupport(AudioStreamInfo &streamInfo,
     return false;
 }
 
-uint32_t AudioPolicyConfigManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
+uint32_t AudioCoreConfigManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
 {
     uint32_t size = audioPolicyConfig_.GetConfigStreamPropsSize(adapterName, pipeName);
     CHECK_AND_RETURN_RET(size == 0, size);
@@ -543,7 +538,7 @@ uint32_t AudioPolicyConfigManager::GetStreamPropInfoSize(const std::string &adap
     return audioPolicyConfig_.GetDynamicStreamPropsSize(adapterName, pipeName);
 }
 
-uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)
+uint32_t AudioCoreConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     // device -> adapter -> flag -> stream
     uint32_t flag = AUDIO_FLAG_NONE; // input or output? default?
@@ -567,7 +562,7 @@ uint32_t AudioPolicyConfigManager::GetRouteFlag(std::shared_ptr<AudioStreamDescr
     return flag;
 }
 
-void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo)
+void AudioCoreConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType source, bool &useMatchingPropInfo)
 {
     switch (source) {
         case SOURCE_TYPE_VOICE_RECOGNITION:
@@ -589,7 +584,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
     }
 }
 
-AudioSampleFormat AudioPolicyConfigManager::ParseFormat(const std::string format)
+AudioSampleFormat AudioCoreConfigManager::ParseFormat(const std::string format)
 {
     auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
     if (it != AudioDefinitionPolicyUtils::formatStrToEnum.end()) {
@@ -598,7 +593,7 @@ AudioSampleFormat AudioPolicyConfigManager::ParseFormat(const std::string format
     AUDIO_WARNING_LOG("invalid format:%{public}s, use default SAMPLE_S16LE", format.c_str());
     return SAMPLE_S16LE;
 }
-void AudioPolicyConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
+void AudioCoreConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
@@ -615,7 +610,7 @@ void AudioPolicyConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioS
     }
 }
 
-void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
+void AudioCoreConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioStreamInfo &streamInfo)
 {
@@ -675,7 +670,7 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
 #endif
 }
 
-std::shared_ptr<AdapterPipeInfo> AudioPolicyConfigManager::GetNormalRecordAdapterInfo(
+std::shared_ptr<AdapterPipeInfo> AudioCoreConfigManager::GetNormalRecordAdapterInfo(
     std::shared_ptr<AudioStreamDescriptor> desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
@@ -694,7 +689,7 @@ std::shared_ptr<AdapterPipeInfo> AudioPolicyConfigManager::GetNormalRecordAdapte
     return pipeIt->second;
 }
 
-bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
+bool AudioCoreConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
         desc->newDeviceDescs_.front() != nullptr, false, "Invalid device desc");
@@ -717,9 +712,9 @@ bool AudioPolicyConfigManager::PreferMultiChannelPipe(std::shared_ptr<AudioStrea
 }
 
 #ifdef MULTI_BUS_ENABLE
-void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
-                                                 std::shared_ptr<PipeStreamPropInfo> &info,
-                                                 const std::vector<std::string> &busAddresses)
+void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+    std::shared_ptr<PipeStreamPropInfo> &info,
+    const std::vector<std::string> &busAddresses)
 {
     // Vehicle system scenario enter
     CHECK_AND_RETURN_LOG(desc != nullptr, "StreamDesc is null, none streamProp");
@@ -784,7 +779,7 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
 }
 #endif
 
-void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
     auto newDeviceDesc = desc->newDeviceDescs_.front();
@@ -846,13 +841,13 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     } // if not match, choose first?
 }
 
-bool AudioPolicyConfigManager::GetSupportMultSupMode()
+bool AudioCoreConfigManager::GetSupportMultSupMode()
 {
     return supportMultSupMode_;
 }
 
-void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,
-                                                      AudioStreamInfo &streamInfo)
+void AudioCoreConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStreamDescriptor> desc,
+    AudioStreamInfo &streamInfo)
 {
     if (desc->routeFlag_ != (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) {
         return;
@@ -866,7 +861,7 @@ void AudioPolicyConfigManager::UpdateStreamSampleInfo(std::shared_ptr<AudioStrea
     }
 }
 
-void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDescriptor> desc,
+void AudioCoreConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDescriptor> desc,
     std::shared_ptr<AdapterPipeInfo> pipeInfo, AudioStreamInfo &streamInfo)
 {
     if (desc == nullptr || pipeInfo == nullptr) {
@@ -903,7 +898,7 @@ void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStream
     }
 }
 
-std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetSuitableStreamPropInfo(const AudioSampleFormat &format,
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetSuitableStreamPropInfo(const AudioSampleFormat &format,
     uint32_t sampleRate, std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos)
 {
     for (auto &streamProp : dynamicStreamPropInfos) {
@@ -914,7 +909,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetSuitableStreamP
     return dynamicStreamPropInfos.back();
 }
 
-std::list<std::shared_ptr<PipeStreamPropInfo>> AudioPolicyConfigManager::SelectStreamPropInfo(
+std::list<std::shared_ptr<PipeStreamPropInfo>> AudioCoreConfigManager::SelectStreamPropInfo(
     std::list<std::shared_ptr<PipeStreamPropInfo>> &streamPropInfos,
     const std::function<bool(std::shared_ptr<PipeStreamPropInfo>)> &limitFunc)
 {
@@ -926,7 +921,7 @@ std::list<std::shared_ptr<PipeStreamPropInfo>> AudioPolicyConfigManager::SelectS
     return res;
 }
 
-void AudioPolicyConfigManager::SortStreamPropInfosBySampleRate(
+void AudioCoreConfigManager::SortStreamPropInfosBySampleRate(
     std::list<std::shared_ptr<PipeStreamPropInfo>> &dynamicStreamPropInfos)
 {
     dynamicStreamPropInfos.sort([](const auto &a, const auto &b) {
@@ -942,7 +937,7 @@ void AudioPolicyConfigManager::SortStreamPropInfosBySampleRate(
     });
 }
 
-std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipe(
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo matchStreamInfo)
 {
     std::unique_lock<std::mutex> lock(info->dynamicMtx_);
@@ -993,7 +988,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
         GetSuitableStreamPropInfo(matchStreamInfo.format, matchStreamInfo.samplingRate, info->dynamicStreamPropInfos_);
 }
 
-std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipeForViVid(
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetDynamicStreamPropInfoFromPipeForViVid(
     std::shared_ptr<AdapterPipeInfo> &info, AudioStreamInfo streamInfo)
 {
     CHECK_AND_RETURN_RET_LOG(info != nullptr && !info->dynamicStreamPropInfos_.empty(), nullptr, "info is null");
@@ -1017,7 +1012,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
     return GetDynamicStreamPropInfoFromPipe(info, matchStreamInfo);
 }
 
-bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
+bool AudioCoreConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPropInfo> &info,
     std::shared_ptr<AdapterPipeInfo> &adapterPipeInfo, const AudioStreamInfo &streamInfo)
 {
     AudioStreamInfo temp(streamInfo.samplingRate, streamInfo.encoding, streamInfo.format, streamInfo.channels,
@@ -1030,7 +1025,7 @@ bool AudioPolicyConfigManager::MatchStreamPropInfo(std::shared_ptr<PipeStreamPro
     return false;
 }
 
-std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoFromPipe(
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoFromPipe(
     std::shared_ptr<AdapterPipeInfo> &info, const AudioStreamInfo &streamInfo)
 {
     CHECK_AND_RETURN_RET_LOG(info != nullptr, nullptr, "info is nullptr");
@@ -1058,7 +1053,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     return nullptr;
 }
 
-bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
+bool AudioCoreConfigManager::SupportImplicitConversion(uint32_t routeFlag)
 {
     if ((routeFlag & AUDIO_OUTPUT_FLAG_NORMAL) ||
         ((routeFlag & AUDIO_OUTPUT_FLAG_DIRECT) && (routeFlag & AUDIO_OUTPUT_FLAG_HD)) ||
@@ -1071,7 +1066,7 @@ bool AudioPolicyConfigManager::SupportImplicitConversion(uint32_t routeFlag)
     return false;
 }
 
-DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+DirectPlaybackMode AudioCoreConfigManager::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
     const AudioStreamInfo &streamInfo)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
@@ -1106,7 +1101,7 @@ DirectPlaybackMode AudioPolicyConfigManager::GetDirectPlaybackSupport(std::share
     return DIRECT_PLAYBACK_NOT_SUPPORTED;
 }
 
-bool AudioPolicyConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamInfo,
+bool AudioCoreConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamInfo,
     std::list<std::shared_ptr<PipeStreamPropInfo>> &infos)
 {
     for (auto info : infos) {
@@ -1118,7 +1113,7 @@ bool AudioPolicyConfigManager::IsStreamPropMatch(const AudioStreamInfo &streamIn
     return false;
 }
 
-std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoForMultiChannel(
+std::shared_ptr<PipeStreamPropInfo> AudioCoreConfigManager::GetStreamPropInfoForMultiChannel(
     std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
     AudioChannelLayout channelLayout)
 {
@@ -1157,7 +1152,7 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetStreamPropInfoF
     return tempStreamProp;
 }
 
-bool AudioPolicyConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo,
+bool AudioCoreConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &streamInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     bool isSupported = false;
@@ -1173,7 +1168,7 @@ bool AudioPolicyConfigManager::IsMultichannelPlaybackSupported(AudioStreamInfo &
     return isSupported;
 }
 
-bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamInfo, uint32_t flag,
+bool AudioCoreConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamInfo, uint32_t flag,
     std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDesc)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
@@ -1200,7 +1195,7 @@ bool AudioPolicyConfigManager::GetPlaybackStreamSupport(AudioStreamInfo &streamI
     return false;
 }
 
-bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
+bool AudioCoreConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &streamInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage)
 {
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = nullptr;
@@ -1220,7 +1215,7 @@ bool AudioPolicyConfigManager::IsDirectPlaybackSupported(AudioStreamInfo &stream
     return false;
 }
 
-bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
+bool AudioCoreConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &streamInfo,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, int32_t usage)
 {
     CHECK_AND_RETURN_RET(usage == STREAM_USAGE_MUSIC || usage == STREAM_USAGE_AUDIOBOOK, false);
@@ -1237,7 +1232,7 @@ bool AudioPolicyConfigManager::IsOffloadPlaybackSupported(AudioStreamInfo &strea
     return isSupported;
 }
 
-bool AudioPolicyConfigManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc)
+bool AudioCoreConfigManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "desc is nullptr");
     CHECK_AND_RETURN_RET_LOG(!desc->newDeviceDescs_.empty(), false, "newDeviceDescs is empty");

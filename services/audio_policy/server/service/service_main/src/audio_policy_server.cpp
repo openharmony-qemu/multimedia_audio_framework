@@ -33,9 +33,11 @@
 #include "client_type_manager.h"
 #include "dfx_msg_manager.h"
 #include "config_policy_utils.h"
+#include "audio_utils.h"
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
+
 #include "audio_zone_service.h"
 #include "audio_bluetooth_manager.h"
 #include "istandard_audio_zone_client.h"
@@ -159,7 +161,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioToneManager_(AudioToneManager::GetInstance()),
       audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
       audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
-      audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
+      audioConfigManager_(AudioCoreConfigManager::GetInstance()),
       audioSceneManager_(AudioSceneManager::GetInstance()),
       audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
       audioDeviceLock_(AudioDeviceLock::GetInstance()),
@@ -169,7 +171,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioVolumeManager_(AudioVolumeManager::GetInstance()),
       audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
       audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-      audioPolicyConfigManager_(AudioPolicyConfigManager::GetInstance()),
+      audioCoreConfigManager_(AudioCoreConfigManager::GetInstance()),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
       audioPolicyUtils_(AudioPolicyUtils::GetInstance()),
       audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -197,7 +199,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
 #endif
     if (volumeApplyToAll_) {
-        audioPolicyConfigManager_.SetNormalVoipFlag(true);
+        audioCoreConfigManager_.SetNormalVoipFlag(true);
     }
     VolumeUtils::InitEnforcedToneVolume();
 }
@@ -282,8 +284,9 @@ void AudioPolicyServer::Init()
 
     coreService_ = AudioCoreService::GetCoreService();
     coreService_->SetCallbackHandler(audioPolicyServerHandler_);
-    coreService_->SetEcAndMicRefEnableState(audioPolicyService_.GetEcEnableState(), micRefEnableState_);
+    coreService_->SetEcAndMicRefEnableState(GetEcEnableParam(), micRefEnableState_);
     coreService_->Init();
+
     eventEntry_ = coreService_->GetEventEntry();
 #ifdef USB_ENABLE
     AudioUsbManager::GetInstance().SetObserver(eventEntry_);

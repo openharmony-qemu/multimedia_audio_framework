@@ -18,7 +18,6 @@
 #include <vector>
 #include "audio_pipe_manager.h"
 #include "audio_stream_info.h"
-#include "audio_policy_config_manager.h"
 #include "audio_concurrency_parser.h"
 #include "audio_zone_info.h"
 
@@ -119,7 +118,7 @@ private:
     bool GetIncomingStreamPriority(const std::shared_ptr<AudioStreamDescriptor> &existingStream,
         const std::shared_ptr<AudioStreamDescriptor> &incomingStream);
     
-    AudioPolicyConfigManager& configManager_;
+    std::shared_ptr<AudioPipeManager> pipeManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

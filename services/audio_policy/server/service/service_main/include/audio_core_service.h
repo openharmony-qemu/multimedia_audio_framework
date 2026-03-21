@@ -45,7 +45,7 @@
 #include "audio_pipe_manager.h"
 #include "audio_session_service.h"
 #include "audio_pipe_selector.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 #include "audio_core_service_utils.h"
 #include "sle_audio_device_manager.h"
 #include "audio_event_utils.h"
@@ -247,8 +247,16 @@ public:
     std::shared_ptr<EventEntry> GetEventEntry();
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
     void SetConfigParserFlag();
+    // Pipe capability pass-through interfaces. Synchronization is managed in pipe/domain modules.
+    void SetEcEnableState(bool ecEnableState);
+    AudioSampleFormat GetFastFormat() const;
+    bool IsSupportInnerCaptureOffload();
+    bool GetEnhancedRoutingSupported();
+    int32_t GetMaxRendererInstances();
+    void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
 
     void SetEcAndMicRefEnableState(int32_t ecEnableState, int32_t micRefEnableState);
+
     void CloseNormalSource();
     AudioEcInfo GetAudioEcInfo();
     void ResetAudioEcInfo();
@@ -580,7 +588,6 @@ private:
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
         const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
-    bool GetFastControlParam();
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType) const;
@@ -755,7 +762,6 @@ private:
     AudioRouteMap& audioRouteMap_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioPolicyConfigManager& policyConfigMananger_;
     AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
     AudioUsrSelectManager &audioUsrSelectManager_;
@@ -799,7 +805,6 @@ private:
     int32_t enableDualHalToneSessionId_ = -1;
     bool enableDualHalToneState_ = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
-    bool isFastControlled_ = true;
     std::mutex serviceFlagMutex_;
 
     std::atomic<bool> a2dpNeedSuspend_ = { false };
@@ -852,11 +857,7 @@ private:
 
     AudioInjectorPolicy &audioInjectorPolicy_;
 
-    AudioConcurrencyService &audioConcurrencyService_;
-    AudioPolicyConfigManager &audioConfigManager_;
-
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
-
     int32_t isSupportUltraFast_ = 0;
 };
 

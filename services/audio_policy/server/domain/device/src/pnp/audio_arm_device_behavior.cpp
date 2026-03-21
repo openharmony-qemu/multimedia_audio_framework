@@ -21,7 +21,7 @@
 #include "audio_active_device.h"
 #include "audio_core_service.h"
 #include "audio_iohandle_map.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 #include "audio_policy_utils.h"
 #include "audio_arm_device_behavior.h"
 
@@ -64,7 +64,7 @@ int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
     string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
     CHECK_AND_RETURN_RET_LOG(address != activeArmAddr, ERR_INVALID_PARAM, "usb device addr already active");
     std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = AudioPolicyConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    bool ret = AudioCoreConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "GetModuleListByType empty");
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
@@ -91,7 +91,7 @@ int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
             } else {
                 AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
                 coreService->SetUsbSourceModuleInfo(moduleInfo);
-                AudioPolicyConfigManager::GetInstance().UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
+                AudioCoreConfigManager::GetInstance().UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
             }
         } else {
             int32_t ret = AudioIOHandleMap::GetInstance().OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);

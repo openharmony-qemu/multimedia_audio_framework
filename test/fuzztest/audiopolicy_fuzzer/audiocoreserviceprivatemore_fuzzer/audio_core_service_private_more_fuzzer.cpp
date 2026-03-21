@@ -164,12 +164,29 @@ vector<AudioStreamStatus> AudioStreamStatusVec = {
 
 void GetFastControlParamFuzzTest(FuzzedDataProvider& fdp)
 {
-    auto audioCoreService = AudioCoreService::GetCoreService();
-    CHECK_AND_RETURN(audioCoreService != nullptr);
-    audioCoreService->isFastControlled_ = GetData<int32_t>() % NUM_2;
     int32_t value = GetData<int32_t>() % NUM_2;
     SetSysPara("persist.multimedia.audioflag.fastcontrolled", value);
-    audioCoreService->GetFastControlParam();
+    GetFastControlParam();
+}
+
+void GetEcEnableParamFuzzTest(FuzzedDataProvider& fdp)
+{
+    (void)fdp;
+    GetEcEnableParam();
+}
+
+void CoreServicePipeManagerPassThroughFuzzTest(FuzzedDataProvider& fdp)
+{
+    auto audioCoreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN(audioCoreService != nullptr);
+
+    audioCoreService->SetEcEnableState(fdp.ConsumeBool());
+    audioCoreService->GetFastFormat();
+    audioCoreService->IsSupportInnerCaptureOffload();
+    audioCoreService->GetEnhancedRoutingSupported();
+    audioCoreService->GetMaxRendererInstances();
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
+    audioCoreService->GetDeviceClassInfo(deviceClassInfo);
 }
 
 void TriggerRecreateRendererStreamCallbackFuzzTest(FuzzedDataProvider& fdp)
@@ -757,8 +774,11 @@ void Test(FuzzedDataProvider& fdp)
 {
     auto func = fdp.PickValueInArray({
     GetFastControlParamFuzzTest,
+    GetEcEnableParamFuzzTest,
+    CoreServicePipeManagerPassThroughFuzzTest,
     NeedRehandleA2DPDeviceFuzzTest,
     TriggerRecreateRendererStreamCallbackFuzzTest,
+
     TriggerRecreateCapturerStreamCallbackFuzzTest,
     ProcessOutputPipeUpdateFuzzTest,
     ProcessInputPipeNewFuzzTest,

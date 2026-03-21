@@ -45,7 +45,7 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
     std::shared_ptr<PolicyAdapterInfo> &policyAdapterInfo)
 {
     uint32_t routerFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     configData.Reorganize();
 
@@ -674,8 +674,8 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
         {{PIPE_TYPE_OUT_LOWLATENCY, PIPE_TYPE_IN_NORMAL}, CONCEDE_INCOMING},
         {{PIPE_TYPE_IN_NORMAL, PIPE_TYPE_IN_NORMAL}, CONCEDE_EXISTING}
     };
-    AudioConcurrencyService &audioConcurrencyService = AudioConcurrencyService::GetInstance();
-    audioConcurrencyService.concurrencyConfigMap_ = ruleMap;
+    AudioConcurrencyManager &audioConcurrencyManager = AudioConcurrencyManager::GetInstance();
+    audioConcurrencyManager.concurrencyConfigMap_ = ruleMap;
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();
     std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
     pipeInfo->adapterName_ = "test_adapterName";

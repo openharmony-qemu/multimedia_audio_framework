@@ -30,7 +30,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -310,7 +310,7 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
 bool AudioUsbManager::IsAvailableUsbDevice(const UsbAudioDevice &device)
 {
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;
-    AudioPolicyConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
+    AudioCoreConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
     auto it = deviceClassInfo.find(ClassType::TYPE_USB);
     if (it == deviceClassInfo.end() || it->second.empty()) {
         return true;

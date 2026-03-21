@@ -15,6 +15,7 @@
 
 #include "audio_core_service_private_unit_test.h"
 #include "hisysevent.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
@@ -42,7 +43,7 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
     std::shared_ptr<PolicyAdapterInfo> &policyAdapterInfo)
 {
     uint32_t routerFlag = AUDIO_OUTPUT_FLAG_LOWPOWER;
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     configData.Reorganize();
 
@@ -78,7 +79,7 @@ static void MakeDeviceInfoMap(AudioPolicyConfigData &configData, std::shared_ptr
 
 static void MakeUidCheckDeviceInfoMap(AudioPolicyConfigData &configData, AudioFlag routerFlag, bool needUidCheck)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     configData.Reorganize();
 
@@ -98,7 +99,7 @@ static void MakeUidCheckDeviceInfoMap(AudioPolicyConfigData &configData, AudioFl
 
 static void MakeUidCheckOffloadSupportDeviceInfoMap(AudioPolicyConfigData &configData, bool needUidCheck)
 {
-    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    AudioCoreConfigManager &manager = AudioCoreConfigManager::GetInstance();
     EXPECT_EQ(manager.Init(true), true);
     configData.Reorganize();
 
@@ -1095,16 +1096,13 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_064, TestSize.Leve
 /**
  * @tc.name : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_065
- * @tc.desc : Test AudioCoreService::GetFastControlParam
+ * @tc.desc : Test AudioUtils::GetFastControlParam
  */
 HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_065, TestSize.Level1)
 {
-    auto audioCoreService = AudioCoreService::GetCoreService();
-    audioCoreService->isFastControlled_ = true;
-
     SetSysPara("persist.multimedia.audioflag.fastcontrolled", 0);
 
-    bool result = audioCoreService->GetFastControlParam();
+    bool result = GetFastControlParam();
 
     EXPECT_EQ(result, false);
 }
@@ -1112,18 +1110,27 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_065, TestSize.Leve
 /**
  * @tc.name : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_066
- * @tc.desc : Test AudioCoreService::GetFastControlParam
+ * @tc.desc : Test AudioUtils::GetFastControlParam
  */
 HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Level1)
 {
-    auto audioCoreService = AudioCoreService::GetCoreService();
-    audioCoreService->isFastControlled_ = true;
-
     SetSysPara("persist.multimedia.audioflag.fastcontrolled", 1);
 
-    bool result = audioCoreService->GetFastControlParam();
+    bool result = GetFastControlParam();
 
     EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_GetEcEnableParam_001
+ * @tc.desc : Test AudioUtils::GetEcEnableParam
+ */
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetEcEnableParam_001, TestSize.Level1)
+{
+    bool result = GetEcEnableParam();
+
+    EXPECT_EQ(result, OHOS::system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0));
 }
 
 /**
@@ -1132,6 +1139,7 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Leve
  * @tc.desc : Test AudioCoreService::NeedRehandleA2DPDevice
  */
 HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_067, TestSize.Level1)
+
 {
     auto desc = std::make_shared<AudioDeviceDescriptor>();
 
@@ -2247,7 +2255,7 @@ HWTEST_F(AudioCoreServicePrivateTest, OffloadAllowedForUid_001, TestSize.Level1)
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: NeedUidCheckForOffloadPipe_001
- * @tc.desc  : Test AudioPolicyConfigManager::NeedUidCheckForOffloadPipe with combined lowpower flag
+ * @tc.desc  : Test AudioCoreConfigManager::NeedUidCheckForOffloadPipe with combined lowpower flag
  */
 HWTEST_F(AudioCoreServicePrivateTest, NeedUidCheckForOffloadPipe_001, TestSize.Level1)
 {
@@ -2262,7 +2270,7 @@ HWTEST_F(AudioCoreServicePrivateTest, NeedUidCheckForOffloadPipe_001, TestSize.L
     ASSERT_NE(deviceDesc, nullptr);
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
-    bool needUidCheck = AudioPolicyConfigManager::GetInstance().NeedUidCheckForOffloadPipe(streamDesc);
+    bool needUidCheck = AudioCoreConfigManager::GetInstance().NeedUidCheckForOffloadPipe(streamDesc);
     EXPECT_EQ(needUidCheck, true);
 
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
@@ -2272,7 +2280,7 @@ HWTEST_F(AudioCoreServicePrivateTest, NeedUidCheckForOffloadPipe_001, TestSize.L
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: IsOffloadPlaybackSupported_001
- * @tc.desc  : Test AudioPolicyConfigManager::IsOffloadPlaybackSupported returns false for uid-gated pipe
+ * @tc.desc  : Test AudioCoreConfigManager::IsOffloadPlaybackSupported returns false for uid-gated pipe
  */
 HWTEST_F(AudioCoreServicePrivateTest, IsOffloadPlaybackSupported_001, TestSize.Level1)
 {
@@ -2289,7 +2297,7 @@ HWTEST_F(AudioCoreServicePrivateTest, IsOffloadPlaybackSupported_001, TestSize.L
     ASSERT_NE(deviceDesc, nullptr);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc = {deviceDesc};
 
-    bool isSupported = AudioPolicyConfigManager::GetInstance().IsOffloadPlaybackSupported(
+    bool isSupported = AudioCoreConfigManager::GetInstance().IsOffloadPlaybackSupported(
         streamInfo, desc, STREAM_USAGE_MUSIC);
     EXPECT_EQ(isSupported, false);
 
