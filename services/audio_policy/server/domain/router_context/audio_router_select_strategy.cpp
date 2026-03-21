@@ -274,7 +274,7 @@ void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr
             { CALL_INPUT_DEVICES, SelectDeviceType::CALL_INPUT },
         };
         for (const auto type : types) {
-            if (usage & type.first != 0) {
+            if ((usage & type.first) != 0) {
                 routerInfra.ClearAllSelectSelectDevice(type.second, simpleDesc);
             }
         }

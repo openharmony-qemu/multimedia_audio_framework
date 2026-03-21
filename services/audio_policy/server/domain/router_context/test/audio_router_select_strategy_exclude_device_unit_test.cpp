@@ -165,7 +165,7 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     EXPECT_TRUE(strategy.IsDeviceExcluded(speaker, MEDIA_OUTPUT_DEVICES));
     EXPECT_TRUE(strategy.IsDeviceExcluded(earpiece, MEDIA_OUTPUT_DEVICES));
 
-    strategy.UnexcludeAllDevice();
+    AudioRouterInfra::GetInstance().UnexcludeAllDevice();
 
     EXPECT_FALSE(strategy.IsDeviceExcluded(speaker, MEDIA_OUTPUT_DEVICES));
     EXPECT_FALSE(strategy.IsDeviceExcluded(earpiece, MEDIA_OUTPUT_DEVICES));
@@ -294,7 +294,6 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     TestSize.Level1)
 {
     auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
-    auto &routerInfra = AudioRouterInfra::GetInstance();
 
     auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE,
         "00:00:00:00:00:01");
@@ -302,12 +301,13 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     AudioRouterFollowStrategy strategy;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = { sco };
 
-    routerInfra.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
         ConvertDeviceToSimple(sco));
 
     strategy.ExcludeDevices(devices, MEDIA_INPUT_DEVICES);
 
-    auto stream1Result = routerInfra.GetStreamSelectDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
+    auto stream1Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
+        SOURCE_TYPE_MIC);
     EXPECT_EQ(stream1Result, nullptr);
 }
 
@@ -372,13 +372,13 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
 
     AudioRouterFollowStrategy strategy;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices1 = { sco };
-    strategy.ExcludeDevices(devices, CALL_OUTPUT_DEVICES);
+    strategy.ExcludeDevices(devices1, CALL_OUTPUT_DEVICES);
 
     EXPECT_TRUE(strategy.IsDeviceExcluded(sco, CALL_OUTPUT_DEVICES));
     EXPECT_TRUE(strategy.IsDeviceExcluded(scoInput, CALL_INPUT_DEVICES));
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices2 = { scoInput };
-    strategy.UnexcludeDevices(devices, CALL_INPUT_DEVICES);
+    strategy.UnexcludeDevices(devices2, CALL_INPUT_DEVICES);
 
     EXPECT_TRUE(strategy.IsDeviceExcluded(sco, CALL_OUTPUT_DEVICES));
     EXPECT_FALSE(strategy.IsDeviceExcluded(scoInput, CALL_INPUT_DEVICES));

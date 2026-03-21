@@ -69,6 +69,8 @@ void AudioRouterContextTestBase::AddPairDeviceDescriptor(
 {
     device1->pairDeviceDescriptor_ = device2;
     device2->pairDeviceDescriptor_ = device1;
+
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
     deviceManager.AddNewDevice(device1);
     deviceManager.AddNewDevice(device2);
     addDevices_.push_back(device1);
