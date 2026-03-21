@@ -41,12 +41,12 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
         simpleDesc = systemSelectInfo.device_;
     } else {
         auto selectResult = GetSelectDeviceByPriority(uid, streamId, SelectDeviceType::MEDIA_INPUT);
-        simpleDesc = selectResult.device;
+        simpleDesc = selectResult.device_;
         category = routerInfra.GetPreferredInputCategory(uid);
 
-        if (selectResult.source == SelectDeviceSource::STREAM) {
+        if (selectResult.source_ == SelectDeviceSource::STREAM) {
             effectiveSourceType = routerInfra.GetStreamSourceType(uid, streamId);
-        } else if (selectResult.source == SelectDeviceSource::APP) {
+        } else if (selectResult.source_ == SelectDeviceSource::APP) {
             effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
         }
 
@@ -145,30 +145,30 @@ AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrateg
 {
     auto& routerInfra = AudioRouterInfra::GetInstance();
     SelectDeviceResult result;
-    result.device = nullptr;
-    result.source = SelectDeviceSource::NONE;
+    result.device_ = nullptr;
+    result.source_ = SelectDeviceSource::NONE;
 
     if (streamId != 0) {
         auto streamSelectDevice = routerInfra.GetStreamSelectDevice(uid, streamId);
         if (streamSelectDevice != nullptr) {
-            result.device = streamSelectDevice;
-            result.source = SelectDeviceSource::STREAM;
+            result.device_ = streamSelectDevice;
+            result.source_ = SelectDeviceSource::STREAM;
         }
     }
 
     if (result.device_ == nullptr) {
         auto appSelectInfo = routerInfra.GetAppSelectDevice(type, uid);
         if (appSelectInfo.device_ != nullptr) {
-            result.device = appSelectInfo.device_;
-            result.source = SelectDeviceSource::APP;
+            result.device_ = appSelectInfo.device_;
+            result.source_ = SelectDeviceSource::APP;
         }
     }
 
     if (result.device_ == nullptr) {
         auto systemSelectInfo = routerInfra.GetSystemSelectDevice(type);
         if (systemSelectInfo.device_ != nullptr) {
-            result.device = systemSelectInfo.device_;
-            result.source = SelectDeviceSource::SYSTEM;
+            result.device_ = systemSelectInfo.device_;
+            result.source_ = SelectDeviceSource::SYSTEM;
         }
     }
 
@@ -187,7 +187,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterIndependentStrategy::Get
         simpleDesc = systemSelectInfo.device_;
     } else {
         auto selectResult = GetSelectDeviceByPriority(uid, streamId, type);
-        simpleDesc = selectResult.device;
+        simpleDesc = selectResult.device_;
     }
     return simpleDesc;
 }

@@ -66,7 +66,7 @@ public:
     void UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
         AudioDeviceUsage usage);
     bool IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
-        AudioDeviceUsage usage) const;
+        AudioDeviceUsage usage);
     void UnexcludeAllDevice();
 
     void UpdateCurrentOutputDevice(int32_t uid,

@@ -53,8 +53,8 @@ private:
     };
 
     struct SelectDeviceResult {
-        std::shared_ptr<AudioDeviceSimpleDescriptor> device;
-        SelectDeviceSource source;
+        std::shared_ptr<AudioDeviceSimpleDescriptor> device_;
+        SelectDeviceSource source_;
     };
 
     SelectDeviceResult GetSelectDeviceByPriority(int32_t uid, uint32_t streamId,
