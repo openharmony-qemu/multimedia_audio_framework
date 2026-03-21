@@ -38,6 +38,8 @@ public:
         DeviceType deviceType, DeviceRole deviceRole, const std::string &macAddress);
     std::shared_ptr<AudioDeviceDescriptor> AddDeviceDescriptor(
         DeviceType deviceType, DeviceRole deviceRole, const std::string &macAddress);
+    void AddPairDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device1,
+        std::shared_ptr<AudioDeviceDescriptor> device2);
 
 public:
     static constexpr int32_t TEST_APP_UID_10001 = 10001;

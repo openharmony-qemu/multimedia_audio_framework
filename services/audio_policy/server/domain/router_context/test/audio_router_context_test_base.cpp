@@ -63,6 +63,18 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterContextTestBase::AddDeviceDesc
     return device;
 }
 
+void AudioRouterContextTestBase::AddPairDeviceDescriptor(
+    std::shared_ptr<AudioDeviceDescriptor> device1,
+    std::shared_ptr<AudioDeviceDescriptor> device2)
+{
+    device1->pairDeviceDescriptor_ = device2;
+    device2->pairDeviceDescriptor_ = device1;
+    deviceManager.AddNewDevice(device1);
+    deviceManager.AddNewDevice(device2);
+    addDevices_.push_back(device1);
+    addDevices_.push_back(device2);
+}
+
 void AudioRouterContextTestBase::SimulateBluetoothHeadsetConnect(const std::string &macAddress)
 {
     AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, macAddress);
