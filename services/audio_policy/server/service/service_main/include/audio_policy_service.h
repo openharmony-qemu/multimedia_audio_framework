@@ -256,8 +256,6 @@ public:
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     AudioScene GetAudioSceneFromAllZones();
-
-
     int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute);
 private:
     AudioPolicyService()

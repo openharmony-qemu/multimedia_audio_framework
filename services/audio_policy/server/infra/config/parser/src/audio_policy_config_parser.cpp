@@ -374,7 +374,8 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             deviceInfo.adapterInfo_ = adapterInfo;
             curNode->GetProp("name", deviceInfo.name_);
             if (deviceInfo.name_ == "Earpiece_Out" && !hasEarpiece_ && isChipGeneralConfig_) {
-                AUDIO_INFO_LOG("skip earpiece node parse because hasEarpiece_ is false and isChipGeneralConfig_ is true");
+                AUDIO_INFO_LOG("skip earpiece parse due to hasEarpiece_=%{public}d, isChipGeneralConfig_=%{public}d",
+                    hasEarpiece_, isChipGeneralConfig_);
                 curNode->MoveToNext();
                 continue;
             }
