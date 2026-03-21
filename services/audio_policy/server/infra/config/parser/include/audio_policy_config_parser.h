@@ -98,6 +98,7 @@ private:
     bool shouldOpenMicSpeaker_ = false;
     bool supportUltraFast_ = false;
     bool hasEarpiece_ = false;
+    bool isChipGeneralConfig_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

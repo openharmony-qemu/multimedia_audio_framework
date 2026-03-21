@@ -48,6 +48,7 @@ AudioPolicyConfigParser::AudioPolicyConfigParser(AudioCoreConfigManager &manager
 {
     curNode_ = AudioXmlNode::Create();
     hasEarpiece_ = GetHasEarpieceParam();
+    isChipGeneralConfig_ = false;
 }
 
 bool AudioPolicyConfigParser::GetHasEarpiece() const
@@ -61,6 +62,7 @@ bool AudioPolicyConfigParser::LoadConfiguration()
 {
     AUDIO_INFO_LOG("Enter");
     if (curNode_->Config(CHIP_PROD_CONFIG_FILE, nullptr, 0) != SUCCESS) {
+        isChipGeneralConfig_ = true;
         if (curNode_->Config(CONFIG_FILE, nullptr, 0) != SUCCESS) {
             AUDIO_ERR_LOG("LoadConfiguration readFile failed");
             return false;
@@ -371,8 +373,8 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             AdapterDeviceInfo deviceInfo {};
             deviceInfo.adapterInfo_ = adapterInfo;
             curNode->GetProp("name", deviceInfo.name_);
-            if (deviceInfo.name_ == "Earpiece_Out" && !hasEarpiece_) {
-                AUDIO_INFO_LOG("skip earpiece node parse because hasEarpiece_ is false");
+            if (deviceInfo.name_ == "Earpiece_Out" && !hasEarpiece_ && isChipGeneralConfig_) {
+                AUDIO_INFO_LOG("skip earpiece node parse because hasEarpiece_ is false and isChipGeneralConfig_ is true");
                 curNode->MoveToNext();
                 continue;
             }
