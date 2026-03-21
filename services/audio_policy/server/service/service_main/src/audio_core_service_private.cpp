@@ -1979,7 +1979,7 @@ bool AudioCoreService::CheckOffloadPipeUidAllowed(const std::shared_ptr<AudioStr
         JUDGE_AND_INFO_LOG(isCreateProcess_, "the extra uid not support offload.");
         return false;
     }
-    if (!policyConfigMananger_.NeedUidCheckForOffloadPipe(streamDesc)) {
+    if (!pipeManager_->NeedUidCheckForOffloadPipe(streamDesc)) {
         return true;
     }
     if (IsOffloadAllowedForUid(realUid)) {
@@ -2782,7 +2782,6 @@ bool AudioCoreService::GetDisableFastStreamParam()
 {
     return GetFastControlParam();
 }
-
 
 bool AudioCoreService::IsFastAllowed(std::string &bundleName)
 {
