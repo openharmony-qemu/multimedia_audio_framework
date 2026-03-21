@@ -304,6 +304,26 @@ int32_t TaiheParamUtils::GetAudioDeviceDescriptorVector(
     return AUDIO_OK;
 }
 
+int32_t TaiheParamUtils::GetAudioDeviceTypeVector(
+    std::vector<OHOS::AudioStandard::DeviceType> &deviceTypeVector, array_view<DeviceType> in)
+{
+    if (in.empty()) {
+        deviceTypeVector = {};
+        AUDIO_ERR_LOG("DeviceTypeVector vector is empty!");
+        return AUDIO_INVALID_PARAM;
+    }
+
+    for (DeviceType &element : in) {
+        int32_t intValue = element.get_value();
+        if (std::find(DEVICE_TYPE_SET.begin(), DEVICE_TYPE_SET.end(), intValue) == DEVICE_TYPE_SET.end()) {
+            AUDIO_INFO_LOG("Undefined device type: %{public}d", intValue);
+            return AUDIO_INVALID_PARAM;
+        }
+        deviceTypeVector.emplace_back(static_cast<OHOS::AudioStandard::DeviceType>(intValue));
+    }
+    return AUDIO_OK;
+}
+
 int32_t TaiheParamUtils::GetAudioCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &capturerInfo,
     AudioCapturerInfo const &in)
 {

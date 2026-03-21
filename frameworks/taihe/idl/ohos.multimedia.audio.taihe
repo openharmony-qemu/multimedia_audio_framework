@@ -418,6 +418,8 @@ interface AudioRoutingManager {
 
   GetPreferredOutputDeviceByFilter(filter: AudioRendererFilter): Array<AudioDeviceDescriptor>;
 
+  DeclareDeviceTypesCompatibility(deviceTypes: Array<DeviceType>): void;
+
   @gen_promise("selectInputDeviceByFilter")
   SelectInputDeviceByFilterSync(filter: AudioCapturerFilter, inputAudioDevices: Array<AudioDeviceDescriptor>): void;
 

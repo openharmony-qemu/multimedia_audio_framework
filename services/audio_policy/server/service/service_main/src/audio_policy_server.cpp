@@ -2112,10 +2112,10 @@ int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
 
     int32_t apiVersion = CheckAndGetApiVersion(device, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, true);
     for (auto &desc : device) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, true);
         desc->SetClientInfo(clientInfo);
     }
     return SUCCESS;
@@ -2147,10 +2147,10 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, hasSystemPermission);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, hasSystemPermission);
         desc->SetClientInfo(clientInfo);
         if (desc->IsAudioDeviceDescriptor()) {
             desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
@@ -2206,10 +2206,10 @@ int32_t AudioPolicyServer::GetOutputDevice(const sptr<AudioRendererFilter> &audi
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, true);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, true);
         desc->SetClientInfo(clientInfo);
         if (desc->IsAudioDeviceDescriptor()) {
             desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
@@ -2231,10 +2231,10 @@ int32_t AudioPolicyServer::GetInputDevice(const sptr<AudioCapturerFilter> &audio
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, true);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, true);
         desc->SetClientInfo(clientInfo);
         if (desc->IsAudioDeviceDescriptor()) {
             desc->deviceType_ = desc->MapInternalToExternalDeviceType(apiVersion);
@@ -2274,10 +2274,10 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, hasSystemPermission);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, hasSystemPermission);
         desc->SetClientInfo(clientInfo);
         desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         if (desc->IsAudioDeviceDescriptor()) {
@@ -2303,14 +2303,25 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     int32_t apiVersion = CheckAndGetApiVersion(deviceDescs, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, hasSystemPermission);
     for (auto &desc : deviceDescs) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, hasSystemPermission);
         desc->SetClientInfo(clientInfo);
     }
 
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetDeclaredDeviceTypes(const std::set<int32_t> &deviceTypes)
+{
+    std::vector<DeviceType> deviceTypeVector;
+    for (const auto &deviceType : deviceTypes) {
+        CHECK_AND_RETURN_RET_LOG(AudioPolicyUtils::needDeclaredDevices.count(static_cast<DeviceType>(deviceType)),
+            ERR_INVALID_PARAM, "devicetype %{public}d is exempt from declaration", deviceType);
+        deviceTypeVector.push_back(static_cast<DeviceType>(deviceType));
+    }
+    return audioPolicyUtils_.SetDeclaredDeviceTypes(AudioBundleManager::GetBundleName(), deviceTypeVector);
 }
 
 int32_t AudioPolicyServer::SetClientCallbacksEnable(int32_t callbackchangeIn, bool enable)
@@ -3463,11 +3474,11 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 
     int32_t apiVersion = GetApiTargetVersion();
     AudioDeviceDescriptor::ClientInfo clientInfo { hasBTPermission, hasSystemPermission, apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, hasSystemPermission);
 
     for (auto &info : audioRendererChangeInfos) {
         CHECK_AND_RETURN_RET_LOG(info != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            info->outputDeviceInfo.deviceType_, hasSystemPermission);
         info->SetClientInfo(clientInfo);
     }
     return result;
@@ -3486,11 +3497,11 @@ int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
 
     int32_t apiVersion = GetApiTargetVersion();
     AudioDeviceDescriptor::ClientInfo clientInfo { hasBTPermission, hasSystemPermission, apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, hasSystemPermission);
 
     for (auto &info : audioCapturerChangeInfos) {
         CHECK_AND_RETURN_RET_LOG(info != nullptr, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            info->inputDeviceInfo.deviceType_, hasSystemPermission);
         info->SetClientInfo(clientInfo);
     }
     return result;
@@ -4161,10 +4172,10 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
 
     int32_t apiVersion = CheckAndGetApiVersion(deviceDevices, hasSystemPermission);
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
-    clientInfo.isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        apiVersion, hasSystemPermission);
     for (auto &desc : deviceDevices) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
+        clientInfo.isSupportedDevice_ = audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(),
+            desc->deviceType_, hasSystemPermission);
         desc->descriptorType_ = AudioDeviceDescriptor::AUDIO_DEVICE_DESCRIPTOR;
         desc->SetClientInfo(clientInfo);
     }
@@ -4590,8 +4601,12 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
     callback->apiVersion_ = GetApiTargetVersion();
-    callback->isSupportedNearlink_ = audioPolicyUtils_.IsSupportedNearlink(AudioBundleManager::GetBundleName(),
-        callback->apiVersion_, hasSysPermission);
+    callback->needDeclaredDevices_ = AudioPolicyUtils::needDeclaredDevices;
+    for (DeviceType deviceType : AudioPolicyUtils::needDeclaredDevices) {
+        if (audioPolicyUtils_.IsSupportedDevice(AudioBundleManager::GetBundleName(), deviceType, hasSysPermission)) {
+                callback->alreadyDeclaredDevicesByApp_.insert(deviceType);
+            }
+    }
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, callback);
     }

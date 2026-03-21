@@ -210,6 +210,19 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetPrefe
     return deviceInfo;
 }
 
+int32_t AudioPolicyManager::SetDeclaredDeviceTypes(const std::vector<DeviceType> &deviceTypes)
+{
+    std::set<int32_t> intDeviceTypeSet;
+    for (const auto &deviceType : deviceTypes) {
+        CHECK_AND_RETURN_RET_LOG(deviceType > DEVICE_TYPE_NONE && deviceType < DEVICE_TYPE_MAX, -1,
+            "device type is invalid");
+        intDeviceTypeSet.insert(static_cast<int32_t>(deviceType));
+    }
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetDeclaredDeviceTypes(intDeviceTypeSet);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyManager::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {

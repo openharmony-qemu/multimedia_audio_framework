@@ -46,6 +46,11 @@ int32_t AudioRoutingManager::GetPreferredInputDeviceForCapturerInfo(AudioCapture
     return AudioRoutingClientManager::GetInstance().GetPreferredInputDeviceForCapturerInfo(captureInfo, desc);
 }
 
+int32_t AudioRoutingManager::SetDeclaredDeviceTypes(std::vector<DeviceType> &deviceTypeVector)
+{
+    return AudioRoutingClientManager::GetInstance().SetDeclaredDeviceTypes(deviceTypeVector);
+}
+
 RecommendInputDevices AudioRoutingManager::GetRecommendInputDevices(
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {

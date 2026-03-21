@@ -218,6 +218,8 @@ public:
     static napi_status GetAudioCapturerChangeInfo(const napi_env &env, AudioCapturerChangeInfo &capturerInfo,
         napi_value in);
     static bool CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType);
+    static napi_status GetAudioDeviceTypeArray(const napi_env &env, std::vector<DeviceType> &deviceTypeVector,
+        napi_value in);
 };
 } // namespace AudioStandard
 } // namespace OHOS
