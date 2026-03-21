@@ -247,7 +247,7 @@ HWTEST(AudioUtilsUnitTest, GetSysPara_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, GetEcEnableParam_001, TestSize.Level1)
 {
     bool ret = GetEcEnableParam();
-    EXPECT_EQ(ret, system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", false));
+    EXPECT_EQ(ret, GetBoolParameter("const.multimedia.audio.fwk_ec.enable", false));
 }
 
 /**
@@ -259,7 +259,7 @@ HWTEST(AudioUtilsUnitTest, GetEcEnableParam_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, GetHasEarpieceParam_001, TestSize.Level1)
 {
     bool ret = GetHasEarpieceParam();
-    EXPECT_EQ(ret, system::GetBoolParameter("const.multimedia.audio.has_earpiece", false));
+    EXPECT_EQ(ret, GetBoolParameter("const.multimedia.audio.has_earpiece", false));
 }
 
 /**
