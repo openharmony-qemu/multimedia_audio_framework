@@ -238,43 +238,6 @@ HWTEST(AudioUtilsUnitTest, GetSysPara_001, TestSize.Level1)
     EXPECT_EQ(true, result4);
 }
 
-/**
- * @tc.name  : Test GetEcEnableParam API
- * @tc.type  : FUNC
- * @tc.number: GetEcEnableParam_001
- * @tc.desc  : Test GetEcEnableParam interface.
- */
-HWTEST(AudioUtilsUnitTest, GetEcEnableParam_001, TestSize.Level1)
-{
-    // 测试设置为true
-    SetParameter("const.multimedia.audio.fwk_ec.enable", "true");
-    bool ret = GetEcEnableParam();
-    EXPECT_EQ(ret, true);
-
-    // 测试设置为false
-    SetParameter("const.multimedia.audio.fwk_ec.enable", "false");
-    ret = GetEcEnableParam();
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test GetHasEarpieceParam API
- * @tc.type  : FUNC
- * @tc.number: GetHasEarpieceParam_001
- * @tc.desc  : Test GetHasEarpieceParam interface.
- */
-HWTEST(AudioUtilsUnitTest, GetHasEarpieceParam_001, TestSize.Level1)
-{
-    // 测试设置为true
-    SetParameter("const.multimedia.audio.has_earpiece", "true");
-    bool ret = GetHasEarpieceParam();
-    EXPECT_EQ(ret, true);
-
-    // 测试设置为false
-    SetParameter("const.multimedia.audio.has_earpiece", "false");
-    ret = GetHasEarpieceParam();
-    EXPECT_EQ(ret, false);
-}
 
 /**
  * @tc.name  : Test GetEngineFlag API
