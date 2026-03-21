@@ -422,16 +422,12 @@ bool AudioCoreConfigManager::GetUpdateRouteSupport()
     return isUpdateRouteSupported_;
 }
 
-<<<<<<< ours
 bool AudioCoreConfigManager::GetEnhancedRoutingSupported()
 {
     return isEnhancedRoutingSupported_;
 }
 
 bool AudioCoreConfigManager::GetAdapterInfoFlag()
-=======
-bool AudioCoreConfigManager::GetAdapterInfoFlag()
->>>>>>> theirs
 {
     return isAdapterInfoMap_.load();
 }
