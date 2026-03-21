@@ -1415,7 +1415,7 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_003, TestSize.Lev
     deviceInfo->supportPipeMap_.insert({AUDIO_OUTPUT_FLAG_MULTICHANNEL, pipeInfo});
     std::set<std::shared_ptr<AdapterDeviceInfo>> adapterDeviceInfoSet = {deviceInfo};
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, INPUT_DEVICE);
-    GetServerPtr()->coreService_->policyConfigMananger_.audioPolicyConfig_
+    AudioCoreConfigManager::GetInstance().GetAudioPolicyConfigData()
         .deviceInfoMap.insert({deviceKey, adapterDeviceInfoSet});
     EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), true);
 }

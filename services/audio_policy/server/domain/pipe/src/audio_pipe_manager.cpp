@@ -100,6 +100,11 @@ DirectPlaybackMode AudioPipeManager::GetDirectPlaybackSupport(std::shared_ptr<Au
     return audioConfigManager_.GetDirectPlaybackSupport(desc, streamInfo);
 }
 
+bool AudioPipeManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc)
+{
+    return audioConfigManager_.NeedUidCheckForOffloadPipe(desc);
+}
+
 void AudioPipeManager::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
     const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
 {

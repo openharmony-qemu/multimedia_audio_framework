@@ -687,7 +687,6 @@ void AudioCoreServicePrivateSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& f
     StreamUsage streamUsage = GetData<StreamUsage>();
     bool isRunning = GetData<bool>();
     bool skipForce = GetData<bool>();
-    audioCoreService->policyConfigMananger_.hasEarpiece_ = GetData<bool>();
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
     if (audioCoreService->pipeManager_ == nullptr) {
         return;
