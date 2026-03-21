@@ -14,6 +14,7 @@
  */
 
 #include "audio_volume_manager.h"
+#include "audio_interrupt_service.h"
 #include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
@@ -210,9 +211,10 @@ void AudioVolumeManagerInitFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
 
     audioVolumeManager.DeInit();
-    audioVolumeManager.Init(audioPolicyServerHandler);
+    audioVolumeManager.Init(audioPolicyServerHandler, interruptService);
 }
 
 void AudioVolumeManagerInitKVStoreFuzzTest(FuzzedDataProvider& fdp)

@@ -605,10 +605,10 @@ void AudioPolicyServerProcUpdateRingerModeFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    audioPolicyServer->supportVibrator_ = true;
-    audioPolicyServer->ProcUpdateRingerMode();
-    audioPolicyServer->supportVibrator_ = false;
-    audioPolicyServer->ProcUpdateRingerMode();
+    audioPolicyServer->audioVolumeManager_.supportVibrator_ = true;
+    audioPolicyServer->audioVolumeManager_.ProcUpdateRingerMode();
+    audioPolicyServer->audioVolumeManager_.supportVibrator_ = false;
+    audioPolicyServer->audioVolumeManager_.ProcUpdateRingerMode();
 }
 
 void AudioPolicyServerSetSingleStreamVolumeFuzztest()

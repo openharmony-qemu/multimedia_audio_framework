@@ -18,6 +18,7 @@
 #include <cstdint>
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
+#include "audio_safe_volume_event_subscriber.h"
 #include "message_parcel.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
@@ -324,19 +325,7 @@ void AudioPolicyServiceSubscribeSafeVolumeEventFuzztest(const uint8_t *rawData, 
         return;
     }
 
-    GetServerPtr()->audioPolicyService_.SubscribeSafeVolumeEvent();
-}
-
-void AudioPolicyServiceOnReceiveEventFuzztest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    EventFwk::CommonEventData eventData;
-    OHOS::EventFwk::Want want;
-    want.SetAction("usual.event.LOCALE_CHANGED");
-    eventData.SetWant(want);
-    GetServerPtr()->audioPolicyService_.OnReceiveEvent(eventData);
+    SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
 }
 
 void AudioPolicyServiceSetAppVolumeLevelFuzztest(const uint8_t *rawData, size_t size)
@@ -1005,7 +994,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioPolicyServiceInterfaceTest,
     OHOS::AudioStandard::AudioDeviceConnectTest,
     OHOS::AudioStandard::AudioPolicyServiceSubscribeSafeVolumeEventFuzztest,
-    OHOS::AudioStandard::AudioPolicyServiceOnReceiveEventFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceSetAppVolumeLevelFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceSetSourceOutputStreamMuteFuzztest,
     OHOS::AudioStandard::AudioPolicyServiceGetSelectedDeviceInfoFuzztest,

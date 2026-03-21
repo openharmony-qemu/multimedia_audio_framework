@@ -17,7 +17,6 @@
 #include "audio_core_config_manager.h"
 #include "audio_core_service.h"
 #include "audio_safe_volume_event_subscriber.h"
-#include "audio_policy_config_manager.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
