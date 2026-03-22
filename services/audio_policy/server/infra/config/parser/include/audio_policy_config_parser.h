@@ -97,7 +97,7 @@ private:
     PolicyGlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
     bool supportUltraFast_ = false;
-    bool hasEarpiece_ = false;
+    bool hasEarpiece_ = true;
     bool isChipGeneralConfig_ = false;
 };
 } // namespace AudioStandard

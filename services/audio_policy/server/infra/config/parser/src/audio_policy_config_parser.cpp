@@ -48,7 +48,6 @@ AudioPolicyConfigParser::AudioPolicyConfigParser(AudioCoreConfigManager &manager
 {
     curNode_ = AudioXmlNode::Create();
     hasEarpiece_ = GetHasEarpieceParam();
-    isChipGeneralConfig_ = false;
 }
 
 bool AudioPolicyConfigParser::GetHasEarpiece() const
@@ -62,9 +61,10 @@ bool AudioPolicyConfigParser::LoadConfiguration()
 {
     AUDIO_INFO_LOG("Enter");
     if (curNode_->Config(CHIP_PROD_CONFIG_FILE, nullptr, 0) != SUCCESS) {
+        AUDIO_WARNING_LOG("Load chip prod config xml fail, use chip general config");
         isChipGeneralConfig_ = true;
         if (curNode_->Config(CONFIG_FILE, nullptr, 0) != SUCCESS) {
-            AUDIO_ERR_LOG("LoadConfiguration readFile failed");
+            AUDIO_ERR_LOG("Load chip prod config and chip general config xml all failed");
             return false;
         }
     }

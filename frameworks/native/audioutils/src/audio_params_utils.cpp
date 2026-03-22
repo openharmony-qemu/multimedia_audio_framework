@@ -46,8 +46,8 @@ bool GetInt32ParameterValue(const char *key, int32_t &value)
     errno = 0;
     long parsedValue = std::strtol(paraValue, &end, 10);
     CHECK_AND_RETURN_RET_LOG(end != paraValue && end[0] == '\0' && errno != ERANGE &&
-        parsedValue >= INT32_MIN && parsedValue <= INT32_MAX, false,
-        "invalid value for key:%{public}s value:%{public}s", key, paraValue);
+        parsedValue >= INT32_MIN && parsedValue <= INT32_MAX,
+        false, "invalid value for key:%{public}s value:%{public}s", key, paraValue);
     value = static_cast<int32_t>(parsedValue);
     return true;
 }
@@ -57,12 +57,15 @@ bool GetFastControlParam()
 {
     int32_t fastControlFlag = 1;
     GetInt32ParameterValue(PARAM_FAST_CONTROL, fastControlFlag);
+    AUDIO_INFO_LOG("get params[%{public}s]: %{public}s", PARAM_FAST_CONTROL, fastControlFlag ? "true" : "false");
     return fastControlFlag != 0;
 }
 
 bool GetEcEnableParam()
 {
-    return system::GetBoolParameter(PARAM_FWK_EC_ENABLE, false);
+    bool ret = system::GetBoolParameter(PARAM_FWK_EC_ENABLE, false);
+    AUDIO_INFO_LOG("get params[%{public}s]: %{public}s", PARAM_FWK_EC_ENABLE, ret ? "true" : "false");
+    return ret;
 }
 
 int32_t GetEngineFlag()
@@ -71,7 +74,7 @@ int32_t GetEngineFlag()
     static int32_t engineFlag = -1;
     if (engineFlag == -1) {
         bool res = GetInt32ParameterValue(PARAM_ENGINE_FLAG, engineFlag);
-        AUDIO_INFO_LOG("get %{public}s = %{public}d", PARAM_ENGINE_FLAG, engineFlag);
+        AUDIO_INFO_LOG("get params[%{public}s]: %{public}d", PARAM_ENGINE_FLAG, engineFlag);
         CHECK_AND_RETURN_RET_LOG(res, engineFlag, "get %{public}s fail", PARAM_ENGINE_FLAG);
     }
     return engineFlag;
@@ -82,7 +85,9 @@ int32_t GetEngineFlag()
 
 bool GetHasEarpieceParam()
 {
-    return system::GetBoolParameter(PARAM_HAS_EARPIECE, false);
+    bool ret = system::GetBoolParameter(PARAM_HAS_EARPIECE, true);
+    AUDIO_INFO_LOG("get params[%{public}s]: %{public}s", PARAM_HAS_EARPIECE, ret ? "true" : "false");
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS
