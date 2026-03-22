@@ -41,7 +41,7 @@
 #include "audio_iohandle_map.h"
 #include "audio_a2dp_device.h"
 #include "audio_a2dp_offload_flag.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 #include "audio_router_map.h"
 #include "audio_a2dp_offload_manager.h"
 #include "audio_spatialization_service.h"
@@ -108,7 +108,7 @@ private:
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-        audioConfigManager_(AudioPolicyConfigManager::GetInstance()),
+        audioConfigManager_(AudioCoreConfigManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
         audioUsrSelectManager_(AudioUsrSelectManager::GetAudioUsrSelectManager()) {}
     ~AudioDeviceStatus() {}
@@ -204,7 +204,7 @@ private:
     AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpDevice& audioA2dpDevice_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
-    AudioPolicyConfigManager& audioConfigManager_;
+    AudioCoreConfigManager& audioConfigManager_;
     AudioRouteMap& audioRouteMap_;
     AudioUsrSelectManager& audioUsrSelectManager_;
 

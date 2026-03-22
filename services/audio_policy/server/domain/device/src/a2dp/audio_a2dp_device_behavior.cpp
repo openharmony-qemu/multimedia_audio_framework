@@ -24,7 +24,7 @@
 #include "audio_errors.h"
 #include "audio_iohandle_map.h"
 #include "audio_log.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_utils.h"
 #include "audio_pipe_manager.h"
@@ -130,7 +130,7 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(DeviceType deviceType, const Aud
     std::string networkId, std::string sinkName, SourceType sourceType)
 {
     std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = AudioPolicyConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
+    bool ret = AudioCoreConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "A2dp module is not exist in the configuration file");
 
     // not load bt_a2dp_fast and bt_hdap, maybe need fix

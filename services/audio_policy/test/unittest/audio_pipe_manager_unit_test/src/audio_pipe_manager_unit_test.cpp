@@ -28,7 +28,40 @@ void AudioPipeManagerUnitTest::SetUp(void) {}
 void AudioPipeManagerUnitTest::TearDown(void) {}
 
 /**
+ * @tc.name: Init_001
+ * @tc.desc: Test Init when adapter info has been loaded.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, Init_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->audioConfigManager_.isAdapterInfoMap_ = true;
+
+    bool result = audioPipeManager->Init();
+
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name: GetHasEarpiece_001
+ * @tc.desc: Test GetHasEarpiece returns value from config manager.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetHasEarpiece_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->audioConfigManager_.hasEarpiece_ = true;
+    EXPECT_TRUE(audioPipeManager->GetHasEarpiece());
+
+    audioPipeManager->audioConfigManager_.hasEarpiece_ = false;
+    EXPECT_FALSE(audioPipeManager->GetHasEarpiece());
+}
+
+
+/**
  * @tc.name: RemoveAudioPipeInfo_001
+
  * @tc.desc: Test RemoveAudioPipeInfo when entering the if branch in the for loop.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ

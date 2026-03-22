@@ -1283,7 +1283,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetNormalVoipFlag_001, TestSize.Level1
 
     bool normalVoipFlag = false;
 
-    server->audioPolicyConfigManager_.SetNormalVoipFlag(normalVoipFlag);
+    server->audioConfigManager_.SetNormalVoipFlag(normalVoipFlag);
     EXPECT_NE(server, nullptr);
 }
 

@@ -14,7 +14,8 @@
  */
 
 #include "audio_policy_service_ext_unit_test.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
+#include "audio_core_service.h"
 #include "audio_server_proxy.h"
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
@@ -112,8 +113,8 @@ static void GetPermission()
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_001, TestSize.Level1)
 {
-    AudioPolicyConfigManager::GetInstance().xmlHasLoaded_ = true;
-    auto ret = AudioPolicyService::GetAudioPolicyService().LoadAudioPolicyConfig();
+    AudioCoreConfigManager::GetInstance().xmlHasLoaded_ = true;
+    auto ret = AudioPipeManager::GetPipeManager()->Init();
     EXPECT_FALSE(ret);
 }
 
@@ -124,8 +125,8 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_001, TestSize.Lev
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_002, TestSize.Level1)
 {
-    AudioPolicyConfigManager::GetInstance().xmlHasLoaded_ = true;
-    auto ret = AudioPolicyService::GetAudioPolicyService().LoadAudioPolicyConfig();
+    AudioCoreConfigManager::GetInstance().xmlHasLoaded_ = true;
+    auto ret = AudioPipeManager::GetPipeManager()->Init();
     EXPECT_FALSE(ret);
     ret = AudioPolicyService::GetAudioPolicyService().Init();
     EXPECT_FALSE(ret);

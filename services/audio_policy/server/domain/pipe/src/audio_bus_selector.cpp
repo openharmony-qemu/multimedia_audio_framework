@@ -32,8 +32,7 @@ constexpr std::string_view PRIMARY_DEFAULT_BUS = "bus0_media_out";
 }
 AudioBusSelector &AudioBusSelector::GetBusSelector() noexcept
 {
-    static AudioBusSelector instance(AudioZoneService::GetInstance(), AudioPipeManager::GetPipeManager(),
-                                    AudioPolicyConfigManager::GetInstance());
+    static AudioBusSelector instance(AudioZoneService::GetInstance(), AudioPipeManager::GetPipeManager());
     return instance;
 }
 
@@ -89,14 +88,14 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
 std::string AudioBusSelector::GetDefaultBusByConfig()
 {
     PolicyGlobalConfigs globalConfigs;
-    audioConfigManager_.GetGlobalConfigs(globalConfigs);
+    audioPipeManager_->GetGlobalConfigs(globalConfigs);
     if (globalConfigs.adapter_.empty() || globalConfigs.pipe_.empty()) {
         return "";
     }
 
     AudioAdapterType adapterType = PolicyAdapterInfo::GetAdapterType(globalConfigs.adapter_);
     std::shared_ptr<PolicyAdapterInfo> adapterInfo{nullptr};
-    bool ret = audioConfigManager_.GetAdapterInfoByType(adapterType, adapterInfo);
+    bool ret = audioPipeManager_->GetAdapterInfoByType(adapterType, adapterInfo);
     if (!ret || !adapterInfo) {
         AUDIO_ERR_LOG("Can not find adapter info for default bus.");
         return "";

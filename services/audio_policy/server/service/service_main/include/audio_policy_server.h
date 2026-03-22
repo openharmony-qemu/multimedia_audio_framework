@@ -926,7 +926,7 @@ private:
     AudioToneManager &audioToneManager_;
     AudioMicrophoneDescriptor &audioMicrophoneDescriptor_;
     AudioDeviceStatus &audioDeviceStatus_;
-    AudioPolicyConfigManager &audioConfigManager_;
+    AudioCoreConfigManager &audioConfigManager_;
     AudioSceneManager &audioSceneManager_;
     AudioConnectedDevice &audioConnectedDevice_;
     AudioDeviceLock &audioDeviceLock_;
@@ -936,7 +936,6 @@ private:
     AudioVolumeManager &audioVolumeManager_;
     AudioDeviceCommon &audioDeviceCommon_;
     IAudioPolicyInterface &audioPolicyManager_;
-    AudioPolicyConfigManager &audioPolicyConfigManager_;
     AudioPolicyService &audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;

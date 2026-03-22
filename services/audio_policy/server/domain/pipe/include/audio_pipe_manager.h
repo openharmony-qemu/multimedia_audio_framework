@@ -23,6 +23,9 @@
 #include "audio_stream_descriptor.h"
 #include "audio_module_info.h"
 #include "audio_pipe_info.h"
+#include "audio_core_config_manager.h"
+#include "audio_concurrency_manager.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
@@ -30,6 +33,36 @@ class AudioPipeManager {
 public:
     AudioPipeManager();
     virtual ~AudioPipeManager();
+
+    bool Init();
+    bool GetUltraFastFlag();
+    bool PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc);
+    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
+    bool GetUpdateRouteSupport();
+    bool GetHasEarpiece();
+    bool GetAdapterInfoFlag();
+    bool GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info);
+    bool GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList);
+    void UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo);
+    DirectPlaybackMode GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+        const AudioStreamInfo &streamInfo);
+    void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
+    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+    uint32_t GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc);
+    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info);
+#ifdef MULTI_BUS_ENABLE
+    void GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<PipeStreamPropInfo> &info,
+        const std::vector<std::string> &busAddresses);
+#endif
+    void GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs);
+    void SetEcEnableState(bool ecEnableState);
+    AudioSampleFormat GetFastFormat() const;
+    bool IsSupportInnerCaptureOffload();
+    bool GetEnhancedRoutingSupported();
+    bool NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc);
+    int32_t GetMaxRendererInstances();
+    void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
 
     static std::shared_ptr<AudioPipeManager> GetPipeManager()
     {
@@ -129,7 +162,10 @@ private:
     std::shared_mutex pipeListLock_;
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> switchStreamMap_{};
     mutable std::shared_mutex switchStreamMapLock_;
+    AudioCoreConfigManager& audioConfigManager_;
+    AudioConcurrencyManager &audioConcurrencyManager_;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_PIPE_MANAGER_H

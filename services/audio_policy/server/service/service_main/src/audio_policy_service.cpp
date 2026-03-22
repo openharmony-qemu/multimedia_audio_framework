@@ -77,23 +77,6 @@ AudioPolicyService::~AudioPolicyService()
     Deinit();
 }
 
-bool AudioPolicyService::LoadAudioPolicyConfig()
-{
-    bool ret = audioConfigManager_.Init();
-    if (!ret) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Policy Config Load Configuration failed");
-        AudioCoreService::GetCoreService()->SetConfigParserFlag();
-    }
-    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Policy Config Load Configuration failed");
-    AudioCoreService::GetCoreService()->SetConfigParserFlag();
-    isFastControlled_ = getFastControlParam();
-    if (!ret) {
-        AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio Config Parse failed");
-    }
-    CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Config Parse failed");
-    return ret;
-}
-
 bool AudioPolicyService::Init(void)
 {
     audioPolicyManager_.Init();
@@ -105,13 +88,8 @@ bool AudioPolicyService::Init(void)
 #endif
     audioGlobalConfigManager_.ParseGlobalConfigXml();
 
-    bool ret = LoadAudioPolicyConfig();
-    if (!ret) {
-        return ret;
-    }
-
 #ifdef FEATURE_DTMF_TONE
-    ret = audioToneManager_.LoadToneDtmfConfig();
+    bool ret = audioToneManager_.LoadToneDtmfConfig();
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
 #endif
 
@@ -119,18 +97,13 @@ bool AudioPolicyService::Init(void)
     std::string versionType = OHOS::system::GetParameter("const.logsystem.versiontype", "commercial");
     AudioDump::GetInstance().SetVersionType(versionType);
 
-    ecEnableState_ = system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0);
-    audioConfigManager_.SetEcEnableState(ecEnableState_);
+    ecEnableState_ = GetEcEnableParam();
+    AudioCoreService::GetCoreService()->SetEcEnableState(ecEnableState_);
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     AudioServerProxy::GetInstance().SetInnerCapLimitProxy(audioGlobalConfigManager_.GetCapLimit());
 #endif
     return true;
-}
-
-int32_t AudioPolicyService::GetEcEnableState()
-{
-    return ecEnableState_;
 }
 
 void AudioPolicyService::CreateRecoveryThread()
@@ -568,16 +541,6 @@ void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<Aud
     }
 }
 
-bool AudioPolicyService::getFastControlParam()
-{
-    int32_t fastControlFlag = 1; // default 1, set isFastControlled_ true
-    GetSysPara("persist.multimedia.audioflag.fastcontrolled", fastControlFlag);
-    if (fastControlFlag == 0) {
-        isFastControlled_ = false;
-    }
-    return isFastControlled_;
-}
-
 void AudioPolicyService::SetDefaultDeviceLoadFlag(bool isLoad)
 {
     audioVolumeManager_.SetDefaultDeviceLoadFlag(isLoad);
@@ -627,7 +590,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
         targetStreamInfo.format = curOutputDeviceDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ?
-            audioConfigManager_.GetFastFormat() : SAMPLE_S16LE;
+            AudioCoreService::GetCoreService()->GetFastFormat() : SAMPLE_S16LE;
+
         CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -714,18 +678,19 @@ void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParamet
 
 bool AudioPolicyService::IsSupportInnerCaptureOffload()
 {
-    return audioConfigManager_.IsSupportInnerCaptureOffload();
+    return AudioCoreService::GetCoreService()->IsSupportInnerCaptureOffload();
 }
 
 bool AudioPolicyService::IsEnhancedRoutingSupported()
 {
-    return audioConfigManager_.GetEnhancedRoutingSupported();
+    return AudioCoreService::GetCoreService()->GetEnhancedRoutingSupported();
 }
 
 int32_t AudioPolicyService::GetMaxRendererInstances()
 {
-    return audioConfigManager_.GetMaxRendererInstances();
+    return AudioCoreService::GetCoreService()->GetMaxRendererInstances();
 }
+
 
 void AudioPolicyService::RegisterBluetoothListener()
 {
@@ -793,7 +758,8 @@ int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<
     CHECK_AND_RETURN_RET(ret, -1);
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo = {};
-    audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
+    AudioCoreService::GetCoreService()->GetDeviceClassInfo(deviceClassInfo);
+
     DeviceType clientDevType = desc->deviceType_;
     for (const auto &device : deviceClassInfo) {
         auto moduleInfoList = device.second;

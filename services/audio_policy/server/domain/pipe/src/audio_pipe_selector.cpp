@@ -114,9 +114,10 @@ bool AudioPipeSelector::IsBothFastArmUsbNeedRecreate(std::shared_ptr<AudioPipeIn
     return false;
 }
 
-AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())
+AudioPipeSelector::AudioPipeSelector() : pipeManager_(AudioPipeManager::GetPipeManager())
 {
 }
+
 
 std::shared_ptr<AudioPipeSelector> AudioPipeSelector::GetPipeSelector()
 {
@@ -127,7 +128,7 @@ std::shared_ptr<AudioPipeSelector> AudioPipeSelector::GetPipeSelector()
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecute(
     std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
 
     ScanPipeListForStreamDesc(pipeInfoList, streamDesc);
     AUDIO_INFO_LOG("Original Pipelist size: %{public}zu, stream routeFlag: 0x%{public}x to fetch",
@@ -192,7 +193,7 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
 void AudioPipeSelector::ProcessRendererAndCapturerConcurrency(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     bool hasFastVoipCapturer = false;
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
     for (auto &curPipeInfo : pipeInfoList) {
         CHECK_AND_CONTINUE(curPipeInfo->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST));
         hasFastVoipCapturer = true;
@@ -298,7 +299,7 @@ void AudioPipeSelector::HandleFindBusPipe(const std::vector<std::string> &busAdd
         CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
         std::shared_ptr<AudioStreamDescriptor> tempDesc = streamDesc;
-        configManager_.GetStreamPropInfo(tempDesc, streamPropInfo, busAddresses);
+        pipeManager_->GetStreamPropInfo(tempDesc, streamPropInfo, busAddresses);
         busPipeIter = FindPipe(newPipeInfoList, [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
             return std::any_of(busAddresses.begin(), busAddresses.end(),
                                [&](const auto &busAddress) { return newPipeInfo->moduleInfo_.name == busAddress; }) &&
@@ -430,7 +431,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
         return oldPipeInfoList;
     }
     // get all existing pipes and select render/capture pipes
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
     for (auto &curPipeInfo : pipeInfoList) {
         if (curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDescs[0]->audioMode_)) {
             oldPipeInfoList.push_back(curPipeInfo);
@@ -655,13 +656,13 @@ ConcurrencyAction AudioPipeSelector::DetermineConcurrencyAction(
     std::shared_ptr<AudioStreamDescriptor> &existingStream,
     std::shared_ptr<AudioStreamDescriptor> &incomingStream)
 {
-    AudioPipeType existingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+    AudioPipeType existingPipe = AudioConcurrencyManager::GetInstance().GetPipeTypeByRouteFlag(
         existingStream->routeFlag_, existingStream->audioMode_);
-    AudioPipeType commingPipe = AudioConcurrencyService::GetInstance().GetPipeTypeByRouteFlag(
+    AudioPipeType commingPipe = AudioConcurrencyManager::GetInstance().GetPipeTypeByRouteFlag(
         incomingStream->routeFlag_, incomingStream->audioMode_);
     SetPipeTypeByStreamType(existingPipe, existingStream);
     SetPipeTypeByStreamType(commingPipe, incomingStream);
-    ConcurrencyAction action = AudioConcurrencyService::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
+    ConcurrencyAction action = AudioConcurrencyManager::GetInstance().GetConcurrencyAction(existingPipe, commingPipe);
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
     bool isIncomingStreamIsLoopback = incomingStream->capturerInfo_.isLoopback ||
         incomingStream->rendererInfo_.isLoopback;
@@ -752,7 +753,7 @@ uint32_t AudioPipeSelector::GetRouteFlagByStreamDesc(std::shared_ptr<AudioStream
 {
     uint32_t flag = AUDIO_FLAG_NONE;
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, flag, "streamDesc is nullptr");
-    flag = configManager_.GetRouteFlag(streamDesc);
+    flag = pipeManager_->GetRouteFlag(streamDesc);
     return flag;
 }
 
@@ -761,9 +762,9 @@ void AudioPipeSelector::GetStreamPropInfoWithBusSelector(std::shared_ptr<AudioSt
 {
 #ifdef MULTI_BUS_ENABLE
     std::vector<std::string> busAddresses = AudioBusSelector::GetBusSelector().GetBusAddressesByStreamDesc(desc);
-    configManager_.GetStreamPropInfo(desc, info, busAddresses);
+    pipeManager_->GetStreamPropInfo(desc, info, busAddresses);
 #else
-    configManager_.GetStreamPropInfo(desc, info);
+    pipeManager_->GetStreamPropInfo(desc, info);
 #endif
 }
 
@@ -872,7 +873,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.busAddress = pipeInfoPtr->paProp_.busAddress_;
     info.moduleInfo_.adapterName = adapterInfoPtr->adapterName;
     info.moduleInfo_.className = adapterInfoPtr->adapterName;
-    info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
+    info.moduleInfo_.OpenMicSpeaker = pipeManager_->GetUpdateRouteSupport() ? "1" : "0";
 
     HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
     HILOG_COMM_INFO("[ConvertStreamDescToPipeInfo]info.moduleInfo_.channels: %{public}s, "

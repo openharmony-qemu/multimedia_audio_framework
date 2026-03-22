@@ -34,7 +34,140 @@ const uint32_t VOIP_SESSIONID = 2;
 const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 AudioPipeManager::AudioPipeManager()
+    : audioConfigManager_(AudioCoreConfigManager::GetInstance()),
+      audioConcurrencyManager_(AudioConcurrencyManager::GetInstance())
 {
+}
+
+bool AudioPipeManager::Init()
+{
+    audioConcurrencyManager_.Init();
+    if (audioConfigManager_.GetAdapterInfoFlag()) {
+        return true;
+    }
+    return audioConfigManager_.Init();
+}
+
+
+bool AudioPipeManager::GetUltraFastFlag()
+{
+    return audioConfigManager_.GetUltraFastFlag();
+}
+
+bool AudioPipeManager::PreferMultiChannelPipe(std::shared_ptr<AudioStreamDescriptor> &desc)
+{
+    return audioConfigManager_.PreferMultiChannelPipe(desc);
+}
+
+uint32_t AudioPipeManager::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
+{
+    return audioConfigManager_.GetStreamPropInfoSize(adapterName, pipeName);
+}
+
+bool AudioPipeManager::GetUpdateRouteSupport()
+{
+    return audioConfigManager_.GetUpdateRouteSupport();
+}
+
+bool AudioPipeManager::GetHasEarpiece()
+{
+    return audioConfigManager_.GetHasEarpiece();
+}
+
+bool AudioPipeManager::GetAdapterInfoFlag()
+{
+    return audioConfigManager_.GetAdapterInfoFlag();
+}
+
+bool AudioPipeManager::GetAdapterInfoByType(AudioAdapterType type, std::shared_ptr<PolicyAdapterInfo> &info)
+{
+    return audioConfigManager_.GetAdapterInfoByType(type, info);
+}
+
+bool AudioPipeManager::GetModuleListByType(ClassType type, std::list<AudioModuleInfo>& moduleList)
+{
+    return audioConfigManager_.GetModuleListByType(type, moduleList);
+}
+
+void AudioPipeManager::UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo)
+{
+    audioConfigManager_.UpdateDynamicCapturerConfig(type, moduleInfo);
+}
+
+DirectPlaybackMode AudioPipeManager::GetDirectPlaybackSupport(std::shared_ptr<AudioDeviceDescriptor> desc,
+    const AudioStreamInfo &streamInfo)
+{
+    return audioConfigManager_.GetDirectPlaybackSupport(desc, streamInfo);
+}
+
+bool AudioPipeManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc)
+{
+    return audioConfigManager_.NeedUidCheckForOffloadPipe(desc);
+}
+
+void AudioPipeManager::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
+{
+    audioConfigManager_.UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices);
+}
+
+void AudioPipeManager::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
+{
+    audioConfigManager_.ClearStreamPropInfo(adapterName, pipeName);
+}
+
+uint32_t AudioPipeManager::GetRouteFlag(std::shared_ptr<AudioStreamDescriptor> &desc)
+{
+    return audioConfigManager_.GetRouteFlag(desc);
+}
+
+void AudioPipeManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+    std::shared_ptr<PipeStreamPropInfo> &info)
+{
+    audioConfigManager_.GetStreamPropInfo(desc, info);
+}
+
+#ifdef MULTI_BUS_ENABLE
+void AudioPipeManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
+    std::shared_ptr<PipeStreamPropInfo> &info, const std::vector<std::string> &busAddresses)
+{
+    audioConfigManager_.GetStreamPropInfo(desc, info, busAddresses);
+}
+#endif
+
+void AudioPipeManager::GetGlobalConfigs(PolicyGlobalConfigs &globalConfigs)
+{
+    audioConfigManager_.GetGlobalConfigs(globalConfigs);
+}
+
+void AudioPipeManager::SetEcEnableState(bool ecEnableState)
+{
+    audioConfigManager_.SetEcEnableState(ecEnableState);
+}
+
+AudioSampleFormat AudioPipeManager::GetFastFormat() const
+{
+    return audioConfigManager_.GetFastFormat();
+}
+
+bool AudioPipeManager::IsSupportInnerCaptureOffload()
+{
+    return audioConfigManager_.IsSupportInnerCaptureOffload();
+}
+
+bool AudioPipeManager::GetEnhancedRoutingSupported()
+{
+    return audioConfigManager_.GetEnhancedRoutingSupported();
+}
+
+int32_t AudioPipeManager::GetMaxRendererInstances()
+{
+    return audioConfigManager_.GetMaxRendererInstances();
+}
+
+void AudioPipeManager::GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo)
+{
+    audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
 }
 
 AudioPipeManager::~AudioPipeManager()

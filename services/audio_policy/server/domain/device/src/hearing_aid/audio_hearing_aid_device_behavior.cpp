@@ -22,7 +22,7 @@
 #include "audio_active_device.h"
 #include "audio_iohandle_map.h"
 #include "audio_pipe_manager.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 #include "audio_policy_manager_factory.h"
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
@@ -75,7 +75,7 @@ int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(DeviceType deviceTyp
     const AudioStreamInfo &audioStreamInfo, std::string networkId, std::string sinkName, SourceType sourceType)
 {
     std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = AudioPolicyConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_HEARING_AID, moduleInfoList);
+    bool ret = AudioCoreConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_HEARING_AID, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "HearingAid module is not exist in the configuration file");
 
     int32_t loadRet = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH,

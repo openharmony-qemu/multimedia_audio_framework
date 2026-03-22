@@ -262,7 +262,7 @@ group("audio_fuzz_test") {
 
     # "fuzztest/audiopolicy_fuzzer/audiopolicyanother_fuzzer:fuzztest",
     # "fuzztest/audiopolicy_fuzzer/audiopolicyclient_fuzzer:fuzztest",
-    "fuzztest/audiopolicy_fuzzer/audiopolicyconfigmanager_fuzzer:fuzztest",
+    "fuzztest/audiopolicy_fuzzer/audiocoreconfigmanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiopolicymanager_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiopolicymanagerdevice_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer/audiopolicymanagerlistenerstubimpl_fuzzer:fuzztest",

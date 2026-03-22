@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 #include "gmock/gmock.h"
 #include "audio_utils.h"
+#include "audio_params_utils.h"
 #include "parameter.h"
 #include "audio_channel_blend.h"
 #include "volume_ramp.h"
@@ -618,5 +619,43 @@ HWTEST(AudioUtilsUnitTest, ReallocVectorBufferAndClear_006, TestSize.Level1)
         EXPECT_EQ(buffer[i], 0);
     }
 }
+/**
+ * @tc.name  : Test GetEcEnableParam API
+ * @tc.type  : FUNC
+ * @tc.number: GetEcEnableParam_001
+ * @tc.desc  : Test GetEcEnableParam interface.
+ */
+HWTEST(AudioUtilsUnitTest, GetEcEnableParam_001, TestSize.Level1)
+{
+    // 测试设置为1 (true)
+    SetSysPara("const.multimedia.audio.fwk_ec.enable", 1);
+    bool ret = GetEcEnableParam();
+    EXPECT_EQ(ret, true);
+
+    // 测试设置为0 (false)
+    SetSysPara("const.multimedia.audio.fwk_ec.enable", 0);
+    ret = GetEcEnableParam();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test GetHasEarpieceParam API
+ * @tc.type  : FUNC
+ * @tc.number: GetHasEarpieceParam_001
+ * @tc.desc  : Test GetHasEarpieceParam interface.
+ */
+HWTEST(AudioUtilsUnitTest, GetHasEarpieceParam_001, TestSize.Level1)
+{
+    // 测试设置为1 (true)
+    SetSysPara("const.multimedia.audio.has_earpiece", 1);
+    bool ret = GetHasEarpieceParam();
+    EXPECT_EQ(ret, true);
+
+    // 测试设置为0 (false)
+    SetSysPara("const.multimedia.audio.has_earpiece", 0);
+    ret = GetHasEarpieceParam();
+    EXPECT_EQ(ret, false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

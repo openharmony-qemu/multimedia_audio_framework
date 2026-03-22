@@ -23,7 +23,6 @@
 #include "audio_zone_info.h"
 #include "audio_zone_service.h"
 #include "audio_pipe_manager.h"
-#include "audio_policy_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,11 +37,9 @@ public:
     std::string GetSinkNameByStreamId(int32_t streamId);
 
 private:
-    AudioBusSelector(AudioZoneService &audioZoneService, const std::shared_ptr<AudioPipeManager> &audioPipeManager,
-                    AudioPolicyConfigManager &audioConfigManager)
+    AudioBusSelector(AudioZoneService &audioZoneService, const std::shared_ptr<AudioPipeManager> &audioPipeManager)
         : audioZoneService_(audioZoneService),
-          audioPipeManager_(audioPipeManager),
-          audioConfigManager_(audioConfigManager)
+          audioPipeManager_(audioPipeManager)
     {
     }
     ~AudioBusSelector() = default;
@@ -51,7 +48,6 @@ private:
 
     AudioZoneService &audioZoneService_;
     const std::shared_ptr<AudioPipeManager> audioPipeManager_{nullptr};
-    AudioPolicyConfigManager &audioConfigManager_;
     std::map<std::string, std::vector<AudioZoneMix>> audioMixMap_;
     std::mutex audioMixMutex_;
 };

@@ -308,7 +308,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_015, TestSize.Level1)
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlData;
     std::list<AudioModuleInfo> moduleInfolist;
     xmlData[ClassType::TYPE_USB] = moduleInfolist;
-    AudioPolicyConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
+    AudioCoreConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
     EXPECT_TRUE(AudioUsbManager::GetInstance().IsAvailableUsbDevice(device));
 }
 
@@ -325,7 +325,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_016, TestSize.Level1)
     moduleInfo.allUsbDeviceDisable_ = true;
     moduleInfolist.push_back(moduleInfo);
     xmlData[ClassType::TYPE_USB] = moduleInfolist;
-    AudioPolicyConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
+    AudioCoreConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
 
     UsbAudioDevice device;
     EXPECT_FALSE(AudioUsbManager::GetInstance().IsAvailableUsbDevice(device));
@@ -343,7 +343,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_017, TestSize.Level1)
     AudioModuleInfo moduleInfo;
     moduleInfolist.push_back(moduleInfo);
     xmlData[ClassType::TYPE_USB] = moduleInfolist;
-    AudioPolicyConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
+    AudioCoreConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
 
     UsbAudioDevice device;
     EXPECT_TRUE(AudioUsbManager::GetInstance().IsAvailableUsbDevice(device));
@@ -369,7 +369,7 @@ HWTEST_F(AudioUsbManagerUnitTest, AudioUsbManagerUnitTest_018, TestSize.Level1)
     moduleInfo.allUsbDeviceDisable_ = true;
     moduleInfolist.push_back(moduleInfo);
     xmlData[ClassType::TYPE_USB] = moduleInfolist;
-    AudioPolicyConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
+    AudioCoreConfigManager::GetInstance().OnXmlParsingCompleted(xmlData);
 
     UsbAudioDevice device;
     bool isConnected = true;

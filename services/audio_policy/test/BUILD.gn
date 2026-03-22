@@ -33,7 +33,7 @@ group("audio_policy_unittest_packages") {
     ":audio_client_tracker_callback_listener_unit_test",
     ":audio_client_tracker_callback_service_unit_test",
     ":audio_collaborative_service_unit_test",
-    ":audio_concurrency_service_unit_test",
+    ":audio_concurrency_manager_unit_test",
     ":audio_connected_device_unit_test",
     ":audio_core_service_entry_unit_test",
     ":audio_core_service_private_unit_test",
@@ -4701,10 +4701,10 @@ ohos_unittest("audio_input_thread_unit_test") {
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 }
 
-ohos_unittest("audio_concurrency_service_unit_test") {
+ohos_unittest("audio_concurrency_manager_unit_test") {
   module_out_path = "audio_framework/audio_framework_route/audio_pipe_manager"
 
-  include_dirs = [ "./unittest/audio_concurrency_service_unit_test/include" ]
+  include_dirs = [ "./unittest/audio_concurrency_manager_unit_test/include" ]
 
   use_exceptions = true
 
@@ -4759,7 +4759,7 @@ ohos_unittest("audio_concurrency_service_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources = [ "./unittest/audio_concurrency_service_unit_test/src/audio_concurrency_service_unit_test.cpp" ]
+  sources = [ "./unittest/audio_concurrency_manager_unit_test/src/audio_concurrency_manager_unit_test.cpp" ]
 
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",

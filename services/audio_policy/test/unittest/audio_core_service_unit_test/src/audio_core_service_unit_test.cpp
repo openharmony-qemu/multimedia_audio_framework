@@ -21,6 +21,7 @@
 #include <vector>
 #include "audio_info.h"
 #include "audio_device_status.h"
+#include "audio_core_config_manager.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
 using namespace testing::ext;
@@ -1415,7 +1416,7 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_003, TestSize.Lev
     deviceInfo->supportPipeMap_.insert({AUDIO_OUTPUT_FLAG_MULTICHANNEL, pipeInfo});
     std::set<std::shared_ptr<AdapterDeviceInfo>> adapterDeviceInfoSet = {deviceInfo};
     auto deviceKey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, INPUT_DEVICE);
-    GetServerPtr()->coreService_->policyConfigMananger_.audioPolicyConfig_
+    AudioCoreConfigManager::GetInstance().GetAudioPolicyConfigData()
         .deviceInfoMap.insert({deviceKey, adapterDeviceInfoSet});
     EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), true);
 }
@@ -5932,8 +5933,49 @@ HWTEST_F(AudioCoreServiceUnitTest, GetEcFeatureEnableAndMicRefFeatureEnable_001,
 }
 
 /**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: PipeManagerPassThrough_001
+* @tc.desc  : Test CoreService pass-through methods with PipeManager.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, PipeManagerPassThrough_001, TestSize.Level1)
+{
+    auto audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_TRUE(audioCoreService != nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    ASSERT_TRUE(pipeManager != nullptr);
+
+    EXPECT_EQ(audioCoreService->GetFastFormat(), pipeManager->GetFastFormat());
+    EXPECT_EQ(audioCoreService->IsSupportInnerCaptureOffload(), pipeManager->IsSupportInnerCaptureOffload());
+    EXPECT_EQ(audioCoreService->GetMaxRendererInstances(), pipeManager->GetMaxRendererInstances());
+    EXPECT_EQ(audioCoreService->GetEnhancedRoutingSupported(), pipeManager->GetEnhancedRoutingSupported());
+
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> coreDeviceClassInfo = {};
+    std::unordered_map<ClassType, std::list<AudioModuleInfo>> pipeDeviceClassInfo = {};
+    audioCoreService->GetDeviceClassInfo(coreDeviceClassInfo);
+    pipeManager->GetDeviceClassInfo(pipeDeviceClassInfo);
+    EXPECT_EQ(coreDeviceClassInfo.size(), pipeDeviceClassInfo.size());
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
+* @tc.number: PipeManagerPassThrough_002
+* @tc.desc  : Test SetEcEnableState pass-through.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, PipeManagerPassThrough_002, TestSize.Level1)
+{
+    auto audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_TRUE(audioCoreService != nullptr);
+
+    audioCoreService->SetEcEnableState(false);
+    audioCoreService->SetEcEnableState(true);
+
+    EXPECT_TRUE(true);
+}
+
+/**
 * @tc.name  : Test AudioEcManager.
 * @tc.number: CloseNormalSourceAndGetSourceOpened_001
+
 * @tc.desc  : Test CloseNormalSource & GetSourceOpened interface.
 */
 HWTEST_F(AudioCoreServiceUnitTest, CloseNormalSourceAndGetSourceOpened_001, TestSize.Level1)
@@ -6240,7 +6282,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_003, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
@@ -6295,7 +6337,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_004, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
@@ -6346,7 +6388,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_005, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
@@ -6387,7 +6429,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_006, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);

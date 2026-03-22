@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef ST_AUDIO_CONCURRENCY_SERVICE_H
-#define ST_AUDIO_CONCURRENCY_SERVICE_H
+#ifndef ST_AUDIO_CONCURRENCY_MANAGER_H
+#define ST_AUDIO_CONCURRENCY_MANAGER_H
 #include <mutex>
 
 #include "iremote_object.h"
@@ -24,22 +24,22 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioConcurrencyService : public std::enable_shared_from_this<AudioConcurrencyService> {
+class AudioConcurrencyManager {
 public:
-    AudioConcurrencyService()
+    AudioConcurrencyManager()
     {
         AUDIO_INFO_LOG("ctor");
     }
-    virtual ~AudioConcurrencyService()
+    virtual ~AudioConcurrencyManager()
     {
         AUDIO_ERR_LOG("dtor");
     }
 
     void Init();
 
-    static AudioConcurrencyService& GetInstance()
+    static AudioConcurrencyManager& GetInstance()
     {
-        static AudioConcurrencyService instance;
+        static AudioConcurrencyManager instance;
         return instance;
     }
 

@@ -21,11 +21,13 @@
 
 #include "audio_errors.h"
 #include "audio_adapter_info.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 static const char *ENCODING_EAC3_NAME = "eac3";
 static const char *FAST_DISTRIBUTE_TAG = "fast_distributed";
+
 constexpr int32_t LENGTH_OF_PAIR = 2;
 
 bool StrToInt(const std::string &str, int32_t &value)
@@ -42,13 +44,27 @@ bool StrToInt(const std::string &str, int32_t &value)
     return true;
 }
 
+AudioPolicyConfigParser::AudioPolicyConfigParser(AudioCoreConfigManager &manager) : configManager_(manager)
+{
+    curNode_ = AudioXmlNode::Create();
+    hasEarpiece_ = GetHasEarpieceParam();
+}
+
+bool AudioPolicyConfigParser::GetHasEarpiece() const
+{
+    return hasEarpiece_;
+}
+
 // LCOV_EXCL_START
+
 bool AudioPolicyConfigParser::LoadConfiguration()
 {
     AUDIO_INFO_LOG("Enter");
     if (curNode_->Config(CHIP_PROD_CONFIG_FILE, nullptr, 0) != SUCCESS) {
+        AUDIO_WARNING_LOG("Load chip prod config xml fail, use chip general config");
+        isChipGeneralConfig_ = true;
         if (curNode_->Config(CONFIG_FILE, nullptr, 0) != SUCCESS) {
-            AUDIO_ERR_LOG("LoadConfiguration readFile failed");
+            AUDIO_ERR_LOG("Load chip prod config and chip general config xml all failed");
             return false;
         }
     }
@@ -74,11 +90,11 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     volumeGroupMap_ = volumeGroupMap;
     interruptGroupMap_ = interruptGroupMap;
 
-    configManager_->OnAudioPolicyConfigXmlParsingCompleted();
-    configManager_->OnXmlParsingCompleted(xmlParsedDataMap_);
-    configManager_->OnVolumeGroupParsed(volumeGroupMap_);
-    configManager_->OnInterruptGroupParsed(interruptGroupMap_);
-    configManager_->OnGlobalConfigsParsed(globalConfigs_);
+    configManager_.OnAudioPolicyConfigXmlParsingCompleted();
+    configManager_.OnXmlParsingCompleted(xmlParsedDataMap_);
+    configManager_.OnVolumeGroupParsed(volumeGroupMap_);
+    configManager_.OnInterruptGroupParsed(interruptGroupMap_);
+    configManager_.OnGlobalConfigsParsed(globalConfigs_);
 
     AUDIO_INFO_LOG("Done");
     return true;
@@ -306,7 +322,7 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
 
         if (pipeInfo->supportFlags_ & AUDIO_OUTPUT_FLAG_VOIP) {
             AUDIO_INFO_LOG("Use fast voip");
-            configManager_->OnVoipConfigParsed(true);
+            configManager_.OnVoipConfigParsed(true);
         }
     } else if (attributeInfo.name_ == "preload") {
         pipeInfo->preloadAttr_ = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
@@ -357,7 +373,14 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             AdapterDeviceInfo deviceInfo {};
             deviceInfo.adapterInfo_ = adapterInfo;
             curNode->GetProp("name", deviceInfo.name_);
+            if (deviceInfo.name_ == "Earpiece_Out" && !hasEarpiece_ && isChipGeneralConfig_) {
+                AUDIO_INFO_LOG("skip earpiece parse due to hasEarpiece_=%{public}d, isChipGeneralConfig_=%{public}d",
+                    hasEarpiece_, isChipGeneralConfig_);
+                curNode->MoveToNext();
+                continue;
+            }
             std::string preload;
+
             curNode->GetProp("preload", preload);
             deviceInfo.preload_ = preload == "true";
             std::string type;
@@ -482,18 +505,18 @@ void AudioPolicyConfigParser::ParsePAConfigs(std::shared_ptr<AudioXmlNode> curNo
 
             switch (GetPaConfigType(name)) {
                 case PolicyPAConfigType::FAST_FORMAT:
-                    configManager_->OnFastFormatParsed(ConvertToFormat(value));
+                    configManager_.OnFastFormatParsed(ConvertToFormat(value));
                     break;
                 case PolicyPAConfigType::AUDIO_LATENCY:
                     CHECK_AND_RETURN_LOG(StringConverter(value, convertValue),
                         "convert invalid value: %{public}s", value.c_str());
-                    configManager_->OnAudioLatencyParsed(convertValue);
+                    configManager_.OnAudioLatencyParsed(convertValue);
                     globalConfigs_.globalPaConfigs_.audioLatency_ = value;
                     break;
                 case PolicyPAConfigType::SINK_LATENCY:
                     CHECK_AND_RETURN_LOG(StringConverter(value, convertValue),
                         "convert invalid value: %{public}s", value.c_str());
-                    configManager_->OnSinkLatencyParsed(convertValue);
+                    configManager_.OnSinkLatencyParsed(convertValue);
                     globalConfigs_.globalPaConfigs_.sinkLatency_ = value;
                     break;
                 default:
@@ -560,10 +583,10 @@ void AudioPolicyConfigParser::ParseCommonConfigs(std::shared_ptr<AudioXmlNode> c
 void AudioPolicyConfigParser::HandleUpdateRouteSupportParsed(std::string &value)
 {
     if (value == "true") {
-        configManager_->OnUpdateRouteSupport(true);
+        configManager_.OnUpdateRouteSupport(true);
         shouldOpenMicSpeaker_ = true;
     } else {
-        configManager_->OnUpdateRouteSupport(false);
+        configManager_.OnUpdateRouteSupport(false);
         shouldOpenMicSpeaker_ = false;
     }
 }
@@ -573,7 +596,7 @@ void AudioPolicyConfigParser::HandleUpdateAnahsSupportParsed(std::string &value)
     std::string anahsShowType = "Dialog";
     anahsShowType = value;
     AUDIO_INFO_LOG("HandleUpdateAnahsSupportParsed show type: %{public}s", anahsShowType.c_str());
-    configManager_->OnUpdateAnahsSupport(anahsShowType);
+    configManager_.OnUpdateAnahsSupport(anahsShowType);
 }
 
 void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<AdapterPipeInfo> pipeInfo,
@@ -582,7 +605,7 @@ void AudioPolicyConfigParser::HandleEncodingEac3SupportParsed(std::shared_ptr<Ad
     CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
     if (value == ENCODING_EAC3_NAME) {
         pipeInfo->supportEncodingEac3_ = true;
-        configManager_->OnUpdateEac3Support(true);
+        configManager_.OnUpdateEac3Support(true);
     }
 }
 

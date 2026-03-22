@@ -28,7 +28,7 @@
 #include "audio_stream_info.h"
 #include "parser.h"
 #include "audio_xml_parser.h"
-#include "audio_policy_config_manager.h"
+#include "audio_core_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,12 +40,11 @@ public:
     bool LoadConfiguration() final;
     void Destroy() final;
 
-    explicit AudioPolicyConfigParser(AudioPolicyConfigManager *manager): configManager_(manager)
-    {
-        curNode_ = AudioXmlNode::Create();
-    }
+    explicit AudioPolicyConfigParser(AudioCoreConfigManager &manager);
+    bool GetHasEarpiece() const;
 
     virtual ~AudioPolicyConfigParser()
+
     {
         Destroy();
         curNode_ = nullptr;
@@ -90,7 +89,7 @@ private:
             std::list<std::shared_ptr<AdapterDeviceInfo>> &deviceInfos);
 
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
-    AudioPolicyConfigManager *configManager_ = nullptr;
+    AudioCoreConfigManager &configManager_;
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> xmlParsedDataMap_ {};
     std::unordered_map<std::string, std::string> volumeGroupMap_;
@@ -98,6 +97,8 @@ private:
     PolicyGlobalConfigs globalConfigs_;
     bool shouldOpenMicSpeaker_ = false;
     bool supportUltraFast_ = false;
+    bool hasEarpiece_ = true;
+    bool isChipGeneralConfig_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -225,7 +225,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, GetModuleNameByType_001, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     unordered_map<ClassType, list<AudioModuleInfo>> deviceClassInfo;
-    AudioPolicyConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
+    AudioCoreConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
     if (!deviceClassInfo.empty()) {
         auto type = deviceClassInfo.cbegin()->first;
         auto moduleName = audioDeviceStatus.GetModuleNameByType(type);
