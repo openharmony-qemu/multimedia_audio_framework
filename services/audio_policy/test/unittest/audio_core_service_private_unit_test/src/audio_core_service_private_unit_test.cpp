@@ -1128,9 +1128,15 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Leve
  */
 HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetEcEnableParam_001, TestSize.Level1)
 {
+    // 测试设置为1 (true)
+    SetSysPara("const.multimedia.audio.fwk_ec.enable", 1);
     bool result = GetEcEnableParam();
+    EXPECT_EQ(result, true);
 
-    EXPECT_EQ(result, OHOS::system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0));
+    // 测试设置为0 (false)
+    SetSysPara("const.multimedia.audio.fwk_ec.enable", 0);
+    result = GetEcEnableParam();
+    EXPECT_EQ(result, false);
 }
 
 /**
