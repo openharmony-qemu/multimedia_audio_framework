@@ -19,6 +19,7 @@
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
 #include "audio_device_info.h"
+#include "audio_core_config_manager.h"
 #include "message_parcel.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
@@ -333,16 +334,16 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleDistributedDeviceUpdate(statusInfo, descForCb, reason);
     GetServerPtr()->audioPolicyDump_.GetEffectManagerInfo();
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(true);
+    AudioCoreConfigManager::GetInstance().OnVoipConfigParsed(true);
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetAudioAdapterInfos(adapterInfoMap);
+    AudioCoreConfigManager::GetInstance().GetAudioAdapterInfos(adapterInfoMap);
     std::unordered_map<std::string, std::string> volumeGroupData;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVolumeGroupData(volumeGroupData);
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetInterruptGroupData(volumeGroupData);
+    AudioCoreConfigManager::GetInstance().GetVolumeGroupData(volumeGroupData);
+    AudioCoreConfigManager::GetInstance().GetInterruptGroupData(volumeGroupData);
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> deviceClassInfo;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetDeviceClassInfo(deviceClassInfo);
+    AudioCoreConfigManager::GetInstance().GetDeviceClassInfo(deviceClassInfo);
     GlobalConfigs globalConfigs;
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
+    AudioCoreConfigManager::GetInstance().GetVoipConfig();
     int32_t clientId = GetData<int32_t>();
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);

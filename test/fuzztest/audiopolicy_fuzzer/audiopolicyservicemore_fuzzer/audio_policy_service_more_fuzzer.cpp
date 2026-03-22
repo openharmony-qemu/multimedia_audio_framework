@@ -20,6 +20,7 @@
 #include <thread>
 #include "audio_policy_server.h"
 #include "audio_device_info.h"
+#include "audio_core_config_manager.h"
 #include "message_parcel.h"
 #include "accesstoken_kit.h"
 #include "audio_routing_manager.h"
@@ -172,7 +173,7 @@ void InitGetServerService(DeviceRole deviceRole, AudioStreamInfo audioStreamInfo
 
 void ThreadFunctionTest()
 {
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
+    AudioCoreConfigManager::GetInstance().isAdapterInfoMap_.store(true);
 }
 
 void AudioPolicyServiceSecondTest(AudioStreamInfo audioStreamInfo,
@@ -180,8 +181,8 @@ void AudioPolicyServiceSecondTest(AudioStreamInfo audioStreamInfo,
 {
     bool isConnected = GetData<bool>();
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.HandleRemoteCastDevice(isConnected, audioStreamInfo);
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnVoipConfigParsed(isConnected);
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.GetVoipConfig();
+    AudioCoreConfigManager::GetInstance().OnVoipConfigParsed(isConnected);
+    AudioCoreConfigManager::GetInstance().GetVoipConfig();
     pid_t clientPid = GetData<pid_t>();
     GetServerPtr()->audioPolicyService_.ReduceAudioPolicyClientProxyMap(clientPid);
     AudioStreamChangeInfo streamChangeInfo;
@@ -232,7 +233,7 @@ void AudioPolicyServiceThirdTest()
     AudioProcessConfig config = InitProcessConfig();
     std::thread t1(ThreadFunctionTest);
     t1.join();
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.Init(true);
+    AudioCoreConfigManager::GetInstance().Init(true);
 
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);

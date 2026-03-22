@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 #include "audio_info.h"
+#include "audio_core_config_manager.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -962,13 +963,13 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     InternalAudioCapturerOptions capturerOptions;
     capturerOptions.streamInfo = audioStreamInfo;
 
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(false);
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(false);
+    AudioCoreConfigManager::GetInstance().isAdapterInfoMap_.store(false);
+    AudioCoreConfigManager::GetInstance().OnUpdateRouteSupport(false);
     int32_t ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
     EXPECT_EQ(ERROR, ret);
 
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.isAdapterInfoMap_.store(true);
-    GetServerPtr()->audioPolicyService_.audioConfigManager_.OnUpdateRouteSupport(true);
+    AudioCoreConfigManager::GetInstance().isAdapterInfoMap_.store(true);
+    AudioCoreConfigManager::GetInstance().OnUpdateRouteSupport(true);
     ret = AudioCoreService::GetCoreService()->SetWakeUpAudioCapturer(capturerOptions);
     EXPECT_EQ(SUCCESS, ret);
 }

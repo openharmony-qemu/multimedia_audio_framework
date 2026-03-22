@@ -21,6 +21,7 @@
 #include <vector>
 #include "audio_info.h"
 #include "audio_device_status.h"
+#include "audio_core_config_manager.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
 using namespace testing::ext;
@@ -6281,7 +6282,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_003, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
@@ -6336,7 +6337,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_004, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
@@ -6387,7 +6388,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_005, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);
@@ -6428,7 +6429,7 @@ HWTEST_F(AudioCoreServiceUnitTest, FetchTargetInfoForSessionAdd_006, TestSize.Le
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<PolicyAdapterInfo> adapterInfo = nullptr;
-    ASSERT_TRUE(audioCoreService->audioConfigManager_.GetAdapterInfoByType(
+    ASSERT_TRUE(AudioCoreConfigManager::GetInstance().GetAdapterInfoByType(
         AudioAdapterType::TYPE_PRIMARY, adapterInfo));
     ASSERT_NE(adapterInfo, nullptr);
     std::shared_ptr<AdapterPipeInfo> pipeInfo = adapterInfo->GetPipeInfoByName(PIPE_PRIMARY_INPUT);

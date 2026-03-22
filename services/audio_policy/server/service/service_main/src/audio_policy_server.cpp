@@ -171,7 +171,6 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioVolumeManager_(AudioVolumeManager::GetInstance()),
       audioDeviceCommon_(AudioDeviceCommon::GetInstance()),
       audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
-      audioCoreConfigManager_(AudioCoreConfigManager::GetInstance()),
       audioPolicyService_(AudioPolicyService::GetAudioPolicyService()),
       audioPolicyUtils_(AudioPolicyUtils::GetInstance()),
       audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -199,7 +198,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     loudVolumeSupportMode_ = system::GetIntParameter("const.audio.loudvolume", 0);
 #endif
     if (volumeApplyToAll_) {
-        audioCoreConfigManager_.SetNormalVoipFlag(true);
+        audioConfigManager_.SetNormalVoipFlag(true);
     }
     VolumeUtils::InitEnforcedToneVolume();
 }

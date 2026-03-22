@@ -936,7 +936,6 @@ private:
     AudioVolumeManager &audioVolumeManager_;
     AudioDeviceCommon &audioDeviceCommon_;
     IAudioPolicyInterface &audioPolicyManager_;
-    AudioCoreConfigManager &audioCoreConfigManager_;
     AudioPolicyService &audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;
