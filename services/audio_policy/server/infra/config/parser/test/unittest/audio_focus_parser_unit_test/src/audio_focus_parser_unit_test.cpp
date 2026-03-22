@@ -315,7 +315,7 @@ HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_011, TestSize.Level4
  */
 HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_012, TestSize.Level4)
 {
-    AudioPolicyConfigParser parser(nullptr);
+    AudioPolicyConfigParser parser(AudioCoreConfigManager::GetInstance());
     EXPECT_EQ(parser.GetHasEarpiece(), GetHasEarpieceParam());
 
     parser.hasEarpiece_ = true;
@@ -332,7 +332,7 @@ HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_012, TestSize.Level4
  */
 HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_013, TestSize.Level4)
 {
-    AudioPolicyConfigParser parser(nullptr);
+    AudioPolicyConfigParser parser(AudioCoreConfigManager::GetInstance());
     parser.hasEarpiece_ = false;
     auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
 
@@ -357,7 +357,7 @@ HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_013, TestSize.Level4
  */
 HWTEST_F(AudioFocusParserUnitTest, AudioFocusParserUnitTest_014, TestSize.Level4)
 {
-    AudioPolicyConfigParser parser(nullptr);
+    AudioPolicyConfigParser parser(AudioCoreConfigManager::GetInstance());
     parser.hasEarpiece_ = true;
     auto adapterInfo = std::make_shared<PolicyAdapterInfo>();
 
