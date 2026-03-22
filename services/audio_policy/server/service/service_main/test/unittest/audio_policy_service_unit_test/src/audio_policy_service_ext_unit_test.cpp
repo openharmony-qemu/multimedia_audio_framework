@@ -114,7 +114,7 @@ static void GetPermission()
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_001, TestSize.Level1)
 {
     AudioCoreConfigManager::GetInstance().xmlHasLoaded_ = true;
-    auto ret = AudioCoreService::GetCoreService()->GetPipeManager()->Init();
+    auto ret = AudioPipeManager::GetPipeManager()->Init();
     EXPECT_FALSE(ret);
 }
 
@@ -126,7 +126,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_001, TestSize.Lev
 HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_002, TestSize.Level1)
 {
     AudioCoreConfigManager::GetInstance().xmlHasLoaded_ = true;
-    auto ret = AudioCoreService::GetCoreService()->GetPipeManager()->Init();
+    auto ret = AudioPipeManager::GetPipeManager()->Init();
     EXPECT_FALSE(ret);
     ret = AudioPolicyService::GetAudioPolicyService().Init();
     EXPECT_FALSE(ret);

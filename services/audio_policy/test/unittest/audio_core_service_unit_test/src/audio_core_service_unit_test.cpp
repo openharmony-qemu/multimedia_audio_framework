@@ -5941,7 +5941,7 @@ HWTEST_F(AudioCoreServiceUnitTest, PipeManagerPassThrough_001, TestSize.Level1)
 {
     auto audioCoreService = AudioCoreService::GetCoreService();
     ASSERT_TRUE(audioCoreService != nullptr);
-    auto pipeManager = audioCoreService->GetPipeManager();
+    auto pipeManager = AudioPipeManager::GetPipeManager();
     ASSERT_TRUE(pipeManager != nullptr);
 
     EXPECT_EQ(audioCoreService->GetFastFormat(), pipeManager->GetFastFormat());
