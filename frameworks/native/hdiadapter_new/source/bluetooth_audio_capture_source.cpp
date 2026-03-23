@@ -341,7 +341,6 @@ int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool s
     AUDIO_INFO_LOG("update validState:%{public}s", (audioScene == AUDIO_SCENE_DEFAULT) ? "true" : "false");
     std::lock_guard<std::mutex> lock(statusMutex_);
     validState_ = (audioScene == AUDIO_SCENE_DEFAULT);
-    started_ = validState_ ? started_ : false;
     return SUCCESS;
 }
 
@@ -544,10 +543,6 @@ int32_t BluetoothAudioCaptureSource::DoStop(void)
     }
 #endif
     CHECK_AND_RETURN_RET_LOG(audioCapture_ != nullptr, ERR_INVALID_HANDLE, "capture is nullptr");
-    if (!IsValidState()) {
-        callback_.OnCaptureState(false);
-        return ERR_INVALID_HANDLE;
-    }
     if (!started_) {
         AUDIO_ERR_LOG("not start, invalid state");
         callback_.OnCaptureState(false);
