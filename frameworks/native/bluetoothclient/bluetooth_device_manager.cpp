@@ -582,6 +582,8 @@ void MediaBluetoothDeviceManager::UpdateA2dpDeviceConfiguration(const BluetoothR
 {
     std::lock_guard<std::mutex> observerLock(g_observerLock);
     CHECK_AND_RETURN_LOG(g_deviceObserver != nullptr, "UpdateA2dpDeviceConfiguration, device observer is null");
+    CHECK_AND_RETURN_LOG(IsA2dpBluetoothDeviceExist(device.GetDeviceAddr()),
+        "UpdateA2dpDeviceConfiguration failed for the device has not connected.");
     g_deviceObserver->OnDeviceConfigurationChanged(DEVICE_TYPE_BLUETOOTH_A2DP, device.GetDeviceAddr(),
         device.GetDeviceName(), streamInfo);
 }
