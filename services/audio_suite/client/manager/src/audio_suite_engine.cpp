@@ -68,6 +68,7 @@ int32_t AudioSuiteEngine::Init()
         return ERR_ILLEGAL_STATE;
     }
     engineThread_ = std::make_unique<AudioSuiteManagerThread>();
+    workGroupId_ = engineThread_->CreateGroup();
     engineThread_->ActivateThread(this, "SuiteEngine");
     isInit_.store(true);
     AUDIO_INFO_LOG("AudioSuiteEngine::Init end");
@@ -77,6 +78,7 @@ int32_t AudioSuiteEngine::Init()
 int32_t AudioSuiteEngine::DeInit()
 {
     isInit_.store(false);
+    engineThread_->ReleaseGroup();
     if (engineThread_ != nullptr) {
         engineThread_->DeactivateThread();
         engineThread_ = nullptr;
@@ -146,6 +148,7 @@ int32_t AudioSuiteEngine::CreatePipeline(PipelineWorkMode workMode)
             return;
         }
 
+        pipeline->SetWorkGroupId(workGroupId_);
         auto ret = pipeline->Init();
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("engine create pipeline failed, init error, ret = %{public}d.", ret);

@@ -40,14 +40,13 @@ using namespace testing;
 namespace {
 static constexpr AudioSamplingRate SPACE_RENDER_ALGO_SAMPLE_RATE = SAMPLE_RATE_48000;
 static constexpr AudioSampleFormat SPACE_RENDER_ALGO_SAMPLE_FORMAT = SAMPLE_S16LE;
-static constexpr AudioChannel SPACE_RENDER_ALGO_CHANNEL_COUNT = STEREO;
-static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
-static constexpr uint32_t NEED_DATA_LENGTH = 20;
+static constexpr AudioChannel SPACE_RENDER_ALGO_IN_CHANNEL_COUNT = MONO;
+static constexpr uint32_t SPACE_RENDER_ALGO_OUT_CHANNEL_COUNT = 2;
+static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_MONO;
+static constexpr uint32_t NEED_DATA_LENGTH = 10;
 
-std::string g_fileNameOne = "/data/audiosuite/sr/48000_2_16.pcm";
+std::string g_fileNameOne = "/data/audiosuite/sr/in_48000_1_s16le.pcm";
 std::string g_outFilename = "/data/audiosuite/sr/out.pcm";
-std::string g_outFilename2 = "/data/audiosuite/sr/out2.pcm";
-std::string g_outFilename3 = "/data/audiosuite/sr/out3.pcm";
 std::string g_basePositionFilename = "/data/audiosuite/sr/base_position.pcm";
 std::string g_baseRotationFilename = "/data/audiosuite/sr/base_rotation.pcm";
 std::string g_baseExtensionFilename = "/data/audiosuite/sr/base_extension.pcm";
@@ -86,7 +85,7 @@ void DoSignalProcess(std::string inputFile, std::string outputFile,
     node->SetOptions(name, value);
 
     AudioSuitePcmBuffer buffer(PcmBufferFormat{
-        SPACE_RENDER_ALGO_SAMPLE_RATE, SPACE_RENDER_ALGO_CHANNEL_COUNT,
+        SPACE_RENDER_ALGO_SAMPLE_RATE, SPACE_RENDER_ALGO_IN_CHANNEL_COUNT,
           SPACE_RENDER_ALGO_CHANNEL_LAYOUT, SPACE_RENDER_ALGO_SAMPLE_FORMAT}, NEED_DATA_LENGTH);
     uint32_t dataSize = buffer.GetDataSize();
 
@@ -101,7 +100,7 @@ void DoSignalProcess(std::string inputFile, std::string outputFile,
             inputs = {&buffer};
             outPcmbuffer = node->SignalProcess(inputs);
             outProcessedFile.write(reinterpret_cast<const char *>(outPcmbuffer[0]->GetPcmData()),
-                dataSize);
+                SPACE_RENDER_ALGO_OUT_CHANNEL_COUNT * dataSize);
             inputs.clear();
         }
     }

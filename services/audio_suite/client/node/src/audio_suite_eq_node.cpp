@@ -55,7 +55,10 @@ int32_t AudioSuiteEqNode::Init()
     algoInterface_->Init();
     SetAudioNodeFormat(AudioFormat{{EQ_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
         static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
-        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
+        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate),
+        {EQ_ALGO_CHANNEL_LAYOUT, nodeParameter_.outChannels},
+        static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
+        static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     nodeNeedDataDuration_ =
         static_cast<uint64_t>(nodeParameter_.frameLen) * MILLISECONDS_TO_MICROSECONDS / nodeParameter_.inSampleRate;

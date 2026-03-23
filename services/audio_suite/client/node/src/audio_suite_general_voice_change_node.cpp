@@ -56,7 +56,10 @@ int32_t AudioSuiteGeneralVoiceChangeNode::Init()
 
     SetAudioNodeFormat(AudioFormat{{VM_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
         static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
-        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
+        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate),
+        {VM_ALGO_CHANNEL_LAYOUT, nodeParameter_.outChannels},
+        static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
+        static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
     
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
     nodeNeedDataDuration_  = (nodeParameter_.frameLen * MILLISECONDS_TO_MICROSECONDS) / nodeParameter_.inSampleRate;

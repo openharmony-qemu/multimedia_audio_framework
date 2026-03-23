@@ -39,6 +39,7 @@ struct AudioNodeInfo {
     bool bypassStatus = false;
     AudioFormat audioFormat;
     PcmBufferFormat inPcmFormat;
+    PcmBufferFormat outPcmFormat;
     PipelineWorkMode workMode = PIPELINE_EDIT_MODE;
 };
 
@@ -77,6 +78,7 @@ public:
     virtual bool GetAudioNodeDataFinishedFlag();
     virtual AudioFormat GetAudioNodeFormat();
     virtual const PcmBufferFormat &GetAudioNodeInPcmFormat();
+    virtual const PcmBufferFormat &GetAudioNodeOutPcmFormat();
     virtual uint32_t GetAudioNodeId();
     virtual float GetAudioNodeVolume();
     virtual AudioNodeType GetNodeType();

@@ -48,7 +48,7 @@ AudioSuiteProcessNode::AudioSuiteProcessNode(AudioNodeType nodeType)
 uint32_t AudioSuiteProcessNode::CalculationNeedBytes(uint32_t frameLengthMs)
 {
     uint32_t dataBytes = 0;
-    PcmBufferFormat pcmFormat = GetAudioNodeInPcmFormat();
+    PcmBufferFormat pcmFormat = GetAudioNodeOutPcmFormat();
     dataBytes = (frameLengthMs * pcmFormat.sampleRate / SECONDS_TO_MS) * pcmFormat.channelCount *
                 AudioSuiteUtil::GetSampleSize(pcmFormat.sampleFormat);
     return dataBytes;
@@ -82,7 +82,7 @@ int32_t AudioSuiteProcessNode::InitCacheLength(uint32_t needDataLength)
 
     for (size_t idx = 0; idx < downStreamData_.size(); ++idx) {
         int32_t ret = downStreamData_[idx].ResizePcmBuffer(
-            GetAudioNodeInPcmFormat(), needDataLength);
+            GetAudioNodeOutPcmFormat(), needDataLength);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Target buffer allocation failed.");
         CHECK_AND_RETURN_RET_LOG(
             downStreamData_[idx].GetPcmData() != nullptr, ERROR, "The target buffer pointer is null.");
@@ -92,7 +92,7 @@ int32_t AudioSuiteProcessNode::InitCacheLength(uint32_t needDataLength)
         ret = cachedBuffer_[idx].ResizeBuffer(needByteLength * doubleLength);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Circular buffer allocation failed.");
 
-        ret = algoOutPcmBuffer_[idx].ResizePcmBuffer(GetAudioNodeInPcmFormat(), requestPreNodeDuration_);
+        ret = algoOutPcmBuffer_[idx].ResizePcmBuffer(GetAudioNodeOutPcmFormat(), requestPreNodeDuration_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "Algorithm result buffer allocation failed.");
         CHECK_AND_RETURN_RET_LOG(
             algoOutPcmBuffer_[idx].GetPcmData() != nullptr, ERROR, "The algorithm result buffer pointer is empty.");

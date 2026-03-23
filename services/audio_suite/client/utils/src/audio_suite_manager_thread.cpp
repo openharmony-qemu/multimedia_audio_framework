@@ -26,10 +26,13 @@
 #include "audio_suite_log.h"
 #include "audio_schedule.h"
 #include "audio_suite_engine.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
+
+static constexpr int32_t FRAME_DURATION_MS = 20;  // 20 ms, frame duration ms
 
 AudioSuiteManagerThread::~AudioSuiteManagerThread()
 {
@@ -48,8 +51,10 @@ void AudioSuiteManagerThread::ActivateThread(IAudioSuiteManagerThread *audioSuit
 
 void AudioSuiteManagerThread::Run()
 {
+    AddThread();
     ScheduleThreadInServer(getpid(), gettid());
     while (running_.load() && m_audioSuiteManager != nullptr) {
+        Start();
         {
             bool isProcessing = m_audioSuiteManager->IsMsgProcessing();
             std::unique_lock<std::mutex> lock(mutex_);
@@ -60,8 +65,10 @@ void AudioSuiteManagerThread::Run()
         }
         m_audioSuiteManager->HandleMsg();
         recvSignal_.store(false);
+        Stop();
     }
     UnscheduleThreadInServer(getpid(), gettid());
+    RemoveThread();
 }
 
 void AudioSuiteManagerThread::Notify()
@@ -79,6 +86,62 @@ void AudioSuiteManagerThread::DeactivateThread()
         thread_.join();
     }
     AUDIO_INFO_LOG("DeactivateThread finish.");
+}
+
+int32_t AudioSuiteManagerThread::CreateGroup()
+{
+    CHECK_AND_RETURN_RET_LOG(AudioSystemManager::GetInstance() != nullptr, workGroupId_,
+        "AudioSystemManager::GetInstance() failed!");
+    workGroupId_ = AudioSystemManager::GetInstance()->CreateAudioWorkgroup();
+    CHECK_AND_RETURN_RET_LOG(workGroupId_ > 0, workGroupId_, "CreateAudioWorkgroup failed.");
+    AUDIO_INFO_LOG("CreateAudioWorkgroup success, group id:%{public}d", workGroupId_);
+    return workGroupId_;
+}
+
+void AudioSuiteManagerThread::ReleaseGroup()
+{
+    CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+    AudioSystemManager::GetInstance()->ReleaseAudioWorkgroup(workGroupId_);
+    AUDIO_INFO_LOG("ReleaseAudioWorkgroup, group id:%{public}d", workGroupId_);
+    workGroupId_ = -1;
+}
+
+void AudioSuiteManagerThread::AddThread()
+{
+    CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+    CHECK_AND_RETURN_LOG(workGroupId_ > 0, "workgroup id is invalid.");
+    int32_t ret = AudioSystemManager::GetInstance()->AddThreadToGroup(workGroupId_, gettid());
+    AUDIO_INFO_LOG("Add current thread %{public}d to group %{public}d", gettid(), workGroupId_);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "AddThreadToGroup failed.");
+}
+
+void AudioSuiteManagerThread::RemoveThread()
+{
+    CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+    AudioSystemManager::GetInstance()->RemoveThreadFromGroup(workGroupId_, gettid());
+    AUDIO_INFO_LOG("Remove thread %{public}d from group %{public}d", gettid(), workGroupId_);
+}
+
+void AudioSuiteManagerThread::Start()
+{
+    uint64_t startTime = 0;
+    CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+    uint64_t deadlineTime = FRAME_DURATION_MS;
+    std::unordered_map<int32_t, bool> threads{{gettid(), true}};
+    bool needUpdatePrio = true;
+    AudioSystemManager::GetInstance()->StartGroup(workGroupId_, startTime, deadlineTime,
+        threads, needUpdatePrio);
+}
+
+void AudioSuiteManagerThread::Stop()
+{
+    CHECK_AND_RETURN_LOG(AudioSystemManager::GetInstance() != nullptr, "AudioSystemManager::GetInstance() failed!");
+    AudioSystemManager::GetInstance()->StopGroup(workGroupId_);
+}
+
+void AudioSuiteManagerThread::SetWorkGroupId(int32_t workGroupId)
+{
+    workGroupId_ = workGroupId;
 }
 
 }  // namespace AudioSuite

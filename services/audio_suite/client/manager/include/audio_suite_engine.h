@@ -123,6 +123,8 @@ private:
     HpaeNoLockQueue engineNoLockQueue_;
 
     std::unordered_map<PipelineMsgCode, std::function<void(const std::any &)>> handlers_;
+
+    int32_t workGroupId_ = -1;
 };
 
 }  // namespace AudioSuite

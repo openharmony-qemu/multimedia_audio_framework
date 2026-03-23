@@ -70,6 +70,9 @@ struct AudioFormat {
     AudioChannelInfo audioChannelInfo;
     AudioSampleFormat format = INVALID_WIDTH;
     AudioSamplingRate rate = SAMPLE_RATE_48000;
+    AudioChannelInfo outAudioChannelInfo;
+    AudioSampleFormat outFormat = INVALID_WIDTH;
+    AudioSamplingRate outRate = SAMPLE_RATE_48000;
     AudioStreamEncodingType encodingType = ENCODING_TYPE_RAW;
 };
 

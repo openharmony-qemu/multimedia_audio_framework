@@ -143,7 +143,7 @@
             <option name="push" value="target_48000_1_s16le_0.8_1.0.pcm -> /data/audiosuite/tempo_pitch/" src="res"/>
             <option name="shell" value="restorecon -R /data/audiosuite/tempo_pitch/"/>
             <option name="shell" value="mkdir -p /data/audiosuite/sr/"/>
-            <option name="push" value="48000_2_16.pcm -> /data/audiosuite/sr/" src="res"/>
+            <option name="push" value="in_48000_1_s16le.pcm -> /data/audiosuite/sr/" src="res"/>
             <option name="push" value="base_position.pcm -> /data/audiosuite/sr/" src="res"/>
             <option name="push" value="base_rotation.pcm -> /data/audiosuite/sr/" src="res"/>
             <option name="push" value="base_extension.pcm -> /data/audiosuite/sr/" src="res"/>

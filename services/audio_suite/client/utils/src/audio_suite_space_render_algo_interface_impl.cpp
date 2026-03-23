@@ -309,10 +309,10 @@ int32_t AudioSuiteSpaceRenderAlgoInterfaceImpl::Apply(std::vector<uint8_t *> &pc
     const short *bufIn = reinterpret_cast<const short *>(pcmInBuf[0]);
     short *pcmOut = reinterpret_cast<short *>(pcmOutBuf[0]);
     CHECK_AND_RETURN_RET_LOG(
-        nodeParameter_.frameLen < MAX_SAMPLE_POINT && nodeParameter_.outChannels <= MAX_CHANNEL_COUNT,
+        nodeParameter_.frameLen < MAX_SAMPLE_POINT && nodeParameter_.inChannels <= MAX_CHANNEL_COUNT,
         ERROR,
         "The algorithm returned more than the maximum number of sample points.");
-    uint32_t INPUT_DATA_LENGTH = nodeParameter_.frameLen * nodeParameter_.outChannels;
+    uint32_t INPUT_DATA_LENGTH = nodeParameter_.frameLen * nodeParameter_.inChannels;
     int32_t ret = algoApi_.applyAlgo(spaceRenderHandle_.data(), bufIn, INPUT_DATA_LENGTH, pcmOut);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
         HILOG_COMM_ERROR("[Apply]SpaceRender algo apply failed, return error is %{public}d", ret));

@@ -26,7 +26,8 @@ namespace AudioStandard {
 namespace AudioSuite {
  
 namespace {
-static constexpr AudioChannelLayout SPACE_RENDER_ALGO_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
+static constexpr AudioChannelLayout SPACE_RENDER_ALGO_IN_CHANNEL_LAYOUT = CH_LAYOUT_MONO;
+static constexpr AudioChannelLayout SPACE_RENDER_ALGO_OUT_CHANNEL_LAYOUT = CH_LAYOUT_STEREO;
 }  // namespace
 
 AudioSuiteSpaceRenderNode::AudioSuiteSpaceRenderNode()
@@ -59,9 +60,12 @@ int32_t AudioSuiteSpaceRenderNode::Init()
 
     int32_t ret = algoInterface_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "algoInterface_ Init failed");
-    SetAudioNodeFormat(AudioFormat{{SPACE_RENDER_ALGO_CHANNEL_LAYOUT, nodeParameter_.inChannels},
+    SetAudioNodeFormat(AudioFormat{{SPACE_RENDER_ALGO_IN_CHANNEL_LAYOUT, nodeParameter_.inChannels},
         static_cast<AudioSampleFormat>(nodeParameter_.inFormat),
-        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate)});
+        static_cast<AudioSamplingRate>(nodeParameter_.inSampleRate),
+        {SPACE_RENDER_ALGO_OUT_CHANNEL_LAYOUT, nodeParameter_.outChannels},
+        static_cast<AudioSampleFormat>(nodeParameter_.outFormat),
+        static_cast<AudioSamplingRate>(nodeParameter_.outSampleRate)});
 
     CHECK_AND_RETURN_RET_LOG(nodeParameter_.inSampleRate != 0, ERROR, "Invalid input SampleRate");
 
