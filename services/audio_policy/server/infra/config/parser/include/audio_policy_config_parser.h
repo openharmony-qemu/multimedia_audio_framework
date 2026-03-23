@@ -42,7 +42,6 @@ public:
 
     explicit AudioPolicyConfigParser(AudioCoreConfigManager &manager);
     bool GetHasEarpiece() const;
-    void UpdateHasEarpieceForChipProp();
 
     virtual ~AudioPolicyConfigParser()
 

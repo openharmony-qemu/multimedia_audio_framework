@@ -63,6 +63,7 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     if (curNode_->Config(CHIP_PROD_CONFIG_FILE, nullptr, 0) != SUCCESS) {
         AUDIO_WARNING_LOG("Load chip prod config xml fail, use chip general config");
         isChipGeneralConfig_ = true;
+        configManager_.OnIsChipGenneralConfig(isChipGeneralConfig_);
         if (curNode_->Config(CONFIG_FILE, nullptr, 0) != SUCCESS) {
             AUDIO_ERR_LOG("Load chip prod config and chip general config xml all failed");
             return false;
@@ -90,7 +91,6 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     volumeGroupMap_ = volumeGroupMap;
     interruptGroupMap_ = interruptGroupMap;
 
-    UpdateHasEarpieceForChipProp();
     configManager_.OnAudioPolicyConfigXmlParsingCompleted();
     configManager_.OnXmlParsingCompleted(xmlParsedDataMap_);
     configManager_.OnVolumeGroupParsed(volumeGroupMap_);
@@ -101,22 +101,6 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     return true;
 }
 
-void AudioPolicyConfigParser::UpdateHasEarpieceForChipProp()
-{
-    CHECK_AND_RETURN_LOG(!isChipGeneralConfig_, "use chip general config");
-    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap; 
-    GetAudioAdapterInfos(adapterInfoMap); 
-    for (const auto &adapterInfo : adapterInfoMap) { 
-        hasEarpiece_ = std::any_of(adapterInfo.second->deviceInfos.begin(), adapterInfo.second->deviceInfos.end(), 
-            [](const auto& deviceInfo) { 
-                return deviceInfo->type_ == DEVICE_TYPE_EARPIECE; 
-            }); 
-        if (hasEarpiece_) { 
-            break; 
-        } 
-    }
-    AUDIO_INFO_LOG("get hasEarpiece_:%{public}s from chip prop config", hasEarpiece_ ? "true" : "false");
-}
 void AudioPolicyConfigParser::Destroy()
 {
     curNode_->FreeDoc();

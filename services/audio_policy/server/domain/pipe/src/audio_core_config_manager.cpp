@@ -198,9 +198,31 @@ void AudioCoreConfigManager::OnUpdateEac3Support(bool isSupported)
 
 void AudioCoreConfigManager::OnHasEarpiece()
 {
+    UpdateHasEarpieceForChipProp()
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
+void AudioCoreConfigManager::UpdateHasEarpieceForChipProp()
+{
+    CHECK_AND_RETURN_LOG(isChipGeneralConfig_, "use chip general config");
+    std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap; 
+    audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap); 
+    for (const auto &adapterInfo : adapterInfoMap) { 
+        hasEarpiece_ = std::any_of(adapterInfo.second->deviceInfos.begin(), adapterInfo.second->deviceInfos.end(), 
+            [](const auto& deviceInfo) { 
+                return deviceInfo->type_ == DEVICE_TYPE_EARPIECE; 
+            }); 
+        if (hasEarpiece_) { 
+            break; 
+        } 
+    }
+    AUDIO_INFO_LOG("get hasEarpiece_:%{public}s from chip prop config", hasEarpiece_ ? "true" : "false");
+}
+
+void AudioCoreConfigManager::OnIsChipGenneralConfig(bool isChipGeneral)
+{
+    isChipGeneralConfig_ = isChipGeneral;
+}
 
 void AudioCoreConfigManager::OnSupportUltraFast(bool supportUltraFast)
 {
