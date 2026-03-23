@@ -28,6 +28,7 @@ static const std::string PIPE_USB_ARM_OUTPUT_UNITTEST = "usb_arm_output";
 static const std::string PIPE_DP_OUTPUT_UNITTEST = "dp_output";
 static const std::string PIPE_ACCESSORY_INPUT_UNITTEST = "accessory_input";
 static const std::string PIPE_USB_ARM_INPUT_UNITTEST = "usb_arm_input";
+static constexpr int32_t MEDIA_SERVICE_UID = 1013;
 
 static AudioPolicyServer* GetServerPtr()
 {
@@ -1903,6 +1904,25 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetBackgroundMuteCallback_001, TestSiz
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test GetRealUid.
+ * @tc.number: GetRealUid_001
+ * @tc.desc  : Test GetRealUid interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetRealUid_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+ 
+    AudioProcessConfig config;
+    config.callerUid = 456;
+    int32_t uid = server->audioPolicyService_.GetRealUid(config);
+    EXPECT_EQ(uid, 456);
+    config.callerUid = MEDIA_SERVICE_UID;
+    config.appInfo.appUid = 456
+    uid = server->audioPolicyService_.GetRealUid(config);
+    EXPECT_EQ(uid, 456);
+}
 
 } // namespace AudioStandard
 } // namespace OHOS
