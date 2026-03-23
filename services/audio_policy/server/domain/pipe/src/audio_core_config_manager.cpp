@@ -198,7 +198,7 @@ void AudioCoreConfigManager::OnUpdateEac3Support(bool isSupported)
 
 void AudioCoreConfigManager::OnHasEarpiece()
 {
-    UpdateHasEarpieceForChipProp()
+    UpdateHasEarpieceForChipProp();
     audioDeviceManager_.UpdateEarpieceStatus(hasEarpiece_);
 }
 
