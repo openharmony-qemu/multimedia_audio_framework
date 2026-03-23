@@ -3214,6 +3214,7 @@ int32_t AudioPolicyManager::GetMaxVolumeLevelByUsage(StreamUsage streamUsage)
     gsp->GetMaxVolumeLevelByUsage(streamUsage, maxVolumeLevel);
     return maxVolumeLevel;
 }
+
 int32_t AudioPolicyManager::GetMinVolumeLevelByUsage(StreamUsage streamUsage)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -3615,6 +3616,21 @@ int32_t AudioPolicyManager::GetActiveStreamsVolumeInfo(
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     return gsp->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+}
+
+int32_t AudioPolicyManager::SetAudioZoneVolumeConfig(const std::string &zoneName,
+    const std::vector<AudioZoneVolumeConfig> &configs)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetAudioZoneVolumeConfig(zoneName, configs);
+}
+
+int32_t AudioPolicyManager::TriggerAudioZoneVolumeSync()
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->TriggerAudioZoneVolumeSync();
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

@@ -19,6 +19,7 @@
 #include "system_ability_definition.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_zone_service.h"
 
 using namespace testing::ext;
 
@@ -111,10 +112,13 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     int32_t volumeDegree = 1;
     VolumeScale volume{volumeDegree, volumeDegree};
     AudioStreamType streamType = STREAM_ALL;
-    volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume);
+
+    int32_t zoneId = 0;
+
+    volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume, zoneId);
     EXPECT_EQ(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
 
-    int32_t retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, STREAM_ALL);
+    int32_t retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, STREAM_ALL, zoneId);
     EXPECT_NE(retVolumeDegree, volumeDegree);
 
     EXPECT_NE(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);
@@ -123,22 +127,22 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerDegreeUnitTest_001, Tes
     ASSERT_NE(nullptr, device);
     device->deviceType_ = DEVICE_TYPE_SPEAKER;
 
-    volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume);
+    volumeDataMaintainer->SaveVolumeToMap(device, streamType, volume, zoneId);
     EXPECT_GT(volumeDataMaintainer->volumeDegreeMap_.size(), 0);
 
-    volumeDataMaintainer->SaveVolumeToMap(device, STREAM_MUSIC, volume);
-    retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, streamType);
+    volumeDataMaintainer->SaveVolumeToMap(device, STREAM_MUSIC, volume, zoneId);
+    retVolumeDegree = volumeDataMaintainer->LoadVolumeDegreeFromMap(device, streamType, zoneId);
     EXPECT_EQ(retVolumeDegree, volumeDegree);
 
     device->networkId_ = "111";
-    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume), SUCCESS);
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume, zoneId), SUCCESS);
 
     device->volumeBehavior_.isReady = true;
-    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume), SUCCESS);
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume, zoneId), SUCCESS);
 
     device->volumeBehavior_.databaseVolumeName = "Test";
     volumeDataMaintainer->SetDataShareReady(true);
-    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume), SUCCESS);
+    EXPECT_EQ(volumeDataMaintainer->SaveVolumeToDb(device, STREAM_MUSIC, volume, zoneId), SUCCESS);
 
     device->deviceType_ = DEVICE_TYPE_NONE;
     EXPECT_EQ(volumeDataMaintainer->LoadVolumeDegreeFromDb(device, STREAM_MUSIC), 0);
@@ -745,28 +749,30 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceVolumeMapFromDb, TestSize.Level4)
     std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
 
+    int32_t zoneId = 0;
+
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    vd->LoadDeviceVolumeMapFromDb(desc);
+    vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_EQ(vd->volumeList_.size(), 0);
     
     desc->networkId_ = "111";
-    vd->LoadDeviceVolumeMapFromDb(desc);
+    vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_EQ(vd->volumeList_.size(), 0);
 
     desc->volumeBehavior_.isReady = true;
-    vd->LoadDeviceVolumeMapFromDb(desc);
+    vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_EQ(vd->volumeList_.size(), 0);
 
     desc->volumeBehavior_.databaseVolumeName = "Test";
-    vd->LoadDeviceVolumeMapFromDb(desc);
+    vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_EQ(vd->volumeList_.size(), 0);
 
     desc->volumeBehavior_.isReady = false;
-    vd->LoadDeviceVolumeMapFromDb(desc);
+    vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_EQ(vd->volumeList_.size(), 0);
 
     vd->SetVolumeList({STREAM_MUSIC});
-    vd->LoadDeviceVolumeMapFromDb(desc);
+    vd->LoadDeviceVolumeMapFromDb(desc, zoneId);
     EXPECT_NE(vd->volumeDegreeMap_.size(), 0);
 }
 
@@ -780,18 +786,20 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveVolumeToDb, TestSize.Level4)
     std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
 
+    int32_t zoneId = 0;
+
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
     VolumeScale tmp = {0, 0, 0};
-    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp, zoneId), SUCCESS);
     
     desc->networkId_ = "111";
-    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp, zoneId), SUCCESS);
 
     desc->volumeBehavior_.isReady = true;
-    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp, zoneId), SUCCESS);
 
     desc->volumeBehavior_.databaseVolumeName = "Test";
-    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp), SUCCESS);
+    EXPECT_EQ(vd->SaveVolumeToDb(desc, STREAM_MUSIC, tmp, zoneId), SUCCESS);
 }
 
 /**
@@ -803,16 +811,19 @@ HWTEST(VolumeDataMaintainerUnitTest, LoadDeviceMuteMapFromDb, TestSize.Level4)
 {
     std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+
+    int32_t zoneId = 0;
+
     desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    vd->LoadDeviceMuteMapFromDb(desc);
+    vd->LoadDeviceMuteMapFromDb(desc, zoneId);
     desc->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
-    vd->LoadDeviceMuteMapFromDb(desc);
+    vd->LoadDeviceMuteMapFromDb(desc, zoneId);
     desc->volumeBehavior_.isReady = true;
-    vd->LoadDeviceMuteMapFromDb(desc);
+    vd->LoadDeviceMuteMapFromDb(desc, zoneId);
     desc->volumeBehavior_.databaseVolumeName = "Test";
-    vd->LoadDeviceMuteMapFromDb(desc);
+    vd->LoadDeviceMuteMapFromDb(desc, zoneId);
     desc->volumeBehavior_.isReady = false;
-    vd->LoadDeviceMuteMapFromDb(desc);
+    vd->LoadDeviceMuteMapFromDb(desc, zoneId);
     EXPECT_EQ(vd->volumeList_.size(), 0);
 }
 
@@ -825,13 +836,15 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveMuteToDb, TestSize.Level4)
 {
     std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), ERROR);
+
+    int32_t zoneId = 0;
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true, zoneId), ERROR);
     desc->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
-    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true, zoneId), SUCCESS);
     desc->volumeBehavior_.isReady = true;
-    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true, zoneId), SUCCESS);
     desc->volumeBehavior_.databaseVolumeName = "Test";
-    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true), SUCCESS);
+    EXPECT_EQ(vd->SaveMuteToDb(desc, STREAM_MUSIC, true, zoneId), SUCCESS);
 }
 
 /**
@@ -849,6 +862,37 @@ HWTEST(VolumeDataMaintainerUnitTest, LegacyHighVolumeCheckTime_001, TestSize.Lev
     int64_t loadedTime = 0;
     (void)vd->GetLegacyHighVolumeTime(loadedTime);
     SUCCEED();
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer::GetZoneKey with invalid zoneId.
+ * @tc.number: VolumeDataMaintainer_GetZoneKey_001
+ * @tc.desc  : zoneId <= 0 should return empty string.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_GetZoneKey_001, TestSize.Level1)
+{
+    std::shared_ptr<VolumeDataMaintainer> vd = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(vd, nullptr);
+
+    // zoneId == 0 -> empty
+    EXPECT_EQ(vd->GetZoneKey(0), "");
+
+    // negative zoneId -> empty
+    EXPECT_EQ(vd->GetZoneKey(-1), "");
+
+    // create an audio zone and verify GetZoneKey returns the zone name
+    AudioZoneService::GetInstance().Init(DelayedSingleton<AudioPolicyServerHandler>::GetInstance(),
+        std::make_shared<AudioInterruptService>());
+    AudioZoneContext context;
+    const std::string zoneName = "UT_VolumeZone";
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone(zoneName, context, 0);
+    ASSERT_GT(zoneId, 0);
+
+    EXPECT_EQ(vd->GetZoneKey(zoneId), zoneName);
+
+    // release zone and verify key no longer available
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
+    EXPECT_EQ(vd->GetZoneKey(zoneId), "");
 }
 } // AudioStandardnamespace
 } // OHOSnamespace

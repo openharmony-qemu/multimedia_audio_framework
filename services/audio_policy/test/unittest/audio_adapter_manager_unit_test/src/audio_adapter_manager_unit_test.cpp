@@ -395,6 +395,19 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeDegree_001, TestSize.Level4)
     audioAdapterManager->volumeDataMaintainer_.muteStatusMap_[device1->GetName()][streamType] = true;
     ret = audioAdapterManager->GetZoneVolumeDegree(zoneId1_, streamType);
     EXPECT_EQ(ret, 0);
+
+    ret = audioAdapterManager->GetZoneVolumeLevel(zoneId1_, streamType);
+    EXPECT_EQ(ret, 0);
+
+    audioAdapterManager->SetSystemVolumeLevel(streamType, 5, volDeviceDesc);
+    int32_t volumeLevel = audioAdapterManager->GetSystemVolumeLevel(streamType, zoneId1_);
+    EXPECT_EQ(volumeLevel, 5);
+
+    audioAdapterManager->SetStreamMuteInternal(device1, streamType, true);
+    volumeLevel = audioAdapterManager->GetSystemVolumeLevel(device1, streamType);
+    int mute = audioAdapterManager->GetStreamMute(streamType, zoneId1_);
+    EXPECT_EQ(volumeLevel, 0);
+    EXPECT_EQ(mute, true);
 }
 
 /**

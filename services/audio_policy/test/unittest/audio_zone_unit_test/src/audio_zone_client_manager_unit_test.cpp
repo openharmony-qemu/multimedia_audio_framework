@@ -25,106 +25,6 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-class IStandardAudioZoneClientUnitTest : public IStandardAudioZoneClient {
-public:
-    sptr<IRemoteObject> AsObject() override
-    {
-        return nullptr;
-    }
-
-    ErrCode OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override
-    {
-        recvEvent_.type = AudioZoneEventType::AUDIO_ZONE_ADD_EVENT;
-        Notify();
-        return 0;
-    }
-
-    ErrCode OnAudioZoneRemove(int32_t zoneId) override
-    {
-        recvEvent_.type = AudioZoneEventType::AUDIO_ZONE_REMOVE_EVENT;
-        recvEvent_.zoneId = zoneId;
-        Notify();
-        return 0;
-    }
-
-    ErrCode OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor& zoneDescriptor,
-        int32_t reason) override
-    {
-        recvEvent_.type = AudioZoneEventType::AUDIO_ZONE_CHANGE_EVENT;
-        recvEvent_.zoneId = zoneId;
-        Notify();
-        return 0;
-    }
-
-    ErrCode OnInterruptEvent(int32_t zoneId,
-        const std::vector<std::map<AudioInterrupt, int32_t>>& ipcInterrupts,
-        int32_t reason) override
-    {
-        recvEvent_.type = AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT;
-        recvEvent_.zoneId = zoneId;
-        Notify();
-        return 0;
-    }
-
-    ErrCode OnInterruptEvent(int32_t zoneId, const std::string& deviceTag,
-        const std::vector<std::map<AudioInterrupt, int32_t>>& ipcInterrupts,
-        int32_t reason) override
-    {
-        recvEvent_.type = AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT;
-        recvEvent_.zoneId = zoneId;
-        recvEvent_.deviceTag = deviceTag;
-        Notify();
-        return 0;
-    }
-
-    ErrCode SetSystemVolume(int32_t zoneId, int32_t volumeType, int32_t volumeLevel,
-        int32_t volumeDegree, int32_t volumeFlag) override
-    {
-        volumeLevel_ = volumeLevel;
-        volumeDegree_ = volumeDegree;
-        Notify();
-        return 0;
-    }
-
-    ErrCode GetSystemVolume(int32_t zoneId, int32_t volumeType, float& outVolume) override
-    {
-        Notify();
-        return volumeLevel_;
-    }
-
-    ErrCode GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume) override
-    {
-        outVolume = volumeDegree_;
-        Notify();
-        return 0;
-    }
-
-    void Notify()
-    {
-        std::unique_lock<std::mutex> lock(waitLock_);
-        waitStatus_ = 1;
-        waiter_.notify_one();
-    }
-
-    void Wait()
-    {
-        std::unique_lock<std::mutex> lock(waitLock_);
-        if (waitStatus_ == 0) {
-            waiter_.wait(lock, [this] {
-                return waitStatus_ != 0;
-            });
-        }
-        waitStatus_ = 0;
-    }
-
-    struct AudioZoneEvent recvEvent_;
-    std::condition_variable waiter_;
-    std::mutex waitLock_;
-    int32_t waitStatus_ = 0;
-    int32_t volumeLevel_ = 0;
-    int32_t volumeDegree_ = -1;
-};
-
 void AudioZoneClientManagerUnitTest::SetUpTestCase(void) {}
 void AudioZoneClientManagerUnitTest::TearDownTestCase(void) {}
 void AudioZoneClientManagerUnitTest::SetUp(void)
@@ -440,28 +340,60 @@ HWTEST_F(AudioZoneClientManagerUnitTest, AudioZoneClientManager_012, TestSize.Le
     EXPECT_EQ(testClient->waitStatus_, 0);
 }
 
-/**
+ /**
  * @tc.name  : Test AudioZoneClientManagerUnitTest.
- * @tc.number: AudioZoneClientManager_DegreeTest_001
- * @tc.desc  : Test SetSystemVolumeDegree interface.
+ * @tc.number: AudioZoneClientManager_013
+ * @tc.desc  : Cover Set/Get SystemVolumeDegree and SetSystemVolumeLevel branches:
+ *             1. calls without registered client -> expect non-zero/error
+ *             2. calls with registered client -> expect success and values routed to client
  */
-HWTEST_F(AudioZoneClientManagerUnitTest, AudioZoneClientManager_DegreeTest_001, TestSize.Level4)
+HWTEST_F(AudioZoneClientManagerUnitTest, AudioZoneClientManager_013, TestSize.Level4)
 {
     auto& manager = AudioZoneClientManager::GetInstance();
 
-    AudioVolumeType volumeType = STREAM_MUSIC;
-    int32_t volumeDegree = 10;
-    VolumeScale volume{volumeDegree, volumeDegree};
-    pid_t pid = 106;
-    EXPECT_NE(manager.GetSystemVolumeDegree(pid, 0, volumeType), 0);
-    EXPECT_NE(manager.SetSystemVolumeLevel(pid, 0, volumeType, volume, 0), 0);
+    // ensure clean state
+    manager.clients_.clear();
 
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    int32_t volumeDegree = 11;
+    // construct VolumeScale(level, degree) — use same numeric values for test
+    VolumeScale volume{volumeDegree, volumeDegree};
+    int32_t zoneId = 0;
+
+    // device parameter was missing — use a concrete device for tests
+    DeviceType device = DEVICE_TYPE_SPEAKER;
+
+    pid_t missingPid = 9999;
+    // Case A: no client registered -> operations should not succeed (expect non-zero)
+    EXPECT_NE(manager.GetSystemVolumeDegree(missingPid, zoneId, device, volumeType), 0);
+    EXPECT_NE(manager.SetSystemVolumeLevel(missingPid, zoneId, device, volumeType, volume, 0), 0);
+    EXPECT_NE(manager.GetSystemVolumeLevel(missingPid, zoneId, device, volumeType), 0);
+
+    // Case B: register client and verify calls reach it
+    pid_t pid = 300;
     sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientUnitTest();
     ASSERT_NE(client, nullptr);
+    {
+        std::lock_guard<std::mutex> lock(manager.clientMutex_);
+        manager.clients_[pid] = client;
+    }
 
-    manager.clients_[pid] = client;
-    EXPECT_EQ(manager.SetSystemVolumeLevel(pid, 0, volumeType, volume, 0), 0);
-    EXPECT_EQ(manager.GetSystemVolumeDegree(pid, 0, volumeType), volumeDegree);
+    // call SetSystemVolumeLevel -> should succeed and client notified
+    EXPECT_EQ(manager.SetSystemVolumeLevel(pid, zoneId, device, volumeType, volume, 0), 0);
+
+    auto testClient = static_cast<IStandardAudioZoneClientUnitTest*>(client.GetRefPtr());
+    testClient->Wait();
+    EXPECT_EQ(testClient->volumeLevel_, volume.VolumeLevel());
+    EXPECT_EQ(testClient->volumeDegree_, volume.VolumeDegree());
+
+    // GetSystemVolumeDegree should return the degree set in stub
+    EXPECT_EQ(manager.GetSystemVolumeDegree(pid, zoneId, device, volumeType), volumeDegree);
+
+    // cleanup
+    {
+        std::lock_guard<std::mutex> lock(manager.clientMutex_);
+        manager.clients_.erase(pid);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

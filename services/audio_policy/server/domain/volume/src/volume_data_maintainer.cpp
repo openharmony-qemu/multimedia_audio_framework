@@ -23,6 +23,7 @@
 #include "audio_connected_device.h"
 #include "audio_bundle_manager.h"
 #include <nlohmann/json.hpp>
+#include "audio_zone_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -85,6 +86,7 @@ static std::map<AudioStreamType, std::string> AUDIO_STREAMTYPE_VOLUME_MAP = {
     {STREAM_ACCESSIBILITY, "accessibility_volume"},
     {STREAM_ULTRASONIC, "ultrasonic_volume"},
     {STREAM_WAKEUP,  "wakeup"},
+    {STREAM_NAVIGATION, "navigation_volume"},
 };
 
 static std::map<AudioStreamType, std::string> AUDIO_STREAMTYPE_MUTE_STATUS_MAP = {
@@ -98,6 +100,7 @@ static std::map<AudioStreamType, std::string> AUDIO_STREAMTYPE_MUTE_STATUS_MAP =
     {STREAM_VOICE_ASSISTANT, "voice_assistant_mute_status"},
     {STREAM_ACCESSIBILITY, "accessibility_mute_status"},
     {STREAM_ULTRASONIC, "unltrasonic_mute_status"},
+    {STREAM_NAVIGATION, "navigation_mute_status"},
 };
 
 bool VolumeDataMaintainer::CheckOsAccountReady()
@@ -838,6 +841,14 @@ std::string VolumeDataMaintainer::GetVolumeKey(const std::shared_ptr<AudioDevice
     return ret;
 }
 
+std::string VolumeDataMaintainer::GetZoneKey(int32_t zoneId)
+{
+    if (zoneId > 0) {
+        return AudioZoneService::GetInstance().GetZoneNameById(zoneId);
+    }
+    return "";
+}
+
 std::string VolumeDataMaintainer::GetMuteKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, "", "GetMuteKey device is null");
@@ -855,12 +866,28 @@ void VolumeDataMaintainer::SetVolumeList(std::vector<AudioStreamType> volumeList
     volumeList_ = volumeList;
 }
 
-void VolumeDataMaintainer::InitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device)
+void VolumeDataMaintainer::InitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "InitDeviceVolumeMap device is null");
     CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false");
-    LoadDeviceVolumeMapFromDb(device);
+    LoadDeviceVolumeMapFromDb(device, zoneId);
     AUDIO_INFO_LOG("InitDeviceVolumeMap device %{public}s", device->GetName().c_str());
+}
+
+void VolumeDataMaintainer::InitZoneVolumeMap(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(zoneId > 0, "InitZoneVolumeMap zoneId is invalid");
+    if (desc != nullptr && desc->deviceType_ != DEVICE_TYPE_NONE && desc->deviceType_ != DEVICE_TYPE_INVALID) {
+        InitDeviceVolumeMap(desc, zoneId);
+        AUDIO_INFO_LOG("InitZoneVolumeMap zoneId %{public}d, deviceType %{public}d", zoneId, desc->deviceType_);
+        return;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioZoneService::GetInstance().GetAllOutputDevices(zoneId);
+    for (auto &desc : descs) {
+        InitDeviceVolumeMap(desc, zoneId);
+    }
+    AUDIO_INFO_LOG("InitZoneVolumeMap zoneId %{public}d", zoneId);
 }
 
 void VolumeDataMaintainer::DeInitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device)
@@ -872,7 +899,7 @@ void VolumeDataMaintainer::DeInitDeviceVolumeMap(std::shared_ptr<AudioDeviceDesc
     AUDIO_INFO_LOG("DeInitDeviceVolumeMap device %{public}s", device->GetName().c_str());
 }
 
-void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device)
+void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "LoadDeviceVolumeMapFromDb device is null");
     AUDIO_INFO_LOG("LoadDeviceVolumeMapFromDb device %{public}s", device->GetName().c_str());
@@ -883,25 +910,13 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
         volumeList = DISTRIBUTED_VOLUME_TYPE_LIST;
     }
     for (auto stream : volumeList) {
-        int32_t dftVolume = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(device, stream);
-        int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(device, stream);
-        IntValueInfo info {
-            .key = GetVolumeKey(device, stream),
-            .defaultValue = dftVolume,
-            .value = dftVolume,
-            .maxValue = maxVolume,
-        };
+        IntValueInfo info = GetVolumeLevelInfo(device, stream, zoneId);
         infos.push_back(info);
 
-        IntValueInfo degreeInfo {
-            .key = GetVolumeKey(device, stream, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE),
-            .defaultValue = -1,
-            .value = -1,
-            .maxValue = MAX_VOLUME_DEGREE,
-        };
+        IntValueInfo degreeInfo = GetVolumeDegreeInfo(device, stream, zoneId);
         degreeInfos.push_back(degreeInfo);
         AUDIO_INFO_LOG("Load %{public}s dftValue %{public}d",
-            info.key.c_str(), dftVolume);
+            info.key.c_str(), info.defaultValue);
     }
 
     bool readDb = false;
@@ -921,22 +936,56 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
 
     for (size_t i = 0; i < volumeList.size(); i++) {
         VolumeScale volume{infos[i].value, degreeInfos[i].value, infos[i].maxValue};
-        SaveVolumeToMap(device, volumeList[i], volume);
+        SaveVolumeToMap(device, volumeList[i], volume, zoneId);
     }
 }
 
+IntValueInfo VolumeDataMaintainer::GetVolumeLevelInfo(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, int32_t zoneId)
+{
+    int32_t dftVolume = AudioVolumeUtils::GetInstance().GetDefaultVolumeLevel(device, streamType, zoneId);
+    int32_t maxVolume = AudioVolumeUtils::GetInstance().GetMaxVolumeLevel(device, streamType, zoneId);
+    IntValueInfo info {
+#ifdef FEATURE_AUDIO_ZONE
+        .key = GetVolumeKey(device, streamType) + GetZoneKey(zoneId),
+#else
+        .key = GetVolumeKey(device, streamType),
+#endif
+        .defaultValue = dftVolume,
+        .value = dftVolume,
+        .maxValue = maxVolume,
+    };
+    return info;
+}
+
+IntValueInfo VolumeDataMaintainer::GetVolumeDegreeInfo(std::shared_ptr<AudioDeviceDescriptor> device,
+    AudioStreamType streamType, int32_t zoneId)
+{
+    IntValueInfo degreeInfo {
+#ifdef FEATURE_AUDIO_ZONE
+        .key = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE) + GetZoneKey(zoneId),
+#else
+        .key = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE),
+#endif
+        .defaultValue = -1,
+        .value = -1,
+        .maxValue = MAX_VOLUME_DEGREE,
+    };
+    return degreeInfo;
+}
+
 int32_t VolumeDataMaintainer::SaveVolumeToDb(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, const VolumeScale &volume)
+    AudioStreamType streamType, const VolumeScale &volume, int32_t zoneId)
 {
     int32_t volumeLevel = volume.VolumeLevel();
     int32_t volumeDegree = volume.VolumeDegree();
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= 0 && volumeDegree >= 0, ERR_INVALID_PARAM,
         "invalid input, volumeLevel: %{public}d, volumeDegree: %{public}d", volumeLevel, volumeDegree);
-    return SaveVolumeToDbInner(device, streamType, volume);
+    return SaveVolumeToDbInner(device, streamType, volume, zoneId);
 }
 
 int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, const VolumeScale &volume)
+    AudioStreamType streamType, const VolumeScale &volume, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "SaveVolumeToDb device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
@@ -948,8 +997,14 @@ int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDes
             return SUCCESS;
         }
     }
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetVolumeKey(device, streamType) + GetZoneKey(zoneId);
+    std::string volumeDegreeKey = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE)
+        + GetZoneKey(zoneId);
+#else
     std::string volumeKey = GetVolumeKey(device, streamType);
     std::string volumeDegreeKey = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE);
+#endif
     if (!volumeKey.compare("")) {
         WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_VOLUME_INTERNA_A),
             ERR_READ_FAILED);
@@ -979,17 +1034,17 @@ int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDes
 }
 
 void VolumeDataMaintainer::SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, VolumeScale &volume)
+    AudioStreamType streamType, VolumeScale &volume, int32_t zoneId)
 {
     int32_t volumeLevel = volume.VolumeLevel();
     int32_t volumeDegree = volume.VolumeDegree();
     CHECK_AND_RETURN_LOG(volumeLevel >= 0 && volumeDegree >= 0,
         "invalid input, volumeLevel: %{public}d, volumeDegree: %{public}d", volumeLevel, volumeDegree);
-    SaveVolumeToMapInner(device, streamType, volume);
+    SaveVolumeToMapInner(device, streamType, volume, zoneId);
 }
 
 void VolumeDataMaintainer::SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, VolumeScale &volume)
+    AudioStreamType streamType, VolumeScale &volume, int32_t zoneId)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "SaveVolumeToMap device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
@@ -997,21 +1052,24 @@ void VolumeDataMaintainer::SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescr
     if (Util::IsDualToneStreamType(streamType)) {
         device = ringerDevice_;
     }
-
-    auto &volumeLevel = volumeLevelMap_[device->GetName()][volumeType];
-    auto &volumeDegree = volumeDegreeMap_[device->GetName()][volumeType];
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
+#else
+    std::string volumeKey = device->GetName();
+#endif
+    auto &volumeLevel = volumeLevelMap_[volumeKey][volumeType];
+    auto &volumeDegree = volumeDegreeMap_[volumeKey][volumeType];
     volume.Adjust({volumeLevel, volumeDegree});
     volumeLevel = volume.VolumeLevel();
     volumeDegree = volume.VolumeDegree();
-
-    SaveVolumeUpdateStateToMap(device, volumeType, true);
-    AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d]"\
+    SaveVolumeUpdateStateToMap(device, volumeType, true, zoneId);
+    AUDIO_INFO_LOG("[zoneId %{public}d, device %{public}s, streamType %{public}d]"\
         "Save volume success, volumeLevel %{public}d, volumeDegree %{public}d",
-        device->GetName().c_str(), volumeType, volumeLevel, volumeDegree);
+        zoneId, device->GetName().c_str(), volumeType, volumeLevel, volumeDegree);
 }
 
 int32_t VolumeDataMaintainer::LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType)
+    AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, DEFAULT_VOLUME_LEVEL, "LoadVolumeFromMap device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
@@ -1026,19 +1084,42 @@ int32_t VolumeDataMaintainer::LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescr
         AUDIO_INFO_LOG("replace stream all to music");
         volumeType = STREAM_MUSIC;
     }
-    CHECK_AND_RETURN_RET_LOG(volumeLevelMap_.contains(device->GetName()), defaultVolume,
-        "device %{public}s not in map", device->GetName().c_str());
-    CHECK_AND_RETURN_RET_LOG(volumeLevelMap_[device->GetName()].contains(volumeType), defaultVolume,
-        "device %{public}s stream %{public}d not in map", device->GetName().c_str(), volumeType);
-    return volumeLevelMap_[device->GetName()][volumeType];
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
+#else
+    std::string volumeKey = device->GetName();
+#endif
+    CHECK_AND_RETURN_RET_LOG(volumeLevelMap_.contains(volumeKey), defaultVolume,
+        "key %{public}s not in map", volumeKey.c_str());
+    CHECK_AND_RETURN_RET_LOG(volumeLevelMap_[volumeKey].contains(volumeType), defaultVolume,
+        "key %{public}s stream %{public}d not in map", volumeKey.c_str(), volumeType);
+    AUDIO_DEBUG_LOG("volumeKey: %{public}s, volumeType: %{public}d, volumeLevel: %{public}d",
+        volumeKey.c_str(), volumeType, volumeLevelMap_[volumeKey][volumeType]);
+    return volumeLevelMap_[volumeKey][volumeType];
 }
 
-void VolumeDataMaintainer::InitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device)
+void VolumeDataMaintainer::InitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "InitDeviceMuteMap device is null");
     CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false");
-    LoadDeviceMuteMapFromDb(device);
+    LoadDeviceMuteMapFromDb(device, zoneId);
     AUDIO_INFO_LOG("InitDeviceMuteMap device %{public}s", device->GetName().c_str());
+}
+
+void VolumeDataMaintainer::InitZoneMuteMap(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(isDataShareReady_, "isDataShareReady_ is false");
+    if (desc != nullptr && desc->deviceType_ != DEVICE_TYPE_NONE && desc->deviceType_ != DEVICE_TYPE_INVALID) {
+        InitDeviceMuteMap(desc, zoneId);
+        AUDIO_INFO_LOG("InitZoneMuteMap zoneId %{public}d, deviceType %{public}d", zoneId, desc->deviceType_);
+        return;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
+        AudioZoneService::GetInstance().GetAllOutputDevices(zoneId);
+    for (auto &desc : descs) {
+        InitDeviceMuteMap(desc, zoneId);
+    }
+    AUDIO_INFO_LOG("InitZoneMuteMap zoneId %{public}d", zoneId);
 }
 
 void VolumeDataMaintainer::DeInitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device)
@@ -1049,7 +1130,7 @@ void VolumeDataMaintainer::DeInitDeviceMuteMap(std::shared_ptr<AudioDeviceDescri
     AUDIO_INFO_LOG("DeInitDeviceMuteMap device %{public}s", device->GetName().c_str());
 }
 
-void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device)
+void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "LoadDeviceMuteMapFromDb device is null");
     AUDIO_INFO_LOG("LoadDeviceMuteMapFromDb device %{public}s", device->GetName().c_str());
@@ -1060,7 +1141,11 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
     }
     for (auto stream : volumeList) {
         BoolValueInfo info {
+#ifdef FEATURE_AUDIO_ZONE
+            .key = GetVolumeKey(device, stream) + GetZoneKey(zoneId),
+#else
             .key = GetVolumeKey(device, stream),
+#endif
             .defaultValue = false,
             .value = false
         };
@@ -1087,7 +1172,7 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
 }
 
 int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, bool muteStatus)
+    AudioStreamType streamType, bool muteStatus, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
@@ -1099,7 +1184,11 @@ int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor
             return SUCCESS;
         }
     }
+#ifdef FEATURE_AUDIO_ZONE
+    std::string muteKey = GetMuteKey(device, streamType) + GetZoneKey(zoneId);
+#else
     std::string muteKey = GetMuteKey(device, streamType);
+#endif
     if (!muteKey.compare("")) {
         WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(
             VolumeDbAccessExceptionFuncId::SAVE_MUTE_STATUS_INTERNAL), ERR_READ_FAILED);
@@ -1117,7 +1206,7 @@ int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor
 }
 
 void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, bool muteStatus)
+    AudioStreamType streamType, bool muteStatus, int32_t zoneId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
@@ -1125,14 +1214,19 @@ void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> 
     if (Util::IsDualToneStreamType(streamType)) {
         device = ringerDevice_;
     }
-    muteStatusMap_[device->GetName()][volumeType] = muteStatus;
-    SaveVolumeUpdateStateToMap(device, volumeType, true);
-    AUDIO_INFO_LOG("SaveMuteToMap device %{public}s streamType %{public}d muteStatus %{public}d",
-        device->GetName().c_str(), streamType, muteStatus);
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
+#else
+    std::string volumeKey = device->GetName();
+#endif
+    muteStatusMap_[volumeKey][volumeType] = muteStatus;
+    SaveVolumeUpdateStateToMap(device, volumeType, true, zoneId);
+    AUDIO_INFO_LOG("SaveMuteToMap zoneId %{public}d device %{public}s streamType %{public}d muteStatus %{public}d",
+        zoneId, device->GetName().c_str(), streamType, muteStatus);
 }
 
 bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType)
+    AudioStreamType streamType, int32_t zoneId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
@@ -1140,11 +1234,18 @@ bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor
     if (Util::IsDualToneStreamType(streamType)) {
         device = ringerDevice_;
     }
-    CHECK_AND_RETURN_RET_LOG(muteStatusMap_.contains(device->GetName()), false,
-        "device %{public}s not in muteStatusMap_", device->GetName().c_str());
-    CHECK_AND_RETURN_RET_LOG(muteStatusMap_[device->GetName()].contains(volumeType), false,
-        "device %{public}s volumeType %{public}d not in muteStatusMap_", device->GetName().c_str(), volumeType);
-    return muteStatusMap_[device->GetName()][volumeType];
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
+#else
+    std::string volumeKey = device->GetName();
+#endif
+    CHECK_AND_RETURN_RET_LOG(muteStatusMap_.contains(volumeKey), false,
+        "key %{public}s not in muteStatusMap_", volumeKey.c_str());
+    CHECK_AND_RETURN_RET_LOG(muteStatusMap_[volumeKey].contains(volumeType), false,
+        "key %{public}s volumeType %{public}d not in muteStatusMap_", volumeKey.c_str(), volumeType);
+    AUDIO_INFO_LOG("volumeKey: %{public}s, volumeType: %{public}d, muteStatus: %{public}d",
+        volumeKey.c_str(), volumeType, muteStatusMap_[volumeKey][volumeType]);
+    return muteStatusMap_[volumeKey][volumeType];
 }
 
 // open for speical need
@@ -1179,7 +1280,7 @@ int32_t VolumeDataMaintainer::LoadVolumeFromDb(std::shared_ptr<AudioDeviceDescri
 }
 
 int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType)
+    AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(device != nullptr, DEFAULT_VOLUME_DEGREE, "param device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
@@ -1194,13 +1295,18 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDevic
         AUDIO_INFO_LOG("replace stream all to music");
         volumeType = STREAM_MUSIC;
     }
-    CHECK_AND_RETURN_RET_LOG(volumeDegreeMap_.contains(device->GetName()), defaultVolumeDegree,
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
+#else
+    std::string volumeKey = device->GetName();
+#endif
+    CHECK_AND_RETURN_RET_LOG(volumeDegreeMap_.contains(volumeKey), defaultVolumeDegree,
         "device %{public}s not in map", device->GetName().c_str());
-    CHECK_AND_RETURN_RET_LOG(volumeDegreeMap_[device->GetName()].contains(volumeType), defaultVolumeDegree,
+    CHECK_AND_RETURN_RET_LOG(volumeDegreeMap_[volumeKey].contains(volumeType), defaultVolumeDegree,
         "device %{public}s stream %{public}d not in map", device->GetName().c_str(), volumeType);
     AUDIO_INFO_LOG("[device %{public}s, streamType %{public}d] volumeDegree %{public}d",
-        device->GetName().c_str(), volumeType, volumeDegreeMap_[device->GetName()][volumeType]);
-    return volumeDegreeMap_[device->GetName()][volumeType];
+        device->GetName().c_str(), volumeType, volumeDegreeMap_[volumeKey][volumeType]);
+    return volumeDegreeMap_[volumeKey][volumeType];
 }
 
 int32_t VolumeDataMaintainer::LoadVolumeDegreeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
@@ -1252,23 +1358,33 @@ int32_t VolumeDataMaintainer::CheckMuteState(std::shared_ptr<AudioDeviceDescript
 }
 
 void VolumeDataMaintainer::SaveVolumeUpdateStateToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType, bool state)
+    AudioStreamType streamType, bool state, int32_t zoneId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForUpdateMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    volumeUpdateStateMap_[device->GetName()][volumeType] = state;
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
+#else
+    std::string volumeKey = device->GetName();
+#endif
+    volumeUpdateStateMap_[volumeKey][volumeType] = state;
     AUDIO_INFO_LOG("set %{public}s stream %{public}d update state as %{public}d",
         device->GetName().c_str(), volumeType, state);
 }
 
 bool VolumeDataMaintainer::LoadVolumeUpdateStateFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
-    AudioStreamType streamType)
+    AudioStreamType streamType, int32_t zoneId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForUpdateMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    return volumeUpdateStateMap_[device->GetName()][volumeType];
+#ifdef FEATURE_AUDIO_ZONE
+    std::string volumeKey = GetZoneKey(zoneId) + device->GetName();
+#else
+    std::string volumeKey = device->GetName();
+#endif
+    return volumeUpdateStateMap_[volumeKey][volumeType];
 }
 
 int32_t VolumeDataMaintainer::SaveSystemAppVolumeLevelToDb()

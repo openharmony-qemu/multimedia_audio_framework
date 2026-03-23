@@ -45,6 +45,7 @@ sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneStream;
 sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneMix;
 sequenceable audio_system_manager..OHOS.AudioStandard.ActiveStreamVolumeInfo;
+sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneVolumeConfig;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -192,7 +193,7 @@ interface IAudioPolicy {
     void AddStreamToAudioZone([in] int zoneId, [in] AudioZoneStream stream);
     void RemoveStreamFromAudioZone([in] int zoneId, [in] AudioZoneStream stream);
     void SetZoneDeviceVisible([in] boolean visible);
-    void EnableSystemVolumeProxy([in] int zoneId, [in] boolean enable);
+    void EnableSystemVolumeProxy([in] int zoneId, [in] int deviceType, [in] boolean enable);
     void GetAudioInterruptForZone([in] int zoneId, [out] List<OrderedMap<AudioInterrupt, int>> interrupts);
     void GetAudioInterruptForZone([in] int zoneId, [in] String deviceTag, [out] List<OrderedMap<AudioInterrupt, int>> interrupts);
     void EnableAudioZoneInterruptReport([in] int zoneId, [in] String deviceTag, [in] boolean enable);
@@ -333,4 +334,6 @@ interface IAudioPolicy {
     void SetAudioSessionBehavior([in] unsigned int behavior);
     void SetDeclaredDeviceTypes([in] Set<int> deviceTypes);
     void GetActiveStreamsVolumeInfo([out] List<ActiveStreamVolumeInfo> ActiveStreamsVolumeInfo);
+    void SetAudioZoneVolumeConfig([in] String zoneName, [in] List<AudioZoneVolumeConfig> configs);
+    void TriggerAudioZoneVolumeSync();
 }

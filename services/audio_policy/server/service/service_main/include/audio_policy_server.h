@@ -534,7 +534,7 @@ public:
 
     int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<int32_t> &usages) override;
 
-    int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
+    int32_t EnableSystemVolumeProxy(int32_t zoneId, int32_t deviceType, bool enable) override;
 
     int32_t AddStreamToAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
 
@@ -754,6 +754,9 @@ public:
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes) override;
     int32_t SetAudioSessionBehavior(const uint32_t behavior) override;
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo) override;
+    int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs) override;
+    int32_t TriggerAudioZoneVolumeSync() override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();

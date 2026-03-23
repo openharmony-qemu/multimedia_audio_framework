@@ -31,10 +31,10 @@ interface IStandardAudioZoneClient {
         [in] List<OrderedMap<AudioInterrupt, int>> ipcInterrupts, // std::list<std::pair<AudioInterrupt, AudioFocuState>> ==> List<Map<AudioInterrupt, AudioFocuState>>
         [in] int reason); // AudioZoneInterruptReason reason
 
-    void SetSystemVolume([in] int zoneId, [in] int volumeType, // AudioVolumeType volumeType
+    [oneway] void SetSystemVolume([in] int zoneId, [in] int deviceType, [in] int volumeType, // AudioVolumeType volumeType
         [in] int volumeLevel, [in] int volumeDegree, [in] int volumeFlag);
 
-    void GetSystemVolume([in] int zoneId, [in] int volumeType, [out] float outVolume); // AudioVolumeType volumeType
+    void GetSystemVolume([in] int zoneId, [in] int deviceType, [in] int volumeType, [out] int outVolume); // AudioVolumeType volumeType
 
-    void GetSystemVolumeDegree([in] int zoneId, [in] int volumeType, [out] int outVolume); // AudioVolumeType volumeType
+    void GetSystemVolumeDegree([in] int zoneId, [in] int deviceType, [in] int volumeType, [out] int outVolume); // AudioVolumeType volumeType
 }

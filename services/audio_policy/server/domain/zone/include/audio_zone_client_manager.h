@@ -44,11 +44,12 @@ public:
         std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts,
         AudioZoneInterruptReason reason);
 
-    int32_t SetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
-        const AudioVolumeType volumeType, const VolumeScale &volume, int32_t volumeFlag);
-    int32_t GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId, AudioVolumeType volumeType);
-    int32_t GetSystemVolumeDegree(pid_t clientPid, int32_t zoneId, AudioVolumeType volumeType);
-
+    int32_t SetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId, const DeviceType deviceType,
+        const AudioVolumeType volumeType, const VolumeScale &volume, const int32_t volumeFlag = 0);
+    int32_t GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
+        const DeviceType deviceType, AudioVolumeType volumeType);
+    int32_t GetSystemVolumeDegree(pid_t clientPid, int32_t zoneId, const DeviceType deviceType,
+        AudioVolumeType volumeType);
 private:
     std::unordered_map<pid_t, sptr<IStandardAudioZoneClient>> clients_;
     std::mutex clientMutex_;

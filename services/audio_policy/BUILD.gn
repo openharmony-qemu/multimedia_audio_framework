@@ -313,6 +313,10 @@ audio_ohos_library("audio_policy_service") {
     sources += [ "server/domain/pipe/src/audio_bus_selector.cpp" ]
   }
 
+  if (audio_framework_feature_multi_zone) {
+    defines += [ "FEATURE_AUDIO_ZONE" ]
+  }
+
   if (audio_framework_feature_wired_audio) {
     defines += [ "AUDIO_WIRED_DETECT" ]
     sources += [
@@ -885,6 +889,10 @@ ohos_shared_library("audio_manager_client") {
   defines = []
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
+  if (audio_framework_feature_multi_zone) {
+    defines += [ "FEATURE_AUDIO_ZONE" ]
   }
 
   cflags = [ "-Os" ]

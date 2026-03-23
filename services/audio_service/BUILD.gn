@@ -373,6 +373,11 @@ ohos_shared_library("audio_policy_manager") {
     "c_utils:utils",
   ]
 
+  defines = []
+  if (audio_framework_feature_multi_zone) {
+    defines += [ "FEATURE_AUDIO_ZONE" ]
+  }
+
   public_external_deps = [
     "c_utils:utils",
   ]

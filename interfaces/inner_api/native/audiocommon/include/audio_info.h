@@ -70,6 +70,7 @@ constexpr float NORMAL_STREAM_SPEED_LEVEL = 1.0f;
 constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
+constexpr int32_t DEFAULT_ZONEID = 0;
 
 constexpr uint32_t MIN_STREAMID = 100000;
 constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
@@ -103,6 +104,7 @@ const char* OFFLOAD_CAPTURER_SOURCE = "InnerCapturerSource";
 const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 const char* VIRTUAL_INJECTOR = "Virtual_Injector";
+inline constexpr std::string_view PRIMARY_ZONE_NAME = "primary_zone";
 
 // For ipc
 constexpr uint32_t MAX_COMMON_IPC_ARRAY_SIZE = 1000;

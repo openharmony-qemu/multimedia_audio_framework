@@ -207,12 +207,12 @@ int32_t AudioPolicyManager::RemoveStreamsFromAudioZone(int32_t zoneId, std::vect
     return gsp->RemoveStreamsFromAudioZone(zoneId, streams);
 }
 
-int32_t AudioPolicyManager::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
+int32_t AudioPolicyManager::EnableSystemVolumeProxy(int32_t zoneId, DeviceType deviceType, bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
-    return gsp->EnableSystemVolumeProxy(zoneId, enable);
+    return gsp->EnableSystemVolumeProxy(zoneId, deviceType, enable);
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyManager::GetAudioInterruptForZone(int32_t zoneId)

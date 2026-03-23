@@ -103,8 +103,10 @@ public:
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
 
     void InitKVStore();
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE,
+        int32_t zoneId = 0) const;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE,
+        int32_t zoneId = 0) const;
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
@@ -197,6 +199,10 @@ public:
         AudioStreamType streamType = STREAM_DEFAULT, int32_t volumeLevel = 0);
     bool IsLegacyHighVolumeChecked();
     void FlushSystemAppVolume();
+    void InitAudioZoneVolume(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc);
+    int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs);
+    void TriggerAudioZoneVolumeSync(int32_t zoneId);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -244,10 +250,10 @@ private:
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
     void HandleLegacyHighVolumeEvent();
     int32_t SetSystemVolumeExternal(AudioStreamType streamType, const VolumeScale &volume);
-    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType,
-        const VolumeScale &volume, std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc);
+    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, const VolumeScale &volume,
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
-        const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+        const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t zoneId);
     void ScheduleSystemAppVolumePersist();
 
 private:

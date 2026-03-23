@@ -237,6 +237,38 @@ struct AudioZoneMix : public Parcelable {
         return info;
     }
 };
+
+class AudioZoneVolumeConfig : public Parcelable {
+public:
+    AudioVolumeType volumeType;
+    int32_t minVolume;
+    int32_t maxVolume;
+    int32_t defaultVolume;
+
+    AudioZoneVolumeConfig() = default;
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(volumeType))
+            && parcel.WriteInt32(minVolume)
+            && parcel.WriteInt32(maxVolume)
+            && parcel.WriteInt32(defaultVolume);
+    }
+
+    static AudioZoneVolumeConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) AudioZoneVolumeConfig();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
+        info->minVolume = parcel.ReadInt32();
+        info->maxVolume = parcel.ReadInt32();
+        info->defaultVolume = parcel.ReadInt32();
+        return info;
+    }
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_ZONE_INFO_H

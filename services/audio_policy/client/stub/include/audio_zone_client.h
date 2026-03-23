@@ -33,8 +33,9 @@ public:
     int32_t AddAudioZoneChangeCallback(int32_t zoneId, const std::shared_ptr<AudioZoneChangeCallback> &callback);
     void RemoveAudioZoneChangeCallback(int32_t zoneId);
 
-    int32_t AddAudioZoneVolumeProxy(int32_t zoneId, const std::shared_ptr<AudioZoneVolumeProxy> &proxy);
-    void RemoveAudioZoneVolumeProxy(int32_t zoneId);
+    int32_t AddAudioZoneVolumeProxy(int32_t zoneId, DeviceType deviceType,
+        const std::shared_ptr<AudioZoneVolumeProxy> &proxy);
+    int32_t RemoveAudioZoneVolumeProxy(int32_t zoneId, DeviceType deviceType);
 
     int32_t AddAudioInterruptCallback(int32_t zoneId, const std::shared_ptr<AudioZoneInterruptCallback> &callback);
     int32_t AddAudioInterruptCallback(int32_t zoneId, const std::string &deviceTag,
@@ -49,6 +50,8 @@ private:
         mutable std::mutex audioZoneCallbackMutex_;
         std::unordered_map<int32_t, std::shared_ptr<AudioZoneChangeCallback>> audioZoneChangeCallbackMap_;
         mutable std::mutex audioZoneChangeMutex_;
+        std::unordered_map<int32_t, std::unordered_map<DeviceType,
+            std::shared_ptr<AudioZoneVolumeProxy>>> audioZoneDeviceVolumeProxyMap_;
         std::unordered_map<int32_t, std::shared_ptr<AudioZoneVolumeProxy>> audioZoneVolumeProxyMap_;
         mutable std::mutex audioZoneVolumeProxyMutex_;
         std::unordered_map<std::string, std::shared_ptr<AudioZoneInterruptCallback>> audioZoneInterruptCallbackMap_;
@@ -66,10 +69,12 @@ private:
         int32_t OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
             const std::vector<std::map<AudioInterrupt, int32_t>> &ipcInterrupts,
             int32_t reason) override;
-        int32_t SetSystemVolume(const int32_t zoneId, const int32_t volumeType,
-            const int32_t volumeLevel, int32_t volumeDegree, const int32_t volumeFlag) override;
-        int32_t GetSystemVolume(int32_t zoneId, int32_t volumeType, float &outVolume) override;
-        int32_t GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume) override;
+        int32_t SetSystemVolume(int32_t zoneId, int32_t deviceTypeIn, int32_t volumeTypeIn,
+            int32_t volumeLevel, int32_t volumeDegree, int32_t volumeFlag) override;
+        int32_t GetSystemVolume(int32_t zoneId, int32_t deviceTypeIn, int32_t volumeTypeIn,
+            int32_t &outVolume) override;
+        int32_t GetSystemVolumeDegree(int32_t zoneId, int32_t deviceTypeIn, int32_t volumeTypeIn,
+            int32_t &outVolume) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS

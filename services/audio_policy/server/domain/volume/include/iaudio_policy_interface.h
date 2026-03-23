@@ -61,12 +61,14 @@ public:
 
     virtual bool ConnectServiceAdapter() = 0;
 
-    virtual int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
+    virtual int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE,
+        int32_t zoneId = 0) = 0;
 
-    virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
+    virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE,
+        int32_t zoneId = 0) = 0;
 
     virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, const VolumeScale &volume,
-        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc) = 0;
+        std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0) = 0;
 
     virtual int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel) = 0;
 
@@ -90,7 +92,10 @@ public:
 
     virtual bool IsAppRingMuted(int32_t appUid) = 0;
 
-    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
+    virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0) = 0;
+
+    virtual int32_t GetSystemVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType,
+        int32_t zoneId = 0) = 0;
 
     virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
@@ -115,7 +120,7 @@ public:
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE,
-        std::string networkId = LOCAL_NETWORK_ID) = 0;
+        std::string networkId = LOCAL_NETWORK_ID, int32_t zoneId = 0) = 0;
 
     virtual void SetDeviceNoMuteForRinger(std::shared_ptr<AudioDeviceDescriptor> device) = 0;
 
@@ -125,7 +130,7 @@ public:
 
     virtual int32_t SetSourceOutputStreamMuteByStreamId(int32_t sessionId, bool setMute) = 0;
 
-    virtual bool GetStreamMute(AudioStreamType streamType) = 0;
+    virtual bool GetStreamMute(AudioStreamType streamType, int32_t zoneId = 0) = 0;
 
     virtual std::vector<SinkInfo> GetAllSinks() = 0;
 
@@ -316,8 +321,11 @@ public:
     virtual void HandleCastingConnection() = 0;
     virtual void HandleCastingDisconnection() = 0;
     virtual bool IsDPCastingConnect() = 0;
-    virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true) = 0;
-    virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) = 0;
+    virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType, bool checkMuteState = true,
+        int32_t zoneId = 0) = 0;
+    virtual int32_t GetSystemVolumeDegree(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType,
+        int32_t zoneId = 0) = 0;
+    virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType, int32_t zoneId = 0) = 0;
     virtual float GetSystemVolumeInDbByDegree(AudioVolumeType volumeType, DeviceType deviceType, bool mute) = 0;
     virtual int32_t GetZoneVolumeDegree(int32_t zoneId, AudioStreamType streamType) = 0;
     virtual void SetPrimarySinkExist(bool isPrimarySinkExist) = 0;
@@ -332,6 +340,10 @@ public:
     virtual void SetMuteFromRemote(std::string networkId, bool mute) = 0;
     virtual int32_t SetLegacyHighVolumeCheckTime(int64_t checkTime) = 0;
     virtual int64_t GetLegacyHighVolumeCheckTime() = 0;
+    virtual void InitAudioZoneVolume(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc) = 0;
+    virtual int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs) = 0;
+    virtual void TriggerAudioZoneVolumeSync(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc = nullptr) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

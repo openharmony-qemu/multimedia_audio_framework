@@ -1877,7 +1877,11 @@ std::unordered_map<AudioStreamType, AudioVolumeType> VolumeUtils::defaultVolumeM
     {STREAM_MOVIE, STREAM_MUSIC},
     {STREAM_GAME, STREAM_MUSIC},
     {STREAM_SPEECH, STREAM_MUSIC},
+#ifdef FEATURE_AUDIO_ZONE
+    {STREAM_NAVIGATION, STREAM_NAVIGATION},
+#else
     {STREAM_NAVIGATION, STREAM_MUSIC},
+#endif
     {STREAM_VOICE_MESSAGE, STREAM_MUSIC},
 
     {STREAM_VOICE_ASSISTANT, STREAM_VOICE_ASSISTANT},
@@ -1940,6 +1944,17 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_ENFORCED_TONE,
         STREAM_USAGE_DTMF,
         STREAM_USAGE_VOICE_RINGTONE}},
+#ifdef FEATURE_AUDIO_ZONE
+    {STREAM_MUSIC, {
+        STREAM_USAGE_UNKNOWN,
+        STREAM_USAGE_MUSIC,
+        STREAM_USAGE_MOVIE,
+        STREAM_USAGE_AUDIOBOOK,
+        STREAM_USAGE_GAME,
+        STREAM_USAGE_VOICE_MESSAGE}},
+    {STREAM_NAVIGATION, {
+        STREAM_USAGE_NAVIGATION}},
+#else
     {STREAM_MUSIC, {
         STREAM_USAGE_UNKNOWN,
         STREAM_USAGE_MUSIC,
@@ -1948,6 +1963,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_GAME,
         STREAM_USAGE_NAVIGATION,
         STREAM_USAGE_VOICE_MESSAGE}},
+#endif
     {STREAM_VOICE_ASSISTANT, {
         STREAM_USAGE_VOICE_ASSISTANT}},
     {STREAM_ALARM, {
@@ -2142,6 +2158,10 @@ std::map<AudioVolumeType, std::vector<StreamUsage>> VolumeUtils::streamToStreamU
 #ifdef MULTI_ALARM_LEVEL
     {STREAM_ANNOUNCEMENT, {STREAM_USAGE_ANNOUNCEMENT}},
     {STREAM_EMERGENCY, {STREAM_USAGE_EMERGENCY}},
+#endif
+
+#ifdef FEATURE_AUDIO_ZONE
+    {STREAM_NAVIGATION, {STREAM_USAGE_NAVIGATION}},
 #endif
 };
 

@@ -198,10 +198,10 @@ int32_t AudioZone::GetId()
     return zoneId_;
 }
 
-bool AudioZone::IsVolumeProxyEnable()
+bool AudioZone::IsVolumeProxyEnable(DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    return isVolumeProxyEnabled_;
+    return volumeProxyDeviceTypes_.count(deviceType);
 }
 
 const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptor()
@@ -222,9 +222,6 @@ const std::string AudioZone::GetStringDescriptor()
         str += key.GetString();
         str += "\n";
     }
-    str += "zone vloume proxy is";
-    str += isVolumeProxyEnabled_ ? "enabled" : "disabled";
-    str += "\n";
     return str;
 }
 
@@ -422,6 +419,35 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::FetchOutputDevice
     return descs;
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioZone::GetAllOutputDevices()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    for (const auto &device : devices_) {
+        if (device.first->deviceRole_ == OUTPUT_DEVICE) {
+            devices.emplace_back(device.first);
+        }
+    }
+    return devices;
+}
+
+std::unordered_set<DeviceType> AudioZone::GetAllOutputDeviceTypes()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    return GetAllOutputDeviceTypesNoLock();
+}
+
+std::unordered_set<DeviceType> AudioZone::GetAllOutputDeviceTypesNoLock()
+{
+    std::unordered_set<DeviceType> deviceTypes;
+    for (const auto &device : devices_) {
+        if (device.first->deviceRole_ == OUTPUT_DEVICE) {
+            deviceTypes.insert(device.first->deviceType_);
+        }
+    }
+    return deviceTypes;
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioZone::FetchInputDevice(SourceType sourceType, int32_t clientUid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
@@ -454,55 +480,69 @@ void AudioZone::SendZoneChangeEvent(AudioZoneChangeReason reason)
     }
 }
 
-int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, bool enable)
+int32_t AudioZone::EnableSystemVolumeProxy(pid_t clientPid, DeviceType deviceType, bool enable)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     volumeProxyClientPid_ = clientPid;
-    isVolumeProxyEnabled_ = enable;
-    AUDIO_INFO_LOG("volume proxy is %{public}s by %{public}d",
-        enable ? "enable" : "disable", clientPid);
+    if (deviceType == DeviceType::DEVICE_TYPE_NONE || deviceType == DeviceType::DEVICE_TYPE_INVALID) {
+        if (enable) {
+            volumeProxyDeviceTypes_ = GetAllOutputDeviceTypesNoLock();
+        } else {
+            volumeProxyDeviceTypes_.clear();
+        }
+    } else {
+        if (enable) {
+            volumeProxyDeviceTypes_.insert(deviceType);
+        } else {
+            size_t count = volumeProxyDeviceTypes_.erase(deviceType);
+            CHECK_AND_RETURN_RET_LOG(count > 0, ERROR,
+                "zone %{public}d volume proxy device type %{public}d is not enabled", zoneId_, deviceType);
+        }
+    }
+    AUDIO_INFO_LOG("device type %{public}d volume proxy is %{public}s by %{public}d",
+        deviceType, enable ? "enable" : "disable", clientPid);
     return SUCCESS;
 }
 
-int32_t AudioZone::SetSystemVolumeLevel(AudioVolumeType volumeType,
+int32_t AudioZone::SetSystemVolumeLevel(DeviceType deviceType, AudioVolumeType volumeType,
     const VolumeScale &volume, int32_t volumeFlag)
 {
     std::shared_ptr<AudioZoneClientManager> mgr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_RETURN_RET_LOG(clientManager_ != nullptr, ERROR, "clientManager is nullptr");
-        CHECK_AND_RETURN_RET_LOG(isVolumeProxyEnabled_, ERROR, "volume proxy is not enable");
+        CHECK_AND_RETURN_RET_LOG(volumeProxyDeviceTypes_.count(deviceType), ERROR, "volume proxy is not enable");
 
         mgr = clientManager_;
     }
-    return mgr->SetSystemVolumeLevel(volumeProxyClientPid_, zoneId_,
+    return mgr->SetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, deviceType,
         volumeType, volume, volumeFlag);
 }
 
-int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioZone::GetSystemVolumeLevel(DeviceType deviceType, AudioVolumeType volumeType)
 {
     std::shared_ptr<AudioZoneClientManager> mgr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_RETURN_RET_LOG(clientManager_ != nullptr, ERROR, "clientManager is nullptr");
-        CHECK_AND_RETURN_RET_LOG(isVolumeProxyEnabled_, ERROR, "volume proxy is not enable");
+        CHECK_AND_RETURN_RET_LOG(volumeProxyDeviceTypes_.count(deviceType), ERROR, "volume proxy is not enable");
 
         mgr = clientManager_;
     }
-    return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, volumeType);
+    return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, deviceType, volumeType);
 }
 
-int32_t AudioZone::GetSystemVolumeDegree(AudioVolumeType volumeType)
+int32_t AudioZone::GetSystemVolumeDegree(DeviceType deviceType, AudioVolumeType volumeType)
 {
     std::shared_ptr<AudioZoneClientManager> mgr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_RETURN_RET_LOG(clientManager_ != nullptr, ERROR, "clientManager is nullptr");
-        CHECK_AND_RETURN_RET_LOG(isVolumeProxyEnabled_, ERROR, "volume proxy is not enable");
+        CHECK_AND_RETURN_RET_LOG(volumeProxyDeviceTypes_.count(deviceType), ERROR, "volume proxy is not enable");
 
         mgr = clientManager_;
     }
-    return mgr->GetSystemVolumeDegree(volumeProxyClientPid_, zoneId_, volumeType);
+    return mgr->GetSystemVolumeDegree(volumeProxyClientPid_, zoneId_, deviceType, volumeType);
 }
 
 pid_t AudioZone::GetClientPid()
@@ -541,6 +581,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioZone::GetDeviceDescriptor(DeviceType
             return it.first;
         }
     }
+    AUDIO_ERR_LOG("device not found, deviceType: %{public}d", type);
     return nullptr;
 }
 } // namespace AudioStandard

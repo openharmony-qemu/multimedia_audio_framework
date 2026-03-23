@@ -61,23 +61,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 
-const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
-    STREAM_VOICE_ASSISTANT,
-    STREAM_VOICE_CALL,
-    STREAM_ACCESSIBILITY,
-    STREAM_RING,
-    STREAM_ALARM,
-    STREAM_VOICE_RING,
-    STREAM_ULTRASONIC,
-    // adjust the type of music from the head of list to end, make sure music is updated last.
-    // avoid interference from ring updates on special platform.
-    // when the device is switched to headset,ring and alarm is dualtone type.
-    // dualtone type use fixed volume curve of speaker.
-    // the ring and alarm are classified into the music group.
-    // the music volume becomes abnormal when the db value of music is modified.
-    STREAM_MUSIC
-};
-
 const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
     STREAM_NOTIFICATION
 };
@@ -1099,15 +1082,17 @@ void AudioPolicyServer::LoadEffectLibrary()
 
 int32_t AudioPolicyServer::GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType)
 {
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     volumeLevel = audioVolumeManager_.GetMaxVolumeLevel(static_cast<AudioVolumeType>(volumeType),
-                                                        static_cast<DeviceType>(deviceType));
+                                                        static_cast<DeviceType>(deviceType), zoneId);
     return SUCCESS;
 }
 
 int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType)
 {
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     volumeLevel = audioVolumeManager_.GetMinVolumeLevel(static_cast<AudioVolumeType>(volumeType),
-                                                        static_cast<DeviceType>(deviceType));
+                                                        static_cast<DeviceType>(deviceType), zoneId);
     return SUCCESS;
 }
 
@@ -1253,19 +1238,13 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     int32_t zoneId = 0;
+#ifndef FEATURE_AUDIO_ZONE
     if (uid != 0) {
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
-        if (zoneId != 0 && AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId)) {
-            int32_t volumeLevelMax = -1;
-            GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
-            int32_t volumeDegree = VolumeUtils::VolumeLevelToDegree(volumeLevel, volumeLevelMax);
-            return AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId,
-                VolumeUtils::GetVolumeTypeFromStreamType(streamType),
-                {volumeLevel, volumeDegree, volumeLevelMax}, flag);
-        }
         VolumeUpdateOption info = { flag };
         return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
     }
+#endif
     zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     VolumeUpdateOption info = { flag };
     return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
@@ -1343,17 +1322,17 @@ int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid,
 {
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
+#ifdef FEATURE_AUDIO_ZONE
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(
+        uid != 0 ? uid : IPCSkeleton::GetCallingUid());
+#else
     int32_t zoneId = 0;
     if (uid != 0) {
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
-        if (zoneId != 0 && AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId)) {
-            volumeLevel = AudioZoneService::GetInstance().GetSystemVolumeLevel(zoneId,
-                VolumeUtils::GetVolumeTypeFromStreamType(newStreamType));
-            return SUCCESS;
-        }
     } else {
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     }
+#endif
     volumeLevel = GetSystemVolumeLevelInternal(newStreamType, zoneId);
     return SUCCESS;
 }
@@ -4578,12 +4557,17 @@ int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
+int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, int32_t deviceType, bool enable)
 {
+#ifdef FEATURE_AUDIO_ZONE
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#else
     CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "audio zone id is invalid");
+#endif
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    return AudioZoneService::GetInstance().EnableSystemVolumeProxy(clientPid, zoneId, enable);
+    return AudioZoneService::GetInstance().EnableSystemVolumeProxy(clientPid, zoneId,
+        static_cast<DeviceType>(deviceType), enable);
 }
 
 int32_t AudioPolicyServer::GetAudioInterruptForZone(int32_t zoneId,
@@ -5726,11 +5710,6 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
     int32_t volumeLevelMax = -1;
     GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
     int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree, volumeLevelMax);
-    if (zoneId != 0 && AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId)) {
-        return AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId,
-            VolumeUtils::GetVolumeTypeFromStreamType(streamType),
-            {volumeLevel, volumeDegree, volumeLevelMax}, flag);
-    }
     VolumeUpdateOption info = { flag, false, uid, volumeDegree };
     int32_t ret = audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
     return ret;
@@ -5742,11 +5721,7 @@ int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
     int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
-    if (zoneId != 0 && AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(zoneId)) {
-        volumeDegree = AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId,
-            VolumeUtils::GetVolumeTypeFromStreamType(newStreamType));
-        return SUCCESS;
-    }
+    
     volumeDegree = GetSystemVolumeDegreeInternal(newStreamType, zoneId);
     return SUCCESS;
 }
@@ -5809,6 +5784,23 @@ int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVo
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
     return coreService_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+}
+
+int32_t AudioPolicyServer::SetAudioZoneVolumeConfig(const std::string &zoneName,
+    const std::vector<AudioZoneVolumeConfig> &configs)
+{
+    return audioVolumeManager_.SetAudioZoneVolumeConfig(zoneName, configs);
+}
+
+int32_t AudioPolicyServer::TriggerAudioZoneVolumeSync()
+{
+    audioVolumeManager_.TriggerAudioZoneVolumeSync(DEFAULT_ZONEID);
+    const std::vector<std::shared_ptr<AudioZoneDescriptor>> audioZones
+        = AudioZoneService::GetInstance().GetAllAudioZone();
+    for (const auto &zone : audioZones) {
+        audioVolumeManager_.TriggerAudioZoneVolumeSync(zone->zoneId_);
+    }
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

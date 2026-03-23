@@ -115,6 +115,13 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_003, TestSize.Level1)
     EXPECT_EQ(fechOutputDevice[0]->IsSameDeviceDesc(device1), true);
     EXPECT_NE(fechInputDevice, nullptr);
     EXPECT_EQ(fechInputDevice->IsSameDeviceDesc(device2), true);
+
+    auto outputDevices = zone->GetAllOutputDevices();
+    EXPECT_EQ(outputDevices.size(), 1);
+    EXPECT_EQ(outputDevices[0]->IsSameDeviceDesc(device1), true);
+    auto outputDeviceType = zone->GetAllOutputDeviceTypes();
+    EXPECT_EQ(outputDeviceType.size(), 1);
+    EXPECT_EQ(outputDeviceType.count(DEVICE_TYPE_SPEAKER), 1);
 }
 
 /**
@@ -208,18 +215,27 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_DegreeTest_001, TestSize.Level1)
     auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
     auto zone = AudioZoneService::GetInstance().FindZone(zoneId);
     ASSERT_NE(zone, nullptr);
-    EXPECT_NE(zone->GetSystemVolumeDegree(volumeType), 0);
-    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
-    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
+    EXPECT_NE(zone->GetSystemVolumeDegree(DEVICE_TYPE_SPEAKER, volumeType), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType, volume, 0), 0);
+    EXPECT_NE(zone->GetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType), 0);
 
     int32_t clientPid = 1;
-    zone->EnableSystemVolumeProxy(clientPid, true);
-    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
-    EXPECT_NE(zone->GetSystemVolumeDegree(volumeType), volumeDegree);
+    zone->EnableSystemVolumeProxy(clientPid, DEVICE_TYPE_SPEAKER, true);
+    EXPECT_NE(zone->GetSystemVolumeDegree(DEVICE_TYPE_SPEAKER, volumeType), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType, volume, 0), 0);
+    EXPECT_NE(zone->GetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType), volumeDegree);
+    zone->EnableSystemVolumeProxy(clientPid, DEVICE_TYPE_SPEAKER, false);
+
+    zone->EnableSystemVolumeProxy(clientPid, DEVICE_TYPE_NONE, true);
+    EXPECT_NE(zone->GetSystemVolumeDegree(DEVICE_TYPE_SPEAKER, volumeType), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType, volume, 0), 0);
+    EXPECT_NE(zone->GetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType), volumeDegree);
+    zone->EnableSystemVolumeProxy(clientPid, DEVICE_TYPE_NONE, false);
 
     zone->clientManager_.reset();
-    EXPECT_NE(zone->SetSystemVolumeLevel(volumeType, volume, 0), 0);
-    EXPECT_NE(zone->GetSystemVolumeDegree(volumeType), 0);
+    EXPECT_NE(zone->SetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType, volume, 0), 0);
+    EXPECT_NE(zone->GetSystemVolumeLevel(DEVICE_TYPE_SPEAKER, volumeType), 0);
+    EXPECT_NE(zone->GetSystemVolumeDegree(DEVICE_TYPE_SPEAKER, volumeType), 0);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
 

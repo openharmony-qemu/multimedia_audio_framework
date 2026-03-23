@@ -26,9 +26,30 @@
 #include "audio_utils.h"
 #include "audio_volume_config.h"
 #include "audio_volume_parser.h"
+#include "audio_zone_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+static const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
+    STREAM_VOICE_ASSISTANT,
+    STREAM_VOICE_CALL,
+    STREAM_ACCESSIBILITY,
+    STREAM_RING,
+    STREAM_ALARM,
+    STREAM_VOICE_RING,
+    STREAM_ULTRASONIC,
+    // adjust the type of music from the head of list to end, make sure music is updated last.
+    // avoid interference from ring updates on special platform.
+    // when the device is switched to headset,ring and alarm is dualtone type.
+    // dualtone type use fixed volume curve of speaker.
+    // the ring and alarm are classified into the music group.
+    // the music volume becomes abnormal when the db value of music is modified.
+    STREAM_MUSIC,
+#ifdef FEATURE_AUDIO_ZONE
+    STREAM_NAVIGATION,
+#endif
+};
 
 static inline const std::vector<AudioStreamType> DISTRIBUTED_VOLUME_TYPE_LIST = {
     STREAM_VOICE_CALL,
@@ -49,6 +70,10 @@ static inline const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
     STREAM_ANNOUNCEMENT,
     STREAM_EMERGENCY,
 #endif
+
+#ifdef FEATURE_AUDIO_ZONE
+    STREAM_NAVIGATION,
+#endif
 };
 
 static inline const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
@@ -66,7 +91,10 @@ static inline const std::vector<AudioStreamType> PC_VOLUME_TYPE_LIST = {
     // dualtone type use fixed volume curve of speaker.
     // the ring and alarm are classified into the music group.
     // the music volume becomes abnormal when the db value of music is modified.
-    STREAM_MUSIC
+    STREAM_MUSIC,
+#ifdef FEATURE_AUDIO_ZONE
+    STREAM_NAVIGATION,
+#endif
 };
 
 static inline const std::unordered_map<DeviceType, DeviceVolumeType> DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP = {
@@ -81,28 +109,36 @@ public:
 
     void Init();
 
-    int32_t GetDefaultVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType);
+    int32_t GetDefaultVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType,
+        int32_t zoneId = 0);
     void GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, int32_t &volumeLevel);
+        AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId = 0);
     void GetDefaultVolumeLevelForDPsDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
     void GetDefaultVolumeLevelForDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
     void GetDefaultVolumeLevelForHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         AudioStreamType streamType, int32_t &volumeLevel);
-    
-    int32_t GetMaxVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType);
+
+    int32_t GetMaxVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType,
+        int32_t zoneId = 0);
     void GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, int32_t &volumeLevel);
-    
-    int32_t GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType);
+        AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId = 0);
+
+    int32_t GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc, AudioStreamType streamType,
+        int32_t zoneId = 0);
     void GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-        AudioStreamType streamType, int32_t &volumeLevel);
+        AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId = 0);
 
     bool IsVolumeTypeValid(AudioStreamType streamType);
 
     bool IsDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescriptor> desc);
+
+    int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs);
+
+    bool HasZoneVolumeConfiged(const std::string &zoneName);
 
 private:
     AudioVolumeUtils() {};
@@ -111,7 +147,10 @@ private:
     bool LoadConfig();
 
     std::map<AudioVolumeType, std::shared_ptr<StreamVolumeInfo>> streamVolumeInfos_;
+    std::map<std::string, std::map<AudioVolumeType, AudioZoneVolumeConfig>> zoneVolumeConfigMap_;
     std::mutex streamVolumeInfosMutex_;
+    std::mutex zoneVolumeConfigMapMutex_;
+    std::unordered_set<std::string> zoneVolumeHasConfiged_;
 };
 }
 }

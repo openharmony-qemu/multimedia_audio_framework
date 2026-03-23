@@ -3572,6 +3572,7 @@ ohos_unittest("volume_data_maintainer_unit_test") {
   include_dirs = [
     "../../audio_policy/server/infra/datashare/include",
     "./unittest/volume_data_maintainer_unit_test/include",
+    "../../audio_policy/server/include",
   ]
 
   use_exceptions = true
@@ -3633,6 +3634,7 @@ ohos_unittest("volume_data_maintainer_unit_test") {
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_service_static",
+    "../../audio_service/idl:audio_framework_interface",
   ]
 
   if (bluetooth_part_enable == true) {

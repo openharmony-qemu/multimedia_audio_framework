@@ -42,6 +42,7 @@ public:
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
     int32_t GetAudioZoneByName(std::string name);
+    std::string GetZoneNameById(int32_t zoneId);
 
     int32_t BindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
@@ -50,6 +51,7 @@ public:
     void MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t UpdateDeviceFromGlobalForAllZone(std::shared_ptr<AudioDeviceDescriptor> device);
     std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(DeviceType type, std::string networkId);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(int32_t zoneId, DeviceType type);
 
     int32_t RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
     void UnRegisterAudioZoneClient(pid_t clientPid);
@@ -70,12 +72,12 @@ public:
     int32_t FindAudioZone(int32_t uid, StreamUsage usage);
     virtual std::string FindAudioZoneNameByUid(int32_t uid);
 
-    int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, bool enable);
-    bool IsSystemVolumeProxyEnable(int32_t zoneId);
-    int32_t SetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType, const VolumeScale &volume,
-        int32_t volumeFlag);
-    int32_t GetSystemVolumeLevel(int32_t zoneId, AudioVolumeType volumeType);
-    int32_t GetSystemVolumeDegree(int32_t zoneId, AudioVolumeType volumeType);
+    int32_t EnableSystemVolumeProxy(pid_t clientPid, int32_t zoneId, DeviceType deviceType, bool enable);
+    bool IsSystemVolumeProxyEnable(int32_t zoneId, DeviceType deviceType = DeviceType::DEVICE_TYPE_NONE);
+    int32_t SetSystemVolumeLevel(int32_t zoneId, DeviceType deviceType, AudioVolumeType volumeType,
+        const VolumeScale &volume, int32_t volumeFlag = 0);
+    int32_t GetSystemVolumeLevel(int32_t zoneId, DeviceType deviceType, AudioVolumeType volumeType);
+    int32_t GetSystemVolumeDegree(int32_t zoneId, DeviceType deviceType, AudioVolumeType volumeType);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId,
@@ -95,7 +97,9 @@ public:
         StreamUsage streamUsage, int32_t clientUid, const RouterType &bypassType);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(int32_t zoneId,
        SourceType sourceType, int32_t clientUid);
-    
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices(int32_t zoneId);
+
     const std::string GetZoneStringDescriptor(int32_t zoneId);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     bool CheckZoneExist(int32_t zoneId);
@@ -108,15 +112,22 @@ public:
     AudioScene GetAudioSceneFromAllZones();
 
 private:
-    AudioZoneService() = default;
+    AudioZoneService()
+        : audioVolumeManager_(AudioVolumeManager::GetInstance()),
+          audioConnectedDevice_(AudioConnectedDevice::GetInstance()) {}
+
     ~AudioZoneService() = default;
 
+    AudioVolumeManager &audioVolumeManager_;
+    AudioConnectedDevice &audioConnectedDevice_;
     std::shared_ptr<AudioInterruptService> interruptService_;
     std::shared_ptr<AudioZoneClientManager> zoneClientManager_;
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
     bool zoneDeviceVisible_ = true;
+    pid_t mainZoneVolumeProxyClientPid_ = 0;
+    std::unordered_set<DeviceType> mainZoneVolumeProxyDeviceTypes_;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,

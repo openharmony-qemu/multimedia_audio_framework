@@ -72,26 +72,47 @@ void AudioZoneClient::RemoveAudioZoneChangeCallback(int32_t zoneId)
     audioZoneChangeCallbackMap_.erase(zoneId);
 }
 
-int32_t AudioZoneClient::AddAudioZoneVolumeProxy(int32_t zoneId,
+int32_t AudioZoneClient::AddAudioZoneVolumeProxy(int32_t zoneId, DeviceType deviceType,
     const std::shared_ptr<AudioZoneVolumeProxy> &proxy)
 {
     std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    if (audioZoneVolumeProxyMap_.find(zoneId) == audioZoneVolumeProxyMap_.end()) {
-        int32_t result = AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, true);
+    if (audioZoneVolumeProxyMap_.find(zoneId) == audioZoneVolumeProxyMap_.end() &&
+        (audioZoneDeviceVolumeProxyMap_.find(zoneId) == audioZoneDeviceVolumeProxyMap_.end() ||
+        audioZoneDeviceVolumeProxyMap_[zoneId].find(deviceType) == audioZoneDeviceVolumeProxyMap_[zoneId].end())) {
+        int32_t result = AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, deviceType, true);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
             "EnableSystemVolumeProxy result:%{public}d", result);
     }
-    audioZoneVolumeProxyMap_[zoneId] = proxy;
+    if (deviceType == DEVICE_TYPE_NONE || deviceType == DEVICE_TYPE_INVALID) {
+        audioZoneVolumeProxyMap_[zoneId] = proxy;
+    } else {
+        audioZoneDeviceVolumeProxyMap_[zoneId][deviceType] = proxy;
+    }
+    AUDIO_INFO_LOG("AddAudioZoneVolumeProxy zoneId:%{public}d deviceType:%{public}d", zoneId, deviceType);
     return SUCCESS;
 }
 
-void AudioZoneClient::RemoveAudioZoneVolumeProxy(int32_t zoneId)
+int32_t AudioZoneClient::RemoveAudioZoneVolumeProxy(int32_t zoneId, DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    CHECK_AND_RETURN_LOG(audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end(),
-        "audioZoneVolumeProxyMap_ not find zoneId.");
-    AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, false);
-    audioZoneVolumeProxyMap_.erase(zoneId);
+    if (deviceType == DEVICE_TYPE_NONE || deviceType == DEVICE_TYPE_INVALID) {
+        CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end(),
+            ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find proxy.");
+
+        audioZoneVolumeProxyMap_.erase(zoneId);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_.find(zoneId) != audioZoneDeviceVolumeProxyMap_.end() ||
+            audioZoneDeviceVolumeProxyMap_[zoneId].find(deviceType) != audioZoneDeviceVolumeProxyMap_[zoneId].end(),
+            ERR_OPERATION_FAILED, "audioZoneDeviceVolumeProxyMap_ not find proxy.");
+
+        audioZoneDeviceVolumeProxyMap_[zoneId].erase(deviceType);
+        if (audioZoneDeviceVolumeProxyMap_[zoneId].empty()) {
+            audioZoneDeviceVolumeProxyMap_.erase(zoneId);
+        }
+    }
+    AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, deviceType, false);
+    AUDIO_INFO_LOG("RemoveAudioZoneVolumeProxy zoneId:%{public}d deviceType:%{public}d", zoneId, deviceType);
+    return SUCCESS;
 }
 
 int32_t AudioZoneClient::AddAudioInterruptCallback(int32_t zoneId,
@@ -150,8 +171,18 @@ void AudioZoneClient::Restore()
     {
         std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
         for (const auto &it : audioZoneVolumeProxyMap_) {
-            int32_t result = AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(it.first, true);
+            const int32_t zoneId = it.first;
+            int32_t result = AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, DEVICE_TYPE_NONE, true);
             AUDIO_INFO_LOG("EnableSystemVolumeProxy result:%{public}d", result);
+        }
+        for (const auto &it : audioZoneDeviceVolumeProxyMap_) {
+            const int32_t zoneId = it.first;
+            const auto &innerMap = it.second;
+            for (const auto &innerIt : innerMap) {
+                DeviceType deviceType = innerIt.first;
+                int32_t result = AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, deviceType, true);
+                AUDIO_INFO_LOG("EnableSystemVolumeProxy result:%{public}d", result);
+            }
         }
     }
 
@@ -242,45 +273,93 @@ int32_t AudioZoneClient::OnInterruptEvent(int32_t zoneId, const std::string &dev
     return SUCCESS;
 }
 
-int32_t AudioZoneClient::SetSystemVolume(int32_t zoneId, int32_t volumeType,
+
+int32_t AudioZoneClient::SetSystemVolume(int32_t zoneId, int32_t deviceTypeIn, int32_t volumeTypeIn,
     int32_t volumeLevel, int32_t volumeDegree, int32_t volumeFlag)
 {
-    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end(),
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
-    CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+    DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(volumeTypeIn);
 
-    audioZoneVolumeProxyMap_[zoneId]->SetSystemVolume(static_cast<AudioVolumeType>(volumeType),
-        volumeLevel);
-    audioZoneVolumeProxyMap_[zoneId]->SetSystemVolumeDegree(static_cast<AudioVolumeType>(volumeType),
-        volumeDegree);
+    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
+    if (audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end()) {
+        CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
+            ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+        audioZoneVolumeProxyMap_[zoneId]->SetSystemVolume(deviceType, volumeType, volumeLevel);
+        audioZoneVolumeProxyMap_[zoneId]->SetSystemVolumeDegree(deviceType, volumeType, volumeDegree);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_.find(zoneId) != audioZoneDeviceVolumeProxyMap_.end(),
+            ERR_OPERATION_FAILED, "audioZoneDeviceVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_[zoneId].find(deviceType) !=
+            audioZoneDeviceVolumeProxyMap_[zoneId].end(), ERR_OPERATION_FAILED,
+            "audioZoneDeviceVolumeProxyMap_ not find zoneId %{public}d deviceType %{public}d.", zoneId, deviceType);
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_[zoneId][deviceType] != nullptr,
+            ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d deviceType %{public}d.",
+            zoneId, deviceType);
+
+        audioZoneDeviceVolumeProxyMap_[zoneId][deviceType]->SetSystemVolume(deviceType, volumeType, volumeLevel);
+        audioZoneDeviceVolumeProxyMap_[zoneId][deviceType]->SetSystemVolumeDegree(deviceType, volumeType, volumeDegree);
+    }
+    AUDIO_INFO_LOG("SetSystemVolume zoneId:%{public}d deviceType:%{public}d volumeType:%{public}d "\
+        "volumeLevel:%{public}d volumeDegree:%{public}d volumeFlag:%{public}d",
+        zoneId, deviceType, volumeType, volumeLevel, volumeDegree, volumeFlag);
     return SUCCESS;
 }
 
-int32_t AudioZoneClient::GetSystemVolume(int32_t zoneId, int32_t volumeType, float &outVolume)
+int32_t AudioZoneClient::GetSystemVolume(int32_t zoneId, int32_t deviceTypeIn, int32_t volumeTypeIn,
+    int32_t &outVolume)
 {
-    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end(),
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
-    CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+    DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(volumeTypeIn);
 
-    outVolume = audioZoneVolumeProxyMap_[zoneId]->GetSystemVolume(static_cast<AudioVolumeType>(volumeType));
+    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
+        if (audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end()) {
+        CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
+            ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+
+        audioZoneVolumeProxyMap_[zoneId]->GetSystemVolume(deviceType, volumeType);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_.find(zoneId) != audioZoneDeviceVolumeProxyMap_.end(),
+            ERR_OPERATION_FAILED, "audioZoneDeviceVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_[zoneId].find(deviceType) !=
+            audioZoneDeviceVolumeProxyMap_[zoneId].end(), ERR_OPERATION_FAILED,
+            "audioZoneDeviceVolumeProxyMap_ not find zoneId %{public}d deviceType %{public}d.", zoneId, deviceType);
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_[zoneId][deviceType] != nullptr,
+            ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d deviceType %{public}d.",
+            zoneId, deviceType);
+
+        outVolume = audioZoneDeviceVolumeProxyMap_[zoneId][deviceType]->GetSystemVolume(deviceType, volumeType);
+    }
+    AUDIO_INFO_LOG("zoneId:%{public}d deviceType:%{public}d volumeType:%{public}d volumeLevel:%{public}d",
+        zoneId, deviceType, volumeType, outVolume);
     return SUCCESS;
 }
 
-int32_t AudioZoneClient::GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume)
+int32_t AudioZoneClient::GetSystemVolumeDegree(int32_t zoneId, int32_t deviceTypeIn, int32_t volumeTypeIn,
+    int32_t &outVolume)
 {
-    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
-    auto iter = audioZoneVolumeProxyMap_.find(zoneId);
-    CHECK_AND_RETURN_RET_LOG(iter != audioZoneVolumeProxyMap_.end(),
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
-    auto proxy = iter->second;
-    CHECK_AND_RETURN_RET_LOG(proxy != nullptr,
-        ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+    DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
+    AudioVolumeType volumeType = static_cast<AudioVolumeType>(volumeTypeIn);
 
-    outVolume = proxy->GetSystemVolumeDegree(static_cast<AudioVolumeType>(volumeType));
+    std::lock_guard<std::mutex> lk(audioZoneVolumeProxyMutex_);
+    if (audioZoneVolumeProxyMap_.find(zoneId) != audioZoneVolumeProxyMap_.end()) {
+        CHECK_AND_RETURN_RET_LOG(audioZoneVolumeProxyMap_[zoneId] != nullptr,
+            ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d.", zoneId);
+
+        audioZoneVolumeProxyMap_[zoneId]->GetSystemVolumeDegree(deviceType, volumeType);
+    } else {
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_.find(zoneId) != audioZoneDeviceVolumeProxyMap_.end(),
+            ERR_OPERATION_FAILED, "audioZoneDeviceVolumeProxyMap_ not find zoneId %{public}d.", zoneId);
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_[zoneId].find(deviceType) !=
+            audioZoneDeviceVolumeProxyMap_[zoneId].end(), ERR_OPERATION_FAILED,
+            "audioZoneDeviceVolumeProxyMap_ not find zoneId %{public}d deviceType %{public}d.", zoneId, deviceType);
+        CHECK_AND_RETURN_RET_LOG(audioZoneDeviceVolumeProxyMap_[zoneId][deviceType] != nullptr,
+            ERR_OPERATION_FAILED, "audioZoneVolumeProxy is nullptr, zoneId %{public}d deviceType %{public}d.",
+            zoneId, deviceType);
+
+        outVolume = audioZoneDeviceVolumeProxyMap_[zoneId][deviceType]->GetSystemVolumeDegree(deviceType, volumeType);
+    }
+    AUDIO_INFO_LOG("zoneId:%{public}d deviceType:%{public}d volumeType:%{public}d volumeDegree:%{public}d",
+        zoneId, deviceType, volumeType, outVolume);
     return SUCCESS;
 }
 }  // namespace AudioStandard
