@@ -124,7 +124,7 @@ private:
     std::mutex curOutputDevice_; // lock this mutex to operate currentActiveDevice_
     AudioDeviceDescriptor currentActiveDevice_ = AudioDeviceDescriptor(DEVICE_TYPE_NONE, DEVICE_ROLE_NONE);
     std::mutex curInputDevice_; // lock this mutex to operate currentActiveInputDeviceMap_
-    std::map<int32_t, AudioDeviceDescriptor> currentActiveInputDeviceMap_;
+    std::unordered_map<int32_t, AudioDeviceDescriptor> currentActiveInputDeviceMap_;
     int32_t volumeAdjustZoneId_ = 0;
     std::mutex deviceForVolumeMutex_;
 
