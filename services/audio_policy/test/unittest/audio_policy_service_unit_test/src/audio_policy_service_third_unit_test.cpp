@@ -1919,7 +1919,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetRealUid_001, TestSize.Level1)
     int32_t uid = server->audioPolicyService_.GetRealUid(config);
     EXPECT_EQ(uid, 456);
     config.callerUid = MEDIA_SERVICE_UID;
-    config.appInfo.appUid = 456
+    config.appInfo.appUid = 456;
     uid = server->audioPolicyService_.GetRealUid(config);
     EXPECT_EQ(uid, 456);
 }
