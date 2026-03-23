@@ -111,7 +111,7 @@ int32_t AudioScoDeviceBehavior::BluetoothScoInputFetch(const std::shared_ptr<Aud
         AUDIO_ERR_LOG("sco [%{public}s] is not connected yet",
             AudioPolicyUtils::GetInstance().GetEncryptAddr(desc->macAddress_).c_str());
     }
-    return ret;
+    return SUCCESS;
 }
 
 int32_t AudioScoDeviceBehavior::ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
