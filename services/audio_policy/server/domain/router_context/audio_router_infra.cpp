@@ -161,29 +161,29 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
         auto &appSelect = context->appSelectDevice_;
         switch (type) {
             case SelectDeviceType::MEDIA_INPUT:
-            if (device == nullptr ||(appSelect.mediaInput_.device_ != nullptr &&
-                *device == *appSelect.mediaInput_.device_)) {
+                if (device == nullptr ||(appSelect.mediaInput_.device_ != nullptr &&
+                    *device == *appSelect.mediaInput_.device_)) {
                     appSelect.mediaInput_.device_ = nullptr;
                     appSelect.mediaInput_.selectTime_ = 0;
                 }
                 break;
             case SelectDeviceType::MEDIA_OUTPUT:
-            if (device == nullptr ||(appSelect.mediaOutput_.device_ != nullptr &&
-                *device == *appSelect.mediaOutput_.device_)) {
+                if (device == nullptr ||(appSelect.mediaOutput_.device_ != nullptr &&
+                    *device == *appSelect.mediaOutput_.device_)) {
                     appSelect.mediaOutput_.device_ = nullptr;
                     appSelect.mediaOutput_.selectTime_ = 0;
                 }
                 break;
             case SelectDeviceType::CALL_INPUT:
-            if (device == nullptr ||(appSelect.callInput_.device_ != nullptr &&
-                *device == *appSelect.callInput_.device_)) {
+                if (device == nullptr ||(appSelect.callInput_.device_ != nullptr &&
+                    *device == *appSelect.callInput_.device_)) {
                     appSelect.callInput_.device_ = nullptr;
                     appSelect.callInput_.selectTime_ = 0;
                 }
                 break;
             case SelectDeviceType::CALL_OUTPUT:
-            if (device == nullptr ||(appSelect.callOutput_.device_ != nullptr &&
-                *device == *appSelect.callOutput_.device_)) {
+                if (device == nullptr ||(appSelect.callOutput_.device_ != nullptr &&
+                    *device == *appSelect.callOutput_.device_)) {
                     appSelect.callOutput_.device_ = nullptr;
                     appSelect.callOutput_.selectTime_ = 0;
                 }

@@ -408,5 +408,5 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     EXPECT_FALSE(strategy.IsDeviceExcluded(scoInput, CALL_INPUT_DEVICES));
 }
 
-}                                     
+}
 }
