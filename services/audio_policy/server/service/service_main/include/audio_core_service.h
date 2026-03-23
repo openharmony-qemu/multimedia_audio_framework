@@ -268,7 +268,7 @@ public:
     int32_t FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
         SourceType &targetSourceType);
 
-    void ReloadSourceForSession(SessionInfo sessionInfo);
+    void ReloadSourceForSession(SessionInfo sessionInfo, uint32_t targetSessionId);
     int32_t ReloadSourceSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
     int32_t ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo> &pipeInfo, uint32_t targetSessionId);
 
@@ -279,7 +279,8 @@ public:
     bool GetMicRefFeatureEnable();
     void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void SetOpenedNormalSource(SourceType sourceType);
-    int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
+    int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource,
+        const int32_t uid = -1);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void PrepareNormalSource(std::shared_ptr<AudioPipeInfo> &pipeInfo,
@@ -611,7 +612,7 @@ private:
     void WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
     void WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
-        const AudioStreamDeviceChangeReason reason);
+        const AudioStreamDeviceChangeReason reason, const int32_t uid);
     int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t HandleDeviceChangeForFetchInputDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
@@ -660,7 +661,7 @@ private:
     void UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
-    void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid);
     void ClearRingMuteWhenCallStart(bool pre, bool after, std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);

@@ -48,6 +48,7 @@ const uint32_t REHANDLE_DEVICE_RETRY_INTERVAL_IN_MICROSECONDS = 30000;
 const std::string DEFAULT_BUFFER_SIZE_8000 = "320";
 
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
+const int32_t DEFAULT_UID = -1;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -1250,11 +1251,11 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
         shared_ptr<AudioDeviceDescriptor> outDevice = audioDeviceManager_.GetRenderDefaultDevice();
         audioActiveDevice_.SetCurrentOutputDevice(*outDevice);
         shared_ptr<AudioDeviceDescriptor> inDevice = audioDeviceManager_.GetCaptureDefaultDevice();
-        audioActiveDevice_.SetCurrentInputDevice(*inDevice);
+        audioActiveDevice_.SetCurrentInputDevice(*inDevice, DEFAULT_UID);
         AudioDeviceDescriptor curDevice = audioActiveDevice_.GetCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(curDevice);
         OnPreferredDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
-            audioActiveDevice_.GetCurrentInputDeviceType());
+            audioActiveDevice_.GetCurrentInputDeviceType(DEFAULT_UID));
         AddEarpiece();
         for (auto it = pnpDeviceList_.begin(); it != pnpDeviceList_.end(); ++it) {
             OnPnpDeviceStatusUpdated((*it).first, (*it).second);

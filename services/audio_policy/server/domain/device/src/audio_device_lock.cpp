@@ -59,10 +59,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferre
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, std::string networkId)
+    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    return audioDeviceCommon_.GetPreferredInputDeviceDescInner(captureInfo, networkId, uid);
 }
 
 void AudioDeviceLock::UpdateAppVolume(int32_t appUid, int32_t volume)

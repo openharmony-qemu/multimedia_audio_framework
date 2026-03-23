@@ -70,6 +70,7 @@ const std::string LIVE_EFFECT_TABLE_TYPE = "system";
 const std::string LIVE_EFFECT_ON = "NRON";
 const int32_t INVALID_VALUE = -1;
 static const std::unordered_set<std::string> ANRCategories = {"AINR", "PNR"};
+static constexpr int32_t MEDIA_SERVICE_UID = 1013;
 
 AudioPolicyService::~AudioPolicyService()
 {
@@ -269,9 +270,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetDevic
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredInputDeviceDescriptors(
-    AudioCapturerInfo &captureInfo, std::string networkId)
+    AudioCapturerInfo &captureInfo, std::string networkId, const int32_t uid)
 {
-    return audioDeviceLock_.GetPreferredInputDeviceDescriptors(captureInfo, networkId);
+    return audioDeviceLock_.GetPreferredInputDeviceDescriptors(captureInfo, networkId, uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPreferredOutputDeviceDescInner(
@@ -511,6 +512,28 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices =
         audioConnectedDevice_.GetDevicesInner(INPUT_DEVICES_FLAG);
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    size_t capturerInfosSize = audioCapturerChangeInfos.size();
+    for (size_t i = 0; i < capturerInfosSize; i++) {
+        CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
+        CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, status, "pipeManager_ is nullptr");
+        std::shared_ptr<AudioStreamDescriptor> streamDesc = 
+            pipeManager_->GetStreamDescById(audioCapturerChangeInfos[i]->sessionId);
+        CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, status, "streamDesc is nullptr");
+        DeviceType activeDeviceType = audioActiveDevice_.GetCurrentInputDeviceType(streamDesc->GetRealUid());
+        DeviceRole activeDeviceRole = INPUT_DEVICE;
+        for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
+            if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
+                UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
+                CHECK_AND_CONTINUE(audioRouterCenter_.IsConfigRouterStrategy(
+                    audioCapturerChangeInfos[i]->capturerInfo.sourceType));
+                audioDeviceCommon_.UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc,
+                    hasBTPermission, hasSystemPermission);
+                break;
+            }
+        }
+    }
+#else
     DeviceType activeDeviceType = audioActiveDevice_.GetCurrentInputDeviceType();
     DeviceRole activeDeviceRole = INPUT_DEVICE;
     for (std::shared_ptr<AudioDeviceDescriptor> desc : inputDevices) {
@@ -524,7 +547,7 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
             break;
         }
     }
-
+#endif
     return status;
 }
 
@@ -594,21 +617,22 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 
         CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
     } else {
+        int32_t uid = GetRealUid(config);
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             AudioCapturerInfo capturerInfo = config.capturerInfo;
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-                (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID)
-                          : audioDeviceCommon_.GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID));
+                (lockFlag ? GetPreferredInputDeviceDescriptors(capturerInfo, LOCAL_NETWORK_ID, uid)
+                : audioDeviceCommon_.GetPreferredInputDeviceDescInner(capturerInfo, LOCAL_NETWORK_ID, uid));
             int32_t type = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
                 preferredDeviceList[0]->deviceType_, capturerInfo.originalFlag, preferredDeviceList[0]->networkId_,
                 samplingRate);
             deviceInfo.deviceRole_ = INPUT_DEVICE;
             return GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
         }
-        deviceInfo.deviceId_ = audioActiveDevice_.GetCurrentInputDevice().deviceId_;
-        deviceInfo.networkId_ = audioActiveDevice_.GetCurrentInputDevice().networkId_;
+        deviceInfo.deviceId_ = audioActiveDevice_.GetCurrentInputDevice(uid).deviceId_;
+        deviceInfo.networkId_ = audioActiveDevice_.GetCurrentInputDevice(uid).networkId_;
         deviceInfo.deviceRole_ = INPUT_DEVICE;
-        deviceInfo.deviceType_ = audioActiveDevice_.GetCurrentInputDeviceType();
+        deviceInfo.deviceType_ = audioActiveDevice_.GetCurrentInputDeviceType(uid);
     }
 
     // todo
@@ -620,6 +644,14 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);
     deviceInfo.a2dpOffloadFlag_ = GetA2dpOffloadFlag();
     return SUCCESS;
+}
+
+int32_t AudioPolicyService::GetRealUid(const AudioProcessConfig &config)
+{
+    if (config.callerUid == MEDIA_SERVICE_UID) {
+        return config.appInfo.appUid;
+    }
+    return config.callerUid;
 }
 
 int32_t AudioPolicyService::GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName)

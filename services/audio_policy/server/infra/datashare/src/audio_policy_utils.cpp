@@ -154,10 +154,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyUtils::GetAvailab
 int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid, const std::string caller)
 {
-    if (desc == nullptr) {
-        AUDIO_ERR_LOG("desc is null");
-        return ERR_INVALID_PARAM;
-    }
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is null");
     int32_t ret = SUCCESS;
     bool mediaControllerFlag = IsSelectedByMediaController();
     switch (preferredType) {
@@ -171,6 +168,9 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             audioStateManager_.SetPreferredCallCaptureDevice(desc);
             break;
         case AUDIO_RECORD_CAPTURE:
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+            SetPreferredRecordCaptureDeviceInCar(desc, uid);
+#else
             {
                 RecordDeviceInfo info {.uid_ = uid, .activeSelectedDevice_ = desc};
                 AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
@@ -178,6 +178,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
             }
             CHECK_AND_BREAK_LOG(!mediaControllerFlag, "selected by media controller");
             audioStateManager_.SetPreferredRecordCaptureDevice(desc);
+#endif
             break;
         case AUDIO_RING_RENDER:
         case AUDIO_TONE_RENDER:
@@ -195,11 +196,8 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     if (desc->deviceType_ == DEVICE_TYPE_NONE) {
         ErasePreferredDeviceByType(preferredType);
     }
-    if (ret != SUCCESS) {
-        HILOG_COMM_INFO("[SetPreferredDevice]Set preferredType %{public}d failed, ret: %{public}d",
-            preferredType, ret);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "[SetPreferredDevice]Set preferredType %{public}d failed, ret: %{public}d", preferredType, ret);
     AudioDeviceStatus::GetInstance().NotifyPreferredDeviceSet(preferredType, desc, uid, caller);
     return ret;
 }
@@ -214,6 +212,36 @@ bool AudioPolicyUtils::IsSelectedByMediaController()
     audioClientInfoMgrCallback_->OnCheckMediaControllerBundle(bundleName, ret);
     return ret;
 }
+
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+bool AudioPolicyUtils::IsSelectedBySystemApp()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET(audioClientInfoMgrCallback_ != nullptr, false);
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
+    bool ret = false;
+    audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
+    return callerUid == SYSTEM_APP_UID;    
+}
+
+void AudioPolicyUtils::SetPreferredRecordCaptureDeviceInCar(
+    const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
+{
+    if (!IsSelectedBySystemApp()) {
+        AudioUsrSelectManager::GetAudioUsrSelectManager().SelectInputDeviceByUid(
+            desc, IPCSkeleton::GetCallingUid());
+    } else {
+        {
+            RecordDeviceInfo info {.uid_ = uid, .activeSelectedDevice_ = desc};
+            AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateRecordDeviceInfo(
+                UpdateType::SYSTEM_SELECT, info);
+        }
+        audioStateManager_.SetPreferredRecordCaptureDevice(desc);
+    }
+}
+#endif
 
 int32_t AudioPolicyUtils::ErasePreferredDeviceByType(const PreferredType preferredType)
 {
