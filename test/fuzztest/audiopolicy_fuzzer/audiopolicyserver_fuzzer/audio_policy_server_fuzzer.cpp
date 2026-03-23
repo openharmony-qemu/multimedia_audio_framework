@@ -1538,7 +1538,8 @@ void AudioPolicyServerEnableSystemVolumeProxyFuzzTest()
     int32_t zoneId = 0;
     server->CreateAudioZone(zoneName, context, zoneId, 0);
     bool enable = GetData<bool>();
-    server->EnableSystemVolumeProxy(zoneId, enable);
+    DeviceType deviceType = GetData<DeviceType>();
+    server->EnableSystemVolumeProxy(zoneId, deviceType, enable);
     server->ReleaseAudioZone(zoneId);
 }
 

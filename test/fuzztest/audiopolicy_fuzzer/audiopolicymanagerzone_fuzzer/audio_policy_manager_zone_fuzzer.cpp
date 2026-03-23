@@ -248,7 +248,8 @@ void EnableSystemVolumeProxyFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t zoneId = GetData<int32_t>();
     bool enable = GetData<uint32_t>() % NUM_2;
-    AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, enable);
+    DeviceType deviceType = GetData<DeviceType>();
+    AudioPolicyManager::GetInstance().EnableSystemVolumeProxy(zoneId, deviceType, enable);
 }
 
 void GetAudioInterruptForZoneFuzzTest(FuzzedDataProvider& fdp)

@@ -22,6 +22,7 @@
 #include "istandard_audio_zone_client.h"
 #include "audio_policy_server_handler.h"
 #include "audio_zone.h"
+#include "audio_volume_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {

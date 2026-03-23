@@ -157,7 +157,8 @@ void AudioZoneClientManagerSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     VolumeScale volume = {volumeLevel, volumeDegree};
     int32_t volumeFlag = GetData<int32_t>();
     AudioVolumeType volumeType = GetData<AudioVolumeType>();
-    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volume, volumeFlag);
+    DeviceType deviceType = GetData<DeviceType>();
+    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, deviceType, volumeType, volume, volumeFlag);
 }
 
 void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
@@ -167,7 +168,8 @@ void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     pid_t clientPid = GetData<pid_t>();
     int32_t zoneId = GetData<int32_t>();
     AudioVolumeType volumeType = GetData<AudioVolumeType>();
-    audioZoneClientManager.GetSystemVolumeLevel(clientPid, zoneId, volumeType);
+    DeviceType deviceType = GetData<DeviceType>();
+    audioZoneClientManager.GetSystemVolumeLevel(clientPid, zoneId, deviceType, volumeType);
 }
 
 void AudioZoneClientManagerSetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
@@ -181,7 +183,8 @@ void AudioZoneClientManagerSetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp
     int32_t volumeDegree = GetData<int32_t>();
     VolumeScale volume = {volumeLevel, volumeDegree};
     int32_t volumeFlag  = GetData<int32_t>();
-    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volume, volumeFlag);
+    DeviceType deviceType = GetData<DeviceType>();
+    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, deviceType, volumeType, volume, volumeFlag);
 }
 
 void AudioZoneClientManagerGetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp)
@@ -191,7 +194,8 @@ void AudioZoneClientManagerGetSystemVolumeDegreeFuzzTest(FuzzedDataProvider& fdp
     pid_t clientPid = GetData<pid_t>();
     int32_t zoneId = GetData<int32_t>();
     AudioVolumeType volumeType  = GetData<AudioVolumeType>();
-    audioZoneClientManager.GetSystemVolumeDegree(clientPid, zoneId, volumeType);
+    DeviceType deviceType = GetData<DeviceType>();
+    audioZoneClientManager.GetSystemVolumeDegree(clientPid, zoneId, deviceType, volumeType);
 }
 
 void Test(FuzzedDataProvider& fdp)

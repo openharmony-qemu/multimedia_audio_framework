@@ -116,23 +116,6 @@ static const std::vector<AudioVolumeType> VOLUME_TYPE_LIST = {
     STREAM_ALL
 };
 
-static const std::vector<AudioStreamType> GET_STREAM_ALL_VOLUME_TYPES {
-    STREAM_VOICE_ASSISTANT,
-    STREAM_VOICE_CALL,
-    STREAM_ACCESSIBILITY,
-    STREAM_RING,
-    STREAM_ALARM,
-    STREAM_VOICE_RING,
-    STREAM_ULTRASONIC,
-    // adjust the type of music from the head of list to end, make sure music is updated last.
-    // avoid interference from ring updates on special platform.
-    // when the device is switched to headset,ring and alarm is dualtone type.
-    // dualtone type use fixed volume curve of speaker.
-    // the ring and alarm are classified into the music group.
-    // the music volume becomes abnormal when the db value of music is modified.
-    STREAM_MUSIC
-};
-
 static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
     STREAM_MUSIC,
     STREAM_RING,
