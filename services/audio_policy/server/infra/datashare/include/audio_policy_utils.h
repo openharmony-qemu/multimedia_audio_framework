@@ -56,6 +56,10 @@ public:
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const int32_t uid = INVALID_UID, const std::string caller = "");
     bool IsSelectedByMediaController();
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    bool IsSelectedBySystemApp();
+    void SetPreferredRecordCaptureDeviceInCar(const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid);
+#endif
     void ClearScoDeviceSuspendState(std::string macAddress = "");
     int64_t GetCurrentTimeMS();
     std::string GetNewSinkPortName(DeviceType deviceType);

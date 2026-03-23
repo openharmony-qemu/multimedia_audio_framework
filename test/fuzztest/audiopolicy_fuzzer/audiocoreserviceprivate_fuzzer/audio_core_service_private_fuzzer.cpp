@@ -863,7 +863,7 @@ void AudioCoreServicePrivateWriteInputRouteChangeEventFuzzTest()
     auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
-    audioCoreService->WriteInputRouteChangeEvent(desc, reason);
+    audioCoreService->WriteInputRouteChangeEvent(desc, reason, -1);
 }
 
 void AudioCoreServicePrivateIsDeviceSwitchingFuzzTest()

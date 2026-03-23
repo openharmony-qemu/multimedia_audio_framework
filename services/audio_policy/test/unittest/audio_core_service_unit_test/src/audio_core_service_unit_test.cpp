@@ -5851,7 +5851,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForSession_001, TestSize.Level1)
     ASSERT_TRUE(audioCoreService != nullptr);
 
     sessionInfo.sourceType = SOURCE_TYPE_INVALID;
-    audioCoreService->ReloadSourceForSession(sessionInfo);
+    audioCoreService->ReloadSourceForSession(sessionInfo, 100000);
 }
 
 /**
