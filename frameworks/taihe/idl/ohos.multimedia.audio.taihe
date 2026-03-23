@@ -890,6 +890,8 @@ interface AudioSessionManager {
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
+  @gen_promise("setCaptureMuteHint")
+  SetCaptureMuteHintSync(mute: bool): void;
 
   SetAudioSessionBehavior(behavior: i32): void;
 
@@ -1008,6 +1010,9 @@ interface AudioCapturer {
 
   @gen_promise("setWillMuteWhenInterrupted")
   SetWillMuteWhenInterruptedSync(muteWhenInterrupted: bool): void;
+
+  @gen_promise("setMuteHint")
+  SetMuteHintSync(mute: bool): void;
 
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 
