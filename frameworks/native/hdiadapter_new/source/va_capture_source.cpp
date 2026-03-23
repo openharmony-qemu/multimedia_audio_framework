@@ -239,6 +239,7 @@ int32_t VACaptureSource::CaptureFrame(char *frame, uint64_t requestBytes, uint64
     CHECK_AND_RETURN_RET_LOG(bufferOperator_ != nullptr, ERR_OPERATION_FAILED, "buffer operator is null");
     CHECK_AND_RETURN_RET_LOG(inputStream_ != nullptr, ERR_OPERATION_FAILED, "input stream is null");
 
+    AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
     int64_t stamp = ClockTime::GetCurNano();
     replyBytes = bufferOperator_->Read(reinterpret_cast<uint8_t *>(frame), requestBytes);
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {

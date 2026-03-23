@@ -204,7 +204,7 @@ HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_008, TestSize.Le
  */
 HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_009, TestSize.Level1)
 {
-    std::shared_ptr<RemoteAudioCaptureSource> source = std::make_shared<RemoteAudioCaptureSource>("test");
+    std::shared_ptr<RemoteAudioCaptureSource> source = std::make_shared<RemoteAudioCaptureSource>(0, "test");
     source->SetInvalidState();
     source->sourceInited_.store(true);
     int32_t ret = source->Start();
