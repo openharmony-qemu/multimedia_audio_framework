@@ -371,29 +371,29 @@ HWTEST(OHAudioSessionManagerUnitTest, EnableMuteSuggestionWhenMixWithOthers002, 
 }
 
 /**
- * @tc.name  : Test OH_AudioSessionManager_SetCapturerMuteHint.
- * @tc.number: OH_AudioSessionManager_SetCapturerMuteHint_001
- * @tc.desc  : Test OH_AudioSessionManager_SetCapturerMuteHint with invalid parameter.
+ * @tc.name  : Test OH_AudioSessionManager_SetCaptureMuteHint.
+ * @tc.number: OH_AudioSessionManager_SetCaptureMuteHint_001
+ * @tc.desc  : Test OH_AudioSessionManager_SetCaptureMuteHint with invalid parameter.
  */
-HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_SetCapturerMuteHint_001, TestSize.Level0)
+HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_SetCaptureMuteHint_001, TestSize.Level0)
 {
-    OH_AudioCommon_Result result = OH_AudioSessionManager_SetCapturerMuteHint(nullptr, true);
+    OH_AudioCommon_Result result = OH_AudioSessionManager_SetCaptureMuteHint(nullptr, true);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
 /**
- * @tc.name  : Test OH_AudioSessionManager_SetCapturerMuteHint.
- * @tc.number: OH_AudioSessionManager_SetCapturerMuteHint_002
- * @tc.desc  : Test OH_AudioSessionManager_SetCapturerMuteHint when no running capturer exists.
+ * @tc.name  : Test OH_AudioSessionManager_SetCaptureMuteHint.
+ * @tc.number: OH_AudioSessionManager_SetCaptureMuteHint_002
+ * @tc.desc  : Test OH_AudioSessionManager_SetCaptureMuteHint when no running capturer exists.
  */
-HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_SetCapturerMuteHint_002, TestSize.Level0)
+HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_SetCaptureMuteHint_002, TestSize.Level0)
 {
     OH_AudioSessionManager *audioManager = nullptr;
     OH_AudioCommon_Result result = OH_AudioManager_GetAudioSessionManager(&audioManager);
     ASSERT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     ASSERT_NE(audioManager, nullptr);
 
-    result = OH_AudioSessionManager_SetCapturerMuteHint(audioManager, true);
+    result = OH_AudioSessionManager_SetCaptureMuteHint(audioManager, true);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE);
 }
 

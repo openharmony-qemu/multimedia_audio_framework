@@ -407,7 +407,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
     return ohAudioSessionManager->EnableMuteSuggestionWhenMixWithOthers(enable);
 }
 
-OH_AudioCommon_Result OH_AudioSessionManager_SetCapturerMuteHint(
+OH_AudioCommon_Result OH_AudioSessionManager_SetCaptureMuteHint(
     OH_AudioSessionManager *audioSessionManager, bool mute)
 {
     CHECK_AND_RETURN_RET_LOG(audioSessionManager != nullptr,

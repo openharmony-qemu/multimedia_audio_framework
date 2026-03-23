@@ -104,7 +104,7 @@ napi_value NapiAudioSessionMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setBluetoothAndNearlinkPreferredRecordCategory", PreferBluetoothAndNearlinkRecord),
         DECLARE_NAPI_FUNCTION("getBluetoothAndNearlinkPreferredRecordCategory", GetPreferBluetoothAndNearlinkRecord),
         DECLARE_NAPI_FUNCTION("enableMuteSuggestionWhenMixWithOthers", EnableMuteSuggestionWhenMixWithOthers),
-        DECLARE_NAPI_FUNCTION("setCaptureMuteHint", SetCaptureMuteHint),
+        DECLARE_NAPI_FUNCTION("setCapturerMuteHint", SetCapturerMuteHint),
         DECLARE_NAPI_FUNCTION("isOtherMediaPlaying", IsOtherMediaPlaying),
         DECLARE_NAPI_FUNCTION("setAudioSessionBehavior", SetAudioSessionBehavior),
     };
@@ -1098,12 +1098,12 @@ napi_value NapiAudioSessionMgr::EnableMuteSuggestionWhenMixWithOthers(napi_env e
     return result;
 }
 
-napi_value NapiAudioSessionMgr::SetCaptureMuteHint(napi_env env, napi_callback_info info)
+napi_value NapiAudioSessionMgr::SetCapturerMuteHint(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioSessionMgrAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("SetCaptureMuteHint failed : no memory");
-        NapiAudioError::ThrowError(env, "SetCaptureMuteHint failed : no memory", NAPI_ERR_NO_MEMORY);
+        AUDIO_ERR_LOG("SetCapturerMuteHint failed : no memory");
+        NapiAudioError::ThrowError(env, "SetCapturerMuteHint failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
@@ -1126,14 +1126,14 @@ napi_value NapiAudioSessionMgr::SetCaptureMuteHint(napi_env env, napi_callback_i
             context->SignError(NAPI_ERR_ILLEGAL_STATE);
             return;
         }
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetCaptureMuteHint failed",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetCapturerMuteHint failed",
             NAPI_ERR_SYSTEM);
     };
 
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
-    return NapiAsyncWork::Enqueue(env, context, "SetCaptureMuteHint", executor, complete);
+    return NapiAsyncWork::Enqueue(env, context, "SetCapturerMuteHint", executor, complete);
 }
 
 napi_value NapiAudioSessionMgr::SetAudioSessionScene(napi_env env, napi_callback_info info)
