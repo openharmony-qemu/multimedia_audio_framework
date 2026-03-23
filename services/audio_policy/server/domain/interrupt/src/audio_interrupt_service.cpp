@@ -30,6 +30,7 @@
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
+#include "audio_volume_manager.h"
 #include "istandard_audio_service.h"
 #include "audio_zone_service.h"
 #include "audio_server_proxy.h"
@@ -1521,14 +1522,10 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
     uint32_t focusSession = 0;
     std::string deviceTag = "";
     for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end(); ++iter) {
-        if ((iter->second != ACTIVE && iter->second != DUCK) ||
-            (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID) {
-            // if the steam is not active or the active stream is an audio capturer stream, skip it.
-            continue;
-        }
-        if (uid != 0 && (iter->first).uid != uid) {
-            continue;
-        }
+        // if the steam is not active or the active stream is an audio capturer stream, skip it.
+        CHECK_AND_CONTINUE(!((iter->second != ACTIVE && iter->second != DUCK) ||
+            (iter->first).audioFocusType.sourceType != SOURCE_TYPE_INVALID));
+        CHECK_AND_CONTINUE(!(uid != 0 && (iter->first).uid != uid));
         if ((iter->first).audioFocusType.streamType == STREAM_VOICE_ASSISTANT &&
             !CheckoutSystemAppUtil::CheckoutSystemApp((iter->first).uid)) {
             (iter->first).audioFocusType.streamType = STREAM_MUSIC;
@@ -1536,6 +1533,9 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
         if (iter->first.isAudioSessionInterrupt) {
             std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(iter->first.pid);
             for (auto stream : sessionStreams) {
+                CHECK_AND_CONTINUE_PRELOG(!(stream.audioFocusType.streamType == STREAM_NOTIFICATION &&
+                    AudioVolumeManager::GetInstance().GetSystemVolumeLevel(STREAM_NOTIFICATION) == 0),
+                    "Skip the notification type because its volume is 0.");
                 int32_t curPriority = GetStreamTypePriority(stream.audioFocusType.streamType);
                 if (curPriority < focusPriority) {
                     focusPriority = curPriority;
@@ -1545,6 +1545,9 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
                 }
             }
         } else {
+            CHECK_AND_CONTINUE_PRELOG(!((iter->first).audioFocusType.streamType == STREAM_NOTIFICATION &&
+                AudioVolumeManager::GetInstance().GetSystemVolumeLevel(STREAM_NOTIFICATION) == 0),
+                "Skip the notification type because its volume is 0.");
             int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
             if (curPriority < focusPriority) {
                 focusPriority = curPriority;
@@ -1554,9 +1557,7 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
             }
         }
     }
-    if (!deviceTag.empty() && streamInFocus == STREAM_ALARM) {
-        streamInFocus = STREAM_MUSIC;
-    }
+    streamInFocus = (!deviceTag.empty() && streamInFocus == STREAM_ALARM) ? STREAM_MUSIC : streamInFocus;
     JUDGE_AND_INFO_LOG(isGetFocusForLog_ == false, "focus session is %{public}d", focusSession);
     CHECK_AND_RETURN_RET_LOG(!returnDefault, streamInFocus, "return default");
     return streamInFocus == STREAM_DEFAULT ? defaultVolumeType_ : streamInFocus;
