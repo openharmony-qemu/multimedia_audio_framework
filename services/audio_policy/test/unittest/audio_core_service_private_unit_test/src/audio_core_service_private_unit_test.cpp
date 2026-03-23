@@ -2651,7 +2651,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_126, TestSize.Leve
     EXPECT_EQ(ret, sessionIDTest);
 }
 
-
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_127
