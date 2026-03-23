@@ -28,6 +28,8 @@
 
 namespace ANI::Audio {
 constexpr double VOLUME_DEFAULT_DOUBLE = 0.0;
+constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
+constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
 
 AudioVolumeManagerImpl::AudioVolumeManagerImpl() : audioSystemMngr_(nullptr) {}
 
@@ -62,34 +64,38 @@ array<VolumeGroupInfo> AudioVolumeManagerImpl::GetVolumeGroupInfosSync(string_vi
 int32_t AudioVolumeManagerImpl::GetAppVolumePercentageForUidSync(int32_t uid)
 {
     int32_t appUid = uid;
-    int32_t volLevel = 0;
+    int32_t volPercent = 0;
     if (audioSystemMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
-        return volLevel;
+        return volPercent;
     }
-    int32_t ret = audioSystemMngr_->GetAppVolume(appUid, volLevel);
-    CHECK_AND_RETURN_RET(ret != OHOS::AudioStandard::SUCCESS, volLevel);
+    int32_t ret = audioSystemMngr_->GetSystemAppVolumePercentageForUid(appUid, volPercent);
+    CHECK_AND_RETURN_RET(ret != OHOS::AudioStandard::SUCCESS, volPercent);
     if (ret == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
-        return volLevel;
+        return volPercent;
     } else if (ret == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
-        return volLevel;
+        return volPercent;
     } else {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
-        return volLevel;
+        return volPercent;
     }
 }
 
 void AudioVolumeManagerImpl::SetAppVolumePercentageForUidSync(int32_t uid, int32_t volume)
 {
     int32_t appUid = uid;
-    int32_t volLevel = volume;
+    int32_t volPercent = volume;
     if (audioSystemMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
         return;
     }
-    int32_t intValue = audioSystemMngr_->SetAppVolume(appUid, volLevel);
+    if (volPercent < MIN_VOLUME_PERCENTAGE || volPercent > MAX_VOLUME_PERCENTAGE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "volume percentage range error");
+        return;
+    }
+    int32_t intValue = audioSystemMngr_->SetSystemAppVolumePercentageForUid(appUid, volPercent);
     CHECK_AND_RETURN(intValue != OHOS::AudioStandard::SUCCESS);
     if (intValue == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
@@ -1218,6 +1224,25 @@ int32_t AudioVolumeManagerImpl::GetMinSystemVolumePercentage(AudioVolumeType vol
     }
     int32_t minSystemVolume = audioSystemMngr_->GetMinVolumeDegree(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
     return minSystemVolume;
+}
+
+ 
+array<ActiveStreamVolumeInfo> AudioVolumeManagerImpl::GetActiveStreamsVolumeInfo()
+{
+    std::vector<ActiveStreamVolumeInfo> emptyResult;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
+        return array<ActiveStreamVolumeInfo>(emptyResult);
+    }
+    std::vector<OHOS::AudioStandard::ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    int32_t ret = audioSystemMngr_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret != OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED,
+        array<ActiveStreamVolumeInfo>(emptyResult),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "Not system app"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == OHOS::AudioStandard::SUCCESS,
+        array<ActiveStreamVolumeInfo>(emptyResult),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetActiveStreamsVolumeInfo failure!"));
+    return TaiheParamUtils::ToTaiheActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
 
 void AudioVolumeManagerImpl::OnVolumePercentageChange(callback_view<void(VolumeEvent const& data)> callback)

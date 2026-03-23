@@ -132,6 +132,7 @@ void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
     AudioServerDiedCallBack func;
     AudioVolumeType volumeType = GetData<AudioVolumeType>();
     int32_t volumeLevel = GetData<int32_t>();
+    int32_t volumePercentage = GetData<int32_t>();
     int32_t volumeFlag = GetData<int32_t>();
     int32_t appUid = GetData<int32_t>();
     bool muted = GetData<bool>();
@@ -153,7 +154,7 @@ void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
     AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType);
     AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
     AudioPolicyManager::GetInstance().SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
-    AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
+    AudioPolicyManager::GetInstance().SetSystemAppVolumePercentageForUid(appUid, volumePercentage);
     AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
     AudioPolicyManager::GetInstance().IsAppVolumeMute(appUid, muted, isMute);
     AudioPolicyManager::GetInstance().SetAdjustVolumeForZone(zoneId);
@@ -170,6 +171,7 @@ void AudioPolicyManagerOneFuzzTest(FuzzedDataProvider& fdp)
 void AudioPolicyManagerTwoFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t volumeLevel = GetData<int32_t>();
+    int32_t volumePercentage = GetData<int32_t>();
     int32_t appUid = GetData<int32_t>();
     AudioVolumeType volumeType = GetData<AudioVolumeType>();
     int32_t uid = GetData<int32_t>();
@@ -193,7 +195,7 @@ void AudioPolicyManagerTwoFuzzTest(FuzzedDataProvider& fdp)
     uint32_t sessionId = GetData<uint32_t>();
 
     AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel(volumeLevel);
-    AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid, volumeLevel);
+    AudioPolicyManager::GetInstance().GetSystemAppVolumePercentageForUid(appUid, volumePercentage);
     AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
     AudioPolicyManager::GetInstance().SetStreamMute(volumeType, mute, isLegacy, deviceType);
     AudioPolicyManager::GetInstance().GetStreamMute(volumeType);

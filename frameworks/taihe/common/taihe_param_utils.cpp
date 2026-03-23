@@ -919,4 +919,25 @@ CurrentInputDeviceChangedEvent TaiheParamUtils::SetValueCurrentInputDeviceChange
     };
     return currentInputDeviceChangedEvent;
 }
+
+taihe::array<ActiveStreamVolumeInfo> TaiheParamUtils::ToTaiheActiveStreamsVolumeInfo(
+    const std::vector<OHOS::AudioStandard::ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    std::vector<ActiveStreamVolumeInfo> result;
+    for (const auto &activeStreamVolumeInfo : activeStreamsVolumeInfo) {
+        result.emplace_back(ToTaiheActiveStreamVolumeInfo(activeStreamVolumeInfo));
+    }
+    return taihe::array<ActiveStreamVolumeInfo>(result);
+}
+
+ActiveStreamVolumeInfo TaiheParamUtils::ToTaiheActiveStreamVolumeInfo(
+    const OHOS::AudioStandard::ActiveStreamVolumeInfo &src)
+{
+    ActiveStreamVolumeInfo activeStreamVolumeInfo = {
+        .volumeType = TaiheAudioEnum::GetJsAudioVolumeType(src.volumeType_),
+        .appVolume = src.systemAppVolumePercentage_,
+        .clientUid = src.clientUid_,
+    };
+    return activeStreamVolumeInfo;
+}
 } // namespace ANI::Audio

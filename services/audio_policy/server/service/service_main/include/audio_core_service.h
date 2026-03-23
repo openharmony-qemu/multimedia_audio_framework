@@ -455,6 +455,7 @@ public:
         const AudioEffectPropertyArrayV3 &newPropertyArray);
     void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
+    int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);

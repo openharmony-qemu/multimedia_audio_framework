@@ -90,10 +90,16 @@ void AudioPolicyClientHolder::OnRingerModeUpdated(const AudioRingerMode &ringerM
     audioPolicyClient_->OnRingerModeUpdated(ringerMode);
 }
 
-void AudioPolicyClientHolder::OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
+void AudioPolicyClientHolder::OnSelfAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
-    audioPolicyClient_->OnAppVolumeChanged(appUid, volumeEvent);
+    audioPolicyClient_->OnSelfAppVolumeChanged(appUid, volumeEvent);
+}
+
+void AudioPolicyClientHolder::OnSystemAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnSystemAppVolumeChanged(appUid, volumeEvent);
 }
 
 void AudioPolicyClientHolder::OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType)

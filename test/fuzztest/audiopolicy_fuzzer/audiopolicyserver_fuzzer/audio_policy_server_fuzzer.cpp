@@ -415,13 +415,13 @@ void AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest()
     audioPolicyServer->GetSystemVolumeLevelInternal(streamInFocus, zoneId);
 }
 
-void AudioPolicyServerGetAppVolumeLevelInternalFuzzTest()
+void AudioPolicyServerGetSelfAppVolumeLevelInternalFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     int32_t appUid = GetData<int32_t>();
     int32_t volumeLevel = GetData<int32_t>();
-    audioPolicyServer->GetAppVolumeLevelInternal(appUid, volumeLevel);
+    audioPolicyServer->GetSelfAppVolumeLevelInternal(appUid, volumeLevel);
 }
 
 void AudioPolicyServerSetLowPowerVolumeFuzzTest()
@@ -559,14 +559,14 @@ void AudioPolicyServerSetSelfAppVolumeLevelFuzztest()
     audioPolicyServer->SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
 }
 
-void AudioPolicyServerSetAppVolumeLevelInternalFuzztest()
+void AudioPolicyServerSetSelfAppVolumeLevelInternalFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     bool isUpdateUi = GetData<bool>();
-    bool muted = GetData<bool>();
+    int32_t volumeLevel = GetData<int32_t>();
     int32_t appUid = GetData<int32_t>();
-    audioPolicyServer->SetAppVolumeLevelInternal(appUid, muted, isUpdateUi);
+    audioPolicyServer->SetSelfAppVolumeLevelInternal(appUid, volumeLevel, isUpdateUi);
 }
 
 void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
@@ -627,16 +627,6 @@ void AudioPolicyServerProcUpdateRingerModeFuzztest()
     audioPolicyServer->ProcUpdateRingerMode();
     audioPolicyServer->supportVibrator_ = false;
     audioPolicyServer->ProcUpdateRingerMode();
-}
-
-void AudioPolicyServerSetAppSingleStreamVolumeFuzztest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    int32_t volumeLevel = GetData<int32_t>();
-    bool isUpdateUi = GetData<bool>();
-    int32_t appUid = GetData<int32_t>();
-    audioPolicyServer->SetAppSingleStreamVolume(appUid, volumeLevel, isUpdateUi);
 }
 
 void AudioPolicyServerSetSingleStreamVolumeFuzztest()
@@ -2103,7 +2093,7 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetSystemVolumeLevelFuzzTest,
     AudioPolicyServerGetSystemVolumeLevelNoMuteStateFuzzTest,
     AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest,
-    AudioPolicyServerGetAppVolumeLevelInternalFuzzTest,
+    AudioPolicyServerGetSelfAppVolumeLevelInternalFuzzTest,
     AudioPolicyServerSetLowPowerVolumeFuzzTest,
     AudioPolicyServerGetLowPowerVolumeFuzzTest,
     AudioPolicyServerGetSingleStreamVolumeFuzzTest,
@@ -2118,13 +2108,12 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest,
     AudioPolicyServerGetSystemVolumeDbFuzzTest,
     AudioPolicyServerSetSelfAppVolumeLevelFuzztest,
-    AudioPolicyServerSetAppVolumeLevelInternalFuzztest,
+    AudioPolicyServerSetSelfAppVolumeLevelInternalFuzztest,
     AudioPolicyServerSetSystemVolumeLevelInternalFuzztest,
     AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest,
     AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest,
     AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest,
     AudioPolicyServerProcUpdateRingerModeFuzztest,
-    AudioPolicyServerSetAppSingleStreamVolumeFuzztest,
     AudioPolicyServerSetSingleStreamVolumeFuzztest,
     AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest,
     AudioPolicyServerGetStreamMuteFuzztest,

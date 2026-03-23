@@ -21,6 +21,8 @@
 #include "audio_policy_manager_factory.h"
 #include "media_monitor_manager.h"
 #include "audio_connected_device.h"
+#include "audio_bundle_manager.h"
+#include <nlohmann/json.hpp>
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -199,6 +201,38 @@ int32_t VolumeDataMaintainer::GetAppVolume(int32_t appUid)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     return appVolumeLevelMap_[appUid];
+}
+
+void VolumeDataMaintainer::SetSystemAppVolume(int32_t appUid, int32_t volumeLevel)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    systemAppVolumeLevelMap_[appUid] = volumeLevel;
+}
+
+bool VolumeDataMaintainer::IsSetSystemAppVolume(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    return systemAppVolumeLevelMap_.find(appUid) != systemAppVolumeLevelMap_.end();
+}
+
+int32_t VolumeDataMaintainer::GetSystemAppVolume(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    return systemAppVolumeLevelMap_.find(appUid) != systemAppVolumeLevelMap_.end() ?
+        systemAppVolumeLevelMap_[appUid] : MAX_VOLUME_DEGREE;
+}
+
+void VolumeDataMaintainer::SetSystemAppVolumeMuted(int32_t appUid, bool muted)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    systemAppVolumeMuteStatusMap_[appUid] = muted;
+}
+
+bool VolumeDataMaintainer::IsSystemAppVolumeMuted(int32_t appUid)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    auto it = systemAppVolumeMuteStatusMap_.find(appUid);
+    return (it != systemAppVolumeMuteStatusMap_.end()) ? it->second : false;
 }
 
 void VolumeDataMaintainer::WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg)
@@ -1237,5 +1271,101 @@ bool VolumeDataMaintainer::LoadVolumeUpdateStateFromMap(std::shared_ptr<AudioDev
     return volumeUpdateStateMap_[device->GetName()][volumeType];
 }
 
+int32_t VolumeDataMaintainer::SaveSystemAppVolumeLevelToDb()
+{
+    std::unordered_map<std::string, int32_t> tempMap;
+    std::unordered_map<int32_t, int32_t> localSystemAppVolumeLevelMap;
+    {
+        std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+        localSystemAppVolumeLevelMap = systemAppVolumeLevelMap_;
+    }
+    for (const auto &[uid, level] : localSystemAppVolumeLevelMap) {
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+        CHECK_AND_CONTINUE_LOG(!bundleName.empty(), "bundleName is empty");
+        CHECK_AND_CONTINUE(level != MAX_VOLUME_DEGREE);
+        tempMap[bundleName] = level;
+    }
+    nlohmann::json j = tempMap;
+    std::string jsonStr = j.dump();
+    std::string key = "app_volume_level";
+    {
+        std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+        AudioSettingProvider &audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        ErrCode ret = audioSettingProvider.PutStringValue(key, jsonStr, "system");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Save system app volume level failed");
+    }
+    return SUCCESS;
+}
+
+int32_t VolumeDataMaintainer::LoadSystemAppVolumeLevelFromDb(
+    std::unordered_map<std::string, int32_t> &systemAppVolumeLevelMap)
+{
+    std::string key = "app_volume_level";
+    std::string jsonStr = "";
+    {
+        std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+        AudioSettingProvider &audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        ErrCode ret = audioSettingProvider.GetStringValue(key, jsonStr, "system");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_READ_FAILED, "Get system app volume level failed");
+    }
+    if (!jsonStr.empty()) {
+        nlohmann::json j = nlohmann::json::parse(jsonStr, nullptr, false);
+        CHECK_AND_RETURN_RET_LOG(!j.is_discarded() && j.is_object(), ERROR, "Invalid json string");
+        for (auto &[key, value] : j.items()) {
+            if (value.is_number_integer()) {
+                systemAppVolumeLevelMap.emplace(key, value.get<int32_t>());
+            }
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t VolumeDataMaintainer::SaveSystemAppVolumeMuteStatusToDb()
+{
+    std::unordered_map<std::string, bool> tempMap;
+    std::unordered_map<int32_t, bool> localSystemAppVolumeMuteStatusMap;
+    {
+        std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+        localSystemAppVolumeMuteStatusMap = systemAppVolumeMuteStatusMap_;
+    }
+    for (const auto &[uid, muteStatus] : localSystemAppVolumeMuteStatusMap) {
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+        CHECK_AND_CONTINUE_LOG(!bundleName.empty(), "bundleName is empty");
+        tempMap[bundleName] = muteStatus;
+    }
+    nlohmann::json j = tempMap;
+    std::string jsonStr = j.dump();
+    std::string key = "app_volume_mute_status";
+    {
+        std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+        AudioSettingProvider &audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        ErrCode ret = audioSettingProvider.PutStringValue(key, jsonStr, "system");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Save system app volume mute status failed");
+    }
+    return SUCCESS;
+}
+
+int32_t VolumeDataMaintainer::LoadSystemAppVolumeMuteStatusFromDb(
+    std::unordered_map<std::string, bool> &systemAppVolumeMuteStatusMap)
+{
+    std::string key = "app_volume_mute_status";
+    std::string jsonStr = "";
+    {
+        std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+        AudioSettingProvider &audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+        ErrCode ret = audioSettingProvider.GetStringValue(key, jsonStr, "system");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_READ_FAILED, "Get system app volume mute status failed");
+    }
+    if (!jsonStr.empty()) {
+        nlohmann::json j = nlohmann::json::parse(jsonStr, nullptr, false);
+        CHECK_AND_RETURN_RET_LOG(!j.is_discarded() && j.is_object(), ERROR, "Invalid json string");
+        for (const auto &[key, value] : j.items()) {
+            if (value.is_boolean()) {
+                systemAppVolumeMuteStatusMap.emplace(key, value.get<bool>());
+            }
+        }
+    }
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

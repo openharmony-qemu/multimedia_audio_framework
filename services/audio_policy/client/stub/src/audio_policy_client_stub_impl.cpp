@@ -690,7 +690,21 @@ int32_t AudioPolicyClientStubImpl::OnActiveVolumeTypeChanged(int32_t volumeType)
     return SUCCESS;
 }
 
-int32_t AudioPolicyClientStubImpl::OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
+int32_t AudioPolicyClientStubImpl::OnSelfAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
+{
+    {
+        std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
+        for (auto iter : selfAppVolumeChangeCallback_) {
+            if (iter.first != appUid) {
+                continue;
+            }
+            iter.second->OnSelfAppVolumeChanged(volumeEvent);
+        }
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::OnSystemAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent)
 {
     {
         std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
@@ -699,15 +713,6 @@ int32_t AudioPolicyClientStubImpl::OnAppVolumeChanged(int32_t appUid, const Volu
                 continue;
             }
             iter.second->OnAppVolumeChangedForUid(appUid, volumeEvent);
-        }
-    }
-    {
-        std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
-        for (auto iter : selfAppVolumeChangeCallback_) {
-            if (iter.first != appUid) {
-                continue;
-            }
-            iter.second->OnSelfAppVolumeChanged(volumeEvent);
         }
     }
     return SUCCESS;

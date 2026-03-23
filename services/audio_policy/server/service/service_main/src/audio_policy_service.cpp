@@ -746,6 +746,7 @@ void AudioPolicyService::RegisterDataObserver()
     audioConnectedDevice_.RegisterNameMonitorHelper();
     audioPolicyManager_.RegisterDoNotDisturbStatus();
     audioPolicyManager_.RegisterDoNotDisturbStatusWhiteList();
+    audioPolicyManager_.RegisterAppIndividualVolumeEnableObserver();
 }
 
 int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc)

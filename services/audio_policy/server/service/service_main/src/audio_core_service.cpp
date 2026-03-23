@@ -3884,5 +3884,22 @@ std::string AudioCoreService::GetHalNameForDevice(const std::string &role, const
     return halName;
 }
 
+int32_t AudioCoreService::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
+{
+    std::vector<std::pair<int32_t, AudioStreamType>> activeStreams = streamCollector_.GetActiveStreams();
+    for (const auto &[uid, streamType] : activeStreams) {
+        int32_t systemAppVolumePercentage = 0;
+        audioVolumeManager_.GetSystemAppVolumePercentage(uid, systemAppVolumePercentage);
+        AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+        ActiveStreamVolumeInfo activeStreamVolumeInfo {volumeType, systemAppVolumePercentage, uid};
+        if (std::find(activeStreamsVolumeInfo.begin(), activeStreamsVolumeInfo.end(),
+            activeStreamVolumeInfo) == activeStreamsVolumeInfo.end()) {
+            activeStreamsVolumeInfo.push_back(activeStreamVolumeInfo);
+            AUDIO_INFO_LOG("clientUID: %{public}d, volumeType: %{public}d, volumePercentage: %{public}d",
+                uid, volumeType, systemAppVolumePercentage);
+        }
+    }
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

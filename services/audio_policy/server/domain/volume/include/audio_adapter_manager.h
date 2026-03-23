@@ -99,6 +99,14 @@ public:
 
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
+    int32_t GetSystemAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
+
+    int32_t SetSystemAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+
+    int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted);
+
+    int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute);
+
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
 
     bool IsAppRingMuted(int32_t appUid);
@@ -316,6 +324,8 @@ public:
     void RegisterDoNotDisturbStatusWhiteList();
     void RegisterMdmMuteSwitchCallback();
     void MdmMuteSwitchCallback(bool isMute);
+    void RegisterAppIndividualVolumeEnableObserver();
+    void HandleAppIndividualVolumeSettingChanged();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
     void SendLoudVolumeModeToDsp(LoudVolumeHoldType funcHoldType, bool state);
@@ -409,6 +419,7 @@ private:
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);
+    void InitSystemAppVolume(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
     bool LoadMuteStatusMap(std::shared_ptr<AudioDeviceDescriptor> &device);
     std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
@@ -429,6 +440,8 @@ private:
     void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
     void SetAppAudioVolume(int32_t appUid, float volumeDb);
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
+    int32_t SetSystemAppVolumeDb(int32_t appUid);
+    void SetSystemAppAudioVolume(int32_t appUid, float volumeDb);
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass,
         const std::string &networkId = LOCAL_NETWORK_ID);
     bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
@@ -496,6 +509,10 @@ private:
  	    AudioVolumeType &volumeType);
     void SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType);
+    void SaveSystemAppVolumeLevelToDb();
+    void SaveSystemAppVolumeMuteStatusToDbAsync();
+    int32_t RestoreSystemAppVolumeLevel();
+    int32_t RestoreSystemAppVolumeMuteStatus();
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

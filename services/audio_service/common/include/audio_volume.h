@@ -29,6 +29,7 @@ namespace AudioStandard {
 class StreamVolume;
 class SystemVolume;
 class AppVolume;
+class SystemAppVolume;
 enum FadePauseState {
     NO_FADE,
     DO_FADE,
@@ -63,11 +64,15 @@ public:
 
     // system volume
     void SetSystemVolume(SystemVolume &systemVolume);
-    void SetAppVolume(AppVolume &appVolume);
-    void SetAppVolumeMute(int32_t appUid, bool muted);
-    bool SetAppRingMuted(int32_t appUid, bool isMuted);
     void SetSystemVolume(int32_t volumeType, const std::string &deviceClass, float volume, int32_t volumeLevel);
     void SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted);
+
+    // app volume
+    void SetAppVolume(AppVolume &appVolume);
+    void SetAppVolumeMute(int32_t appUid, bool muted);
+    void SetSystemAppVolume(SystemAppVolume &systemAppVolume);
+    void SetSystemAppVolumeMuted(int32_t appUid, bool muted);
+    bool SetAppRingMuted(int32_t appUid, bool isMuted);
 
     // stream type convert
     int32_t ConvertStreamTypeStrToInt(const std::string &streamType);
@@ -98,6 +103,9 @@ public:
     int32_t GetOffloadType(uint32_t streamIndex);
     void SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable);
     int32_t GetOffloadEnable(uint32_t streamIndex);
+    void HandleAppIndividualVolumeSettingChanged(bool appIndividualVolumeEnabled);
+    float GetSystemAppVolume(int32_t uid, AudioStreamType streamType);
+    std::set<int32_t> GetStreamVolumeAppUids();
 private:
     AudioVolume();
     float GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode);
@@ -106,10 +114,13 @@ private:
     void ConstructEnforcedToneVolumeValues(VolumeValues *volumes);
     void GetVolumeValues(uint32_t sessionId, AudioStreamType streamType, const std::string &deviceClass,
         VolumeValues *volumes);
+    bool ShouldApplySystemAppVolume(AudioStreamType streamType);
+    float GetSystemAppVolumeEffective(StreamVolume &stream);
 private:
     std::unordered_map<uint32_t, StreamVolume> streamVolume_ {};
     std::unordered_map<std::string, SystemVolume> systemVolume_ {};
     std::unordered_map<int32_t, AppVolume> appVolume_ {};
+    std::unordered_map<int32_t, SystemAppVolume> systemAppVolume_ {};
     std::shared_mutex volumeMutex_ {};
     bool isVgsVolumeSupported_ = false;
     std::shared_mutex fadeoutMutex_ {};
@@ -130,6 +141,7 @@ private:
     bool isScoActive_ = false;
     std::unordered_map<uint32_t, float> doNotDisturbStatusWhiteListVolume_ {};
     bool isDoNotDisturbStatus_ = false;
+    bool appIndividualVolumeEnabled_ = false;
 };
 
 class StreamVolume {
@@ -162,7 +174,8 @@ public:
     bool isDualMuted_ = false;
 
     float appVolume_ = 1.0f;
-    float totalVolume_ = 1.0f; // volume_ * duckFactor_ * lowPowerFactor_ * appVolume_
+    float systemAppVolume_ = 1.0f;
+    float totalVolume_ = 1.0f; // volume_ * duckFactor_ * lowPowerFactor_ * appVolume_ * systemAppVolume_
 
     float historyVolume_ = 0.0f; // used all volume
     float monitorVolume_ = 0.0f; // monitor all volume change
@@ -205,6 +218,24 @@ public:
         : appUid_(appUid), volume_(volume),
         volumeLevel_(volumeLevel), isMuted_(isMuted) {};
     ~AppVolume() = default;
+    int32_t GetAppUid() {return appUid_;};
+
+private:
+    int32_t appUid_ = 0;
+
+public:
+    float volume_ = 1.0f;
+    int32_t volumeLevel_ = 0;
+    bool isMuted_ = false;
+    float totalVolume_ = 1.0f;
+};
+
+class SystemAppVolume {
+public:
+    SystemAppVolume(int32_t appUid, float volume, int32_t volumeLevel, bool isMuted)
+        : appUid_(appUid), volume_(volume),
+        volumeLevel_(volumeLevel), isMuted_(isMuted) {};
+    ~SystemAppVolume() = default;
     int32_t GetAppUid() {return appUid_;};
 
 private:

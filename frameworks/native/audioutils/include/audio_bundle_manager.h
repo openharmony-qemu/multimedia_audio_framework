@@ -30,6 +30,8 @@ public:
     static AppExecFwk::BundleInfo GetBundleInfoFromUid(int32_t callingUid);
     static void RemoveBundleInfoByUid(int32_t callingUid);
     static std::string GetBundleNameByToken(const uint32_t tokenIdNum);
+    static int32_t IsBundleInstalled(
+        const std::string &bundleName, int32_t userId, int32_t appIndex, bool &isInstalled);
 
 private:
     static std::mutex bundleNameMapMutex_;

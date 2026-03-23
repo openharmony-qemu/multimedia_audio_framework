@@ -157,9 +157,9 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getVolumeGroupManager", GetVolumeGroupManager),
         DECLARE_NAPI_FUNCTION("getVolumeGroupManagerSync", GetVolumeGroupManagerSync),
         DECLARE_NAPI_FUNCTION("setAppVolumePercentage", SetAppVolumePercentage),
-        DECLARE_NAPI_FUNCTION("setAppVolumePercentageForUid", SetAppVolumePercentageForUid),
+        DECLARE_NAPI_FUNCTION("setAppVolumePercentageForUid", SetSystemAppVolumePercentageForUid),
         DECLARE_NAPI_FUNCTION("getAppVolumePercentage", GetAppVolumePercentage),
-        DECLARE_NAPI_FUNCTION("getAppVolumePercentageForUid", GetAppVolumePercentageForUid),
+        DECLARE_NAPI_FUNCTION("getAppVolumePercentageForUid", GetSystemAppVolumePercentageForUid),
         DECLARE_NAPI_FUNCTION("setAppVolumeMutedForUid", SetAppVolumeMutedForUid),
         DECLARE_NAPI_FUNCTION("isAppVolumeMutedForUid", IsAppVolumeMutedForUid),
         DECLARE_NAPI_FUNCTION("getSystemVolume", GetSystemVolume),
@@ -177,6 +177,7 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getStreamUsagesByVolumeType", GetStreamUsagesByVolumeType),
         DECLARE_NAPI_FUNCTION("getSystemVolumeByUid", GetSystemVolumeByUid),
         DECLARE_NAPI_FUNCTION("setSystemVolumeByUid", SetSystemVolumeByUid),
+        DECLARE_NAPI_FUNCTION("getActiveStreamsVolumeInfo", GetActiveStreamsVolumeInfo),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
         DECLARE_NAPI_FUNCTION("forceVolumeKeyControlType", ForceVolumeKeyControlType),
@@ -231,12 +232,12 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentage(napi_env env, napi_cal
     return NapiAsyncWork::Enqueue(env, context, "GetAppVolumePercentage", executor, complete);
 }
 
-napi_value NapiAudioVolumeManager::GetAppVolumePercentageForUid(napi_env env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::GetSystemAppVolumePercentageForUid(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("GetAppVolumePercentageForUid failed : no memory");
-        NapiAudioError::ThrowError(env, "GetAppVolumePercentageForUid failed : no memory", NAPI_ERR_SYSTEM);
+        AUDIO_ERR_LOG("GetSystemAppVolumePercentageForUid failed : no memory");
+        NapiAudioError::ThrowError(env, "GetSystemAppVolumePercentageForUid failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
     size_t argNum = 0;
@@ -257,7 +258,8 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentageForUid(napi_env env, na
         auto *napiAudioVolumeManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
             "audio volume group manager state is error.");
-        context->intValue = napiAudioVolumeManager->audioSystemMngr_->GetAppVolume(context->appUid, context->volLevel);
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->GetSystemAppVolumePercentageForUid(
+            context->appUid, context->volLevel);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION);
@@ -271,15 +273,15 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentageForUid(napi_env env, na
     auto complete = [env, context](napi_value &output) {
         NapiParamUtils::SetValueInt32(env, context->volLevel, output);
     };
-    return NapiAsyncWork::Enqueue(env, context, "GetAppVolumePercentageForUid", executor, complete);
+    return NapiAsyncWork::Enqueue(env, context, "getAppVolumePercentageForUid", executor, complete);
 }
 
-napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, napi_callback_info info)
+napi_value NapiAudioVolumeManager::SetSystemAppVolumePercentageForUid(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("SetAppVolumePercentageForUid failed : no memory");
-        NapiAudioError::ThrowError(env, "SetAppVolumePercentageForUid failed : no memory", NAPI_ERR_SYSTEM);
+        AUDIO_ERR_LOG("SetSystemAppVolumePercentageForUid failed : no memory");
+        NapiAudioError::ThrowError(env, "SetSystemAppVolumePercentageForUid failed : no memory", NAPI_ERR_SYSTEM);
         return NapiParamUtils::GetUndefinedValue(env);
     }
     size_t argNum = 0;
@@ -290,8 +292,12 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed",
             NAPI_ERR_INPUT_INVALID);
-        context->status = NapiParamUtils::GetValueInt32(env, context->volLevel, argv[PARAM1]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed",
+        context->status = NapiParamUtils::GetValueInt32(env, context->volPercent, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volPercent failed",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = (context->volPercent < MIN_VOLUME_PERCENTAGE || context->volPercent > MAX_VOLUME_PERCENTAGE) ?
+            napi_invalid_arg : context->status;
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "volPercent range error",
             NAPI_ERR_INPUT_INVALID);
     };
     context->GetCbInfo(env, info, inputParser);
@@ -303,8 +309,8 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
         auto *napiAudioVolumeManager = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
             "audio volume group manager state is error.");
-        context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetAppVolume(
-            context->appUid, context->volLevel);
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->SetSystemAppVolumePercentageForUid(
+            context->appUid, context->volPercent);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION);
@@ -313,14 +319,14 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
         } else if (context->intValue == ERR_INVALID_PARAM) {
             context->SignError(NAPI_ERROR_INVALID_PARAM);
         } else {
-            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Set system app volume fail.");
         }
     };
 
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
-    return NapiAsyncWork::Enqueue(env, context, "SetAppVolumePercentageForUid", executor, complete);
+    return NapiAsyncWork::Enqueue(env, context, "setAppVolumePercentageForUid", executor, complete);
 }
 
 napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_callback_info info)
@@ -405,7 +411,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumeMutedForUid(napi_env env, napi_ca
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
-    return NapiAsyncWork::Enqueue(env, context, "SetAppVolumeMutedForUid", executor, complete);
+    return NapiAsyncWork::Enqueue(env, context, "setAppVolumeMutedForUid", executor, complete);
 }
 
 napi_value NapiAudioVolumeManager::IsAppVolumeMutedForUid(napi_env env, napi_callback_info info)
@@ -2074,6 +2080,30 @@ napi_value NapiAudioVolumeManager::GetMinSystemVolumePercentage(napi_env env, na
     int32_t minSystemVolume = napiAudioVolumeManager->audioSystemMngr_->GetMinVolumeDegree(
         NapiAudioEnum::GetNativeAudioVolumeType(volType));
     NapiParamUtils::SetValueInt32(env, minSystemVolume, result);
+    return result;
+}
+
+napi_value NapiAudioVolumeManager::GetActiveStreamsVolumeInfo(napi_env env, napi_callback_info info)
+{
+    AUDIO_INFO_LOG("GetActiveStreamsVolumeInfo");
+    napi_value result = nullptr;
+    size_t argc = ARGS_ZERO;
+    auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, nullptr);
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    if (napiAudioVolumeManager == nullptr || napiAudioVolumeManager->audioSystemMngr_ == nullptr) {
+        AUDIO_ERR_LOG("napiAudioVolumeManager or audioSystemMngr is nullptr!");
+        return NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM,
+            "napiAudioVolumeManager or audioSystemMngr is nullptr!");
+    }
+    int32_t ret = napiAudioVolumeManager->audioSystemMngr_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_PERMISSION_DENIED,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Not system app"), "Not system app");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "GetActiveStreamsVolumeInfo failure!"),
+        "GetActiveStreamsVolumeInfo failure!");
+
+    NapiParamUtils::ToJsActiveStreamsVolumeInfo(env, activeStreamsVolumeInfo, result);
     return result;
 }
 }  // namespace AudioStandard

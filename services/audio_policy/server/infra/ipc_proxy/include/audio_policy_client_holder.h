@@ -34,7 +34,8 @@ public:
     void OnDeviceInfoUpdate(const DeviceChangeAction &deviceChangeAction);
     void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo);
     void OnRingerModeUpdated(const AudioRingerMode &ringerMode);
-    void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent);
+    void OnSelfAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent);
+    void OnSystemAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent);
     void OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType);
     void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent);
     void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,

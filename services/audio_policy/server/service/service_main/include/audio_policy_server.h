@@ -117,7 +117,7 @@ public:
     int32_t SetSystemVolumeLevelWithDevice(int32_t volumeType, int32_t volumeLevel, int32_t deviceType,
         int32_t volumeFlag = 0) override;
 
-    int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag) override;
+    int32_t SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage) override;
 
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
@@ -133,7 +133,7 @@ public:
 
     int32_t GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel) override;
 
-    int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) override;
+    int32_t GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage) override;
 
     int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel) override;
 
@@ -772,6 +772,7 @@ public:
     int32_t GetAudioSceneFromAllZones(int32_t &audioScene) override;
     int32_t SetCustomAudioMix(const std::string &zoneName, const std::vector<AudioZoneMix> &audioMixes) override;
     int32_t SetAudioSessionBehavior(const uint32_t behavior) override;
+    int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -820,18 +821,17 @@ private:
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
     int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
         int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
-    int32_t SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
-    int32_t SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
+    int32_t SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
         bool isUpdateUi, DeviceType deviceType);
     int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
-    int32_t SetAppSingleStreamVolume(int32_t streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
         DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
     int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId = 0);
-    int32_t GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);
+    int32_t GetSelfAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
@@ -845,6 +845,10 @@ private:
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
     bool IsRingerModeValid(AudioRingerMode ringMode);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
+
+    int32_t SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage);
+    int32_t GetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t &volumePercentage);
+    int32_t SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted);
 
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);

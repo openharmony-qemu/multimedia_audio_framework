@@ -65,6 +65,7 @@ static const std::unordered_map<std::string, AudioStreamType> STREAM_TYPE_STRING
 uint64_t DURATION_TIME_DEFAULT = 40;
 uint64_t DURATION_TIME_SHORT = 10;
 static const float DEFAULT_APP_VOLUME = 1.0f;
+constexpr int32_t DEFAULT_APP_VOLUME_LEVEL = 100;
 uint32_t VOIP_CALL_VOICE_SERVICE = 1001;
 uint32_t DISTURB_STATE_VOLUME_MUTE = 0;
 uint32_t DISTURB_STATE_VOLUME_UNMUTE = 1;
@@ -84,6 +85,7 @@ AudioVolume::AudioVolume()
 AudioVolume::~AudioVolume()
 {
     appVolume_.clear();
+    systemAppVolume_.clear();
     streamVolume_.clear();
     systemVolume_.clear();
     doNotDisturbStatusWhiteListVolume_.clear();
@@ -274,6 +276,16 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", streamVolumeParams.sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    float totalSystemAppVolume = 1.0f;
+    auto systemAppVolumeIt = systemAppVolume_.find(streamVolumeParams.uid);
+    if (systemAppVolumeIt != systemAppVolume_.end()) {
+        totalSystemAppVolume = systemAppVolumeIt->second.totalVolume_;
+    } else {
+        SystemAppVolume systemAppVolume(streamVolumeParams.uid, DEFAULT_APP_VOLUME, DEFAULT_APP_VOLUME_LEVEL, false);
+        systemAppVolume.totalVolume_ = systemAppVolume.volume_;
+        totalSystemAppVolume = systemAppVolume.totalVolume_;
+        systemAppVolume_.emplace(streamVolumeParams.uid, systemAppVolume);
+    }
     auto it = streamVolume_.find(streamVolumeParams.sessionId);
     if (it == streamVolume_.end()) {
         streamVolume_.emplace(streamVolumeParams.sessionId,
@@ -287,9 +299,10 @@ void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
     it = streamVolume_.find(streamVolumeParams.sessionId);
     if (it != streamVolume_.end()) {
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
+        it->second.systemAppVolume_ = totalSystemAppVolume;
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
-            it->second.isDualMuted_) ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.isDualMuted_) ? 0.0f : it->second.volume_ * it->second.duckFactor_ *
+            it->second.lowPowerFactor_ * it->second.appVolume_ * GetSystemAppVolumeEffective(it->second);
     } else {
         HILOG_COMM_ERROR("[AddStreamVolume] stream volume not exist, sessionId:%{public}u",
             streamVolumeParams.sessionId);
@@ -317,8 +330,8 @@ void AudioVolume::SetStreamVolume(uint32_t sessionId, float volume)
         it->second.volume_ = volume;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
-            it->second.isDualMuted_) ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.isDualMuted_) ? 0.0f : it->second.volume_ * it->second.duckFactor_ *
+            it->second.lowPowerFactor_ * it->second.appVolume_ * GetSystemAppVolumeEffective(it->second);
     } else {
         HILOG_COMM_ERROR("[SetStreamVolume] stream volume not exist, sessionId:%{public}u", sessionId);
     }
@@ -337,8 +350,8 @@ void AudioVolume::SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor
         }
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
-            it->second.isDualMuted_) ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.isDualMuted_) ? 0.0f : it->second.volume_ * it->second.duckFactor_ *
+            it->second.lowPowerFactor_ * it->second.appVolume_ * GetSystemAppVolumeEffective(it->second);
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
@@ -353,8 +366,8 @@ void AudioVolume::SetStreamVolumeLowPowerFactor(uint32_t sessionId, float lowPow
         it->second.lowPowerFactor_ = lowPowerFactor;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
-            it->second.isDualMuted_) ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.isDualMuted_) ? 0.0f : it->second.volume_ * it->second.duckFactor_ *
+            it->second.lowPowerFactor_ * it->second.appVolume_ * GetSystemAppVolumeEffective(it->second);
     } else {
         AUDIO_ERR_LOG("stream volume not exist, sessionId:%{public}u", sessionId);
     }
@@ -405,8 +418,8 @@ void AudioVolume::SetNonInterruptMute(uint32_t sessionId, bool muteFlag)
         it->second.nonInterruptMute_ = muteFlag;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
-            it->second.isDualMuted_) ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.isDualMuted_) ? 0.0f : it->second.volume_ * it->second.duckFactor_ *
+            it->second.lowPowerFactor_ * it->second.appVolume_ * GetSystemAppVolumeEffective(it->second);
     }
 }
 
@@ -419,8 +432,8 @@ void AudioVolume::SetStreamVolumeMute(uint32_t sessionId, bool isMuted)
         it->second.isMuted_ = isMuted;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
-            it->second.isDualMuted_) ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.isDualMuted_) ? 0.0f : it->second.volume_ * it->second.duckFactor_ *
+            it->second.lowPowerFactor_ * it->second.appVolume_ * GetSystemAppVolumeEffective(it->second);
     }
 }
 
@@ -433,8 +446,8 @@ void AudioVolume::SetDualStreamVolumeMute(uint32_t sessionId, bool isDualMuted)
         it->second.isDualMuted_ = isDualMuted;
         it->second.appVolume_ = GetAppVolumeInternal(it->second.GetAppUid(), it->second.GetVolumeMode());
         it->second.totalVolume_ = (it->second.isMuted_ || it->second.isAppRingMuted_ || it->second.nonInterruptMute_ ||
-            it->second.isDualMuted_) ? 0.0f :
-            it->second.volume_ * it->second.duckFactor_ * it->second.lowPowerFactor_ * it->second.appVolume_;
+            it->second.isDualMuted_) ? 0.0f : it->second.volume_ * it->second.duckFactor_ *
+            it->second.lowPowerFactor_ * it->second.appVolume_ * GetSystemAppVolumeEffective(it->second);
     }
 }
 
@@ -482,8 +495,8 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
         if (stream.GetAppUid() == appUid) {
             stream.appVolume_ = VolumeUtils::IsPCVolumeEnable() ? totalAppVolume : (isMuted ? totalAppVolume :
                 (stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 : totalAppVolume));
-            stream.totalVolume_ = stream.isMuted_ ? 0.0f :
-                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
+            stream.totalVolume_ = stream.isMuted_ ? 0.0f : stream.volume_ * stream.duckFactor_ *
+                stream.lowPowerFactor_ * stream.appVolume_ * GetSystemAppVolumeEffective(stream);
         }
     }
 }
@@ -510,8 +523,8 @@ bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
         if (stream.GetAppUid() == appUid && stream.GetStreamType() == static_cast<int32_t>(STREAM_RING)) {
             stream.isAppRingMuted_ = isMuted;
             stream.appVolume_ = totalAppVolume;
-            stream.totalVolume_ = (stream.isMuted_ || stream.isAppRingMuted_) ? 0.0f :
-                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
+            stream.totalVolume_ = (stream.isMuted_ || stream.isAppRingMuted_) ? 0.0f : stream.volume_ *
+                stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_ * GetSystemAppVolumeEffective(stream);
             AUDIO_INFO_LOG("stream total volume: %{public}f", stream.totalVolume_);
             return true;
         }
@@ -519,6 +532,16 @@ bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
     return false;
 }
 
+
+/**
+ * Sets the application-requested volume factor (appVolume) for a specific app.
+ *
+ * The final app volume is determined by:
+ *
+ *     finalAppVolume = appVolume * systemAppVolume
+ *
+ * This function only modifies the app-controlled factor.
+ */
 void AudioVolume::SetAppVolume(AppVolume &appVolume)
 {
     int32_t appUid = appVolume.GetAppUid();
@@ -544,8 +567,75 @@ void AudioVolume::SetAppVolume(AppVolume &appVolume)
             stream.appVolume_ = VolumeUtils::IsPCVolumeEnable() ? appVolume.totalVolume_ : (appVolume.isMuted_ ?
                 appVolume.totalVolume_ :(stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 :
                     appVolume.totalVolume_));
-            stream.totalVolume_ = stream.isMuted_ ? 0.0f :
-                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
+            stream.totalVolume_ = stream.isMuted_ ? 0.0f : stream.volume_ * stream.duckFactor_ *
+                stream.lowPowerFactor_ * stream.appVolume_ * GetSystemAppVolumeEffective(stream);
+        }
+    }
+}
+
+/**
+ * Sets the system-managed volume factor (systemAppVolume) for a specific app.
+ *
+ * The final app volume is determined by:
+ *
+ *     finalAppVolume = appVolume * systemAppVolume
+ *
+ * Unlike SetAppVolume(), this function controls the system policy factor applied to the app.
+ */
+void AudioVolume::SetSystemAppVolume(SystemAppVolume &systemAppVolume)
+{
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    int32_t appUid = systemAppVolume.GetAppUid();
+    systemAppVolume.totalVolume_ = systemAppVolume.isMuted_ ? 0.0f : systemAppVolume.volume_;
+    auto it = systemAppVolume_.find(appUid);
+    if (it != systemAppVolume_.end()) {
+        it->second.volume_ = systemAppVolume.volume_;
+        it->second.volumeLevel_ = systemAppVolume.volumeLevel_;
+        it->second.isMuted_ = systemAppVolume.isMuted_;
+        it->second.totalVolume_ = systemAppVolume.totalVolume_;
+    } else {
+        systemAppVolume_.emplace(appUid, systemAppVolume);
+    }
+
+    AUDIO_INFO_LOG("appUid:%{public}d, volume:%{public}f, level:%{public}d, isMuted:%{public}d, size:%{public}zu",
+        appUid, systemAppVolume.volume_, systemAppVolume.volumeLevel_, systemAppVolume.isMuted_,
+        systemAppVolume_.size());
+    for (auto &streamVolume : streamVolume_) {
+        auto &stream = streamVolume.second;
+        if (stream.GetAppUid() == appUid) {
+            stream.systemAppVolume_ = systemAppVolume.totalVolume_;
+            stream.totalVolume_ = (stream.isMuted_ || stream.isAppRingMuted_ || stream.nonInterruptMute_ ||
+                stream.isDualMuted_) ? 0.0f : stream.volume_ * stream.duckFactor_ *
+                stream.lowPowerFactor_ * stream.appVolume_ * GetSystemAppVolumeEffective(stream);
+        }
+    }
+}
+
+void AudioVolume::SetSystemAppVolumeMuted(int32_t appUid, bool isMuted)
+{
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    float totalSystemAppVolume = 1.0f;
+    auto it = systemAppVolume_.find(appUid);
+    if (it != systemAppVolume_.end()) {
+        it->second.isMuted_ = isMuted;
+        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f : it->second.volume_;
+        totalSystemAppVolume = it->second.totalVolume_;
+    } else {
+        SystemAppVolume systemAppVolume(appUid, DEFAULT_APP_VOLUME, defaultAppVolume_, isMuted);
+        systemAppVolume.totalVolume_ = isMuted ? 0.0f : systemAppVolume.volume_;
+        totalSystemAppVolume = systemAppVolume.totalVolume_;
+        systemAppVolume_.emplace(appUid, systemAppVolume);
+    }
+
+    AUDIO_INFO_LOG("appUid:%{public}d, isMuted:%{public}d, size:%{public}zu",
+        appUid, isMuted, systemAppVolume_.size());
+    for (auto &streamVolume : streamVolume_) {
+        auto &stream = streamVolume.second;
+        if (stream.GetAppUid() == appUid) {
+            stream.systemAppVolume_ = totalSystemAppVolume;
+            stream.totalVolume_ = (stream.isMuted_ || stream.isAppRingMuted_ || stream.nonInterruptMute_ ||
+                stream.isDualMuted_) ? 0.0f : stream.volume_ * stream.duckFactor_ *
+                stream.lowPowerFactor_ * stream.appVolume_ * GetSystemAppVolumeEffective(stream);
         }
     }
 }
@@ -813,6 +903,67 @@ int32_t AudioVolume::GetOffloadEnable(uint32_t streamIndex)
     if (it != offloadEnable_.end()) { return it->second; }
     AUDIO_WARNING_LOG("No such streamIndex in map!");
     return 0;
+}
+
+float AudioVolume::GetSystemAppVolume(int32_t uid, AudioStreamType streamType)
+{
+    if (!ShouldApplySystemAppVolume(streamType)) {
+        return 1.0f;
+    }
+    auto it = systemAppVolume_.find(uid);
+    if (it != systemAppVolume_.end()) {
+        return it->second.totalVolume_;
+    } else {
+        return 1.0f;
+    }
+}
+
+float AudioVolume::GetSystemAppVolumeEffective(StreamVolume &stream)
+{
+    if (!ShouldApplySystemAppVolume(static_cast<AudioStreamType>(stream.GetStreamType()))) {
+        return 1.0f;
+    }
+    return stream.systemAppVolume_;
+}
+
+bool AudioVolume::ShouldApplySystemAppVolume(AudioStreamType streamType)
+{
+    if (!appIndividualVolumeEnabled_) {
+        return false;
+    }
+
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (!VolumeUtils::IsPCVolumeEnable()) {
+        return volumeType == STREAM_MUSIC;
+    }
+
+    if (VolumeUtils::IsPCVolumeEnable()) {
+        return true;
+    }
+    return true;
+}
+
+void AudioVolume::HandleAppIndividualVolumeSettingChanged(bool appIndividualVolumeEnabled)
+{
+    appIndividualVolumeEnabled_ = appIndividualVolumeEnabled;
+    
+    // Recalculate the volume of all streams.
+    for (auto &streamVolume : streamVolume_) {
+        auto &stream = streamVolume.second;
+        stream.totalVolume_ = (stream.isMuted_ || stream.isAppRingMuted_ || stream.nonInterruptMute_ ||
+            stream.isDualMuted_) ? 0.0f : stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ *
+            stream.appVolume_ * GetSystemAppVolumeEffective(stream);
+    }
+}
+
+std::set<int32_t> AudioVolume::GetStreamVolumeAppUids()
+{
+    std::set<int32_t> appUidSet;
+
+    for (auto &[sessionId, streamVolume] : streamVolume_) {
+        appUidSet.insert(streamVolume.GetAppUid());
+    }
+    return appUidSet;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -320,16 +320,29 @@ bool AudioPolicyServerHandler::SendActiveVolumeTypeChangeCallback(const AudioVol
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent)
+bool AudioPolicyServerHandler::SendSelfAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->appUid = appUid;
     eventContextObj->volumeEvent = volumeEvent;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::APP_VOLUME_CHANGE_EVENT,
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SELF_APP_VOLUME_CHANGE_EVENT,
         eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send RINGER_MODEUPDATE_EVENT event failed");
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SELF_APP_VOLUME_CHANGE_EVENT event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendSystemAppVolumeChangeCallback(int32_t appUid, const VolumeEvent &volumeEvent)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->appUid = appUid;
+    eventContextObj->volumeEvent = volumeEvent;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send SYSTEM_APP_VOLUME_CHANGE_EVENT event failed");
     return ret;
 }
 
@@ -1125,7 +1138,7 @@ void AudioPolicyServerHandler::HandleActiveVolumeTypeChangeEvent(const AppExecFw
     }
 }
 
-void AudioPolicyServerHandler::HandleAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+void AudioPolicyServerHandler::HandleSelfAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
@@ -1140,14 +1153,30 @@ void AudioPolicyServerHandler::HandleAppVolumeChangeEvent(const AppExecFwk::Inne
         AUDIO_INFO_LOG("appVolumeChangeListenerCb client %{public}d :volumeMode %{public}d :appUid%{public}d",
             it->first, static_cast<int32_t>(eventContextObj->volumeEvent.volumeMode), eventContextObj->appUid);
         if (clientCallbacksMap_.count(it->first) > 0 &&
-            clientCallbacksMap_[it->first].count(CALLBACK_APP_VOLUME_CHANGE) > 0 &&
-            clientCallbacksMap_[it->first][CALLBACK_APP_VOLUME_CHANGE]) {
-            appVolumeChangeListenerCb->OnAppVolumeChanged(eventContextObj->appUid, eventContextObj->volumeEvent);
-        }
-        if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SELF_APP_VOLUME_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_SELF_APP_VOLUME_CHANGE]) {
-            appVolumeChangeListenerCb->OnAppVolumeChanged(eventContextObj->appUid, eventContextObj->volumeEvent);
+            appVolumeChangeListenerCb->OnSelfAppVolumeChanged(eventContextObj->appUid, eventContextObj->volumeEvent);
+        }
+    }
+}
+
+void AudioPolicyServerHandler::HandleSystemAppVolumeChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
+        std::shared_ptr<AudioPolicyClientHolder> appVolumeChangeListenerCb = it->second;
+        if (appVolumeChangeListenerCb == nullptr) {
+            AUDIO_ERR_LOG("nullptr for client %{public}d", it->first);
+            continue;
+        }
+
+        AUDIO_INFO_LOG("client:%{public}d, appUid:%{public}d", it->first, eventContextObj->appUid);
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_APP_VOLUME_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_APP_VOLUME_CHANGE]) {
+            appVolumeChangeListenerCb->OnSystemAppVolumeChanged(eventContextObj->appUid, eventContextObj->volumeEvent);
         }
     }
 }
@@ -1964,8 +1993,11 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
         case EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE:
             HandleSpatializatonEnabledChangeForCurrentDeviceEvent(event);
             break;
-        case EventAudioServerCmd::APP_VOLUME_CHANGE_EVENT:
-            HandleAppVolumeChangeEvent(event);
+        case EventAudioServerCmd::SELF_APP_VOLUME_CHANGE_EVENT:
+            HandleSelfAppVolumeChangeEvent(event);
+            break;
+        case EventAudioServerCmd::SYSTEM_APP_VOLUME_CHANGE_EVENT:
+            HandleSystemAppVolumeChangeEvent(event);
             break;
         case EventAudioServerCmd::ACTIVE_VOLUME_TYPE_CHANGE_EVENT:
             HandleActiveVolumeTypeChangeEvent(event);
@@ -1978,9 +2010,6 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::SESSION_INPUT_DEVICE_CHANGE:
             HandleAudioSessionInputDeviceChangeEvent(event);
-            break;
-        case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
-            HandleVolumeDegreeEvent(event);
             break;
         default:
             break;
@@ -1999,6 +2028,9 @@ void AudioPolicyServerHandler::HandleOtherServiceSecondEvent(const uint32_t &eve
             break;
         case EventAudioServerCmd::DEVICE_CONFIG_CHANGED:
             HandleDeviceConfigChangedEvent(event);
+            break;
+        case EventAudioServerCmd::VOLUME_DEGREE_EVENT:
+            HandleVolumeDegreeEvent(event);
             break;
         default:
             break;

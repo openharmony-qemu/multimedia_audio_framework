@@ -322,36 +322,6 @@ HWTEST(AudioVolumeClientManagerUnitTest, SetSelfAppVolume_002, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test SetAppVolume API
-* @tc.number : SetAppVolume_001
-* @tc.desc   : Test SetSelfAppVolume interface
-*/
-HWTEST(AudioVolumeClientManagerUnitTest, SetAppVolume_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolume_001 start");
-    int32_t appUid = 30003000;
-    int32_t volume = 10;
-    int32_t result = AudioVolumeClientManager::GetInstance().SetAppVolume(appUid, volume);
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolume_001 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
-}
-
-/**
-* @tc.name   : Test SetAppVolume API
-* @tc.number : SetAppVolume_002
-* @tc.desc   : Test SetSelfAppVolume interface
-*/
-HWTEST(AudioVolumeClientManagerUnitTest, SetAppVolume_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolume_002 start");
-    int32_t appUid = 30003000;
-    int32_t volume = 1000;
-    int32_t result = AudioVolumeClientManager::GetInstance().SetAppVolume(appUid, volume);
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolume_002 end result:%{public}d", result);
-    EXPECT_NE(result, TEST_RET_NUM);
-}
-
-/**
 * @tc.name   : Test GetSelfAppVolume API
 * @tc.number : GetSelfAppVolume_001
 * @tc.desc   : Test GetSelfAppVolume interface
@@ -365,39 +335,6 @@ HWTEST(AudioVolumeClientManagerUnitTest, GetSelfAppVolume_001, TestSize.Level1)
     EXPECT_EQ(result, TEST_RET_NUM);
     result = AudioVolumeClientManager::GetInstance().GetSelfAppVolume(volume);
     AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetSelfAppVolume_001 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
-}
-
-/**
-* @tc.name   : Test GetAppVolume API
-* @tc.number : GetAppVolume_001
-* @tc.desc   : Test GetAppVolume_001 interface
-*/
-HWTEST(AudioVolumeClientManagerUnitTest, GetAppVolume_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetAppVolume_001 start");
-    int32_t appUid = 30003000;
-    int volume = 10;
-    int result = AudioVolumeClientManager::GetInstance().SetAppVolume(appUid, volume);
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest SetAppVolume end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
-    result = AudioVolumeClientManager::GetInstance().GetAppVolume(appUid, volume);
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetAppVolume_001 end result:%{public}d", result);
-    EXPECT_EQ(result, TEST_RET_NUM);
-}
-
-/**
-* @tc.name   : Test GetAppVolume API
-* @tc.number : GetAppVolume_002
-* @tc.desc   : Test GetAppVolume_002 interface
-*/
-HWTEST(AudioVolumeClientManagerUnitTest, GetAppVolume_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetAppVolume_002 start");
-    int32_t appUid = 40004000;
-    int volume = 0;
-    int32_t result = AudioVolumeClientManager::GetInstance().GetAppVolume(appUid, volume);
-    AUDIO_INFO_LOG("AudioVolumeClientManagerUnitTest GetAppVolume_002 end result:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
 }
 

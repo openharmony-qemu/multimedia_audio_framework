@@ -182,7 +182,8 @@ public:
     int32_t OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
     int32_t OnRingerModeUpdated(int32_t ringerMode) override;
     int32_t OnActiveVolumeTypeChanged(int32_t volumeType) override;
-    int32_t OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
+    int32_t OnSelfAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
+    int32_t OnSystemAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     int32_t OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
     int32_t OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
