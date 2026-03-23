@@ -838,5 +838,6 @@ void AudioDeviceDescriptor::BuildCapabilitiesFromDeviceStreamInfo()
         capabilities_.push_back(cap);
     }
 }
+
 } // AudioStandard
 } // namespace OHOS

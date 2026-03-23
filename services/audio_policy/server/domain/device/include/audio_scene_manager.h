@@ -56,6 +56,9 @@ public:
     bool IsHangUpScene();
     bool IsPhoneCallOrChatSceneTriggeredByUid(int32_t uid) const;
     void SetPhoneCallOrChatSceneTriggerUid(int32_t uid);
+    int32_t GetAudioSceneOwnerUid();
+    void SetAudioSceneOwnerUid(const int32_t uid);
+    bool IsInAudioCallScene();
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
@@ -67,6 +70,7 @@ private:
     AudioScene audioScene_ = AUDIO_SCENE_DEFAULT;
     AudioScene lastAudioScene_ = AUDIO_SCENE_DEFAULT;
     int32_t phoneCallOrChatSceneTriggerUid_ = INVALID_UID;
+    int32_t callOwnerUid_ = 0;
 
     AudioRouterCenter& audioRouterCenter_;
     AudioStreamCollector& streamCollector_;
