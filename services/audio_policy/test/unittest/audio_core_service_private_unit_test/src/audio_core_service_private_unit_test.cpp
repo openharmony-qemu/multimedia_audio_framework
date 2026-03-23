@@ -2651,6 +2651,47 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_126, TestSize.Leve
     EXPECT_EQ(ret, sessionIDTest);
 }
 
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_127
+ * @tc.desc  : Test AudioCoreService::OpenNewAudioPortAndRoute()
+ */
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_127, TestSize.Level1)
+{
+    uint32_t sessionIDTest = 100;
+ 
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    AudioStreamInfo audioStreamInfo = {};
+    audioStreamInfo.samplingRate =  AudioSamplingRate::SAMPLE_RATE_48000;
+    audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    audioStreamInfo.channels = AudioChannel::STEREO;
+    auto pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(pipeInfo, nullptr);
+    auto audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    audioStreamDescriptor->streamInfo_ = audioStreamInfo;
+    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
+    pipeInfo->moduleInfo_.name = BLUETOOTH_MIC;
+ 
+    auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(audioStreamDescriptor, nullptr);
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+ 
+    AudioDeviceDescriptor curDesc(DeviceType::DEVICE_TYPE_MIC, DeviceRole::INPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentInputDevice(curDesc);
+    uint32_t paIndex = 0;
+    auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
+    EXPECT_NE(ret, sessionIDTest);
+ 
+    AudioDeviceDescriptor curDesc1(DeviceType::DEVICE_TYPE_ACCESSORY, DeviceRole::INPUT_DEVICE);
+    audioCoreService->audioActiveDevice_.SetCurrentInputDevice(curDesc1);
+    ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
+    EXPECT_NE(ret, sessionIDTest);
+}
 
 /**
  * @tc.name  : Test AudioCoreService.
