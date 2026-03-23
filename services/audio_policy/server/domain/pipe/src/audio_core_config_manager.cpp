@@ -204,7 +204,7 @@ void AudioCoreConfigManager::OnHasEarpiece()
 
 void AudioCoreConfigManager::UpdateHasEarpieceForChipProp()
 {
-    CHECK_AND_RETURN_LOG(isChipGeneralConfig_, "use chip general config");
+    CHECK_AND_RETURN_LOG(!isChipGeneralConfig_, "use chip general config");
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap; 
     audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap); 
     for (const auto &adapterInfo : adapterInfoMap) { 
