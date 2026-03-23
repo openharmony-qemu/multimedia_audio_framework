@@ -25,7 +25,7 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 
-using namespace OHOS::HDI::DistributedAudio::Audio::V1_0;
+using namespace OHOS::HDI::DistributedAudio::Audio::V2_0;
 
 namespace OHOS {
 namespace AudioStandard {

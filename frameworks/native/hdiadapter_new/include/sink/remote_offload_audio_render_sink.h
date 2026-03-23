@@ -19,7 +19,7 @@
 #include "sink/i_audio_render_sink.h"
 #include <iostream>
 #include <cstring>
-#include <v1_0/iaudio_manager.h>
+#include <v2_0/iaudio_manager.h>
 #include "audio_utils.h"
 #include "adapter/i_device_manager.h"
 #include "util/audio_running_lock.h"
@@ -27,13 +27,13 @@
 
 namespace OHOS {
 namespace AudioStandard {
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioCallback RemoteIAudioCallback;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioExtParamKey RemoteAudioExtParamKey;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::IAudioRender RemoteIAudioRender;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioFormat RemoteAudioFormat;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioSampleAttributes RemoteAudioSampleAttributes;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
-typedef OHOS::HDI::DistributedAudio::Audio::V1_0::AudioCallbackType RemoteAudioCallbackType;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioCallback RemoteIAudioCallback;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioExtParamKey RemoteAudioExtParamKey;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::IAudioRender RemoteIAudioRender;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioFormat RemoteAudioFormat;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioSampleAttributes RemoteAudioSampleAttributes;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioDeviceDescriptor RemoteAudioDeviceDescriptor;
+typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioCallbackType RemoteAudioCallbackType;
 
 enum RemoteOffloadTimestampTag {
     GET_HDI_LATENCY,

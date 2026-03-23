@@ -122,7 +122,7 @@ ohos_shared_library("hdiadapter_new") {
       "source/remote_fast_audio_capture_source.cpp",
     ]
     external_deps +=
-        [ "drivers_interface_distributed_audio:libdaudio_proxy_1.0" ]
+        [ "drivers_interface_distributed_audio:libdaudio_proxy_2.0" ]
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
   }
   if (use_libfuzzer || use_clang_coverage) {
@@ -244,7 +244,7 @@ ohos_unittest("hdiadapter_unit_test") {
       "test/unittest/source/remote_audio_capture_source_unit_test.cpp",
       "test/unittest/source/remote_fast_audio_capture_source_unit_test.cpp",
     ]
-    external_deps += [ "drivers_interface_distributed_audio:libdaudio_proxy_1.0" ]
+    external_deps += [ "drivers_interface_distributed_audio:libdaudio_proxy_2.0" ]
     defines += [ "FEATURE_DISTRIBUTE_AUDIO" ]
   }
 
