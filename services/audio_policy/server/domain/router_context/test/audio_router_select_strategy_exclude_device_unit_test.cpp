@@ -301,8 +301,7 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     AudioRouterFollowStrategy strategy;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = { sco };
 
-    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        ConvertDeviceToSimple(sco));
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, sco);
 
     strategy.ExcludeDevices(devices, MEDIA_INPUT_DEVICES);
 

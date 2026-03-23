@@ -126,7 +126,7 @@ private:
             } else if (b == nullptr) {
                 return false;
             }
-            return a < b;
+            return *a < *b;
         }
     };
 
