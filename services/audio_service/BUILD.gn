@@ -654,6 +654,7 @@ audio_ohos_library("audio_process_service") {
 
   external_deps = [
     "ability_runtime:app_manager",
+    "ability_runtime:ability_connect_callback_stub",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libprivacy_sdk",
@@ -669,6 +670,8 @@ audio_ohos_library("audio_process_service") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "ability_runtime:extension_manager",
+    "init:libbegetutil",
   ]
 
   if (!audio_framework_feature_new_engine_flag) {

@@ -606,9 +606,9 @@ void RequestUserPrivacyAuthorityTest()
     capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
     capturerInServer_->processConfig_.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
     capturerInServer_->status_ = I_STATUS_STARTING;
-    capturerInServer_->RequestUserPrivacyAuthority();
+    capturerInServer_->RequestUserPrivacyAuthority(1);
     capturerInServer_->status_ = I_STATUS_PAUSING;
-    capturerInServer_->RequestUserPrivacyAuthority();
+    capturerInServer_->RequestUserPrivacyAuthority(1);
 }
 
 void SetRebuildFlagTest()

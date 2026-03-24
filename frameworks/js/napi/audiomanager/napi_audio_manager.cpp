@@ -43,6 +43,7 @@
 #include "napi_audio_effect_manager.h"
 #include "napi_audio_session_manager.h"
 #endif
+#include "audio_system_client_engine_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -138,6 +139,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("getSpatializationManager", GetSpatializationManager),
         DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
         DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
+        DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserChoice),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_MNGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -1612,5 +1614,51 @@ napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback
 #endif
 }
 
+napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_callback_info info)
+{
+    size_t argc = PARAM2;
+    napi_value args[PARAM2] = {nullptr};
+    napi_status status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    if (status != napi_ok) {
+        AUDIO_ERR_LOG("napi_get_cb_info failed: %{public}d", status);
+        NapiAudioError::ThrowError(env, "Get callback info failed", NAPI_ERR_SYSTEM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    if (argc != PARAM2) {
+        AUDIO_ERR_LOG("Parameter count error: expected 2, got %{public}zu", argc);
+        NapiAudioError::ThrowError(env, "Expected 2 parameters (sessionId, choice)", NAPI_ERR_INPUT_INVALID);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    napi_valuetype type0 = napi_undefined;
+    napi_valuetype type1 = napi_undefined;
+    napi_typeof(env, args[0], &type0);
+    napi_typeof(env, args[1], &type1);
+
+    if (type0 != napi_number || type1 != napi_boolean) {
+        AUDIO_ERR_LOG("Parameter type error: type0=%{public}d, type1=%{public}d", type0, type1);
+        NapiAudioError::ThrowError(env, "Parameters must be numbers", NAPI_ERR_INPUT_INVALID);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    uint32_t sessionId = 0;
+    bool choice = false;
+    napi_get_value_uint32(env, args[0], &sessionId);
+    napi_get_value_bool(env, args[1], &choice);
+
+    int32_t ret = AudioSystemClientEngineManager::GetInstance().ReportPlaybackCaptureUserChoice(sessionId, choice);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("ReportPlaybackCaptureUserChoice failed: %{public}d", ret);
+        if (ret == ERR_PERMISSION_DENIED) {
+            NapiAudioError::ThrowError(env, "Permission denied", NAPI_ERR_NO_PERMISSION);
+        } else {
+            NapiAudioError::ThrowError(env, "ReportPlaybackCaptureUserChoice failed", NAPI_ERR_SYSTEM);
+        }
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    napi_value result = nullptr;
+    napi_create_int32(env, ret, &result);
+    return result;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

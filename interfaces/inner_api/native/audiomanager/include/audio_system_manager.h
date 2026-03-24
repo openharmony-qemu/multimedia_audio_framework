@@ -1569,6 +1569,15 @@ public:
     int32_t ExecuteAudioWorkgroupPrioImprove(int32_t workgroupId,
         const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
+    /**
+     * @brief Report playback capture user choice.
+     *
+     * @param sessionId Specifies which playback capture session to report.
+     * @param choice The user choice
+     * @since 24
+     */
+    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
+
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();
