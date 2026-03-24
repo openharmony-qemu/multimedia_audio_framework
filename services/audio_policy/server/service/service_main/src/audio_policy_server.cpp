@@ -1771,7 +1771,7 @@ void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType st
 int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi, DeviceType deviceType)
 {
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetDeviceForVolume(streamType)->deviceType_;
     int32_t ret = SUCCESS;
     if (curOutputDeviceType != deviceType) {
         ret = audioVolumeManager_.SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
