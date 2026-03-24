@@ -842,6 +842,7 @@ private:
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
+    void SubscribeVolumeKeyEventsRetryFunc();
     bool IsContinueAddVol();
     void TriggerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
@@ -872,7 +873,7 @@ private:
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
     void SubscribeCommonEventExecute();
     void SubscribeBackgroundTask();
-    void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
+    void SendMonitortEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
     int32_t SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId, const int32_t keyType);
 
@@ -947,6 +948,7 @@ private:
     std::mutex volUpHistoryMutex_;
     std::deque<int64_t> volUpHistory_;
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
+    std::unordered_set<int32_t> failedVolumeKeyEvents_;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;

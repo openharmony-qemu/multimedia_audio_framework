@@ -3166,16 +3166,16 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_160, TestSize.Level1)
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
     int32_t resultOfVolumeKey = 0;
-    server->SendMonitrtEvent(keyType, resultOfVolumeKey);
+    server->SendMonitortEvent(keyType, resultOfVolumeKey);
 
     keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN;
-    server->SendMonitrtEvent(keyType, resultOfVolumeKey);
+    server->SendMonitortEvent(keyType, resultOfVolumeKey);
 
     keyType = OHOS::MMI::KeyEvent::KEYCODE_MUTE;
-    server->SendMonitrtEvent(keyType, resultOfVolumeKey);
+    server->SendMonitortEvent(keyType, resultOfVolumeKey);
 
     keyType = -1;
-    server->SendMonitrtEvent(keyType, resultOfVolumeKey);
+    server->SendMonitortEvent(keyType, resultOfVolumeKey);
 }
 
 /**
