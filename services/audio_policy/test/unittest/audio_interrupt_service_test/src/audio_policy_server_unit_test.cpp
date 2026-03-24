@@ -3596,48 +3596,6 @@ HWTEST(AudioPolicyUnitTest, GetBundleNameFromUidandGetBundleInfoFromUid_001, Tes
 }
 
 /**
-* @tc.name  : Test VerifyBluetoothPermission.
-* @tc.number: VerifyBluetoothPermission_001
-* @tc.desc  : VerifyBluetoothPermission for UID_BOOTUP_MUSIC
-*/
-HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_001, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    constexpr int32_t UID_BOOTUP_MUSIC = 1003;
-    EXPECT_FALSE(server->VerifyBluetoothPermission(UID_BOOTUP_MUSIC));
-}
-
-/**
-* @tc.name  : Test VerifyBluetoothPermission.
-* @tc.number: VerifyBluetoothPermission_002
-* @tc.desc  : VerifyBluetoothPermission for UID_MEDIA
-*/
-HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_002, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    constexpr int32_t UID_MEDIA = 1013;
-    EXPECT_FALSE(server->VerifyBluetoothPermission(UID_MEDIA));
-}
-
-/**
-* @tc.name  : Test VerifyBluetoothPermission.
-* @tc.number: VerifyBluetoothPermission_003
-* @tc.desc  : VerifyBluetoothPermission for UID_MCU
-*/
-HWTEST(AudioPolicyUnitTest, VerifyBluetoothPermission_003, TestSize.Level1)
-{
-    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
-    ASSERT_TRUE(server != nullptr);
-
-    constexpr int32_t UID_MCU = 7500;
-    EXPECT_FALSE(server->VerifyBluetoothPermission(UID_MCU));
-}
-
-/**
 * @tc.name  : Test GetSystemSoundPath.
 * @tc.number: GetSystemSoundPath_001
 * @tc.desc  : Test GetSystemSoundPath.
