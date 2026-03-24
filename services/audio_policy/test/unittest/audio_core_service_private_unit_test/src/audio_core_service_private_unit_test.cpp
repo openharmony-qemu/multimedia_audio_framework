@@ -2798,7 +2798,7 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level4)
     auto mockDeviceBehavior = std::make_shared<MockAudioArmDeviceBehavior>();
     ASSERT_NE(mockDeviceBehavior, nullptr);
 
-    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).Willonce(Return(SUCCESS));
+    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).WillOnce(Return(SUCCESS));
 
     auto& audioDeviceFactory = AudioDeviceFactory::GetInstance();
     audioDeviceFactory.deviceBehaviorCache_[DEVICE_TYPE_USB_ARM_HEADSET] = mockDeviceBehavior;
@@ -3475,7 +3475,7 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
     auto mockDeviceBehavior = std::make_shared<MockAudioArmDeviceBehavior>();
     ASSERT_NE(mockDeviceBehavior, nullptr);
 
-    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).Willonce(Return(SUCCESS));
+    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).WillOnce(Return(SUCCESS));
 
     auto& audioDeviceFactory = AudioDeviceFactory::GetInstance();
     audioDeviceFactory.deviceBehaviorCache_[DEVICE_TYPE_USB_ARM_HEADSET] = mockDeviceBehavior;
