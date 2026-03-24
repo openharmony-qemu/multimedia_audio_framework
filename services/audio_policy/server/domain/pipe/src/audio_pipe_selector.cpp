@@ -811,6 +811,7 @@ static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipe
         info.moduleInfo_.fileName = "mch_dump_file";
         info.moduleInfo_.fixedLatency = "1";
         info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
+        info.moduleInfo_.suspendIdleTimeout = pipeInfoPtr->suspendIdleTimeout_;
     } else if (pipeInfoPtr->name_ == "offload_distributed_output") {
         info.moduleInfo_.className = "remote_offload";
         info.moduleInfo_.offloadEnable = "1";
