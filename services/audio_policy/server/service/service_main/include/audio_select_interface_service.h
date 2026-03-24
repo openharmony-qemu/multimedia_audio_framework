@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef AUDIO_SELECT_INTERFACE_SERVICE_H
+#define AUDIO_SELECT_INTERFACE_SERVICE_H
+
+#include "audio_device_info.h"
+#include "audio_stream_descriptor.h"
+#include "audio_stream_types.h"
+
+namespace OHOS {
+namespace AudioStandard {
+class AudioSelectInterfaceService {
+public:
+    static AudioSelectInterfaceService &GetInstance()
+    {
+        static AudioSelectInterfaceService instance;
+        return instance;
+    };
+
+    // AudioRoutingManager#setCommunicationDevice & AudioManager#setDeviceActive (deprecated)
+    int32_t SetDeviceActive(DeviceType deviceType, bool active, const std::string &address = "",
+        const int32_t uid = INVALID_UID);
+    // AudioRoutingManager#selectOutputDevice & AudioRoutingManager#selectOutputDeviceByFilter
+    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0,
+        const bool isNeedNotifyBt = true);
+
+    // AudioRoutingManager#selectInputDeviceByFilter
+    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    // AudioRoutingManager#selectInputDevice & AudioSessionManager#selectMediaInputDevice
+    int32_t SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        int32_t uid);
+
+    // AudioRoutingManager#excludeOutputDevices & AudioRoutingManager#unexcludeOutputDevices
+    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+
+    // AudioSessionManager#setDefaultOutputDevice
+    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+    // AudioRenderer#setDefaultOutputDevice
+    int32_t SetDefaultOutputDevice(
+        const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
+        bool skipForce = false);
+
+    // AudioCapturer#setInputDeviceToAccessory
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+        const SourceType sourceType, bool isRunning);
+    // AudioSessionManager#setBluetoothAndNearlinkPreferredRecordCategory
+    int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
+    // AudioCapturer#AudioCapturerOptions#preferredInputDevice
+    void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+
+    // Called by Bluetooth and Nearlink Service
+    void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
+        sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "");
+    void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
+        const std::string &caller = "");
+};
+} // namespace AudioStandard
+} // namespace OHOS
+
+
+#endif // AUDIO_SELECT_INTERFACE_SERVICE_H
