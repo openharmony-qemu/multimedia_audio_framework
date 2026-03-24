@@ -116,6 +116,9 @@ constexpr int32_t MAX_SIZE = 1024;
 constexpr int32_t DEFAULT_UID = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
 constexpr int32_t RESTORE_INFO_LOCK_TIMEOUT_MS = 1000; // 1000ms
+constexpr int32_t MAX_RETRIES = 5;
+constexpr int32_t RETRY_INTERVAL_SECONDS_S = 3; // 3 s
+constexpr int32_t MAX_RESULT_FOR_VOLUME_KEY = 60000;
 
 // system sound path
 constexpr int32_t PHOTO_SHUTTER = 0;
@@ -811,21 +814,75 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
 
     AUDIO_INFO_LOG("SubscribeVolumeKeyEvents: first time.");
     int32_t resultOfVolumeUp = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
-    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, resultOfVolumeUp);
+    SendMonitortEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP, resultOfVolumeUp);
+    if (resultOfVolumeUp < 0 || resultOfVolumeUp >= MAX_RESULT_FOR_VOLUME_KEY) {
+        AUDIO_ERR_LOG("failed to subscribe volume up key event.");
+        failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP);
+    }
     int32_t resultOfVolumeDown = RegisterVolumeKeyEvents(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
-    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN, resultOfVolumeDown);
+    SendMonitortEvent(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN, resultOfVolumeDown);
+    if (resultOfVolumeDown < 0 || resultOfVolumeDown >= MAX_RESULT_FOR_VOLUME_KEY) {
+        AUDIO_ERR_LOG("failed to subscribe volume down key event.");
+        failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_VOLUME_DOWN);
+    }
     int32_t resultOfMute = RegisterVolumeKeyMuteEvents();
-    SendMonitrtEvent(OHOS::MMI::KeyEvent::KEYCODE_MUTE, resultOfMute);
-    if (resultOfVolumeUp >= 0 && resultOfVolumeDown >= 0 && resultOfMute >= 0) {
+    SendMonitortEvent(OHOS::MMI::KeyEvent::KEYCODE_MUTE, resultOfMute);
+    if (resultOfMute < 0 || resultOfMute >= MAX_RESULT_FOR_VOLUME_KEY) {
+        AUDIO_ERR_LOG("failed to subscribe volume mute key event.");
+        failedVolumeKeyEvents_.insert(OHOS::MMI::KeyEvent::KEYCODE_MUTE);
+    }
+
+    if (failedVolumeKeyEvents_.size() == 0) {
         hasSubscribedVolumeKeyEvents_.store(true);
     } else {
         AUDIO_ERR_LOG("SubscribeVolumeKeyEvents: failed to subscribe key events.");
         hasSubscribedVolumeKeyEvents_.store(false);
+        std::thread(&AudioPolicyServer::SubscribeVolumeKeyEventsRetryFunc, this).detach();
+    }
+}
+
+void AudioPolicyServer::SubscribeVolumeKeyEventsRetryFunc()
+{
+    int32_t retryCount = 0;
+    while (retryCount < MAX_RETRIES) {
+        std::lock_guard<std::mutex> lock(subscribeVolumeKey_);
+        if (failedVolumeKeyEvents_.size() == 0) {
+            AUDIO_INFO_LOG("Three volume key events have been all sunscirbed! No need to retry.");
+            hasSubscribedVolumeKeyEvents_.store(true);
+            return;
+        }
+        for (auto it = failedVolumeKeyEvents_.begin(); it != failedVolumeKeyEvents_.end();) {
+            int32_t key = *it;
+            int32_t result = -1;
+            if (key == OHOS::MMI::KeyEvent::KEYCODE_MUTE) {
+                result = RegisterVolumeKeyMuteEvents();
+                SendMonitortEvent(OHOS::MMI::KeyEvent::KEYCODE_MUTE, result);
+            } else { // volume up or volume down
+                result = RegisterVolumeKeyEvents(key);
+                SendMonitortEvent(key, result);
+            }
+
+            if (result >= 0 && result < MAX_RESULT_FOR_VOLUME_KEY) {
+                AUDIO_INFO_LOG("Subscribe volume key %{public}d event successfully.", key);
+                it = failedVolumeKeyEvents_.erase(it);
+            } else {
+                it++;
+            }
+        }
+
+        if (failedVolumeKeyEvents_.size() == 0) {
+            AUDIO_INFO_LOG("Three volume key events have been all sunscirbed! Return.");
+            hasSubscribedVolumeKeyEvents_.store(true);
+            return;
+        }
+        retryCount++;
+        CHECK_AND_RETURN_LOG(retryCount < MAX_RETRIES, "The function has been retried five times!");
+        std::this_thread::sleep_for(std::chrono::seconds(RETRY_INTERVAL_SECONDS_S));
     }
 }
 #endif
 
-void AudioPolicyServer::SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey)
+void AudioPolicyServer::SendMonitortEvent(const int32_t keyType, int32_t resultOfVolumeKey)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::VOLUME_SUBSCRIBE,
