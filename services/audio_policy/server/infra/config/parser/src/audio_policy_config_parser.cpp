@@ -63,6 +63,7 @@ bool AudioPolicyConfigParser::LoadConfiguration()
     if (curNode_->Config(CHIP_PROD_CONFIG_FILE, nullptr, 0) != SUCCESS) {
         AUDIO_WARNING_LOG("Load chip prod config xml fail, use chip general config");
         isChipGeneralConfig_ = true;
+        configManager_.OnIsChipGenneralConfig(isChipGeneralConfig_);
         if (curNode_->Config(CONFIG_FILE, nullptr, 0) != SUCCESS) {
             AUDIO_ERR_LOG("Load chip prod config and chip general config xml all failed");
             return false;
