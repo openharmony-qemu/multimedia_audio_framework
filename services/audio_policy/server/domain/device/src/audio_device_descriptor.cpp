@@ -772,6 +772,9 @@ std::string AudioDeviceDescriptor::GetKey()
 
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion, bool isSupportedDevice) const
 {
+    if (connectState_ == SIMULATED_CONNECTED) {
+        return DEVICE_TYPE_INVALID;
+    }
     switch (deviceType_) {
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:

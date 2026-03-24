@@ -399,6 +399,9 @@ void AudioPolicyConfigParser::ParseDevices(std::shared_ptr<AudioXmlNode> curNode
             if (curNode->GetProp("address", address) == SUCCESS) {
                 deviceInfo.address_ = address;
             }
+            std::string isSimulated;
+            curNode->GetProp("isSimulated", isSimulated);
+            deviceInfo.isSimulated_ = isSimulated == "true";
 
             deviceInfos.push_back(std::make_shared<AdapterDeviceInfo>(deviceInfo));
         }

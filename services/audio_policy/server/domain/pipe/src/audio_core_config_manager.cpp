@@ -1247,5 +1247,13 @@ bool AudioCoreConfigManager::NeedUidCheckForOffloadPipe(const std::shared_ptr<Au
     }
     return false;
 }
+
+bool AudioCoreConfigManager::IsDeviceSimulated(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(
+        desc->deviceType_, desc->deviceRole_, desc->networkId_, AUDIO_FLAG_NONE);
+    CHECK_AND_RETURN_RET(deviceInfo != nullptr, false);
+    return deviceInfo->isSimulated_;
+}
 }
 }

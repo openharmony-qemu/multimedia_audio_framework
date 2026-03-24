@@ -105,7 +105,6 @@ constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr uid_t UID_AVSESSION_SERVICE = 6700;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
-const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 const std::string CALLER_NAME = "audio_server";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
@@ -127,7 +126,6 @@ const std::string PHOTO_SHUTTER_FILE = "capture.ogg";
 const std::string VIDEO_RECORDING_START_FILE = "video_record.ogg";
 const std::string VIDEO_RECORDING_END_FILE = "video_record_end.ogg";
 
-constexpr int32_t UID_BOOTUP_MUSIC = 1003;
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_MCU = 7500;
 constexpr int32_t UID_CAAS = 5527;
@@ -1986,7 +1984,7 @@ int32_t AudioPolicyServer::GetDevices(int32_t deviceFlagIn,
         }
     }
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
@@ -2085,7 +2083,7 @@ int32_t AudioPolicyServer::GetPreferredOutputDeviceDescriptors(const AudioRender
 
     bool hasBTPermission = false;
     if (!forceNoBTPermission) {
-        hasBTPermission = VerifyBluetoothPermission();
+        hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     }
 
     if (!hasBTPermission) {
@@ -2117,7 +2115,7 @@ int32_t AudioPolicyServer::GetPreferredInputDeviceDescriptors(const AudioCapture
 {
     AudioCapturerInfo captureInfo = captureInfoIn;
     deviceDescs = eventEntry_->GetPreferredInputDeviceDescriptors(captureInfo, IPCSkeleton::GetCallingUid());
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDescs);
     }
@@ -2964,32 +2962,6 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
     return PermissionUtil::VerifyGeneralPermission(permissionName, tokenId, isRecording);
 }
 
-bool AudioPolicyServer::VerifyBluetoothPermission()
-{
-    return VerifyBluetoothPermission(static_cast<uid_t>(IPCSkeleton::GetCallingUid()));
-}
-
-bool AudioPolicyServer::VerifyBluetoothPermission(const uid_t callingUid)
-{
-    if (callingUid == UID_MEDIA || callingUid == UID_BOOTUP_MUSIC) {
-        // bootup use media kit
-        return false;
-    }
-#ifdef AUDIO_BUILD_VARIANT_ROOT
-    // root user case for auto test
-    if (callingUid == ROOT_UID) {
-        return true;
-    }
-#endif
-    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
-
-    WatchTimeout guard("VerifyBluetooth");
-    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, USE_BLUETOOTH_PERMISSION);
-    CHECK_AND_RETURN_RET(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, false);
-
-    return true;
-}
-
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos)
 {
     audioPolicyManager_.GetStreamVolumeInfoMap(streamVolumeInfos);
@@ -3241,7 +3213,7 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
 int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
     std::vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: BT use permission: %{public}d", hasBTPermission);
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AUDIO_DEBUG_LOG("GetCurrentRendererChangeInfos: System use permission: %{public}d", hasSystemPermission);
@@ -3264,7 +3236,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     std::vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: BT use permission: %{public}d", hasBTPermission);
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AUDIO_DEBUG_LOG("GetCurrentCapturerChangeInfos: System use permission: %{public}d", hasSystemPermission);
@@ -3937,7 +3909,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
         deviceDevices.push_back(std::make_shared<AudioDeviceDescriptor>(*desc));
     }
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         audioPolicyService_.UpdateDescWhenNoBTPermission(deviceDevices);
         descs.clear();
@@ -3981,7 +3953,7 @@ int32_t AudioPolicyServer::SetAvailableDeviceChangeCallback(int32_t /*clientId*/
     }
 
     int32_t clientPid = IPCSkeleton::GetCallingPid();
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     return audioPolicyService_.SetAvailableDeviceChangeCallback(clientPid, usage, object, hasBTPermission);
 }
 
@@ -4373,7 +4345,7 @@ int32_t AudioPolicyServer::RegisterPolicyCallbackClient(const sptr<IRemoteObject
     int32_t clientPid = IPCSkeleton::GetCallingPid();
     AUDIO_DEBUG_LOG("register clientPid: %{public}d", clientPid);
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     bool hasSysPermission = PermissionUtil::VerifySystemPermission();
     callback->hasBTPermission_ = hasBTPermission;
     callback->hasSystemPermission_ = hasSysPermission;
@@ -4659,7 +4631,7 @@ int32_t AudioPolicyServer::GetActiveBluetoothDevice(std::shared_ptr<AudioDeviceD
 
     descs = eventEntry_->GetActiveBluetoothDevice();
 
-    bool hasBTPermission = VerifyBluetoothPermission();
+    bool hasBTPermission = PermissionUtil::VerifyBluetoothPermission();
     if (!hasBTPermission) {
         CHECK_AND_RETURN_RET_LOG(descs != nullptr, ERROR, "descs is nullptr");
         descs->deviceName_ = "";
