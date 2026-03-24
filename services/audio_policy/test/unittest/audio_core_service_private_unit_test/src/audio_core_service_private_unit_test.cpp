@@ -3467,7 +3467,7 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
     newDeviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     newDeviceDesc->deviceId_ = 1;
-    newDeviceDesc->deviceTypeName_ = "usb_arm_headset";
+    newDeviceDesc->deviceName_ = "usb_arm_headset";
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
