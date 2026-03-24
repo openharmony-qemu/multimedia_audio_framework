@@ -1460,7 +1460,8 @@ void AudioVolumeManager::SetAbsVolumeSceneAsync(const std::string &macAddress, c
             audioPolicyManager_.GetAllDeviceVolumeInfo(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
             int32_t volumeLevel = audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
             std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-            audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeLevel, deviceDesc);
+            VolumeScale volumeScale = {volumeLevel, -1, GetMaxVolumeLevel(STREAM_MUSIC)};
+            audioPolicyManager_.SetSystemVolumeLevel(STREAM_MUSIC, volumeScale, deviceDesc);
         } else if (currentOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP && support) {
             Volume vol = {false, 1.0f, 0};
             vol.isMute = volume == 0 ? true : false;
@@ -1480,7 +1481,8 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
         retryCount++;
         int32_t currentVolume = support ? volume : audioPolicyManager_.GetSystemVolumeLevelNoMuteState(STREAM_MUSIC);
         bool currentMute = support ? (volume == 0) : audioPolicyManager_.GetStreamMute(STREAM_MUSIC);
-        if (audioA2dpDevice_.SetA2dpDeviceAbsVolumeSupport(macAddress, support, currentVolume, currentMute)) {
+        VolumeScale volumeScale = {currentVolume, -1, GetMaxVolumeLevel(STREAM_MUSIC)};
+        if (audioA2dpDevice_.SetA2dpDeviceAbsVolumeSupport(macAddress, support, volumeScale, currentMute)) {
             break;
         }
         CHECK_AND_RETURN_RET_LOG(retryCount != maxRetries, ERROR,
