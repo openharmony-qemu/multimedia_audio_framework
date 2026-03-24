@@ -68,10 +68,13 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     int32_t uid, BluetoothAndNearlinkPreferredRecordCategory &category)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
+    if (uid == INVALID_UID) {
+        auto systemSelectInfo = routerInfra.GetSystemSelectDevice(SelectDeviceType::MEDIA_INPUT);
+        return systemSelectInfo.device_;
+    }
+
     category = routerInfra.GetPreferredInputCategory(uid);
-
     auto appSelectInfo = routerInfra.GetAppSelectDevice(SelectDeviceType::MEDIA_INPUT, uid);
-
     std::shared_ptr<AudioDeviceSimpleDescriptor> simpleDesc = nullptr;
 
     if (appSelectInfo.device_ != nullptr) {

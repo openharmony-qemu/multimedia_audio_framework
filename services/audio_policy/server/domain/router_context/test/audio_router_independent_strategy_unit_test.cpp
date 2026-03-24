@@ -585,6 +585,25 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     EXPECT_EQ(stream1Result->deviceId_, speaker->deviceId_);
 }
 
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_MediaOutput_008,
+    TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto ad2p = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+    strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
+
+    auto stream1Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1,
+        STREAM_USAGE_MEDIA);
+    ASSERT_NE(stream1Result, nullptr);
+    EXPECT_EQ(stream1Result->deviceType_, DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_EQ(stream1Result->deviceId_, ad2p->deviceId_);
+}
+
 HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallInput_003,
     TestSize.Level1)
 {
@@ -885,6 +904,24 @@ HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyU
     ASSERT_NE(stream1Result, nullptr);
     EXPECT_EQ(stream1Result->deviceType_, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(stream1Result->deviceId_, speaker->deviceId_);
+}
+
+HWTEST_F(AudioRouterIndependentStrategyUnitTest, AudioRouterIndependentStrategyUnitTest_CallOutput_008,
+    TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "00:00:00:00:00:01");
+    auto ad2p = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE, "00:00:00:00:00:01");
+
+    AudioRouterIndependentStrategy strategy;
+    strategy.SetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, ad2p);
+
+    auto stream1Result = strategy.GetCallOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
+    ASSERT_NE(stream1Result, nullptr);
+    EXPECT_EQ(stream1Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(stream1Result->deviceId_, sco->deviceId_);
 }
 
 }

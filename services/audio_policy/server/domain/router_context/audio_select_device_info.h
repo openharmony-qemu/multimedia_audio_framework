@@ -27,6 +27,7 @@ enum class SelectDeviceType {
     MEDIA_OUTPUT,
     CALL_INPUT,
     CALL_OUTPUT,
+    INVALID_TYPE,
 };
 
 struct AudioSelectDeviceInfo {

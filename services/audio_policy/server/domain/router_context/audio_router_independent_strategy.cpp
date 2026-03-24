@@ -131,7 +131,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallOu
     auto result = ConvertSimpleToDevice(simpleDesc);
     
     AudioRouterInfra::GetInstance().Unlock();
-    return result;
+    return GetFinalOutputDeviceForCall(result);
 }
 
 void AudioRouterIndependentStrategy::SetCallOutputDevice(int32_t uid,

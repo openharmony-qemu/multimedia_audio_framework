@@ -18,12 +18,12 @@
 #endif
 
 #include "audio_router_select_strategy.h"
+#include <algorithm>
 #include "audio_router_follow_strategy.h"
 #include "audio_router_independent_strategy.h"
 #include "audio_router_infra.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
-#include <algorithm>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -108,6 +108,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::JudgeFinalSele
         a2dpin->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
         bool isA2dpinConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dpin);
         if (isA2dpinConnected) {
+            AUDIO_INFO_LOG("prefer high quality input for source %{public}d with category %{public}d",
+                sourceType, category);
             return AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dpin);
         }
     }
@@ -153,6 +155,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetFinalOutput
         a2dp->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
         bool isA2dpConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(a2dp);
         if (isA2dpConnected) {
+            AUDIO_INFO_LOG("use a2dp device for media output");
             return AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(a2dp);
         }
     }
@@ -173,6 +176,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetFinalOutput
         sco->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
         bool isScoConnected = AudioDeviceManager::GetAudioDeviceManager().IsConnectedDevices(sco);
         if (isScoConnected) {
+            AUDIO_INFO_LOG("use sco device for call output");
             return AudioDeviceManager::GetAudioDeviceManager().GetExistedDevice(sco);
         }
     }
@@ -263,6 +267,8 @@ void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr
         if (device == nullptr) {
             continue;
         }
+        AUDIO_INFO_LOG("exclude device %{public}d with role %{public}d for usage %{public}d",
+            device->deviceType_, device->deviceRole_, usage);
         ExcludePairDevice(device, usage);
         auto simpleDesc = ConvertDeviceToSimple(device);
         routerInfra.ExcludeDevice(simpleDesc, usage);
@@ -273,7 +279,7 @@ void AudioRouterSelectStrategy::ExcludeDevices(const std::vector<std::shared_ptr
             { CALL_OUTPUT_DEVICES, SelectDeviceType::CALL_OUTPUT },
             { CALL_INPUT_DEVICES, SelectDeviceType::CALL_INPUT },
         };
-        for (const auto type : types) {
+        for (const auto &type : types) {
             if ((usage & type.first) != 0) {
                 routerInfra.ClearAllSelectSelectDevice(type.second, simpleDesc);
             }
@@ -286,14 +292,22 @@ void AudioRouterSelectStrategy::ExcludePairDevice(const std::shared_ptr<AudioDev
     AudioDeviceUsage usage)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    if (device->pairDeviceDescriptor_ != nullptr) {
+    auto onLineDevice = deviceManager.FindConnectedDeviceById(device->deviceId_);
+    if (onLineDevice == nullptr) {
+        AUDIO_ERR_LOG("no online device for type %{public}d and role %{public}d",
+            device->deviceType_, device->deviceRole_);
+        return;
+    }
+
+    if (onLineDevice->pairDeviceDescriptor_ != nullptr) {
         if (usage & MEDIA_OUTPUT_DEVICES) {
-            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            auto simplePairDesc = ConvertDeviceToSimple(onLineDevice->pairDeviceDescriptor_);
             routerInfra.ExcludeDevice(simplePairDesc, MEDIA_INPUT_DEVICES);
             routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::MEDIA_INPUT, simplePairDesc);
         } else if (usage & CALL_OUTPUT_DEVICES) {
-            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            auto simplePairDesc = ConvertDeviceToSimple(onLineDevice->pairDeviceDescriptor_);
             routerInfra.ExcludeDevice(simplePairDesc, CALL_INPUT_DEVICES);
             routerInfra.ClearAllSelectSelectDevice(SelectDeviceType::CALL_INPUT, simplePairDesc);
         }
@@ -311,6 +325,8 @@ void AudioRouterSelectStrategy::UnexcludeDevices(const std::vector<std::shared_p
         if (device == nullptr) {
             continue;
         }
+        AUDIO_INFO_LOG("unexclude device %{public}d with role %{public}d for usage %{public}d",
+            device->deviceType_, device->deviceRole_, usage);
         UnexcludePairDevice(device, usage);
         auto simpleDesc = ConvertDeviceToSimple(device);
         routerInfra.UnexcludeDevice(simpleDesc, usage);
@@ -322,13 +338,21 @@ void AudioRouterSelectStrategy::UnexcludePairDevice(const std::shared_ptr<AudioD
     AudioDeviceUsage usage)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
 
-    if (device->pairDeviceDescriptor_ != nullptr) {
+    auto onLineDevice = deviceManager.FindConnectedDeviceById(device->deviceId_);
+    if (onLineDevice == nullptr) {
+        AUDIO_ERR_LOG("no online device for type %{public}d and role %{public}d",
+            device->deviceType_, device->deviceRole_);
+        return;
+    }
+
+    if (onLineDevice->pairDeviceDescriptor_ != nullptr) {
         if (usage & MEDIA_OUTPUT_DEVICES) {
-            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            auto simplePairDesc = ConvertDeviceToSimple(onLineDevice->pairDeviceDescriptor_);
             routerInfra.UnexcludeDevice(simplePairDesc, MEDIA_INPUT_DEVICES);
         } else if (usage & CALL_OUTPUT_DEVICES) {
-            auto simplePairDesc = ConvertDeviceToSimple(device->pairDeviceDescriptor_);
+            auto simplePairDesc = ConvertDeviceToSimple(onLineDevice->pairDeviceDescriptor_);
             routerInfra.UnexcludeDevice(simplePairDesc, CALL_INPUT_DEVICES);
         }
     }

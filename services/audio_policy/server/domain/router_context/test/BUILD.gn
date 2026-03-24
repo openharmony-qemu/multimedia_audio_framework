@@ -69,6 +69,8 @@ ohos_unittest("audio_router_context_test") {
     "./audio_router_follow_strategy_unit_test.cpp",
     "./audio_router_independent_strategy_unit_test.cpp",
     "./audio_router_select_strategy_exclude_device_unit_test.cpp",
+    "./audio_router_select_strategy_extra_test.cpp",
+    "./audio_router_infra_extra_test.cpp",
   ]
 
   deps = [
