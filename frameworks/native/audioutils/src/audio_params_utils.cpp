@@ -85,7 +85,7 @@ int32_t GetEngineFlag()
 
 bool GetHasEarpieceParam()
 {
-    bool ret = system::GetBoolParameter(PARAM_HAS_EARPIECE, true);
+    bool ret = system::GetBoolParameter(PARAM_HAS_EARPIECE, false);
     AUDIO_INFO_LOG("get params[%{public}s]: %{public}s", PARAM_HAS_EARPIECE, ret ? "true" : "false");
     return ret;
 }
