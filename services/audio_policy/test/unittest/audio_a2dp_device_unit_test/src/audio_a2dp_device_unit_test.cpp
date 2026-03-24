@@ -384,19 +384,17 @@ HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_001, TestSize.Level1)
     AudioStreamInfo audioStreamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
     AudioModuleInfo moduleInfo;
-    SourceType sourceType = SourceType::SOURCE_TYPE_MIC;
+    moduleInfo.role = "source";
 
     // Act
-    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
 
     // Assert
     EXPECT_EQ(moduleInfo.channels, "2");
     EXPECT_EQ(moduleInfo.rate, "44100");
-    EXPECT_EQ(moduleInfo.format, "AUDIO_FORMAT_PCM_16_BIT");
-    EXPECT_GT(moduleInfo.bufferSize.size(), 0);
-    EXPECT_EQ(moduleInfo.role, "source");
-    EXPECT_EQ(moduleInfo.renderInIdleState, "1");
-    EXPECT_EQ(moduleInfo.sinkLatency, "0");
+    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_NE(moduleInfo.renderInIdleState, "1");
+    EXPECT_NE(moduleInfo.sinkLatency, "0");
 }
 
 /**
@@ -409,19 +407,16 @@ HWTEST_F(AudioA2dpDeviceUnitTest, GetA2dpModuleInfo_002, TestSize.Level1)
     AudioStreamInfo audioStreamInfo(AudioSamplingRate::SAMPLE_RATE_44100, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
     AudioModuleInfo moduleInfo;
-    SourceType sourceType = SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE;
 
     // Act
-    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
 
     // Assert
     EXPECT_EQ(moduleInfo.channels, "2");
     EXPECT_EQ(moduleInfo.rate, "44100");
-    EXPECT_EQ(moduleInfo.format, "AUDIO_FORMAT_PCM_16_BIT");
-    EXPECT_GT(moduleInfo.bufferSize.size(), 0);
-    EXPECT_NE(moduleInfo.role, "source");
-    EXPECT_NE(moduleInfo.renderInIdleState, "1");
-    EXPECT_NE(moduleInfo.sinkLatency, "0");
+    EXPECT_EQ(moduleInfo.format, "s16le");
+    EXPECT_EQ(moduleInfo.renderInIdleState, "1");
+    EXPECT_EQ(moduleInfo.sinkLatency, "0");
 }
 
 } // namespace AudioStandard

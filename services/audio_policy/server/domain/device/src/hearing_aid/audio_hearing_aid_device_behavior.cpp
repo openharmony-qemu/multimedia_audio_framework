@@ -97,7 +97,7 @@ int32_t AudioHearingAidDeviceBehavior::LoadHearingAidModule(DeviceType deviceTyp
         if (AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name) == false) {
             AUDIO_INFO_LOG("hearingAid device connects for the first time");
             // HearingAid device connects for the first time
-            AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+            AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
             uint32_t paIndex = 0;
             auto ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo, paIndex);
             CHECK_AND_CALL_FUNC_RETURN_RET(ioHandle != HDI_INVALID_ID, ERR_INVALID_HANDLE,

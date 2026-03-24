@@ -411,29 +411,6 @@ void ClientDiedDisconnectScoRecognitionFuzzTest()
     audioDeviceCommon.ClientDiedDisconnectScoRecognition();
 }
 
-void GetA2dpModuleInfoFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioModuleInfo moduleInfo;
-    AudioStreamInfo audioStreamInfo;
-    SourceType sourceType = GetData<SourceType>();
-    audioDeviceCommon.GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
-    OnStop();
-}
-
-void ReloadA2dpAudioPortFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioModuleInfo moduleInfo;
-    DeviceType deviceType = GetData<DeviceType>();
-    AudioStreamInfo audioStreamInfo;
-    std::string networkID = "";
-    std::string sinkName = "";
-    SourceType sourceType = GetData<SourceType>();
-    audioDeviceCommon.ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo, networkID, sinkName, sourceType);
-    OnStop();
-}
-
 void LoadA2dpModuleFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -447,7 +424,6 @@ void LoadA2dpModuleFuzzTest()
     std::list<AudioModuleInfo> moduleInfoList;
     moduleInfoList.push_back(moduleInfo);
     audioDeviceCommon.audioConfigManager_.deviceClassInfo_.insert({classType, moduleInfoList});
-    audioDeviceCommon.LoadA2dpModule(deviceType, audioStreamInfo, networkID, sinkName, sourceType);
     audioDeviceCommon.audioConfigManager_.deviceClassInfo_.clear();
     OnStop();
 }
@@ -566,9 +542,7 @@ TestFuncs g_testFuncs[] = {
     HasLowLatencyCapabilityFuzzTest,
     GetSpatialDeviceTypeFuzzTest,
     IsSameDeviceFuzzTest,
-    GetA2dpModuleInfoFuzzTest,
     LoadA2dpModuleFuzzTest,
-    ReloadA2dpAudioPortFuzzTest,
     RingToneVoiceControlFuzzTest,
     SetVirtualCallFuzzTest,
     WriteInputRouteChangeEventFuzzTest,

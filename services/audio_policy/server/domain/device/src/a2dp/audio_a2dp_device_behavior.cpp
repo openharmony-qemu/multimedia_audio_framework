@@ -144,7 +144,7 @@ int32_t AudioA2dpDeviceBehavior::LoadA2dpModule(DeviceType deviceType, const Aud
         if (configRole != deviceRole) { continue; }
         if (!AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
             AUDIO_INFO_LOG("A2dp device connects for the first time");
-            AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+            AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, audioStreamInfo);
 
             uint32_t paIndex = 0;
             AudioIOHandle ioHandle = AudioPolicyManagerFactory::GetAudioPolicyManager().OpenAudioPort(moduleInfo,
@@ -215,7 +215,7 @@ int32_t AudioA2dpDeviceBehavior::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo
     }
     pipeManager->RemoveAudioPipeInfo(activateDeviceIOHandle);
 
-    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, context.audioStreamInfo, context.sourceType);
+    AudioA2dpDevice::GetInstance().GetA2dpModuleInfo(moduleInfo, context.audioStreamInfo);
     uint32_t paIndex = 0;
     AudioIOHandle ioHandle = ReloadOrOpenAudioPort(engineFlag, moduleInfo, paIndex);
     AudioIOHandleMap::GetInstance().AddIOHandleInfo(moduleInfo.name, ioHandle);
