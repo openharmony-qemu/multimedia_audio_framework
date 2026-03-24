@@ -67,6 +67,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_002, TestSize.Level1)
 
     auto ret = eventEntry->UpdateSessionOperation(sessionId, operation);
     EXPECT_EQ(ret, SUCCESS);
+    ret = eventEntry->UpdateSessionOperation(sessionId, SESSION_OPERATION_STANDBY);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

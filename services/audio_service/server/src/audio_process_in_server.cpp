@@ -289,6 +289,7 @@ void AudioProcessInServer::EnableStandby()
     processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     enterStandbyTime_ = ClockTime::GetCurNano();
     audioStreamChecker_->RecordStandbyTime(true);
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STANDBY);
     WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 

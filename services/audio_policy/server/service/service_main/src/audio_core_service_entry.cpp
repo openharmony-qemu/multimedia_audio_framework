@@ -136,6 +136,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         case SESSION_OPERATION_START:
             return coreService_->StartClient(sessionId);
         case SESSION_OPERATION_PAUSE:
+        case SESSION_OPERATION_STANDBY:
             return coreService_->PauseClient(sessionId);
         case SESSION_OPERATION_STOP:
             return coreService_->StopClient(sessionId);
