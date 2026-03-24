@@ -5863,11 +5863,12 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_001, TestSize.Level1
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_TRUE(audioCoreService != nullptr);
+    auto &ioHandleMap = audioCoreService->audioIOHandleMap_;
 
     constexpr uint32_t targetSessionId = 123456;
     const std::string moduleName = "ut_voice_recognition_mic_ec_reload_pipe";
     AudioIOHandle oldIoHandle = 0;
-    bool hadOldIoHandle = AudioIOHandleMap::GetInstance().GetModuleIdByKey(moduleName, oldIoHandle);
+    bool hadOldIoHandle = ioHandleMap.GetModuleIdByKey(moduleName, oldIoHandle);
 
     auto pipeInfo = std::make_shared<AudioPipeInfo>();
     ASSERT_TRUE(pipeInfo != nullptr);
@@ -5909,7 +5910,9 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_001, TestSize.Level1
     streamDesc->newDeviceDescs_.push_back(inputDevice);
 
     pipeInfo->streamDescMap_[targetSessionId] = streamDesc;
-    AudioIOHandleMap::GetInstance().AddIOHandleInfo(moduleName, static_cast<AudioIOHandle>(targetSessionId));
+    ioHandleMap.AddIOHandleInfo(moduleName, static_cast<AudioIOHandle>(targetSessionId));
+    AudioIOHandle ioHandleInMap = 0;
+    ASSERT_TRUE(ioHandleMap.GetModuleIdByKey(moduleName, ioHandleInMap));
 
     int32_t ret = audioCoreService->ReloadSourceForInputPipe(pipeInfo, targetSessionId);
     EXPECT_EQ(ret, SUCCESS);
@@ -5925,9 +5928,9 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_001, TestSize.Level1
     EXPECT_EQ(pipeInfo->moduleInfo_.micRefFormat, "s32");
 
     if (hadOldIoHandle) {
-        AudioIOHandleMap::GetInstance().AddIOHandleInfo(moduleName, oldIoHandle);
+        ioHandleMap.AddIOHandleInfo(moduleName, oldIoHandle);
     } else {
-        AudioIOHandleMap::GetInstance().DelIOHandleInfo(moduleName);
+        ioHandleMap.DelIOHandleInfo(moduleName);
     }
 }
 
