@@ -129,8 +129,8 @@ void AudioCoreConfigManager::OnAudioLatencyParsed(uint64_t latency)
 
 void AudioCoreConfigManager::OnFastFormatParsed(AudioSampleFormat format)
 {
-    AUDIO_INFO_LOG("fast format is %{public}d", fastFormat_);
     fastFormat_ = format;
+    AUDIO_INFO_LOG("fast format is %{public}d", fastFormat_);
 }
 
 AudioSampleFormat AudioCoreConfigManager::GetFastFormat() const
@@ -815,26 +815,27 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
 
     if (SupportImplicitConversion(desc->routeFlag_)) {
         info = pipeIt->second->streamPropInfos_.front();
+        return;
     }
 
-    if (info->format_ == INVALID_WIDTH && info->sampleRate_ == 0 && info->channelLayout_ == CH_LAYOUT_UNKNOWN &&
-        desc->routeFlag_ != (AUDIO_OUTPUT_FLAG_NORMAL || AUDIO_INPUT_FLAG_NORMAL)) {
-        AUDIO_INFO_LOG("Find streamPropInfo failed, choose normal flag");
-        desc->routeFlag_ = desc->audioMode_ == AUDIO_MODE_PLAYBACK ?
-            AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
-        AudioStreamInfo streamInfo(desc->streamInfo_.samplingRate, ENCODING_PCM, desc->streamInfo_.format,
-            desc->streamInfo_.channels);
-        auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, streamInfo);
-        if (streamProp != nullptr) {
-            info = streamProp;
-            return;
-        }
+    desc->routeFlag_ = desc->audioMode_ == AUDIO_MODE_PLAYBACK ? AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
+    pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
+    AudioStreamInfo streamInfo(desc->streamInfo_.samplingRate, ENCODING_PCM, desc->streamInfo_.format,
+        desc->streamInfo_.channels);
+    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, streamInfo);
+    if (streamProp != nullptr) {
+        AUDIO_INFO_LOG("Select primary attribute");
+        info = streamProp;
+        return;
     }
-    if (info->format_ == INVALID_WIDTH && info->sampleRate_ == 0 && info->channelLayout_ == CH_LAYOUT_UNKNOWN &&
-        desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_NORMAL || AUDIO_INPUT_FLAG_NORMAL) &&
-        !pipeIt->second->streamPropInfos_.empty()) {
+
+    if (!pipeIt->second->streamPropInfos_.empty()) {
+        AUDIO_INFO_LOG("Select primary first attribute");
         info = pipeIt->second->streamPropInfos_.front();
-    } // if not match, choose first?
+        return;
+    }
+    AUDIO_ERR_LOG("Pipe:%{public}s Not Support StreamProp", PipeIt->second->name_.c_str());
+    return;
 }
 
 bool AudioCoreConfigManager::GetSupportMultSupMode()
