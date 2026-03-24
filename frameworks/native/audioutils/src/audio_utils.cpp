@@ -62,7 +62,6 @@ const int32_t SIGNAL_DATA_SIZE = 96;
 const size_t TIME_TEXT_LENGTH = 32;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
-constexpr int32_t ROOT_UID = 0;
 constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_AUDIO_BROKER = 5557;
