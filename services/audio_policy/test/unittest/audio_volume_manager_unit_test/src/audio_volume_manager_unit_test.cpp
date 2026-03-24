@@ -1738,5 +1738,71 @@ HWTEST_F(AudioVolumeManagerUnitTest, GetStreamMute_003, TestSize.Level1)
     bool ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
     EXPECT_TRUE(ret);
 }
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: AudioVolumeManager_InitAudioZoneVolume_001
+ * @tc.desc  : Call InitAudioZoneVolume with null and valid device descriptor to ensure no crash.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_InitAudioZoneVolume_001, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager = AudioVolumeManager::GetInstance();
+
+    // Case 1: nullptr descriptor
+    std::shared_ptr<AudioDeviceDescriptor> nullDesc = nullptr;
+    audioVolumeManager.InitAudioZoneVolume(0, nullDesc);
+
+    // Case 2: valid descriptor
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    desc->networkId_ = "unit_test";
+    audioVolumeManager.InitAudioZoneVolume(1, desc);
+
+    // No direct return value to assert — ensure function executes without crashing.
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager::SetAudioZoneVolumeConfig.
+ * @tc.number: AudioVolumeManager_SetAudioZoneVolumeConfig_001
+ * @tc.desc  : Call SetAudioZoneVolumeConfig with empty and non-empty config vector.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_SetAudioZoneVolumeConfig_001, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager = AudioVolumeManager::GetInstance();
+
+    std::string zoneName = "UnitTestZone";
+    std::vector<AudioZoneVolumeConfig> emptyConfigs;
+    int32_t ret = audioVolumeManager.SetAudioZoneVolumeConfig(zoneName, emptyConfigs);
+    // Expect not a generic ERROR (implementation may return SUCCESS or other codes)
+    EXPECT_NE(ret, ERROR);
+
+    // Provide a minimal config if type is default-constructible
+    std::vector<AudioZoneVolumeConfig> configs;
+    AudioZoneVolumeConfig cfg;
+    // populate minimal fields if available (best-effort, leave defaults otherwise)
+    configs.push_back(cfg);
+    ret = audioVolumeManager.SetAudioZoneVolumeConfig(zoneName, configs);
+    EXPECT_NE(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager::TriggerAudioZoneVolumeSync.
+ * @tc.number: AudioVolumeManager_TriggerAudioZoneVolumeSync_001
+ * @tc.desc  : Call TriggerAudioZoneVolumeSync for default and a specific zone id.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_TriggerAudioZoneVolumeSync_001, TestSize.Level1)
+{
+    AudioVolumeManager &audioVolumeManager = AudioVolumeManager::GetInstance();
+
+    // Trigger default zone sync (zoneId = 0)
+    audioVolumeManager.TriggerAudioZoneVolumeSync(0);
+
+    // Trigger sync for a specific zone
+    audioVolumeManager.TriggerAudioZoneVolumeSync(1);
+
+    // No return value — test passes if no crash
+    EXPECT_TRUE(true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

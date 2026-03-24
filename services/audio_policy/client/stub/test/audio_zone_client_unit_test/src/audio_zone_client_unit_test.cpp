@@ -17,6 +17,11 @@
 #include "audio_zone_types.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_zone_types.h"
+#include "ipc_skeleton.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 #include <thread>
 #include <memory>
@@ -25,6 +30,43 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+bool g_hasPermission = false;
+
+void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audiofuzztest",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
+}
 
 void AudiZoneClientUnitTest::SetUpTestCase(void) {}
 void AudiZoneClientUnitTest::TearDownTestCase(void) {}
@@ -52,13 +94,15 @@ class AudioZoneVolumeProxyStub : public AudioZoneVolumeProxy {
 public:
     ~AudioZoneVolumeProxyStub() override {}
 
-    void SetSystemVolume(const AudioVolumeType volumeType, const int32_t volumeLevel) override {}
+    void SetSystemVolume(const DeviceType deviceType, const AudioVolumeType volumeType,
+        const int32_t volumeLevel) override {}
 
-    int32_t GetSystemVolume(AudioVolumeType volumeType) override {return 0;}
+    int32_t GetSystemVolume(const DeviceType deviceType, const AudioVolumeType volumeType) override {return 10;}
 
-    void SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree) override {}
+    void SetSystemVolumeDegree(const DeviceType deviceType, const AudioVolumeType volumeType,
+        int32_t volumeDegree) override {}
 
-    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType) override { return 0;}
+    int32_t GetSystemVolumeDegree(const DeviceType deviceType, const AudioVolumeType volumeType) override { return 10;}
 };
 
 class AudioZoneInterruptCallbackStub : public AudioZoneInterruptCallback {
@@ -113,18 +157,50 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_002, TestSize.Level4)
 */
 HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_003, TestSize.Level4)
 {
+    GetPermission();
     auto audioZoneClient = std::make_shared<AudioZoneClient>();
     int32_t zoneId = 0;
-    auto callback = std::make_shared<AudioZoneVolumeProxyStub>();
-    audioZoneClient->audioZoneVolumeProxyMap_[zoneId] = callback;
-    auto ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, callback);
-    EXPECT_EQ(SUCCESS, ret);
+    auto proxy = std::make_shared<AudioZoneVolumeProxyStub>();
 
     audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
-    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, callback);
-    EXPECT_NE(SUCCESS, ret);
-}
+    audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
+    auto zoneManager = AudioZoneManager::GetInstance();
+    int32_t ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_NONE, proxy);
+    EXPECT_EQ(SUCCESS, ret);
 
+    ret = zoneManager->RegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_NE(SUCCESS, audioZoneClient->SetSystemVolume(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
+        static_cast<int>(STREAM_MUSIC), 0, 0, 0));
+    int outVol = 0;
+    int outDegree = 0;
+    EXPECT_NE(SUCCESS, audioZoneClient->GetSystemVolume(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
+        static_cast<int>(STREAM_MUSIC), outVol));
+    EXPECT_NE(SUCCESS, audioZoneClient->GetSystemVolumeDegree(zoneId, static_cast<int>(DEVICE_TYPE_SPEAKER),
+        static_cast<int>(STREAM_MUSIC), outDegree));
+    audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
+
+    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_EARPIECE, proxy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER, proxy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER, proxy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioZoneClient->audioZoneDeviceVolumeProxyMap_[zoneId][DEVICE_TYPE_SPEAKER] = proxy;
+    ret = audioZoneClient->AddAudioZoneVolumeProxy(zoneId, DEVICE_TYPE_INVALID, proxy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = zoneManager->UnRegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = zoneManager->UnRegisterSystemVolumeProxy(zoneId, DEVICE_TYPE_INVALID);
+    EXPECT_EQ(SUCCESS, ret);
+    audioZoneClient->audioZoneDeviceVolumeProxyMap_.erase(zoneId);
+    audioZoneClient->audioZoneVolumeProxyMap_.erase(zoneId);
+}
 
 /**
 * @tc.name  : Test AudiZoneClientUnitTest.
@@ -144,7 +220,7 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_004, TestSize.Level4)
 
     audioZoneClient->audioZoneInterruptCallbackMap_.erase(key);
     ret = audioZoneClient->AddAudioInterruptCallback(zoneId, deviceTag, callback);
-    EXPECT_NE(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -162,6 +238,5 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_005, TestSize.Level4)
     audioZoneClient->Restore();
     EXPECT_NE(nullptr, audioZoneClient->audioZoneCallback_);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

@@ -306,7 +306,8 @@ void VolumeDataMaintainerLoadDeviceVolumeMapFromDbFuzzTest(const uint8_t *rawDat
     device->networkId_ = "testId";
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     device->deviceType_ =  g_testDeviceTypes[index];
-    volumeDataMaintainerRet->LoadDeviceVolumeMapFromDb(device);
+    int32_t zoneId = static_cast<int32_t>(size);
+    volumeDataMaintainerRet->LoadDeviceVolumeMapFromDb(device, zoneId);
 }
 
 void VolumeDataMaintainerInitDeviceMuteMapFuzzTest(const uint8_t *rawData, size_t size)
@@ -327,7 +328,8 @@ void VolumeDataMaintainerLoadDeviceMuteMapFromDbFuzzTest(const uint8_t *rawData,
     device->networkId_ = "testId";
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     device->deviceType_ =  g_testDeviceTypes[index];
-    volumeDataMaintainerRet->LoadDeviceMuteMapFromDb(device);
+    int32_t zoneId = static_cast<int32_t>(size);
+    volumeDataMaintainerRet->LoadDeviceMuteMapFromDb(device, zoneId);
 }
 
 void VolumeDataMaintainerLoadVolumeDegreeFromDbFuzzTest(const uint8_t *rawData, size_t size)

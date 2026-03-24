@@ -311,7 +311,8 @@ void AudioZoneEnableSystemVolumeProxyFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioZoneClientManager> zoneClientManager;
     std::shared_ptr<AudioZone> zone =
         std::make_shared<AudioZone>(zoneClientManager, name, context);
-    zone->EnableSystemVolumeProxy(clientPid, enable);
+    DeviceType deviceType = GetData<DeviceType>();
+    zone->EnableSystemVolumeProxy(clientPid, deviceType, enable);
 }
 
 void AudioZoneSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
@@ -324,7 +325,8 @@ void AudioZoneSetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioZoneClientManager> zoneClientManager;
     std::shared_ptr<AudioZone> zone =
         std::make_shared<AudioZone>(zoneClientManager, name, context);
-    zone->SetSystemVolumeLevel(volumeProxyClientPid, volumeLevel, volumeFlag);
+    DeviceType deviceType = GetData<DeviceType>();
+    zone->SetSystemVolumeLevel(deviceType, volumeProxyClientPid, volumeLevel, volumeFlag);
 }
 
 void AudioZoneGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
@@ -335,7 +337,8 @@ void AudioZoneGetSystemVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
     std::shared_ptr<AudioZoneClientManager> zoneClientManager;
     std::shared_ptr<AudioZone> zone =
         std::make_shared<AudioZone>(zoneClientManager, name, context);
-    zone->GetSystemVolumeLevel(volumeProxyClientPid);
+    DeviceType deviceType = GetData<DeviceType>();
+    zone->GetSystemVolumeLevel(deviceType, volumeProxyClientPid);
 }
 
 void Test(FuzzedDataProvider& fdp)

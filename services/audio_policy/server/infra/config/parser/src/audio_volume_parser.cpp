@@ -47,7 +47,7 @@ AudioVolumeParser::AudioVolumeParser()
         {"NAVIGATION", STREAM_NAVIGATION},
 #ifdef MULTI_ALARM_LEVEL
         {"ANNOUNCEMENT", STREAM_ANNOUNCEMENT},
-        {"EMERGENCY", STREAM_EMERGENCY}
+        {"EMERGENCY", STREAM_EMERGENCY},
 #endif
     };
 

@@ -232,7 +232,7 @@ bool AudioPolicyServerHandler::SendAvailableDeviceChange(
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent)
+bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent, const int32_t zoneId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -240,13 +240,14 @@ bool AudioPolicyServerHandler::SendVolumeKeyEventCallback(const VolumeEvent &vol
         return false;
     }
     eventContextObj->volumeEvent = volumeEvent;
+    eventContextObj->zoneId = zoneId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::VOLUME_KEY_EVENT, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendVolumeKeyEventCallback event failed");
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent)
+bool AudioPolicyServerHandler::SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent, const int32_t zoneId)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
@@ -254,6 +255,7 @@ bool AudioPolicyServerHandler::SendVolumeDegreeEventCallback(const VolumeEvent &
         return false;
     }
     eventContextObj->volumeEvent = volumeEvent;
+    eventContextObj->zoneId = zoneId;
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::VOLUME_DEGREE_EVENT, eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "send event failed");
@@ -974,6 +976,16 @@ bool AudioPolicyServerHandler::IsTargetDeviceForVolumeKeyEvent(int32_t pid, cons
     return ret;
 }
 
+bool AudioPolicyServerHandler::IsTargetZoneForVolumeKeyEvent(int32_t pid, int32_t zoneId)
+{
+    CHECK_AND_RETURN_RET(pidUidMap_.count(pid) > 0, true);
+    int32_t uid = pidUidMap_[pid];
+    int zoneIdForUid = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+    AUDIO_INFO_LOG("uid: %{public}d, zoneId: %{public}d, target zoneId: %{public}d, is target zone: %{public}s",
+        uid, zoneIdForUid, zoneId, zoneId == zoneIdForUid ? "true" : "false");
+    return zoneId == zoneIdForUid;
+}
+
 void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1002,6 +1014,9 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             static_cast<int32_t>(eventContextObj->volumeEvent.updateUi),
             eventContextObj->volumeEvent.previousVolume,
             static_cast<int32_t>(eventContextObj->volumeEvent.deviceType));
+#ifdef FEATURE_AUDIO_ZONE
+        CHECK_AND_CONTINUE(IsTargetZoneForVolumeKeyEvent(it->first, eventContextObj->zoneId));
+#endif
         CHECK_AND_CONTINUE(IsTargetDeviceForVolumeKeyEvent(it->first, eventContextObj->volumeEvent));
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&

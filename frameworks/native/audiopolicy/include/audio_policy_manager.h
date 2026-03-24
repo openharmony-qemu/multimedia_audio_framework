@@ -569,7 +569,7 @@ public:
 
     int32_t RemoveUidUsagesFromAudioZone(int32_t zoneId, int32_t uid, const std::set<StreamUsage> &usages);
 
-    int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable);
+    int32_t EnableSystemVolumeProxy(int32_t zoneId, DeviceType deviceType, bool enable);
 
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
 
@@ -764,6 +764,9 @@ public:
     int32_t NotifyStreamSilentChange(uint32_t streamId);
     int32_t SetAudioSessionBehavior(const uint32_t behavior);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+    int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs);
+    int32_t TriggerAudioZoneVolumeSync();
 
 private:
     AudioPolicyManager() {}

@@ -18,6 +18,9 @@
 #include "audio_policy_log.h"
 #include "audio_zone.h"
 #include "audio_connected_device.h"
+#include "audio_device_info.h"
+#include "audio_common_utils.h"
+#include "audio_zone_client_manager_unit_test.h"
 
 #include <thread>
 #include <memory>
@@ -35,6 +38,14 @@ void AudioZoneServiceUnitTest::SetUp(void)
         std::make_shared<AudioInterruptService>());
 }
 void AudioZoneServiceUnitTest::TearDown(void) {}
+
+static void ClearZone()
+{
+    auto zoneList = AudioZoneService::GetInstance().GetAllAudioZone();
+    for (auto &zone : zoneList) {
+        AudioZoneService::GetInstance().ReleaseAudioZone(zone->zoneId_);
+    }
+}
 
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.
@@ -108,21 +119,32 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_DegreeTest_001, TestSize.Lev
     AudioZoneContext context;
     AudioVolumeType volumeType = STREAM_MUSIC;
     int32_t volumeDegree = 10;
+    // VolumeScale(level, degree)
     VolumeScale volume{volumeDegree, volumeDegree};
     int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
-    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeLevel(0, volumeType, volume, 0), 0);
-    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId1, volumeType,
+
+    // calls must match signature: (zoneId, deviceType, volumeType, volume, flag)
+    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeLevel(0, DEVICE_TYPE_SPEAKER, volumeType, volume, 0), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId1, DEVICE_TYPE_SPEAKER, volumeType,
         volume, 0), 0);
-    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(0, volumeType), 0);
-    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId1, volumeType), 0);
+
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(0, DEVICE_TYPE_SPEAKER, volumeType), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId1, DEVICE_TYPE_SPEAKER, volumeType), 0);
+
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeLevel(0, DEVICE_TYPE_SPEAKER, volumeType), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeLevel(zoneId1, DEVICE_TYPE_SPEAKER, volumeType), 0);
 
     auto zone = AudioZoneService::GetInstance().FindZone(zoneId1);
     ASSERT_NE(zone, nullptr);
     int32_t clientPid = 1;
-    zone->EnableSystemVolumeProxy(clientPid, true);
-    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId1, volumeType,
+    // enable device proxy on zone object (unit test simulates client registered)
+    zone->EnableSystemVolumeProxy(clientPid, DEVICE_TYPE_SPEAKER, true);
+
+    // now SetSystemVolumeLevel should be accepted when proxy enabled (still uses deviceType param)
+    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeLevel(zoneId1, DEVICE_TYPE_SPEAKER, volumeType,
         volume, 0), 0);
-    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId1, volumeType), volumeDegree);
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId1, DEVICE_TYPE_SPEAKER, volumeType),
+        volumeDegree);
 
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
 }
@@ -253,6 +275,9 @@ HWTEST_F(AudioZoneServiceUnitTest, GetDeviceDescriptor, TestSize.Level1)
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, ""), nullptr);
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_SPEAKER, ""), nullptr);
     EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(DEVICE_TYPE_NONE, "Test"), nullptr);
+
+    EXPECT_NE(AudioZoneService::GetInstance().GetDeviceDescriptor(DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER), nullptr);
+    EXPECT_EQ(AudioZoneService::GetInstance().GetDeviceDescriptor(zoneId, DEVICE_TYPE_SPEAKER), nullptr);
 }
 
 /**
@@ -322,6 +347,76 @@ HWTEST_F(AudioZoneServiceUnitTest, CheckDeviceInAudioZone_003, TestSize.Level1)
     auto ret = AudioZoneService::GetInstance().CheckDeviceInAudioZone(device);
     EXPECT_FALSE(ret);
 }
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AudioZoneService_GetZoneNameById_001
+ * @tc.desc  : Test GetZoneNameById interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_GetZoneNameById_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
+
+    auto zone = AudioZoneService::GetInstance().FindZone(zoneId1);
+    ASSERT_NE(zone, nullptr);
+
+    EXPECT_EQ(AudioZoneService::GetInstance().GetZoneNameById(DEFAULT_ZONEID), PRIMARY_ZONE_NAME);
+    EXPECT_EQ(AudioZoneService::GetInstance().GetZoneNameById(zoneId1), "TestZone1");
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+}
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AudioZoneService_EnableSystemVolumeProxy_001
+ * @tc.desc  : Test EnableSystemVolumeProxy interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_EnableSystemVolumeProxy_001, TestSize.Level1)
+{
+    ClearZone();
+    AudioZoneService &svc = AudioZoneService::GetInstance();
+
+    pid_t missingPid = 12345;
+    int32_t invalidZone = 99999;
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(missingPid, 0, DEVICE_TYPE_SPEAKER, true), ERROR);
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(missingPid, invalidZone, DEVICE_TYPE_SPEAKER, true), ERROR);
+
+    pid_t mainPid = 1000;
+    sptr<IStandardAudioZoneClient> mainClient = new IStandardAudioZoneClientUnitTest();
+    ASSERT_NE(mainClient, nullptr);
+    EXPECT_EQ(svc.RegisterAudioZoneClient(mainPid, mainClient), SUCCESS);
+
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER, true), SUCCESS);
+    EXPECT_TRUE(svc.IsSystemVolumeProxyEnable(DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER));
+
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER, false), SUCCESS);
+    EXPECT_FALSE(svc.IsSystemVolumeProxyEnable(DEFAULT_ZONEID, DEVICE_TYPE_SPEAKER));
+
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_NONE, true), SUCCESS);
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_NONE, false), SUCCESS);
+
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_INVALID, true), SUCCESS);
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(mainPid, DEFAULT_ZONEID, DEVICE_TYPE_INVALID, false), SUCCESS);
+
+    AudioZoneContext context;
+    int32_t zoneId = svc.CreateAudioZone("UTZone", context, 0);
+    ASSERT_NE(zoneId, ERROR);
+    pid_t zonePid = 2000;
+    sptr<IStandardAudioZoneClient> zoneClient = new IStandardAudioZoneClientUnitTest();
+    ASSERT_NE(zoneClient, nullptr);
+    EXPECT_EQ(svc.RegisterAudioZoneClient(zonePid, zoneClient), SUCCESS);
+
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(zonePid, zoneId, DEVICE_TYPE_SPEAKER, true), SUCCESS);
+    EXPECT_TRUE(svc.IsSystemVolumeProxyEnable(zoneId, DEVICE_TYPE_SPEAKER));
+
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(zonePid, zoneId, DEVICE_TYPE_SPEAKER, false), SUCCESS);
+    EXPECT_FALSE(svc.IsSystemVolumeProxyEnable(zoneId, DEVICE_TYPE_SPEAKER));
+
+    EXPECT_EQ(svc.EnableSystemVolumeProxy(zonePid, invalidZone, DEVICE_TYPE_SPEAKER, true), ERROR);
+
+    svc.UnRegisterAudioZoneClient(mainPid);
+    svc.UnRegisterAudioZoneClient(zonePid);
+    svc.ReleaseAudioZone(zoneId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
- 

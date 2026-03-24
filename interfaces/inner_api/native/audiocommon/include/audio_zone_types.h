@@ -46,10 +46,12 @@ class AudioZoneVolumeProxy {
 public:
     virtual ~AudioZoneVolumeProxy() = default;
 
-    virtual void SetSystemVolume(const AudioVolumeType volumeType, const int32_t volumeLevel) = 0;
-    virtual int32_t GetSystemVolume(AudioVolumeType volumeType) = 0;
-    virtual void SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree) {}
-    virtual int32_t GetSystemVolumeDegree(AudioVolumeType volumeType) { return -1;}
+    virtual void SetSystemVolume(const DeviceType deviceType, const AudioVolumeType volumeType,
+        const int32_t volumeLevel) = 0;
+    virtual int32_t GetSystemVolume(const DeviceType deviceType, const AudioVolumeType volumeType) = 0;
+    virtual void SetSystemVolumeDegree(const DeviceType deviceType, const AudioVolumeType volumeType,
+        int32_t volumeDegree) {}
+    virtual int32_t GetSystemVolumeDegree(const DeviceType deviceType, const AudioVolumeType volumeType) { return -1;}
 };
 
 class AudioZoneInterruptCallback {
@@ -112,10 +114,10 @@ public:
 
     virtual void SetZoneDeviceVisible(bool visible) = 0;
 
-    virtual int32_t RegisterSystemVolumeProxy(int32_t zoneId,
+    virtual int32_t RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,
         const std::shared_ptr<AudioZoneVolumeProxy> &proxy) = 0;
 
-    virtual int32_t UnRegisterSystemVolumeProxy(int32_t zoneId) = 0;
+    virtual int32_t UnRegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType) = 0;
 
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) = 0;
@@ -139,6 +141,11 @@ public:
     
     virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
+    
+    virtual int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs) const = 0;
+
+    virtual int32_t TriggerAudioZoneVolumeSync() const = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

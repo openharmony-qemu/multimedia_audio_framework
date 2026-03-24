@@ -18,6 +18,7 @@
 #endif
 
 #include "audio_volume_utils.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,7 +48,7 @@ bool AudioVolumeUtils::LoadConfig()
 }
 
 int32_t AudioVolumeUtils::GetDefaultVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType)
+    AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, DEFAULT_VOLUME_LEVEL, "desc is null");
     int32_t defaultVolumeLevel = DEFAULT_VOLUME_LEVEL;
@@ -66,18 +67,32 @@ int32_t AudioVolumeUtils::GetDefaultVolumeLevel(std::shared_ptr<AudioDeviceDescr
             if (desc->networkId_ != LOCAL_NETWORK_ID) {
                 GetDefaultVolumeLevelForDistributedDevice(desc, streamType, defaultVolumeLevel);
             } else {
-                GetDefaultVolumeLevelFromConfig(desc, streamType, defaultVolumeLevel);
+                GetDefaultVolumeLevelFromConfig(desc, streamType, defaultVolumeLevel, zoneId);
             }
             break;
         default:
-            GetDefaultVolumeLevelFromConfig(desc, streamType, defaultVolumeLevel);
+            GetDefaultVolumeLevelFromConfig(desc, streamType, defaultVolumeLevel, zoneId);
             break;
     }
     return defaultVolumeLevel;
 }
 
+#ifdef FEATURE_AUDIO_ZONE
 void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType, int32_t &volumeLevel)
+    AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
+{
+    std::lock_guard<std::mutex> lock(zoneVolumeConfigMapMutex_);
+    std::string zoneName = AudioZoneService::GetInstance().GetZoneNameById(zoneId);
+    CHECK_AND_RETURN_LOG(zoneVolumeConfigMap_.contains(zoneName), "zoneVolumeConfigMap_ not contain zone");
+    
+    std::map<AudioVolumeType, AudioZoneVolumeConfig> zoneConfigIt = zoneVolumeConfigMap_[zoneName];
+    AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    CHECK_AND_RETURN_LOG(zoneConfigIt.contains(internalVolumeType), "streamType in zone not config");
+    volumeLevel = zoneConfigIt[internalVolumeType].defaultVolume;
+}
+#else
+void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+    AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
     if (streamVolumeInfos_.empty()) {
@@ -108,6 +123,7 @@ void AudioVolumeUtils::GetDefaultVolumeLevelFromConfig(std::shared_ptr<AudioDevi
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt->defaultLevel != -1, "defaultLevel is -1, not use");
     volumeLevel = deviceVolumeInfoIt->defaultLevel;
 }
+#endif
 
 void AudioVolumeUtils::GetDefaultVolumeLevelForDPsDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t &volumeLevel)
@@ -151,17 +167,31 @@ void AudioVolumeUtils::GetDefaultVolumeLevelForHearingAidDevice(std::shared_ptr<
 }
 
 int32_t AudioVolumeUtils::GetMaxVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType)
+    AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, MAX_VOLUME_LEVEL, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t maxVolumeLevel = MAX_VOLUME_LEVEL;
-    GetMaxVolumeLevelFromConfig(desc, volumeType, maxVolumeLevel);
+    GetMaxVolumeLevelFromConfig(desc, volumeType, maxVolumeLevel, zoneId);
     return maxVolumeLevel;
 }
 
+#ifdef FEATURE_AUDIO_ZONE
 void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType, int32_t &volumeLevel)
+    AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
+{
+    std::lock_guard<std::mutex> lock(zoneVolumeConfigMapMutex_);
+    std::string zoneName = AudioZoneService::GetInstance().GetZoneNameById(zoneId);
+    CHECK_AND_RETURN_LOG(zoneVolumeConfigMap_.contains(zoneName), "zoneVolumeConfigMap_ not contain zone");
+    
+    std::map<AudioVolumeType, AudioZoneVolumeConfig> zoneConfigIt = zoneVolumeConfigMap_[zoneName];
+    AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    CHECK_AND_RETURN_LOG(zoneConfigIt.contains(internalVolumeType), "streamType in zone not config");
+    volumeLevel = zoneConfigIt[internalVolumeType].maxVolume;
+}
+#else
+void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+    AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
     if (streamVolumeInfos_.empty()) {
@@ -192,19 +222,34 @@ void AudioVolumeUtils::GetMaxVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt->maxLevel != -1, "maxLevel is -1, not use");
     volumeLevel = deviceVolumeInfoIt->maxLevel;
 }
+#endif
 
 int32_t AudioVolumeUtils::GetMinVolumeLevel(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType)
+    AudioStreamType streamType, int32_t zoneId)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, MIN_VOLUME_LEVEL, "desc is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t minVolumeLevel = MIN_VOLUME_LEVEL;
-    GetMinVolumeLevelFromConfig(desc, volumeType, minVolumeLevel);
+    GetMinVolumeLevelFromConfig(desc, volumeType, minVolumeLevel, zoneId);
     return minVolumeLevel;
 }
 
+#ifdef FEATURE_AUDIO_ZONE
 void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
-    AudioStreamType streamType, int32_t &volumeLevel)
+    AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
+{
+    std::lock_guard<std::mutex> lock(zoneVolumeConfigMapMutex_);
+    std::string zoneName = AudioZoneService::GetInstance().GetZoneNameById(zoneId);
+    CHECK_AND_RETURN_LOG(zoneVolumeConfigMap_.contains(zoneName), "zoneVolumeConfigMap_ not contain zone");
+    
+    std::map<AudioVolumeType, AudioZoneVolumeConfig> zoneConfigIt = zoneVolumeConfigMap_[zoneName];
+    AudioVolumeType internalVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    CHECK_AND_RETURN_LOG(zoneConfigIt.contains(internalVolumeType), "streamType in zone not config");
+    volumeLevel = zoneConfigIt[internalVolumeType].minVolume;
+}
+#else
+void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDescriptor> desc,
+    AudioStreamType streamType, int32_t &volumeLevel, int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(streamVolumeInfosMutex_);
     if (streamVolumeInfos_.empty()) {
@@ -236,6 +281,7 @@ void AudioVolumeUtils::GetMinVolumeLevelFromConfig(std::shared_ptr<AudioDeviceDe
     CHECK_AND_RETURN_LOG(deviceVolumeInfoIt->minLevel != -1, "minLevel is -1, not use");
     volumeLevel = deviceVolumeInfoIt->minLevel;
 }
+#endif
 
 bool AudioVolumeUtils::IsDistributedDevice(std::shared_ptr<AudioDeviceDescriptor> desc)
 {
@@ -296,6 +342,26 @@ bool AudioVolumeUtils::IsDeviceWithSafeVolume(std::shared_ptr<AudioDeviceDescrip
         default:
             return false;
     }
+}
+
+int32_t AudioVolumeUtils::SetAudioZoneVolumeConfig(const std::string &zoneName,
+    const std::vector<AudioZoneVolumeConfig> &configs)
+{
+    std::lock_guard<std::mutex> lock(zoneVolumeConfigMapMutex_);
+    for (const auto &config : configs) {
+        zoneVolumeConfigMap_[zoneName][config.volumeType] = config;
+        AUDIO_INFO_LOG("zoneName: %{public}s, volumeType: %{public}d, default: %{public}d,"
+            "min: %{public}d, max: %{public}d", zoneName.c_str(), config.volumeType,
+            config.defaultVolume, config.minVolume, config.maxVolume);
+    }
+    zoneVolumeHasConfiged_.insert(zoneName);
+    return SUCCESS;
+}
+
+bool AudioVolumeUtils::HasZoneVolumeConfiged(const std::string &zoneName)
+{
+    AUDIO_INFO_LOG("zoneName: %{public}s", zoneName.c_str());
+    return zoneVolumeHasConfiged_.contains(zoneName);
 }
 } // namespace AudioStandard
 } // namespace OHOS

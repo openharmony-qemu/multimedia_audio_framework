@@ -86,6 +86,10 @@ ohos_shared_library("audio_utils") {
     external_deps += [ "hitrace:hitrace_meter" ]
   }
 
+  if (audio_framework_feature_multi_zone) {
+    defines += [ "FEATURE_AUDIO_ZONE" ]
+  }
+
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
   } else if (build_variant == "root") {

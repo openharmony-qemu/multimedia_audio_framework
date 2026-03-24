@@ -132,6 +132,7 @@ public:
         int32_t callerPid_ = -1;
         bool collaborationEnabled;
         SpatialAudioSourceType mode = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+        int32_t zoneId = -1;
     };
 
     struct RendererDeviceChangeEvent {
@@ -177,8 +178,8 @@ public:
     bool SendMicrophoneBlockedCallback(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc,
         DeviceBlockStatus status);
     void HandleMicrophoneBlockedCallback(const AppExecFwk::InnerEvent::Pointer &event);
-    bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent);
-    bool SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent);
+    bool SendVolumeKeyEventCallback(const VolumeEvent &volumeEvent, const int32_t zoneId = 0);
+    bool SendVolumeDegreeEventCallback(const VolumeEvent &volumeEvent, const int32_t zoneId = 0);
     bool SendAudioFocusInfoChangeCallback(int32_t callbackCategory, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList);
     bool SendRingerModeUpdatedCallback(const AudioRingerMode &ringMode);
@@ -314,6 +315,7 @@ private:
     bool IsForceGetDevByVolumeType(int32_t uid);
     bool IsForceGetZoneDevice(int32_t uid);
     bool IsTargetDeviceForVolumeKeyEvent(int32_t pid, const VolumeEvent &volumeEvent);
+    bool IsTargetZoneForVolumeKeyEvent(int32_t pid, int32_t zoneId);
     bool BuildStateChangedEvent(InterruptHint hintType, float &duckVolume,
         AudioSessionStateChangedEvent &stateChangedEvent);
     void ValidatePreferredOutputDeviceCallback(int32_t clientPid,

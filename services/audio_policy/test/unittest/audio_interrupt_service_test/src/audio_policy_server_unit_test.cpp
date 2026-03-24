@@ -4958,13 +4958,14 @@ HWTEST(AudioPolicyUnitTest, EnableSystemVolumeProxy_001, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     bool enable = true;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
 
     // Test zoneId = 0
-    int32_t ret = server->EnableSystemVolumeProxy(0, enable);
+    int32_t ret = server->EnableSystemVolumeProxy(0, deviceType, enable);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
     // Test zoneId < 0
-    ret = server->EnableSystemVolumeProxy(-1, enable);
+    ret = server->EnableSystemVolumeProxy(-1, deviceType, enable);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -4982,8 +4983,9 @@ HWTEST(AudioPolicyUnitTest, EnableSystemVolumeProxy_002, TestSize.Level1)
 
     int32_t zoneId = 1;
     bool enable = true;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
 
-    int32_t ret = server->EnableSystemVolumeProxy(zoneId, enable);
+    int32_t ret = server->EnableSystemVolumeProxy(zoneId, deviceType, enable);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -5002,8 +5004,9 @@ HWTEST(AudioPolicyUnitTest, EnableSystemVolumeProxy_003, TestSize.Level1)
 
     int32_t zoneId = 1;
     bool enable = true;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
 
-    int32_t ret = server->EnableSystemVolumeProxy(zoneId, enable);
+    int32_t ret = server->EnableSystemVolumeProxy(zoneId, deviceType, enable);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -5022,8 +5025,9 @@ HWTEST(AudioPolicyUnitTest, EnableSystemVolumeProxy_004, TestSize.Level1)
 
     int32_t zoneId = 1;
     bool enable = false;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
 
-    int32_t ret = server->EnableSystemVolumeProxy(zoneId, enable);
+    int32_t ret = server->EnableSystemVolumeProxy(zoneId, deviceType, enable);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -5924,6 +5928,37 @@ HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_009, TestSize.Level1)
     audioPolicyServer->screenOffAdjustVolumeEnable_ = true;
     audioPolicyServer->isScreenOn_ = false;
     audioPolicyServer->ProcessVolumeKeyEvents(keyType);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: SetAudioZoneVolumeConfig_001
+ * @tc.desc  : Call SetAudioZoneVolumeConfig with empty/typical params, ensure it returns a non-error code.
+ */
+HWTEST(AudioPolicyUnitTest, SetAudioZoneVolumeConfig_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string zoneName = "UnitTestZone";
+    std::vector<AudioZoneVolumeConfig> configs; // empty vector is a valid quick-check
+
+    int32_t ret = server->SetAudioZoneVolumeConfig(zoneName, configs);
+    EXPECT_NE(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: TriggerAudioZoneVolumeSync_001
+ * @tc.desc  : Call TriggerAudioZoneVolumeSync and expect SUCCESS (no crash, triggers sync).
+ */
+HWTEST(AudioPolicyUnitTest, TriggerAudioZoneVolumeSync_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t ret = server->TriggerAudioZoneVolumeSync();
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // AudioStandard
 } // OHOS

@@ -530,5 +530,29 @@ std::shared_ptr<AudioDeviceDescriptor> AudioConnectedDevice::GetDeviceByDeviceTy
     AUDIO_ERR_LOG("Get device failed, make new %{public}s", device->GetName().c_str());
     return device;
 }
+
+std::unordered_set<DeviceType> AudioConnectedDevice::GetAllOutputDeviceTypes()
+{
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    std::unordered_set<DeviceType> deviceTypes;
+    for (const auto& device : connectedDevices_) {
+        if (device->deviceRole_ == OUTPUT_DEVICE) {
+            deviceTypes.insert(device->deviceType_);
+        }
+    }
+    return deviceTypes;
+}
+
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetAllOutputDevices()
+{
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    for (const auto& device : connectedDevices_) {
+        if (device->deviceRole_ == OUTPUT_DEVICE) {
+            devices.push_back(device);
+        }
+    }
+    return devices;
+}
 }
 }

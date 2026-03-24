@@ -74,7 +74,7 @@ public:
         Notify();
     }
 
-    int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
+    int32_t SetSystemVolume(const int32_t zoneId, const DeviceType deviceType, const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag) override
     {
         volumeLevel_ = volumeLevel;
@@ -82,7 +82,7 @@ public:
         return 0;
     }
 
-    int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) override
+    int32_t GetSystemVolume(int32_t zoneId, DeviceType deviceType, AudioVolumeType volumeType) override
     {
         Notify();
         return volumeLevel_;

@@ -75,10 +75,10 @@ public:
 
     void SetZoneDeviceVisible(bool visible) override;
 
-    int32_t RegisterSystemVolumeProxy(int32_t zoneId,
+    int32_t RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,
         const std::shared_ptr<AudioZoneVolumeProxy> &proxy) override;
 
-    int32_t UnRegisterSystemVolumeProxy(int32_t zoneId) override;
+    int32_t UnRegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
         int32_t zoneId) override;
@@ -102,6 +102,11 @@ public:
     
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
+    
+    int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
+        const std::vector<AudioZoneVolumeConfig> &configs) const override;
+
+    int32_t TriggerAudioZoneVolumeSync() const override;
 
 private:
     sptr<AudioZoneClient> client_;
@@ -359,11 +364,11 @@ int32_t AudioZoneManagerInner::RemoveStreamsFromAudioZone(int32_t zoneId, std::v
     return result;
 }
 
-int32_t AudioZoneManagerInner::RegisterSystemVolumeProxy(int32_t zoneId,
+int32_t AudioZoneManagerInner::RegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType,
     const std::shared_ptr<AudioZoneVolumeProxy> &proxy)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
     CHECK_AND_RETURN_RET_LOG(proxy != nullptr, ERR_INVALID_PARAM, "proxy is nullptr");
     
     std::unique_lock<std::mutex> lock(clientMutex_);
@@ -371,20 +376,18 @@ int32_t AudioZoneManagerInner::RegisterSystemVolumeProxy(int32_t zoneId,
         "RegisterAudioZoneClient failed!");
     CHECK_AND_RETURN_RET_LOG(client_ != nullptr, ERROR, "client_ is nullptr!");
 
-    client_->AddAudioZoneVolumeProxy(zoneId, proxy);
-    return SUCCESS;
+    return client_->AddAudioZoneVolumeProxy(zoneId, deviceType, proxy);
 }
 
-int32_t AudioZoneManagerInner::UnRegisterSystemVolumeProxy(int32_t zoneId)
+int32_t AudioZoneManagerInner::UnRegisterSystemVolumeProxy(int32_t zoneId, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("in");
-    CHECK_AND_RETURN_RET_LOG(zoneId > 0, ERR_INVALID_PARAM, "zoneId is invalid");
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId is invalid");
 
     std::unique_lock<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_RET_LOG(client_ != nullptr, ERROR, "client_ is nullptr!");
 
-    client_->RemoveAudioZoneVolumeProxy(zoneId);
-    return SUCCESS;
+    return client_->RemoveAudioZoneVolumeProxy(zoneId, deviceType);
 }
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioZoneManagerInner::GetAudioInterruptForZone(
@@ -481,6 +484,28 @@ int32_t AudioZoneManagerInner::InjectInterruptToAudioZone(int32_t zoneId, const 
     int32_t result = AudioPolicyManager::GetInstance().InjectInterruptToAudioZone(zoneId, deviceTag, interrupts);
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "InjectInterruptToAudioZone result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::SetAudioZoneVolumeConfig(const std::string &zoneName,
+    const std::vector<AudioZoneVolumeConfig> &configs) const
+{
+    AUDIO_INFO_LOG("in");
+    CHECK_AND_RETURN_RET_LOG(!zoneName.empty(), ERR_INVALID_PARAM, "zoneName is empty");
+    CHECK_AND_RETURN_RET_LOG(!configs.empty(), ERR_INVALID_PARAM, "configs is empty");
+
+    int32_t result = AudioPolicyManager::GetInstance().SetAudioZoneVolumeConfig(zoneName, configs);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "SetAudioZoneVolumeConfig result:%{public}d", result);
+    return result;
+}
+
+int32_t AudioZoneManagerInner::TriggerAudioZoneVolumeSync() const
+{
+    AUDIO_INFO_LOG("in");
+    int32_t result = AudioPolicyManager::GetInstance().TriggerAudioZoneVolumeSync();
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+        "TriggerAudioZoneVolumeSync result:%{public}d", result);
     return result;
 }
 } // namespace AudioStandard

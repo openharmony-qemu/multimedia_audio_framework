@@ -111,6 +111,9 @@ ohos_unittest("audio_zone_client_unit_test") {
     "accessibility:accessibility_common",
     "accessibility:accessibilityconfig",
     "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
   ]
 
   sources = [
@@ -121,6 +124,7 @@ ohos_unittest("audio_zone_client_unit_test") {
     "../service/src/audio_policy_manager_zone.cpp",
     "./src/audio_policy_client_stub_impl.cpp",
     "../../../audio_policy/server/src/audio_client_tracker_callback_service.cpp",
+    "../../../audio_policy/client/service/src/audio_zone_manager.cpp",
   ]
 
   deps = [

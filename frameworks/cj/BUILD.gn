@@ -58,6 +58,12 @@ ohos_shared_library("cj_multimedia_audio_ffi") {
     "src/multimedia_audio_volume_manager_impl.cpp",
   ]
 
+  defines = []
+
+  if (audio_framework_feature_multi_zone) {
+    defines += [ "FEATURE_AUDIO_ZONE" ]
+  }
+
   deps = [
     "../../services/audio_policy:audio_policy_client",
     "../../services/audio_service:audio_client",

@@ -81,18 +81,22 @@ public:
     int32_t RemoveDeviceDescriptor(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
     int32_t EnableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t DisableDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> device);
-    std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(DeviceType type, std::string networkId);
+    std::shared_ptr<AudioDeviceDescriptor> GetDeviceDescriptor(DeviceType type,
+        std::string networkId = LOCAL_NETWORK_ID);
     bool IsDeviceConnect(std::shared_ptr<AudioDeviceDescriptor> device);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(StreamUsage streamUsage,
         int32_t clientUid, const RouterType &bypassType);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(SourceType sourceType, int32_t clientUid);
 
-    int32_t EnableSystemVolumeProxy(pid_t clientPid, bool enable);
-    int32_t SetSystemVolumeLevel(const AudioVolumeType volumeType,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAllOutputDevices();
+    std::unordered_set<DeviceType> GetAllOutputDeviceTypes();
+
+    int32_t EnableSystemVolumeProxy(pid_t clientPid, DeviceType deviceType, bool enable);
+    int32_t SetSystemVolumeLevel(const DeviceType deviceType, const AudioVolumeType volumeType,
         const VolumeScale &volume, const int32_t volumeFlag = 0);
-    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
-    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType);
-    bool IsVolumeProxyEnable();
+    int32_t GetSystemVolumeLevel(const DeviceType deviceType, const AudioVolumeType volumeType);
+    int32_t GetSystemVolumeDegree(const DeviceType deviceType, const AudioVolumeType volumeType);
+    bool IsVolumeProxyEnable(DeviceType deviceType);
 
     int32_t EnableChangeReport(pid_t clientPid, bool enable);
 
@@ -114,12 +118,13 @@ private:
     std::set<pid_t> changeReportClientList_;
     pid_t volumeProxyClientPid_ = 0;
     pid_t zoneClientPid_ = 0;
-    bool isVolumeProxyEnabled_ = false;
     AudioZoneContext context_;
+    std::unordered_set<DeviceType> volumeProxyDeviceTypes_;
 
     int32_t SetDeviceDescriptorState(const std::shared_ptr<AudioDeviceDescriptor> device, const bool enable);
     void SendZoneChangeEvent(AudioZoneChangeReason reason);
     const std::shared_ptr<AudioZoneDescriptor> GetDescriptorNoLock();
+    std::unordered_set<DeviceType> GetAllOutputDeviceTypesNoLock();
 };
 } // namespace AudioStandard
 } // namespace OHOS

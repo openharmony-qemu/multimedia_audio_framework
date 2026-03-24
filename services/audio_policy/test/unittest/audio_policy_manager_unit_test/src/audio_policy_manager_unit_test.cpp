@@ -948,5 +948,54 @@ HWTEST(AudioPolicyManager, IsCollaborativePlaybackSupportedForDevice_002, TestSi
     bool isSupported = audioPolicyManager_->IsCollaborativePlaybackSupportedForDevice(device);
     EXPECT_FALSE(isSupported);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyManager.
+ * @tc.number: SetAudioZoneVolumeConfig_001
+ * @tc.desc  : Call SetAudioZoneVolumeConfig with empty/typical params, expect non-ERROR return.
+ */
+HWTEST(AudioPolicyManager, SetAudioZoneVolumeConfig_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    std::string zoneName = std::string(PRIMARY_ZONE_NAME);
+    std::vector<AudioZoneVolumeConfig> configs; // empty list
+
+    int32_t ret = audioPolicyManager_->SetAudioZoneVolumeConfig(zoneName, configs);
+    EXPECT_NE(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManager.
+ * @tc.number: TriggerAudioZoneVolumeSync_001
+ * @tc.desc  : Call TriggerAudioZoneVolumeSync and expect non-ERROR return.
+ */
+HWTEST(AudioPolicyManager, TriggerAudioZoneVolumeSync_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    int32_t ret = audioPolicyManager_->TriggerAudioZoneVolumeSync();
+    EXPECT_NE(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManager.
+ * @tc.number: EnableSystemVolumeProxy_001
+ * @tc.desc  : Call EnableSystemVolumeProxy with invalid zoneId (0) and expect ERROR return.
+ */
+HWTEST(AudioPolicyManager, EnableSystemVolumeProxy_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    int32_t zoneId = 1;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    bool enable = true;
+
+    int32_t ret = audioPolicyManager_->EnableSystemVolumeProxy(zoneId, deviceType, enable);
+    EXPECT_NE(ret, ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS

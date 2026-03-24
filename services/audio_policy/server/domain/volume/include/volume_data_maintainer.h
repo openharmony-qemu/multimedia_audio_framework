@@ -138,23 +138,28 @@ public:
     std::string GetVolumeKey(const std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioStreamType streamType, VolumeKeyType keyType = VolumeKeyType::VOLUME_KEY_TYPE_LEVEL);
     std::string GetMuteKey(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
+    std::string GetZoneKey(int32_t zoneId);
     void SetVolumeList(std::vector<AudioStreamType> volumeList);
 
-    void InitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device);
+    void InitZoneVolumeMap(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> device);
+    void InitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId = 0);
     void DeInitDeviceVolumeMap(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t SaveVolumeToDb(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, const VolumeScale &volume);
+        AudioStreamType streamType, const VolumeScale &volume, int32_t zoneId = 0);
     void SaveVolumeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, VolumeScale &volume);
-    int32_t LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
+        AudioStreamType streamType, VolumeScale &volume, int32_t zoneId = 0);
+    int32_t LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType,
+        int32_t zoneId = 0);
 
-    void InitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device);
+    void InitZoneMuteMap(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> device);
+    void InitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId = 0);
     void DeInitDeviceMuteMap(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, bool muteStatus);
+        AudioStreamType streamType, bool muteStatus, int32_t zoneId = 0);
     void SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, bool muteStatus);
-    bool LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
+        AudioStreamType streamType, bool muteStatus, int32_t zoneId = 0);
+    bool LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType,
+        int32_t zoneId = 0);
 
     // open for speical need
     int32_t LoadVolumeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
@@ -162,21 +167,22 @@ public:
     int32_t LoadVolumeDegreeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType);
     int32_t SaveVolumeDegreeToDb(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, int32_t volumeDegree);
+        AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
     int32_t LoadVolumeDegreeFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType);
+        AudioStreamType streamType, int32_t zoneId = 0);
 
     int32_t SaveSystemAppVolumeLevelToDb();
     int32_t LoadSystemAppVolumeLevelFromDb(std::unordered_map<std::string, int32_t> &systemAppVolumeLevelMap);
     int32_t SaveSystemAppVolumeMuteStatusToDb();
     int32_t LoadSystemAppVolumeMuteStatusFromDb(std::unordered_map<std::string, bool> &systemAppVolumeMuteStatusMap);
-    
+
     int32_t CheckVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
     int32_t CheckMuteState(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
 
     void SaveVolumeUpdateStateToMap(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, bool state);
-    bool LoadVolumeUpdateStateFromMap(std::shared_ptr<AudioDeviceDescriptor> device, AudioStreamType streamType);
+        AudioStreamType streamType, bool state, int32_t zoneId = 0);
+    bool LoadVolumeUpdateStateFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, int32_t zoneId = 0);
 
 private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
@@ -187,14 +193,18 @@ private:
     static std::string GetMuteKeyForDatabaseVolumeName(std::string databaseVolumeName, AudioStreamType streamType);
     static std::string GetDeviceTypeName(DeviceType deviceType);
 
-    void LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device);
-    void LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device);
+    void LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
+    void LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
 
     void WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg);
     int32_t SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, const VolumeScale &volume);
+        AudioStreamType streamType, const VolumeScale &volume, int32_t zoneId);
     void SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescriptor> device,
-        AudioStreamType streamType, VolumeScale &volume);
+        AudioStreamType streamType, VolumeScale &volume, int32_t zoneId);
+    IntValueInfo GetVolumeLevelInfo(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, int32_t zoneId);
+    IntValueInfo GetVolumeDegreeInfo(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, int32_t zoneId);
 
     ffrt::mutex volumeMutex_;
     ffrt::mutex volumeForDbMutex_;

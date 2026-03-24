@@ -160,6 +160,10 @@ taihe_shared_library("audio_taihe") {
   if (audio_framework_feature_multi_alarm_level) {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
+
+  if (audio_framework_feature_multi_zone) {
+    defines += [ "FEATURE_AUDIO_ZONE" ]
+  }
 }
 
 generate_static_abc("audio_framework_taihe_abc") {

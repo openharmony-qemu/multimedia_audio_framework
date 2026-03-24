@@ -82,7 +82,7 @@ public:
         return 0;
     }
 
-    ErrCode SetSystemVolume(int32_t zoneId, int32_t volumeType, int32_t volumeLevel,
+    ErrCode SetSystemVolume(int32_t zoneId, int32_t deviceType, int32_t volumeType, int32_t volumeLevel,
         int32_t volumeDegree, int32_t volumeFlag) override
     {
         volumeLevel_ = volumeLevel;
@@ -91,13 +91,14 @@ public:
         return 0;
     }
 
-    ErrCode GetSystemVolume(int32_t zoneId, int32_t volumeType, float& outVolume) override
+    ErrCode GetSystemVolume(int32_t zoneId, int32_t deviceType, int32_t volumeType, int32_t& outVolume) override
     {
         Notify();
         return volumeLevel_;
     }
 
-    ErrCode GetSystemVolumeDegree(int32_t zoneId, int32_t volumeType, int32_t &outVolume) override
+    ErrCode GetSystemVolumeDegree(int32_t zoneId, int32_t deviceType, int32_t volumeType,
+        int32_t &outVolume) override
     {
         Notify();
         return volumeDegree_;

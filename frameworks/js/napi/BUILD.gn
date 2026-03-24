@@ -127,6 +127,10 @@ ohos_shared_library("audio") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (audio_framework_feature_multi_zone) {
+    defines += [ "FEATURE_AUDIO_ZONE" ]
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",

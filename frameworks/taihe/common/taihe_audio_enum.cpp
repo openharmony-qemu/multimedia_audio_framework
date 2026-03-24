@@ -599,7 +599,11 @@ OHOS::AudioStandard::AudioVolumeType TaiheAudioEnum::GetNativeAudioVolumeType(in
             result = OHOS::AudioStandard::STREAM_RING;
             break;
         case AudioJsVolumeType::NAVIGATION:
+#ifdef FEATURE_AUDIO_ZONE
+            result = OHOS::AudioStandard::STREAM_NAVIGATION;
+#else
             result = OHOS::AudioStandard::STREAM_MUSIC;
+#endif
             break;
         case AudioJsVolumeType::ALL:
             result = OHOS::AudioStandard::STREAM_ALL;
@@ -792,10 +796,16 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioS
         case OHOS::AudioStandard::AudioStreamType::STREAM_MOVIE:
         case OHOS::AudioStandard::AudioStreamType::STREAM_GAME:
         case OHOS::AudioStandard::AudioStreamType::STREAM_SPEECH:
-        case OHOS::AudioStandard::AudioStreamType::STREAM_NAVIGATION:
         case OHOS::AudioStandard::AudioStreamType::STREAM_CAMCORDER:
         case OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_MESSAGE:
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
+            break;
+        case OHOS::AudioStandard::AudioStreamType::STREAM_NAVIGATION:
+#ifdef FEATURE_AUDIO_ZONE
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::NAVIGATION);
+#else
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
+#endif
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_ALARM:
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::ALARM);

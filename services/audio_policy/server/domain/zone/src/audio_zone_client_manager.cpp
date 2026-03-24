@@ -184,7 +184,7 @@ void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zon
 }
 
 int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
-    const AudioVolumeType volumeType, const VolumeScale &volume, int32_t volumeFlag)
+    const DeviceType deviceType, const AudioVolumeType volumeType, const VolumeScale &volume, const int32_t volumeFlag)
 {
     sptr<IStandardAudioZoneClient> client = nullptr;
     {
@@ -192,29 +192,15 @@ int32_t AudioZoneClientManager::SetSystemVolumeLevel(const pid_t clientPid, cons
         CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
         client = clients_[clientPid];
     }
-    AUDIO_DEBUG_LOG("set audio zone %{public}d volumeLevel:%{public}d volumeDegree:%{public}d to client %{public}d",
-        zoneId, volume.VolumeLevel(), volume.VolumeDegree(), clientPid);
-    return client->SetSystemVolume(zoneId, volumeType, volume.VolumeLevel(), volume.VolumeDegree(), volumeFlag);
+    AUDIO_DEBUG_LOG("set audio zone %{public}d deviceType %{public}d volumeType %{public}d volumeLevel %{public}d"\
+        "volumeDegree:%{public}d to client %{public}d", zoneId, deviceType, volumeType, volume.VolumeLevel(),
+        volume.VolumeDegree(), clientPid);
+    return client->SetSystemVolume(zoneId, deviceType, volumeType, volume.VolumeLevel(), volume.VolumeDegree(),
+        volumeFlag);
 }
 
 int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, const int32_t zoneId,
-    AudioVolumeType volumeType)
-{
-    sptr<IStandardAudioZoneClient> client = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(clientMutex_);
-        CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
-        client = clients_[clientPid];
-    }
-    AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
-        zoneId, clientPid);
-    float outVolume = 0.0f;
-    client->GetSystemVolume(zoneId, volumeType, outVolume);
-    return static_cast<int32_t>(outVolume);
-}
-
-int32_t AudioZoneClientManager::GetSystemVolumeDegree(pid_t clientPid, int32_t zoneId,
-    AudioVolumeType volumeType)
+    const DeviceType deviceType, AudioVolumeType volumeType)
 {
     sptr<IStandardAudioZoneClient> client = nullptr;
     {
@@ -225,7 +211,23 @@ int32_t AudioZoneClientManager::GetSystemVolumeDegree(pid_t clientPid, int32_t z
     AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
         zoneId, clientPid);
     int32_t outVolume = 0;
-    client->GetSystemVolumeDegree(zoneId, volumeType, outVolume);
+    client->GetSystemVolume(zoneId, deviceType, volumeType, outVolume);
+    return outVolume;
+}
+
+int32_t AudioZoneClientManager::GetSystemVolumeDegree(pid_t clientPid, int32_t zoneId,
+    const DeviceType deviceType, AudioVolumeType volumeType)
+{
+    sptr<IStandardAudioZoneClient> client = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(clientMutex_);
+        CHECK_AND_RETURN_RET(clients_.find(clientPid) != clients_.end(), ERROR);
+        client = clients_[clientPid];
+    }
+    AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
+        zoneId, clientPid);
+    int32_t outVolume = 0;
+    client->GetSystemVolumeDegree(zoneId, deviceType, volumeType, outVolume);
     return outVolume;
 }
 } // namespace AudioStandard
