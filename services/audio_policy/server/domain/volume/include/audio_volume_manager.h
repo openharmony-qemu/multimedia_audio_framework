@@ -42,10 +42,14 @@
 #include "audio_connected_device.h"
 #include "audio_offload_stream.h"
 #include "audio_policy_state_monitor.h"
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+#include "audio_loud_volume_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
 
+class AudioInterruptService;
 class ForceControlVolumeTypeMonitor;
 
 using InternalDeviceType = DeviceType;
@@ -56,6 +60,21 @@ struct AdjustVolumeInfo {
     int32_t volumeLevel;
     int32_t appUid;
     std::string invocationTime;
+};
+
+struct VolumeUpdateOption {
+    bool isUpdateUi = false;
+    bool mute = false;
+    int32_t zoneId = 0;
+    int32_t volumeDegree = -1;
+    bool hasCheckLoudVolume = false;
+};
+
+struct VolInfoForUpdateMute {
+    AudioStreamType streamType;
+    int32_t volumeLevel;
+    bool mute;
+    int32_t zoneId = 0;
 };
 
 struct VolumeKeyEventRegistration {
@@ -77,7 +96,8 @@ public:
         static AudioVolumeManager instance;
         return instance;
     }
-    bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler);
+    bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler,
+        std::shared_ptr<AudioInterruptService> interruptService);
     void DeInit(void);
 
     void SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler);
@@ -113,7 +133,22 @@ public:
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
         int32_t zoneId = 0);
     bool GetStreamMute(AudioStreamType streamType, int32_t zoneId = 0) const;
-
+    bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevelWithOption(AudioStreamType streamType, int32_t volumeLevel,
+        int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
+    bool GetStreamMuteInterface(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t GetSystemVolumeLevelNoMuteStateInterface(AudioStreamType streamType);
+    int32_t SetRingerMode(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
+    int32_t GetSystemVolumeDegreeInterface(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
+    int32_t GetSystemVolumeLevelInterface(AudioStreamType streamType, int32_t zoneId = 0);
+    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
+    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
+        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    std::shared_ptr<LoudVolumeManager> GetLoudVolumeManager();
+#endif
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, VolumeScale &volume,
         bool internalCall = false);
 
@@ -150,7 +185,6 @@ public:
     void OnTimerExpired();
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
-    void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     int32_t UpdateSafeVolumeByStrMode();
@@ -189,7 +223,6 @@ private:
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
-    void PublishLoudVolumeNotification(int32_t notificationId);
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
@@ -201,7 +234,8 @@ private:
     int32_t DealWithEventVolume(const int32_t notificationId);
     void ChangeDeviceSafeStatus(SafeStatus safeStatus);
     bool CheckMixActiveMusicTime(int32_t safeVolume);
-
+    bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
+    void ProcUpdateRingerMode();
     int32_t HandleA2dpAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
         DeviceType curDeviceType);
     int32_t HandleNearlinkDeviceAbsVolume(AudioStreamType streamType, const VolumeScale &volume,
@@ -221,6 +255,12 @@ private:
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;
     volatile bool *sharedSleAbsVolumeScene_ = nullptr;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    int32_t loudVolumeSupportMode_ = 0;
+    std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
+#endif
+    bool supportVibrator_ = false;
+    std::shared_ptr<AudioInterruptService> interruptService_;
 
     int64_t activeSafeTimeBt_ = 0;
     int64_t activeSafeTime_ = 0;

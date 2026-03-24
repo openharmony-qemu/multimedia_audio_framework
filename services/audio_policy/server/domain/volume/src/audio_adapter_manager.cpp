@@ -1405,7 +1405,7 @@ void AudioAdapterManager::DepressVolume(float &volume, int32_t volumeLevel,
         return;
     }
     auto volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    AudioVolumeType voiceCallType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL);
+    static const AudioVolumeType voiceCallType = VolumeUtils::GetVolumeTypeFromStreamType(STREAM_VOICE_CALL);
 
     auto devForCall = audioActiveDevice_.GetDeviceForVolume(voiceCallType);
     CHECK_AND_RETURN_LOG(devForCall != nullptr, "device is null");

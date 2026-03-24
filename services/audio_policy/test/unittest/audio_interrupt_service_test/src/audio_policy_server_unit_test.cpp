@@ -990,12 +990,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_038, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: SetSystemVolumeLevelInternal_001
-* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelInternal
+* @tc.number: SetSystemVolumeLevelWithOption_001
+* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelWithOption
 */
-HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_001, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithOption_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevelInternal_001 start");
+    AUDIO_INFO_LOG("SetSystemVolumeLevelWithOption_001 start");
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
@@ -1004,19 +1004,19 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_001, TestSize.Level1)
     int32_t volumeLevel = 5;
     bool isUpdateUi = true;
     VolumeUpdateOption info = { isUpdateUi };
-    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL,
+    auto ret = ptrAudioPolicyServer->audioVolumeManager_.SetSystemVolumeLevelWithOption(STREAM_VOICE_CALL,
         volumeLevel, DEFAULT_ZONE_ID, info);
     EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: SetSystemVolumeLevelInternal_002
-* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelInternal
+* @tc.number: SetSystemVolumeLevelWithOption_002
+* @tc.desc  : Test AudioPolicyServer::SetSystemVolumeLevelWithOption
 */
-HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_002, TestSize.Level1)
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithOption_002, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevelInternal_002 start");
+    AUDIO_INFO_LOG("SetSystemVolumeLevelWithOption_002 start");
     int32_t systemAbilityId = 3009;
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
@@ -1026,7 +1026,7 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelInternal_002, TestSize.Level1)
     bool isUpdateUi = true;
     VolumeUtils::SetPCVolumeEnable(true);
     VolumeUpdateOption info = { isUpdateUi };
-    auto ret = ptrAudioPolicyServer->SetSystemVolumeLevelInternal(STREAM_VOICE_CALL,
+    auto ret = ptrAudioPolicyServer->audioVolumeManager_.SetSystemVolumeLevelWithOption(STREAM_VOICE_CALL,
         volumeLevel, DEFAULT_ZONE_ID, info);
     VolumeUtils::SetPCVolumeEnable(false);
     EXPECT_EQ(ret, SUCCESS);
@@ -1139,22 +1139,6 @@ HWTEST(AudioPolicyUnitTest, TranslateErrorCode_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test IsVolumeTypeValid.
-* @tc.number: IsVolumeTypeValid_001
-* @tc.desc  : Test AudioPolicyServer::IsVolumeTypeValid
-*/
-HWTEST(AudioPolicyUnitTest, IsVolumeTypeValid_001, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    bool result = ptrAudioPolicyServer->IsVolumeTypeValid(static_cast<AudioStreamType>(-1));
-    EXPECT_FALSE(result);
-}
-
-/**
 * @tc.name  : Test UpdateMuteStateAccordingToVolLevel.
 * @tc.number: UpdateMuteStateAccordingToVolLevel_001
 * @tc.desc  : Test AudioPolicyServer::UpdateMuteStateAccordingToVolLevel
@@ -1169,7 +1153,7 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_001, TestSize.Lev
     int32_t volumeLevel = 1;
     bool mute = true;
     VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
+    ptrAudioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1187,7 +1171,7 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_002, TestSize.Lev
     int32_t volumeLevel = 0;
     bool mute = false;
     VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
+    ptrAudioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1205,7 +1189,7 @@ HWTEST(AudioPolicyUnitTest, UpdateMuteStateAccordingToVolLevel_003, TestSize.Lev
     int32_t volumeLevel = 1;
     bool mute = false;
     VolInfoForUpdateMute info = { streamType, volumeLevel, mute, 0 };
-    ptrAudioPolicyServer->UpdateMuteStateAccordingToVolLevel(info);
+    ptrAudioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(info);
 }
 
 /**
@@ -1261,7 +1245,7 @@ HWTEST(AudioPolicyUnitTest, IsVolumeLevelValid_001, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     int32_t volumeLevel = 20;
-    bool result = ptrAudioPolicyServer->IsVolumeLevelValid(streamType, volumeLevel);
+    bool result = ptrAudioPolicyServer->audioVolumeManager_.IsVolumeLevelValid(streamType, volumeLevel);
     EXPECT_FALSE(result);
 }
 
@@ -2755,10 +2739,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_134, TestSize.Level1)
 
     server->coreService_ = std::make_shared<AudioCoreService>();
     server->supportVibrator_ = true;
-    server->ProcUpdateRingerMode();
+    server->audioVolumeManager_.ProcUpdateRingerMode();
 
     server->supportVibrator_ = false;
-    server->ProcUpdateRingerMode();
+    server->audioVolumeManager_.ProcUpdateRingerMode();
 }
 
 /**
@@ -2773,13 +2757,14 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_136, TestSize.Level1)
 
     int32_t volumeLevel = 1;
     VolumeUpdateOption option{true, false};
-    auto ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, option);
+    auto ret = server->audioVolumeManager_.SetSingleStreamVolume(
+        AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
+    ret = server->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = server->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, option);
+    ret = server->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_RING, volumeLevel, option);
     EXPECT_EQ(ret, SUCCESS);
 }
 

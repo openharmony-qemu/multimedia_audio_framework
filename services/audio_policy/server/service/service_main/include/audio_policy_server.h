@@ -67,21 +67,6 @@ class AudioPolicyServerHandler;
 class AudioSessionService;
 class BluetoothEventSubscriber;
 
-struct VolumeUpdateOption {
-    bool isUpdateUi = false;
-    bool mute = false;
-    int32_t zoneId = 0;
-    int32_t volumeDegree = -1;
-    bool hasCheckLoudVolume = false;
-};
-
-struct VolInfoForUpdateMute {
-    AudioStreamType streamType;
-    int32_t volumeLevel;
-    bool mute;
-    int32_t zoneId = 0;
-};
-
 class AudioPolicyServer : public SystemAbility,
                           public AudioPolicyStub,
                           public AudioStreamRemovedCallback {
@@ -677,10 +662,7 @@ public:
         int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0, int32_t previousVolume = -1);
-    void UpdateMuteStateAccordingToVolLevel(const VolInfoForUpdateMute &info, const bool& isUpdateUi = false,
-        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
 
-    void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
 
     int32_t SetCollaborativePlaybackEnabledForDevice(
@@ -763,7 +745,6 @@ public:
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
     int32_t ReloadLoudVolumeMode(const int32_t streamInFocus, const int32_t setVolMode, bool &ret) override;
-    bool CheckLoudVolumeMode(bool mute, int32_t volumeLevel, AudioStreamType streamType);
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree) override;
@@ -794,7 +775,6 @@ private:
     static constexpr char DAUDIO_DEV_TYPE_MIC = '2';
     static constexpr int32_t AUDIO_UID = 1041;
     static constexpr uint32_t MICPHONE_CALLER = 0;
-    static constexpr int32_t ROOT_UID = 0;
     static constexpr int32_t PREEMPT_UID = 7015;
 
     static const std::list<uid_t> RECORD_ALLOW_BACKGROUND_LIST;
@@ -819,14 +799,11 @@ private:
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
-    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
-        int32_t zoneId = 0, const VolumeUpdateOption &info = VolumeUpdateOption());
     int32_t SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
         bool isUpdateUi, DeviceType deviceType);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, const VolumeUpdateOption &option);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
         DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
@@ -840,9 +817,6 @@ private:
     void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
-    bool GetStreamMuteInternal(AudioStreamType streamType, int32_t zoneId = 0);
-    bool IsVolumeTypeValid(AudioStreamType streamType);
-    bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
     bool IsRingerModeValid(AudioRingerMode ringMode);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 
@@ -851,7 +825,7 @@ private:
     int32_t SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted);
 
     // Permission and privacy
-    bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
+    bool VerifyPermission(const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
     bool VerifyBluetoothPermission(const uid_t callingUid);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
@@ -893,7 +867,6 @@ private:
     void RegisterAppStateListener();
     void AddRemoteDevstatusCallback();
     void OnDistributedRoutingRoleChange(const std::shared_ptr<AudioDeviceDescriptor> descriptor, const CastType type);
-    void SubscribeSafeVolumeEvent();
     void SubscribeCommonEventExecute();
     void SubscribeBackgroundTask();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);

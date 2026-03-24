@@ -16,6 +16,7 @@
 #include "audio_adapter_manager_unit_test.h"
 #include "audio_stream_descriptor.h"
 #include "audio_interrupt_service.h"
+#include "audio_policy_server.h"
 #include "audio_adapter_manager_handler.h"
 
 using namespace testing::ext;

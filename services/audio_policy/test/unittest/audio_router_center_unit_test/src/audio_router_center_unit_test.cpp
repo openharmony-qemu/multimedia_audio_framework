@@ -20,7 +20,7 @@
 #include "audio_scene_manager.h"
 #include "audio_stream_collector.h"
 #include "audio_device_manager.h"
-
+#include "audio_core_service.h"
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 

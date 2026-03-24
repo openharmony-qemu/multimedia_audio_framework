@@ -258,31 +258,13 @@ void AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest()
     audioPolicyServer->SetVolumeInternalByKeyEvent(streamInFocus, zoneId, keyType);
 }
 
-void AudioPolicyServerSubscribeSafeVolumeEventFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
-    int32_t zoneId = GetData<int32_t>();
-    int32_t keyType = GetData<int32_t>();
-    audioPolicyServer->SubscribeSafeVolumeEvent();
-}
-
-void AudioPolicyServerIsVolumeTypeValidFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
-    audioPolicyServer->IsVolumeTypeValid(streamInFocus);
-}
-
 void AudioPolicyServerIsVolumeLevelValidFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
     int32_t volumeLevel = GetData<int32_t>();
-    audioPolicyServer->IsVolumeLevelValid(streamInFocus, volumeLevel);
+    audioPolicyServer->audioVolumeManager_.IsVolumeLevelValid(streamInFocus, volumeLevel);
 }
 
 void AudioPolicyServerIsRingerModeValidFuzzTest()
@@ -569,7 +551,7 @@ void AudioPolicyServerSetSelfAppVolumeLevelInternalFuzztest()
     audioPolicyServer->SetSelfAppVolumeLevelInternal(appUid, volumeLevel, isUpdateUi);
 }
 
-void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
+void AudioPolicyServerSetSystemVolumeLevelWithOptionFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
@@ -578,7 +560,7 @@ void AudioPolicyServerSetSystemVolumeLevelInternalFuzztest()
     int32_t volumeLevel = 0;
     int32_t zoneId = GetData<int32_t>();
     VolumeUpdateOption info = { isUpdateUi };
-    audioPolicyServer->SetSystemVolumeLevelInternal(streamType, volumeLevel, zoneId, info);
+    audioPolicyServer->audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
 }
 
 void AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest()
@@ -612,21 +594,21 @@ void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest()
     int32_t volumeLevel = 0;
     bool mute = false;
     VolInfoForUpdateMute muteInfo = { streamType, volumeLevel, mute, zoneId };
-    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(muteInfo, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(muteInfo, isUpdateUi);
     volumeLevel = 1;
     mute = true;
     VolInfoForUpdateMute unmuteInfo = { streamType, volumeLevel, mute, zoneId };
-    audioPolicyServer->UpdateMuteStateAccordingToVolLevel(unmuteInfo, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateMuteStateAccordingToVolLevel(unmuteInfo, isUpdateUi);
 }
 
 void AudioPolicyServerProcUpdateRingerModeFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    audioPolicyServer->supportVibrator_ = true;
-    audioPolicyServer->ProcUpdateRingerMode();
-    audioPolicyServer->supportVibrator_ = false;
-    audioPolicyServer->ProcUpdateRingerMode();
+    audioPolicyServer->audioVolumeManager_.supportVibrator_ = true;
+    audioPolicyServer->audioVolumeManager_.ProcUpdateRingerMode();
+    audioPolicyServer->audioVolumeManager_.supportVibrator_ = false;
+    audioPolicyServer->audioVolumeManager_.ProcUpdateRingerMode();
 }
 
 void AudioPolicyServerSetSingleStreamVolumeFuzztest()
@@ -638,8 +620,8 @@ void AudioPolicyServerSetSingleStreamVolumeFuzztest()
     bool mute = GetData<bool>();
     int32_t zoneId = GetData<int32_t>();
     VolumeUpdateOption option{isUpdateUi, mute, zoneId};
-    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
-    audioPolicyServer->SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
+    audioPolicyServer->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_RING, volumeLevel, option);
+    audioPolicyServer->audioVolumeManager_.SetSingleStreamVolume(AudioStreamType::STREAM_VOICE_ASSISTANT, volumeLevel,
         option);
 }
 
@@ -2075,8 +2057,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerTriggerMuteCheckFuzzTest,
     AudioPolicyServerProcessVolumeKeyEventsFuzzTest,
     AudioPolicyServerSetVolumeInternalByKeyEventFuzzTest,
-    AudioPolicyServerSubscribeSafeVolumeEventFuzzTest,
-    AudioPolicyServerIsVolumeTypeValidFuzzTest,
     AudioPolicyServerIsVolumeLevelValidFuzzTest,
     AudioPolicyServerIsRingerModeValidFuzzTest,
     AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest,
@@ -2109,7 +2089,7 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetSystemVolumeDbFuzzTest,
     AudioPolicyServerSetSelfAppVolumeLevelFuzztest,
     AudioPolicyServerSetSelfAppVolumeLevelInternalFuzztest,
-    AudioPolicyServerSetSystemVolumeLevelInternalFuzztest,
+    AudioPolicyServerSetSystemVolumeLevelWithOptionFuzztest,
     AudioPolicyServerSetSystemVolumeLevelWithDeviceInternalFuzztest,
     AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest,
     AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest,

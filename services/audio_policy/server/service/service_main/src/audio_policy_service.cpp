@@ -151,37 +151,6 @@ void AudioPolicyService::Deinit(void)
     return;
 }
 
-void SafeVolumeEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
-{
-    if (eventReceiver_ == nullptr) {
-        AUDIO_ERR_LOG("eventReceiver_ is nullptr.");
-        return;
-    }
-    eventReceiver_(eventData);
-}
-
-void AudioPolicyService::SubscribeSafeVolumeEvent()
-{
-    AUDIO_INFO_LOG("enter.");
-    EventFwk::MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(AUDIO_RESTORE_VOLUME_EVENT);
-    matchingSkills.AddEvent(AUDIO_INCREASE_VOLUME_EVENT);
-    matchingSkills.AddEvent(AUDIO_LEGACY_HIGH_VOLUME_EVENT);
-    EventFwk::CommonEventSubscribeInfo subscribeInfo(matchingSkills);
-    auto commonSubscribePtr = std::make_shared<SafeVolumeEventSubscriber>(subscribeInfo,
-        std::bind(&AudioPolicyService::OnReceiveEvent, this, std::placeholders::_1));
-    if (commonSubscribePtr == nullptr) {
-        AUDIO_ERR_LOG("commonSubscribePtr is nullptr");
-        return;
-    }
-    EventFwk::CommonEventManager::SubscribeCommonEvent(commonSubscribePtr);
-}
-
-void AudioPolicyService::OnReceiveEvent(const EventFwk::CommonEventData &eventData)
-{
-    audioVolumeManager_.OnReceiveEvent(eventData);
-}
-
 int32_t AudioPolicyService::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
 {
     // update dump appvolume

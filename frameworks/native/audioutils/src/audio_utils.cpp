@@ -553,6 +553,32 @@ bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_
     return true;
 }
 
+bool PermissionUtil::VerifyGeneralPermission(const std::string &permissionName, uint32_t tokenId, bool isRecording)
+{
+    AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
+
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == UID_AUDIO) {
+        return true;
+    }
+
+    if (!isRecording) {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+        // root user case for auto test
+        if (callingUid == ROOT_UID) {
+            return true;
+        }
+#endif
+        tokenId = IPCSkeleton::GetCallingTokenID();
+    }
+
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
+    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
+        false, "Permission denied [%{public}s]", permissionName.c_str());
+
+    return true;
+}
+
 bool PermissionUtil::IsFoldAble(const char ch)
 {
     if (ch == DUAL_DISPLAY || ch == SINGLE_POCKET_DISPLAY || ch == SUPER_FOLD_DISPLAY) {

@@ -496,6 +496,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, OnCheckActiveMusicTime_002, TestSize.Level4
  * @tc.number: OnCheckActiveMusicTime_002
  * @tc.desc  : Test SendLoudVolumeMode() without async handler
  */
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
 HWTEST_F(AudioVolumeManagerUnitTest, SendLoudVolumeMode_001, TestSize.Level4)
 {
     auto testVolumeManager = std::make_shared<AudioVolumeManager>();
@@ -504,16 +505,16 @@ HWTEST_F(AudioVolumeManagerUnitTest, SendLoudVolumeMode_001, TestSize.Level4)
     LoudVolumeHoldType funcHoldType = LOUD_VOLUME_MODE_MUSIC;
     bool state = true;
     bool repeatTrigNotif = true;
-    testVolumeManager->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
+    testVolumeManager->loudVolumeManager_->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
 
     state = false;
-    testVolumeManager->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
+    testVolumeManager->loudVolumeManager_->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
 
     repeatTrigNotif = false;
-    testVolumeManager->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
+    testVolumeManager->loudVolumeManager_->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
 
     state = true;
-    testVolumeManager->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
+    testVolumeManager->loudVolumeManager_->SendLoudVolumeMode(funcHoldType, state, repeatTrigNotif);
 
     std::string testReason = "Default";
     std::string outReason = testVolumeManager->DoLoopCheck(testReason);
@@ -521,7 +522,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, SendLoudVolumeMode_001, TestSize.Level4)
 
     testVolumeManager->DeInit();
 }
-
+#endif
 
 } // namespace AudioStandard
 } // namespace OHOS

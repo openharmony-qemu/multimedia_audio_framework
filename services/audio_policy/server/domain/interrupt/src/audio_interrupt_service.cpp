@@ -17,7 +17,7 @@
 #endif
 
 #include "audio_interrupt_service.h"
-
+#include "audio_policy_server.h"
 #include "audio_focus_parser.h"
 #include "audio_utils_c.h"
 #include "standard_audio_policy_manager_listener_proxy.h"
