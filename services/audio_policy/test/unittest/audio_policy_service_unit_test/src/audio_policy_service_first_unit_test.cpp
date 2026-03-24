@@ -42,6 +42,7 @@ const int32_t DEFAULT_VOLUME_LEVEL = 7;
 const int32_t G_UNKNOWN_PID = -1;
 const uint32_t CHANNELS = 2;
 const uint32_t RATE = 4;
+static constexpr int32_t MEDIA_SERVICE_UID = 1013;
 
 void AudioPolicyServiceUnitTest::SetUpTestCase(void)
 {
@@ -2271,6 +2272,26 @@ HWTEST_F(AudioPolicyServiceUnitTest, IsFastFromA2dpToA2dp_002, TestSize.Level1)
     bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsFastFromA2dpToA2dp(audioDeviceDescriptor,
         rendererChangeInfo, reason);
     EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test GetRealUid.
+ * @tc.number: GetRealUid_001
+ * @tc.desc  : Test GetRealUid interfaces.
+ */
+HWTEST_F(AudioPolicyServiceUnitTest, GetRealUid_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+ 
+    AudioProcessConfig config;
+    config.callerUid = 456;
+    int32_t uid = server->audioPolicyService_.GetRealUid(config);
+    EXPECT_EQ(uid, 456);
+    config.callerUid = MEDIA_SERVICE_UID;
+    config.appInfo.appUid = 456;
+    uid = server->audioPolicyService_.GetRealUid(config);
+    EXPECT_EQ(uid, 456);
 }
 } // namespace AudioStandard
 } // namespace OHOS

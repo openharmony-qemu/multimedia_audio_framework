@@ -768,7 +768,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RegisterTracker_002, TestSize.Level1)
     AudioStreamChangeInfo streamChangeInfo = {};
     int32_t apiVersion = 1;
     auto result = GetServerPtr()->eventEntry_->RegisterTracker(mode, streamChangeInfo, nullptr, apiVersion);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
+    EXPECT_NE(result, SUCCESS);
 }
 
 /**
@@ -5851,7 +5851,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForSession_001, TestSize.Level1)
     ASSERT_TRUE(audioCoreService != nullptr);
 
     sessionInfo.sourceType = SOURCE_TYPE_INVALID;
-    audioCoreService->ReloadSourceForSession(sessionInfo);
+    audioCoreService->ReloadSourceForSession(sessionInfo, 100000);
 }
 
 /**

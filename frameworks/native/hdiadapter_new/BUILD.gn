@@ -136,7 +136,10 @@ ohos_shared_library("hdiadapter_new") {
   if(!audio_framework_feature_new_engine_flag) {
     defines += [ "SUPPORT_OLD_ENGINE" ]
   }
-
+  if (audio_framework_feature_multi_bus) {
+    defines += [ "MULTI_BUS_ENABLE" ]
+  }
+  
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libhdiadapter_new.versionscript"

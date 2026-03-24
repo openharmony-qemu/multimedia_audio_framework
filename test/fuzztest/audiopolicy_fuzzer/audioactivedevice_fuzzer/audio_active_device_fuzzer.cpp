@@ -269,7 +269,7 @@ void AudioActiveDeviceNotifyUserSelectionEventToBtFuzzTest(FuzzedDataProvider& f
         return;
     }
     audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    audioActiveDevice->currentActiveInputDevice_.deviceType_ =
+    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceType_ =
         DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     StreamUsage streamUsage = STREAM_USAGE_ALARM;
     audioActiveDevice->NotifyUserSelectionEventToBt(audioDeviceDescriptor, streamUsage);
@@ -293,7 +293,7 @@ void AudioActiveDeviceNotifyUserDisSelectionEventToBtFuzzTest(FuzzedDataProvider
         return;
     }
     audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    audioActiveDevice->currentActiveInputDevice_.deviceType_ =
+    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceType_ =
         DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     audioActiveDevice->NotifyUserDisSelectionEventToBt(audioDeviceDescriptor);
     OnStop();
@@ -319,7 +319,7 @@ void AudioActiveDeviceNotifyUserSelectionEventForInputFuzzTest(FuzzedDataProvide
         return;
     }
     audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    audioActiveDevice->currentActiveInputDevice_.deviceType_ =
+    audioActiveDevice->currentActiveInputDeviceMap_[-1].deviceType_ =
         DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
     audioActiveDevice->NotifyUserSelectionEventForInput(audioDeviceDescriptor, sourceType);

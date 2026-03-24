@@ -256,7 +256,7 @@ HWTEST_F(AudioActiveDeviceUnitTest, GetCurrentInputDeviceMacAddr_001, TestSize.L
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
 
-    audioActiveDevice->currentActiveDevice_.macAddress_ = "00:11:22:33:44:55";
+    audioActiveDevice->currentActiveInputDeviceMap_[-1].macAddress_ = "00:11:22:33:44:55";
     string ret = audioActiveDevice->GetCurrentInputDeviceMacAddr();
     EXPECT_EQ(ret, "00:11:22:33:44:55");
 }

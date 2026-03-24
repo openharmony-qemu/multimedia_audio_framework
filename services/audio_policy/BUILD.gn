@@ -353,6 +353,10 @@ audio_ohos_library("audio_policy_service") {
     defines += [ "MULTI_ALARM_LEVEL" ]
   }
 
+  if (audio_framework_feature_input_independent_routing_rule) {
+    defines += [ "INPUT_FEATURE_INDEPENDENT_MODE" ]
+  }
+
   public_configs = [ ":audio_policy_public_config" ]
 
   deps = [

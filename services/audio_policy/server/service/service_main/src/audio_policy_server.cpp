@@ -2289,7 +2289,8 @@ int32_t AudioPolicyServer::GetDmDeviceType(uint16_t &deviceType)
 
 int32_t AudioPolicyServer::GetActiveInputDevice(int32_t &deviceType)
 {
-    deviceType = static_cast<int32_t>(audioActiveDevice_.GetCurrentInputDeviceType());
+    int32_t uid = IPCSkeleton::GetCallingUid();
+    deviceType = static_cast<int32_t>(audioActiveDevice_.GetCurrentInputDeviceType(uid));
     return SUCCESS;
 }
 
@@ -3324,6 +3325,9 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectRendererDevice(uid);
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    audioActiveDevice_.DelCurrentInputDevice(uid);
+#endif
     {
         std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
         eventEntry_->RegisteredTrackerClientDied(uid, pid);
@@ -3371,6 +3375,9 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     eventEntry_->ClearSelectedInputDeviceByUid(uid);
     eventEntry_->PreferBluetoothAndNearlinkRecordByUid(uid,
         BluetoothAndNearlinkPreferredRecordCategory::PREFERRED_NONE);
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    audioActiveDevice_.DelCurrentInputDevice(uid);
+#endif
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()

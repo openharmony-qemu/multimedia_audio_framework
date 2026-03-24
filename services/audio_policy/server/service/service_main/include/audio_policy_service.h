@@ -73,6 +73,7 @@
 #include "audio_global_config_manager.h"
 #include "sle_audio_device_manager.h"
 #include "va_device_manager.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -170,6 +171,8 @@ public:
     // override for IPolicyProvider
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag, AudioDeviceDescriptor &deviceInfo);
 
+    int32_t GetRealUid(const AudioProcessConfig &config);
+
     int32_t GetRemoteDeviceName(const std::string &deviceId, std::string &deviceName);
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
@@ -185,7 +188,7 @@ public:
     void RegisterRemoteDevStatusCallback();
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
+        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
@@ -285,7 +288,8 @@ private:
         audioDeviceLock_(AudioDeviceLock::GetInstance()),
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
         sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
-        vaDeviceManager_(VADeviceManager::GetInstance())
+        vaDeviceManager_(VADeviceManager::GetInstance()),
+        pipeManager_(AudioPipeManager::GetPipeManager())
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -415,6 +419,7 @@ private:
     AudioDeviceStatus& audioDeviceStatus_;
     SleAudioDeviceManager& sleAudioDeviceManager_;
     VADeviceManager& vaDeviceManager_;
+    std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
 };
 
 } // namespace AudioStandard

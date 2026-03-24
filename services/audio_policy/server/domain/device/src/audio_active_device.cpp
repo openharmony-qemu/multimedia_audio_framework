@@ -89,31 +89,65 @@ bool AudioActiveDevice::IsDirectSupportedDevice()
     return dev == DEVICE_TYPE_WIRED_HEADSET || dev == DEVICE_TYPE_USB_HEADSET;
 }
 
-void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
+void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc, const int32_t uid)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
-    AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
-    currentActiveInputDevice_ = AudioDeviceDescriptor(desc);
+    CHECK_AND_RETURN_LOG(uid >= -1, "Invalid uid to set current input device");
+    AUDIO_INFO_LOG("Set for uid[%{public}d] as type: %{public}d id: %{public}d", uid, desc.deviceType_, desc.deviceId_);
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    currentActiveInputDeviceMap_[uid] = AudioDeviceDescriptor(desc);
+#else
+    currentActiveInputDeviceMap_[-1] = AudioDeviceDescriptor(desc);
+#endif
 }
 
-const AudioDeviceDescriptor AudioActiveDevice::GetCurrentInputDevice()
+const AudioDeviceDescriptor AudioActiveDevice::GetCurrentInputDevice(const int32_t uid)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
-    return currentActiveInputDevice_;
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    auto it = currentActiveInputDeviceMap_.find(uid);
+    if (it != currentActiveInputDeviceMap_.end()) {
+        return it->second;
+    }
+#endif
+    return currentActiveInputDeviceMap_[-1];
 }
 
 
-DeviceType AudioActiveDevice::GetCurrentInputDeviceType()
+DeviceType AudioActiveDevice::GetCurrentInputDeviceType(const int32_t uid)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
-    return currentActiveInputDevice_.deviceType_;
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    auto it = currentActiveInputDeviceMap_.find(uid);
+    if (it != currentActiveInputDeviceMap_.end()) {
+        return it->second.deviceType_;
+    }
+#endif
+    return currentActiveInputDeviceMap_[-1].deviceType_;
 }
 
-std::string AudioActiveDevice::GetCurrentInputDeviceMacAddr()
+std::string AudioActiveDevice::GetCurrentInputDeviceMacAddr(const int32_t uid)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
-    return currentActiveDevice_.macAddress_;
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    auto it = currentActiveInputDeviceMap_.find(uid);
+    if (it != currentActiveInputDeviceMap_.end()) {
+        return it->second.macAddress_;
+    }
+#endif
+    return currentActiveInputDeviceMap_[-1].macAddress_;
 }
+
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+void AudioActiveDevice::DelCurrentInputDevice(const int32_t uid)
+{
+    std::lock_guard<std::mutex> lock(curInputDevice_);
+    auto it = currentActiveInputDeviceMap_.find(uid);
+    if (it != currentActiveInputDeviceMap_.end()) {
+        currentActiveInputDeviceMap_.erase(it);
+    }
+}
+#endif
 
 void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc)
 {
@@ -162,10 +196,11 @@ float AudioActiveDevice::GetMaxAmplitude(const int32_t deviceId, AudioInterrupt 
         std::string deviceClass = AudioPolicyUtils::GetInstance().GetOutputDeviceClassBySinkPortName(sinkName);
         return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(true, deviceClass);
     }
-
-    descriptor = GetCurrentInputDevice();
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    descriptor = GetCurrentInputDevice(callerUid);
     if (deviceId == descriptor.deviceId_) {
-        std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(GetCurrentInputDeviceType());
+        std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(
+            GetCurrentInputDeviceType(callerUid));
         std::string deviceClass = AudioPolicyUtils::GetInstance().GetInputDeviceClassBySourcePortName(sourceName);
         return AudioServerProxy::GetInstance().GetMaxAmplitudeProxy(false, deviceClass,
             audioInterrupt.audioFocusType.sourceType);
@@ -220,11 +255,20 @@ void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDe
 {
     CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "audioDeviceDescriptor is nullptr");
 #ifdef BLUETOOTH_ENABLE
+#ifdef INPUT_FEATURE_INDEPENDENT_MODE
+    for (auto& devicePair : currentActiveInputDeviceMap_) {
+        auto curInputDevice = std::make_shared<AudioDeviceDescriptor>(devicePair.second);
+        CHECK_AND_RETURN_LOG(curInputDevice != nullptr, "curInputDevice is nullptr");
+        bool isSameDevice = audioDeviceDescriptor->IsSameDeviceDesc(*curInputDevice);
+        NotifyUserDisSelectionEventToBt(curInputDevice, isSameDevice);
+    }
+#else
     auto curInputDevice = std::make_shared<AudioDeviceDescriptor>(GetCurrentInputDevice());
     CHECK_AND_RETURN_LOG(curInputDevice != nullptr, "curInputDevice is nullptr");
 
     bool isSameDevice = audioDeviceDescriptor->IsSameDeviceDesc(*curInputDevice);
     NotifyUserDisSelectionEventToBt(curInputDevice, isSameDevice);
+#endif
 
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {

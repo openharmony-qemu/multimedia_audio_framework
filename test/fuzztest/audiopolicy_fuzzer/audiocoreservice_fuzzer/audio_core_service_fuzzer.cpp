@@ -150,7 +150,7 @@ void AudioCoreServiceCheckAndSetCurrentInputDeviceFuzzTest(FuzzedDataProvider& f
 {
     audioCoreService->Init();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    audioCoreService->CheckAndSetCurrentInputDevice(desc);
+    audioCoreService->CheckAndSetCurrentInputDevice(desc, -1);
 }
 
 void AudioCoreServiceSetCallDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
