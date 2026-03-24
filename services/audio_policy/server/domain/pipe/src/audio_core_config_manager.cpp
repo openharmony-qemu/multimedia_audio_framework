@@ -208,8 +208,8 @@ void AudioCoreConfigManager::UpdateHasEarpieceForChipProp()
     audioPolicyConfig_.GetAudioAdapterInfos(adapterInfoMap);
     for (const auto &adapterInfo : adapterInfoMap) {
         hasEarpiece_ = std::any_of(adapterInfo.second->deviceInfos.begin(), adapterInfo.second->deviceInfos.end(),
-            [](const auto& deviceInfo) { 
-            return deviceInfo->type_ == DEVICE_TYPE_EARPIECE; 
+            [](const auto& deviceInfo) {
+            return deviceInfo->type_ == DEVICE_TYPE_EARPIECE;
         });
         if (hasEarpiece_) {
             break;
