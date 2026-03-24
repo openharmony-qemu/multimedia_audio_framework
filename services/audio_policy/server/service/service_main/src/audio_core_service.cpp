@@ -584,6 +584,8 @@ int32_t AudioCoreService::CreateCapturerClient(
     int32_t ret = FetchCapturerPipeAndExecute(streamDesc, audioFlag, sessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
+    pipeManager_->RemoveSwitchStream(sessionId);
+    streamDesc->SetFutureRoute(AUDIO_FLAG_NONE);
     return SUCCESS;
 }
 

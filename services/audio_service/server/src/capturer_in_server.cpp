@@ -842,9 +842,11 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         status_ = I_STATUS_INVALID;
         return ret;
     }
+
+    bool needRemoveFromMap = !isSwitchStream;
     if (processConfig_.capturerInfo.sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE) {
-        int32_t result =
-            CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
+        int32_t result = CoreServiceHandler::GetInstance().UpdateSessionOperation(
+            streamIndex_, SESSION_OPERATION_RELEASE, SESSION_OP_MSG_DEFAULT, needRemoveFromMap);
         CHECK_AND_CALL_FUNC_RETURN_RET(result == SUCCESS, result,
             HILOG_COMM_ERROR("[Release]Policy remove client failed, reason: %{public}d", result));
     }
