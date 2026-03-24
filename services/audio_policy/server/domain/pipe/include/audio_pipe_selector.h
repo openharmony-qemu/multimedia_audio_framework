@@ -62,6 +62,9 @@ private:
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 #ifdef MULTI_BUS_ENABLE
+    bool IsRecordingPipeMatched(const std::vector<std::string> &busAddresses,
+        const std::shared_ptr<AudioStreamDescriptor> &streamDesc, const std::string &adapterName,
+        const std::shared_ptr<AudioPipeInfo> &newPipeInfo);
     void HandleFindBusPipe(const std::vector<std::string> &busAddresses,
                            std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
                            const std::shared_ptr<AudioStreamDescriptor> &streamDesc,

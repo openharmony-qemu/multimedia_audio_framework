@@ -17,6 +17,7 @@
 #include "audio_bus_selector.h"
 #include "audio_errors.h"
 #include "audio_module_info.h"
+#include "audio_policy_utils.h"
 
 #undef LOG_TAG
 #define LOG_TAG "AudioBusSelector"
@@ -53,6 +54,15 @@ std::vector<std::string> AudioBusSelector::GetBusAddressesByStreamDesc(
     if (!streamDesc) {
         AUDIO_ERR_LOG("streamDesc is null, cannot retrieve bus addresses.");
         return {};
+    }
+
+    if (streamDesc->IsRecording()) {
+        std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->GetMainNewDeviceDesc();
+        CHECK_AND_RETURN_RET(deviceDesc != nullptr && !deviceDesc->macAddress_.empty(), {});
+        std::string encryptedAddress = AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_);
+        AUDIO_INFO_LOG("Stream is recording, bus address of %{public}u is %{public}s.", streamDesc->sessionId_,
+            encryptedAddress.c_str());
+        return {deviceDesc->macAddress_};
     }
 
     std::string zoneName = audioZoneService_.FindAudioZoneNameByUid(streamDesc->callerUid_);
