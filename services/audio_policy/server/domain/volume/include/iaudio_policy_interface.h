@@ -84,7 +84,7 @@ public:
 
     virtual void SaveSystemAppVolumeLevelToDb() = 0;
 
-    virtual void SaveSystemAppVolumeMuteStatusToDbAsync() = 0;
+    virtual void SaveSystemAppVolumeMuteStatusToDb(bool isAsync = false) = 0;
 
     virtual int32_t SetAppRingMuted(int32_t appUid, bool muted) = 0;
 

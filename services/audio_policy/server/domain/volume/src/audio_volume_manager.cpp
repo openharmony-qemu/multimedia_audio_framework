@@ -485,6 +485,7 @@ void AudioVolumeManager::FlushSystemAppVolume()
 {
     if (systemAppVolumeDirty_) {
         audioPolicyManager_.SaveSystemAppVolumeLevelToDb();
+        audioPolicyManager_.SaveSystemAppVolumeMuteStatusToDb();
         systemAppVolumeDirty_ = false;
     }
     systemAppVolumeFlushScheduled_ = false;
@@ -503,7 +504,7 @@ int32_t AudioVolumeManager::SetSystemAppVolumeMuted(int32_t appUid, bool muted)
 {
     int32_t ret = audioPolicyManager_.SetSystemAppVolumeMuted(appUid, muted);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set system app mute status fail");
-    audioPolicyManager_.SaveSystemAppVolumeMuteStatusToDbAsync();
+    audioPolicyManager_.SaveSystemAppVolumeMuteStatusToDb(true);
     return ret;
 }
 

@@ -493,11 +493,12 @@ void AudioAdapterManager::SaveSystemAppVolumeLevelToDb()
     volumeDataMaintainer_.SaveSystemAppVolumeLevelToDb();
 }
 
-void AudioAdapterManager::SaveSystemAppVolumeMuteStatusToDbAsync()
+void AudioAdapterManager::SaveSystemAppVolumeMuteStatusToDb(bool isAsync)
 {
-    std::thread([this]() {
+    auto task = [this] {
         volumeDataMaintainer_.SaveSystemAppVolumeMuteStatusToDb();
-    }).detach();
+    };
+    isAsync ? std::thread(task).detach() : task();
 }
 
 int32_t AudioAdapterManager::SetAppRingMuted(int32_t appUid, bool muted)

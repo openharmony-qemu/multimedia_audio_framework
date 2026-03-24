@@ -1693,7 +1693,8 @@ napi_status NapiParamUtils::ToJsActiveStreamsVolumeInfo(const napi_env &env,
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set systemAppVolumePercentage failed");
         status = SetValueInt32(env, "clientUid", activeStreamsVolumeInfo[i].clientUid_, valueParam);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set clientUid failed");
-        napi_set_element(env, result, i, valueParam);
+        status = napi_set_element(env, result, i, valueParam);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set element failed");
     }
     return status;
 }
