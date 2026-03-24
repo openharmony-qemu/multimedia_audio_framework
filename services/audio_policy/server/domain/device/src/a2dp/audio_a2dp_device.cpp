@@ -155,14 +155,15 @@ size_t AudioA2dpDevice::DelA2dpDevice(const std::string& device)
 }
 
 bool AudioA2dpDevice::SetA2dpDeviceAbsVolumeSupport(const std::string& device, const bool support,
-    int32_t volume, bool mute)
+    const VolumeScale &volume, bool mute)
 {
     std::lock_guard<std::mutex> lock(a2dpDeviceMapMutex_);
     auto configInfoPos = connectedA2dpDeviceMap_.find(device);
     if (configInfoPos != connectedA2dpDeviceMap_.end()) {
         configInfoPos->second.absVolumeSupport = support;
         if (support && configInfoPos->second.volumeLevel == -1) {
-            configInfoPos->second.volumeLevel = volume;
+            configInfoPos->second.volumeLevel = volume.VolumeLevel();
+            configInfoPos->second.volumeDegree = volume.VolumeDegree();
             configInfoPos->second.mute = mute;
         }
         return true;
