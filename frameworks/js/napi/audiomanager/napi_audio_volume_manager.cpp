@@ -2103,7 +2103,10 @@ napi_value NapiAudioVolumeManager::GetActiveStreamsVolumeInfo(napi_env env, napi
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "GetActiveStreamsVolumeInfo failure!"),
         "GetActiveStreamsVolumeInfo failure!");
 
-    NapiParamUtils::ToJsActiveStreamsVolumeInfo(env, activeStreamsVolumeInfo, result);
+    napi_status status = NapiParamUtils::ToJsActiveStreamsVolumeInfo(env, activeStreamsVolumeInfo, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "Convert activeStreamsVolumeInfo failed"),
+        "Convert activeStreamsVolumeInfo failed");
     return result;
 }
 }  // namespace AudioStandard

@@ -530,7 +530,7 @@ private:
     void SaveSpecifiedDeviceVolumeInner(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType);
     void SaveSystemAppVolumeLevelToDb();
-    void SaveSystemAppVolumeMuteStatusToDbAsync();
+    void SaveSystemAppVolumeMuteStatusToDb(bool isAsync);
     int32_t RestoreSystemAppVolumeLevel();
     int32_t RestoreSystemAppVolumeMuteStatus();
 

@@ -1230,10 +1230,9 @@ int32_t AudioVolumeManagerImpl::GetMinSystemVolumePercentage(AudioVolumeType vol
 array<ActiveStreamVolumeInfo> AudioVolumeManagerImpl::GetActiveStreamsVolumeInfo()
 {
     std::vector<ActiveStreamVolumeInfo> emptyResult;
-    if (audioSystemMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
-        return array<ActiveStreamVolumeInfo>(emptyResult);
-    }
+    CHECK_AND_CALL_FUNC_RETURN_RET(audioSystemMngr_ != nullptr, array<ActiveStreamVolumeInfo>(emptyResult),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr"));
+
     std::vector<OHOS::AudioStandard::ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
     int32_t ret = audioSystemMngr_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret != OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED,
@@ -1242,6 +1241,7 @@ array<ActiveStreamVolumeInfo> AudioVolumeManagerImpl::GetActiveStreamsVolumeInfo
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == OHOS::AudioStandard::SUCCESS,
         array<ActiveStreamVolumeInfo>(emptyResult),
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetActiveStreamsVolumeInfo failure!"));
+
     return TaiheParamUtils::ToTaiheActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
 }
 

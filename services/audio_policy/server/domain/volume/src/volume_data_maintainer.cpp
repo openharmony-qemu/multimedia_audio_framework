@@ -1393,6 +1393,7 @@ int32_t VolumeDataMaintainer::SaveSystemAppVolumeLevelToDb()
     std::unordered_map<int32_t, int32_t> localSystemAppVolumeLevelMap;
     {
         std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+        CHECK_AND_RETURN_RET(!systemAppVolumeLevelMap_.empty(), SUCCESS);
         localSystemAppVolumeLevelMap = systemAppVolumeLevelMap_;
     }
     for (const auto &[uid, level] : localSystemAppVolumeLevelMap) {
@@ -1442,6 +1443,7 @@ int32_t VolumeDataMaintainer::SaveSystemAppVolumeMuteStatusToDb()
     std::unordered_map<int32_t, bool> localSystemAppVolumeMuteStatusMap;
     {
         std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+        CHECK_AND_RETURN_RET(!systemAppVolumeMuteStatusMap_.empty(), SUCCESS);
         localSystemAppVolumeMuteStatusMap = systemAppVolumeMuteStatusMap_;
     }
     for (const auto &[uid, muteStatus] : localSystemAppVolumeMuteStatusMap) {
