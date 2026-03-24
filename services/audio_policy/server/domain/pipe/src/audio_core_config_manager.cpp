@@ -834,7 +834,7 @@ void AudioCoreConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescri
         info = pipeIt->second->streamPropInfos_.front();
         return;
     }
-    AUDIO_ERR_LOG("Pipe:%{public}s Not Support StreamProp", PipeIt->second->name_.c_str());
+    AUDIO_ERR_LOG("Pipe:%{public}s Not Support StreamProp", pipeIt->second->name_.c_str());
     return;
 }
 
