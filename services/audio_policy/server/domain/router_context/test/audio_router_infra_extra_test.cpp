@@ -135,6 +135,7 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ParamAbrnormal_002
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
+    std::vector<SourceType> sourceTypes = { SourceType::SOURCE_TYPE_MIC };
     auto result1 = routerInfra.HasHighestPriorityRunningSourceType();
     EXPECT_EQ(result1, false);
 

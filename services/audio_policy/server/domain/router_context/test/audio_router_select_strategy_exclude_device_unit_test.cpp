@@ -15,6 +15,7 @@
 
 #include "audio_router_context_test_base.h"
 #include "audio_router_follow_strategy.h"
+#include "audio_router_independent_strategy.h"
 #include "audio_device_manager.h"
 #include "audio_device_descriptor.h"
 #include "audio_info.h"
@@ -298,7 +299,7 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE,
         "00:00:00:00:00:01");
 
-    AudioRouterFollowStrategy strategy;
+    AudioRouterIndependentStrategy strategy;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = { sco };
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1, sco);
@@ -425,8 +426,8 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices = { sco, nullptr };
 
     strategy.ExcludeDevices(devices, CALL_OUTPUT_DEVICES);
-    EXPECT_FALSE(strategy.IsDeviceExcluded(sco, CALL_OUTPUT_DEVICES));
-    EXPECT_FALSE(strategy.IsDeviceExcluded(scoInput, CALL_INPUT_DEVICES));
+    EXPECT_TRUE(strategy.IsDeviceExcluded(sco, CALL_OUTPUT_DEVICES));
+    EXPECT_TRUE(strategy.IsDeviceExcluded(scoInput, CALL_INPUT_DEVICES));
     strategy.UnexcludeDevices(devices, CALL_OUTPUT_DEVICES);
     EXPECT_FALSE(strategy.IsDeviceExcluded(sco, CALL_OUTPUT_DEVICES));
     EXPECT_FALSE(strategy.IsDeviceExcluded(scoInput, CALL_INPUT_DEVICES));
