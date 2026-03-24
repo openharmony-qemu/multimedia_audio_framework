@@ -517,7 +517,7 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
     for (size_t i = 0; i < capturerInfosSize; i++) {
         CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
         CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, status, "pipeManager_ is nullptr");
-        std::shared_ptr<AudioStreamDescriptor> streamDesc = 
+        std::shared_ptr<AudioStreamDescriptor> streamDesc =
             pipeManager_->GetStreamDescById(audioCapturerChangeInfos[i]->sessionId);
         CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, status, "streamDesc is nullptr");
         DeviceType activeDeviceType = audioActiveDevice_.GetCurrentInputDeviceType(streamDesc->GetRealUid());
