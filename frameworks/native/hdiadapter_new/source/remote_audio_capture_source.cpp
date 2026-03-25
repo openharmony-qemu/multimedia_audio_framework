@@ -30,9 +30,11 @@ using namespace OHOS::HDI::DistributedAudio::Audio::V2_0;
 
 namespace OHOS {
 namespace AudioStandard {
-RemoteAudioCaptureSource::RemoteAudioCaptureSource(const std::string &deviceNetworkId)
-    : deviceNetworkId_(deviceNetworkId)
+RemoteAudioCaptureSource::RemoteAudioCaptureSource(const uint32_t captureId, const std::string &deviceNetworkId)
+    : deviceNetworkId_(deviceNetworkId), captureId_(captureId)
 {
+    audioSrcClock_ = std::make_shared<AudioSourceClock>();
+    CapturerClockManager::GetInstance().RegisterAudioSourceClock(captureId, audioSrcClock_);
 }
 
 RemoteAudioCaptureSource::~RemoteAudioCaptureSource()
@@ -49,6 +51,8 @@ int32_t RemoteAudioCaptureSource::Init(const IAudioSourceAttr &attr)
     sourceInited_.store(true);
     SetMute(muteState_);
     AUDIO_DEBUG_LOG("end");
+    CHECK_AND_RETURN_RET(audioSrcClock_ != nullptr, SUCCESS);
+    audioSrcClock_->Init(attr.sampleRate, attr.format, attr.channel);
     return SUCCESS;
 }
 
@@ -63,6 +67,8 @@ void RemoteAudioCaptureSource::DeInit(void)
 
     DestroyCapture();
     DumpFileUtil::CloseDumpFile(&dumpFile_);
+
+    CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
     AUDIO_INFO_LOG("end");
 }
 
@@ -199,6 +205,7 @@ int32_t RemoteAudioCaptureSource::CaptureFrame(char *frame, uint64_t requestByte
     }
 
     Trace trace("RemoteAudioCaptureSource::CaptureFrame");
+    AudioCapturerSourceTsRecorder recorder(replyBytes, audioSrcClock_);
     std::vector<int8_t> bufferVec(requestBytes);
     int32_t ret = audioCapture_->CaptureFrame(bufferVec, replyBytes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_READ_FAILED, "fail, ret: %{public}x", ret);

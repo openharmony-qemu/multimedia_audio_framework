@@ -22,6 +22,7 @@
 #include <v2_0/iaudio_manager.h>
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
+#include "capturer_clock_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,7 +35,7 @@ typedef OHOS::HDI::DistributedAudio::Audio::V2_0::AudioDeviceDescriptor RemoteAu
 class RemoteAudioCaptureSource : public IAudioCaptureSource, public IDeviceManagerCallback,
     public std::enable_shared_from_this<RemoteAudioCaptureSource> {
 public:
-    RemoteAudioCaptureSource(const std::string &deviceNetworkId);
+    RemoteAudioCaptureSource(const uint32_t captureId, const std::string &deviceNetworkId);
     ~RemoteAudioCaptureSource();
 
     int32_t Init(const IAudioSourceAttr &attr) override;
@@ -110,6 +111,8 @@ private:
     mutable int64_t volumeDataCount_ = 0;
     bool muteState_ = false;
     std::unordered_set<int32_t> appsUid_;
+    uint32_t captureId_ = HDI_INVALID_ID;
+    std::shared_ptr<AudioSourceClock> audioSrcClock_ = nullptr;
 };
 
 } // namespace AudioStandard

@@ -50,7 +50,7 @@ private:
 #endif
     std::shared_ptr<IAudioCaptureSource> CreatePrimaryCaptureSource(const uint32_t captureId, const std::string &info);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-    std::shared_ptr<IAudioCaptureSource> CreateRemoteCaptureSource(const std::string &info);
+    std::shared_ptr<IAudioCaptureSource> CreateRemoteCaptureSource(const uint32_t captureId, const std::string &info);
     std::shared_ptr<IAudioCaptureSource> CreateRemoteFastCaptureSource(const std::string &info);
 #endif
 };

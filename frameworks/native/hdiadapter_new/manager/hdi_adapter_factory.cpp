@@ -148,7 +148,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
             break;
 #ifdef FEATURE_DISTRIBUTE_AUDIO
         case HDI_ID_TYPE_REMOTE:
-            source = CreateRemoteCaptureSource(info);
+            source = CreateRemoteCaptureSource(captureId, info);
             break;
         case HDI_ID_TYPE_REMOTE_FAST:
             source = CreateRemoteFastCaptureSource(info);
@@ -235,10 +235,11 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSour
 }
 
 #ifdef FEATURE_DISTRIBUTE_AUDIO
-std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteCaptureSource(const std::string &info)
+std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteCaptureSource(const uint32_t captureId,
+    const std::string &info)
 {
     CHECK_AND_RETURN_RET_LOG(!info.empty(), nullptr, "deviceNetworkId is nullptr");
-    return std::make_shared<RemoteAudioCaptureSource>(info);
+    return std::make_shared<RemoteAudioCaptureSource>(captureId, info);
 }
 
 std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateRemoteFastCaptureSource(const std::string &info)
