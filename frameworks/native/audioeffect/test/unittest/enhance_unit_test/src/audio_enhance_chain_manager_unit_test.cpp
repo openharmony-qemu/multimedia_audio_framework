@@ -304,6 +304,18 @@ HWTEST_F(AudioEnhanceChainManagerUnitTest, SendInitCommandSucc, TestSize.Level1)
     EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
 }
 
+HWTEST_F(AudioEnhanceChainManagerUnitTest, SendStopCommandSucc, TestSize.Level1)
+{
+    auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);
+    manager_->InitAudioEnhanceChainManager(enhanceChains_, managerParam_, enhanceLibraryList_);
+    EXPECT_EQ(manager_->SetInputDevice(TEST_CAPTURER_ID, DEVICE_TYPE_MIC), SUCCESS);
+    EXPECT_EQ(manager_->CreateAudioEnhanceChainDynamic(sceneKeyCode, TEST_DEVICE_ATTR), SUCCESS);
+
+    EXPECT_EQ(manager_->SendStopCommand(), SUCCESS);
+
+    EXPECT_EQ(manager_->ReleaseAudioEnhanceChainDynamic(sceneKeyCode), SUCCESS);
+}
+
 HWTEST_F(AudioEnhanceChainManagerUnitTest, UpdateExtraSceneTypeFoldState, TestSize.Level1)
 {
     auto sceneKeyCode = GetValidSceneKeyCode(SCENE_RECORD, TEST_CAPTURER_ID);

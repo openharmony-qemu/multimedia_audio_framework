@@ -220,6 +220,13 @@ void HpaePolicyManager::SendInitCommandToAlgo()
     audioEnhanceChainManager->SendInitCommand();
 }
 
+void HpaePolicyManager::SendStopCommandToAlgo()
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is null");
+    audioEnhanceChainManager->SendStopCommand();
+}
+
 void HpaePolicyManager::AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();

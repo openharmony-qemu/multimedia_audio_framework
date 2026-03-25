@@ -754,8 +754,26 @@ int32_t AudioEnhanceChainManagerImpl::SendInitCommand()
     return SUCCESS;
 }
 
+int32_t AudioEnhanceChainManagerImpl::SendStopCommand()
+{
+    auto chainArray = ChainPool::GetInstance().GetAllChain();
+    for (const auto &chain : chainArray) {
+        if (chain != nullptr) {
+            int32_t ret = chain->StopCommand();
+            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
+                "chain: [%{public}" PRIu64 "] set stop command fail", chain->GetChainId());
+        }
+    }
+    AUDIO_INFO_LOG("success");
+    return SUCCESS;
+}
+
 int32_t AudioEnhanceChainManagerImpl::SetAppsMuteStateToChainById(uint64_t sceneKeyCode, bool isMute)
 {
+    {
+        std::lock_guard<std::mutex> lock(chainManagerMutex_);
+        enhancePara_.appsMuteState = static_cast<uint32_t>(isMute);
+    }
     auto chain = ChainPool::GetInstance().GetChainById(sceneKeyCode);
     CHECK_AND_RETURN_RET_LOG(chain != nullptr, ERROR, "can not find [%{public}" PRIu64 "] chain", sceneKeyCode);
     int32_t ret = chain->SetAppsMuteState(isMute);

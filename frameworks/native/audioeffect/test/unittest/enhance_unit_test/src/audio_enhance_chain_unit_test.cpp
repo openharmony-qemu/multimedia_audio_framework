@@ -169,6 +169,7 @@ HWTEST(AudioEnhanceChainUnitTest, CreateAllEnhanceModuleFailWithCmdFail, TestSiz
         static_cast<uint32_t>(EFFECT_CMD_SET_PARAM),
         static_cast<uint32_t>(EFFECT_CMD_GET_CONFIG),
         static_cast<uint32_t>(EFFECT_CMD_SET_PROPERTY),
+        static_cast<uint32_t>(EFFECT_CMD_STOP),
     };
 
     ClearCommandRetMap();
@@ -211,6 +212,18 @@ HWTEST(AudioEnhanceChainUnitTest, InitCommandSucc, TestSize.Level1)
     AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
     CreateModuleForChain(chain, &lib);
     EXPECT_EQ(chain->InitCommand(), 0);
+    chain->ReleaseAllEnhanceModule();
+}
+
+HWTEST(AudioEnhanceChainUnitTest, StopCommandSucc, TestSize.Level1)
+{
+    auto chain = CreateNewChain();
+    EXPECT_NE(chain, nullptr);
+    EXPECT_EQ(chain->StopCommand(), 0);
+
+    AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
+    CreateModuleForChain(chain, &lib);
+    EXPECT_EQ(chain->StopCommand(), 0);
     chain->ReleaseAllEnhanceModule();
 }
 

@@ -73,6 +73,8 @@
     *UpdateExtraSceneType*;
     *SendInitCommand*;
     *EnhanceChainManagerSendInitCommand*;
+    *SendStopCommand*;
+    *SetAppsMuteStateToChainById*;
     *InitEffectBuffer*;
     *LoadEffectProperties*;
     *ApplyAudioEffectChain*;

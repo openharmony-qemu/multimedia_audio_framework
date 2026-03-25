@@ -73,6 +73,8 @@ public:
 
     virtual int32_t SendInitCommand() = 0;
 
+    virtual int32_t SendStopCommand() = 0;
+
     virtual int32_t SetAppsMuteStateToChainById(uint64_t sceneKeyCode, bool isMute) = 0;
 };
 } // namespace AudioStandard

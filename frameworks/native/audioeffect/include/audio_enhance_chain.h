@@ -90,6 +90,7 @@ public:
     int32_t GetOutputDataFromChain(void *buf, size_t bufSize);
     int32_t ApplyEnhanceChain(const EnhanceTransBuffer &transBuf);
     int32_t InitCommand();
+    int32_t StopCommand();
     int32_t SetAppsMuteState(uint32_t appsMuteState);
 
 private:
@@ -99,6 +100,7 @@ private:
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
     int32_t PrepareChainInputData(void);
     int32_t ProcessInitCommand(void);
+    int32_t ProcessStopCommand(void);
     int32_t ProcessSetFoldState(uint32_t foldState);
     int32_t ProcessSetPowerState(uint32_t powerState);
     int32_t ProcessSetVolumeParam(bool mute, uint32_t systemVol);
