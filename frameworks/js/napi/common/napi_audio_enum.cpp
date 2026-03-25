@@ -1391,7 +1391,6 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             result = NapiAudioEnum::VOICE_CALL;
             break;
         case AudioStreamType::STREAM_RING:
-        case AudioStreamType::STREAM_DTMF:
         case AudioStreamType::STREAM_VOICE_RING:
             result = NapiAudioEnum::RINGTONE;
             break;
@@ -1419,12 +1418,19 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
         case AudioStreamType::STREAM_ULTRASONIC:
             result = NapiAudioEnum::ULTRASONIC;
             break;
+        case AudioStreamType::STREAM_DTMF:
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+            result = NOTIFICATION;
+#else
+            result = NapiAudioEnum::RINGTONE;
+#endif
+            break;
         case AudioStreamType::STREAM_SYSTEM:
         case AudioStreamType::STREAM_NOTIFICATION:
         case AudioStreamType::STREAM_SYSTEM_ENFORCED:
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
             result = (system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0))?
-                NapiAudioEnum::SYSTEM : NapiAudioEnum::RINGTONE;
+                NapiAudioEnum::SYSTEM : NapiAudioEnum::NOTIFICATION;
 #else
             result = NapiAudioEnum::RINGTONE;
 #endif
@@ -1765,7 +1771,7 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             result = STREAM_SYSTEM;
             break;
         case NapiAudioEnum::NOTIFICATION:
-            result = STREAM_RING;
+            result = STREAM_NOTIFICATION;
             break;
         case NapiAudioEnum::NAVIGATION:
             result = (K_FEATURE_AUDIO_ZONE ? STREAM_NAVIGATION : STREAM_MUSIC);

@@ -180,7 +180,7 @@ void AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest(FuzzedDataProvider& fdp)
     audioAdapterManager->UpdateSafeVolumeByS4();
 }
 
-void AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest(FuzzedDataProvider& fdp)
+void AudioVolumeManagerSaveNotificationVolumeToLocalFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     CHECK_AND_RETURN(audioAdapterManager != nullptr);
@@ -189,7 +189,7 @@ void AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest(FuzzedDataProvider& fdp
     AudioVolumeType volumeType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
     auto desc = std::make_shared<AudioDeviceDescriptor>();
     CHECK_AND_RETURN(desc != nullptr);
-    audioAdapterManager->SaveRingtoneVolumeToLocal(desc, volumeType, volumeLevel);
+    audioAdapterManager->SaveNotificationVolumeToLocal(desc, volumeType, volumeLevel);
 }
 
 void AudioVolumeManagerSaveRingerModeInfoFuzzTest(FuzzedDataProvider& fdp)
@@ -653,7 +653,7 @@ void Test(FuzzedDataProvider& fdp)
     AudioVolumeManagerSaveSpecifiedDeviceVolumeFuzzTest,
     AudioVolumeManagerHandleStreamMuteStatusFuzzTest,
     AudioVolumeManagerKvDataFuzzTest,
-    AudioVolumeManagerSaveRingtoneVolumeToLocalFuzzTest,
+    AudioVolumeManagerSaveNotificationVolumeToLocalFuzzTest,
     AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest,
     AudioVolumeManagerSelectDeviceFuzzTest,
     AudioVolumeManagerSaveRingerModeInfoFuzzTest,

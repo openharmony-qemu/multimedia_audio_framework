@@ -64,6 +64,8 @@ int32_t AudioVolumeClientManager::SetVolume(AudioVolumeType volumeType, int32_t 
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
 #ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:
@@ -105,6 +107,8 @@ int32_t AudioVolumeClientManager::SetVolumeWithDevice(AudioVolumeType volumeType
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
 #ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:
@@ -129,7 +133,6 @@ int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t 
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
-        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
@@ -141,6 +144,8 @@ int32_t AudioVolumeClientManager::GetVolume(AudioVolumeType volumeType, int32_t 
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
 #ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:
@@ -245,7 +250,6 @@ int32_t AudioVolumeClientManager::SetMute(AudioVolumeType volumeType, bool mute,
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
-        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
@@ -257,6 +261,8 @@ int32_t AudioVolumeClientManager::SetMute(AudioVolumeType volumeType, bool mute,
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
 #ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:
@@ -283,7 +289,6 @@ bool AudioVolumeClientManager::IsStreamMute(AudioVolumeType volumeType) const
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
-        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
@@ -295,6 +300,8 @@ bool AudioVolumeClientManager::IsStreamMute(AudioVolumeType volumeType) const
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
 #ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:
@@ -319,7 +326,6 @@ bool AudioVolumeClientManager::IsStreamActive(AudioVolumeType volumeType) const
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
-        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
@@ -332,6 +338,8 @@ bool AudioVolumeClientManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, false, "volumeType=%{public}d. No system permission", volumeType);
@@ -477,7 +485,9 @@ int32_t AudioVolumeClientManager::SetVolumeDegree(AudioVolumeType volumeType, in
 #ifdef FEATURE_AUDIO_ZONE
         case STREAM_NAVIGATION:
 #endif
-                break;
+            break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
 #ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:
@@ -501,7 +511,6 @@ int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, in
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
-        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
@@ -513,6 +522,8 @@ int32_t AudioVolumeClientManager::GetVolumeDegree(AudioVolumeType volumeType, in
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
 #ifdef MULTI_ALARM_LEVEL
         case STREAM_ANNOUNCEMENT:

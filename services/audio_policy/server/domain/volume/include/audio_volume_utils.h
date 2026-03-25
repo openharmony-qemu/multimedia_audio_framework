@@ -60,6 +60,7 @@ static inline const std::vector<AudioStreamType> DISTRIBUTED_VOLUME_TYPE_LIST = 
 static inline const std::vector<AudioStreamType> BASE_VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
+    STREAM_NOTIFICATION,
     STREAM_VOICE_CALL,
     STREAM_VOICE_ASSISTANT,
     STREAM_ALARM,
