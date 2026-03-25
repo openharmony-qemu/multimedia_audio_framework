@@ -573,6 +573,8 @@ void AudioDeviceManager::RemoveVirtualConnectedDevice(const shared_ptr<AudioDevi
 
 void AudioDeviceManager::AddNewDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
+    deviceDescriptor->connectState_ = AudioCoreConfigManager::GetInstance().IsDeviceSimulated(deviceDescriptor)
+        ? SIMULATED_CONNECTED : deviceDescriptor->connectState_;
     shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(deviceDescriptor);
     CHECK_AND_RETURN_LOG(devDesc != nullptr, "Memory allocation failed");
 

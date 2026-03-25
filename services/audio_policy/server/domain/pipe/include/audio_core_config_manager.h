@@ -127,6 +127,7 @@ public:
         std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &info,
         AudioChannelLayout channelLayout);
     AudioPolicyConfigData &GetAudioPolicyConfigData() const { return audioPolicyConfig_; }
+    bool IsDeviceSimulated(std::shared_ptr<AudioDeviceDescriptor> desc);
 
     AudioCoreConfigManager() : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioPolicyConfig_(AudioPolicyConfigData::GetInstance())

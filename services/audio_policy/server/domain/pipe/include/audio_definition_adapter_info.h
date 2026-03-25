@@ -174,6 +174,7 @@ public:
     AudioPin pin_ = AUDIO_PIN_NONE;
     DeviceRole role_ = DEVICE_ROLE_NONE;
     std::string address_ = STR_INITED;
+    bool isSimulated_ = false;
 
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::string> supportPipes_ {};

@@ -62,6 +62,7 @@ const int32_t SIGNAL_DATA_SIZE = 96;
 const size_t TIME_TEXT_LENGTH = 32;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
+constexpr int32_t UID_MEDIA = 1013;
 constexpr int32_t UID_AUDIO = 1041;
 constexpr int32_t UID_AUDIO_BROKER = 5557;
 constexpr int32_t UID_MSDP_SA = 6699;
@@ -527,6 +528,27 @@ bool PermissionUtil::VerifySelfPermission()
 
     AUDIO_ERR_LOG("Check self app permission reject");
     return false;
+}
+
+bool PermissionUtil::VerifyBluetoothPermission()
+{
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == UID_MEDIA || callingUid == BOOTUP_MUSIC_UID) {
+        // bootup use media kit
+        return false;
+    }
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    // root user case for auto test
+    if (callingUid == ROOT_UID) {
+        return true;
+    }
+#endif
+    uint32_t tokenId = IPCSkeleton::GetCallingTokenID();
+
+    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, "ohos.permission.USE_BLUETOOTH");
+    CHECK_AND_RETURN_RET(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, false);
+
+    return true;
 }
 
 bool PermissionUtil::VerifySystemPermission()
