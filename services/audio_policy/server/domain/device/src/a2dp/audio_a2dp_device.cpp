@@ -209,8 +209,7 @@ bool AudioA2dpDevice::CheckHearingAidDeviceExist(const std::string& device)
     return configInfoPos != connectedHearingAidDeviceMap_.end();
 }
 
-void AudioA2dpDevice::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
-    SourceType sourceType)
+void AudioA2dpDevice::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo)
 {
     uint32_t bufferSize = audioStreamInfo.samplingRate *
         AudioPolicyUtils::GetInstance().PcmFormatToBytes(audioStreamInfo.format) *

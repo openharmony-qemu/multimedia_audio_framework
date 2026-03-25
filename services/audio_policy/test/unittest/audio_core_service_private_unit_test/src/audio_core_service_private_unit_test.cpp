@@ -16,8 +16,11 @@
 #include "audio_core_service_private_unit_test.h"
 #include "hisysevent.h"
 #include "audio_utils.h"
+#include "mock_audio_arm_device_behavior.h"
+#include "audio_device_factory.h"
 
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -2792,6 +2795,14 @@ HWTEST_F(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level4)
     EXPECT_NE(deviceDesc, nullptr);
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
+    auto mockDeviceBehavior = std::make_shared<MockAudioArmDeviceBehavior>();
+    ASSERT_NE(mockDeviceBehavior, nullptr);
+
+    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).WillOnce(Return(SUCCESS));
+
+    auto& audioDeviceFactory = AudioDeviceFactory::GetInstance();
+    audioDeviceFactory.deviceBehaviorCache_[DEVICE_TYPE_USB_ARM_HEADSET] = mockDeviceBehavior;
+
     auto result = audioCoreService->ActivateInputDevice(streamDesc);
     ASSERT_EQ(result, SUCCESS);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_001 end");
@@ -3452,12 +3463,25 @@ HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize
  */
 HWTEST_F(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
 {
+    auto audioCoreService = std::make_shared<AudioCoreService>();
     std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    newDeviceDesc->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    newDeviceDesc->deviceId_ = 1;
+    newDeviceDesc->deviceName_ = "usb_arm_headset";
+
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
-    auto audioCoreService = std::make_shared<AudioCoreService>();
+
+    auto mockDeviceBehavior = std::make_shared<MockAudioArmDeviceBehavior>();
+    ASSERT_NE(mockDeviceBehavior, nullptr);
+
+    EXPECT_CALL(*mockDeviceBehavior, ActivateDevice(_, _)).WillOnce(Return(SUCCESS));
+
+    auto& audioDeviceFactory = AudioDeviceFactory::GetInstance();
+    audioDeviceFactory.deviceBehaviorCache_[DEVICE_TYPE_USB_ARM_HEADSET] = mockDeviceBehavior;
+
     int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
+    ASSERT_NE(audioCoreService, nullptr);
     ASSERT_EQ(ret, SUCCESS);
 }
 

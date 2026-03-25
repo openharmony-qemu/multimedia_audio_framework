@@ -142,13 +142,6 @@ private:
     int32_t OpenRemoteAudioDevice(std::string networkId, DeviceRole deviceRole, DeviceType deviceType,
         std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
 
-    int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo, std::string networkID,
-        std::string sinkName, SourceType sourceType);
-    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
-        SourceType sourceType);
-    int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
-        const AudioStreamInfo& audioStreamInfo, std::string networkID, std::string sinkName,
-        SourceType sourceType);
     int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
     void ClearRingMuteWhenCallStart(bool pre, bool after);
     bool NeedClearPreferredMediaRenderer(const std::shared_ptr<AudioDeviceDescriptor> &preferred,

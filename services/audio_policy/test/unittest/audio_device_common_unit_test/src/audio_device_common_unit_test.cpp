@@ -646,30 +646,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_056, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_063
-* @tc.desc  : Test ReloadA2dpAudioPort interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_063, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioModuleInfo moduleInfo;
-    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    AudioStreamInfo audioStreamInfo;
-    std::string networkID = "";
-    std::string sinkName = "";
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    int32_t ret = audioDeviceCommon.ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo, networkID,
-        sinkName, sourceType);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-
-    deviceType = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-    ret = audioDeviceCommon.ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo, networkID,
-        sinkName, sourceType);
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-}
-
-/**
 * @tc.name  : Test ScoInputDeviceFetchedForRecongnition.
 * @tc.number: ScoInputDeviceFetchedForRecongnition_003
 * @tc.desc  : Test ScoInputDeviceFetchedForRecongnition interface.

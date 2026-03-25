@@ -53,8 +53,7 @@ public:
     size_t DelHearingAidDevice(const std::string& device);
     bool CheckHearingAidDeviceExist(const std::string& device);
 
-    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo &audioStreamInfo,
-        SourceType sourceType);
+    void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo &audioStreamInfo);
 private:
     AudioA2dpDevice() {}
     ~AudioA2dpDevice() {}
