@@ -926,21 +926,18 @@ float AudioVolume::GetSystemAppVolumeEffective(StreamVolume &stream)
     return stream.systemAppVolume_;
 }
 
+// PC uses app volume by default; phone uses app volume based on switch and volume type
 bool AudioVolume::ShouldApplySystemAppVolume(AudioStreamType streamType)
 {
-    if (!appIndividualVolumeEnabled_) {
-        return false;
-    }
-
-    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (!VolumeUtils::IsPCVolumeEnable()) {
-        return volumeType == STREAM_MUSIC;
-    }
-
     if (VolumeUtils::IsPCVolumeEnable()) {
         return true;
     }
-    return true;
+
+    if (!appIndividualVolumeEnabled_) {
+        return false;
+    }
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    return volumeType == STREAM_MUSIC;
 }
 
 void AudioVolume::HandleAppIndividualVolumeSettingChanged(bool appIndividualVolumeEnabled)

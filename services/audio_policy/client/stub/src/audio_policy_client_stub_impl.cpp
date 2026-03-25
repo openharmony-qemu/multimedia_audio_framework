@@ -694,7 +694,7 @@ int32_t AudioPolicyClientStubImpl::OnSelfAppVolumeChanged(int32_t appUid, const 
 {
     {
         std::lock_guard<std::mutex> lockCbMap(selfAppVolumeChangeMutex_);
-        for (auto iter : selfAppVolumeChangeCallback_) {
+        for (const auto &iter : selfAppVolumeChangeCallback_) {
             if (iter.first != appUid) {
                 continue;
             }
@@ -708,7 +708,7 @@ int32_t AudioPolicyClientStubImpl::OnSystemAppVolumeChanged(int32_t appUid, cons
 {
     {
         std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
-        for (auto iter : appVolumeChangeForUidCallback_) {
+        for (const auto &iter : appVolumeChangeForUidCallback_) {
             if (iter.first != appUid) {
                 continue;
             }

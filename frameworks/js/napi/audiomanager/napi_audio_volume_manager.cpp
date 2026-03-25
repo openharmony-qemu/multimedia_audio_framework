@@ -2097,7 +2097,7 @@ napi_value NapiAudioVolumeManager::GetActiveStreamsVolumeInfo(napi_env env, napi
             "napiAudioVolumeManager or audioSystemMngr is nullptr!");
     }
     int32_t ret = napiAudioVolumeManager->audioSystemMngr_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
-    CHECK_AND_RETURN_RET_LOG(ret != ERR_PERMISSION_DENIED,
+    CHECK_AND_RETURN_RET_LOG(ret != ERR_SYSTEM_PERMISSION_DENIED,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Not system app"), "Not system app");
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "GetActiveStreamsVolumeInfo failure!"),
