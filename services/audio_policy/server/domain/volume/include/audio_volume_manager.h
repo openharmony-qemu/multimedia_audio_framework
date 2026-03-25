@@ -154,6 +154,8 @@ public:
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, VolumeScale &volume,
         bool internalCall = false);
 
+    int32_t ClearLoudVolumeHoldMapForCall();
+
     int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
         VolumeScale &volume, bool internalCall = false);
     int32_t SetNearlinkDeviceVolumeEx(AudioVolumeType volumeType, const int32_t volume);

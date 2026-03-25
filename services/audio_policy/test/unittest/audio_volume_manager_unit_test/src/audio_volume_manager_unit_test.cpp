@@ -1804,5 +1804,32 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_TriggerAudioZoneVolumeSy
     // No return value — test passes if no crash
     EXPECT_TRUE(true);
 }
+ 
+/**
+ * @tc.name  : Test ClearLoudVolumeHoldMapForCall.
+ * @tc.number: ClearLoudVolumeHoldMapForCall_001
+ * @tc.desc  : Test ClearLoudVolumeHoldMapForCall interface with normal case.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, ClearLoudVolumeHoldMapForCall_001, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t ret = audioVolumeManager.ClearLoudVolumeHoldMapForCall();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ClearLoudVolumeHoldMapForCall.
+ * @tc.number: ClearLoudVolumeHoldMapForCall_002
+ * @tc.desc  : Test ClearLoudVolumeHoldMapForCall interface with nullptr loudVolumeManager.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, ClearLoudVolumeHoldMapForCall_002, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+
+    audioVolumeManager->loudVolumeManager_ = nullptr;
+    int32_t ret = audioVolumeManager->ClearLoudVolumeHoldMapForCall();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

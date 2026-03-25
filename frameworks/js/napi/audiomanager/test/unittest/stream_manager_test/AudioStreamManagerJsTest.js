@@ -18,6 +18,16 @@ import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from
 
 const TAG = "[AudioStreamManagerJsTest]";
 
+function isPCDevice() {
+  try {
+    let deviceInfo = requireNapi('deviceInfo');
+    return deviceInfo.deviceType === 'pc' || deviceInfo.deviceType === '2in1';
+  } catch (e) {
+    console.info(`${TAG} isPCDevice: deviceInfo not available, treating as non-PC device`);
+    return false;
+  }
+}
+
 describe("AudioStreamManagerJsTest", function () {
   const ERROR_INPUT_INVALID = '401';
   const ERROR_INVALID_PARAM = '6800101';
@@ -509,6 +519,11 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.require: I7V04L
    */
   it("getSupportedAudioEffectProperty001", 0, async function (done) {
+    if (!isPCDevice()) {
+      console.info(`${TAG} getSupportedAudioEffectProperty001 is not supported on non-PC device`);
+      done();
+      return;
+    }
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = audioStreamManager.getSupportedAudioEffectProperty();
@@ -534,6 +549,11 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.require: I7V04L
    */
   it("getAudioEffectProperty001", 0, async function (done) {
+    if (!isPCDevice()) {
+      console.info(`${TAG} getAudioEffectProperty001 is not supported on non-PC device`);
+      done();
+      return;
+    }
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = audioStreamManager.getAudioEffectProperty();
@@ -562,6 +582,11 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.require: I7V04L
    */
   it("getSupportedAudioEnhanceProperty001", 0, async function (done) {
+    if (!isPCDevice()) {
+      console.info(`${TAG} getSupportedAudioEnhanceProperty001 is not supported on non-PC device`);
+      done();
+      return;
+    }
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getSupportedAudioEnhanceProperty();
@@ -587,6 +612,11 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.require: I7V04L
    */
   it("getAudioEnhanceProperty001", 0, async function (done) {
+    if (!isPCDevice()) {
+      console.info(`${TAG} getAudioEnhanceProperty001 is not supported on non-PC device`);
+      done();
+      return;
+    }
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getAudioEnhanceProperty();
@@ -615,6 +645,11 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.require: I7V04L
    */
   it("setAudioEffectProperty001", 0, async function (done) {
+    if (!isPCDevice()) {
+      console.info(`${TAG} setAudioEffectProperty001 is not supported on non-PC device`);
+      done();
+      return;
+    }
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEffectArray = audioStreamManager.getAudioEffectProperty();
@@ -725,6 +760,11 @@ describe("AudioStreamManagerJsTest", function () {
    * @tc.require: I7V04L
    */
   it("setAudioEnhanceProperty001", 0, async function (done) {
+    if (!isPCDevice()) {
+      console.info(`${TAG} setAudioEnhanceProperty001 is not supported on non-PC device`);
+      done();
+      return;
+    }
     try {
       let audioStreamManager = audio.getAudioManager().getStreamManager();
       let audioEnhanceArray = audioStreamManager.getAudioEnhanceProperty();

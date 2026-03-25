@@ -204,6 +204,17 @@ void AudioVolumeManager::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandle
     asyncHandler_ = handler;
 }
 
+int32_t AudioVolumeManager::ClearLoudVolumeHoldMapForCall()
+{
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    if (loudVolumeManager_ != nullptr) {
+        loudVolumeManager_->ClearLoudVolumeHoldMap(LoudVolumeHoldType::LOUD_VOLUME_MODE_VOICE);
+    }
+    return SUCCESS;
+#endif
+    return SUCCESS;
+}
+
 int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType, int32_t zoneId) const
 {
     if (volumeType == STREAM_ALL) {
