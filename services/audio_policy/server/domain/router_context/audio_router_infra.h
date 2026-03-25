@@ -79,9 +79,7 @@ public:
     void UpdateInputStreamState(int32_t uid, uint32_t streamId, SourceType sourceType, StreamState state);
     void UpdateOutputStreamState(int32_t uid, uint32_t streamId, StreamUsage streamUsage, StreamState state);
 
-    bool HasRunningSourceType(const std::vector<SourceType>& sourceTypes);
     bool HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes);
-    bool HasRunningStreamUsage(const std::vector<StreamUsage>& streamUsages);
     std::vector<SourceType> GetHighestPriorityRunningSourceTypes();
     std::vector<StreamUsage> GetHighestPriorityRunningStreamUsages();
     SourceType GetStreamSourceType(int32_t uid, uint32_t streamId);

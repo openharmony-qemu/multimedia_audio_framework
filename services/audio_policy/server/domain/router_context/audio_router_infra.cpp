@@ -77,7 +77,7 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
         it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
             appContext->appSelectDevice_.mediaInput_.device_ = device;
@@ -110,6 +110,7 @@ void AudioRouterInfra::ClearAllSelectSelectDevice(SelectDeviceType type,
 
     ClearSystemSelectDevice(type, device);
     ClearAllAppSelectDevice(type, device);
+    ClearStreamSelectDevice(device);
 }
 
 void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type,
@@ -117,6 +118,7 @@ void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type,
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
+    AUDIO_INFO_LOG("clear system select device for type: %{public}d", type);
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
             if (device == nullptr ||(systemSelectDevice_.mediaInput_.device_ != nullptr &&
@@ -157,6 +159,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
+    AUDIO_INFO_LOG("clear app select device for type: %{public}d", type);
     for (auto& [uid, context] : appContexts_) {
         auto &appSelect = context->appSelectDevice_;
         switch (type) {
@@ -238,7 +241,7 @@ AudioSelectDeviceInfo AudioRouterInfra::GetAppSelectDevice(SelectDeviceType type
         return AudioSelectDeviceInfo();
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
             return appContext->appSelectDevice_.mediaInput_;
@@ -317,10 +320,10 @@ void AudioRouterInfra::UpdateCurrentOutputDevice(int32_t uid,
 
     auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
-        return;
+        it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, false)).first;
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     appContext->currentOutputDevices_ = devices;
 }
 
@@ -333,7 +336,7 @@ std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetC
         return {};
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     return appContext->currentOutputDevices_;
 }
 
@@ -344,10 +347,10 @@ void AudioRouterInfra::UpdateCurrentInputDevice(int32_t uid,
 
     auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
-        return;
+        it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, false)).first;
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     appContext->currentInputDevices_ = devices;
 }
 
@@ -360,7 +363,7 @@ std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetC
         return {};
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     return appContext->currentInputDevices_;
 }
 
@@ -374,7 +377,7 @@ void AudioRouterInfra::UpdateInputStreamState(int32_t uid, uint32_t streamId,
         it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     if (state == StreamState::STARTED) {
         appContext->inputStreams_[streamId] = sourceType;
     } else if (state == StreamState::STOPPED || state == StreamState::PAUSED) {
@@ -395,7 +398,7 @@ void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
         it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     if (state == StreamState::STARTED) {
         appContext->outputStreams_[streamId] = streamUsage;
     } else if (state == StreamState::STOPPED || state == StreamState::PAUSED) {
@@ -404,20 +407,6 @@ void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
 
     bool hasRunningStream = HasRunningOutputStream(uid);
     AdjustOutputPriority(uid, hasRunningStream, appContext->isForeground_, false);
-}
-
-bool AudioRouterInfra::HasRunningSourceType(const std::vector<SourceType>& sourceTypes)
-{
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    for (const auto& [uid, context] : appContexts_) {
-        for (const auto& [streamId, sourceType] : context->inputStreams_) {
-            if (std::find(sourceTypes.begin(), sourceTypes.end(), sourceType) != sourceTypes.end()) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 bool AudioRouterInfra::HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes)
@@ -437,20 +426,6 @@ bool AudioRouterInfra::HasHighestPriorityRunningSourceType(const std::vector<Sou
     for (const auto& [streamId, sourceType] : it->second->inputStreams_) {
         if (std::find(sourceTypes.begin(), sourceTypes.end(), sourceType) != sourceTypes.end()) {
             return true;
-        }
-    }
-    return false;
-}
-
-bool AudioRouterInfra::HasRunningStreamUsage(const std::vector<StreamUsage>& streamUsages)
-{
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-
-    for (const auto& [uid, context] : appContexts_) {
-        for (const auto& [streamId, streamUsage] : context->outputStreams_) {
-            if (std::find(streamUsages.begin(), streamUsages.end(), streamUsage) != streamUsages.end()) {
-                return true;
-            }
         }
     }
     return false;
@@ -646,7 +621,7 @@ void AudioRouterInfra::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
         it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     appContext->streamSelectDevices_[streamId] = device;
 }
 
@@ -660,7 +635,7 @@ void AudioRouterInfra::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
         it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, true)).first;
     }
 
-    auto& appContext = it->second;
+    auto &appContext = it->second;
     appContext->streamDefaultDevices_[streamId] = device;
 }
 
@@ -703,6 +678,13 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetStreamDefaultD
 void AudioRouterInfra::ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device)
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+    if (device == nullptr) {
+        for (auto &[uid, context] : appContexts_) {
+            context->streamSelectDevices_.clear();
+        }
+        return;
+    }
 
     for (auto &[uid, context] : appContexts_) {
         auto &streamSelectDevices = context->streamSelectDevices_;
