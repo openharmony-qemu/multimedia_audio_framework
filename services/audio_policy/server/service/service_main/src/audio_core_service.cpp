@@ -1136,6 +1136,16 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     return SUCCESS;
 }
 
+int32_t AudioCoreService::StandbyClient(uint32_t sessionId)
+{
+    auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    if (streamDesc) {
+        streamDesc->isStandby_ = true;
+        ForceRemoveSleStreamType(streamDesc);
+    }
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::StopClient(uint32_t sessionId)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);

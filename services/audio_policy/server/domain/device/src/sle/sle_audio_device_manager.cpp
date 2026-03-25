@@ -402,7 +402,7 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
         if (IsMoveToNearlinkDevice(streamDesc)) {
             streamType = GetSleStreamTypeByStreamUsage(streamUsage, streamDesc->GetRealUid());
             newDeviceAddr = streamDesc->newDeviceDescs_[0]->macAddress_;
-            if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+            if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_) {
                 UpdateStreamTypeMap(newDeviceAddr, streamType, sessionId, true);
             } else {
                 AUDIO_INFO_LOG("session %{public}d is not running", sessionId);
