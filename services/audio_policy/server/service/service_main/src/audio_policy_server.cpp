@@ -1200,7 +1200,8 @@ int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid());
     if (bundleName == SCENE_BOARD_PACKAGE_NAME) {
@@ -1237,7 +1238,8 @@ int32_t AudioPolicyServer::SetSystemAppVolumeMutedForUidInternal(int32_t appUid,
 
 int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     CHECK_AND_RETURN_RET_LOG(volumePercentage >= MIN_VOLUME_PERCENTAGE && volumePercentage <= MAX_VOLUME_PERCENTAGE,
         ERR_INVALID_PARAM, "volume percentage range error");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
@@ -1270,7 +1272,8 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUidInternal(int32_t ap
 
 int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
     return SetAppRingMutedInternal(appUid, muted);
 }
 
@@ -1354,7 +1357,8 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32
 
 int32_t AudioPolicyServer::GetSystemAppVolumePercentageForUid(int32_t appUid, int32_t &volumePercentage)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     return GetSystemAppVolumePercentageForUidInternal(appUid, volumePercentage);
 }
 
@@ -5809,7 +5813,8 @@ int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
 int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)
 {
     AUDIO_INFO_LOG("enter");
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
     return coreService_->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
