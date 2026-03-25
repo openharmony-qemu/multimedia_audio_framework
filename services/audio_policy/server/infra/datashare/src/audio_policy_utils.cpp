@@ -941,6 +941,9 @@ int32_t AudioPolicyUtils::SetDeclaredDeviceTypes(const std::string &bundleName,
     std::string deviceTypeLog = "";
     for (auto deviceType : deviceTypeVector) {
         declaredDeviceTypeSet.insert(deviceType);
+        if (deviceType == DEVICE_TYPE_NEARLINK) {
+            declaredDeviceTypeSet.insert(DEVICE_TYPE_NEARLINK_IN);
+        }
         deviceTypeLog += std::to_string(static_cast<int>(deviceType)) + " ";
     }
     AUDIO_INFO_LOG("bundle name: %{public}s, declare supported devicetype: %{public}s", bundleName.c_str(),
