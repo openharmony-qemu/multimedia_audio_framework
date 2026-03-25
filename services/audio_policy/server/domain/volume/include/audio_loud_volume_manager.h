@@ -41,10 +41,10 @@ public:
     virtual ~LoudVolumeManager();
     bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus, SetLoudVolMode setVolMode);
     bool ReloadLoudVolumeModeSwitch(LoudVolumeHoldType funcHoldType, SetLoudVolMode setVolMode);
+    bool ClearLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType);
     bool CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
 private:
     void SetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool state);
-    bool ClearLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType);
     bool GetLoudVolumeHoldMap(LoudVolumeHoldType funcHoldType, bool &state);
     bool IsSkipCloseLoudVolType(AudioStreamType streamType);
     bool FindLoudVolStreamTypeEnable(AudioStreamType streamType, LoudVolumeHoldType &funcHoldType);
