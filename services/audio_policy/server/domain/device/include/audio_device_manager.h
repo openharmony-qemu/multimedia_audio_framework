@@ -25,6 +25,7 @@ using namespace std;
 constexpr int32_t NEED_TO_FETCH = 1;
 
 enum DEVICE_PRIORITY {
+    PRIORITY_APP,
     PRIORITY_PRIVACY,
     PRIORITY_PUBLIC,
     PRIORITY_BASE,
