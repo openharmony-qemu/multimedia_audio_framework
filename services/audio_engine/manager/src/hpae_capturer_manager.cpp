@@ -483,8 +483,6 @@ int32_t HpaeCapturerManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_STOPPED);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-            HPAE_SESSION_STOPPED, OPERATION_STOPPED);
         NotifyStreamChangeToSource(STREAM_CHANGE_TYPE_STATE_CHANGE, sessionId, CAPTURER_STOPPED);
     };
     SendRequest(request, __func__);
