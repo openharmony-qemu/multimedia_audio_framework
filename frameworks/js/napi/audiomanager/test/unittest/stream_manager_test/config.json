@@ -50,6 +50,10 @@
         {
           "name": "ohos.permission.MICROPHONE",
           "reason": "use ohos.permission.MICROPHONE"
+        },
+        {
+          "name": "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+          "reason": "use ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS"
         }
       ],
       "js": [
