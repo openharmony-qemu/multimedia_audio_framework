@@ -511,6 +511,7 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
     RecordStandbyTime(standByEnable_, true);
     enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
