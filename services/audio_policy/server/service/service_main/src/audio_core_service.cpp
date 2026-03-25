@@ -1674,7 +1674,7 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
-
+    FetchInputDeviceAndRoute("RegisteredTrackerClientDied");
     audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 }
