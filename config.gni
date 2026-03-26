@@ -42,7 +42,7 @@ declare_args() {
   audio_framework_feature_mutesink_enable = true
   audio_framework_feature_audiosuite_support = false
   audio_framework_feature_multi_alarm_level = false
-  audio_framework_feature_multi_bus = true
+  audio_framework_feature_multi_bus = false
   audio_framework_feature_input_independent_routing_rule = false
   audio_framework_feature_multi_zone = false
   
