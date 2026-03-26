@@ -249,6 +249,9 @@ void AudioEffectChain::BuildEffectParamData(int32_t *data)
     data[SUPER_LOUDNESS_MODE] = static_cast<int32_t>(superLoudnessMode_);
     data[SYSTEMLOAD_STATE_INDEX] = static_cast<int32_t>(systemLoadState_);
     data[FRONTEND_APP_TYPE] = static_cast<int32_t>(frontendAppType_);
+    data[PARAM_INDEX_RESERVE1] = 0;
+    data[PARAM_INDEX_RESERVE2] = 0;
+    data[PARAM_INDEX_RESERVE3] = 0;
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)

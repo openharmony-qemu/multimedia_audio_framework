@@ -636,11 +636,10 @@ void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortInd
 int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeProductId(const std::string &productId)
 {
     lock_guard<mutex> lock(lock_);
-    return IHpaeManager::GetHpaeManager().UpdateCollaborativeProductId(productId);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    IHpaeManager::GetHpaeManager().UpdateCollaborativeProductId(productId);
     collaborativeUpdateResult_ = ERROR;
     isFinishCollaborativeUpdate_ = false;
-    IHpaeManager::GetHpaeManager().UpdateCollaborativeProductId(productId);
     bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
         return isFinishCollaborativeUpdate_;
     });
