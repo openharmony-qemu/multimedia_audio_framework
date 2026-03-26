@@ -1150,7 +1150,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, RequestUserPrivacyAuthority_001, TestSi
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    int32_t result = capturerInServer_->RequestUserPrivacyAuthority();
+    int32_t result = capturerInServer_->RequestUserPrivacyAuthority(1);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
 
@@ -1192,6 +1192,39 @@ HWTEST_F(CapturerInServerSecondUnitTest, SetInMainThreadStateAndReportOverflow_0
 
     capturerInServer_->overFlowLogFlag_ = 30;
     capturerInServer_->ReportOverflowEvent();
+}
+
+/*
+ * @tc.name  : Test StartPrivacyConfirmDialog.
+ * @tc.type  : FUNC
+ * @tc.number: StartPrivacyConfirmDialog_001
+ * @tc.desc  : Test StartPrivacyConfirmDialog interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, StartPrivacyConfirmDialog_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    auto result = capturerInServer_->StartPrivacyConfirmDialog(1);
+    EXPECT_EQ(result, SUCCESS);
+}
+ 
+/*
+ * @tc.name  : Test ReportPlaybackCaptureUserChoice.
+ * @tc.type  : FUNC
+ * @tc.number: ReportPlaybackCaptureUserChoice_001
+ * @tc.desc  : Test ReportPlaybackCaptureUserChoice interface.
+ */
+HWTEST_F(CapturerInServerSecondUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
+    std::weak_ptr<IStreamListener> streamListener = iStreamListener_;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    auto result = capturerInServer_->ReportPlaybackCaptureUserChoice(1, true);
+    capturerInServer_->OnPrivacyAuthorityResult(true);
+    capturerInServer_->OnPrivacyAuthorityResult(false);
+    EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

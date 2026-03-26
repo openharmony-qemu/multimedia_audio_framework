@@ -145,6 +145,7 @@ public:
     void RenderersCheckForAudioWorkgroup(int32_t pid);
     int32_t GetPrivacyType(const uint32_t sessionId, AudioPrivacyType &privacyType);
     int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
+    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);

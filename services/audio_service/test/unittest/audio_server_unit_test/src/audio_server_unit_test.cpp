@@ -3266,5 +3266,17 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreRenderSink_001, TestSize.Level1)
     EXPECT_NE(SUCCESS, ret);
 }
 
+/**
+ * @tc.name  : Test ReportPlaybackCaptureUserChoice
+ * @tc.type  : FUNC
+ * @tc.number: ReportPlaybackCaptureUserChoice_001
+ * @tc.desc  : Test ReportPlaybackCaptureUserChoice with params
+ */
+HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(1, false);
+    EXPECT_NE(ret, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

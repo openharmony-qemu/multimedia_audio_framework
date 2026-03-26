@@ -110,6 +110,7 @@ struct AudioManagerAsyncContext : public ContextBase {
     static void UnregisterAudioSceneChangeCallback(napi_env env, napi_value callback, NapiAudioManager *audioMgrNapi);
     static napi_value RegisterCallback(napi_env env, napi_value jsThis,
         napi_value *argv, size_t argc, const std::string &cbName);
+    static napi_value ReportPlaybackCaptureUserChoice(napi_env env, napi_callback_info info);
     template<typename T> static void RegisterInterruptCallback(napi_env env, const T &argv,
     NapiAudioManager *napiAudioManager);
     template<typename T> static void RegisterRingerModeCallback(napi_env env, const T &argv,

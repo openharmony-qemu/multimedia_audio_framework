@@ -86,6 +86,7 @@
     *GetModuleInfo*;
     *SetEndpointMuteForSwitchDevice*;
     *RequestUserPrivacyAuthority*;
+    *ReportPlaybackCaptureUserChoice*;
   local:
     *;
 };

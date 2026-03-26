@@ -171,5 +171,13 @@ int32_t AudioSystemClientEngineManager::GenerateSessionId(uint32_t &sessionId)
     CHECK_AND_RETURN_RET_LOG(ret == 0, AUDIO_ERR, "Get sessionId failed");
     return 0;
 }
+
+int32_t AudioSystemClientEngineManager::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
+{
+    const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    int32_t res = gasp->ReportPlaybackCaptureUserChoice(sessionId, choice);
+    return res;
+}
 } // namespace AudioStandard
 } // namespace OHOS
