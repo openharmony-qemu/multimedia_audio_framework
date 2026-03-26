@@ -98,8 +98,7 @@ HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002, TestSize.Level0)
     ret = HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray5, DEVICE_TYPE_SPEAKER);
     EXPECT_EQ(ret, 0);
 
-    HpaePolicyManager::GetInstance().SendInitCommandToAlgo();
-    HpaePolicyManager::GetInstance().SendStopCommandToAlgo();
+    HpaePolicyManager::GetInstance().NotifyAlgoToStopStream();
     std::string mainkey = "other_mainkey";
     std::string subkey = "other_subkey";
     std::string extraSceneType = "extra_scene";

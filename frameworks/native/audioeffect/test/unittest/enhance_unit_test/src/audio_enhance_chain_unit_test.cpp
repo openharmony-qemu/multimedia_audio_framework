@@ -169,7 +169,7 @@ HWTEST(AudioEnhanceChainUnitTest, CreateAllEnhanceModuleFailWithCmdFail, TestSiz
         static_cast<uint32_t>(EFFECT_CMD_SET_PARAM),
         static_cast<uint32_t>(EFFECT_CMD_GET_CONFIG),
         static_cast<uint32_t>(EFFECT_CMD_SET_PROPERTY),
-        static_cast<uint32_t>(EFFECT_CMD_STOP),
+        static_cast<uint32_t>(EFFECT_CMD_STOP_STREAM),
     };
 
     ClearCommandRetMap();
@@ -203,27 +203,15 @@ HWTEST(AudioEnhanceChainUnitTest, SetThreadHandler_Fail, TestSize.Level1)
     EXPECT_EQ(chain->SetThreadHandler(nullptr), ERROR);
 }
 
-HWTEST(AudioEnhanceChainUnitTest, InitCommandSucc, TestSize.Level1)
+HWTEST(AudioEnhanceChainUnitTest, StopStreamSucc, TestSize.Level1)
 {
     auto chain = CreateNewChain();
     EXPECT_NE(chain, nullptr);
-    EXPECT_EQ(chain->InitCommand(), 0);
+    EXPECT_EQ(chain->StopStream(), 0);
 
     AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
     CreateModuleForChain(chain, &lib);
-    EXPECT_EQ(chain->InitCommand(), 0);
-    chain->ReleaseAllEnhanceModule();
-}
-
-HWTEST(AudioEnhanceChainUnitTest, StopCommandSucc, TestSize.Level1)
-{
-    auto chain = CreateNewChain();
-    EXPECT_NE(chain, nullptr);
-    EXPECT_EQ(chain->StopCommand(), 0);
-
-    AudioEffectLibrary lib = { 0, "name", "implementor", CheckEffectTest, CreateEffectTestSucc, ReleaseEffectTest };
-    CreateModuleForChain(chain, &lib);
-    EXPECT_EQ(chain->StopCommand(), 0);
+    EXPECT_EQ(chain->StopStream(), 0);
     chain->ReleaseAllEnhanceModule();
 }
 

@@ -637,50 +637,25 @@ int32_t AudioEnhanceChain::ApplyEnhanceChain(const EnhanceTransBuffer &transBuf)
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChain::ProcessInitCommand(void)
+int32_t AudioEnhanceChain::ProcessStopStream(void)
 {
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
     for (const auto &module : enhanceModules_) {
-        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET_LOG(initCmdRet == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
+        auto stopStreamRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_STOP_STREAM,
+            &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(stopStreamRet == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_STOP_STREAM fail", sceneType_.c_str());
     }
 
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChain::InitCommand()
+int32_t AudioEnhanceChain::StopStream()
 {
     auto task = [self = weak_from_this()]() {
         if (auto chain = self.lock(); chain != nullptr) {
-            chain->ProcessInitCommand();
-        }
-    };
-
-    ScheduleAudioTask(task);
-
-    return SUCCESS;
-}
-
-int32_t AudioEnhanceChain::ProcessStopCommand(void)
-{
-    AudioEffectTransInfo cmdInfo = {};
-    AudioEffectTransInfo replyInfo = {};
-    for (const auto &module : enhanceModules_) {
-        auto stopCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_STOP, &cmdInfo, &replyInfo);
-        CHECK_AND_RETURN_RET_LOG(stopCmdRet == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_STOP fail", sceneType_.c_str());
-    }
-
-    return SUCCESS;
-}
-
-int32_t AudioEnhanceChain::StopCommand()
-{
-    auto task = [self = weak_from_this()]() {
-        if (auto chain = self.lock(); chain != nullptr) {
-            chain->ProcessStopCommand();
+            chain->ProcessStopStream();
         }
     };
 

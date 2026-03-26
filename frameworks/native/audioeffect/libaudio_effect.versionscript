@@ -71,9 +71,8 @@
     *SetVolumeInfo*;
     *SetMicrophoneMuteInfo*;
     *UpdateExtraSceneType*;
-    *SendInitCommand*;
+    *NotifyChainToStopStream*;
     *EnhanceChainManagerSendInitCommand*;
-    *SendStopCommand*;
     *SetAppsMuteStateToChainById*;
     *InitEffectBuffer*;
     *LoadEffectProperties*;

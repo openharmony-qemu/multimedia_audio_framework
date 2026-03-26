@@ -740,28 +740,14 @@ void AudioEnhanceChainManagerImpl::SendPowerStateToChain(uint32_t powerState)
     }
 }
 
-int32_t AudioEnhanceChainManagerImpl::SendInitCommand()
+int32_t AudioEnhanceChainManagerImpl::NotifyChainToStopStream()
 {
     auto chainArray = ChainPool::GetInstance().GetAllChain();
     for (const auto &chain : chainArray) {
         if (chain != nullptr) {
-            int32_t ret = chain->InitCommand();
+            int32_t ret = chain->StopStream();
             CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
-                "chain: [%{public}" PRIu64 "] set init command fail", chain->GetChainId());
-        }
-    }
-    AUDIO_INFO_LOG("success");
-    return SUCCESS;
-}
-
-int32_t AudioEnhanceChainManagerImpl::SendStopCommand()
-{
-    auto chainArray = ChainPool::GetInstance().GetAllChain();
-    for (const auto &chain : chainArray) {
-        if (chain != nullptr) {
-            int32_t ret = chain->StopCommand();
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR,
-                "chain: [%{public}" PRIu64 "] set stop command fail", chain->GetChainId());
+                "chain: [%{public}" PRIu64 "] stop stream fail", chain->GetChainId());
         }
     }
     AUDIO_INFO_LOG("success");

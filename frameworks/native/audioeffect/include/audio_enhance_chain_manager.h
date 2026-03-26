@@ -71,9 +71,7 @@ public:
     virtual void UpdateExtraSceneType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType) = 0;
 
-    virtual int32_t SendInitCommand() = 0;
-
-    virtual int32_t SendStopCommand() = 0;
+    virtual int32_t NotifyChainToStopStream() = 0;
 
     virtual int32_t SetAppsMuteStateToChainById(uint64_t sceneKeyCode, bool isMute) = 0;
 };

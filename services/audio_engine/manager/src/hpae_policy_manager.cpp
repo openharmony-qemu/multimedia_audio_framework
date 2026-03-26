@@ -213,18 +213,11 @@ void HpaePolicyManager::SetAudioParameter(const std::string &adapterName, const 
     deviceManager->SetAudioParameter(adapterName, key, condition, value);
 }
 
-void HpaePolicyManager::SendInitCommandToAlgo()
+void HpaePolicyManager::NotifyAlgoToStopStream()
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is null");
-    audioEnhanceChainManager->SendInitCommand();
-}
-
-void HpaePolicyManager::SendStopCommandToAlgo()
-{
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is null");
-    audioEnhanceChainManager->SendStopCommand();
+    audioEnhanceChainManager->NotifyChainToStopStream();
 }
 
 void HpaePolicyManager::AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume)
