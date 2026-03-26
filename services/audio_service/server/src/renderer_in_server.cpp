@@ -2034,6 +2034,7 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen) +
         "isFirstWriteDataFlag: " + std::to_string(isFirstWriteDataFlag_));
+    std::lock_guard<std::mutex> lock(dupMutex_);
     CHECK_AND_RETURN_RET_LOG(isFirstWriteDataFlag_ == false, ERROR, "audioStream is firstdata, overlap OnWriteData");
     CHECK_AND_RETURN_RET_LOG(!CheckIsWriteFirst(), ERROR, "audioStream is flush, overlap OnWriteData");
     int32_t engineFlag = GetEngineFlag();
@@ -2096,6 +2097,7 @@ int32_t StreamCallbacks::GetAvailableSize(size_t &length)
 
 std::unique_ptr<AudioRingCache>& StreamCallbacks::GetDupRingBuffer()
 {
+    std::lock_guard<std::mutex> lock(dupMutex_);
     return dupRingBuffer_;
 }
 
