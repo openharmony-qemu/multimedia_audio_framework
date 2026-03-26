@@ -639,7 +639,6 @@ void AudioCoreService::UpdateInputDeviceWhenStopping(int32_t uid)
         audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
         audioDeviceManager_.RemovePreferredInputDevice(sessionID);
     }
-    FetchInputDeviceAndRoute("UpdateInputDeviceWhenStopping");
 }
 
 void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
