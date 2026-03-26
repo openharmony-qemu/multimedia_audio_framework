@@ -471,7 +471,7 @@ int32_t HpaeCapturerManager::CapturerSourceStop()
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
     }
-    HpaePolicyManager::GetInstance().SendInitCommandToAlgo();
+    HpaePolicyManager::GetInstance().NotifyAlgoToStopStream();
     return SUCCESS;
 }
 

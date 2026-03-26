@@ -77,7 +77,7 @@ public:
         const std::string &condition);
     void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition, const std::string &value);
-    void SendInitCommandToAlgo();
+    void NotifyAlgoToStopStream();
     void AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume);
     void DeleteStreamVolumeToEffect(const std::string stringSessionID);
     bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout);
