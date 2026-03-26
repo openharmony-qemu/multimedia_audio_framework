@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,11 +60,17 @@ constexpr uint32_t MD5_BITS_LEFT_BYTE = 3;
 constexpr uint32_t MD5_WORD_COUNT = 16;
 constexpr uint32_t MD5_BITS_PER_BYTE = 8;
 constexpr uint32_t MD5_BITS_PER_WORD = 32;
+constexpr uint32_t STATE_D_INDEX = 3;
 
 // Padding byte
 constexpr uint8_t MD5_PADDING_BYTE = 0x80;
 constexpr size_t MD5_LENGTH_BYTES = 8;
-std::vector<int> MD5_INDEX{0, 1, 2, 3, 4,5,6,7,8,9,10,11,12,13,14,15};
+// MD5 initial state
+constexpr uint32_t MD5_INIT_STATE_0 = 0x67452301;
+constexpr uint32_t MD5_INIT_STATE_1 = 0xEFCDAB89;
+constexpr uint32_t MD5_INIT_STATE_2 = 0x98BADCFE;
+constexpr uint32_t MD5_INIT_STATE_3 = 0x10325476;
+constexpr int kHexByteWidth = 2;
 
 static int32_t RequestDataCallback(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
@@ -192,10 +198,10 @@ static void MD5Init(MD5Context* ctx)
 {
     ctx->count[0] = 0;
     ctx->count[1] = 0;
-    ctx->state[0] = 0x67452301;
-    ctx->state[1] = 0xEFCDAB89;
-    ctx->state[2] = 0x98BADCFE;
-    ctx->state[3] = 0x10325476;
+    ctx->state[0] = MD5_INIT_STATE_0;
+    ctx->state[1] = MD5_INIT_STATE_1;
+    ctx->state[2] = MD5_INIT_STATE_2;
+    ctx->state[3] = MD5_INIT_STATE_3;
 }
 
 static void MD5EncodeBits(uint8_t bits[MD5_LENGTH_BYTES], const uint32_t count[2])
@@ -207,8 +213,9 @@ static void MD5EncodeBits(uint8_t bits[MD5_LENGTH_BYTES], const uint32_t count[2
 
 static void MD5EncodeDigest(uint8_t digest[MD5_DIGEST_SIZE], const uint32_t state[MD5_STATE_SIZE])
 {
+    int32_t moveRightTwo = 2;
     for (size_t i = 0; i < MD5_DIGEST_SIZE; i++) {
-        digest[i] = static_cast<uint8_t>((state[i >> 2] >> ((i & 3) << 3)) & 0xFF);
+        digest[i] = static_cast<uint8_t>((state[i >> moveRightTwo] >> ((i & 3) << 3)) & 0xFF);
     }
 }
 
@@ -231,13 +238,13 @@ static void MD5Update(MD5Context* ctx, const void* data, size_t len)
 {
     const uint8_t* bytes = static_cast<const uint8_t*>(data);
     uint32_t i = ctx->count[0];
-
+    int32_t moveRight = 3;
     if ((ctx->count[0] += static_cast<uint32_t>(len) << MD5_BITS_LEFT_BYTE) < i) {
         ctx->count[1]++;
     }
     ctx->count[1] += static_cast<uint32_t>(len >> (MD5_BITS_PER_WORD - MD5_BITS_LEFT_BYTE));
 
-    if ((i >> 3) & (MD5_BLOCK_SIZE - 1)) {
+    if ((i >> moveRight) & (MD5_BLOCK_SIZE - 1)) {
         MD5ProcessBuffer(ctx, &bytes, &len, i);
     }
 
@@ -262,8 +269,8 @@ static void MD5Final(uint8_t digest[MD5_DIGEST_SIZE], MD5Context* ctx)
         padLen += MD5_BLOCK_SIZE;
     }
 
-    static const uint8_t PADDING[MD5_BLOCK_SIZE] = { MD5_PADDING_BYTE };
-    MD5Update(ctx, PADDING, padLen - MD5_LENGTH_BYTES);
+    static const uint8_t padding[MD5_BLOCK_SIZE] = { MD5_PADDING_BYTE };
+    MD5Update(ctx, padding, padLen - MD5_LENGTH_BYTES);
     MD5Update(ctx, bits, MD5_LENGTH_BYTES);
 
     MD5EncodeDigest(digest, ctx->state);
@@ -335,10 +342,10 @@ static inline void MD5_II(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const
 static void MD5DecodeBlock(uint32_t x[MD5_WORD_COUNT], const uint8_t block[MD5_BLOCK_SIZE])
 {
     for (size_t i = 0; i < MD5_WORD_COUNT; i++) {
-        x[i] = static_cast<uint32_t>(block[i * 4]) |
-               (static_cast<uint32_t>(block[i * 4 + 1]) << MD5_BITS_PER_BYTE) |
-               (static_cast<uint32_t>(block[i * 4 + 2]) << (MD5_BITS_PER_BYTE * 2)) |
-               (static_cast<uint32_t>(block[i * 4 + 3]) << (MD5_BITS_PER_BYTE * 3));
+        x[i] = static_cast<uint32_t>(block[i * MD5_STATE_SIZE]) |
+               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + 1]) << MD5_BITS_PER_BYTE) |
+               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + 2]) << (MD5_BITS_PER_BYTE * 2)) |
+               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + 3]) << (MD5_BITS_PER_BYTE * 3));
     }
 }
 
@@ -439,7 +446,7 @@ static void MD5Transform(uint32_t state[4], const uint8_t block[64])
     state[0] += a;
     state[1] += b;
     state[2] += c;
-    state[3] += d;
+    state[STATE_D_INDEX] += d;
 }
 
 static std::string CalculateMD5(const std::string& filePath)
@@ -459,12 +466,13 @@ static std::string CalculateMD5(const std::string& filePath)
         MD5Update(&ctx, buffer, file.gcount());
     }
 
-    uint8_t digest[16];
+    int32_t digestCount = 16;
+    uint8_t digest[digestCount];
     MD5Final(digest, &ctx);
 
     std::stringstream ss;
-    for (int i = 0; i < 16; i++) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(digest[i]);
+    for (int i = 0; i < digestCount; i++) {
+        ss << std::hex << std::setw(kHexByteWidth) << std::setfill('0') << static_cast<int>(digest[i]);
     }
 
     file.close();
@@ -499,7 +507,7 @@ struct OHConverterTestInfo {
     OH_Audio_SampleFormat outputSampleFormat;
 };
 
-static const std::string g_CONVERTER_TEST_DIR = "/data/audiosuite/converter/";
+static const std::string g_converterTestDir = "/data/audiosuite/converter/";
 
 static OHConverterTestInfo g_converterTestCases[] = {
     {"in_converter_44100_2_s16le.pcm", "converterOut1.pcm", "9f68a71725ac44ff52edf8c40babdf4f",
@@ -620,20 +628,19 @@ static OH_AudioConverter* CreateConverter(const OHConverterTestInfo& info)
 
 static FILE* OpenInputFile(const OHConverterTestInfo& info)
 {
-    std::string inputFilePath = g_CONVERTER_TEST_DIR + info.inputFileName;
+    std::string inputFilePath = g_converterTestDir + info.inputFileName;
     return fopen(inputFilePath.c_str(), "rb");
 }
 
 static FILE* OpenOutputFile(const OHConverterTestInfo& info)
 {
-    std::string outputFilePath = g_CONVERTER_TEST_DIR + info.outputFileName;
+    std::string outputFilePath = g_converterTestDir + info.outputFileName;
     return fopen(outputFilePath.c_str(), "wb");
 }
 
 static bool ProcessConversion(OH_AudioConverter* converter, FILE* outputFile)
 {
     uint8_t outputBuffer[EXTRA_LARGE_BUFFER_SIZE] = {0};
-    // std::vector<uint8_t>outputBuffer(EXTRA_LARGE_BUFFER_SIZE, 0);
     int32_t totalBytesWritten = 0;
     
     while (true) {
@@ -657,7 +664,7 @@ static bool ProcessConversion(OH_AudioConverter* converter, FILE* outputFile)
 
 static void VerifyResults(const OHConverterTestInfo& info, int32_t totalBytesWritten)
 {
-    std::string outputFilePath = g_CONVERTER_TEST_DIR + info.outputFileName;
+    std::string outputFilePath = g_converterTestDir + info.outputFileName;
     std::string compareFilePath = info.compareFileMd5;
     CompareOutputWithReference(outputFilePath, compareFilePath);
     
@@ -666,19 +673,19 @@ static void VerifyResults(const OHConverterTestInfo& info, int32_t totalBytesWri
     EXPECT_GT(totalBytesWritten, 0);
 }
 
-static int32_t g_callbackCallCount_016 = 0;
+static int32_t g_callbackCallCountSixteen = 0;
 
 static int32_t RequestDataCallback_016(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
 {
     (void)userData;
     static uint8_t testData[CUSTOM_BUFFER_SIZE_19200] = {0};
-    
+    uint32_t moveRight = 8;
     for (int32_t i = 0; i < CUSTOM_BUFFER_SIZE_19200 / LOOP_COUNT_2; i += LOOP_COUNT_2) {
         int16_t sample =
             static_cast<int16_t>(SIGNAL_AMPLITUDE_1000 * sin(2 * M_PI * i / 48000));
         testData[i] = sample & 0xFF;
-        testData[i + 1] = (sample >> 8) & 0xFF;
+        testData[i + 1] = (sample >> moveRight) & 0xFF;
     }
     
     if (outInputData != nullptr) {
@@ -688,23 +695,23 @@ static int32_t RequestDataCallback_016(void* userData, const void** outInputData
         *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
     }
     
-    g_callbackCallCount_016++;
+    g_callbackCallCountSixteen++;
     return CUSTOM_BUFFER_SIZE_19200;
 }
 
-static int32_t g_callbackCallCount_017 = 0;
+static int32_t g_callbackCallCountSeveneen = 0;
 
 static int32_t RequestDataCallback_017(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
 {
     (void)userData;
     static uint8_t testData[CUSTOM_BUFFER_SIZE_9600] = {0};
-    
+    uint32_t moveRight = 8;
     for (int32_t i = 0; i < CUSTOM_BUFFER_SIZE_9600 / LOOP_COUNT_2; i += LOOP_COUNT_2) {
         int16_t sample =
             static_cast<int16_t>(SIGNAL_AMPLITUDE_5000 * sin(2 * M_PI * i / 48000));
         testData[i] = sample & 0xFF;
-        testData[i + 1] = (sample >> 8) & 0xFF;
+        testData[i + 1] = (sample >> moveRight) & 0xFF;
     }
     
     if (outInputData != nullptr) {
@@ -714,7 +721,7 @@ static int32_t RequestDataCallback_017(void* userData, const void** outInputData
         *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
     }
     
-    g_callbackCallCount_017++;
+    g_callbackCallCountSeveneen++;
     return CUSTOM_BUFFER_SIZE_9600;
 }
 
@@ -725,12 +732,12 @@ static int32_t RequestDataCallback_018(void* userData, const void** outInputData
 {
     (void)userData;
     static uint8_t testData[CUSTOM_BUFFER_SIZE_1600] = {0};
-    
+    uint32_t moveRight = 8;
     for (int32_t i = 0; i < CUSTOM_BUFFER_SIZE_1600 / LOOP_COUNT_2; i += LOOP_COUNT_2) {
         int16_t sample =
             static_cast<int16_t>(SIGNAL_AMPLITUDE_3000 * sin(2 * M_PI * i / 8000));
         testData[i] = sample & 0xFF;
-        testData[i + 1] = (sample >> 8) & 0xFF;
+        testData[i + 1] = (sample >> moveRight) & 0xFF;
     }
     
     if (outInputData != nullptr) {
@@ -744,7 +751,7 @@ static int32_t RequestDataCallback_018(void* userData, const void** outInputData
     return CUSTOM_BUFFER_SIZE_1600;
 }
 
-static int32_t g_callCount_024 = 0;
+static int32_t g_callCountTwentyFour = 0;
 
 static int32_t RequestDataCallback_024(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
@@ -756,18 +763,18 @@ static int32_t RequestDataCallback_024(void* userData, const void** outInputData
         *outInputData = testData;
     }
     if (outStatus != nullptr) {
-        if (g_callCount_024 == 0) {
+        if (g_callCountTwentyFour == 0) {
             *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
         } else {
             *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
         }
     }
     
-    g_callCount_024++;
+    g_callCountTwentyFour++;
     return DEFAULT_BUFFER_SIZE;
 }
 
-static int32_t g_callCount_030 = 0;
+static int32_t g_callCountThirty = 0;
 
 static int32_t RequestDataCallback_030(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
@@ -779,14 +786,14 @@ static int32_t RequestDataCallback_030(void* userData, const void** outInputData
         *outInputData = testData;
     }
     if (outStatus != nullptr) {
-        if (g_callCount_030 < LOOP_COUNT_2 + 1) {
+        if (g_callCountThirty < LOOP_COUNT_2 + 1) {
             *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
         } else {
             *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
         }
     }
     
-    g_callCount_030++;
+    g_callCountThirty++;
     return DEFAULT_BUFFER_SIZE;
 }
 
@@ -822,8 +829,14 @@ static bool RunOHConverterTest(const OHConverterTestInfo& info)
     
     int32_t totalBytesWritten = ProcessConversion(converter, outputFile);
     
-    fclose(inputFile);
-    fclose(outputFile);
+    int32_t result = fclose(inputFile);
+    if (result != 0) {
+        return false;
+    }
+    result = fclose(outputFile);
+    if (result != 0) {
+        return false;
+    }
     
     VerifyResults(info, totalBytesWritten);
     
@@ -853,7 +866,7 @@ void OHAudioConverterTest::SetUp(void)
 {
     g_requestDataCallCount = 0;
     g_callbackCallCount = 0;
-    g_callbackDataSize = 1024;
+    g_callbackDataSize = DEFAULT_BUFFER_SIZE;
     g_totalBytesRead = 0;
 }
 
@@ -1608,7 +1621,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_016, TestSize.Level0)
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
-    g_callbackCallCount_016 = 0;
+    g_callbackCallCountSixteen = 0;
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_016, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
@@ -1617,7 +1630,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_016, TestSize.Level0)
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     EXPECT_GT(outputSize, 0);
-    EXPECT_GT(g_callbackCallCount_016, 0);
+    EXPECT_GT(g_callbackCallCountSixteen, 0);
     
     bool hasNonZeroData = false;
     for (int32_t i = 0; i < outputSize; i++) {
@@ -1656,7 +1669,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_017, TestSize.Level0)
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
     int32_t inputBytes = CUSTOM_BUFFER_SIZE_9600;
-    g_callbackCallCount_017 = 0;
+    g_callbackCallCountSeveneen = 0;
     
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_017, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
@@ -1666,7 +1679,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_017, TestSize.Level0)
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     EXPECT_GT(outputSize, 0);
-    EXPECT_GT(g_callbackCallCount_017, 0);
+    EXPECT_GT(g_callbackCallCountSeveneen, 0);
     
     EXPECT_EQ(outputSize, inputBytes * LOOP_COUNT_2);
     
@@ -1765,7 +1778,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_024, TestSize.Level0)
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
-    g_callCount_024 = 0;
+    g_callCountTwentyFour = 0;
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_024, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
@@ -1990,7 +2003,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_030, TestSize.Level0)
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
-    g_callCount_030 = 0;
+    g_callCountThirty = 0;
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_030, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
@@ -2103,7 +2116,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_DonConvert_001, TestSize.Level0
 constexpr uint32_t INPUT_DATA_SIZE = 1024 * 400;
 constexpr uint32_t INPUT_DATA_SIZE_PLUS = 2 * 400 * 1024;
 
-static int32_t g_callbackCallCount_034 = 0;
+static int32_t g_callCountThirtyFour = 0;
 
 /**
  * @brief Callback function that returns data larger than 400KB
@@ -2116,7 +2129,7 @@ static int32_t RequestDataCallback_LargerThanOneMB(void* userData, const void** 
 
     *outInputData = testData;
     *outStatus = OH_AudioConverter_InputStatus::AUDIOCONVERTER_INPUT_HAVE_DATA;
-    g_callbackCallCount_034++;
+    g_callCountThirtyFour++;
 
     return INPUT_DATA_SIZE_PLUS;
 }
@@ -2136,7 +2149,7 @@ static int32_t RequestDataCallback_EqualsOneMB(void* userData, const void** outI
     if (outStatus != nullptr) {
         *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
     }
-    g_callbackCallCount_034++;
+    g_callCountThirtyFour++;
     return testData.capacity();
 }
 
@@ -2291,24 +2304,20 @@ static void ThreadTestTask(int threadId, int iterations)
             g_mtFailCount++;
             continue;
         }
-
         ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallbackMultithread, nullptr);
         if (ret != AUDIOCONVERTER_SUCCESS) {
             g_mtFailCount++;
             OH_AudioConverter_Destroy(converter);
             continue;
         }
-
         uint8_t outputData[LARGE_BUFFER_SIZE] = {0};
         int32_t outputSize = 0;
         ret = OH_AudioConverter_Process(converter, outputData, LARGE_BUFFER_SIZE, &outputSize);
-
         if (ret != AUDIOCONVERTER_SUCCESS) {
             g_mtFailCount++;
         } else {
             g_mtSuccessCount++;
         }
-
         OH_AudioConverter_Destroy(converter);
     }
 }
