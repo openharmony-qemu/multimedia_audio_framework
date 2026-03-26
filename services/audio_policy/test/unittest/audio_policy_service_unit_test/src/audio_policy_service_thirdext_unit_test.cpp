@@ -913,7 +913,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestS
     audioDevDesc->macAddress_ = "00:00:00:00:00:00";
     audioDeviceDescriptors.push_back(audioDevDesc);
 
-    int32_t result = server->audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = server->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
@@ -939,7 +939,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestS
     audioDevDesc->macAddress_ = "00:00:00:00:00:00";
     audioDeviceDescriptors.push_back(audioDevDesc);
 
-    int32_t result = server->audioDeviceLock_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = server->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
@@ -957,8 +957,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetExcludedDevicesTest_001, TestSize.
     EXPECT_NE(nullptr, server);
 
     AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
-        server->audioDeviceLock_.GetExcludedDevices(audioDevUsage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    server->GetExcludedDevices(audioDevUsage, audioDeviceDescriptors);
     EXPECT_EQ(audioDeviceDescriptors.size(), 0);
 }
 
@@ -974,8 +974,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetExcludedDevicesTest_002, TestSize.
     EXPECT_NE(nullptr, server);
 
     AudioDeviceUsage audioDevUsage = CALL_OUTPUT_DEVICES;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors =
-        server->audioDeviceLock_.GetExcludedDevices(audioDevUsage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    server->GetExcludedDevices(audioDevUsage, audioDeviceDescriptors);
     EXPECT_EQ(audioDeviceDescriptors.size(), 0);
 }
 

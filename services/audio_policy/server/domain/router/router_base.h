@@ -21,6 +21,7 @@
 #include "audio_policy_log.h"
 #include "audio_state_manager.h"
 #include "audio_policy_utils.h"
+#include "audio_router_select_strategy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,8 +74,9 @@ public:
             CHECK_AND_CONTINUE(desc != nullptr);
             if (desc->exceptionFlag_ || !desc->isEnable_ ||
                 (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-                (desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded())) ||
-                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, desc) ||
+                    (desc->connectState_ == SUSPEND_CONNECTED ||
+                        AudioRouterSelectStrategy::GetInstance().GetScoExcluded())) ||
+                AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(desc, audioDevUsage) ||
                 !IsDeviceUsageSupported(audioDevUsage, desc)) {
                 continue;
             }

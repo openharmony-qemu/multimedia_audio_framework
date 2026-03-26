@@ -15,6 +15,7 @@
 #ifndef AUDIO_SELECT_INTERFACE_SERVICE_H
 #define AUDIO_SELECT_INTERFACE_SERVICE_H
 
+#include "audio_a2dp_offload_manager.h"
 #include "audio_device_info.h"
 #include "audio_stream_descriptor.h"
 #include "audio_stream_types.h"
@@ -46,9 +47,9 @@ public:
 
     // AudioRoutingManager#excludeOutputDevices & AudioRoutingManager#unexcludeOutputDevices
     int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
 
     // AudioSessionManager#setDefaultOutputDevice
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
@@ -70,6 +71,17 @@ public:
         sptr<AudioRendererFilter> filter = nullptr, const std::string &caller = "");
     void OnPrivacyDeviceSelected(DeviceType devType, const std::string &macAddress,
         const std::string &caller = "");
+
+    int32_t SetA2dpDeviceOffloadManager(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager);
+
+private:
+    int32_t ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    int32_t ClearActiveHfpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    int32_t UnexcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
+        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+
+    std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

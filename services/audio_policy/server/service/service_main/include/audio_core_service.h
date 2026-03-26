@@ -458,6 +458,11 @@ public:
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
 
+    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
+        const AudioStreamDeviceChangeReason reason);
+    void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
+
 private:
     void UpdateEnhanceEffectState(SourceType source);
     void UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &pipeInfo, SourceType sourceType);
@@ -585,10 +590,6 @@ private:
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason);
-    void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);

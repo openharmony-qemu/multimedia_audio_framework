@@ -415,27 +415,6 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016_ext03, TestSize.Le
 }
 
 /**
- * @tc.name  : Test UnexcludeOutputDevices API
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_016
- * @tc.desc  : Test UnexcludeOutputDevices
- */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
-{
-    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
-    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
-    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    audioPolicyUtilsTest_->isBTReconnecting_ = true;
-
-    int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(D_ALL_DEVICES, descs);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(MEDIA_INPUT_DEVICES, descs);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test IsSupportedDevice API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_017

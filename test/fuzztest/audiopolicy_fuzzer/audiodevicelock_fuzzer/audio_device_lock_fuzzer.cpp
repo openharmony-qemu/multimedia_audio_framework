@@ -356,18 +356,6 @@ void AudioDeviceLockUpdateSpatializationSupportedFuzzTest(FuzzedDataProvider& fd
     OnStop();
 }
 
-void AudioDeviceLockGetExcludedDevicesFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
-    if (audioDeviceLock == nullptr || AudioDeviceUsageVec.size() == 0) {
-        return;
-    }
-
-    AudioDeviceUsage audioDevUsage = AudioDeviceUsageVec[GetData<uint32_t>() % AudioDeviceUsageVec.size()];
-    audioDeviceLock->GetExcludedDevices(audioDevUsage);
-    OnStop();
-}
-
 void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest(FuzzedDataProvider& fdp)
 {
     Parcel parcel;
@@ -401,7 +389,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioDeviceLockUpdateAppVolumeFuzzTest,
     AudioDeviceLockOnDeviceInfoUpdatedFuzzTest,
     AudioDeviceLockOnDeviceStatusUpdatedFuzzTest,
-    AudioDeviceLockGetExcludedDevicesFuzzTest,
     AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest,
     AudioDeviceLockUpdateSpatializationSupportedFuzzTest,
     AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest
