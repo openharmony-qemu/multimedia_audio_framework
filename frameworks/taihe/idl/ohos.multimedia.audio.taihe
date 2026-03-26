@@ -841,7 +841,7 @@ enum AudioSessionStateChangeHint: i32 {
 }
 
 enum AudioSessionBehaviorFlags: i32 {
-  DEFAULT = 0x00000000,
+  DEFAULT_BEHAVIOR = 0x00000000,
   VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
   MUTE_WHEN_INTERRUPTED = 0x00000002,
 }
