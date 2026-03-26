@@ -84,6 +84,7 @@ public:
     void SetEarphoneProduct(int32_t earphoneProduct);
     void SetOutdoorMode(const std::string &outdoorMode);
     void SetSuperLoudnessMode(const std::string &superLoudnessMode);
+    void SetStereoEnhancementMode(const std::string &stereoEnhancementMode);
     bool IsEffectChainFading();
     void SetFrontendAppType(const std::string &frontendAppType);
 private:
@@ -103,6 +104,7 @@ private:
     uint32_t extraEffectChainType_ = 0;
     uint32_t foldState_ = 0;
     uint32_t lidState_ = 0;
+    uint32_t stereoEnhancementMode_ = 0;
     uint32_t systemLoadState_ = 0;
     StreamUsage streamUsage_ = STREAM_USAGE_INVALID;
     AudioEffectScene currSceneType_ = SCENE_MUSIC;
