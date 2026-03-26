@@ -396,10 +396,10 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_007, Test
 
 /**
 * @tc.name   : Test LoadCollaborationConfigInner API
-* @tc.number : LoadCollaborationConfigInner_004
+* @tc.number : LoadCollaborationConfigInner_008
 * @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
 */
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_004, TestSize.Level1)
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_008, TestSize.Level1)
 {
     std::string prodcutId = "testProduct";
     auto mockNode = std::make_shared<MockAudioXmlNode>();

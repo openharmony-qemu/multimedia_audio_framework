@@ -310,7 +310,6 @@ void AudioEnhanceChainSetParaFuzzTest()
     audioEnhanceChain->SetFoldState(foldState);
 
     audioEnhanceChain->SetThreadHandler(nullptr);
-    audioEnhanceChain->InitCommand();
 }
 
 void AudioEnhanceChainGetParaFuzzTest()

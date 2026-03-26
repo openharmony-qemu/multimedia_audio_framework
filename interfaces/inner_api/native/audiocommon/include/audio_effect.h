@@ -60,6 +60,7 @@ enum HdiSetParamCommandCode {
     HDI_SUPER_LOUDNESS_MODE = 17,
     HDI_SYSTEMLOAD_STATE = 18,
     HDI_FRONTEND_APP_TYPE = 19,
+    HDI_STEREO_ENHANCEMENT = 20,
 };
 
 enum AudioTwsMode : int32_t {
@@ -698,9 +699,7 @@ enum AudioEffectChainSetParamIndex {
     SUPER_LOUDNESS_MODE = 16,
     SYSTEMLOAD_STATE_INDEX = 17,
     FRONTEND_APP_TYPE = 18,
-    PARAM_INDEX_RESERVE1,
-    PARAM_INDEX_RESERVE2,
-    PARAM_INDEX_RESERVE3,
+    STEREO_ENHANCEMENT_INDEX = 19,
     MAX_PARAM_INDEX,
 };
 
@@ -713,7 +712,8 @@ enum AudioEffectCommandCode {
     EFFECT_CMD_GET_PARAM = 5,
     EFFECT_CMD_GET_CONFIG = 6,
     EFFECT_CMD_SET_IMU = 7,
-    EFFECT_CMD_SET_PROPERTY = 8
+    EFFECT_CMD_SET_PROPERTY = 8,
+    EFFECT_CMD_STOP_STREAM = 9
 };
 
 enum AudioEffectParamSetCode {

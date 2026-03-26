@@ -410,6 +410,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetOutdoorMode(outdoorMode_);
     audioEffectChain->SetSuperLoudnessMode(superLoudnessMode_);
     audioEffectChain->SetFrontendAppType(frontendAppType_);
+    audioEffectChain->SetStereoEnhancementMode(stereoEnhancementMode_);
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
@@ -1022,6 +1023,10 @@ void AudioEffectChainManager::SendAudioParamToARM(HdiSetParamCommandCode code, c
                 audioEffectChain->SetFrontendAppType(value);
                 paramUpdated = true;
                 break;
+            case HDI_STEREO_ENHANCEMENT:
+                audioEffectChain->SetStereoEnhancementMode(value);
+                paramUpdated = true;
+                break;
             default:
                 break;
         }
@@ -1060,6 +1065,8 @@ void AudioEffectChainManager::UpdateParamExtra(
         updateParam(superLoudnessMode_, HDI_SUPER_LOUDNESS_MODE);
     } else if (mainkey == "audio_effect" && subkey == "update_audio_effect_hvs_type") {
         updateParam(frontendAppType_, HDI_FRONTEND_APP_TYPE);
+    } else if (mainkey == "audio_effect" && subkey == "tablet_premium") {
+        updateParam(stereoEnhancementMode_, HDI_STEREO_ENHANCEMENT);
     } else {
         AUDIO_INFO_LOG("UpdateParamExtra failed, mainkey is %{public}s, subkey is %{public}s, "
             "value is %{public}s", mainkey.c_str(), subkey.c_str(), value.c_str());
@@ -1667,7 +1674,7 @@ int32_t AudioEffectChainManager::NotifyAndCreateAudioEffectChain(const std::stri
         if (defaultEffectChainCreated_ == true) {
             sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] =
                 sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        } else if (isDefaultEffectChainExisted_ == true) {
+        } else if (isDefaultEffectChainExisted_ == true && !isPriorScene) {
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
         }
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 1;

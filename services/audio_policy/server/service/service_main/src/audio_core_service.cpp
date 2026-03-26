@@ -1675,7 +1675,7 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
         UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
-
+    FetchInputDeviceAndRoute("RegisteredTrackerClientDied");
     audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
 }
@@ -3710,6 +3710,8 @@ int32_t AudioCoreService::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo
         moduleInfo.ecSamplingRate = std::to_string(streamDesc->ecStreamInfo_.samplingRate);
         moduleInfo.ecChannels = std::to_string(streamDesc->ecStreamInfo_.channels);
         moduleInfo.ecFormat = formatToHpaeStr[streamDesc->ecStreamInfo_.format];
+    } else if (IsVoiceRecognitionMicInEcRequested(streamDesc)) {
+        UpdateMicInEcModuleInfoByStreamDesc(streamDesc, moduleInfo);
     }
     AUDIO_INFO_LOG("sessionId:%{public}u rate:%{public}s channels:%{public}s bufferSize:%{public}s"
         "format:%{public}s channelLayout:%{public}s sourceType: %{public}s", targetSessionId,
