@@ -1866,6 +1866,7 @@ int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionI
                 CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
                     "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Stop(sessionId);
+                UpdateStatus(capturerIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STOPPED, sessionId);
             }
             capturerIdStreamInfoMap_[sessionId].state = HPAE_SESSION_STOPPING;
         } else {
