@@ -326,7 +326,6 @@ void AudioEnhanceChainManagerFuzzTest(AudioEnhanceChainManager *audioEnhanceChai
     std::string subKey = "subKey";
     std::string extraSceneType = "extraSceneType";
     audioEnhanceChainMananger->UpdateExtraSceneType(mainKey, subKey, extraSceneType);
-    audioEnhanceChainMananger->SendInitCommand();
 }
 
 void AudioEnhanceChainManagerCreateFuzzTest(AudioEnhanceChainManager *manager)
