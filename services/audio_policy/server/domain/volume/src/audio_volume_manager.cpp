@@ -921,6 +921,7 @@ void AudioVolumeManager::HandleLegacyHighVolumeEvent()
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
     int32_t ret = SetSystemVolumeLevel(legacyHighVolumeStreamType_, legacyHighVolumeLevel_, deviceDesc);
     AUDIO_INFO_LOG("handle AUDIO_LEGACY_HIGH_VOLUME_EVENT result: %{public}d", ret);
+    SetSafeVolumeCallback(legacyHighVolumeStreamType_, false);
 }
 
 bool AudioVolumeManager::IsLegacyHighVolumeChecked()
