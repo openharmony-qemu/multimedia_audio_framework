@@ -40,7 +40,8 @@ constexpr uint32_t CUSTOM_BUFFER_SIZE_1022 = 1022;
 constexpr uint32_t CUSTOM_BUFFER_SIZE_19200 = 19200;
 constexpr uint32_t CUSTOM_BUFFER_SIZE_9600 = 9600;
 constexpr uint32_t CUSTOM_BUFFER_SIZE_1600 = 1600;
-// constexpr uint32_t CUSTOM_BUFFER_BUFFER_SIZE = 10000;
+constexpr uint32_t LOOP_NUMBER = 10000;
+
 
 constexpr int32_t LOOP_COUNT_2 = 2;
 constexpr int32_t LOOP_COUNT_6 = 6;
@@ -52,7 +53,6 @@ constexpr int32_t SIGNAL_AMPLITUDE_3000 = 3000;
 
 static int32_t g_requestDataCallCount = 0;
 // MD5 constants
-
 constexpr uint32_t MD5_BLOCK_SIZE = 64;
 constexpr uint32_t MD5_DIGEST_SIZE = 16;
 constexpr uint32_t MD5_STATE_SIZE = 4;
@@ -60,6 +60,9 @@ constexpr uint32_t MD5_BITS_LEFT_BYTE = 3;
 constexpr uint32_t MD5_WORD_COUNT = 16;
 constexpr uint32_t MD5_BITS_PER_BYTE = 8;
 constexpr uint32_t MD5_BITS_PER_WORD = 32;
+constexpr uint32_t STATE_A_INDEX = 0;
+constexpr uint32_t STATE_B_INDEX = 1;
+constexpr uint32_t STATE_C_INDEX = 2;
 constexpr uint32_t STATE_D_INDEX = 3;
 
 // Padding byte
@@ -70,7 +73,7 @@ constexpr uint32_t MD5_INIT_STATE_0 = 0x67452301;
 constexpr uint32_t MD5_INIT_STATE_1 = 0xEFCDAB89;
 constexpr uint32_t MD5_INIT_STATE_2 = 0x98BADCFE;
 constexpr uint32_t MD5_INIT_STATE_3 = 0x10325476;
-constexpr int kHexByteWidth = 2;
+constexpr int Byte_Width = 2;
 
 static int32_t RequestDataCallback(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
@@ -196,26 +199,31 @@ static void MD5Round4(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const 
 
 static void MD5Init(MD5Context* ctx)
 {
+    int32_t stateTwo = 2;
+    int32_t stateThree = 3;
     ctx->count[0] = 0;
     ctx->count[1] = 0;
     ctx->state[0] = MD5_INIT_STATE_0;
     ctx->state[1] = MD5_INIT_STATE_1;
-    ctx->state[2] = MD5_INIT_STATE_2;
-    ctx->state[3] = MD5_INIT_STATE_3;
+    ctx->state[stateTwo] = MD5_INIT_STATE_2;
+    ctx->state[stateThree] = MD5_INIT_STATE_3;
 }
 
 static void MD5EncodeBits(uint8_t bits[MD5_LENGTH_BYTES], const uint32_t count[2])
 {
+    int32_t moveTwo = 2;
+    int32_t moveThree = 3;
     for (size_t i = 0; i < MD5_LENGTH_BYTES; i++) {
-        bits[i] = static_cast<uint8_t>((count[i >> 2] >> ((i & 3) << 3)) & 0xFF);
+        bits[i] = static_cast<uint8_t>((count[i >> moveTwo] >> ((i & moveThree) << moveThree)) & 0xFF);
     }
 }
 
 static void MD5EncodeDigest(uint8_t digest[MD5_DIGEST_SIZE], const uint32_t state[MD5_STATE_SIZE])
 {
     int32_t moveRightTwo = 2;
+    int32_t moveThree = 3;
     for (size_t i = 0; i < MD5_DIGEST_SIZE; i++) {
-        digest[i] = static_cast<uint8_t>((state[i >> moveRightTwo] >> ((i & 3) << 3)) & 0xFF);
+        digest[i] = static_cast<uint8_t>((state[i >> moveRightTwo] >> ((i & moveThree) << moveThree)) & 0xFF);
     }
 }
 
@@ -225,10 +233,10 @@ static void MD5ProcessBuffer(MD5Context* ctx, const uint8_t** data, size_t* len,
     size_t remaining = MD5_BLOCK_SIZE - ((originalCount >> 3) & (MD5_BLOCK_SIZE - 1));
 
     if (*len < remaining) {
-        memcpy(p, *data, *len);
+        std::copy(*data, *data + *len, p);
         return;
     }
-    memcpy(p, *data, remaining);
+    std::copy(*data, *data + remaining, p);
     MD5Transform(ctx->state, ctx->buffer);
     *data += remaining;
     *len -= remaining;
@@ -254,7 +262,7 @@ static void MD5Update(MD5Context* ctx, const void* data, size_t len)
         len -= MD5_BLOCK_SIZE;
     }
 
-    memcpy(ctx->buffer, bytes, len);
+    std::copy(bytes, bytes + len, ctx->buffer);
 }
 
 static void MD5Final(uint8_t digest[MD5_DIGEST_SIZE], MD5Context* ctx)
@@ -263,8 +271,9 @@ static void MD5Final(uint8_t digest[MD5_DIGEST_SIZE], MD5Context* ctx)
     size_t padLen;
 
     MD5EncodeBits(bits, ctx->count);
-
-    padLen = MD5_BLOCK_SIZE - ((ctx->count[0] >> 3) & (MD5_BLOCK_SIZE - 1));
+    int32_t moveOne = 1;
+    int32_t moveThree = 3;
+    padLen = MD5_BLOCK_SIZE - ((ctx->count[0] >> moveThree) & (MD5_BLOCK_SIZE - moveOne));
     if (padLen < MD5_LENGTH_BYTES) {
         padLen += MD5_BLOCK_SIZE;
     }
@@ -274,7 +283,7 @@ static void MD5Final(uint8_t digest[MD5_DIGEST_SIZE], MD5Context* ctx)
     MD5Update(ctx, bits, MD5_LENGTH_BYTES);
 
     MD5EncodeDigest(digest, ctx->state);
-    memset(ctx, 0, sizeof(*ctx));
+    memset_s(ctx, sizeof(*ctx), 0, sizeof(*ctx));
 }
 
 // MD5 operation parameters structure
@@ -341,11 +350,14 @@ static inline void MD5_II(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const
 
 static void MD5DecodeBlock(uint32_t x[MD5_WORD_COUNT], const uint8_t block[MD5_BLOCK_SIZE])
 {
+    int32_t moveOne = 1;
+    int32_t moveTwo = 2;
+    int32_t moveThree = 3;
     for (size_t i = 0; i < MD5_WORD_COUNT; i++) {
         x[i] = static_cast<uint32_t>(block[i * MD5_STATE_SIZE]) |
-               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + 1]) << MD5_BITS_PER_BYTE) |
-               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + 2]) << (MD5_BITS_PER_BYTE * 2)) |
-               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + 3]) << (MD5_BITS_PER_BYTE * 3));
+               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + moveOne]) << MD5_BITS_PER_BYTE) |
+               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + moveTwo]) << (MD5_BITS_PER_BYTE * moveTwo)) |
+               (static_cast<uint32_t>(block[i * MD5_STATE_SIZE + moveThree]) << (MD5_BITS_PER_BYTE * moveThree));
     }
 }
 
@@ -443,9 +455,9 @@ static void MD5Transform(uint32_t state[4], const uint8_t block[64])
     MD5Round3(a, b, c, d, x);
     MD5Round4(a, b, c, d, x);
 
-    state[0] += a;
-    state[1] += b;
-    state[2] += c;
+    state[STATE_A_INDEX] += a;
+    state[STATE_B_INDEX] += b;
+    state[STATE_C_INDEX] += c;
     state[STATE_D_INDEX] += d;
 }
 
@@ -453,7 +465,6 @@ static std::string CalculateMD5(const std::string& filePath)
 {
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
-        AUDIO_ERR_LOG("Failed to open file for MD5 calculation: %{public}s", filePath.c_str());
         return "";
     }
 
@@ -472,7 +483,7 @@ static std::string CalculateMD5(const std::string& filePath)
 
     std::stringstream ss;
     for (int i = 0; i < digestCount; i++) {
-        ss << std::hex << std::setw(kHexByteWidth) << std::setfill('0') << static_cast<int>(digest[i]);
+        ss << std::hex << std::setw(Byte_Width) << std::setfill('0') << static_cast<int>(digest[i]);
     }
 
     file.close();
@@ -507,7 +518,7 @@ struct OHConverterTestInfo {
     OH_Audio_SampleFormat outputSampleFormat;
 };
 
-static const std::string g_converterTestDir = "/data/audiosuite/converter/";
+static const std::string CONVERTER_TEST_DIR = "/data/audiosuite/converter/";
 
 static OHConverterTestInfo g_converterTestCases[] = {
     {"in_converter_44100_2_s16le.pcm", "converterOut1.pcm", "9f68a71725ac44ff52edf8c40babdf4f",
@@ -628,13 +639,13 @@ static OH_AudioConverter* CreateConverter(const OHConverterTestInfo& info)
 
 static FILE* OpenInputFile(const OHConverterTestInfo& info)
 {
-    std::string inputFilePath = g_converterTestDir + info.inputFileName;
+    std::string inputFilePath = CONVERTER_TEST_DIR + info.inputFileName;
     return fopen(inputFilePath.c_str(), "rb");
 }
 
 static FILE* OpenOutputFile(const OHConverterTestInfo& info)
 {
-    std::string outputFilePath = g_converterTestDir + info.outputFileName;
+    std::string outputFilePath = CONVERTER_TEST_DIR + info.outputFileName;
     return fopen(outputFilePath.c_str(), "wb");
 }
 
@@ -642,8 +653,8 @@ static bool ProcessConversion(OH_AudioConverter* converter, FILE* outputFile)
 {
     uint8_t outputBuffer[EXTRA_LARGE_BUFFER_SIZE] = {0};
     int32_t totalBytesWritten = 0;
-    
-    while (true) {
+    int32_t loopNumber = LOOP_NUMBER;
+    while (loopNumber > 0) {
         int32_t outputSize = 0;
         OH_AudioConverter_Result ret = OH_AudioConverter_Process(converter, outputBuffer,
             sizeof(outputBuffer), &outputSize);
@@ -657,6 +668,7 @@ static bool ProcessConversion(OH_AudioConverter* converter, FILE* outputFile)
         
         size_t bytesWritten = fwrite(outputBuffer, 1, outputSize, outputFile);
         totalBytesWritten += bytesWritten;
+        loopNumber--;
     }
     
     return totalBytesWritten > 0;
@@ -664,7 +676,7 @@ static bool ProcessConversion(OH_AudioConverter* converter, FILE* outputFile)
 
 static void VerifyResults(const OHConverterTestInfo& info, int32_t totalBytesWritten)
 {
-    std::string outputFilePath = g_converterTestDir + info.outputFileName;
+    std::string outputFilePath = CONVERTER_TEST_DIR + info.outputFileName;
     std::string compareFilePath = info.compareFileMd5;
     CompareOutputWithReference(outputFilePath, compareFilePath);
     
@@ -725,7 +737,7 @@ static int32_t RequestDataCallback_017(void* userData, const void** outInputData
     return CUSTOM_BUFFER_SIZE_9600;
 }
 
-static int32_t g_callbackCallCount_018 = 0;
+static int32_t g_callbackCallCountEighteen = 0;
 
 static int32_t RequestDataCallback_018(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
@@ -747,7 +759,7 @@ static int32_t RequestDataCallback_018(void* userData, const void** outInputData
         *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
     }
     
-    g_callbackCallCount_018++;
+    g_callbackCallCountEighteen++;
     return CUSTOM_BUFFER_SIZE_1600;
 }
 
@@ -850,9 +862,6 @@ static int32_t RunAllOHConverterTests()
     
     for (size_t idx = 0; idx < count; idx++) {
         const OHConverterTestInfo& info = g_converterTestCases[idx];
-        AUDIO_INFO_LOG("Running test case [%{public}zu/%{public}zu]: %{public}s", 
-                       idx + 1, count, info.inputFileName.c_str());
-        
         RunOHConverterTest(info);
     }
     return SUCCESS;
@@ -1710,7 +1719,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_018, TestSize.Level0)
     OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
-    g_callbackCallCount_018 = 0;
+    g_callbackCallCountEighteen= 0;
     ret = OH_AudioConverter_SetInputCallback(converter, RequestDataCallback_018, nullptr);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     
@@ -1719,7 +1728,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_018, TestSize.Level0)
     ret = OH_AudioConverter_Process(converter, outputData, sizeof(outputData), &outputSize);
     EXPECT_EQ(ret, AUDIOCONVERTER_SUCCESS);
     EXPECT_GT(outputSize, 0);
-    EXPECT_GT(g_callbackCallCount_018, 0);
+    EXPECT_GT(g_callbackCallCountEighteen, 0);
     
     EXPECT_EQ(outputSize, CUSTOM_BUFFER_SIZE_1600 * LOOP_COUNT_6);
     
@@ -2126,11 +2135,9 @@ static int32_t RequestDataCallback_LargerThanOneMB(void* userData, const void** 
 {
     (void)userData;
     static uint8_t testData[INPUT_DATA_SIZE_PLUS] = {0};
-
     *outInputData = testData;
     *outStatus = OH_AudioConverter_InputStatus::AUDIOCONVERTER_INPUT_HAVE_DATA;
     g_callCountThirtyFour++;
-
     return INPUT_DATA_SIZE_PLUS;
 }
 
@@ -2141,7 +2148,6 @@ static int32_t RequestDataCallback_EqualsOneMB(void* userData, const void** outI
     OH_AudioConverter_InputStatus* outStatus)
 {
     (void)userData;
-    // static uint8_t testData[INPUT_DATA_SIZE] = {0};
     std::vector<uint8_t>testData(INPUT_DATA_SIZE, 0);
     if (outInputData != nullptr) {
         *outInputData = testData.data();
@@ -2299,7 +2305,6 @@ static void ThreadTestTask(int threadId, int iterations)
 
         OH_AudioConverter* converter = nullptr;
         OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
-
         if (ret != AUDIOCONVERTER_SUCCESS || converter == nullptr) {
             g_mtFailCount++;
             continue;
@@ -2358,12 +2363,9 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Multithread_002, TestSize.Level
 {
     g_mtSuccessCount = 0;
     g_mtFailCount = 0;
-
     const int numThreads = 8;
     const int iterations = 20;
-
     std::vector<std::thread> threads;
-
     for (int i = 0; i < numThreads; i++) {
         threads.emplace_back([]() {
             for (int j = 0; j < iterations; j++) {
@@ -2391,11 +2393,9 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Multithread_002, TestSize.Level
             }
         });
     }
-
     for (auto& thread : threads) {
         thread.join();
     }
-
     EXPECT_EQ(g_mtSuccessCount, numThreads * iterations);
     EXPECT_EQ(g_mtFailCount, 0);
 }
