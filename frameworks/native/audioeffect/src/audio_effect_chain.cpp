@@ -128,6 +128,13 @@ void AudioEffectChain::SetLidState(const std::string &lidState)
         "convert invalid lidState: %{public}s", lidState.c_str());
 }
 
+void AudioEffectChain::SetStereoEnhancementMode(const std::string &stereoEnhancementMode)
+{
+    AUDIO_INFO_LOG("stereoEnhancementMode: %{public}s", stereoEnhancementMode.c_str());
+    CHECK_AND_RETURN_LOG(StringConverter(stereoEnhancementMode, stereoEnhancementMode_),
+        "convert invalid stereoEnhancementMode: %{public}s", stereoEnhancementMode.c_str());
+}
+
 void AudioEffectChain::SetSystemLoadState(const std::string &systemLoadState)
 {
     CHECK_AND_RETURN_LOG(StringConverter(systemLoadState, systemLoadState_),
@@ -249,6 +256,7 @@ void AudioEffectChain::BuildEffectParamData(int32_t *data)
     data[SUPER_LOUDNESS_MODE] = static_cast<int32_t>(superLoudnessMode_);
     data[SYSTEMLOAD_STATE_INDEX] = static_cast<int32_t>(systemLoadState_);
     data[FRONTEND_APP_TYPE] = static_cast<int32_t>(frontendAppType_);
+    data[STEREO_ENHANCEMENT_INDEX] = static_cast<int32_t>(stereoEnhancementMode_);
 }
 
 int32_t AudioEffectChain::SetEffectProperty(const std::string &effect, const std::string &property)
