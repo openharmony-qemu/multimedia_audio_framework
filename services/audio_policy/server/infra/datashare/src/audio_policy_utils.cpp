@@ -985,5 +985,14 @@ int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolic
     audioClientInfoMgrCallback_ = callback;
     return 0;
 }
+
+string AudioPolicyUtils::EncUsbAddr(const string &src)
+{
+    const string head("card=");
+    auto pos = src.find(';', head.length());
+    CHECK_AND_RETURN_RET_LOG(pos != string::npos, "", "Illegal usb address");
+    auto num = src.substr(head.length(), pos - head.length());
+    return string("c**") + num + "**";
+}
 } // namespace AudioStandard
 } // namespace OHOS
