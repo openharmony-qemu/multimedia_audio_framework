@@ -462,7 +462,7 @@ public:
     AudioSamplingRate samplingRate;
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
-    AudioChannel channels;
+    AudioChannel channels = AudioChannel::CHANNEL_UNKNOW;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
     // Add customSampleRate Init Value 0
     uint32_t customSampleRate = 0;
