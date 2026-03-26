@@ -601,6 +601,7 @@ bool AudioActiveDevice::IsAvailableFrontDeviceInVector(
 void AudioActiveDevice::SetAdjustVolumeForZone(int32_t zoneId)
 {
     volumeAdjustZoneId_ = zoneId;
+    UpdateStreamDeviceMap("SetAdjustVolumeForZone");
 }
 
 int32_t AudioActiveDevice::GetAdjustVolumeZoneId()
