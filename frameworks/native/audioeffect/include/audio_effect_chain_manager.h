@@ -233,7 +233,7 @@ private:
     std::string maxDefaultSessionIDToSceneType_ = "";
     std::string outdoorMode_ = "0";
     std::string superLoudnessMode_ = "music_off";
-    std::string stereoEnhancementMode_ = "EFFECT_COMFORT";
+    std::string stereoEnhancementMode_ = "0";
     bool isInitialized_ = false;
     std::mutex dynamicMutex_;
     std::atomic<bool> spatializationEnabled_ = false;
