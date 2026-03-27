@@ -124,7 +124,7 @@ void AudioCollaborationManager::LoadCollaborationConfigInner(const std::shared_p
         std::string earphoneType;
         std::string earphoneName;
         if (!node->IsElementNode() || !node->CompareName("product") ||
-            node->GetProp("id", productId) != SUCCESS || node->GetProp("product", earphoneType) != SUCCESS ||
+            node->GetProp("id", productId) != SUCCESS || node->GetProp("type", earphoneType) != SUCCESS ||
             node->GetProp("name", earphoneName) != SUCCESS) {
             AUDIO_ERR_LOG("product node without id or product or name");
             node->MoveToNext();

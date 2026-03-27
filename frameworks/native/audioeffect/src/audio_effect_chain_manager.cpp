@@ -1674,7 +1674,7 @@ int32_t AudioEffectChainManager::NotifyAndCreateAudioEffectChain(const std::stri
         if (defaultEffectChainCreated_ == true) {
             sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] =
                 sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
-        } else if (isDefaultEffectChainExisted_ == true) {
+        } else if (isDefaultEffectChainExisted_ == true && !isPriorScene) {
             sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
         }
         sceneTypeToEffectChainCountMap_[sceneTypeAndDeviceKey] = 1;

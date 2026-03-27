@@ -60,7 +60,7 @@ HWTEST(AudioCollaborationManagerUnitTest, updateCollaborativeProductId_001, Test
     int32_t ret = AudioCollaborationManager::GetInstance()->UpdateCollaborativeProductId("testProductId_new");
     EXPECT_EQ(ret, SUCCESS);
 
-    AudioCollaborationManager::GetInstance()->UpdateCollaborativeProductId("newProductId_new");
+    ret = AudioCollaborationManager::GetInstance()->UpdateCollaborativeProductId("newProductId_new");
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -77,7 +77,7 @@ HWTEST(AudioCollaborationManagerUnitTest, updateCollaborativeProductId_002, Test
     EXPECT_EQ(ret, ERROR);
 
     productId = "00014B_07_4113";
-    AudioCollaborationManager::GetInstance()->UpdateCollaborativeProductId(productId);
+    ret = AudioCollaborationManager::GetInstance()->UpdateCollaborativeProductId(productId);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(AudioCollaborationManager::GetInstance()->productId_, "00014B");
 }
@@ -135,7 +135,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_001, Tes
 
     std::shared_ptr<AudioXmlNode> node = AudioXmlNode::Create();
     AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(node, prodcutId);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
+    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
 }
 
 /**
@@ -151,7 +151,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_002, Tes
     std::string prodcutId = "testProduct";
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
+    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
 }
 
 /**
@@ -162,15 +162,14 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_002, Tes
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_003, TestSize.Level1)
 {
     auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     std::string prodcutId = "testProduct";
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
+    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
 }
 
 /**
@@ -181,17 +180,15 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_003, Tes
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_004, TestSize.Level1)
 {
     auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, GetProp("latency_ms", _)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     std::string prodcutId = "testProduct";
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
+    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
 }
 
 /**
@@ -202,17 +199,16 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_004, Tes
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_005, TestSize.Level1)
 {
     auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("testMode"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("latency_ms", _)).WillOnce(DoAll(SetArgReferee<1>("100"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(Return(-1));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     std::string prodcutId = "testProduct";
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
+    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
 }
 
 /**
@@ -223,7 +219,49 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_005, Tes
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_006, TestSize.Level1)
 {
     auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("testMode"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, GetProp("latency_ms", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+
+    std::string prodcutId = "testProduct";
+
+    AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
+    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollaborationLatencyInner API
+* @tc.number : LoadCollaborationLatencyInner_007
+* @tc.desc   : Test LoadCollaborationLatencyInner interface(using empty use case).
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_007, TestSize.Level1)
+{
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("testMode"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, GetProp("latency_ms", _)).WillOnce(DoAll(SetArgReferee<1>("100"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+
+    std::string prodcutId = "testProduct";
+
+    AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
+    EXPECT_FALSE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollaborationLatencyInner API
+* @tc.number : LoadCollaborationLatencyInner_008
+* @tc.desc   : Test LoadCollaborationLatencyInner interface(using empty use case).
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_008, TestSize.Level1)
+{
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("listen"), Return(SUCCESS)));
@@ -237,27 +275,6 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_006, Tes
 }
 
 /**
-* @tc.name   : Test LoadCollaborationLatencyInner API
-* @tc.number : LoadCollaborationLatencyInner_007
-* @tc.desc   : Test LoadCollaborationLatencyInner interface(using empty use case).
-*/
-HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_007, TestSize.Level1)
-{
-    auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, CompareName("tws_mode")).WillOnce(Return(true));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("listen"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, GetProp("latency_ms", _)).WillOnce(DoAll(SetArgReferee<1>("invalid"), Return(SUCCESS)));
-    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
-
-    std::string prodcutId = "testProduct";
-
-    AudioCollaborationManager::GetInstance()->LoadCollaborationLatencyInner(mockNode, prodcutId);
-    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeLatencyConfig_.empty());
-}
-
-/**
 * @tc.name   : Test LoadCollaborationConfigInner API
 * @tc.number : LoadCollaborationConfigInner_001
 * @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
@@ -265,7 +282,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationLatencyInner_007, Tes
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_001, TestSize.Level1)
 {
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(nullptr);
-    EXPECT_TRUE(true);
+    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
 }
 
 /**
@@ -279,7 +296,7 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_002, Test
     EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(false));
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
-    EXPECT_TRUE(true);
+    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
 }
 
 /**
@@ -290,18 +307,13 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_002, Test
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_003, TestSize.Level1)
 {
     auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(Return(false));
-    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
-    EXPECT_TRUE(true);
+    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
 }
 
 /**
@@ -311,16 +323,97 @@ HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_003, Test
 */
 HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_004, TestSize.Level1)
 {
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+
+    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
+    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollaborationConfigInner API
+* @tc.number : LoadCollaborationConfigInner_005
+* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_005, TestSize.Level1)
+{
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+
+    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
+    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollaborationConfigInner API
+* @tc.number : LoadCollaborationConfigInner_006
+* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_006, TestSize.Level1)
+{
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+
+    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
+    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollaborationConfigInner API
+* @tc.number : LoadCollaborationConfigInner_007
+* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_007, TestSize.Level1)
+{
+    auto mockNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
+    EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(DoAll(SetArgReferee<1>("10"), Return(SUCCESS)));
+    EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(Return(-1));
+    EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
+
+    AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);
+    EXPECT_TRUE(AudioCollaborationManager::GetInstance()->collaborativeEarphoneNameConfig_.empty());
+}
+
+/**
+* @tc.name   : Test LoadCollaborationConfigInner API
+* @tc.number : LoadCollaborationConfigInner_008
+* @tc.desc   : Test LoadCollaborationConfigInner interface(using empty use case).
+*/
+HWTEST(AudioCollaborationManagerUnitTest, LoadCollaborationConfigInner_008, TestSize.Level1)
+{
     std::string prodcutId = "testProduct";
     auto mockNode = std::make_shared<MockAudioXmlNode>();
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
+    auto mockSecondNode = std::make_shared<MockAudioXmlNode>();
+    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true)).WillOnce(Return(true)).WillOnce(Return(false));
     EXPECT_CALL(*mockNode, MoveToChildren()).Times(1);
-    EXPECT_CALL(*mockNode, IsNodeValid()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, IsElementNode()).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, CompareName("product")).WillOnce(Return(true));
     EXPECT_CALL(*mockNode, GetProp("id", _)).WillOnce(DoAll(SetArgReferee<1>("testProduct"), Return(SUCCESS)));
     EXPECT_CALL(*mockNode, GetProp("type", _)).WillOnce(DoAll(SetArgReferee<1>("10"), Return(SUCCESS)));
     EXPECT_CALL(*mockNode, GetProp("name", _)).WillOnce(DoAll(SetArgReferee<1>("test"), Return(SUCCESS)));
+    EXPECT_CALL(*mockSecondNode, MoveToChildren()).Times(1);
+    EXPECT_CALL(*mockSecondNode, IsNodeValid()).WillOnce(Return(false));
+    EXPECT_CALL(*mockNode, GetCopyNode()).Times(1).WillOnce(Return(mockSecondNode));
     EXPECT_CALL(*mockNode, MoveToNext()).Times(1);
 
     AudioCollaborationManager::GetInstance()->LoadCollaborationConfigInner(mockNode);

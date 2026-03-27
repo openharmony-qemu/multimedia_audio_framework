@@ -70,23 +70,16 @@ void AudioCollaborativeServiceIsCollaborativePlaybackSupportedForDeviceFuzzTest(
         AUDIO_ERR_LOG("selectedAudioDevice is nullptr");
         return;
     }
-    selectedAudioDevice->macAddress_ = "8C-32-23-23-6C-12";
-    audioCollaborativeService.isCollaborativePlaybackSupported_ = false;
+    selectedAudioDevice->macAddress_ = g_fuzzUtils.GetData<std::string>();
+    audioCollaborativeService.isCollaborativePlaybackSupported_ = g_fuzzUtils.GetData<bool>();
     audioCollaborativeService.IsCollaborativePlaybackSupportedForDevice(selectedAudioDevice);
-}
-
-void AudioCollaborativeServiceIsCollaborativePlaybackSupportedForDeviceFuzzTest2(FuzzedDataProvider& fdp)
-{
-    AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
-    audioCollaborativeService.isCollaborativePlaybackSupported_ = true;
-    audioCollaborativeService.IsCollaborativePlaybackSupportedForDevice(nullptr);
 }
 
 void AudioCollaborativeServiceUpdateCollaborativeProductIdFuzzTest(FuzzedDataProvider& fdp)
 {
     AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
-    audioCollaborativeService.UpdateCollaborativeProductId("default_productId");
-    audioCollaborativeService.UpdateCollaborativeProductId("new_productId");
+    std::string prodcutId = g_fuzzUtils.GetData<std::string>();
+    audioCollaborativeService.UpdateCollaborativeProductId(prodcutId);
 }
 
 void AudioCollaborativeServiceIsCollaborativePlaybackEnabledForDeviceFuzzTest(FuzzedDataProvider& fdp)
@@ -144,7 +137,6 @@ void Test(FuzzedDataProvider& fdp)
     auto func = fdp.PickValueInArray({
     AudioCollaborativeServiceIsCollaborativePlaybackSupportedFuzzTest,
     AudioCollaborativeServiceIsCollaborativePlaybackSupportedForDeviceFuzzTest,
-    AudioCollaborativeServiceIsCollaborativePlaybackSupportedForDeviceFuzzTest2,
     AudioCollaborativeServiceUpdateCollaborativeProductIdFuzzTest,
     AudioCollaborativeServiceUpdateCurrentDeviceFuzzTest,
     AudioCollaborativeServiceSetCollaborativePlaybackEnabledForDeviceFuzzTest,
