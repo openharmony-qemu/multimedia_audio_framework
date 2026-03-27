@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.456564
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
 export * from "./multiPipelineIndex";
@@ -28,7 +28,7 @@ export const startFieldEffect: (inputId: string, mode: number, fieldEffectId: st
 export const resetFieldEffect: (inputId: string, mode: number, fieldEffectId: string) => number;
 export const startEnvEffect: (inputId: string, envEffectId: string, mode: number, selectedNodeId?: string) => number;
 export const resetEnvEffect: (inputId: string, envEffectId: string, mode: number) => number;
-export const addAudioSeparation: (mode: number, uuid: string, inputId?:string, selectedNodeId?: string, is_AllSep?: boolean) => number;
+export const addAudioSeparation: (mode: number, uuid: string, inputId:string, selectedNodeId?: string) => number;
 export const deleteAudioSeparation: (uuid: string) => number;
 export const getAudioOfTap:() => ArrayBuffer;
 export const addNoiseReduction: (uuid: string, inputId:string, selectedNode?: string) => number;
@@ -66,4 +66,19 @@ export const registerAudioCacheCallback: (callBackFull: Function) => boolean;
 export const unregisterAudioCacheCallback: () => void;
 export const ModifyRender: (notRenderTrackIds: string[], renderTrackIds: string[]) => void;
 export const setCurrentTime: (currentTime: number) => void;
-export const setEffectNodeBypass: (inputId: string, effectId: string, isBypass: boolean) => boolean;
+export const setEffectNodeBypass: (inputId: string, effectId: string, is: boolean) => boolean;
+export const OH_AudioConverter_Create: (inputFormat: {
+  encodingType: number;
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+}, outputFormat: {
+  encodingType: number;
+  samplingRate: number;
+  channelLayout: number;
+  sampleFormat: number;
+}, fd: number) => number;
+export const OH_AudioConverter_SetInputCallback: (converter: number, callback: Function, userData: number) => number;
+export const OH_AudioConverter_Process: (converter: number) => ArrayBuffer;
+export const OH_AudioConverter_Destroy: (converter: number) => void;
+export const saveConverterFile: () => ArrayBuffer;
