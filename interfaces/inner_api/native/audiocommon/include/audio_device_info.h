@@ -210,6 +210,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_USB_ARM_HEADSET = 1001,
     /**
+     * Indicates a Rear-mounted usb-arm device.
+     */
+    DEVICE_TYPE_WIRED_MICIN = 1002,
+    /**
      * Indicates device type max count.
      */
     DEVICE_TYPE_MAX
@@ -228,12 +232,15 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_NEARLINK_IN,
     DeviceType::DEVICE_TYPE_BT_SPP,
     DeviceType::DEVICE_TYPE_NEARLINK_PORT,
+    DeviceType::DEVICE_TYPE_WIRED_MICIN,
+    DeviceType::DEVICE_TYPE_LINE_DIGITAL,
 };
 
 inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
 {
     // Arm usb device distinguishes input and output through device roles.
-    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET) {
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET ||
+        deviceType == DEVICE_TYPE_LINE_DIGITAL) {
         return deviceRole == INPUT_DEVICE;
     } else {
         return INPUT_DEVICE_TYPE_SET.count(deviceType) > 0;
@@ -276,7 +283,8 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
 {
     // Arm usb device distinguishes input and output through device roles.
-    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET) {
+    if (deviceType == DEVICE_TYPE_USB_ARM_HEADSET || deviceType == DEVICE_TYPE_USB_HEADSET ||
+            deviceType == DEVICE_TYPE_LINE_DIGITAL) {
         return deviceRole == OUTPUT_DEVICE;
     } else {
         return OUTPUT_DEVICE_TYPE_SET.count(deviceType) > 0;

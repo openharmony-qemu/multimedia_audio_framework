@@ -1005,6 +1005,29 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_073, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_074
+* @tc.desc  : Test GetDeviceTypeFromPin interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_074, TestSize.Level1)
+{
+    AudioPin hdiPin = AUDIO_PIN_NONE;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
+
+    hdiPin = AUDIO_PIN_IN_LINEIN;
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
+
+    hdiPin = AUDIO_PIN_OUT_LINEOUT;
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
+}
+
+/**
 * @tc.name : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_037
 * @tc.desc : Test HandleArmUsbDevice interface.

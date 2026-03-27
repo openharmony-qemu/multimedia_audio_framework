@@ -483,6 +483,7 @@ static const std::unordered_map<DeviceType, std::pair<AudioPortPin, const char *
     {DEVICE_TYPE_BLUETOOTH_SCO, {PIN_OUT_BLUETOOTH_SCO, "pin_out_bluetooth_sco"}},
     {DEVICE_TYPE_BLUETOOTH_A2DP, {PIN_OUT_BLUETOOTH_A2DP, "pin_out_bluetooth_a2dp"}},
     {DEVICE_TYPE_HDMI, {PIN_OUT_HDMI, "pin_out_hdmi"}},
+    {DEVICE_TYPE_LINE_DIGITAL, {PIN_OUT_LINEOUT, "pin_out_lineout"}},
     {DEVICE_TYPE_NONE, {PIN_NONE, "pin_out_none"}}
 };
 
@@ -520,6 +521,21 @@ int32_t LocalDeviceManager::HandleNearlinkScene(DeviceType deviceType, AudioRout
     return SUCCESS;
 }
 
+int32_t LocalDeviceManager::HandleAccessoryPin(AudioRouteNode &source)
+{
+    if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
+        source.ext.device.type = PIN_IN_PENCIL;
+        source.ext.device.desc = (char *)"pin_in_pencil";
+    } else if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_UWB) {
+        source.ext.device.type = PIN_IN_UWB;
+        source.ext.device.desc = (char *)"pin_in_uwb";
+    } else {
+        AUDIO_WARNING_LOG("Unsupported accessory type in dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY]");
+        return ERR_INVALID_OPERATION;
+    }
+    return SUCCESS;
+}
+
 int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNode &source)
 {
     int32_t ret = SUCCESS;
@@ -539,6 +555,10 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
             source.ext.device.type = PIN_IN_USB_HEADSET;
             source.ext.device.desc = (char *)"pin_in_usb_headset";
             break;
+        case DEVICE_TYPE_LINE_DIGITAL:
+            source.ext.device.type = PIN_IN_LINEIN;
+            source.ext.device.desc = (char *)"pin_in_linein";
+            break;
         case DEVICE_TYPE_USB_HEADSET:
             source.ext.device.type = PIN_IN_USB_EXT;
             source.ext.device.desc = (char *)"pin_in_usb_ext";
@@ -548,13 +568,7 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
             source.ext.device.desc = (char *)"pin_in_bluetooth_sco_headset";
             break;
         case DEVICE_TYPE_ACCESSORY:
-            if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
-                source.ext.device.type = PIN_IN_PENCIL;
-                source.ext.device.desc = (char *)"pin_in_pencil";
-            } else if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_UWB) {
-                source.ext.device.type = PIN_IN_UWB;
-                source.ext.device.desc = (char *)"pin_in_uwb";
-            }
+            ret = HandleAccessoryPin(source);
             break;
         case DEVICE_TYPE_NEARLINK_IN:
             HandleNearlinkScene(inputDevice, source);

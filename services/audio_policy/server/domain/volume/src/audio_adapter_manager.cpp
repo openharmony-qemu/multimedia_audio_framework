@@ -81,7 +81,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_HDMI, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
     {DEVICE_TYPE_HEARING_AID, {HEARING_AID_CLASS}},
-    {DEVICE_TYPE_LINE_DIGITAL, {DP_CLASS, DP_MCH_CLASS}},
+    {DEVICE_TYPE_LINE_DIGITAL, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_REMOTE_DAUDIO, {DP_CLASS, DP_MCH_CLASS}}
 };
 } // namespace
@@ -2379,6 +2379,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_DP:
         case DEVICE_TYPE_HDMI:
         case DEVICE_TYPE_ACCESSORY:
+        case DEVICE_TYPE_LINE_DIGITAL:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:

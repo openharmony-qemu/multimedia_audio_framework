@@ -28,6 +28,9 @@
 #define MOVE_NUM 16
 #define REMOVE_AUDIO_DEVICE '0'
 #define SWITCH_STATE_PATH    "/sys/class/switch/h2w/state"
+#define SWITCH_STATE_PATH_LINEIN    "/sys/class/switch/h2w_linein/state"
+#define SWITCH_STATE_PATH_LINEOUT   "/sys/class/switch/h2w_lineout/state"
+#define SWITCH_STATE_PATH_MICIN    "/sys/class/switch/h2w_micin/state"
 #define STATE_PATH_ITEM_SIZE 1
 
 #define STATE_NOT_SUPPORTED     0
@@ -52,6 +55,9 @@
 #define UEVENT_STATE_ANALOG_HS1 "MICROPHONE=1"
 #define UEVENT_SUBSYSTEM_SWITCH "switch"
 #define UEVENT_SWITCH_NAME_H2W  "h2w"
+#define UEVENT_NAME_H2W_MICIN   "h2w_micin"
+#define UEVENT_NAME_H2W_LINEIN  "h2w_linein"
+#define UEVENT_NAME_H2W_LINEOUT "h2w_lineout"
 #define UEVENT_SOCKET_BUFF_SIZE (64 * 1024)
 #define UEVENT_SOCKET_GROUPS    0xffffffff
 #define UEVENT_MSG_LEN          2048
@@ -93,6 +99,7 @@ struct AudioEvent {
     std::string name;
     std::string address;
     std::string anahsName;
+    int32_t deviceRole;
 };
 } // namespace AudioStandard
 } // namespace OHOS

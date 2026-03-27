@@ -16,6 +16,7 @@
 #include "audio_type_convert.h"
 #include "audio_log.h"
 #include "audio_policy_manager.h"
+#include "audio_system_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,6 +50,13 @@ AudioPin GetPinValueForPeripherals(DeviceType deviceType, DeviceRole deviceRole,
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES:
             pin = AUDIO_PIN_OUT_HEADPHONE;
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_LINE_DIGITAL:
+            if (deviceRole == DeviceRole::INPUT_DEVICE) {
+                pin = AUDIO_PIN_IN_LINEIN;
+            } else {
+                pin = AUDIO_PIN_OUT_LINEOUT;
+            }
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_DP:
             pin = AUDIO_PIN_OUT_DP;
@@ -107,6 +115,8 @@ AudioPin AudioTypeConvert::GetPinValueFromType(DeviceType deviceType, DeviceRole
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
         case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
         case OHOS::AudioStandard::DEVICE_TYPE_ACCESSORY:
+        case OHOS::AudioStandard::DEVICE_TYPE_LINE_DIGITAL:
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_MICIN:
             pin = GetPinValueForPeripherals(deviceType, deviceRole, dmDeviceType);
             break;
         default:
@@ -129,6 +139,8 @@ DeviceType AudioTypeConvert::GetTypeValueFromPin(AudioPin pin)
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+            type = DEVICE_TYPE_LINE_DIGITAL;
             break;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
             break;
@@ -144,8 +156,6 @@ DeviceType AudioTypeConvert::GetTypeValueFromPin(AudioPin pin)
             break;
         case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
             type = DEVICE_TYPE_WIRED_HEADSET;
-            break;
-        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
             break;

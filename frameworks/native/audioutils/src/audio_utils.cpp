@@ -173,6 +173,8 @@ static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = 
     {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
     {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
     {DEVICE_TYPE_BT_SPP, "BT_SPP"},
+    {DEVICE_TYPE_LINE_DIGITAL, "LINE_DIGITAL"},
+    {DEVICE_TYPE_WIRED_MICIN, "WIRED_MICIN"},
 };
 
 static const std::set<SourceType> BACKGROUND_SOURCE_TYPE = {

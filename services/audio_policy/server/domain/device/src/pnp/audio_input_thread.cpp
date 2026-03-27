@@ -38,13 +38,16 @@ AudioEvent AudioInputThread::audioInputEvent_ = {
 
 int32_t AudioInputThread::AudioAnalogHeadsetDeviceCheck(input_event evt)
 {
+    AUDIO_INFO_LOG("INPUT EVENT: code = 0x%{public}x, value = %{public}d\n", evt.code, evt.value);
     audioInputEvent_.eventType = (evt.value == 0) ? AUDIO_DEVICE_REMOVE : AUDIO_DEVICE_ADD;
     switch (evt.code) {
         case SW_HEADPHONE_INSERT:
             audioInputEvent_.deviceType = AUDIO_HEADPHONE;
+            AUDIO_INFO_LOG("AUDIO_HEADPHONE");
             break;
         case SW_MICROPHONE_INSERT:
             audioInputEvent_.deviceType = AUDIO_HEADSET;
+            AUDIO_INFO_LOG("AUDIO_HEADSET");
             break;
         case SW_LINEOUT_INSERT:
             audioInputEvent_.deviceType = AUDIO_LINEOUT;

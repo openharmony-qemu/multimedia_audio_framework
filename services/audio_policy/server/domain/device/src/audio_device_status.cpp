@@ -680,7 +680,12 @@ void AudioDeviceStatus::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bo
         }
     }
     AudioStreamInfo streamInfo = {};
-    OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
+    if (desc.deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
+        OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
+    } else {
+        OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo,
+            desc.deviceRole_);
+    }
 }
 
 void AudioDeviceStatus::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)
@@ -840,7 +845,8 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
-            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+            return DeviceType::DEVICE_TYPE_LINE_DIGITAL;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
@@ -857,8 +863,6 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
         case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
             return DeviceType::DEVICE_TYPE_ACCESSORY;
         case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
-            break;
-        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
             break;

@@ -93,6 +93,7 @@ private:
     void SaveSetParameter(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value);
     int32_t HandleNearlinkScene(DeviceType deviceType, AudioRouteNode &node);
+    int32_t HandleAccessoryPin(AudioRouteNode &source);
     void ReportBundleNameEvent(const std::string &value);
 
 private:

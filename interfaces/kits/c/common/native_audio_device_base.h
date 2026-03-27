@@ -188,6 +188,13 @@ typedef enum {
     AUDIO_DEVICE_TYPE_NEARLINK = 31,
 
     /**
+     * @brief Wired micin audio device.
+     *
+     * @since 21
+     */
+    AUDIO_DEVICE_TYPE_WIRED_MICIN = 1002,
+
+    /**
      * @brief Default device type.
      */
     AUDIO_DEVICE_TYPE_DEFAULT = 1000,

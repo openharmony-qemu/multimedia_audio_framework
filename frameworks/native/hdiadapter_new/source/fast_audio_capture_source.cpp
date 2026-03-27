@@ -456,6 +456,9 @@ void FastAudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &device
         case DEVICE_TYPE_WIRED_HEADSET:
             deviceDesc.pins = PIN_IN_HS_MIC;
             break;
+        case DEVICE_TYPE_LINE_DIGITAL:
+            deviceDesc.pins = PIN_IN_LINEIN;
+            break;
         case DEVICE_TYPE_USB_HEADSET:
             deviceDesc.pins = PIN_IN_USB_EXT;
             break;
