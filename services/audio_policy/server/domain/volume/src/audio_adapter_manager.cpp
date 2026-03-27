@@ -3973,6 +3973,22 @@ bool AudioAdapterManager::IsChannelLayoutSupportedForDspEffect(AudioChannelLayou
     return audioServiceAdapter_->IsChannelLayoutSupportedForDspEffect(channelLayout);
 }
 
+bool AudioAdapterManager::IsStreamTypeInUse(AudioStreamType streamType,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, false, "streamDesc is null");
+    if (VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage) ==
+        VolumeUtils::GetVolumeTypeFromStreamType(streamType)) {
+        return true;
+    }
+    if (streamType == STREAM_MUSIC &&
+        !CheckoutSystemAppUtil::CheckoutSystemApp(audioActiveDevice_.GetRealUid(streamDesc)) &&
+        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_ASSISTANT) {
+        return true;
+    }
+    return false;
+}
+
 int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDeviceDescriptor> desc,
     AudioStreamType streamType, int32_t zoneId)
 {
@@ -3981,22 +3997,20 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     std::set<std::pair<std::string, AudioStreamType>> setedVolume;
     for (auto &streamDesc : streamDescs) {
         CHECK_AND_CONTINUE(streamDesc != nullptr);
-        AudioStreamType newStreamType = streamType;
         auto device = streamDesc->newDeviceDescs_.front();
         CHECK_AND_CONTINUE(device != nullptr && device->GetName() == desc->GetName());
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         CHECK_AND_CONTINUE(device->volumeBehavior_.controlMode != HILINK_MODE);
-
-        CHECK_AND_CONTINUE(VolumeUtils::GetVolumeTypeFromStreamUsage(streamDesc->rendererInfo_.streamUsage) ==
-            VolumeUtils::GetVolumeTypeFromStreamType(newStreamType));
-
-        RedirectVolumeType(streamDesc, newStreamType);
+        if (!IsStreamTypeInUse(streamType, streamDesc)) {
+            AUDIO_INFO_LOG("streamType %{public}d is not in use", streamType);
+            continue;
+        }
         for (auto &tempDesc : streamDesc->newDeviceDescs_) {
             CHECK_AND_CONTINUE(tempDesc != nullptr);
-            auto target = std::make_pair(tempDesc->GetName(), newStreamType);
+            auto target = std::make_pair(tempDesc->GetName(), streamType);
             CHECK_AND_CONTINUE(setedVolume.find(target) == setedVolume.end());
             setedVolume.insert(target);
-            SetVolumeDb(tempDesc, newStreamType);
+            SetVolumeDb(tempDesc, streamType);
         }
     }
     if (desc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
