@@ -13,7 +13,7 @@
     "installationFree": false,
     "pages": "$profile:main_pages",
     "routerMap": "$profile:router_map",
-        "requestPermissions": [
+    "requestPermissions": [
       {
         "name": "ohos.permission.GET_BUNDLE_INFO"
       },
@@ -93,4 +93,3 @@
     ]
   }
 }
-//4564654
