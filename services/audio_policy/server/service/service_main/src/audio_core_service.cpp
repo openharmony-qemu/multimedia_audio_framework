@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_core_service.h"
+#include "audio_device_factory.h"
 #include "system_ability.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -3423,7 +3424,7 @@ void AudioCoreService::UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDesc
 void AudioCoreService::PresetArmIdleInput(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
     std::string address = deviceDesc->GetMacAddress();
-    AUDIO_INFO_LOG("Entry. address=%{public}s", AudioPolicyUtils::GetInstance().GetEncryptAddr(address).c_str());
+    AUDIO_INFO_LOG("Entry. address=%{public}s", AudioPolicyUtils::GetInstance().EncUsbAddr(address).c_str());
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = pipeManager_->GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_LOG(ret, "GetModuleListByType empty");
@@ -3440,21 +3441,8 @@ void AudioCoreService::PresetArmIdleInput(const std::shared_ptr<AudioDeviceDescr
 
 void AudioCoreService::CloseUsbArmDevice(const AudioDeviceDescriptor &device)
 {
-    AUDIO_INFO_LOG("address=%{public}s, role=%{public}d",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(device.macAddress_).c_str(), device.deviceRole_);
-    string &activeArmAddr = device.deviceRole_ == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
-    CHECK_AND_RETURN_LOG(device.macAddress_ == activeArmAddr, "usb device addr not match");
-    std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = pipeManager_->GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
-    CHECK_AND_RETURN_LOG(ret, "GetModuleListByType Failed");
-    for (auto &moduleInfo : moduleInfoList) {
-        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
-        if (configRole != device.deviceRole_) {continue;}
-        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
-            audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleInfo.name);
-        }
-    }
-    activeArmAddr = "";
+    auto deviceDescs = { std::make_shared<AudioDeviceDescriptor>(device) };
+    AudioDeviceFactory::GetInstance().DeactivateDevice(deviceDescs);
 }
 
 void AudioCoreService::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo> &pipeInfo, SourceType sourceType)
