@@ -2082,6 +2082,7 @@ bool StreamCallbacks::CheckIsWriteFirst() const noexcept
 
 int32_t StreamCallbacks::GetAvailableSize(size_t &length)
 {
+    std::lock_guard<std::mutex> lock(dupMutex_);
     if (dupRingBuffer_ == nullptr) {
         AUDIO_ERR_LOG("nullptr");
         return ERROR;
