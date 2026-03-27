@@ -95,7 +95,6 @@ int32_t AudioDeviceFactory::DeactivateDeviceLocked(DeviceType deviceType)
 {
     auto it = deviceBehaviorCache_.find(deviceType);
     if (it == deviceBehaviorCache_.end() || it->second == nullptr) {
-        AUDIO_ERR_LOG("DeviceType: %{public}d is not activated", deviceType);
         return SUCCESS;
     }
 
