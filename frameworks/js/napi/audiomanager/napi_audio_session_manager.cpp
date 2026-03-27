@@ -1313,7 +1313,7 @@ napi_value NapiAudioSessionMgr::SetAudioSessionBehavior(napi_env env, napi_callb
     napi_value args[ARGS_ONE] = {};
     auto *napiSessionMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_SYSTEM, "argcCount invalid"), "argcCount invalid");
+        NAPI_ERR_INVALID_PARAM, "argcCount invalid"), "argcCount invalid");
 
     uint32_t behavior;
     napi_status status = NapiParamUtils::GetValueUInt32(env, behavior, args[PARAM0]);
@@ -1321,14 +1321,14 @@ napi_value NapiAudioSessionMgr::SetAudioSessionBehavior(napi_env env, napi_callb
         "parameter verification failed: behavior wrong value"),
         "valueType invalid");
     CHECK_AND_RETURN_RET_LOG(
-        behavior < (static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        (behavior & ~static_cast<uint32_t>(AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR)) == 0,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
-        "Parameter verification failed. behavior param is out of range"), "invaild behavior param");
+        "Parameter verification failed. behavior param is out of range"), "invalid behavior param");
 
     CHECK_AND_RETURN_RET_LOG(napiSessionMgr != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_SYSTEM, "can not get session"), "napiSessionMgr is nullptr");
+        NAPI_ERR_ILLEGAL_STATE, "can not get session"), "napiSessionMgr is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiSessionMgr->audioSessionMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_SYSTEM, "can not get session"), "audioSessionMngr_ is nullptr");
+        NAPI_ERR_ILLEGAL_STATE, "can not get session"), "audioSessionMngr_ is nullptr");
 
     int32_t ret = napiSessionMgr->audioSessionMngr_->SetAudioSessionBehavior(behavior);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,

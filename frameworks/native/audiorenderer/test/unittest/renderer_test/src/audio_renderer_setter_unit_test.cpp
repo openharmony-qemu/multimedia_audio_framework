@@ -2552,5 +2552,34 @@ HWTEST(AudioRendererUnitTest, DecideStreamClassAndUpdateRendererInfo_002, TestSi
     streamClass = audioRendererPrivate->DecideStreamClassAndUpdateRendererInfo(flag);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 }
+
+/**
+ * @tc.name  : Test SetIndependentAudioSessionStrategy
+ * @tc.number: SetIndependentAudioSessionStrategy_001
+ * @tc.desc  : Test SetIndependentAudioSessionStrategy API
+ */
+HWTEST(AudioRendererUnitTest, SetIndependentAudioSessionStrategy_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+
+    AudioSessionStrategy strategy = {};
+    uint32_t behavior = 0;
+    audioRendererPrivate->SetIndependentAudioSessionStrategy(strategy, behavior);
+    bool res = audioRendererPrivate->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
+    EXPECT_FALSE(res);
+
+    behavior = 1;
+    audioRendererPrivate->SetIndependentAudioSessionStrategy(strategy, behavior);
+    res = audioRendererPrivate->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
+    EXPECT_FALSE(res);
+
+    behavior = 3;
+    audioRendererPrivate->audioInterrupt_.audioFocusType.streamType = STREAM_VOICE_COMMUNICATION;
+    audioRendererPrivate->SetIndependentAudioSessionStrategy(strategy, behavior);
+    res = audioRendererPrivate->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
+    EXPECT_TRUE(res);
+}
 } // namespace AudioStandard
 } // namespace OHOS
