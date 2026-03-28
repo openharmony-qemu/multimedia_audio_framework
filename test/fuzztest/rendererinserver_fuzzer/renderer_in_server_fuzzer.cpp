@@ -1353,7 +1353,6 @@ void MarkStaticFadeOutFuzzTest()
     CHECK_AND_RETURN(RendererInServerPtr != nullptr);
 
     RendererInServerPtr->Init();
-    bool isRefresh = true;
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t totalSizeInFrame = 8;
     uint32_t byteSizePerFrame = 4;
@@ -1362,7 +1361,7 @@ void MarkStaticFadeOutFuzzTest()
         byteSizePerFrame);
     RendererInServerPtr->staticBufferProvider_ = std::make_shared<AudioStaticBufferProvider>(config.streamInfo,
         RendererInServerPtr->audioServerBuffer_);
-    RendererInServerPtr->MarkStaticFadeOut(isRefresh);
+    RendererInServerPtr->MarkStaticFadeOut();
 }
 
 void MarkStaticFadeInFuzzTest()
@@ -1385,7 +1384,7 @@ void MarkStaticFadeInFuzzTest()
         byteSizePerFrame);
     RendererInServerPtr->staticBufferProvider_ = std::make_shared<AudioStaticBufferProvider>(config.streamInfo,
         RendererInServerPtr->audioServerBuffer_);
-    RendererInServerPtr->MarkStaticFadeIn();
+    RendererInServerPtr->MarkStaticFadeIn(true);
 }
 
 void GetLatencyWithFlagFuzzTest()

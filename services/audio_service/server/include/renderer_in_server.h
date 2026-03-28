@@ -247,8 +247,8 @@ private:
     int32_t CreateServerBuffer();
     int32_t ProcessAndSetStaticBuffer();
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
-    void MarkStaticFadeOut(bool isRefresh);
-    void MarkStaticFadeIn();
+    void MarkStaticFadeOut();
+    void MarkStaticFadeIn(bool isRefresh);
     void HandleIsWriteFirst(bool isWriteFirst);
     void HandleStreamUnderrun();
 private:

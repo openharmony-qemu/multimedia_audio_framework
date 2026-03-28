@@ -452,7 +452,7 @@ int32_t AudioProcessInServer::StartInner()
                 "stream:%{public}d!", sessionId_));
     }
     TurnOnRemoteMicIndicator();
-    MarkStaticFadeIn();
+    MarkStaticFadeIn(true);
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
         NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
@@ -532,7 +532,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
     TurnOffRemoteMicIndicator();
-    MarkStaticFadeOut(false);
+    MarkStaticFadeOut();
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
@@ -574,7 +574,7 @@ int32_t AudioProcessInServer::Resume()
                 "stream:%{public}d!", sessionId_));
     }
     TurnOnRemoteMicIndicator();
-    MarkStaticFadeIn();
+    MarkStaticFadeIn(false);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
     int32_t result = SUCCESS;
@@ -605,7 +605,7 @@ int32_t AudioProcessInServer::Stop(int32_t stageIn)
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
     TurnOffRemoteMicIndicator();
-    MarkStaticFadeOut(true);
+    MarkStaticFadeOut();
 
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this); // notify endpoint?
@@ -1482,7 +1482,7 @@ int32_t AudioProcessInServer::CreateServerBuffer()
     return SUCCESS;
 }
 
-void AudioProcessInServer::MarkStaticFadeOut(bool isRefresh)
+void AudioProcessInServer::MarkStaticFadeOut()
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
@@ -1490,17 +1490,17 @@ void AudioProcessInServer::MarkStaticFadeOut(bool isRefresh)
     if (!staticBufferProvider_->IsLoopEnd()) {
         staticBufferProvider_->NeedProcessFadeOut();
     }
-    // Refresh needs to be called after fadeout
-    if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->ResetStaticPlayPosition();
-    }
 }
 
-void AudioProcessInServer::MarkStaticFadeIn()
+void AudioProcessInServer::MarkStaticFadeIn(bool isRefresh)
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
     staticBufferProvider_->NeedProcessFadeIn();
+
+    if (isRefresh) {
+        staticBufferProvider_->ResetStaticPlayPosition();
+    }
 }
 
 AudioProcessInServerHandler::AudioProcessInServerHandler(IHandler* handler) : handler_(handler) {}

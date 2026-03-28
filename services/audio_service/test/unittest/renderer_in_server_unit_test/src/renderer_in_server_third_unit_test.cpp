@@ -2660,27 +2660,14 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_008, TestSize.
 
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->playFinished_ = false;
-    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
-
-    staticBufferProviderTest->currentLoopTimes_ = 0;
-    staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->playFinished_ = true;
     EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
 
     staticBufferProviderTest->currentLoopTimes_ = 1;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->playFinished_ = false;
-    EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
-
-    staticBufferProviderTest->currentLoopTimes_ = 1;
-    staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->playFinished_ = true;
     EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
 
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->playFinished_ = false;
     staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_IDEL);
     staticBufferProviderTest->sharedBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
     EXPECT_FALSE(staticBufferProviderTest->NeedProvideData());
@@ -2704,7 +2691,6 @@ HWTEST_F(RendererInServerThirdUnitTest, AudioStaticBufferProvider_009, TestSize.
 
     staticBufferProviderTest->currentLoopTimes_ = 0;
     staticBufferProviderTest->totalLoopTimes_ = 1;
-    staticBufferProviderTest->playFinished_ = false;
     staticBufferProviderTest->sharedBuffer_->CheckFrozenAndSetLastProcessTime(BUFFER_IN_CLIENT);
 
     staticBufferProviderTest->sharedBuffer_->GetStreamStatus()->store(STREAM_RUNNING);
@@ -2757,23 +2743,23 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_001, 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
     rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
     rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
-    rendererInServer->MarkStaticFadeOut(false);
+    rendererInServer->MarkStaticFadeOut();
     EXPECT_TRUE(rendererInServer->staticBufferProvider_->needFadeOut_);
 
     rendererInServer->staticBufferProvider_->needFadeOut_ = false;
     rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
     rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
-    rendererInServer->MarkStaticFadeOut(false);
+    rendererInServer->MarkStaticFadeOut();
     EXPECT_FALSE(rendererInServer->staticBufferProvider_->needFadeOut_);
 }
 
 /**
  * @tc.name  : Test Stop API
  * @tc.type  : FUNC
- * @tc.number: RendererInServer_MarkStaticFadeOut_002
- * @tc.desc  : Test RendererInServer_MarkStaticFadeOut_002.
+ * @tc.number: RendererInServer_MarkStaticFadeIn_001
+ * @tc.desc  : Test RendererInServer_MarkStaticFadeIn_001
  */
-HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_002, TestSize.Level1)
+HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeIn_001, TestSize.Level1)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -2789,33 +2775,13 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServer_MarkStaticFadeOut_002, 
     rendererInServer->staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo1, buffer);
     ASSERT_TRUE(rendererInServer->staticBufferProvider_ != nullptr);
 
-    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
-    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
-    rendererInServer->MarkStaticFadeOut(false);
-    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
+    rendererInServer->staticBufferProvider_->needFadeIn_ = false;
+    rendererInServer->MarkStaticFadeIn(false);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->needFadeIn_);
 
-    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 0;
-    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
-    rendererInServer->MarkStaticFadeOut(true);
-    EXPECT_TRUE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
-
-    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
-    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
-    rendererInServer->MarkStaticFadeOut(false);
-    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
-
-    rendererInServer->staticBufferProvider_->needFadeOut_ = false;
-    rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    rendererInServer->staticBufferProvider_->currentLoopTimes_ = 1;
-    rendererInServer->staticBufferProvider_->totalLoopTimes_ = 1;
-    rendererInServer->MarkStaticFadeOut(true);
-    EXPECT_FALSE(rendererInServer->staticBufferProvider_->delayRefreshBufferStatus_);
+    rendererInServer->staticBufferProvider_->needFadeIn_ = false;
+    rendererInServer->MarkStaticFadeIn(true);
+    EXPECT_TRUE(rendererInServer->staticBufferProvider_->curStaticDataPos_ == 0);
 }
 
 /**
