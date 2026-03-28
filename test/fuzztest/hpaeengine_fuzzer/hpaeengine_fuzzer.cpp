@@ -373,6 +373,13 @@ void OnGetCollaborativeUpdateCbFuzzTest()
     impl_->OnGetCollaborativeUpdateCb(result);
 }
 
+void OnUpdateSpatializationStateCbFuzzTest()
+{
+    SetUp();
+    int32_t result = GetData<int32_t>();
+    impl_->OnUpdateSpatializationStateCb(result);
+}
+
 typedef void (*TestFuncs[33])();
 
 TestFuncs g_testFuncs = {
