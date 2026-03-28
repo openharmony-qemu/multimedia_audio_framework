@@ -1616,6 +1616,7 @@ napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback
 
 napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_callback_info info)
 {
+#ifndef CROSS_PLATFORM
     size_t argc = PARAM2;
     napi_value args[PARAM2] = {nullptr};
     napi_status status = napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
@@ -1659,6 +1660,9 @@ napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_
     napi_value result = nullptr;
     napi_create_int32(env, ret, &result);
     return result;
+#else
+    return nullptr;
+#endif
 }
 }  // namespace AudioStandard
 }  // namespace OHOS
