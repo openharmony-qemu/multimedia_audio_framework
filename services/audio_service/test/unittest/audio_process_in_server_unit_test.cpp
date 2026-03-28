@@ -2611,23 +2611,23 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeOut_001,
     audioProcessInServerRet.staticBufferProvider_->needFadeOut_ = false;
     audioProcessInServerRet.staticBufferProvider_->currentLoopTimes_ = 0;
     audioProcessInServerRet.staticBufferProvider_->totalLoopTimes_ = 1;
-    audioProcessInServerRet.MarkStaticFadeOut(false);
+    audioProcessInServerRet.MarkStaticFadeOut();
     EXPECT_TRUE(audioProcessInServerRet.staticBufferProvider_->needFadeOut_);
 
     audioProcessInServerRet.staticBufferProvider_->needFadeOut_ = false;
     audioProcessInServerRet.staticBufferProvider_->currentLoopTimes_ = 1;
     audioProcessInServerRet.staticBufferProvider_->totalLoopTimes_ = 1;
-    audioProcessInServerRet.MarkStaticFadeOut(false);
+    audioProcessInServerRet.MarkStaticFadeOut();
     EXPECT_FALSE(audioProcessInServerRet.staticBufferProvider_->needFadeOut_);
 }
 
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInServer_MarkStaticFadeOut
+ * @tc.number: AudioProcessInServer_MarkStaticFadeIn
  * @tc.desc  : Test AudioProcessInServer interface.
  */
-HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeOut_002, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeIn_001, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -2647,33 +2647,13 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_MarkStaticFadeOut_002,
     std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromLocal(10, 10);
     audioProcessInServerRet.staticBufferProvider_ = AudioStaticBufferProvider::CreateInstance(testStreamInfo, buffer);
 
-    audioProcessInServerRet.staticBufferProvider_->needFadeOut_ = false;
-    audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    audioProcessInServerRet.staticBufferProvider_->currentLoopTimes_ = 0;
-    audioProcessInServerRet.staticBufferProvider_->totalLoopTimes_ = 1;
-    audioProcessInServerRet.MarkStaticFadeOut(false);
-    EXPECT_TRUE(audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_);
+    audioProcessInServerRet.staticBufferProvider_->needFadeIn_ = false;
+    audioProcessInServerRet.MarkStaticFadeIn(false);
+    EXPECT_TRUE(audioProcessInServerRet.staticBufferProvider_->needFadeIn_);
 
-    audioProcessInServerRet.staticBufferProvider_->needFadeOut_ = false;
-    audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    audioProcessInServerRet.staticBufferProvider_->currentLoopTimes_ = 0;
-    audioProcessInServerRet.staticBufferProvider_->totalLoopTimes_ = 1;
-    audioProcessInServerRet.MarkStaticFadeOut(true);
-    EXPECT_TRUE(audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_);
-
-    audioProcessInServerRet.staticBufferProvider_->needFadeOut_ = false;
-    audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    audioProcessInServerRet.staticBufferProvider_->currentLoopTimes_ = 1;
-    audioProcessInServerRet.staticBufferProvider_->totalLoopTimes_ = 1;
-    audioProcessInServerRet.MarkStaticFadeOut(false);
-    EXPECT_FALSE(audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_);
-
-    audioProcessInServerRet.staticBufferProvider_->needFadeOut_ = false;
-    audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_ = true;
-    audioProcessInServerRet.staticBufferProvider_->currentLoopTimes_ = 1;
-    audioProcessInServerRet.staticBufferProvider_->totalLoopTimes_ = 1;
-    audioProcessInServerRet.MarkStaticFadeOut(true);
-    EXPECT_FALSE(audioProcessInServerRet.staticBufferProvider_->delayRefreshBufferStatus_);
+    audioProcessInServerRet.staticBufferProvider_->needFadeIn_ = false;
+    audioProcessInServerRet.MarkStaticFadeIn(true);
+    EXPECT_TRUE(audioProcessInServerRet.staticBufferProvider_->curStaticDataPos_ == 0);
 }
 
 /**

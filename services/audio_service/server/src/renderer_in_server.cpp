@@ -1243,9 +1243,10 @@ int32_t RendererInServer::StartInner()
 
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr && audioServerBuffer_->GetStreamStatus() != nullptr,
         ERR_OPERATION_FAILED, "null stream");
+
+    MarkStaticFadeIn(audioServerBuffer_->GetStreamStatus()->load() == STREAM_STOPPED);
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
     audioServerBuffer_->SetIsFirstFrame(true);
-    MarkStaticFadeIn();
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
@@ -1344,7 +1345,7 @@ int32_t RendererInServer::Pause()
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
-    MarkStaticFadeOut(false);
+    MarkStaticFadeOut();
 
     // remove eac3 param check
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK ||
@@ -1553,7 +1554,7 @@ int32_t RendererInServer::StopInner()
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
-    MarkStaticFadeOut(true);
+    MarkStaticFadeOut();
 
     if (IsMovieOffloadStream()) {
         SetSoftLinkFunc([](auto &softLink) { softLink->Stop(); });
@@ -3026,7 +3027,7 @@ int32_t RendererInServer::PauseDuringStandby()
     return SUCCESS;
 }
 
-void RendererInServer::MarkStaticFadeOut(bool isRefresh)
+void RendererInServer::MarkStaticFadeOut()
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
@@ -3034,17 +3035,17 @@ void RendererInServer::MarkStaticFadeOut(bool isRefresh)
     if (!staticBufferProvider_->IsLoopEnd()) {
         staticBufferProvider_->NeedProcessFadeOut();
     }
-    // Refresh needs to be called after fadeout
-    if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->ResetStaticPlayPosition();
-    }
 }
 
-void RendererInServer::MarkStaticFadeIn()
+void RendererInServer::MarkStaticFadeIn(bool isRefresh)
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
     staticBufferProvider_->NeedProcessFadeIn();
+
+    if (isRefresh) {
+        staticBufferProvider_->ResetStaticPlayPosition();
+    }
 }
 
 void RendererInServer::HandleIsWriteFirst(bool isWriteFirst)
