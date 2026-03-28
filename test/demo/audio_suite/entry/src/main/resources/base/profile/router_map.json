@@ -34,6 +34,11 @@
             "name": "audioTrackEdit",
             "pageSourceFile": "src/main/ets/pages/AudioTrackEdit.ets",
             "buildFunction": "AudioTrackEditBuilder"
+        },
+        {
+            "name": "audioConversion",
+            "pageSourceFile": "src/main/ets/pages/AudioConversion.ets",
+            "buildFunction": "AudioConversionBuilder"
         }
-     ]
+    ]
 }
