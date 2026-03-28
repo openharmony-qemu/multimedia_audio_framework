@@ -148,7 +148,7 @@ int32_t AudioScoDeviceBehavior::DeactivateDevice()
 
 int32_t AudioScoDeviceBehavior::DeactivateDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
-    return SUCCESS;
+    return Bluetooth::AudioHfpManager::ClearActiveHfpDevice(deviceDesc->macAddress_);
 }
 
 } // namespace AudioStandard

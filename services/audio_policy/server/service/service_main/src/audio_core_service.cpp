@@ -32,6 +32,7 @@
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
 #include "i_hpae_manager.h"
+#include "audio_select_interface_service.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -333,6 +334,7 @@ void AudioCoreService::Init()
     }
     audioDeviceCommon_.Init(audioPolicyServerHandler_);
     audioRecoveryDevice_.Init(audioA2dpOffloadManager_);
+    AudioSelectInterfaceService::GetInstance().SetA2dpDeviceOffloadManager(audioA2dpOffloadManager_);
 
     audioDeviceStatus_.Init(audioA2dpOffloadManager_, audioPolicyServerHandler_);
     pipeManager_->Init();
@@ -1409,8 +1411,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevic
 
     for (const auto &desc : audioPrivacyDeviceDescriptors) {
         if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || desc->exceptionFlag_ || !desc->isEnable_ ||
-            desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded() ||
-            audioStateManager_.IsExcludedDevice(AudioDeviceUsage::CALL_OUTPUT_DEVICES, desc)) {
+            desc->connectState_ == SUSPEND_CONNECTED || AudioRouterSelectStrategy::GetInstance().GetScoExcluded() ||
+            AudioRouterSelectStrategy::GetInstance().IsDeviceExcluded(desc, AudioDeviceUsage::CALL_OUTPUT_DEVICES)) {
             continue;
         }
         activeDeviceDescriptors.push_back(make_shared<AudioDeviceDescriptor>(*desc));
@@ -1573,13 +1575,14 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetExcludedDevices(
     AudioDeviceUsage audioDevUsage)
 {
-    return audioStateManager_.GetExcludedDevices(audioDevUsage);
+    return AudioRouterSelectStrategy::GetInstance().GetExcludedDevices(audioDevUsage);
 }
 
 int32_t AudioCoreService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    int32_t result = audioRecoveryDevice_.ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    int32_t result = AudioSelectInterfaceService::GetInstance().ExcludeOutputDevices(audioDevUsage,
+        audioDeviceDescriptors);
     DeactivateA2dpAfterExclude(audioDeviceDescriptors, pipeManager_->GetAllOutputStreamDescs());
     return result;
 }
@@ -1587,7 +1590,7 @@ int32_t AudioCoreService::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
 int32_t AudioCoreService::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    return audioRecoveryDevice_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    return AudioSelectInterfaceService::GetInstance().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
 int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,

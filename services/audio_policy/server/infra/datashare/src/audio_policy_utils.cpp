@@ -866,32 +866,6 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
     }
 }
 
-int32_t AudioPolicyUtils::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (isBTReconnecting_) {
-        return SUCCESS;
-    }
-
-    if ((audioDevUsage & MEDIA_OUTPUT_DEVICES) != 0) {
-        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
-    }
-    if ((audioDevUsage & CALL_OUTPUT_DEVICES) != 0) {
-        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
-    }
-    return SUCCESS;
-}
-
-void AudioPolicyUtils::SetScoExcluded(bool scoExcluded)
-{
-    isScoExcluded_ = scoExcluded;
-}
-
-bool AudioPolicyUtils::GetScoExcluded()
-{
-    return isScoExcluded_;
-}
-
 bool AudioPolicyUtils::IsDataShareReady()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

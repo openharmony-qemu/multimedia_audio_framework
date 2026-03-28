@@ -402,64 +402,6 @@ void AudioRecoveryDeviceSelectInputDeviceFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void AudioRecoveryDeviceExcludeOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
-{
-    static const vector<AudioDeviceUsage> testAudioDeviceUsage = {
-        MEDIA_OUTPUT_DEVICES,
-        MEDIA_INPUT_DEVICES,
-        ALL_MEDIA_DEVICES,
-        CALL_OUTPUT_DEVICES,
-        CALL_INPUT_DEVICES,
-        ALL_CALL_DEVICES,
-        D_ALL_DEVICES,
-    };
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || testAudioDeviceUsage.size() == 0
-        || deviceDescriptor == nullptr || g_testDeviceTypes.size() == 0) {
-        return;
-    }
-    AudioDeviceUsage audioDevUsage =
-        testAudioDeviceUsage[GetData<uint32_t>() % testAudioDeviceUsage.size()];
-    deviceDescriptor->networkId_ = "testNetworkId";
-    deviceDescriptor->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
-    selectedDesc.push_back(deviceDescriptor);
-    audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
-
-    audioRecoveryDevice->ExcludeOutputDevices(audioDevUsage, selectedDesc);
-    OnStop();
-}
-
-void AudioRecoveryDeviceUnexcludeOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
-{
-    static const vector<AudioDeviceUsage> testAudioDeviceUsage = {
-        MEDIA_OUTPUT_DEVICES,
-        MEDIA_INPUT_DEVICES,
-        ALL_MEDIA_DEVICES,
-        CALL_OUTPUT_DEVICES,
-        CALL_INPUT_DEVICES,
-        ALL_CALL_DEVICES,
-        D_ALL_DEVICES,
-    };
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || testAudioDeviceUsage.size() == 0
-        || deviceDescriptor == nullptr || g_testDeviceTypes.size() == 0) {
-        return;
-    }
-    AudioDeviceUsage audioDevUsage =
-        testAudioDeviceUsage[GetData<uint32_t>() % testAudioDeviceUsage.size()];
-    deviceDescriptor->networkId_ = "testNetworkId";
-    deviceDescriptor->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
-    selectedDesc.push_back(deviceDescriptor);
-    audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
-
-    audioRecoveryDevice->UnexcludeOutputDevices(audioDevUsage, selectedDesc);
-    OnStop();
-}
-
 void AudioRecoveryDeviceSetCaptureDeviceForUsageFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
@@ -510,23 +452,6 @@ void AudioRecoveryDeviceWriteSelectInputSysEventsFuzzTest(FuzzedDataProvider& fd
     OnStop();
 }
 
-void AudioRecoveryDeviceWriteExcludeOutputSysEventsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || g_testDeviceTypes.size() == 0
-        || deviceDescriptor == nullptr ||AudioDeviceUsageVec.size() == 0) {
-        return;
-    }
-
-    deviceDescriptor->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    AudioDeviceUsage audioDevUsage = AudioDeviceUsageVec[GetData<uint32_t>() % AudioDeviceUsageVec.size()];
-    audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
-
-    audioRecoveryDevice->WriteExcludeOutputSysEvents(audioDevUsage, deviceDescriptor);
-    OnStop();
-}
-
 void AudioRecoveryDeviceRefreshVirtualDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
@@ -555,12 +480,9 @@ void Test(FuzzedDataProvider& fdp)
     AudioRecoveryDeviceSelectFastOutputDeviceFuzzTest,
     AudioRecoveryDeviceSelectOutputDeviceByFilterInnerFuzzTest,
     AudioRecoveryDeviceSelectInputDeviceFuzzTest,
-    AudioRecoveryDeviceExcludeOutputDevicesFuzzTest,
-    AudioRecoveryDeviceUnexcludeOutputDevicesFuzzTest,
     AudioRecoveryDeviceSetCaptureDeviceForUsageFuzzTest,
     AudioRecoveryDeviceSelectFastInputDeviceFuzzTest,
     AudioRecoveryDeviceWriteSelectInputSysEventsFuzzTest,
-    AudioRecoveryDeviceWriteExcludeOutputSysEventsFuzzTest,
     AudioRecoveryDeviceRefreshVirtualDeviceFuzzTest,
     });
     func(fdp);

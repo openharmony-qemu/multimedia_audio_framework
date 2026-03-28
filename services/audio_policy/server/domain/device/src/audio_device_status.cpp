@@ -1558,7 +1558,7 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
 #ifndef WIRELESS_DEFAULT_EXCLUDE
             std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
                 make_shared<AudioDeviceDescriptor>(desc)};
-            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
+            AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 #endif
             reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             ClearPreferredWhenCategoryUpdated(desc);

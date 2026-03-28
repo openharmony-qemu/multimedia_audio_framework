@@ -16,6 +16,7 @@
 #include "privacy_priority_router_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_router_infra.h"
 
 #include <thread>
 #include <memory>
@@ -232,7 +233,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_009, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.reconCapturePrivacyDevices_.push_back(sco);
     manager.reconCapturePrivacyDevices_.push_back(wired);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_RECOGNITION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
@@ -257,7 +258,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_010, TestSize.Level
     manager.reconCapturePrivacyDevices_.clear();
     manager.reconCapturePrivacyDevices_.push_back(wired);
     manager.reconCapturePrivacyDevices_.push_back(sco);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_RECOGNITION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
@@ -283,7 +284,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_011, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.mediaCapturePrivacyDevices_.push_back(a2dpin);
     manager.reconCapturePrivacyDevices_.push_back(wired);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(true);
+    AudioRouterInfra::GetInstance().SetScoExcluded(true);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_RECOGNITION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
@@ -310,7 +311,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_012, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.reconCapturePrivacyDevices_.push_back(wired);
     manager.mediaCapturePrivacyDevices_.push_back(a2dpin);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(true);
+    AudioRouterInfra::GetInstance().SetScoExcluded(true);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_RECOGNITION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
@@ -336,7 +337,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_013, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.reconCapturePrivacyDevices_.push_back(sco);
     manager.mediaCapturePrivacyDevices_.push_back(a2dpin);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_TRANSCRIPTION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
@@ -385,7 +386,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_015, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.reconCapturePrivacyDevices_.push_back(sco);
     manager.reconCapturePrivacyDevices_.push_back(wired);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_TRANSCRIPTION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
@@ -411,7 +412,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_016, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.reconCapturePrivacyDevices_.push_back(wired);
     manager.reconCapturePrivacyDevices_.push_back(sco);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_TRANSCRIPTION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
@@ -438,7 +439,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_017, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.mediaCapturePrivacyDevices_.push_back(a2dpin);
     manager.reconCapturePrivacyDevices_.push_back(wired);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(true);
+    AudioRouterInfra::GetInstance().SetScoExcluded(true);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_TRANSCRIPTION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
@@ -465,7 +466,7 @@ HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_018, TestSize.Level
     manager.mediaCapturePrivacyDevices_.clear();
     manager.reconCapturePrivacyDevices_.push_back(wired);
     manager.mediaCapturePrivacyDevices_.push_back(a2dpin);
-    AudioPolicyUtils::GetInstance().SetScoExcluded(true);
+    AudioRouterInfra::GetInstance().SetScoExcluded(true);
     auto result = privacyPriorityRouter.GetRecordCaptureDevice(SOURCE_TYPE_VOICE_TRANSCRIPTION, clientUID, sessionID);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_WIRED_HEADSET);
@@ -655,13 +656,9 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_020, TestSize.Level1
     desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     desc->connectState_ = VIRTUAL_CONNECTED;
     desc->deviceUsage_ = VOICE;
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
     AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
-    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
     EXPECT_EQ(2, router.GetRingRenderDevices(STREAM_USAGE_VOICE_RINGTONE, 1).size());
 }
 
@@ -680,13 +677,9 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_021, TestSize.Level1
     desc->deviceType_ = DEVICE_TYPE_MIC;
     desc->connectState_ = VIRTUAL_CONNECTED;
     desc->deviceUsage_ = VOICE;
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.clear();
     AudioDeviceManager::GetAudioDeviceManager().commRenderPrivacyDevices_.push_back(desc);
-    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
 
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_VOICE_RINGTONE, 1).size());
 }
@@ -706,13 +699,9 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_022, TestSize.Level1
     desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     desc->connectState_ = VIRTUAL_CONNECTED;
     desc->deviceUsage_ = MEDIA;
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.push_back(desc);
-    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
     EXPECT_EQ(2, router.GetRingRenderDevices(STREAM_USAGE_ALARM, 1).size());
 }
 
@@ -731,13 +720,9 @@ HWTEST(PrivacyPriorityRouterUnitTest, PrivacyPriorityRouter_023, TestSize.Level1
     desc->deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
     desc->connectState_ = VIRTUAL_CONNECTED;
     desc->deviceUsage_ = MEDIA;
-    AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+    AudioRouterInfra::GetInstance().SetScoExcluded(false);
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.clear();
     AudioDeviceManager::GetAudioDeviceManager().mediaRenderPrivacyDevices_.push_back(desc);
-    AudioStateManager::GetAudioStateManager().excludedMediaOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedMediaInputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallOutputDevices_.devices_.clear();
-    AudioStateManager::GetAudioStateManager().excludedCallInputDevices_.devices_.clear();
     EXPECT_EQ(1, router.GetRingRenderDevices(STREAM_USAGE_MUSIC, 1).size());
 }
 } // namespace AudioStandard

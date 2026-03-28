@@ -152,20 +152,6 @@ void AudioDeviceLock::OnConnectFailed(AudioDeviceDescriptor &desc)
     audioDeviceStatus_.OnConnectFailed(desc);
 }
 
-int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioRecoveryDevice_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetExcludedDevices(
-    AudioDeviceUsage audioDevUsage)
-{
-    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioStateManager_.GetExcludedDevices(audioDevUsage);
-}
-
 // new lock
 void AudioDeviceLock::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bool isConnected)
 {

@@ -68,8 +68,11 @@ public:
         AudioDeviceUsage usage);
     void UnexcludeDevices(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices,
         AudioDeviceUsage usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
     bool IsDeviceExcluded(const std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioDeviceUsage usage);
+    void SetScoExcluded(bool scoExcluded);
+    bool GetScoExcluded();
 
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(

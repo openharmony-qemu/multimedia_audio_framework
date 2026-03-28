@@ -53,7 +53,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterSelectStrategy::ConvertD
         return nullptr;
     }
     return std::make_shared<AudioDeviceSimpleDescriptor>(deviceDesc->deviceType_,
-        deviceDesc->deviceRole_, deviceDesc->deviceId_, deviceDesc->networkId_);
+        deviceDesc->deviceRole_, deviceDesc->deviceId_, deviceDesc->networkId_, deviceDesc->macAddress_);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::ConvertSimpleToDevice(
@@ -358,12 +358,36 @@ void AudioRouterSelectStrategy::UnexcludePairDevice(const std::shared_ptr<AudioD
     }
 }
 
+std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterSelectStrategy::GetExcludedDevices(
+    AudioDeviceUsage usage)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    auto excludedDevices = routerInfra.GetExcludedDevices(usage);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> result;
+    for (const auto &simpleDesc : excludedDevices) {
+        result.push_back(ConvertSimpleToDevice(simpleDesc));
+    }
+    return result;
+}
+
 bool AudioRouterSelectStrategy::IsDeviceExcluded(const std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioDeviceUsage usage)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     auto &routerInfra = AudioRouterInfra::GetInstance();
     return routerInfra.IsDeviceExcluded(simpleDesc, usage);
+}
+
+void AudioRouterSelectStrategy::SetScoExcluded(bool scoExcluded)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    routerInfra.SetScoExcluded(scoExcluded);
+}
+
+bool AudioRouterSelectStrategy::GetScoExcluded()
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    return routerInfra.GetScoExcluded();
 }
 
 }

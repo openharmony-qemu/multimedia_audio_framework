@@ -30,6 +30,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum ExcludeDeviceType {
+    EXCLUDED = 0,
+    UNEXCLUDED = 1,
+};
 
 class AudioRouterInfra {
 public:
@@ -65,9 +69,12 @@ public:
         AudioDeviceUsage usage);
     void UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
         AudioDeviceUsage usage);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetExcludedDevices(AudioDeviceUsage usage);
     bool IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
         AudioDeviceUsage usage);
     void UnexcludeAllDevice();
+    void SetScoExcluded(bool scoExcluded);
+    bool GetScoExcluded();
 
     void UpdateCurrentOutputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
@@ -113,6 +120,9 @@ private:
     bool HasRunningOutputStream(int32_t uid);
     int64_t GetCurrentTimeMs() const;
 
+    void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);
+
     struct CompareExcludedSimpleDevice {
         bool operator()(const std::shared_ptr<AudioDeviceSimpleDescriptor> &a,
             const std::shared_ptr<AudioDeviceSimpleDescriptor> &b) const
@@ -136,6 +146,7 @@ private:
         CompareExcludedSimpleDevice> excludedDevices_;
     std::list<int32_t> inputPriorityList_;
     std::list<int32_t> outputPriorityList_;
+    std::atomic<bool> isScoExcluded_ {false};
 };
 
 }

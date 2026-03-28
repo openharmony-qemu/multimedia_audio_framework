@@ -263,32 +263,6 @@ HWTEST_F(AudioStateManagerUnitTest, SetPreferredRecognitionCaptureDevice_1, Test
 
 /**
 * @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_011
-* @tc.desc  : Test ExcludeOutputDevices interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_011, TestSize.Level1)
-{
-    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
-    auto descriptor = std::make_shared<AudioDeviceDescriptor>();
-    vector<shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    audioDeviceDescriptors.push_back(descriptor);
-    AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    AudioStateManager::GetAudioStateManager().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_NE(0, audioDeviceDescriptors.size());
-
-    audioDevUsage = CALL_OUTPUT_DEVICES;
-    AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    AudioStateManager::GetAudioStateManager().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_NE(0, audioDeviceDescriptors.size());
-
-    audioDevUsage = CALL_INPUT_DEVICES;
-    AudioStateManager::GetAudioStateManager().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    AudioStateManager::GetAudioStateManager().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-    EXPECT_NE(0, audioDeviceDescriptors.size());
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
 * @tc.number: AudioStateManagerUnitTest_012
 * @tc.desc  : Test SetAudioSceneOwnerUid interface.
 */
@@ -297,75 +271,6 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_012, TestSize.Leve
     int32_t uid = 1041;
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(uid);
     EXPECT_EQ(ANCO_SERVICE_BROKER_UID, AudioStateManager::GetAudioStateManager().ownerUid_);
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: AudioStateManagerUnitTest_013
-* @tc.desc  : Test GetExcludedDevices interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_013, TestSize.Level1)
-{
-    AudioDeviceUsage usage = CALL_INPUT_DEVICES;
-    auto ret = AudioStateManager::GetAudioStateManager().GetExcludedDevices(usage);
-    EXPECT_EQ(0, ret.size());
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: FindExcludedDevices_001
-* @tc.desc  : Test FindExcludedDevices interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, FindExcludedDevices_001, TestSize.Level1)
-{
-    auto &man = AudioStateManager::GetAudioStateManager();
-    ExcludedDevices *devs;
-    devs = man.FindExcludedDevices(MEDIA_OUTPUT_DEVICES);
-    EXPECT_NE(devs, nullptr);
-    devs = man.FindExcludedDevices(MEDIA_INPUT_DEVICES);
-    EXPECT_NE(devs, nullptr);
-    devs = man.FindExcludedDevices(CALL_OUTPUT_DEVICES);
-    EXPECT_NE(devs, nullptr);
-    devs = man.FindExcludedDevices(CALL_INPUT_DEVICES);
-    EXPECT_NE(devs, nullptr);
-    devs = man.FindExcludedDevices(D_ALL_DEVICES);
-    EXPECT_EQ(devs, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: ExcludeDevices_001
-* @tc.desc  : Test ExcludeDevices interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, ExcludeDevices_001, TestSize.Level1)
-{
-    auto &man = AudioStateManager::GetAudioStateManager();
-    auto dev = make_shared<AudioDeviceDescriptor>();
-    dev->deviceId_ = 1000;
-    dev->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    dev->deviceName_ = "--";
-    dev->deviceRole_ = OUTPUT_DEVICE;
-    dev->macAddress_ = "card=2;device=0";
-    man.ExcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
-    EXPECT_TRUE(man.IsExcludedDevice(MEDIA_OUTPUT_DEVICES, dev));
-}
-
-/**
-* @tc.name  : Test AudioStateManager.
-* @tc.number: UnexcludeDevices_001
-* @tc.desc  : Test UnexcludeDevices interface.
-*/
-HWTEST_F(AudioStateManagerUnitTest, UnexcludeDevices_001, TestSize.Level1)
-{
-    auto &man = AudioStateManager::GetAudioStateManager();
-    auto dev = make_shared<AudioDeviceDescriptor>();
-    dev->deviceId_ = 1000;
-    dev->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    dev->deviceName_ = "--";
-    dev->deviceRole_ = OUTPUT_DEVICE;
-    dev->macAddress_ = "card=2;device=0";
-    man.UnexcludeDevices(MEDIA_OUTPUT_DEVICES, {dev});
-    EXPECT_FALSE(man.IsExcludedDevice(MEDIA_OUTPUT_DEVICES, dev));
 }
 
 /**

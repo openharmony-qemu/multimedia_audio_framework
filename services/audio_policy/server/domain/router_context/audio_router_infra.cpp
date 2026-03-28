@@ -20,6 +20,8 @@
 #include "audio_router_infra.h"
 #include "audio_policy_log.h"
 #include "audio_info.h"
+#include "ipc_skeleton.h"
+#include "media_monitor_manager.h"
 #include <chrono>
 #include <algorithm>
 
@@ -729,6 +731,7 @@ void AudioRouterInfra::ExcludeDevice(const std::shared_ptr<AudioDeviceSimpleDesc
     } else {
         it->second = static_cast<AudioDeviceUsage>(it->second | usage);
     }
+    WriteExcludeOutputSysEvents(usage, device, EXCLUDED);
 }
 
 void AudioRouterInfra::UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
@@ -747,12 +750,29 @@ void AudioRouterInfra::UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDe
     it->second = static_cast<AudioDeviceUsage>(it->second & ~usage);
     if (it->second == 0) {
         excludedDevices_.erase(it);
+        WriteExcludeOutputSysEvents(usage, device, UNEXCLUDED);
     }
+}
+
+std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> AudioRouterInfra::GetExcludedDevices(
+    AudioDeviceUsage usage)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> result;
+    for (auto &[device, devUsage] : excludedDevices_) {
+        if ((devUsage & usage) != 0) {
+            result.push_back(device);
+        }
+    }
+    return result;
 }
 
 void AudioRouterInfra::UnexcludeAllDevice()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
+    for (auto &[device, usage] : excludedDevices_) {
+        WriteExcludeOutputSysEvents(usage, device, UNEXCLUDED);
+    }
     excludedDevices_.clear();
 }
 
@@ -770,6 +790,42 @@ bool AudioRouterInfra::IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleD
     }
 
     return (it->second & usage) != 0;
+}
+
+void AudioRouterInfra::SetScoExcluded(bool scoExcluded)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    isScoExcluded_.store(scoExcluded);
+}
+
+bool AudioRouterInfra::GetScoExcluded()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return isScoExcluded_.load();
+}
+
+void AudioRouterInfra::WriteExcludeOutputSysEvents(const AudioDeviceUsage audioDevUsage,
+    const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType)
+{
+    int64_t timeStamp = GetCurrentTimeMs();
+    auto uid = IPCSkeleton::GetCallingUid();
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::EXCLUDE_OUTPUT_DEVICE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("CLIENT_UID", static_cast<int32_t>(uid));
+    bean->Add("TIME_STAMP", static_cast<uint64_t>(timeStamp));
+    if (excludeType == EXCLUDED) {
+        bean->Add("EXCLUSION_STATUS", EXCLUDED);
+    } else {
+        bean->Add("EXCLUSION_STATUS", UNEXCLUDED);
+    }
+    bean->Add("AUDIO_DEVICE_USAGE", static_cast<int32_t>(audioDevUsage));
+    bean->Add("DEVICE_TYPE", 0);
+    bean->Add("NETWORKID", deviceDesc->networkId_);
+    bean->Add("ADDRESS", deviceDesc->macAddress_);
+    bean->Add("DEVICE_NAME", "");
+    bean->Add("BT_TYPE", 0);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 }

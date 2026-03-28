@@ -26,6 +26,7 @@
 #include "media_monitor_manager.h"
 #include "audio_policy_utils.h"
 #include "istandard_audio_service.h"
+#include "audio_router_select_strategy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,7 +54,7 @@ int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, BluetoothOff
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool scoExcludeFlag = false;
-    if (AudioPolicyUtils::GetInstance().GetScoExcluded()) {
+    if (AudioRouterSelectStrategy::GetInstance().GetScoExcluded()) {
         scoExcludeFlag = true;
     }
     int32_t result = gsp->SetAudioScene(audioScene, state, scoExcludeFlag);

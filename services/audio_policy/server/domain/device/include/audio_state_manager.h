@@ -26,13 +26,6 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 
-struct ExcludedDevices {
-    shared_mutex sMtx_;
-    unordered_set<shared_ptr<AudioDeviceDescriptor>,
-        AudioDeviceDescriptor::AudioDeviceDescriptorHash,
-        AudioDeviceDescriptor::AudioDeviceDescriptorEqual> devices_;
-};
-
 class AudioStateManager {
 public:
     static AudioStateManager& GetAudioStateManager()
@@ -61,16 +54,6 @@ public:
 
     // Set tone render device selected by the user
     void SetPreferredToneRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-
-    void ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-
-    void UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        vector<shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-
-    void ExcludeDevices(uint32_t usages, const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
-
-    void UnexcludeDevices(uint32_t usages, const vector<shared_ptr<AudioDeviceDescriptor>> &descs);
 
     // Get media render device selected by the user
     shared_ptr<AudioDeviceDescriptor> GetPreferredMediaRenderDevice();
@@ -101,10 +84,6 @@ public:
     void UpdatePreferredCallCaptureDeviceConnectState(ConnectState state);
     void UpdatePreferredRecordCaptureDeviceConnectState(ConnectState state);
 
-    vector<shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
-    bool IsExcludedDevice(AudioDeviceUsage audioDevUsage,
-        const shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor);
-
     void SetAudioSceneOwnerUid(const int32_t uid);
 
     int32_t GetAudioSceneOwnerUid();
@@ -124,12 +103,6 @@ private:
     std::shared_ptr<AudioDeviceDescriptor> preferredToneRenderDevice_ = std::make_shared<AudioDeviceDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> preferredRecognitionCaptureDevice_{make_shared<AudioDeviceDescriptor>()};
 
-    ExcludedDevices excludedMediaInputDevices_;
-    ExcludedDevices excludedMediaOutputDevices_;
-    ExcludedDevices excludedCallInputDevices_;
-    ExcludedDevices excludedCallOutputDevices_;
-    ExcludedDevices *FindExcludedDevices(AudioDeviceUsage usage);
-
     std::mutex mutex_;
     int32_t ownerUid_ = 0;
     std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
@@ -142,4 +115,3 @@ private:
 } // namespace OHOS
 
 #endif // ST_AUDIO_STATE_MANAGER_H
-
