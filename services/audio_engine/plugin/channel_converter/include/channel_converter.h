@@ -33,6 +33,7 @@ public:
     int32_t SetInChannelInfo(AudioChannelInfo inChannelInfo);
     int32_t SetOutChannelInfo(AudioChannelInfo outChannelInfo);
     void SetDownmixNormalization(bool normalizing);
+    void SetUpmixCoef(float coef); // take effect before SetParam
     void Reset();
 private:
     int32_t MixProcess(bool isDmix, uint32_t frameLen, float* in, float* out);
@@ -46,6 +47,7 @@ private:
     bool mixLfe_ = true;
     bool isInitialized_ = false;
     bool downmixNormalizing_ = true; // by default, downmixer should do normalization to prevent overflow
+    float upmixCoef_ = COEF_0DB_F; // by default, not used
 };
 } // HPAE
 } // AudioStandard

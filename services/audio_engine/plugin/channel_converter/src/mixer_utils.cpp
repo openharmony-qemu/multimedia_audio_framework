@@ -585,7 +585,7 @@ int32_t SetUpGeneralMixingTable(float (&coeffTable)[MAX_CHANNELS][MAX_CHANNELS],
     CHECK_AND_RETURN_RET_LOG(((inChannelInfo.channelLayout & CH_LAYOUT_STEREO) == CH_LAYOUT_STEREO) &&
         ((outChannelInfo.channelLayout & CH_LAYOUT_STEREO) == CH_LAYOUT_STEREO), MIX_ERR_INVALID_ARG,
         "input channelLayout %{public}" PRIu64 " or output channelLayout %{public}" PRIu64 " is invalid. "
-        "Must at least have FRONR_LEFT and FRONT_RIGHT", inChannelInfo.channelLayout, outChannelInfo.channelLayout);
+        "Must at least have FRONT_LEFT and FRONT_RIGHT", inChannelInfo.channelLayout, outChannelInfo.channelLayout);
 
     return SetUpGeneralMixingTableInner(coeffTable, inChannelInfo, outChannelInfo, mixLfe);
 }

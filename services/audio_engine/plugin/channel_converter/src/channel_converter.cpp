@@ -65,9 +65,17 @@ int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelI
     workFormat_ = format;
     workSize_ = GetFormatSize(format);
     mixLfe_ = mixLfe;
+    // stereo downmix the same as stereo
+    if (inChannelInfo_.channelLayout == CH_LAYOUT_STEREO_DOWNMIX) {
+        inChannelInfo_.channelLayout = CH_LAYOUT_STEREO;
+    }
+    if (outChannelInfo_.channelLayout == CH_LAYOUT_STEREO_DOWNMIX) {
+        outChannelInfo_.channelLayout = CH_LAYOUT_STEREO;
+    }
+
     int32_t ret = MIX_ERR_SUCCESS;
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
-        ret = downMixer_.SetParam(inChannelInfo, outChannelInfo, workSize_, mixLfe);
+        ret = downMixer_.SetParam(inChannelInfo_, outChannelInfo_, workSize_, mixLfe_);
         downMixer_.SetNormalization(downmixNormalizing_);
         downMixer_.GetDownMixTable(mixTable_);
     } else {
@@ -143,6 +151,16 @@ void ChannelConverter::SetDownmixNormalization(bool normalizing)
     downMixer_.SetNormalization(downmixNormalizing_);
     downMixer_.GetDownMixTable(mixTable_);
 }
+
+void ChannelConverter::SetUpmixCoef(float coef)
+{
+    if (std::isnan(coef) || coef < 0.0f) {
+        AUDIO_ERR_LOG("set upmix coef invalid");
+        return;
+    }
+    AUDIO_INFO_LOG("set upmix coef from %{public}f to %{public}f", upmixCoef_, coef);
+    upmixCoef_ = coef;
+}
  
 int32_t ChannelConverter::Process(uint32_t frameLen, float* in, uint32_t inByteSize, float* out, uint32_t outByteSize)
 {
@@ -172,6 +190,7 @@ void ChannelConverter::Reset()
     isInitialized_ = false;
     downMixer_.Reset();
     std::fill(&mixTable_[0][0], &mixTable_[0][0] + MAX_CHANNELS * MAX_CHANNELS, 0.0f);
+    upmixCoef_ = COEF_0DB_F;
 }
 
 int32_t ChannelConverter::MixProcess(bool isDmix, uint32_t frameLen, float* in, float* out)
@@ -193,9 +212,12 @@ int32_t ChannelConverter::MixProcess(bool isDmix, uint32_t frameLen, float* in, 
     return MIX_ERR_SUCCESS;
 }
 // used to add gain adjustment to upmix
-// mutiplty some gain to output channel that is not in input channelmap, for now it is COEF_0DB_F (not used)
+// apply configured gain to output channel that is not in input channelmap
 void ChannelConverter::UpmixGainAttenuation()
 {
+    if (inChannelInfo_.numChannels == 1) {
+        return;
+    }
     uint64_t outChMsk = outChannelInfo_.channelLayout;
     for (uint32_t i = 0; i < outChannelInfo_.numChannels; i++) {
         uint64_t outBit = outChMsk & (~outChMsk + 1);
@@ -203,12 +225,13 @@ void ChannelConverter::UpmixGainAttenuation()
         for (uint32_t j = 0; j < inChannelInfo_.numChannels; j++) {
             uint64_t inBit = inChMsk & (~inChMsk + 1);
             if (inBit != outBit) {
-                mixTable_[j][i] *= COEF_0DB_F;
+                mixTable_[j][i] *= upmixCoef_;
             }
             inChMsk ^= inBit;
         }
         outChMsk ^= outBit;
     }
+    AUDIO_INFO_LOG("upmix coef take effect:%{public}f", upmixCoef_);
 }
 
 } // HPAE

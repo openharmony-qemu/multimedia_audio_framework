@@ -92,6 +92,263 @@ void ChannelConverterTest::SetUp() {}
 
 void ChannelConverterTest::TearDown() {}
 
+HWTEST_F(ChannelConverterTest, ChannelConverter_StereoDownmix_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO_DOWNMIX, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_MONO, 1};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+
+    std::vector<float> in(TEST_BUFFER_LEN * 2, 0.0f);
+    std::vector<float> out(TEST_BUFFER_LEN * 1, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_StereoDownmix_002, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_5POINT1, 6};
+    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO_DOWNMIX, 2};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+
+    std::vector<float> in(TEST_BUFFER_LEN * 6, 0.0f);
+    std::vector<float> out(TEST_BUFFER_LEN * 2, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_StereoDownmix_003, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO_DOWNMIX, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+
+    std::vector<float> in(TEST_BUFFER_LEN * 2, 0.0f);
+    std::vector<float> out(TEST_BUFFER_LEN * 2, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_StereoDownmix_004, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO_DOWNMIX, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_5POINT1, 6};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+
+    std::vector<float> in(TEST_BUFFER_LEN * 2, 0.0f);
+    std::vector<float> out(TEST_BUFFER_LEN * 6, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_StereoDownmix_005, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_7POINT1, 8};
+    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO_DOWNMIX, 2};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+    EXPECT_EQ(converter.isInitialized_, true);
+
+    std::vector<float> in(TEST_BUFFER_LEN * 8, 0.0f);
+    std::vector<float> out(TEST_BUFFER_LEN * 2, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_Default_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_6POINT0, 6};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::vector<float> in(2 * TEST_BUFFER_LEN, 1.0f);
+    std::vector<float> out(6 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    bool foundClipping = false;
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        if (out[i] > 1.01f) {
+            foundClipping = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundClipping);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_Attenuated_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_6POINT0, 6};
+
+    converter.SetUpmixCoef(0.5f);
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::vector<float> in(2 * TEST_BUFFER_LEN, 1.0f);
+    std::vector<float> out(6 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        EXPECT_LE(out[i], 1.51f);
+    }
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_Switch_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_6POINT0, 6};
+
+    converter.SetUpmixCoef(0.5f);
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::vector<float> in(2 * TEST_BUFFER_LEN, 1.0f);
+    std::vector<float> out(6 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        EXPECT_LE(out[i], 1.51f);
+    }
+
+    converter.SetUpmixCoef(1.0f);
+    ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::fill(out.begin(), out.end(), 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    bool foundClipping = false;
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        if (out[i] > 1.01f) {
+            foundClipping = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(foundClipping);
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_UpmixGain_5Point1_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_STEREO, 2};
+    AudioChannelInfo outInfo = {CH_LAYOUT_5POINT1, 6};
+
+    converter.SetUpmixCoef(0.5f);
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::vector<float> in(2 * TEST_BUFFER_LEN, 0.8f);
+    std::vector<float> out(6 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        EXPECT_LE(out[i], 1.21f);
+    }
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_MonoUpmixNoCoef_001, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_MONO, 1};
+    AudioChannelInfo outInfo = {CH_LAYOUT_STEREO, 2};
+
+    converter.SetUpmixCoef(0.5f);
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::vector<float> in(TEST_BUFFER_LEN, 1.0f);
+    std::vector<float> out(2 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 2 * TEST_BUFFER_LEN; i++) {
+        EXPECT_FLOAT_EQ(out[i], 1.0f);
+    }
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_MonoUpmixNoCoef_002, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_MONO, 1};
+    AudioChannelInfo outInfo = {CH_LAYOUT_5POINT1, 6};
+
+    converter.SetUpmixCoef(0.3f);
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::vector<float> in(TEST_BUFFER_LEN, 0.8f);
+    std::vector<float> out(6 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 6 * TEST_BUFFER_LEN; i++) {
+        EXPECT_FLOAT_EQ(out[i], 0.8f);
+    }
+}
+
+HWTEST_F(ChannelConverterTest, ChannelConverter_MonoUpmixNoCoef_003, TestSize.Level0)
+{
+    ChannelConverter converter;
+    AudioChannelInfo inInfo = {CH_LAYOUT_MONO, 1};
+    AudioChannelInfo outInfo = {CH_LAYOUT_7POINT1, 8};
+
+    int32_t ret = converter.SetParam(inInfo, outInfo, SAMPLE_F32LE, MIX_FLE);
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    std::vector<float> in(TEST_BUFFER_LEN, 0.5f);
+    std::vector<float> out(8 * TEST_BUFFER_LEN, 0.0f);
+    ret = converter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float),
+                            out.data(), out.size() * sizeof(float));
+    EXPECT_EQ(ret, MIX_ERR_SUCCESS);
+
+    for (uint32_t i = 0; i < 8 * TEST_BUFFER_LEN; i++) {
+        EXPECT_FLOAT_EQ(out[i], 0.5f);
+    }
+}
+
 /**
  * @tc.name : Test SetParam API
  * @tc.type : FUNC
