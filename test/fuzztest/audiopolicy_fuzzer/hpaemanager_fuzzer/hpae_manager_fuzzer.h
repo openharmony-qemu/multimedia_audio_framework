@@ -104,7 +104,7 @@ public:
 
     void OnUpdateSpatializationStateCb(int32_t result) override
     {
-        getCollaborativeUpdateResult_ = result;
+        updateSpatializationStateResult_ = result;
     }
 
     void HandleSourceAudioStreamRemoved(uint32_t sessionId) override {}
