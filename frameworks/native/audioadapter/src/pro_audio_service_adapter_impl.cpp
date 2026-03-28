@@ -449,6 +449,20 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEnhanceProperty
     return SUCCESS;
 }
 
+int32_t ProAudioServiceAdapterImpl::UpdateSpatializationState(AudioSpatializationState spatializationState)
+{
+    AUDIO_INFO_LOG("Enter");
+    lock_guard<mutex> lock(lock_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishUpdateSpatializationState_ = false;
+    IHpaeManager::GetHpaeManager().UpdateSpatializationState(spatializationState);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishUpdateSpatializationState_;
+    });
+    CHECK_AND_RETURN_RET_LOG(stopWaiting == true, SUCCESS, "wait for notify timeout");
+    return SUCCESS;
+}
+
 void ProAudioServiceAdapterImpl::OnReloadAudioPortCb(int32_t portId)
 {
     AUDIO_INFO_LOG("PortId: %{public}d", portId);
@@ -561,6 +575,14 @@ void ProAudioServiceAdapterImpl::OnGetAudioEnhancePropertyCb(int32_t result)
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("Result: %{public}d", result);
     isFinishGetAudioEnhanceProperty_ = true;
+    callbackCV_.notify_all();
+}
+
+void ProAudioServiceAdapterImpl::OnUpdateSpatializationStateCb(int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    AUDIO_INFO_LOG("Result: %{public}d", result);
+    isFinishUpdateSpatializationState_ = true;
     callbackCV_.notify_all();
 }
 

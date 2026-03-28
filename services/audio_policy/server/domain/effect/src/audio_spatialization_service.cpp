@@ -186,12 +186,14 @@ int32_t AudioSpatializationService::SetSpatializationEnabled(
     HandleSpatializationEnabledChange(selectedAudioDevice, enable);
     if (address == currentDeviceAddress_) {
         HandleSpatializationEnabledChangeForCurrentDevice(enable);
-        HandleDeviceConfigChanged(selectedAudioDevice);
     }
     std::string deviceSpatialInfo = EncapsulateDeviceInfo(address);
     UpdateDeviceSpatialMapInfo(address, deviceSpatialInfo);
     if (UpdateSpatializationStateReal(false) != 0) {
         return ERROR;
+    }
+    if (address == currentDeviceAddress_) {
+        HandleDeviceConfigChanged(selectedAudioDevice);
     }
     WriteSpatializationStateToDb(WRITE_ALLDEVICESPATIAL_INFO);
     return SPATIALIZATION_SERVICE_OK;
@@ -629,19 +631,11 @@ int32_t AudioSpatializationService::UpdateSpatializationStateReal(bool outputDev
 
 int32_t AudioSpatializationService::UpdateSpatializationState()
 {
-    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
-    if (gsp == nullptr) {
-        AUDIO_ERR_LOG("Service proxy unavailable: g_adProxy null");
-        return -1;
-    }
     AudioSpatializationState spatializationState = {spatializationEnabledReal_, headTrackingEnabledReal_,
         adaptiveSpatialRenderingEnabledReal_};
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    int32_t ret = gsp->UpdateSpatializationState(spatializationState);
-    IPCSkeleton::SetCallingIdentity(identity);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("UpdateSpatializationState fail");
-    }
+    audioPolicyManager_.UpdateSpatializationState(spatializationState);
+    AUDIO_INFO_LOG("Update spatialization: %{public}d, %{public}d, %{public}d", spatializationState.spatializationEnabledReal_,
+        spatializationState.headTrackingEnabledReal_, spatializationState.adaptiveSpatialRenderingEnabledReal_);
     return SPATIALIZATION_SERVICE_OK;
 }
 

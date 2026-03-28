@@ -249,6 +249,13 @@ public:
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) NOT_SUPPORT_RET
 
     /**
+     * @brief Set spatialization service enabled
+     *
+     * @return int32_t the result, only supports proaudio for now.
+     */
+    virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) NOT_SUPPORT_RET
+
+    /**
      * @brief Set SetAbsVolumeStateToEffect service enabled
      *
      * @return int32_t the result, only supports proaudio for now.
