@@ -1166,26 +1166,21 @@ static bool ParseWavFile(int fd, off_t fileSize, uint32_t &wavDataSize, uint32_t
 {
     uint8_t header[WAV_HEADER_SIZE];
     int headerRead = read(fd, header, WAV_HEADER_SIZE);
-    
     if (headerRead < WAV_HEADER_SIZE) {
         return false;
     }
 
-    // Check RIFF header
     if (header[0] != DATA_HEADER_INDEX[0] || header[1] != DATA_HEADER_INDEX[1] ||
-        header[2] != DATA_HEADER_INDEX[2] || header[3] != DATA_HEADER_INDEX[3]) {
+        header[INDEXTWO] != DATA_HEADER_INDEX[INDEXTWO] || header[INDEXTHREE] != DATA_HEADER_INDEX[INDEXTHREE]) {
         return false;
     }
 
-    // Read WAV format parameters
     uint16_t audioFormat = *reinterpret_cast<uint16_t*>(&header[WAV_AUDIO_FORMAT_OFFSET]);
     uint16_t numChannels = *reinterpret_cast<uint16_t*>(&header[WAV_NUM_CHANNELS_OFFSET]);
     uint32_t sampleRate = *reinterpret_cast<uint32_t*>(&header[WAV_SAMPLE_RATE_OFFSET]);
     uint32_t byteRate = *reinterpret_cast<uint32_t*>(&header[WAV_BYTE_RATE_OFFSET]);
     uint16_t blockAlign = *reinterpret_cast<uint16_t*>(&header[WAV_BLOCK_ALIGN_OFFSET]);
     uint16_t bitsPerSample = *reinterpret_cast<uint16_t*>(&header[WAV_BITS_PER_SAMPLE_OFFSET]);
-
-    // Search for data chunk
     lseek(fd, WAV_RIFF_HEADER_SIZE, SEEK_SET);
     bool foundDataChunk = false;
     uint8_t chunkHeader[WAV_CHUNK_HEADER_SIZE];
@@ -1199,7 +1194,7 @@ static bool ParseWavFile(int fd, off_t fileSize, uint32_t &wavDataSize, uint32_t
 
         // Check if it's a data chunk
         if (chunkHeader[0] == DATA_CHUNK_ID[0] && chunkHeader[1] == DATA_CHUNK_ID[1] &&
-            chunkHeader[2] == DATA_CHUNK_ID[2] && chunkHeader[3] == DATA_CHUNK_ID[3]) {
+            chunkHeader[INDEXTWO] == DATA_CHUNK_ID[INDEXTWO] && chunkHeader[INDEXTHREE] == DATA_CHUNK_ID[INDEXTHREE]) {
             foundDataChunk = true;
             wavDataSize = *reinterpret_cast<uint32_t*>(&chunkHeader[WAV_CHUNK_SIZE_OFFSET]);
             wavDataStart = lseek(fd, 0, SEEK_CUR);
@@ -1225,11 +1220,11 @@ static bool ParseWavFile(int fd, off_t fileSize, uint32_t &wavDataSize, uint32_t
 static bool ReadFileData(int fd, off_t fileSize, bool isWavFile, uint32_t wavDataSize, uint32_t wavDataStart)
 {
     uint32_t bytesToRead = 0;
-    
+
     if (isWavFile) {
         lseek(fd, wavDataStart, SEEK_SET);
-        bytesToRead = (wavDataSize > 0 && wavDataSize < (fileSize - wavDataStart)) ? 
-                      wavDataSize : (fileSize - wavDataStart);
+        bytesToRead =
+            (wavDataSize > 0 && wavDataSize < (fileSize - wavDataStart)) ? wavDataSize : (fileSize - wavDataStart);
         g_inputDataLen = read(fd, g_inputData, bytesToRead);
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                      "Read %{public}u bytes from WAV data (expected: %{public}u bytes)", g_inputDataLen, bytesToRead);
@@ -1281,7 +1276,13 @@ static bool ValidateAndGetFileSize(int fd, off_t &fileSize)
 // Allocate memory for input data
 static bool AllocateInputData(off_t fileSize, uint8_t *&inputData)
 {
-    inputData = static_cast<uint8_t*>(malloc(fileSize));
+    if (fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Invalid memory allocation size: %{public}ld bytes",
+                     fileSize);
+        return false;
+    }
+
+    inputData = static_cast<uint8_t *>(malloc(fileSize));
     if (inputData == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Failed to allocate memory for input data");
         return false;
@@ -1444,7 +1445,7 @@ static napi_status CreateThreadSafeConverterCallback(napi_env env)
     napi_value name;
     napi_status status = napi_create_string_utf8(env, "AudioConverterCallbackWrapper", NAPI_AUTO_LENGTH, &name);
     status = napi_create_threadsafe_function(env, callback, NULL, name, 1, 1, NULL, NULL, NULL,
-                                            AudioConverterCallbackWrapper, &g_converterCallback);
+                                             AudioConverterCallbackWrapper, &g_converterCallback);
     return status;
 }
 
@@ -1529,13 +1530,13 @@ static int32_t CalculateBufferSize()
             sampleFormatMultiplier = 1;
             break;
         case AUDIO_SAMPLE_S24LE:
-            sampleFormatMultiplier = 2;
+            sampleFormatMultiplier = INDEXTWO;
             break;
         case AUDIO_SAMPLE_S32LE:
-            sampleFormatMultiplier = 2;
+            sampleFormatMultiplier = INDEXTWO;
             break;
         case AUDIO_SAMPLE_F32LE:
-            sampleFormatMultiplier = 2;
+            sampleFormatMultiplier = INDEXTWO;
             break;
         default:
             sampleFormatMultiplier = 1;
@@ -1636,14 +1637,14 @@ static void ResetOutputData()
 }
 
 // Log process result
-static void LogProcessResult(int32_t processCount, OH_AudioConverter_Result result, 
-                            const char *errorMsg, int32_t outputSize)
+static void LogProcessResult(int32_t processCount, OH_AudioConverter_Result result, const char *errorMsg,
+                             int32_t outputSize)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                 "Process success %{public}d: result=%{public}d (%{public}s), outputSize=%{public}d", 
-                 processCount, static_cast<int>(result), errorMsg, outputSize);
-    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "dataOffset=%{public}u, remainingData=%{public}u",
-                 g_dataOffset, (g_inputDataLen > g_dataOffset) ? (g_inputDataLen - g_dataOffset) : 0);
+                 "Process success %{public}d: result=%{public}d (%{public}s), outputSize=%{public}d", processCount,
+                 static_cast<int>(result), errorMsg, outputSize);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "dataOffset=%{public}u, remainingData=%{public}u", g_dataOffset,
+                 (g_inputDataLen > g_dataOffset) ? (g_inputDataLen - g_dataOffset) : 0);
 }
 
 // Log process error
@@ -1732,8 +1733,8 @@ static bool ValidateInputData()
 }
 
 // Initialize process parameters
-static void InitializeProcessParameters(int32_t &bufferSize, int32_t &processCount, 
-                                       int32_t &zeroOutputCount, bool &hasError, bool &retryWithSmallerBuffer)
+static void InitializeProcessParameters(int32_t &bufferSize, int32_t &processCount, int32_t &zeroOutputCount,
+                                        bool &hasError, bool &retryWithSmallerBuffer)
 {
     bufferSize = CalculateBufferSize();
     processCount = 0;
@@ -1743,9 +1744,8 @@ static void InitializeProcessParameters(int32_t &bufferSize, int32_t &processCou
 }
 
 // Process single iteration
-static bool ProcessIteration(OH_AudioConverter *converter, int32_t bufferSize, 
-                            int32_t &processCount, int32_t &zeroOutputCount, 
-                            bool &hasError, bool &retryWithSmallerBuffer)
+static bool ProcessIteration(OH_AudioConverter *converter, int32_t bufferSize, int32_t &processCount,
+                             int32_t &zeroOutputCount, bool &hasError, bool &retryWithSmallerBuffer)
 {
     int32_t currentBufferSize = retryWithSmallerBuffer ? RETRY_BUFFER_SIZE : bufferSize;
     void *outputData = new uint8_t[currentBufferSize];
@@ -1820,14 +1820,12 @@ static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
-    // Parse and validate converter
     OH_AudioConverter *converter = ParseAndValidateConverter(env, argv);
     if (converter == nullptr) {
         delete[] argv;
         return nullptr;
     }
 
-    // Validate input data
     if (!ValidateInputData()) {
         delete[] argv;
         return nullptr;
@@ -1839,16 +1837,16 @@ static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
 
     // Reset output data
     ResetOutputData();
-
-    // Initialize process parameters
-    int32_t bufferSize, processCount, zeroOutputCount;
-    bool hasError, retryWithSmallerBuffer;
+    int32_t bufferSize;
+    int32_t processCount;
+    int32_t zeroOutputCount;
+    bool hasError;
+    bool retryWithSmallerBuffer;
     InitializeProcessParameters(bufferSize, processCount, zeroOutputCount, hasError, retryWithSmallerBuffer);
 
-    // Process loop
     while (processCount < MAX_PROCESS_ATTEMPTS) {
-        bool shouldContinue = ProcessIteration(converter, bufferSize, processCount, 
-                                              zeroOutputCount, hasError, retryWithSmallerBuffer);
+        bool shouldContinue =
+            ProcessIteration(converter, bufferSize, processCount, zeroOutputCount, hasError, retryWithSmallerBuffer);
         if (!shouldContinue) {
             break;
         }
