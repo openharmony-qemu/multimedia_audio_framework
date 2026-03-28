@@ -262,7 +262,9 @@ HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, cons
                 HPAE_SCENE_SPLIT_NAVIGATION : HPAE_SCENE_SPLIT_MEDIA) :
             (splitNums == splitThreeStream) ? (
                 (streamUsage == STREAM_USAGE_NAVIGATION) ? HPAE_SCENE_SPLIT_NAVIGATION :
-                (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION || streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)
+                (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+                 streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+                 streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION)
                     ? HPAE_SCENE_SPLIT_COMMUNICATION
                     : HPAE_SCENE_SPLIT_MEDIA
             ) : HPAE_SCENE_DEFAULT;
