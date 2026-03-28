@@ -635,8 +635,8 @@ int32_t AudioSpatializationService::UpdateSpatializationState()
         adaptiveSpatialRenderingEnabledReal_};
     audioPolicyManager_.UpdateSpatializationState(spatializationState);
     AUDIO_INFO_LOG("Update spatialization: %{public}d, %{public}d, %{public}d",
-        spatializationState.spatializationEnabledReal_, spatializationState.headTrackingEnabledReal_,
-        spatializationState.adaptiveSpatialRenderingEnabledReal_);
+        spatializationState.spatializationEnabled, spatializationState.headTrackingEnabled,
+        spatializationState.adaptiveSpatialRenderingEnabled);
     return SPATIALIZATION_SERVICE_OK;
 }
 
