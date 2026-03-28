@@ -63,6 +63,7 @@ private:
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
     std::atomic<bool> isFirstWriteDataFlag_ = true;
+    std::mutex dupMutex_;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
