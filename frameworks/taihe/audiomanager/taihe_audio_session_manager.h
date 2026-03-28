@@ -48,7 +48,7 @@ public:
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
     void SetAudioSessionScene(AudioSessionScene scene);
     void EnableMuteSuggestionWhenMixWithOthers(bool enable);
-    void SetCaptureMuteHintSync(bool mute);
+    void SetCapturerMuteHintSync(bool mute);
     void SetAudioSessionBehavior(const uint32_t behavior);
     void OnAudioSessionDeactivated(callback_view<void(AudioSessionDeactivatedEvent const&)> callback);
     void OnAudioSessionStateChanged(callback_view<void(AudioSessionStateChangedEvent const&)> callback);
