@@ -2074,11 +2074,11 @@ static napi_value Init(napi_env env, napi_value exports)
         {"setEqualizerMode", nullptr, SetEqualizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setEqualizerFrequencyBandGains", nullptr, SetEqualizerFrequencyBandGains, nullptr, nullptr, nullptr,
          napi_default, nullptr},
-        {"OH_AudioConverter_Create", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"OH_AudioConverter_SetInputCallback", nullptr, AudioConverterSetInputCallback, nullptr, nullptr, nullptr,
+        {"ohAudioConverterCreate", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"ohAudioConverterSetInputCallback", nullptr, AudioConverterSetInputCallback, nullptr, nullptr, nullptr,
          napi_default, nullptr},
-        {"OH_AudioConverter_Process", nullptr, AudioConverterProcess, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"OH_AudioConverter_Destroy", nullptr, AudioConverterDestroy, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"ohAudioConverterProcess", nullptr, AudioConverterProcess, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"ohAudioConverterDestroy", nullptr, AudioConverterDestroy, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"saveConverterFile", nullptr, SaveConverterFile, nullptr, nullptr, nullptr, napi_default, nullptr}
     };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
