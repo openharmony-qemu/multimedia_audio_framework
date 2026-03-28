@@ -58,6 +58,8 @@
 #include "ohaudiosuite/native_audio_suite_base.h"
 #include <cmath>
 
+#define INDEXTWO 2 
+#define INDEXTHREE 3
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
@@ -128,7 +130,6 @@ const int32_t WAV_NUM_CHANNELS_OFFSET = 22; // WAV: 22
 const int32_t WAV_BYTE_RATE_OFFSET = 28; // WAV: 28
 const int32_t WAV_BITS_PER_SAMPLE_OFFSET = 34; // WAV: 34
 
-const int32_t USER_DATA_INDEX[] = {0, 1, 2, 3};
 const int32_t INVALID_FD = -1;
 const int32_t HUNDRED = 100;
 const char DATA_CHUNK_ID[] = {'d', 'a', 't', 'a'};
@@ -1162,7 +1163,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
 
     // Parsing the file descriptor.
     int32_t fd = INVALID_FD;
-    status = napi_get_value_int32(env, argv[USER_DATA_INDEX[2]], &fd);
+    status = napi_get_value_int32(env, argv[INDEXTWO], &fd);
 
     if (status != napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse file descriptor failed");
@@ -1232,8 +1233,8 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     uint32_t wavDataStart = WAV_HEADER_SIZE; // Default data start position
 
     if (headerRead >= WAV_HEADER_SIZE && header[0] == DATA_HEADER_INDEX[0] && header[1] == DATA_HEADER_INDEX[1] &&
-        header[USER_DATA_INDEX[2]] == DATA_HEADER_INDEX[USER_DATA_INDEX[2]] &&
-        header[USER_DATA_INDEX[3]] == DATA_HEADER_INDEX[USER_DATA_INDEX[3]]) {
+        header[INDEXTWO] == DATA_HEADER_INDEX[INDEXTWO] &&
+        header[INDEXTHREE] == DATA_HEADER_INDEX[INDEXTHREE]) {
         isWavFile = true;
 
         // Read the actual format parameters from the WAV file header
@@ -1266,8 +1267,7 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
 
             // Check whether it is a data chunk.
             if (chunkHeader[0] == DATA_CHUNK_ID[0] && chunkHeader[1] == DATA_CHUNK_ID[1] &&
-                chunkHeader[USER_DATA_INDEX[2]] == DATA_CHUNK_ID[USER_DATA_INDEX[2]] &&
-                chunkHeader[USER_DATA_INDEX[3]] == DATA_CHUNK_ID[USER_DATA_INDEX[3]]) {
+                chunkHeader[INDEXTWO] == DATA_CHUNK_ID[INDEXTWO] && chunkHeader[INDEXTHREE] == DATA_CHUNK_ID[INDEXTHREE]) {
                 foundDataChunk = true;
                 wavDataSize = *reinterpret_cast<uint32_t*>(&chunkHeader[WAV_CHUNK_SIZE_OFFSET]);
                 wavDataStart = lseek(fd, 0, SEEK_CUR); // Obtaining the current location.
@@ -1324,56 +1324,56 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     g_inputSampleRate = inputFormat.samplingRate;
 
     switch (outputFormat.channelLayout) {
-      case CH_LAYOUT_MONO:
-        g_outputChannelCount = CHANNEL_COUNT_MONO;
-        break;
-      case CH_LAYOUT_STEREO:
-      case CH_LAYOUT_STEREO_DOWNMIX:
-        g_outputChannelCount = CHANNEL_COUNT_STEREO;
-        break;
-      case CH_LAYOUT_2POINT1:
-      case CH_LAYOUT_3POINT0:
-      case CH_LAYOUT_SURROUND:
-        g_outputChannelCount = CHANNEL_COUNT_2POINT1;
-        break;
-      case CH_LAYOUT_3POINT1:
-      case CH_LAYOUT_4POINT0:
-      case CH_LAYOUT_QUAD:
-      case CH_LAYOUT_QUAD_SIDE:
-      case CH_LAYOUT_2POINT0POINT2:
-        g_outputChannelCount = CHANNEL_COUNT_QUAD;
-        break;
-      case CH_LAYOUT_4POINT1:
-      case CH_LAYOUT_5POINT0:
-      case CH_LAYOUT_5POINT0_BACK:
-      case CH_LAYOUT_2POINT1POINT2:
-      case CH_LAYOUT_3POINT0POINT2:
-        g_outputChannelCount = CHANNEL_COUNT_5POINT0;
-        break;
-      case CH_LAYOUT_5POINT1:
-      case CH_LAYOUT_5POINT1_BACK:
-      case CH_LAYOUT_6POINT0:
-      case CH_LAYOUT_3POINT1POINT2:
-      case CH_LAYOUT_6POINT0_FRONT:
-        g_outputChannelCount = CHANNEL_COUNT_5POINT1;
-        break;
-      case CH_LAYOUT_HEXAGONAL:
-      case CH_LAYOUT_6POINT1:
-      case CH_LAYOUT_6POINT1_BACK:
-      case CH_LAYOUT_6POINT1_FRONT:
-      case CH_LAYOUT_7POINT0:
-      case CH_LAYOUT_7POINT0_FRONT:
-        g_outputChannelCount = CHANNEL_COUNT_7POINT0;
-        break;
-      case CH_LAYOUT_7POINT1:
-      case CH_LAYOUT_OCTAGONAL:
-      case CH_LAYOUT_7POINT1_WIDE:
-      case CH_LAYOUT_7POINT1_WIDE_BACK:
-        g_outputChannelCount = CHANNEL_COUNT_7POINT1;
-        break;
-      default:
-        g_outputChannelCount = CHANNEL_COUNT_STEREO;
-        break;
+        case CH_LAYOUT_MONO:
+            g_outputChannelCount = CHANNEL_COUNT_MONO;
+            break;
+        case CH_LAYOUT_STEREO:
+        case CH_LAYOUT_STEREO_DOWNMIX:
+            g_outputChannelCount = CHANNEL_COUNT_STEREO;
+            break;
+        case CH_LAYOUT_2POINT1:
+        case CH_LAYOUT_3POINT0:
+        case CH_LAYOUT_SURROUND:
+            g_outputChannelCount = CHANNEL_COUNT_2POINT1;
+            break;
+        case CH_LAYOUT_3POINT1:
+        case CH_LAYOUT_4POINT0:
+        case CH_LAYOUT_QUAD:
+        case CH_LAYOUT_QUAD_SIDE:
+        case CH_LAYOUT_2POINT0POINT2:
+            g_outputChannelCount = CHANNEL_COUNT_QUAD;
+            break;
+        case CH_LAYOUT_4POINT1:
+        case CH_LAYOUT_5POINT0:
+        case CH_LAYOUT_5POINT0_BACK:
+        case CH_LAYOUT_2POINT1POINT2:
+        case CH_LAYOUT_3POINT0POINT2:
+            g_outputChannelCount = CHANNEL_COUNT_5POINT0;
+            break;
+        case CH_LAYOUT_5POINT1:
+        case CH_LAYOUT_5POINT1_BACK:
+        case CH_LAYOUT_6POINT0:
+        case CH_LAYOUT_3POINT1POINT2:
+        case CH_LAYOUT_6POINT0_FRONT:
+            g_outputChannelCount = CHANNEL_COUNT_5POINT1;
+            break;
+        case CH_LAYOUT_HEXAGONAL:
+        case CH_LAYOUT_6POINT1:
+        case CH_LAYOUT_6POINT1_BACK:
+        case CH_LAYOUT_6POINT1_FRONT:
+        case CH_LAYOUT_7POINT0:
+        case CH_LAYOUT_7POINT0_FRONT:
+            g_outputChannelCount = CHANNEL_COUNT_7POINT0;
+            break;
+        case CH_LAYOUT_7POINT1:
+        case CH_LAYOUT_OCTAGONAL:
+        case CH_LAYOUT_7POINT1_WIDE:
+        case CH_LAYOUT_7POINT1_WIDE_BACK:
+            g_outputChannelCount = CHANNEL_COUNT_7POINT1;
+            break;
+        default:
+            g_outputChannelCount = CHANNEL_COUNT_STEREO;
+            break;
     }
 
     // Saves the output sampling format for dynamically adjusting the buffer size.
@@ -1472,7 +1472,7 @@ static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_inf
 
     // Parse userData
     int64_t userData = 0;
-    status = napi_get_value_int64(env, argv[USER_DATA_INDEX[2]], &userData);
+    status = napi_get_value_int64(env, argv[INDEXTWO], &userData);
 
     g_userData = userData;
 
@@ -1590,24 +1590,24 @@ static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
     // U8: 8bit (0.5x), S16LE: 16bit (1x), S24LE: 24bit (1.5x), S32LE: 32bit (2x), F32LE: 32bit (2x)
     int32_t sampleFormatMultiplier = 1;
     switch (g_outputSampleFormat) {
-      case AUDIO_SAMPLE_U8:
-        sampleFormatMultiplier = 1; // 8bit
-        break;
-      case AUDIO_SAMPLE_S16LE:
-        sampleFormatMultiplier = 1; // 16bit
-        break;
-      case AUDIO_SAMPLE_S24LE:
-        sampleFormatMultiplier = 2; // 24bit
-        break;
-      case AUDIO_SAMPLE_S32LE:
-        sampleFormatMultiplier = 2; // 32bit
-        break;
-      case AUDIO_SAMPLE_F32LE:
-        sampleFormatMultiplier = 2; // 32bit float
-        break;
-      default:
-        sampleFormatMultiplier = 1; // 16bit
-        break;
+        case AUDIO_SAMPLE_U8:
+            sampleFormatMultiplier = 1; // 8bit
+            break;
+        case AUDIO_SAMPLE_S16LE:
+            sampleFormatMultiplier = 1; // 16bit
+            break;
+        case AUDIO_SAMPLE_S24LE:
+            sampleFormatMultiplier = 2; // 24bit
+            break;
+        case AUDIO_SAMPLE_S32LE:
+            sampleFormatMultiplier = 2; // 32bit
+            break;
+        case AUDIO_SAMPLE_F32LE:
+            sampleFormatMultiplier = 2; // 32bit float
+            break;
+        default:
+            sampleFormatMultiplier = 1; // 16bit
+            break;
     }
     bufferSize = bufferSize * sampleFormatMultiplier;
 
@@ -1641,21 +1641,21 @@ static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
         // Detailed error information.
         const char *errorMsg = "";
         switch (result) {
-          case AUDIOCONVERTER_SUCCESS:
-            errorMsg = "SUCCESS";
-            break;
-          case AUDIOCONVERTER_ERROR_INVALID_PARAM:
-            errorMsg = "INVALID_PARAM";
-            break;
-          case AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT:
-            errorMsg = "UNSUPPORTED_FORMAT";
-            break;
-          case AUDIOCONVERTER_ERROR_SYSTEM:
-            errorMsg = "SYSTEM_ERROR";
-            break;
-          default:
-            errorMsg = "UNKNOWN_ERROR";
-            break;
+            case AUDIOCONVERTER_SUCCESS:
+                errorMsg = "SUCCESS";
+                break;
+            case AUDIOCONVERTER_ERROR_INVALID_PARAM:
+                errorMsg = "INVALID_PARAM";
+                break;
+            case AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT:
+                errorMsg = "UNSUPPORTED_FORMAT";
+                break;
+            case AUDIOCONVERTER_ERROR_SYSTEM:
+                errorMsg = "SYSTEM_ERROR";
+                break;
+            default:
+                errorMsg = "UNKNOWN_ERROR";
+                break;
         }
 
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
