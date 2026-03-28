@@ -58,7 +58,7 @@
 #include "ohaudiosuite/native_audio_suite_base.h"
 #include <cmath>
 
-#define INDEXTWO 2 
+#define INDEXTWO 2
 #define INDEXTHREE 3
 
 const int GLOBAL_RESMGR = 0xFF00;
@@ -1164,7 +1164,6 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     // Parsing the file descriptor.
     int32_t fd = INVALID_FD;
     status = napi_get_value_int32(env, argv[INDEXTWO], &fd);
-
     if (status != napi_ok) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse file descriptor failed");
         delete[] argv;
@@ -1400,7 +1399,7 @@ int64_t g_userData;
 
 // AudioConverter C callback function - called by converter engine
 static int32_t AudioConverterRequestDataCallback(void *userData, const void **outInputData,
-                                                 OH_AudioConverter_InputStatus *outStatus) 
+                                                 OH_AudioConverter_InputStatus *outStatus)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                  "AudioConverterRequestDataCallback called, offset: %{public}u, totalLen: %{public}u", g_dataOffset,
@@ -1424,27 +1423,23 @@ static int32_t AudioConverterRequestDataCallback(void *userData, const void **ou
     // that all audio data can be correctly processed
     uint32_t remainingData = g_inputDataLen - g_dataOffset;
     uint32_t dataSizeToReturn = (remainingData > DATA_CHUNK_SIZE) ? DATA_CHUNK_SIZE : remainingData;
-
     *outInputData = g_inputData + g_dataOffset;
     *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
-
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                  "Returning %{public}u bytes of input data (offset: %{public}u, remaining: %{public}u)",
                  dataSizeToReturn, g_dataOffset, remainingData);
 
     // Update the offset, indicating that the data has been provided.
     g_dataOffset += dataSizeToReturn;
-
-
     return dataSizeToReturn;
 }
 
 // AudioConverter callback wrapper function - thread-safe callback for JS
-static void AudioConverterCallbackWrapper(napi_env env, napi_value js_callback, void *context, void *data) 
+static void AudioConverterCallbackWrapper(napi_env env, napi_value js_callback, void *context, void *data)
 {
     (void)context;
     (void)data;
-
+    
     // This is the thread-safe wrapper that will be called from C++ to invoke JS callback
     // The actual callback parameters will be passed through the data parameter
     // For now, this is a placeholder for the thread-safe mechanism
@@ -1452,9 +1447,8 @@ static void AudioConverterCallbackWrapper(napi_env env, napi_value js_callback, 
     napi_call_function(env, NULL, js_callback, 0, NULL, &result);
 }
 
-static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_info info) 
+static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_info info)
 {
-
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "OH_AudioConverter_SetInputCallback start");
     size_t argc = 3;
     napi_value *argv = new napi_value[argc];
@@ -1521,7 +1515,7 @@ static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_inf
     return napiValue;
 }
 
-static napi_value AudioConverterProcess(napi_env env, napi_callback_info info) 
+static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "AudioConverterProcess start");
     size_t argc = 1;
@@ -1812,7 +1806,7 @@ static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
 }
 
 // OH_AudioConverter_Destroy NAPI binding
-static napi_value AudioConverterDestroy(napi_env env, napi_callback_info info) 
+static napi_value AudioConverterDestroy(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "AudioConverterDestroy start");
     size_t argc = 1;
@@ -1852,7 +1846,7 @@ static napi_value AudioConverterDestroy(napi_env env, napi_callback_info info)
 }
 
 // SaveConverterFile NAPI binding - Saving the converted audio data.
-static napi_value SaveConverterFile(napi_env env, napi_callback_info info) 
+static napi_value SaveConverterFile(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SaveConverterFile start");
 
@@ -2014,7 +2008,7 @@ static napi_value Init(napi_env env, napi_value exports)
         {"audioRendererStop", nullptr, AudioRendererStop, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"getRendererState", nullptr, GetRendererState, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetTotalWriteAudioDataSize", nullptr, ResetTotalWriteAudioDataSize, nullptr, nullptr, nullptr, napi_default,
-            nullptr},
+         nullptr},
         {"realTimeSaveFileBuffer", nullptr, RealTimeSaveFileBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioEditNodeInit", nullptr, AudioEditNodeInit, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioInAndOutInit", nullptr, AudioInAndOutInit, nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -2023,9 +2017,10 @@ static napi_value Init(napi_env env, napi_value exports)
         {"setFormat", nullptr, SetFormat, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setEqualizerMode", nullptr, SetEqualizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setEqualizerFrequencyBandGains", nullptr, SetEqualizerFrequencyBandGains, nullptr, nullptr, nullptr,
-            napi_default, nullptr},
+         napi_default, nullptr},
         {"OH_AudioConverter_Create", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"OH_AudioConverter_SetInputCallback", nullptr, AudioConverterSetInputCallback, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"OH_AudioConverter_SetInputCallback", nullptr, AudioConverterSetInputCallback, nullptr, nullptr, nullptr,
+         napi_default, nullptr},
         {"OH_AudioConverter_Process", nullptr, AudioConverterProcess, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"OH_AudioConverter_Destroy", nullptr, AudioConverterDestroy, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"saveConverterFile", nullptr, SaveConverterFile, nullptr, nullptr, nullptr, napi_default, nullptr}
