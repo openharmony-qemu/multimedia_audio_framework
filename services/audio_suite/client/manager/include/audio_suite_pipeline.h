@@ -114,6 +114,7 @@ private:
     int32_t GetFrameDuration(int32_t frameSize, const AudioFormat &nodeFormat);
     void CheckRenderFrameTime(int32_t frameDurationMS, uint64_t processDurationUS);
     void CheckRenderFrameOverTimeCount();
+    void SetMixerNodeSampleRate();
 
 private:
     static std::mutex allocateIdLock;
