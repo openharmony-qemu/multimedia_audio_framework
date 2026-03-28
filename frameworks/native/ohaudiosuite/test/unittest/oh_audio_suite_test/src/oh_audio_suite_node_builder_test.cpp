@@ -36,9 +36,9 @@ void OHAudioSuiteNodeBuilderTest::SetUp(void)
 
 void OHAudioSuiteNodeBuilderTest::TearDown(void) { }
 
-static const uint32_t MAX_INPUT_NODE_NUM = 5;
+static const uint32_t MAX_INPUT_NODE_NUM = 15;
 static const uint32_t MAX_OUTPUT_NODE_NUM = 1;
-static const uint32_t MAX_EFFECT_NODE_NUM = 5;
+static const uint32_t MAX_EFFECT_NODE_NUM = 15;
 static const uint32_t MAX_MIX_NODE_NUM = 3;
 
 static int32_t RequestDataCallback(OH_AudioNode *audioNode, void *userData,

@@ -25,6 +25,7 @@
 #include "audio_suite_pipeline.h"
 #include "audio_suite_base.h"
 #include "audio_suite_unittest_tools.h"
+#include "audio_suite_output_node.h"
 
 
 using namespace OHOS;
@@ -1350,6 +1351,149 @@ HWTEST_F(AudioSuiteEngineManagerUnitTest, audioSuitePipelineCheckRenderFrameTime
         EXPECT_EQ(pl.renderFrameOvertimeCounters_, expectedArrayEmpty);
         EXPECT_EQ(pl.renderFrameTotalCount_, 0);
     }
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, MixerNodeNotSetSampleRateWhenInputsDifferent, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+
+    AudioFormat inputFormat1 = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+    AudioFormat inputFormat2 = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_16000};
+    AudioFormat mixerFormat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    AudioFormat outputFormat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+
+    auto inputNode1 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    inputNode1->audioNodeInfo_.nodeId = 2;
+    inputNode1->SetAudioNodeFormat(inputFormat1);
+
+    auto inputNode2 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    inputNode2->audioNodeInfo_.nodeId = 3;
+    inputNode2->SetAudioNodeFormat(inputFormat2);
+
+    auto mixerNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    mixerNode->audioNodeInfo_.nodeId = 1;
+    mixerNode->SetAudioNodeFormat(mixerFormat);
+
+    auto outputNode = std::make_shared<AudioOutputNode>(outputFormat);
+    outputNode->audioNodeInfo_.nodeId = 4;
+
+    audioSuitePipeline.nodeMap_[2] = inputNode1;
+    audioSuitePipeline.nodeMap_[3] = inputNode2;
+    audioSuitePipeline.nodeMap_[1] = mixerNode;
+    audioSuitePipeline.outputNode_ = outputNode;
+    audioSuitePipeline.reverseConnections_[1] = {2, 3};
+    audioSuitePipeline.connections_[2] = 1;
+    audioSuitePipeline.connections_[3] = 1;
+    audioSuitePipeline.reverseConnections_[4] = {1};
+    audioSuitePipeline.connections_[1] = 4;
+
+    std::shared_ptr<InputNodeRequestDataCallBack> suitCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestImpl>();
+    audioSuitePipeline.SetRequestDataCallback(2, suitCallback);
+    audioSuitePipeline.SetRequestDataCallback(3, suitCallback);
+
+    EXPECT_EQ(audioSuitePipeline.Start(), SUCCESS);
+    sleep(1);
+    EXPECT_EQ(mixerNode->GetAudioNodeFormat().rate, SAMPLE_RATE_44100);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, MultipleMixerNodesEachSetFromInputs, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+
+    AudioFormat inputFormat1 = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+    AudioFormat inputFormat2 = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_16000};
+    AudioFormat mixerFormat1 = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    AudioFormat mixerFormat2 = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_8000};
+    AudioFormat outputFormat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+
+    auto inputNode1 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    inputNode1->audioNodeInfo_.nodeId = 3;
+    inputNode1->SetAudioNodeFormat(inputFormat1);
+
+    auto inputNode2 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    inputNode2->audioNodeInfo_.nodeId = 4;
+    inputNode2->SetAudioNodeFormat(inputFormat1);
+
+    auto inputNode3 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    inputNode3->audioNodeInfo_.nodeId = 5;
+    inputNode3->SetAudioNodeFormat(inputFormat2);
+
+    auto mixerNode1 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    mixerNode1->audioNodeInfo_.nodeId = 1;
+    mixerNode1->SetAudioNodeFormat(mixerFormat1);
+
+    auto mixerNode2 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    mixerNode2->audioNodeInfo_.nodeId = 2;
+    mixerNode2->SetAudioNodeFormat(mixerFormat2);
+
+    auto outputNode = std::make_shared<AudioOutputNode>(outputFormat);
+    outputNode->audioNodeInfo_.nodeId = 6;
+
+    audioSuitePipeline.nodeMap_[3] = inputNode1;
+    audioSuitePipeline.nodeMap_[4] = inputNode2;
+    audioSuitePipeline.nodeMap_[5] = inputNode3;
+    audioSuitePipeline.nodeMap_[1] = mixerNode1;
+    audioSuitePipeline.nodeMap_[2] = mixerNode2;
+    audioSuitePipeline.outputNode_ = outputNode;
+    audioSuitePipeline.reverseConnections_[1] = {3, 4};
+    audioSuitePipeline.connections_[3] = 1;
+    audioSuitePipeline.connections_[4] = 1;
+    audioSuitePipeline.reverseConnections_[2] = {5};
+    audioSuitePipeline.connections_[5] = 2;
+    audioSuitePipeline.reverseConnections_[6] = {1, 2};
+    audioSuitePipeline.connections_[1] = 6;
+    audioSuitePipeline.connections_[2] = 6;
+
+    std::shared_ptr<InputNodeRequestDataCallBack> suitCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestImpl>();
+    audioSuitePipeline.SetRequestDataCallback(3, suitCallback);
+    audioSuitePipeline.SetRequestDataCallback(4, suitCallback);
+    audioSuitePipeline.SetRequestDataCallback(5, suitCallback);
+
+    EXPECT_EQ(audioSuitePipeline.Start(), SUCCESS);
+    sleep(1);
+    EXPECT_EQ(mixerNode1->GetAudioNodeFormat().rate, SAMPLE_RATE_48000);
+    EXPECT_EQ(mixerNode2->GetAudioNodeFormat().rate, SAMPLE_RATE_16000);
+}
+
+HWTEST_F(AudioSuiteEngineManagerUnitTest, MixerNodeHandleNullInputNodes, TestSize.Level0)
+{
+    AudioSuitePipeline audioSuitePipeline(PIPELINE_EDIT_MODE);
+    audioSuitePipeline.Init();
+
+    AudioFormat inputFormat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+    AudioFormat mixerFormat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_44100};
+    AudioFormat outputFormat = {{CH_LAYOUT_STEREO, 2}, SAMPLE_F32LE, SAMPLE_RATE_48000};
+
+    auto inputNode1 = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_INPUT);
+    inputNode1->audioNodeInfo_.nodeId = 2;
+    inputNode1->SetAudioNodeFormat(inputFormat);
+
+    auto mixerNode = std::make_shared<AudioNodeTestImpl>(NODE_TYPE_AUDIO_MIXER);
+    mixerNode->audioNodeInfo_.nodeId = 1;
+    mixerNode->SetAudioNodeFormat(mixerFormat);
+
+    auto outputNode = std::make_shared<AudioOutputNode>(outputFormat);
+    outputNode->audioNodeInfo_.nodeId = 4;
+
+    audioSuitePipeline.nodeMap_[2] = inputNode1;
+    audioSuitePipeline.nodeMap_[1] = mixerNode;
+    audioSuitePipeline.outputNode_ = outputNode;
+    audioSuitePipeline.reverseConnections_[1] = {2, 3};
+    audioSuitePipeline.connections_[2] = 1;
+    audioSuitePipeline.reverseConnections_[4] = {1};
+    audioSuitePipeline.connections_[1] = 4;
+
+    std::shared_ptr<InputNodeRequestDataCallBack> suitCallback =
+        std::make_shared<SuiteInputNodeRequestDataCallBackTestImpl>();
+    audioSuitePipeline.SetRequestDataCallback(2, suitCallback);
+
+    EXPECT_EQ(audioSuitePipeline.Start(), SUCCESS);
+    sleep(1);
+    EXPECT_EQ(mixerNode->GetAudioNodeFormat().rate, SAMPLE_RATE_48000);
 }
 
 }  // namespace

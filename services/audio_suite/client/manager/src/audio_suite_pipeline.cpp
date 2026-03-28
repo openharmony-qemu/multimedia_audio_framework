@@ -159,6 +159,8 @@ int32_t AudioSuitePipeline::Start()
             return;
         }
 
+        SetMixerNodeSampleRate();
+
         if (!CheckPipelineNode(outputNode_->GetAudioNodeId())) {
             AUDIO_INFO_LOG("Current pipeline node connet status error, id is %{public}d", id_);
             TriggerCallback(START_PIPELINE, ERR_ILLEGAL_STATE);
@@ -210,6 +212,49 @@ int32_t AudioSuitePipeline::Stop()
     CheckRenderFrameOverTimeCount();
 
     return SUCCESS;
+}
+
+void AudioSuitePipeline::SetMixerNodeSampleRate()
+{
+    for (const auto& [nodeId, node] : nodeMap_) {
+        if (node == nullptr) {
+            continue;
+        }
+
+        if (node->GetNodeType() != NODE_TYPE_AUDIO_MIXER) {
+            continue;
+        }
+
+        auto it = reverseConnections_.find(nodeId);
+        if (it == reverseConnections_.end() || it->second.empty()) {
+            continue;
+        }
+
+        AudioSamplingRate firstSampleRate = static_cast<AudioSamplingRate>(0);
+        bool allSameRate = true;
+
+        for (const auto& prevNodeId : it->second) {
+            auto prevNodeIt = nodeMap_.find(prevNodeId);
+            if (prevNodeIt == nodeMap_.end() || prevNodeIt->second == nullptr) {
+                continue;
+            }
+
+            AudioFormat prevNodeFormat = prevNodeIt->second->GetAudioNodeFormat();
+            if (firstSampleRate == static_cast<AudioSamplingRate>(0)) {
+                firstSampleRate = prevNodeFormat.rate;
+            } else if (prevNodeFormat.rate != firstSampleRate) {
+                allSameRate = false;
+                break;
+            }
+        }
+
+        if (allSameRate && firstSampleRate != static_cast<AudioSamplingRate>(0)) {
+            AudioFormat mixerFormat = node->GetAudioNodeFormat();
+            mixerFormat.rate = firstSampleRate;
+            node->SetAudioNodeFormat(mixerFormat);
+            AUDIO_INFO_LOG("Set mixer node %{public}d sample rate to %{public}d", nodeId, firstSampleRate);
+        }
+    }
 }
 
 int32_t AudioSuitePipeline::GetPipelineState()

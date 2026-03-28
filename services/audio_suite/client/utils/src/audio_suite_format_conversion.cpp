@@ -26,7 +26,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace AudioSuite {
 
-static constexpr uint32_t RESAMPLE_QUAILTY = 5;
+static constexpr uint32_t RESAMPLE_QUAILTY = 1;
 static constexpr uint32_t DOUBLE_FRAME = 2;
 
 int32_t AudioSuiteFormatConversion::ChannelConvert(AudioSuitePcmBuffer *in, AudioSuitePcmBuffer *out)
