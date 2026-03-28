@@ -2,6 +2,7 @@
 * Copyright (c) 2026 Huawei Device Co., Ltd. 2026-2026. All rights reserved.
 */
 
+
 import { Logger } from '../utils/Logger';
 import { StyleConst } from '../utils/StyleConst';
 import audioNapi from 'libentry.so';
@@ -126,7 +127,7 @@ export async function saveFileBuffer(): Promise<ArrayBuffer> {
 
 @Concurrent
 export async function audioConverterProcess(converterHandle: number): Promise<ArrayBuffer> {
-  let result = audioNapi.OH_AudioConverter_Process(converterHandle);
+  let result = audioNapi.ohAudioConverterProcess(converterHandle);
   return result;
 }
 
@@ -213,7 +214,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.OH_AudioConverter_Create();
+                this.ohAudioConverterCreate();
               })
 
             Text(this.createResult)
@@ -226,7 +227,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.OH_AudioConverter_SetInputCallback();
+                this.ohAudioConverterSetInputCallback();
               })
 
             Text(this.callbackResult)
@@ -239,7 +240,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.OH_AudioConverter_Process();
+                this.ohAudioConverterProcess();
               })
 
             Text(this.processResult)
@@ -252,7 +253,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.OH_AudioConverter_Destroy();
+                this.ohAudioConverterDestroy();
               })
 
             Text(this.destroyResult)
@@ -473,7 +474,7 @@ export struct AudioConversion {
     }
   }
 
-  OH_AudioConverter_Create(): void {
+  ohAudioConverterCreate(): void {
     Logger.info(TAG, 'OH_AudioConverter_Create 接口调用');
     try {
       Logger.info(TAG, `InputFormat: encodingType=${this.inputFormat.encodingType},
@@ -512,7 +513,7 @@ export struct AudioConversion {
       let fsStat  = fs.statSync(path);
       Logger.info(TAG, `fileSize : ${fsStat.size}`);
 
-      const result = audioNapi.OH_AudioConverter_Create(this.inputFormat, this.outputFormat, file.fd);
+      const result = audioNapi.ohAudioConverterCreate(this.inputFormat, this.outputFormat, file.fd);
 
       // Note: The C++ layer has already read the data and closed the file descriptor, so there is no need to close it again here.
       // Check if the return value is a valid converter handle (non-zero and negative values indicate an error).
@@ -532,7 +533,7 @@ export struct AudioConversion {
     }
   }
 
-  OH_AudioConverter_SetInputCallback(): void {
+  ohAudioConverterSetInputCallback(): void {
     Logger.info(TAG, 'OH_AudioConverter_SetCallback 接口调用');
     try {
       if (this.selectedFileUri === '') {
@@ -553,7 +554,7 @@ export struct AudioConversion {
       };
 
       // Call C++ interface, passing callback function and user data
-      const result = audioNapi.OH_AudioConverter_SetInputCallback(this.converterHandle, callback, 0);
+      const result = audioNapi.ohAudioConverterSetInputCallback(this.converterHandle, callback, 0);
       this.callbackResult = `SetInputCallback 调用成功, result: ${result}`;
       Logger.info(TAG, `OH_AudioConverter_SetInputCallback result: ${result}`);
     } catch (e) {
@@ -562,7 +563,7 @@ export struct AudioConversion {
     }
   }
 
-  OH_AudioConverter_Process(): void {
+  ohAudioConverterProcess(): void {
     Logger.info(TAG, 'OH_AudioConverter_Process 接口调用');
 
     // Checking whether the converter handle is valid.
@@ -598,7 +599,7 @@ export struct AudioConversion {
     });
   }
 
-  OH_AudioConverter_Destroy(): void {
+  ohAudioConverterDestroy(): void {
     Logger.info(TAG, 'OH_AudioConverter_Destroy 接口调用');
     try {
       if (this.converterHandle === 0) {
@@ -607,7 +608,7 @@ export struct AudioConversion {
         return;
       }
 
-      audioNapi.OH_AudioConverter_Destroy(this.converterHandle);
+      audioNapi.ohAudioConverterDestroy(this.converterHandle);
       this.converterHandle = 0;
       this.destroyResult = 'Destroy 调用成功';
       Logger.info(TAG, 'OH_AudioConverter_Destroy 调用成功');
@@ -694,7 +695,7 @@ export struct AudioConversion {
       case AudioChannelLayout.CH_LAYOUT_3POINT0:
         return 3;
       case AudioChannelLayout.CH_LAYOUT_SURROUND:
-        return 4;
+        return 3;
       case AudioChannelLayout.CH_LAYOUT_3POINT1:
         return 4;
       case AudioChannelLayout.CH_LAYOUT_4POINT0:
