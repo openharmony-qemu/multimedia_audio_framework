@@ -98,6 +98,7 @@ private:
     int32_t setSourceOutputMuteResult_ = -1;
     int32_t getAudioEffectPropertyResult_ = -1;
     int32_t getAudioEnhancePropertyResult_ = -1;
+    int32_t getCollaborativeUpdateResult_ = -1;
     int32_t updateSpatializationStateResult_ = -1;
     std::vector<SinkInput> sinkInputs_;
     std::vector<SourceOutput> sourceOutputs_;
