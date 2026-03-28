@@ -2137,6 +2137,7 @@ ohos_unittest("audio_policy_server_unit_test") {
     "../../audio_policy/test/unittest/audio_interrupt_service_test/include",
     "../../../services/audio_engine/manager/include",
     "../../../services/audio_service/server/include",
+    "../../audio_service/test/unittest/include"
   ]
 
   use_exceptions = true

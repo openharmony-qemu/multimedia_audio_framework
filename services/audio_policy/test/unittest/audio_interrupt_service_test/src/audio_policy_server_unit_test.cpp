@@ -28,6 +28,7 @@
 #include "token_setproc.h"
 #include "audio_bundle_manager.h"
 #include "audio_zone_info.h"
+#include "audio_unit_test.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -2929,9 +2930,16 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+    volumeLevel = 6;
+    ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    MockNative::Resume();
+
     volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 #ifdef TEMP_DISABLE
