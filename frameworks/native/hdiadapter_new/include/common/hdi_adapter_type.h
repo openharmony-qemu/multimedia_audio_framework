@@ -36,6 +36,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
     float volume = 0.0f;
     std::string filePath;
     std::string deviceNetworkId;
+    int32_t deviceRole = 0;
     int32_t deviceType = 0;
     uint64_t channelLayout = 0;
     int32_t audioStreamFlag = 0;

@@ -51,6 +51,7 @@ const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_FILE_SOURCE, "FILE_SOURCE"},
     {DEVICE_TYPE_EXTERN_CABLE, "EXTERN_CABLE"},
     {DEVICE_TYPE_SYSTEM_PRIVATE, "SYSTEM_PRIVATE"},
+    {DEVICE_TYPE_WIRED_MICIN, "WIRED_MICIN"},
     {DEVICE_TYPE_DEFAULT, "DEFAULT"},
     {DEVICE_TYPE_USB_ARM_HEADSET, "USB_ARM_HEADSET"}
 };
@@ -788,6 +789,13 @@ DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVer
 #endif
             }
             return DEVICE_TYPE_USB_HEADSET;
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_MICIN:
+            return DEVICE_TYPE_WIRED_HEADSET;
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+            return DEVICE_TYPE_WIRED_HEADPHONES;
+        case DEVICE_TYPE_LINE_DIGITAL:
+            return DEVICE_TYPE_LINE_DIGITAL;
         case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
             return DEVICE_TYPE_BLUETOOTH_A2DP;
         case DEVICE_TYPE_HEARING_AID:

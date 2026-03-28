@@ -19,6 +19,7 @@
 #include "device_status_listener.h"
 #include <securec.h>
 #include <cstring>
+#include <cstdlib>
 #include "hdf_device_class.h"
 
 namespace {
@@ -79,6 +80,13 @@ static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
             break;
         case PnpDeviceType::PNP_DEVICE_ACCESSORY:
             internalDeviceType = DEVICE_TYPE_ACCESSORY;
+            break;
+        case PnpDeviceType::PNP_DEVICE_MICIN:
+            internalDeviceType = DEVICE_TYPE_WIRED_MICIN;
+            break;
+        case PnpDeviceType::PNP_DEVICE_LINEOUT:
+        case PnpDeviceType::PNP_DEVICE_LINEIN:
+            internalDeviceType = DEVICE_TYPE_LINE_DIGITAL;
             break;
         default:
             internalDeviceType = DEVICE_TYPE_NONE;
@@ -339,19 +347,23 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
         std::string anahsName = "";
         auto anahsBegin = info.find("ANAHS_NAME=");
         auto anahsEnd = info.find_first_of(";", anahsBegin);
-        anahsName = info.substr(anahsBegin + std::strlen("ANAHS_NAME="),
-            anahsEnd - anahsBegin - std::strlen("ANAHS_NAME="));
-        if (strncmp(anahsName.c_str(), UEVENT_INSERT, strlen(UEVENT_INSERT)) == 0 ||
-            strncmp(anahsName.c_str(), UEVENT_REMOVE, strlen(UEVENT_REMOVE)) == 0) {
+        if (anahsBegin != std::string::npos && anahsEnd != std::string::npos) {
+            size_t nameLen = std::strlen("ANAHS_NAME=");
+            if (anahsEnd > anahsBegin + nameLen) {
+                anahsName = info.substr(anahsBegin + nameLen, anahsEnd - anahsBegin - nameLen);
+            }
+        }
+        if (!anahsName.empty() && (strncmp(anahsName.c_str(), UEVENT_INSERT, strlen(UEVENT_INSERT)) == 0 ||
+            strncmp(anahsName.c_str(), UEVENT_REMOVE, strlen(UEVENT_REMOVE)) == 0)) {
             AUDIO_INFO_LOG("parse anahsName = %{public}s", anahsName.c_str());
             audioDeviceAnahsCb_->OnExtPnpDeviceStatusChanged(anahsName, anahsShowType_);
             return;
         }
     }
 
+    int32_t deviceRole = ParsedDeviceRole(info);
     PnpDeviceType pnpDeviceType = PNP_DEVICE_UNKNOWN;
     PnpEventType pnpEventType = PNP_EVENT_UNKNOWN;
-
     AudioDeviceDescriptor desc = {};
 
     if (sscanf_s(info.c_str(), "EVENT_TYPE=%d;DEVICE_TYPE=%d;", &pnpEventType, &pnpDeviceType) < EVENT_NUM_TYPE) {
@@ -359,29 +371,100 @@ void DeviceStatusListener::OnPnpDeviceStatusChanged(const std::string &info)
         return;
     }
 
-    auto nameBegin = info.find("EVENT_NAME=");
-    auto nameEnd = info.find_first_of(";", nameBegin);
-    desc.deviceName_ = info.substr(nameBegin + std::strlen("EVENT_NAME="),
-        nameEnd - nameBegin - std::strlen("EVENT_NAME="));
+    std::string portId;
+    std::string deviceName;
+    ParseDeviceNameAndAddress(info, desc.deviceName_, portId);
 
-    auto addressBegin = info.find("DEVICE_ADDRESS=");
-    auto addressEnd = info.find_first_of(";", addressBegin);
-    string portId = info.substr(addressBegin + std::strlen("DEVICE_ADDRESS="),
-        addressEnd - addressBegin - std::strlen("DEVICE_ADDRESS="));
-
+    desc.deviceName_ = deviceName;
     desc.deviceType_ = GetInternalDeviceType(pnpDeviceType);
     if (desc.deviceType_ == DEVICE_TYPE_NONE) {
         AUDIO_DEBUG_LOG("Unsupported device %{public}d", pnpDeviceType);
         return;
     }
-    bool isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
 
+    desc.deviceRole_ = static_cast<DeviceRole>(deviceRole);
+    bool isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
     if (desc.deviceType_ == DEVICE_TYPE_DP) {
         desc.macAddress_ = DP_ADDRESS + portId;
     }
     AUDIO_INFO_LOG("[device type: %{public}d], [connection state: %{public}d], [name: %{public}s]",
         desc.deviceType_, isConnected, desc.deviceName_.c_str());
     deviceObserver_.OnPnpDeviceStatusUpdated(desc, isConnected);
+}
+
+int32_t DeviceStatusListener::ParsedDeviceRole(const std::string &info)
+{
+    int32_t deviceRole = DEVICE_TYPE_NONE;
+    auto roleBegin = info.find("DEVICE_ROLE=");
+    if (roleBegin == std::string::npos) {
+        AUDIO_DEBUG_LOG("DEVICE_ROLE filed not found in info, using default : %{public}d", DEVICE_ROLE_NONE);
+        return deviceRole;
+    }
+
+    auto roleEnd = info.find_first_of(";", roleBegin);
+    if (roleEnd == std::string::npos) {
+        AUDIO_DEBUG_LOG("DEVICE_ROLE filed not found in info, using default : %{public}d", DEVICE_ROLE_NONE);
+        return deviceRole;
+    }
+
+    size_t len = std::strlen("DEVICE_ROLE=");
+    if (roleEnd <= roleBegin + len) {
+        AUDIO_WARNING_LOG("DEVICE_ROLE is empty string, skip parsing");
+        deviceRole = DEVICE_ROLE_NONE;
+        return deviceRole;
+    }
+
+    std::string roleStr = info.substr(roleBegin + len, roleEnd - roleBegin - len);
+    if (roleStr.empty()) {
+        AUDIO_WARNING_LOG("DEVICE_ROLE is empty string, skip parsing");
+        deviceRole = DEVICE_ROLE_NONE;
+        return deviceRole;
+    }
+
+    char *endptr = nullptr;
+    long roleLong = strtol(roleStr.c_str(), &endptr, 10);
+    if (endptr == roleStr.c_str() || *endptr != '\0') {
+        AUDIO_ERR_LOG("Invalid DEVICE_ROLE format: '%{public}s' (not a valid intrger)", roleStr.c_str());
+        deviceRole = DEVICE_ROLE_NONE;
+        return deviceRole;
+    }
+
+    if (roleLong < INT32_MIN || roleLong > INT32_MAX) {
+        AUDIO_ERR_LOG("DEVICE_ROLE value out of range: '%{public}s' (exceeds int32_t range)", roleStr.c_str());
+        deviceRole = DEVICE_ROLE_NONE;
+        return deviceRole;
+    }
+
+    deviceRole = static_cast<int32_t>(roleLong);
+    AUDIO_DEBUG_LOG("Parsed DEVICE_ROLE = %{public}d from string: %{public}s", deviceRole, roleStr.c_str());
+
+    return deviceRole;
+}
+
+bool DeviceStatusListener::ParseDeviceNameAndAddress(const std::string &info, std::string &deviceName,
+    std::string &portId)
+{
+    deviceName.clear();
+    portId.clear();
+    auto nameBegin = info.find("EVENT_NAME=");
+    auto nameEnd = info.find_first_of(";", nameBegin);
+    if (nameBegin == std::string::npos && nameEnd != std::string::npos) {
+        size_t nameLen = std::strlen("EVENT_NAME=");
+        if (nameEnd > nameBegin + nameLen) {
+            deviceName = info.substr(nameBegin + nameLen, nameEnd - nameBegin - nameLen);
+        }
+    }
+
+    auto addressBegin = info.find("DEVICE_ADDRESS=");
+    auto addressEnd = info.find_first_of(";", addressBegin);
+    if (addressBegin != std::string::npos && addressEnd != std::string::npos) {
+        size_t addrLen = std::strlen("DEVICE_ADDRESS=");
+        if (addressEnd > addressBegin + addrLen) {
+            portId = info.substr(addressBegin + addrLen, addressEnd - addressBegin - addrLen);
+        }
+    }
+    
+    return true;
 }
 #endif
 

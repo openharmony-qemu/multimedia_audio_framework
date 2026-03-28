@@ -59,6 +59,7 @@ private:
     void DetectAudioDpDevice();
 };
 
+std::string GetAudioEventInfo(const AudioEvent audioEvent);
 class MicrophoneBlocked {
 public:
     static MicrophoneBlocked &GetInstance()
@@ -101,6 +102,8 @@ enum PnpDeviceType {
     PNP_DEVICE_DP_DEVICE = 1 << 12,
     PNP_DEVICE_MIC = 1 << 13,
     PNP_DEVICE_ACCESSORY = 1 << 14,
+    PNP_DEVICE_MICIN = 1 << 15,
+    PNP_DEVICE_LINEIN = 1 << 16,
     PNP_DEVICE_UNKNOWN,
 };
 

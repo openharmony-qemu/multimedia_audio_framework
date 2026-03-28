@@ -46,6 +46,8 @@ const std::unordered_map<DeviceType, std::string> &GetSupportedDeviceType()
         {DEVICE_TYPE_ACCESSORY, "DEVICE_TYPE_ACCESSORY"},
         {DEVICE_TYPE_BT_SPP, "DEVICE_TYPE_BT_SPP"},
         {DEVICE_TYPE_NEARLINK, "DEVICE_TYPE_NEARLINK"},
+        {DEVICE_TYPE_LINE_DIGITAL, "DEVICE_TYPE_LINE_DIGITAL"},
+        {DEVICE_TYPE_WIRED_MICIN, "DEVICE_TYPE_WIRED_MICIN"},
     };
     return supportedDevicetype;
 }

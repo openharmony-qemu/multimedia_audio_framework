@@ -1748,6 +1748,8 @@ bool AudioCoreService::HasLowLatencyCapability(DeviceType deviceType, bool isRem
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
+        case DeviceType::DEVICE_TYPE_WIRED_MICIN:
         case DeviceType::DEVICE_TYPE_DP:
             return true;
 

@@ -368,7 +368,9 @@ private:
         DEVICE_TYPE_WIRED_HEADSET,
         DEVICE_TYPE_WAKEUP,
         DEVICE_TYPE_MIC,
-        DEVICE_TYPE_ACCESSORY
+        DEVICE_TYPE_ACCESSORY,
+        DEVICE_TYPE_LINE_DIGITAL,
+        DEVICE_TYPE_WIRED_MICIN
     };
 
     AudioEffectService& audioEffectService_;

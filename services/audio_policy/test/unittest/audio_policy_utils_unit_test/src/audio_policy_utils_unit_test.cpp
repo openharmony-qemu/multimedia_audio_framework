@@ -545,6 +545,44 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_021, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_024
+ * @tc.desc  : Test GetSourcePortName
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_024, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_MICIN;
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+
+    std::string ret = audioPolicyUtilsTest_->GetSourcePortName(deviceType, routeFlag);
+    EXPECT_EQ(ret, PRIMARY_MIC);
+}
+
+/**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_025
+ * @tc.desc  : Test GetSourcePortName
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_025, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_LINE_DIGITAL;
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+
+    std::string ret = audioPolicyUtilsTest_->GetSourcePortName(deviceType, routeFlag);
+    EXPECT_EQ(ret, PRIMARY_MIC);
+}
+
+/**
  * @tc.name  : Test AudioPolicyUtils
  * @tc.number: ClearScoDeviceSuspendState_001
  * @tc.desc  : Test ClearScoDeviceSuspendState

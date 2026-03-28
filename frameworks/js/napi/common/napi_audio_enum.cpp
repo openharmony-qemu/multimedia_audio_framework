@@ -156,6 +156,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
     {"ACCESSORY", DEVICE_TYPE_ACCESSORY},
     {"DEFAULT", DEVICE_TYPE_DEFAULT},
+    {"WIRED_MICIN", DEVICE_TYPE_WIRED_MICIN},
     {"MAX", DEVICE_TYPE_MAX},
 };
 

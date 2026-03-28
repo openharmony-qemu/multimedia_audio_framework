@@ -1344,6 +1344,36 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Leve
 }
 
 /**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_075
+ * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
+ */
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_075, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_LINE_DIGITAL;
+    auto audioCoreService = AudioCoreService::GetCoreService();
+
+    bool result = audioCoreService->HasLowLatencyCapability(deviceType, false);
+
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_076
+ * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
+ */
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_076, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_WIRED_MICIN;
+    auto audioCoreService = AudioCoreService::GetCoreService();
+
+    bool result = audioCoreService->HasLowLatencyCapability(deviceType, false);
+
+    EXPECT_EQ(result, true);
+}
+
+/**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_100
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeUpdate()

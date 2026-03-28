@@ -592,6 +592,14 @@ HWTEST(AudioPolicyClientStubImplTest, AudioDeviceDescriptor_001, TestSize.Level1
     deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX);
     deviceDescriptor.deviceRole_ = INPUT_DEVICE;
     EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_USB_DEVICE);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_WIRED_HEADSET);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_WIRED_HEADPHONES;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_WIRED_HEADPHONES);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_LINE_DIGITAL;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_LINE_DIGITAL);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_WIRED_MICIN;
+    EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_WIRED_HEADSET);
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     EXPECT_EQ(deviceDescriptor.MapInternalToExternalDeviceType(API_VERSION_MAX), DEVICE_TYPE_BLUETOOTH_A2DP);
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;

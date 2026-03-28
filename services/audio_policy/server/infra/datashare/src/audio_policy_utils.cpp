@@ -466,6 +466,8 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_NEARLINK_IN:
+        case DeviceType::DEVICE_TYPE_WIRED_MICIN:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
             portName = ResolvePrimaryMicPort(routeFlag);
             AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
             break;

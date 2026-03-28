@@ -64,6 +64,8 @@ private:
     sptr<IStandardAudioAnahsManagerListener> audioDeviceAnahsCb_;
     std::string anahsShowType_ = "Dialog";
     std::atomic<bool> isOnline_;
+    static int32_t ParsedDeviceRole(const std::string &info);
+    static bool ParseDeviceNameAndAddress(const std::string &info, std::string &deviceName, std::string &portId);
 };
 
 #ifdef AUDIO_WIRED_DETECT

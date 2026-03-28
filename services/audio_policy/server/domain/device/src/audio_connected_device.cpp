@@ -353,6 +353,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioConnectedDevice::GetDev
         if (device == nullptr) {
             continue;
         }
+        AUDIO_INFO_LOG("networkId=[%{public}s], deviceRole=[%{public}d], deviceType=[%{public}d], isLocal=[%{public}d]",
+            device->networkId_.c_str(), static_cast<int32_t>(device->deviceRole_),
+                static_cast<int32_t>(device->deviceType_), (device->networkId_ == LOCAL_NETWORK_ID ? 1 : 0));
         bool filterAllLocal = deviceFlag == DeviceFlag::ALL_DEVICES_FLAG && device->networkId_ == LOCAL_NETWORK_ID;
         bool filterLocalOutput = deviceFlag == DeviceFlag::OUTPUT_DEVICES_FLAG
             && device->networkId_ == LOCAL_NETWORK_ID
@@ -394,6 +397,7 @@ DeviceType AudioConnectedDevice::FindConnectedHeadset()
             (devDesc->deviceType_ == DEVICE_TYPE_ACCESSORY) ||
             (devDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) ||
             (devDesc->deviceType_ == DEVICE_TYPE_HDMI) ||
+            (devDesc->deviceType_ == DEVICE_TYPE_WIRED_MICIN) ||
             (devDesc->deviceType_ == DEVICE_TYPE_LINE_DIGITAL));
     });
 
