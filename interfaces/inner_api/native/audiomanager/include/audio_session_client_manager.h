@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -209,6 +208,16 @@ public:
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
 
     /**
+     * @brief Set the output device for audio session scene.
+     *
+     * @param deviceType. The available deviceTypes are SPEAKER/DEFAULT.
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26
+     */
+    int32_t SetMediaOutputDevice(DeviceType deviceType);
+
+    /**
      * @brief Subscribes device changed event callback.
      * The event is triggered when device changed.
      *
@@ -355,6 +364,10 @@ private:
     std::mutex setDefaultOutputDeviceMutex_;
     bool setDefaultOutputDevice_ = false;
     DeviceType setDeviceType_ = DEVICE_TYPE_INVALID;
+
+    std::mutex setMediaOutputDeviceMutex_;
+    bool setMediaOutputDevice_ = false;
+    DeviceType setMediaDeviceType_ = DEVICE_TYPE_INVALID;
 
     // used by restore
     std::mutex sessionManagerRestoreMutex_;
