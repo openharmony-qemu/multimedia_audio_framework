@@ -23,7 +23,6 @@
 #include "audio_system_manager.h"
 #include "OHAudioDeviceDescriptor.h"
 
-
 namespace OHOS {
 namespace AudioStandard {
 
@@ -50,6 +49,58 @@ public:
 
 private:
     OH_AudioRoutingManager_OnDeviceChangedCallback callback_;
+};
+
+class OHAudioPreferredOutputDeviceChangedCallback : public AudioPreferredOutputDeviceChangeCallback {
+public:
+    explicit OHAudioPreferredOutputDeviceChangedCallback(
+        OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback)
+        : callback_(callback)
+    {
+    }
+    void OnPreferredOutputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
+
+    OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback GetCallback()
+    {
+        return callback_;
+    }
+
+    ~OHAudioPreferredOutputDeviceChangedCallback()
+    {
+        AUDIO_INFO_LOG("~OHAudioPreferredOutputDeviceChangedCallback called.");
+        if (callback_ != nullptr) {
+            callback_ = nullptr;
+        }
+    }
+
+private:
+    OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback_;
+};
+
+class OHAudioPreferredInputDeviceChangedCallback : public AudioPreferredInputDeviceChangeCallback {
+public:
+    explicit OHAudioPreferredInputDeviceChangedCallback(
+        OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback)
+        : callback_(callback)
+    {
+    }
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
+
+    OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback GetCallback()
+    {
+        return callback_;
+    }
+
+    ~OHAudioPreferredInputDeviceChangedCallback()
+    {
+        AUDIO_INFO_LOG("~OHAudioPreferredInputDeviceChangedCallback called.");
+        if (callback_ != nullptr) {
+            callback_ = nullptr;
+        }
+    }
+
+private:
+    OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback_;
 };
 
 class OHMicrophoneBlockCallback : public AudioManagerMicrophoneBlockedCallback {
@@ -95,6 +146,16 @@ public:
         OH_AudioRoutingManager_OnDeviceChangedCallback callback);
     OH_AudioCommon_Result UnsetDeviceChangeCallback(DeviceFlag flag,
         OH_AudioRoutingManager_OnDeviceChangedCallback ohOnDeviceChangedcallback);
+    OH_AudioCommon_Result SetPreferredOutputDeviceChangeCallback(StreamUsage streamUsage,
+        OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback);
+    OH_AudioCommon_Result RemoveAllPreferredOutputDeviceCallback();
+    OH_AudioCommon_Result UnsetPreferredOutputDeviceChangeCallback(
+        OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback);
+    OH_AudioCommon_Result SetPreferredInputDeviceChangeCallback(SourceType sourceType,
+        OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback);
+    OH_AudioCommon_Result RemoveAllPreferredInputDeviceCallback();
+    OH_AudioCommon_Result UnsetPreferredInputDeviceChangeCallback(
+        OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback);
     OH_AudioCommon_Result SetMicrophoneBlockedCallback(OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback,
         void* userData);
     OH_AudioCommon_Result UnsetMicrophoneBlockedCallback(OH_AudioRoutingManager_OnDeviceBlockStatusCallback callback);
@@ -102,8 +163,14 @@ public:
 private:
     OHAudioRoutingManager();
     AudioSystemManager *audioSystemManager_ = AudioSystemManager::GetInstance();
+    AudioRoutingManager *audioRoutingManager_ =  AudioRoutingManager::GetInstance();
     std::vector<std::shared_ptr<OHAudioDeviceChangedCallback>> ohAudioOnDeviceChangedCallbackArray_;
+    std::vector<std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback>> ohAudioPreferredOutputDeviceCallbackArray_;
+    std::vector<std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback>> ohAudioPreferredInputDeviceCallbackArray_;
     std::vector<std::shared_ptr<OHMicrophoneBlockCallback>> ohMicroPhoneBlockCallbackArray_;
+
+    std::mutex audioPreferredOutputDeviceCbMutex_;
+    std::mutex audioPreferredInputDeviceCbMutex_;
 };
 
 } // namespace AudioStandard
