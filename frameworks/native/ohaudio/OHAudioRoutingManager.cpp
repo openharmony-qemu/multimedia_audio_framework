@@ -21,6 +21,7 @@
 #include "audio_routing_manager.h"
 #include "parameters.h"
 
+
 namespace {
 const size_t MAX_VALID_SIZE = 128; // MAX AudioDevice size.
 const std::set<OH_AudioDevice_Usage> VALID_OH_AUDIO_DEVICE_UASGES = {

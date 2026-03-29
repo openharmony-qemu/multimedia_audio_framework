@@ -31,6 +31,7 @@ void OHAudioRoutingManagerUnitTest::TearDown(void) { }
 
 int32_t callbackRet = -1;
 
+
 static int32_t DeviceChangeCallback(OH_AudioDevice_ChangeType type,
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
 {
