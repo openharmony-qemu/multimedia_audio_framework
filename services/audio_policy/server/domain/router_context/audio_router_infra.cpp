@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -256,6 +255,7 @@ AudioSelectDeviceInfo AudioRouterInfra::GetAppSelectDevice(SelectDeviceType type
     }
 
     auto &appContext = it->second;
+    CHECK_AND_RETURN_RET_LOG(appContext != nullptr, AudioSelectDeviceInfo(), "appContext is nullptr");
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
             return appContext->appSelectDevice_.mediaInput_;
@@ -446,6 +446,7 @@ void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
     }
 
     auto &appContext = it->second;
+    CHECK_AND_RETURN_LOG(appContext != nullptr, "appContext is nullptr");
     if (state == StreamState::STARTED) {
         appContext->outputStreams_[streamId] = streamUsage;
     } else if (state == StreamState::STOPPED || state == StreamState::PAUSED) {
@@ -454,6 +455,17 @@ void AudioRouterInfra::UpdateOutputStreamState(int32_t uid, uint32_t streamId,
 
     bool hasRunningStream = HasRunningOutputStream(uid);
     AdjustOutputPriority(uid, hasRunningStream, appContext->isForeground_, false);
+}
+
+int32_t AudioRouterInfra::GetHighestOutputPriorityApp()
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(!outputPriorityList_.empty(), INVALID_UID, "outputPriorityList_ is empty");
+    auto it = appContexts_.find(outputPriorityList_.front());
+    CHECK_AND_RETURN_RET_LOG(it != appContexts_.end(), INVALID_UID, "cannot find appContext");
+    CHECK_AND_RETURN_RET_LOG(it->second != nullptr, INVALID_UID, "audioAppRouterContext is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!it->second->outputStreams_.empty(), INVALID_UID, "no running stream");
+    return outputPriorityList_.front();
 }
 
 bool AudioRouterInfra::HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes)
@@ -487,8 +499,10 @@ void AudioRouterInfra::UpdateAppForegroundState(int32_t uid, bool isForeground)
         it = appContexts_.emplace(uid, std::make_shared<AudioAppRouterContext>(0, uid, isForeground)).first;
         return;
     }
-
+    CHECK_AND_RETURN_LOG(it->second != nullptr, "audioAppRouterContext is nullptr");
     it->second->isForeground_ = isForeground;
+    CHECK_AND_RETURN(isForeground);
+    AdjustOutputPriority(uid, HasRunningOutputStream(uid), isForeground, false);
 }
 
 void AudioRouterInfra::Lock()
@@ -608,12 +622,12 @@ void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream,
     bool isForeground, bool isSelfSelecting)
 {
     if (isSelfSelecting) {
-        if (isForeground && hasRunningStream) {
+        if (isForeground && hasRunningStream && HasAppSelectOutputDevice(uid)) {
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
         }
     } else {
-        if (hasRunningStream) {
+        if (hasRunningStream && HasAppSelectOutputDevice(uid)) {
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
         } else {
@@ -638,9 +652,18 @@ bool AudioRouterInfra::HasRunningOutputStream(int32_t uid)
     if (it == appContexts_.end()) {
         return false;
     }
+    CHECK_AND_RETURN_RET(it->second != nullptr, false);
     return !it->second->outputStreams_.empty();
 }
 
+bool AudioRouterInfra::HasAppSelectOutputDevice(int32_t uid)
+{
+    auto it = appContexts_.find(uid);
+    CHECK_AND_RETURN_RET(it != appContexts_.end(), false);
+    CHECK_AND_RETURN_RET(it->second != nullptr, false);
+    return it->second->appSelectDevice_.mediaOutput_.device_ != nullptr &&
+        it->second->appSelectDevice_.mediaOutput_.device_->deviceType_ != DEVICE_TYPE_NONE;
+}
 
 SourceType AudioRouterInfra::GetFirstAppRunningSourceType(int32_t uid)
 {
@@ -762,7 +785,7 @@ int64_t AudioRouterInfra::GetCurrentTimeMs() const
 
 bool AudioRouterInfra::IsSystemUid(int32_t uid) const
 {
-    return uid == SYSTEM_PID;
+    return uid == SYSTEM_UID;
 }
 
 void AudioRouterInfra::ExcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
