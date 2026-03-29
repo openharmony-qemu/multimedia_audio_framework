@@ -1012,6 +1012,21 @@ bool TaiheAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceT
     return result;
 }
 
+bool TaiheAudioEnum::IsLegalInputArgumentSetMediaOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 bool TaiheAudioEnum::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag)
 {
     bool result = false;
