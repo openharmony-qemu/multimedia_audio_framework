@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -120,6 +119,11 @@ int32_t AudioSessionManager::GetDefaultOutputDevice(DeviceType &deviceType)
 int32_t AudioSessionManager::SetDefaultOutputDevice(DeviceType deviceType)
 {
     return AudioSessionClientManager::GetInstance().SetDefaultOutputDevice(deviceType);
+}
+
+int32_t AudioSessionManager::SetMediaOutputDevice(DeviceType deviceType)
+{
+    return AudioSessionClientManager::GetInstance().SetMediaOutputDevice(deviceType);
 }
 
 int32_t AudioSessionManager::SetAudioSessionCurrentDeviceChangeCallback(
