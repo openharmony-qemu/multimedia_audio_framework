@@ -753,7 +753,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     ASSERT_NE(appResult, nullptr);
 
     strategy.SetMediaOutputDevice(SYSTEM_UID, -1, earpiece);
-    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
     ASSERT_NE(systemResult, nullptr);
 
     strategy.SetMediaOutputDevice(SYSTEM_UID, -1, nullptr);
