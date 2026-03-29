@@ -747,9 +747,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
 
     strategy.SetMediaOutputDevice(456, -1, speaker);
-    AudioRouterInfra::GetInstance().UpdateOutputStreamState(456, 100000, )
-    AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
-        STREAM_USAGE_MEDIA, StreamState::STARTED);
+    AudioRouterInfra::GetInstance().UpdateOutputStreamState(
+        456, 100000, STREAM_USAGE_MEDIA, StreamState::STARTED);
     auto appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(appResult, nullptr);
 
