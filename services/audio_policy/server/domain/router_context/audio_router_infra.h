@@ -50,6 +50,7 @@ public:
     void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
+    AudioSelectDeviceInfo GetLatestAppSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetHighestPrioritySelectDevice(SelectDeviceType type);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetRecognitionCaptureDevice();
 
@@ -96,6 +97,7 @@ public:
     void UpdateAppForegroundState(int32_t uid, bool isForeground);
     void OnAppDied(int32_t uid);
     bool IsSystemUid(int32_t uid) const;
+    bool IsPreferredDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &desc);
 
     void Lock();
     void Unlock();
@@ -122,6 +124,8 @@ private:
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);
+    void WriteSelectOutputSysEvents(
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, SelectDeviceType type);
 
     struct CompareExcludedSimpleDevice {
         bool operator()(const std::shared_ptr<AudioDeviceSimpleDescriptor> &a,

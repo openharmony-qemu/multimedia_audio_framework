@@ -40,7 +40,7 @@ constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
-constexpr uint32_t INVALID_SESSION_ID = 9999;
+constexpr uint32_t INVALID_STREAM_ID = 9999;
 
 class HpaeInjectorRendererManagerTest : public testing::Test {
 public:
@@ -456,7 +456,7 @@ HWTEST_F(HpaeInjectorRendererManagerTest, HpaeInjectorMoveStreamNotInitTest_001,
 {
     HpaeSinkInfo sinkInfo = GetSinkInfo();
     auto hpaeRendererManager = std::make_shared<HpaeInjectorRendererManager>(sinkInfo);
-    EXPECT_EQ(hpaeRendererManager->MoveStream(INVALID_SESSION_ID, ""), SUCCESS);
+    EXPECT_EQ(hpaeRendererManager->MoveStream(INVALID_STREAM_ID, ""), SUCCESS);
     EXPECT_EQ(hpaeRendererManager->sinkInputNodeMap_.size(), 0);
 }
 

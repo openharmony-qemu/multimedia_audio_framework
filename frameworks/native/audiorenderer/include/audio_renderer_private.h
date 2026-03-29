@@ -33,7 +33,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class FormatUnsupportedErrorCallbackImpl;
@@ -287,7 +286,7 @@ private:
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
-    uint32_t sessionID_ = INVALID_SESSION_ID;
+    uint32_t sessionID_ = INVALID_STREAM_ID;
     std::shared_ptr<AudioRendererProxyObj> rendererProxyObj_;
     FILE *dumpFile_ = nullptr;
     std::shared_ptr<AudioRendererErrorCallback> audioRendererErrorCallback_ = nullptr;
@@ -357,7 +356,7 @@ private:
     AudioInterrupt audioInterrupt_ {};
     bool isForcePaused_ = false;
     bool isForceDucked_ = false;
-    uint32_t sessionID_ = INVALID_SESSION_ID;
+    uint32_t sessionID_ = INVALID_STREAM_ID;
     std::mutex mutex_;
     bool switching_ = false;
     std::condition_variable switchStreamCv_;

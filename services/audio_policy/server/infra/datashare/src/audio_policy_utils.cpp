@@ -30,7 +30,8 @@
 #include "audio_recovery_device.h"
 #include "audio_bus_selector.h"
 #include "audio_bundle_manager.h"
-
+#include "audio_router_select_strategy.h"
+#include "audio_select_interface_service.h"
 #include "audio_server_proxy.h"
 
 namespace OHOS {
@@ -157,12 +158,14 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is null");
     int32_t ret = SUCCESS;
     bool mediaControllerFlag = IsSelectedByMediaController();
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
-            audioStateManager_.SetPreferredMediaRenderDevice(desc);
+            strategy.SetMediaOutputDevice(uid, INVALID_STREAM_ID, desc);
             break;
         case AUDIO_CALL_RENDER:
-            audioStateManager_.SetPreferredCallRenderDevice(desc, uid, caller);
+            strategy.SetCallOutputDevice(AudioSelectInterfaceService::GetInstance().GetPreferredUid(uid),
+                INVALID_STREAM_ID, desc, caller);
             break;
         case AUDIO_CALL_CAPTURE:
             audioStateManager_.SetPreferredCallCaptureDevice(desc);

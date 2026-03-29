@@ -390,5 +390,11 @@ bool AudioRouterSelectStrategy::GetScoExcluded()
     return routerInfra.GetScoExcluded();
 }
 
+bool AudioRouterSelectStrategy::IsPreferredDevice(const AudioDeviceDescriptor &desc)
+{
+    auto simpleDesc = ConvertDeviceToSimple(std::make_shared<AudioDeviceDescriptor>(desc));
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    return routerInfra.IsPreferredDevice(simpleDesc);
+}
 }
 }

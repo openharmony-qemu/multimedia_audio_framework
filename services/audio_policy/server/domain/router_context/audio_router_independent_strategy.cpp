@@ -81,7 +81,7 @@ void AudioRouterIndependentStrategy::SetMediaInputDevice(int32_t uid, uint32_t s
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaOutputDevice(int32_t uid,
-    uint32_t streamId, StreamUsage streamUsage)
+    uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
 
@@ -135,7 +135,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetCallOu
 }
 
 void AudioRouterIndependentStrategy::SetCallOutputDevice(int32_t uid,
-    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device)
+    uint32_t streamId, const std::shared_ptr<AudioDeviceDescriptor> &device, const std::string caller)
 {
     SetMediaOutputDevice(uid, streamId, device);
 }

@@ -4083,7 +4083,7 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_001, TestSize.Level1)
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_DIRECT;
 
     audioRendererPrivate->InitSwitchInfo(info);
-    EXPECT_EQ(info.params.originalSessionId, INVALID_SESSION_ID);
+    EXPECT_EQ(info.params.originalSessionId, INVALID_STREAM_ID);
 }
 
 /**
@@ -4559,7 +4559,7 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_002, TestSize.Level1)
     audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
 
     audioRendererPrivate->InitSwitchInfo(info);
-    EXPECT_EQ(info.params.originalSessionId, INVALID_SESSION_ID);
+    EXPECT_EQ(info.params.originalSessionId, INVALID_STREAM_ID);
 }
 
 /**

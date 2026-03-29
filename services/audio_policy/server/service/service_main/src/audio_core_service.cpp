@@ -33,6 +33,7 @@
 #include "audio_volume.h"
 #include "i_hpae_manager.h"
 #include "audio_select_interface_service.h"
+#include "audio_router_select_strategy.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -1200,7 +1201,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
 {
     audioSceneManager_.SetAudioScenePre(audioScene);
     audioSceneManager_.SetPhoneCallOrChatSceneTriggerUid(uid);
-    audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
+    audioSceneManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
     AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
@@ -1262,7 +1263,7 @@ int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool ac
 {
     AUDIO_INFO_LOG("[ADeviceEvent] withlock device %{public}d, active %{public}d from uid %{public}d",
         deviceType, active, uid);
-    int32_t ret = audioActiveDevice_.SetDeviceActive(deviceType, active, uid);
+    int32_t ret = AudioSelectInterfaceService::GetInstance().SetDeviceActive(deviceType, active, "", uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDeviceActive failed");
 
     FetchDeviceAndRoute("SetDeviceActive", AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE);
@@ -1400,7 +1401,8 @@ bool AudioCoreService::GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &i
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevice()
 {
-    std::shared_ptr<AudioDeviceDescriptor> preferredDesc = audioStateManager_.GetPreferredCallRenderDevice();
+    std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
+        AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
     if (preferredDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         return preferredDesc;
     }
@@ -1456,7 +1458,7 @@ int32_t AudioCoreService::SetCallDeviceActive(InternalDeviceType deviceType, boo
 {
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
 
-    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address, uid);
+    int32_t ret = AudioSelectInterfaceService::GetInstance().SetDeviceActive(deviceType, active, address, uid);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
     ret = FetchDeviceAndRoute("SetCallDeviceActive", AudioStreamDeviceChangeReason::OVERRODE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchDeviceAndRoute failed");
@@ -1732,8 +1734,8 @@ int32_t AudioCoreService::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
         RecordSelectDevice(selectHistory);
     }
 
-    return audioRecoveryDevice_.SelectOutputDevice(audioRendererFilter, selectedDesc, audioDeviceSelectMode,
-        isNeedNotifyBt);
+    return AudioSelectInterfaceService::GetInstance().SelectOutputDevice(
+        audioRendererFilter, selectedDesc, audioDeviceSelectMode, isNeedNotifyBt);
 }
 
 void AudioCoreService::NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc)
@@ -2376,7 +2378,8 @@ void AudioCoreService::NotifyRemoteDeviceStatusUpdate(std::shared_ptr<AudioDevic
     CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
     audioActiveDevice_.NotifyUserDisSelectionEventToRemote(desc);
     desc->connectState_ = VIRTUAL_CONNECTED;
-    audioDeviceManager_.UpdateDevicesListInfo(desc, CONNECTSTATE_UPDATE);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    audioDeviceManager_.UpdateDevicesListInfo(desc, CONNECTSTATE_UPDATE, reason);
     DeactivateRemoteDevice(desc->networkId_, desc->deviceType_);
 }
 

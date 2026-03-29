@@ -16,9 +16,12 @@
 #define AUDIO_SELECT_INTERFACE_SERVICE_H
 
 #include "audio_a2dp_offload_manager.h"
+#include "audio_info.h"
 #include "audio_device_info.h"
 #include "audio_stream_descriptor.h"
 #include "audio_stream_types.h"
+#include "istandard_audio_policy_manager_listener.h"
+#include "audio_router_select_strategy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,8 +38,8 @@ public:
         const int32_t uid = INVALID_UID);
     // AudioRoutingManager#selectOutputDevice & AudioRoutingManager#selectOutputDeviceByFilter
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0,
-        const bool isNeedNotifyBt = true);
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc,
+        const int32_t audioDeviceSelectMode = 0, const bool isNeedNotifyBt = true);
 
     // AudioRoutingManager#selectInputDeviceByFilter
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -73,6 +76,9 @@ public:
         const std::string &caller = "");
 
     int32_t SetA2dpDeviceOffloadManager(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager);
+    int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    int32_t GetPreferredUid(int32_t uid);
+    void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
 
 private:
     int32_t ExcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
@@ -80,8 +86,24 @@ private:
     int32_t ClearActiveHfpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
     int32_t UnexcludeOutputDevicesInner(AudioDeviceUsage audioDevUsage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs);
+    void HandleActiveBt(DeviceType deviceType, std::string macAddress);
+    void HandleNegtiveBt(DeviceType deviceType);
+    void SelectOutputDeviceLog(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
+        const int32_t audioDeviceSelectMode = 0);
+    void RestoreSelectRendererDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, const int32_t uid);
+    int32_t SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
+    int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, std::shared_ptr<AudioDeviceDescriptor> desc,
+        const int32_t uid = -1);
+    int32_t SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
+        std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    void HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason, const std::string &caller);
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
+    sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

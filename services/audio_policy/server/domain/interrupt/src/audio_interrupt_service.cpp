@@ -2760,7 +2760,7 @@ bool AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
             break;
         case DEACTIVATE_AUDIO_INTERRUPT:
             if (GetAudioScenePriority(audioScene) >= GetAudioScenePriority(currentAudioScene)) {
-                AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(audioScene == 0 ? 0 : ownerUid_);
+                AudioSceneManager::GetInstance().SetAudioSceneOwnerUid(audioScene == 0 ? 0 : ownerUid_);
                 return false;
             }
             break;

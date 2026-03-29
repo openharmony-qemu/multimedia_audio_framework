@@ -256,13 +256,13 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
 
     strategy.SetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
 
-    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, STREAM_USAGE_MEDIA);
+    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
     ASSERT_NE(systemResult, nullptr);
     EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 
     strategy.ExcludeDevices(devices, MEDIA_OUTPUT_DEVICES);
 
-    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, STREAM_USAGE_MEDIA);
+    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
     EXPECT_EQ(systemResult, nullptr);
 }
 
@@ -279,15 +279,13 @@ HWTEST_F(AudioRouterSelectStrategyExcludeDeviceUnitTest, AudioRouterSelectStrate
 
     strategy.SetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
-    auto app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
-        STREAM_USAGE_MEDIA);
+    auto app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 
     strategy.ExcludeDevices(devices, MEDIA_OUTPUT_DEVICES);
 
-    app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
-        STREAM_USAGE_MEDIA);
+    app10001Result = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
     EXPECT_EQ(app10001Result, nullptr);
 }
 

@@ -235,84 +235,6 @@ void AudioRecoveryDeviceHandleRecoveryPreferredDevicesFuzzTest(FuzzedDataProvide
     OnStop();
 }
 
-void AudioRecoveryDeviceSelectOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || g_testDeviceTypes.size() == 0
-        || audioRendererFilter == nullptr || deviceDescriptor == nullptr) {
-        return;
-    }
-    audioRendererFilter->uid = GetData<int32_t>();
-    audioRendererFilter->rendererInfo.rendererFlags = GetData<int32_t>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
-    deviceDescriptor->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceDescriptor->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    selectedDesc.push_back(deviceDescriptor);
-    audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
-    audioRecoveryDevice->SelectOutputDevice(audioRendererFilter, selectedDesc);
-    OnStop();
-}
-
-void AudioRecoveryDeviceHandleFetchDeviceChangeFuzzTest(FuzzedDataProvider& fdp)
-{
-    static const vector<AudioStreamDeviceChangeReason> testAudioStreamDeviceChangeReason = {
-        AudioStreamDeviceChangeReason::UNKNOWN,
-        AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
-        AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE,
-        AudioStreamDeviceChangeReason::OVERRODE,
-        AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE,
-        AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED,
-    };
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    if (audioRecoveryDevice == nullptr || g_testDeviceTypes.size() == 0
-        || testAudioStreamDeviceChangeReason.size() == 0) {
-        return;
-    }
-    audioRecoveryDevice->audioActiveDevice_.currentActiveDevice_.deviceType_ =
-        g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    audioRecoveryDevice->audioActiveDevice_.currentActiveDevice_.networkId_ = "testNetworkId";
-    AudioStreamDeviceChangeReason reason =
-        testAudioStreamDeviceChangeReason[GetData<uint32_t>() % testAudioStreamDeviceChangeReason.size()];
-    std::string caller{};
-    audioRecoveryDevice->audioA2dpOffloadManager_ = make_shared<AudioA2dpOffloadManager>();
-    audioRecoveryDevice->HandleFetchDeviceChange(reason, caller);
-    OnStop();
-}
-
-void AudioRecoveryDeviceSelectOutputDeviceForFastInnerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    if (audioRecoveryDevice == nullptr) {
-        return;
-    }
-    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
-    CHECK_AND_RETURN(audioRendererFilter != nullptr);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    selectedDesc.push_back(deviceDescriptor);
-
-    audioRecoveryDevice->SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
-    OnStop();
-    selectedDesc.clear();
-}
-
-void AudioRecoveryDeviceSetRenderDeviceForUsageFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || g_testStreamUsages.size() == 0 || desc == nullptr
-        || g_testDeviceTypes.size() == 0) {
-        return;
-    }
-    StreamUsage streamUsage = g_testStreamUsages[GetData<uint32_t>() % g_testStreamUsages.size()];
-    desc->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-
-    audioRecoveryDevice->SetRenderDeviceForUsage(streamUsage, desc);
-    OnStop();
-}
-
 void AudioRecoveryDeviceConnectVirtualDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
@@ -323,59 +245,6 @@ void AudioRecoveryDeviceConnectVirtualDeviceFuzzTest(FuzzedDataProvider& fdp)
     selectedDesc->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
 
     audioRecoveryDevice->ConnectVirtualDevice(selectedDesc);
-    OnStop();
-}
-
-void AudioRecoveryDeviceWriteSelectOutputSysEventsFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDescs;
-    std::shared_ptr<AudioDeviceDescriptor> selectedDesc = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || selectedDesc == nullptr ||
-        g_testDeviceTypes.size() == 0 || g_testStreamUsages.size() == 0) {
-        return;
-    }
-    selectedDesc->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    selectedDescs.push_back(selectedDesc);
-    StreamUsage strUsage = g_testStreamUsages[GetData<uint32_t>() % g_testStreamUsages.size()];
-
-    audioRecoveryDevice->WriteSelectOutputSysEvents(selectedDescs, strUsage);
-    OnStop();
-}
-
-void AudioRecoveryDeviceSelectFastOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || audioRendererFilter == nullptr || deviceDescriptor == nullptr) {
-        return;
-    }
-    audioRendererFilter->uid = GetData<int32_t>();
-    deviceDescriptor->networkId_ = "testNetworkId";
-
-    audioRecoveryDevice->SelectFastOutputDevice(audioRendererFilter, deviceDescriptor);
-    OnStop();
-}
-
-void AudioRecoveryDeviceSelectOutputDeviceByFilterInnerFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioRecoveryDevice = std::make_shared<AudioRecoveryDevice>();
-    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    if (audioRecoveryDevice == nullptr || audioRendererFilter == nullptr ||
-        deviceDescriptor == nullptr || g_testDeviceTypes.size() == 0) {
-        return;
-    }
-    audioRendererFilter->uid = GetData<int32_t>();
-    deviceDescriptor->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    deviceDescriptor->networkId_ = "testNetworkId";
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
-    selectedDesc.push_back(deviceDescriptor);
-    std::shared_ptr<AudioRendererChangeInfo> audioRendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    audioRecoveryDevice->streamCollector_.audioRendererChangeInfos_.push_back(audioRendererChangeInfo);
-
-    audioRecoveryDevice->SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
     OnStop();
 }
 
@@ -471,14 +340,7 @@ void Test(FuzzedDataProvider& fdp)
     RecoverExcludedOutputDevicesFuzzTest,
     HandleExcludedOutputDevicesRecoveryFuzzTest,
     AudioRecoveryDeviceHandleRecoveryPreferredDevicesFuzzTest,
-    AudioRecoveryDeviceSelectOutputDeviceFuzzTest,
-    AudioRecoveryDeviceHandleFetchDeviceChangeFuzzTest,
-    AudioRecoveryDeviceSelectOutputDeviceForFastInnerFuzzTest,
-    AudioRecoveryDeviceSetRenderDeviceForUsageFuzzTest,
     AudioRecoveryDeviceConnectVirtualDeviceFuzzTest,
-    AudioRecoveryDeviceWriteSelectOutputSysEventsFuzzTest,
-    AudioRecoveryDeviceSelectFastOutputDeviceFuzzTest,
-    AudioRecoveryDeviceSelectOutputDeviceByFilterInnerFuzzTest,
     AudioRecoveryDeviceSelectInputDeviceFuzzTest,
     AudioRecoveryDeviceSetCaptureDeviceForUsageFuzzTest,
     AudioRecoveryDeviceSelectFastInputDeviceFuzzTest,

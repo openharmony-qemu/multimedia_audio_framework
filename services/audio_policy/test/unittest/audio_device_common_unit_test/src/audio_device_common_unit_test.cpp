@@ -14,6 +14,7 @@
  */
 
 #include "audio_device_common_unit_test.h"
+#include "audio_router_select_strategy.h"
 
 using namespace testing::ext;
 
@@ -905,10 +906,10 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t uid = 456;
 
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(0, INVALID_STREAM_ID, desc, "");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, uid);
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(uid, INVALID_STREAM_ID, speaker, "");
     deviceList = audioDeviceCommon.GetPreferredOutputDeviceDescInner(
         rendererInfo, networkId, uid);
     EXPECT_EQ(deviceList[0]->deviceId_, 0);
@@ -921,6 +922,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner, TestSize.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, ClearPreferredDevices_001, TestSize.Level1)
 {
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     AudioDeviceCommon &comm = AudioDeviceCommon::GetInstance();
     auto dev = make_shared<AudioDeviceDescriptor>();
     dev->deviceId_ = 1000;
@@ -929,8 +931,8 @@ HWTEST_F(AudioDeviceCommonUnitTest, ClearPreferredDevices_001, TestSize.Level1)
     dev->deviceRole_ = OUTPUT_DEVICE;
     dev->macAddress_ = "card=2;device=0";
     comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
-    comm.audioStateManager_.SetPreferredCallRenderDevice(dev);
-    comm.audioStateManager_.SetPreferredMediaRenderDevice(dev);
+    strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
+    strategy.SetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID, dev);
     comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);
@@ -1051,7 +1053,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_Unavailabl
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t uid = 456;
 
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(uid, INVALID_STREAM_ID, desc, "");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
     // Device should not be returned due to exception flag
@@ -1080,7 +1082,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_ScoSuspend
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t uid = 456;
 
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(uid, INVALID_STREAM_ID, desc, "");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
     // SCO device should not be returned when in suspend state
@@ -1108,7 +1110,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_VirtualCon
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t uid = 456;
 
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(uid, INVALID_STREAM_ID, desc, "");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
     // Virtual connected device should not be returned
@@ -1136,7 +1138,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_AvailableD
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t uid = 456;
 
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(uid, INVALID_STREAM_ID, desc, "");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
     // Available device should be returned
@@ -1166,7 +1168,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, GetPreferredOutputDeviceDescInner_A2dpSuspen
     std::string networkId = LOCAL_NETWORK_ID;
     int32_t uid = 456;
 
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, uid);
+    AudioRouterSelectStrategy::GetInstance().SetCallOutputDevice(uid, INVALID_STREAM_ID, desc, "");
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList =
         audioDeviceCommon.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, uid);
     // A2DP device in suspend state should be returned
