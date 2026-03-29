@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -54,6 +53,7 @@ private:
     void ClearCallOutputDevice(int32_t uid, uint32_t streamId, const std::string caller);
     void RefreshCallOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
+    bool HasVaildSelectDevice(AudioSelectDeviceInfo selectInfo);
 };
 
 }
