@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -464,6 +463,13 @@ int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilte
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
+}
+
+int32_t AudioCoreService::EventEntry::SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::SetMediaOutputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetMediaOutputDeviceByUid(deviceType, uid);
 }
 
 int32_t AudioCoreService::EventEntry::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
