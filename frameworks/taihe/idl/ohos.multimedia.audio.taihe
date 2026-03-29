@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -899,6 +898,9 @@ interface AudioSessionManager {
 
   @gen_promise("setDefaultOutputDevice")
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
+
+  @gen_promise("setMediaOutputDevice")
+  SetMediaOutputDeviceSync(deviceType: DeviceType): void;
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
   @gen_promise("setCaptureMuteHint")
