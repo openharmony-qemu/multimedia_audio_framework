@@ -70,8 +70,9 @@ int32_t AudioScoDeviceBehavior::HandleScoOutputDeviceFetched(const std::shared_p
         RecoverFetchedDescs(pipeManager->GetAllOutputStreamDescs());
         AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
         deviceDesc->exceptionFlag_ = true;
+        AudioStreamDeviceChangeReasonExt inreason = AudioStreamDeviceChangeReason::UNKNOWN;
         AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
-            std::make_shared<AudioDeviceDescriptor>(*deviceDesc), EXCEPTION_FLAG_UPDATE);
+            std::make_shared<AudioDeviceDescriptor>(*deviceDesc), EXCEPTION_FLAG_UPDATE, inreason);
         return ERROR;
     }
     if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
@@ -90,8 +91,9 @@ int32_t AudioScoDeviceBehavior::BluetoothScoInputFetch(const std::shared_ptr<Aud
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch input device");
         desc->exceptionFlag_ = true;
+        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
         AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
-            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
+            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE, reason);
         return ERROR;
     }
 

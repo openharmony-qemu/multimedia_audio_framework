@@ -2235,7 +2235,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.
     EXPECT_NE(nullptr, audioCapturer);
 
     EXPECT_NE(CAPTURER_INVALID, audioCapturer->GetStatus());
-    uint32_t originalSessionId = INVALID_SESSION_ID;
+    uint32_t originalSessionId = INVALID_STREAM_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
     RestoreInfo restoreInfo;
@@ -2267,7 +2267,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_002, TestSize.
     EXPECT_EQ(false, startResult);
     EXPECT_EQ(CAPTURER_NEW, audioCapturer->GetStatus());
 
-    uint32_t originalSessionId = INVALID_SESSION_ID;
+    uint32_t originalSessionId = INVALID_STREAM_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
     RestoreInfo restoreInfo;
@@ -2293,7 +2293,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_003, TestSize.
         std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
     EXPECT_NE(nullptr, audioCapturer);
 
-    uint32_t originalSessionId = INVALID_SESSION_ID;
+    uint32_t originalSessionId = INVALID_STREAM_ID;
     audioCapturer->GetAudioStreamId(originalSessionId);
 
     RestoreInfo restoreInfo;

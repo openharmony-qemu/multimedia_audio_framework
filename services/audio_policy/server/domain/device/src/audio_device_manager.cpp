@@ -1180,40 +1180,45 @@ bool AudioDeviceManager::GetScoState()
     return false;
 }
 
-AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDevicesListInfo(
-    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, const DeviceInfoUpdateCommand updateCommand)
+bool AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
+    const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason)
 {
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, reason, "desc is nullptr");
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, false, "desc is nullptr");
 
     bool ret = false;
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     switch (updateCommand) {
         case CATEGORY_UPDATE:
             ret = UpdateDeviceCategory(devDesc);
+            reason = devDesc->deviceCategory_ == BT_UNWEAR_HEADPHONE ?
+                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE :
+                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             break;
         case CONNECTSTATE_UPDATE:
             ret = UpdateConnectState(devDesc);
             break;
         case ENABLE_UPDATE:
             ret = UpdateEnableState(devDesc);
+            reason = devDesc->isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
+                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
             break;
         case EXCEPTION_FLAG_UPDATE:
             ret = UpdateExceptionFlag(devDesc);
             break;
         case USAGE_UPDATE:
-            reason = UpdateDeviceUsage(devDesc);
+            ret = UpdateDeviceUsage(devDesc, reason);
             break;
         default:
             break;
     }
     if (!ret) {
         int32_t audioId = devDesc->deviceId_;
-        AUDIO_ERR_LOG("cant update type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
+        AUDIO_ERR_LOG("do not update type:id %{public}d:%{public}d mac:%{public}s\
+            networkid:%{public}s in connected list",
             devDesc->deviceType_, audioId, GetEncryptStr(devDesc->macAddress_).c_str(),
             GetEncryptStr(devDesc->networkId_).c_str());
     }
-    return reason;
+    return ret;
 }
 
 void AudioDeviceManager::UpdateDeviceConnectTimestamp(AudioDeviceDescriptor &desc)
@@ -1267,8 +1272,8 @@ bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceD
             }
 
             TriggerDeviceInfoUpdatedCallback(*desc, descForCb);
+            updateFlag = true;
         }
-        updateFlag = true;
     }
     return updateFlag;
 }
@@ -1344,11 +1349,10 @@ bool AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
     return updateFlag;
 }
 
-AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDeviceUsage(
-    const shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+bool AudioDeviceManager::UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+    AudioStreamDeviceChangeReasonExt &reason)
 {
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, reason, "device is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "device is nullptr");
     bool updateFlag = false;
     for (const auto &desc : connectedDevices_) {
         CHECK_AND_CONTINUE(desc != nullptr);
@@ -1363,8 +1367,8 @@ AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDeviceUsage(
             updateFlag = true;
         }
     }
-    CHECK_AND_RETURN_RET_LOG(updateFlag == true, reason, "Update usage fails");
-    return reason;
+    CHECK_AND_RETURN_RET_LOG(updateFlag == true, false, "Update usage fails");
+    return true;
 }
 
 void AudioDeviceManager::UpdateEarpieceStatus(const bool hasEarPiece)

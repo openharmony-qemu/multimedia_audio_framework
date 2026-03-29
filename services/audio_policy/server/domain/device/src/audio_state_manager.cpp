@@ -37,70 +37,6 @@ constexpr int32_t ANCO_SERVICE_BROKER_UID = 5557;
 constexpr AudioDeviceUsage EXCLUDED_DEVICE_USAGES[] {
     MEDIA_OUTPUT_DEVICES, MEDIA_INPUT_DEVICES, CALL_OUTPUT_DEVICES, CALL_INPUT_DEVICES};
 
-void AudioStateManager::SetPreferredMediaRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    preferredMediaRenderDevice_ = deviceDescriptor;
-}
-
-void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-    const int32_t uid, const std::string caller)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    bool ret = false;
-    int32_t callerUid = uid;
-    auto callerPid = IPCSkeleton::GetCallingPid();
-    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
-    AUDIO_INFO_LOG(
-        "deviceType: %{public}d, callerUid: %{public}d, callerPid: %{public}d, ownerUid:%{public}d,\
-        bundle name: %{public}s, caller: %{public}s",
-        deviceDescriptor->deviceType_, callerUid, callerPid, ownerUid_, bundleName.c_str(), caller.c_str());
-    if (audioClientInfoMgrCallback_ != nullptr) {
-        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
-    }
-    AUDIO_INFO_LOG("check result uid: %{public}d", callerUid);
-    if (deviceDescriptor->deviceType_ == DEVICE_TYPE_NONE) {
-        if (callerUid == CLEAR_UID) {
-            // clear all
-            forcedDeviceMapList_.clear();
-        } else if (callerUid == SYSTEM_UID || callerUid == ownerUid_) {
-            // clear equal ownerUid_ and SYSTEM_UID
-            RemoveForcedDeviceMapData(ownerUid_);
-            RemoveForcedDeviceMapData(SYSTEM_UID);
-        } else {
-            // clear equal uid
-            RemoveForcedDeviceMapData(callerUid);
-        }
-    } else {
-        std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> currentDeviceMap;
-        if (callerUid == SYSTEM_UID && ownerUid_ != 0) {
-            forcedDeviceMapList_.clear();
-            currentDeviceMap = {{ownerUid_, deviceDescriptor}};
-            forcedDeviceMapList_.push_back(currentDeviceMap);
-        } else if (callerUid == SYSTEM_UID && ownerUid_ == 0) {
-            forcedDeviceMapList_.clear();
-        }
-
-        RemoveForcedDeviceMapData(callerUid);
-        currentDeviceMap = {{callerUid, deviceDescriptor}};
-
-        forcedDeviceMapList_.push_back(currentDeviceMap);
-    }
-}
-
-int32_t AudioStateManager::GetPreferredUid(int32_t uid)
-{
-    int32_t callerUid = uid;
-    if (audioClientInfoMgrCallback_ != nullptr) {
-        auto callerPid = IPCSkeleton::GetCallingPid();
-        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
-        bool ret = false;
-        audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
-    }
-    return callerUid;
-}
-
 void AudioStateManager::SetPreferredCallCaptureDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -123,66 +59,6 @@ void AudioStateManager::SetPreferredToneRenderDevice(const std::shared_ptr<Audio
 {
     std::lock_guard<std::mutex> lock(mutex_);
     preferredToneRenderDevice_ = deviceDescriptor;
-}
-
-shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredMediaRenderDevice()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    shared_ptr<AudioDeviceDescriptor> devDesc = make_shared<AudioDeviceDescriptor>(preferredMediaRenderDevice_);
-    return devDesc;
-}
-
-shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDevice()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (ownerUid_ == 0) {
-        if (!forcedDeviceMapList_.empty()) {
-            AUDIO_INFO_LOG("ownerUid_: 0, deviceType: %{public}d, Uid: %{public}d",
-                forcedDeviceMapList_.rbegin()->begin()->second->deviceType_,
-                forcedDeviceMapList_.rbegin()->begin()->first);
-            return make_shared<AudioDeviceDescriptor>(std::move(forcedDeviceMapList_.rbegin()->begin()->second));
-        }
-    } else {
-        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-            if (ownerUid_ == it->begin()->first) {
-                AUDIO_INFO_LOG("deviceType: %{public}d, ownerUid_: %{public}d", it->begin()->second->deviceType_,
-                    ownerUid_);
-                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
-            }
-        }
-        for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-            if (SYSTEM_UID == it->begin()->first) {
-                AUDIO_INFO_LOG("bluetooth already force selected, deviceType: %{public}d",
-                    it->begin()->second->deviceType_);
-                return make_shared<AudioDeviceDescriptor>(std::move(it->begin()->second));
-            }
-        }
-    }
-    return std::make_shared<AudioDeviceDescriptor>();
-}
-
-shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallRenderDeviceForUid(const int32_t clientUid)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET_LOG(!forcedDeviceMapList_.empty(), std::make_shared<AudioDeviceDescriptor>(),
-        "ForcedDeviceMapList_ is empty");
-    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-        if (clientUid == it->begin()->first) {
-            CHECK_AND_CONTINUE(it->begin()->second != nullptr);
-            AUDIO_INFO_LOG("deviceType: %{public}d, clientUid: %{public}d", it->begin()->second->deviceType_,
-                clientUid);
-            return make_shared<AudioDeviceDescriptor>(it->begin()->second);
-        }
-    }
-    for (auto it = forcedDeviceMapList_.begin(); it != forcedDeviceMapList_.end(); ++it) {
-        if (SYSTEM_UID == it->begin()->first) {
-            CHECK_AND_CONTINUE(it->begin()->second != nullptr);
-            AUDIO_INFO_LOG("system force selected, deviceType: %{public}d",
-                it->begin()->second->deviceType_);
-            return make_shared<AudioDeviceDescriptor>(it->begin()->second);
-        }
-    }
-    return std::make_shared<AudioDeviceDescriptor>();
 }
 
 shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredCallCaptureDevice()
@@ -225,47 +101,6 @@ shared_ptr<AudioDeviceDescriptor> AudioStateManager::GetPreferredRecognitionCapt
     return preferredRecognitionCaptureDevice_;
 }
 
-bool AudioStateManager::IsPreferredDevice(AudioDeviceDescriptor &desc)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDescs = {
-        preferredMediaRenderDevice_,
-        preferredCallCaptureDevice_,
-        preferredRingRenderDevice_,
-        preferredRecordCaptureDevice_,
-        preferredToneRenderDevice_,
-        preferredRecognitionCaptureDevice_,
-        AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(-1, SOURCE_TYPE_MIC)
-    };
-    bool isPreferred = std::any_of(preferredDescs.begin(), preferredDescs.end(), [&desc](const auto &preferred) {
-        return preferred && preferred->deviceType_ == desc.deviceType_ && preferred->macAddress_ == desc.macAddress_ &&
-            preferred->networkId_ == desc.networkId_;
-    });
-    if (isPreferred) {
-        return true;
-    }
-
-    return std::any_of(forcedDeviceMapList_.begin(), forcedDeviceMapList_.end(), [&desc](const auto &map) {
-        return std::any_of(map.begin(), map.end(), [&desc](const auto &pair) {
-            return pair.second && pair.second->deviceType_ == desc.deviceType_ &&
-                pair.second->macAddress_ == desc.macAddress_ && pair.second->networkId_ == desc.networkId_;
-        });
-    });
-}
-
-void AudioStateManager::UpdatePreferredMediaRenderDeviceConnectState(ConnectState state)
-{
-    CHECK_AND_RETURN_LOG(preferredMediaRenderDevice_ != nullptr, "preferredMediaRenderDevice_ is nullptr");
-    preferredMediaRenderDevice_->connectState_ = state;
-}
-
-void AudioStateManager::UpdatePreferredCallRenderDeviceConnectState(ConnectState state)
-{
-    CHECK_AND_RETURN_LOG(preferredCallRenderDevice_ != nullptr, "preferredCallRenderDevice_ is nullptr");
-    preferredCallRenderDevice_->connectState_ = state;
-}
-
 void AudioStateManager::UpdatePreferredCallCaptureDeviceConnectState(ConnectState state)
 {
     CHECK_AND_RETURN_LOG(preferredCallCaptureDevice_ != nullptr, "preferredCallCaptureDevice_ is nullptr");
@@ -276,29 +111,6 @@ void AudioStateManager::UpdatePreferredRecordCaptureDeviceConnectState(ConnectSt
 {
     CHECK_AND_RETURN_LOG(preferredRecordCaptureDevice_ != nullptr, "preferredRecordCaptureDevice_ is nullptr");
     preferredRecordCaptureDevice_->connectState_ = state;
-}
-
-int32_t AudioStateManager::GetAudioSceneOwnerUid()
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    return ownerUid_;
-}
-
-void AudioStateManager::SetAudioSceneOwnerUid(const int32_t uid)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_INFO_LOG("ownerUid_: %{public}d, uid: %{public}d", ownerUid_, uid);
-    ownerUid_ = uid;
-    if (uid == AUDIO_UID) {
-        ownerUid_ = ANCO_SERVICE_BROKER_UID;
-    }
-}
-
-int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    audioClientInfoMgrCallback_ = callback;
-    return 0;
 }
 
 int32_t AudioStateManager::SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
@@ -318,21 +130,6 @@ int32_t AudioStateManager::CheckVKBInfo(const std::string &bundleName, bool &isV
     }
     AUDIO_INFO_LOG("isVKB:%{public}s", isValid ? "T" : "F");
     return 0;
-}
-
-void AudioStateManager::RemoveForcedDeviceMapData(int32_t uid)
-{
-    if (forcedDeviceMapList_.empty()) {
-        return;
-    }
-    auto it = forcedDeviceMapList_.begin();
-    while (it != forcedDeviceMapList_.end()) {
-        if (uid == it->begin()->first) {
-            it = forcedDeviceMapList_.erase(it);
-        } else {
-            it++;
-        }
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

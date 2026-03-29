@@ -19,6 +19,7 @@
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
 #include "router_base.h"
+#include "audio_router_select_strategy.h"
 
 #include <thread>
 #include <memory>
@@ -32,79 +33,6 @@ void UserSelectRouterExtUnitTest::SetUpTestCase(void) {}
 void UserSelectRouterExtUnitTest::TearDownTestCase(void) {}
 void UserSelectRouterExtUnitTest::SetUp(void) {}
 void UserSelectRouterExtUnitTest::TearDown(void) {}
-
-/**
- * @tc.name  : Test GetMediaRenderDevice.
- * @tc.number: GetMediaRenderDevice_004
- * @tc.desc  : GetMediaRenderDevice.
- */
-HWTEST(UserSelectRouterExtUnitTest, GetMediaRenderDevice_004, TestSize.Level3)
-{
-    UserSelectRouter userSelectRouter;
-    int32_t clientUID = 1;
-    auto& audioStateManager = AudioStateManager::GetAudioStateManager();
-    audioStateManager.preferredMediaRenderDevice_->deviceId_ = 1;
-    audioStateManager.preferredMediaRenderDevice_->deviceUsage_ = MEDIA;
-    auto result = userSelectRouter.GetMediaRenderDevice(STREAM_USAGE_MEDIA, clientUID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetMediaRenderDevice.
- * @tc.number: GetCallRenderDevice_004
- * @tc.desc  : GetCallRenderDevice
- */
-HWTEST(UserSelectRouterExtUnitTest, GetCallRenderDevice_004, TestSize.Level3)
-{
-    UserSelectRouter userSelectRouter;
-    int32_t clientUID = 1;
-    auto& audioStateManager = AudioStateManager::GetAudioStateManager();
-    audioStateManager.preferredMediaRenderDevice_->deviceId_ = 1;
-    audioStateManager.preferredMediaRenderDevice_->deviceUsage_ = VOICE;
-    auto result = userSelectRouter.GetCallRenderDevice(STREAM_USAGE_VOICE_MESSAGE, clientUID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetCallCaptureDevice.
- * @tc.number: GetCallCaptureDevice_003
- * @tc.desc  : GetCallCaptureDevice.
- */
-HWTEST(UserSelectRouterExtUnitTest, GetCallCaptureDevice_003, TestSize.Level3)
-{
-    UserSelectRouter userSelectRouter;
-    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
-    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
-    int32_t clientUID = 1;
-    uint32_t sessionID = 678;
-    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
-    preferredDevice->deviceId_ = 1;
-    preferredDevice->deviceUsage_ = VOICE;
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(preferredDevice);
-    auto result = userSelectRouter.GetCallCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetCallCaptureDevice.
- * @tc.number: GetCallCaptureDevice_004
- * @tc.desc  : GetCallCaptureDevice.
- */
-HWTEST(UserSelectRouterExtUnitTest, GetCallCaptureDevice_004, TestSize.Level4)
-{
-    UserSelectRouter userSelectRouter;
-    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
-    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
-    int32_t clientUID = 1;
-    uint32_t sessionID = 678;
-    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
-    preferredDevice->deviceId_ = 0;
-    preferredDevice->deviceUsage_ = VOICE;
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(preferredDevice);
-
-    auto result = userSelectRouter.GetCallCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-}
 
 /**
  * @tc.name  : Test GetRingRenderDevices.
@@ -187,122 +115,6 @@ HWTEST(UserSelectRouterExtUnitTest, GetRingRenderDevices_007, TestSize.Level3)
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         userSelectRouter.GetRingRenderDevices(STREAM_USAGE_ALARM, clientUID);
     EXPECT_EQ(descs.size(), 1);
-}
-
-/**
- * @tc.name  : Test GetRecordCaptureDevice.
- * @tc.number: GetRecordCaptureDevice_003
- * @tc.desc  : GetRecordCaptureDevice.
- */
-HWTEST(UserSelectRouterExtUnitTest, GetRecordCaptureDevice_003, TestSize.Level4)
-{
-    UserSelectRouter userSelectRouter;
-    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
-    int32_t clientUID = 1;
-    uint32_t sessionID = 678;
-    auto& audioStateManager = AudioStateManager::GetAudioStateManager();
-    audioStateManager.preferredMediaRenderDevice_->deviceId_ = 1;
-    audioStateManager.preferredMediaRenderDevice_->deviceUsage_ = MEDIA;
-    auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetRecordCaptureDevice.
- * @tc.number: GetRecordCaptureDevice_004
- * @tc.desc  : GetRecordCaptureDevice.
- */
-HWTEST(UserSelectRouterExtUnitTest, GetRecordCaptureDevice_004, TestSize.Level3)
-{
-    UserSelectRouter userSelectRouter;
-    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION;
-    int32_t clientUID = 1;
-    uint32_t sessionID = 678;
-    auto& audioStateManager = AudioStateManager::GetAudioStateManager();
-    audioStateManager.preferredMediaRenderDevice_->deviceId_ = 1;
-    audioStateManager.preferredMediaRenderDevice_->deviceUsage_ = MEDIA;
-    auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetMediaRenderDevice.
- * @tc.number: GetCallRenderDevice_005
- * @tc.desc  : GetCallRenderDevice
- */
-HWTEST(UserSelectRouterExtUnitTest, GetCallRenderDevice_005, TestSize.Level3)
-{
-    UserSelectRouter userSelectRouter;
-    int32_t clientUID = 1;
-    auto& audioStateManager = AudioStateManager::GetAudioStateManager();
-    audioStateManager.ownerUid_ = 0;
-    audioStateManager.forcedDeviceMapList_.clear();
-    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
-    descriptor->deviceType_ = DEVICE_TYPE_EARPIECE;
-    descriptor->deviceId_ = 1;
-    
-    std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> forcedDeviceMap = {{0, descriptor}};
-    audioStateManager.forcedDeviceMapList_.push_back(forcedDeviceMap);
-
-    auto perDev = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
-    EXPECT_NE(perDev->deviceId_, 0);
-
-    auto result = userSelectRouter.GetCallRenderDevice(STREAM_USAGE_VOICE_MESSAGE, clientUID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetMediaRenderDevice.
- * @tc.number: GetCallRenderDevice_006
- * @tc.desc  : GetCallRenderDevice
- */
-HWTEST(UserSelectRouterExtUnitTest, GetCallRenderDevice_006, TestSize.Level3)
-{
-    UserSelectRouter userSelectRouter;
-    int32_t clientUID = 1;
-    auto& audioStateManager = AudioStateManager::GetAudioStateManager();
-    audioStateManager.ownerUid_ = 0;
-    audioStateManager.forcedDeviceMapList_.clear();
-    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
-    descriptor->deviceType_ = DEVICE_TYPE_EARPIECE;
-    descriptor->deviceId_ = 0;
-    descriptor->deviceUsage_ = static_cast<DeviceUsage>(0);
-    
-    std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> forcedDeviceMap = {{0, descriptor}};
-    audioStateManager.forcedDeviceMapList_.push_back(forcedDeviceMap);
-
-    auto perDev = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
-    EXPECT_EQ(perDev->deviceId_, 0);
-
-    auto result = userSelectRouter.GetCallRenderDevice(STREAM_USAGE_VOICE_MESSAGE, clientUID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetMediaRenderDevice.
- * @tc.number: GetCallRenderDevice_007
- * @tc.desc  : GetCallRenderDevice
- */
-HWTEST(UserSelectRouterExtUnitTest, GetCallRenderDevice_007, TestSize.Level3)
-{
-    UserSelectRouter userSelectRouter;
-    int32_t clientUID = 1;
-    auto& audioStateManager = AudioStateManager::GetAudioStateManager();
-    audioStateManager.ownerUid_ = 0;
-    audioStateManager.forcedDeviceMapList_.clear();
-    std::shared_ptr<AudioDeviceDescriptor> descriptor = std::make_shared<AudioDeviceDescriptor>();
-    descriptor->deviceType_ = DEVICE_TYPE_EARPIECE;
-    descriptor->deviceId_ = 1;
-    descriptor->deviceUsage_ = static_cast<DeviceUsage>(0);
-    
-    std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>> forcedDeviceMap = {{0, descriptor}};
-    audioStateManager.forcedDeviceMapList_.push_back(forcedDeviceMap);
-
-    auto perDev = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
-    EXPECT_NE(perDev->deviceId_, 0);
-
-    auto result = userSelectRouter.GetCallRenderDevice(STREAM_USAGE_VOICE_MESSAGE, clientUID);
-    EXPECT_NE(result, nullptr);
 }
 
 /**

@@ -22,6 +22,7 @@
 #include "audio_info.h"
 #include "ipc_skeleton.h"
 #include "media_monitor_manager.h"
+#include "audio_active_device.h"
 #include <chrono>
 #include <algorithm>
 
@@ -54,6 +55,7 @@ void AudioRouterInfra::RefreshSystemSelectDevice(SelectDeviceType type,
         case SelectDeviceType::MEDIA_OUTPUT:
             systemSelectDevice_.mediaOutput_.device_ = device;
             systemSelectDevice_.mediaOutput_.selectTime_ = currentTime;
+            WriteSelectOutputSysEvents(device, type);
             break;
         case SelectDeviceType::CALL_INPUT:
             systemSelectDevice_.callInput_.device_ = device;
@@ -62,6 +64,7 @@ void AudioRouterInfra::RefreshSystemSelectDevice(SelectDeviceType type,
         case SelectDeviceType::CALL_OUTPUT:
             systemSelectDevice_.callOutput_.device_ = device;
             systemSelectDevice_.callOutput_.selectTime_ = currentTime;
+            WriteSelectOutputSysEvents(device, type);
             break;
         default:
             AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
@@ -80,6 +83,7 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
     }
 
     auto &appContext = it->second;
+    CHECK_AND_RETURN_LOG(appContext != nullptr, "appContext is null");
     switch (type) {
         case SelectDeviceType::MEDIA_INPUT:
             appContext->appSelectDevice_.mediaInput_.device_ = device;
@@ -90,6 +94,7 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
             appContext->appSelectDevice_.mediaOutput_.device_ = device;
             appContext->appSelectDevice_.mediaOutput_.selectTime_ = currentTime;
             AdjustOutputPriority(uid, HasRunningOutputStream(uid), appContext->isForeground_, true);
+            WriteSelectOutputSysEvents(device, type);
             break;
         case SelectDeviceType::CALL_INPUT:
             appContext->appSelectDevice_.callInput_.device_ = device;
@@ -98,6 +103,7 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
         case SelectDeviceType::CALL_OUTPUT:
             appContext->appSelectDevice_.callOutput_.device_ = device;
             appContext->appSelectDevice_.callOutput_.selectTime_ = currentTime;
+            WriteSelectOutputSysEvents(device, type);
             break;
         default:
             AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
@@ -134,6 +140,7 @@ void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type,
                 *device == *systemSelectDevice_.mediaOutput_.device_)) {
                 systemSelectDevice_.mediaOutput_.device_ = nullptr;
                 systemSelectDevice_.mediaOutput_.selectTime_ = 0;
+                WriteSelectOutputSysEvents(device, type);
             }
             break;
         case SelectDeviceType::CALL_INPUT:
@@ -148,6 +155,7 @@ void AudioRouterInfra::ClearSystemSelectDevice(SelectDeviceType type,
                 *device == *systemSelectDevice_.callOutput_.device_)) {
                 systemSelectDevice_.callOutput_.device_ = nullptr;
                 systemSelectDevice_.callOutput_.selectTime_ = 0;
+                WriteSelectOutputSysEvents(device, type);
             }
             break;
         default:
@@ -163,6 +171,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
 
     AUDIO_INFO_LOG("clear app select device for type: %{public}d", type);
     for (auto& [uid, context] : appContexts_) {
+        CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
         auto &appSelect = context->appSelectDevice_;
         switch (type) {
             case SelectDeviceType::MEDIA_INPUT:
@@ -177,6 +186,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.mediaOutput_.device_)) {
                     appSelect.mediaOutput_.device_ = nullptr;
                     appSelect.mediaOutput_.selectTime_ = 0;
+                    WriteSelectOutputSysEvents(device, type);
                 }
                 break;
             case SelectDeviceType::CALL_INPUT:
@@ -191,6 +201,7 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.callOutput_.device_)) {
                     appSelect.callOutput_.device_ = nullptr;
                     appSelect.callOutput_.selectTime_ = 0;
+                    WriteSelectOutputSysEvents(device, type);
                 }
                 break;
             default:
@@ -257,6 +268,39 @@ AudioSelectDeviceInfo AudioRouterInfra::GetAppSelectDevice(SelectDeviceType type
             AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
             return AudioSelectDeviceInfo();
     }
+}
+
+AudioSelectDeviceInfo AudioRouterInfra::GetLatestAppSelectDevice(SelectDeviceType type)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    AudioSelectDeviceInfo latestSelectInfo;
+    for (const auto& [uid, context] : appContexts_) {
+        CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
+        AudioSelectDeviceInfo currentSelectInfo;
+        switch (type) {
+            case SelectDeviceType::MEDIA_INPUT:
+                currentSelectInfo = context->appSelectDevice_.mediaInput_;
+                break;
+            case SelectDeviceType::MEDIA_OUTPUT:
+                currentSelectInfo = context->appSelectDevice_.mediaOutput_;
+                break;
+            case SelectDeviceType::CALL_INPUT:
+                currentSelectInfo = context->appSelectDevice_.callInput_;
+                break;
+            case SelectDeviceType::CALL_OUTPUT:
+                currentSelectInfo = context->appSelectDevice_.callOutput_;
+                break;
+            default:
+                AUDIO_ERR_LOG("Invalid select device type: %{public}d", type);
+                return AudioSelectDeviceInfo();
+        }
+
+        if (currentSelectInfo.device_ != nullptr &&
+            currentSelectInfo.selectTime_ >= latestSelectInfo.selectTime_) {
+            latestSelectInfo = currentSelectInfo;
+        }
+    }
+    return latestSelectInfo;
 }
 
 AudioSelectDeviceInfo AudioRouterInfra::GetHighestPrioritySelectDevice(SelectDeviceType type)
@@ -624,6 +668,7 @@ void AudioRouterInfra::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
     }
 
     auto &appContext = it->second;
+    CHECK_AND_RETURN_LOG(appContext != nullptr, "appContext is null");
     appContext->streamSelectDevices_[streamId] = device;
 }
 
@@ -683,12 +728,14 @@ void AudioRouterInfra::ClearStreamSelectDevice(const std::shared_ptr<AudioDevice
 
     if (device == nullptr) {
         for (auto &[uid, context] : appContexts_) {
+            CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
             context->streamSelectDevices_.clear();
         }
         return;
     }
 
     for (auto &[uid, context] : appContexts_) {
+        CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
         auto &streamSelectDevices = context->streamSelectDevices_;
         auto it = streamSelectDevices.begin();
         while (it != streamSelectDevices.end()) {
@@ -828,5 +875,58 @@ void AudioRouterInfra::WriteExcludeOutputSysEvents(const AudioDeviceUsage audioD
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void AudioRouterInfra::WriteSelectOutputSysEvents(
+    const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, SelectDeviceType type)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_FORCE_USE_AUDIO_DEVICE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    AudioDeviceDescriptor curOutputDeviceDesc = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
+    bean->Add("CLIENT_UID", static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+    bean->Add("DEVICE_TYPE", curOutputDeviceDesc.deviceType_);
+    if (type == SelectDeviceType::MEDIA_OUTPUT) {
+        bean->Add("STREAM_TYPE", STREAM_USAGE_MEDIA);
+    } else if (type == SelectDeviceType::CALL_OUTPUT) {
+        bean->Add("STREAM_TYPE", STREAM_USAGE_VOICE_COMMUNICATION);
+    }
+    bean->Add("BT_TYPE", curOutputDeviceDesc.deviceCategory_);
+    bean->Add("DEVICE_NAME", curOutputDeviceDesc.deviceName_);
+    bean->Add("ADDRESS", curOutputDeviceDesc.macAddress_);
+    bean->Add("IS_PLAYBACK", 1);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+bool AudioRouterInfra::IsPreferredDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &desc)
+{
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET(desc != nullptr, false);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> preferredDescs = {
+        systemSelectDevice_.mediaInput_.device_,
+        systemSelectDevice_.mediaOutput_.device_,
+        systemSelectDevice_.callInput_.device_,
+        systemSelectDevice_.callOutput_.device_,
+        recognitionSelectDevice_.device_
+    };
+    bool isPreferred = std::any_of(preferredDescs.begin(), preferredDescs.end(), [&desc](const auto &preferred) {
+        return preferred && preferred->deviceType_ == desc->deviceType_ &&
+            preferred->macAddress_ == desc->macAddress_ && preferred->networkId_ == desc->networkId_;
+    });
+    CHECK_AND_RETURN_RET(!isPreferred, isPreferred);
+    for (const auto& [uid, context] : appContexts_) {
+        CHECK_AND_CONTINUE_LOG(context != nullptr, "null context found for uid: %{public}d", uid);
+        std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> appPreferredDescs = {
+            context->appSelectDevice_.mediaInput_.device_,
+            context->appSelectDevice_.mediaOutput_.device_,
+            context->appSelectDevice_.callInput_.device_,
+            context->appSelectDevice_.callOutput_.device_
+        };
+        isPreferred = std::any_of(appPreferredDescs.begin(), appPreferredDescs.end(), [&desc](const auto &preferred) {
+            return preferred && preferred->deviceType_ == desc->deviceType_ &&
+                preferred->macAddress_ == desc->macAddress_ && preferred->networkId_ == desc->networkId_;
+        });
+        CHECK_AND_RETURN_RET(!isPreferred, isPreferred);
+    }
+    return false;
+}
 }
 }

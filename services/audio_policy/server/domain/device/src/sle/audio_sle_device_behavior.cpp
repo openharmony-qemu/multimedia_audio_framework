@@ -99,14 +99,17 @@ void AudioSleDeviceBehavior::HandleNearlinkErrResult(int32_t result, shared_ptr<
     bool isVoiceType)
 {
     CHECK_AND_RETURN(result != SUCCESS);
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     if (result == REMOTE_USER_TERMINATED) {
         auto deviceDescriptor = make_shared<AudioDeviceDescriptor>(devDesc);
         AUDIO_INFO_LOG("Set connect state to SUSPEND_CONNECTED");
         deviceDescriptor->connectState_ = SUSPEND_CONNECTED;
         deviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK;
-        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
+        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
+            deviceDescriptor, CONNECTSTATE_UPDATE, reason);
         deviceDescriptor->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
-        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDescriptor, CONNECTSTATE_UPDATE);
+        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
+            deviceDescriptor, CONNECTSTATE_UPDATE, reason);
     } else if (result == DUAL_CONNECTION_FAILURE) {
         if (isVoiceType) {
             devDesc->deviceUsage_ = static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
@@ -115,10 +118,11 @@ void AudioSleDeviceBehavior::HandleNearlinkErrResult(int32_t result, shared_ptr<
             devDesc->deviceUsage_ = static_cast<DeviceUsage>(static_cast<uint32_t>(devDesc->deviceUsage_) &
                 ~static_cast<uint32_t>(DeviceUsage::MEDIA));
         }
-        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(devDesc, USAGE_UPDATE);
+        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(devDesc, USAGE_UPDATE, reason);
     } else {
         devDesc->exceptionFlag_ = true;
-        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(devDesc, EXCEPTION_FLAG_UPDATE);
+        AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(
+            devDesc, EXCEPTION_FLAG_UPDATE, reason);
     }
 }
 } // namespace AudioStandard

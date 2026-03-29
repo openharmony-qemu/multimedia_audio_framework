@@ -182,47 +182,6 @@ void GetMaxAmplitudeFuzzTest(FuzzedDataProvider& fdp)
     OnStop();
 }
 
-void HandleNegtiveBtFuzzTest(FuzzedDataProvider& fdp)
-{
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
-    deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    audioActiveDevice->HandleNegtiveBt(deviceType);
-    OnStop();
-}
-
-void SetDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
-{
-    uint32_t usageCount = GetData<uint32_t>() % AudioDeviceUsageVec.size();
-    AudioDeviceUsage usage = AudioDeviceUsageVec[usageCount];
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices =
-        AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(usage);
-    for (const auto &desc : callDevices) {
-        uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-        DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-        bool active = GetData<uint32_t>() % NUM_2;
-        int32_t uid = GetData<int32_t>();
-        audioActiveDevice->SetDeviceActive(deviceType, active, uid);
-    }
-    OnStop();
-}
-
-void HandleActiveBtFuzzTest(FuzzedDataProvider& fdp)
-{
-    std::string macAddress = "test";
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
-    deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    audioActiveDevice->HandleActiveBt(deviceType, macAddress);
-    OnStop();
-}
-
 void IsDirectSupportedDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
@@ -232,19 +191,6 @@ void IsDirectSupportedDeviceFuzzTest(FuzzedDataProvider& fdp)
     AudioDeviceDescriptor audioDeviceDescriptor(deviceType, role);
     audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
     audioActiveDevice->IsDirectSupportedDevice();
-    OnStop();
-}
-
-void SetCallDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
-{
-    uint32_t usageCount = GetData<uint32_t>() % AudioDeviceUsageVec.size();
-    AudioDeviceUsage usage = AudioDeviceUsageVec[usageCount];
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices =
-        AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(usage);
-    for (const auto &desc : callDevices) {
-        bool active = GetData<uint32_t>() % NUM_2;
-        audioActiveDevice->SetCallDeviceActive(desc->deviceType_, active, desc->macAddress_);
-    }
     OnStop();
 }
 
@@ -299,18 +245,6 @@ void AudioActiveDeviceNotifyUserDisSelectionEventToBtFuzzTest(FuzzedDataProvider
     OnStop();
 }
 
-void AudioActiveDeviceSetDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
-{
-    if (audioActiveDevice == nullptr || DeviceTypeVec.size() == 0) {
-        return;
-    }
-    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    bool active = GetData<uint32_t>() % NUM_2;
-    int32_t uid = GetData<int32_t>();
-    audioActiveDevice->SetDeviceActive(deviceType, active, uid);
-    OnStop();
-}
-
 void AudioActiveDeviceNotifyUserSelectionEventForInputFuzzTest(FuzzedDataProvider& fdp)
 {
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
@@ -323,19 +257,6 @@ void AudioActiveDeviceNotifyUserSelectionEventForInputFuzzTest(FuzzedDataProvide
         DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
     SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
     audioActiveDevice->NotifyUserSelectionEventForInput(audioDeviceDescriptor, sourceType);
-    OnStop();
-}
-
-void AudioActiveDeviceSetCallDeviceActiveFuzzTest(FuzzedDataProvider& fdp)
-{
-    if (audioActiveDevice == nullptr || DeviceTypeVec.size() == 0) {
-        return;
-    }
-    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    bool active = GetData<uint32_t>() % NUM_2;
-    int32_t uid = GetData<int32_t>();
-    std::string address = "testAddress";
-    audioActiveDevice->SetCallDeviceActive(deviceType, active, address, uid);
     OnStop();
 }
 
@@ -507,18 +428,12 @@ void Test(FuzzedDataProvider& fdp)
     GetActiveA2dpDeviceStreamInfoFuzzTest,
     GetMaxAmplitudeFuzzTest,
     UpdateDeviceFuzzTest,
-    HandleActiveBtFuzzTest,
-    HandleNegtiveBtFuzzTest,
-    SetDeviceActiveFuzzTest,
-    SetCallDeviceActiveFuzzTest,
     IsDirectSupportedDeviceFuzzTest,
     IsDeviceActiveFuzzTest,
     AudioActiveDeviceGetCurrentOutputDeviceCategoryFuzzTest,
     AudioActiveDeviceNotifyUserSelectionEventToBtFuzzTest,
     AudioActiveDeviceNotifyUserDisSelectionEventToBtFuzzTest,
     AudioActiveDeviceNotifyUserSelectionEventForInputFuzzTest,
-    AudioActiveDeviceSetDeviceActiveFuzzTest,
-    AudioActiveDeviceSetCallDeviceActiveFuzzTest,
     AudioActiveDeviceIsDeviceInVectorFuzzTest,
     AudioActiveDeviceReleaseActiveDeviceRouteFuzzTest,
     AudioActiveDeviceUpdateVolumeTypeDeviceMapFuzzTest,

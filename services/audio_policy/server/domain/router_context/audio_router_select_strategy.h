@@ -37,8 +37,7 @@ public:
     virtual void SetMediaInputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId,
-        StreamUsage streamUsage) = 0;
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaOutputDevice(int32_t uid, uint32_t streamId) = 0;
     virtual void SetMediaOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
 
@@ -48,7 +47,7 @@ public:
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallOutputDevice(int32_t uid, uint32_t streamId) = 0;
     virtual void SetCallOutputDevice(int32_t uid, uint32_t streamId,
-        const std::shared_ptr<AudioDeviceDescriptor> &device) = 0;
+        const std::shared_ptr<AudioDeviceDescriptor> &device, const std::string caller = "") = 0;
 
     virtual std::shared_ptr<AudioDeviceDescriptor> GetRecognitionInputDevice();
     virtual void SetRecognitionInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
@@ -73,6 +72,7 @@ public:
         AudioDeviceUsage usage);
     void SetScoExcluded(bool scoExcluded);
     bool GetScoExcluded();
+    bool IsPreferredDevice(const AudioDeviceDescriptor &desc);
 
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(

@@ -1217,7 +1217,7 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
         HILOG_COMM_ERROR("[Start]Start failed. Switching state: %{public}d", isSwitching_));
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
-        audioInterrupt_.streamId == INVALID_SESSION_ID) {
+        audioInterrupt_.streamId == INVALID_STREAM_ID) {
         return ERR_ILLEGAL_STATE;
     }
 

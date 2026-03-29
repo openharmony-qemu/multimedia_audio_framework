@@ -51,6 +51,7 @@
 #include "audio_injector_policy.h"
 #include "audio_safe_volume_event_subscriber.h"
 #include "audio_volume_utils.h"
+#include "audio_select_interface_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -2726,7 +2727,7 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
-        auto ret = audioStateManager_.SetAudioClientInfoMgrCallback(callback);
+        auto ret = AudioSelectInterfaceService::GetInstance().SetAudioClientInfoMgrCallback(callback);
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ret, "audioPolicyServerHandler_ is nullptr");
         audioPolicyServerHandler_->SetAudioClientInfoMgrCallback(callback);
         audioPolicyUtils_.SetAudioClientInfoMgrCallback(callback);

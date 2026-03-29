@@ -42,6 +42,7 @@
 #include "audio_device_info.h"
 #include "audio_effect_volume.h"
 #include "bluetooth_host.h"
+#include "audio_router_select_strategy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -217,6 +218,7 @@ void UpdateDeviceInfoFuzzTest()
 
 void ClearPreferredDevicesFuzzTest()
 {
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     AudioDeviceCommon &comm = AudioDeviceCommon::GetInstance();
     auto dev = make_shared<AudioDeviceDescriptor>();
     dev->deviceId_ = GetData<int32_t>();
@@ -225,8 +227,8 @@ void ClearPreferredDevicesFuzzTest()
     dev->deviceName_ = "--";
     dev->macAddress_ = "card=2;device=0";
     comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
-    comm.audioStateManager_.SetPreferredCallRenderDevice(dev);
-    comm.audioStateManager_.SetPreferredMediaRenderDevice(dev);
+    strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
+    strategy.SetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID, dev);
     comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);
