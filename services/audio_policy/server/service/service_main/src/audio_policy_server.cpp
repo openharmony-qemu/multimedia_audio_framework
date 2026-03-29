@@ -1604,6 +1604,11 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
     AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
         streamType, mute, isUpdateUi);
 
+    if (streamType == STREAM_NOTIFICATION && audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
+        AUDIO_INFO_LOG("Cannot unmute the notification volume because of the SILENT or VIBRATE mode");
+        return ERR_OPERATION_FAILED;
+    }
+
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetMute of STREAM_ALL for StreamType = %{public}d ", audioStreamType);
@@ -1700,15 +1705,15 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     }
     ProcUpdateRingerModeForMute(updateRingerMode, mute);
     SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId, previousVolume);
-    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
+    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi); // for PC
     return SUCCESS;
 }
 
 void AudioPolicyServer::ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute)
 {
     if (updateRingerMode) {
-        AudioRingerMode ringerMode = mute ? (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :
-            RINGER_MODE_NORMAL;
+        AudioRingerMode ringerMode = mute ?
+            (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :	RINGER_MODE_NORMAL;
         if (!supportVibrator_) {
             AUDIO_INFO_LOG("The device does not support vibration");
         }
