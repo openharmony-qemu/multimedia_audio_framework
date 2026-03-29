@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +34,7 @@
 #include "i_hpae_manager.h"
 #include "audio_select_interface_service.h"
 #include "audio_router_select_strategy.h"
+#include "audio_router_infra.h"
 
 namespace {
     #include "v6_0/iaudio_manager.h"
@@ -1070,6 +1070,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->rendererInfo_.streamUsage, StreamState::STARTED);
         FetchDeviceForSessionUseDefault(sessionId, streamDesc);
         int32_t ret = FetchAndActivateOutputDevice(deviceDesc, streamDesc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchAndActivateOutputDevice fail!");
@@ -1133,6 +1135,9 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
+    } else if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->rendererInfo_.streamUsage, StreamState::PAUSED);
     }
     ForceRemoveSleStreamType(streamDesc);
 
@@ -1153,6 +1158,10 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::STOP_CLIENT, info);
     }
     ForceRemoveSleStreamType(streamDesc);
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->rendererInfo_.streamUsage, StreamState::STOPPED);
+    }
 
     HandlePlaybackStoppingOperations(streamDesc, "StopClient");
 
@@ -1172,6 +1181,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_RECORD) {
         RecordDeviceInfo info {.uid_ = GetRealUid(streamDesc)};
         audioUsrSelectManager_.UpdateRecordDeviceInfo(UpdateType::RELEASE_CLIENT, info);
+    }
+    if (streamDesc != nullptr && streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
+        AudioRouterInfra::GetInstance().UpdateOutputStreamState(GetRealUid(streamDesc), sessionId,
+            streamDesc->rendererInfo_.streamUsage, StreamState::STOPPED);
     }
     ForceRemoveSleStreamType(streamDesc);
     pipeManager_->RemoveClient(sessionId);
@@ -1742,6 +1755,17 @@ int32_t AudioCoreService::SelectOutputDevice(sptr<AudioRendererFilter> audioRend
 void AudioCoreService::NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc)
 {
     audioDeviceCommon_.NotifyDistributedOutputChange(deviceDesc);
+}
+
+int32_t AudioCoreService::SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid)
+{
+    AUDIO_INFO_LOG("select device %{public}d from uid %{public}d", deviceType, uid);
+    int32_t ret = AudioSelectInterfaceService::GetInstance().SetMediaOutputDeviceByUid(deviceType, uid);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetMediaOutputDeviceByUid failed");
+    FetchOutputDeviceAndRoute("SetMediaOutputDeviceByUid");
+    ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
+        audioActiveDevice_.GetCurrentOutputDevice(), "SetMediaOutputDeviceByUid");
+    return SUCCESS;
 }
 
 int32_t AudioCoreService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
