@@ -210,7 +210,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_RegisterPreferredOutputDevicesChang
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
     StreamUsage usage = static_cast<StreamUsage>(streamUsage);
- 	return ohAudioRoutingManager->SetPreferredOutputDeviceChangeCallback(usage, callback);
+    return ohAudioRoutingManager->SetPreferredOutputDeviceChangeCallback(usage, callback);
 }
 
 OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
@@ -238,7 +238,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_RegisterPreferredInputDevicesChange
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
     SourceType type = static_cast<SourceType>(sourceType);
- 	return ohAudioRoutingManager->SetPreferredInputDeviceChangeCallback(type, callback);
+    return ohAudioRoutingManager->SetPreferredInputDeviceChangeCallback(type, callback);
 }
 
 OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
@@ -250,7 +250,7 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterPreferredInputDevicesChan
     OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
     CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
         AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
- 	return ohAudioRoutingManager->UnsetPreferredInputDeviceChangeCallback(callback);
+    return ohAudioRoutingManager->UnsetPreferredInputDeviceChangeCallback(callback);
 }
 
 OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
@@ -566,29 +566,29 @@ OH_AudioCommon_Result OHAudioRoutingManager::UnsetPreferredOutputDeviceChangeCal
 void OHAudioPreferredOutputDeviceChangedCallback::OnPreferredOutputDeviceUpdated(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
- 	CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the fuction is nullptr");
- 	uint32_t size = desc.size();
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the fuction is nullptr");
+    uint32_t size = desc.size();
     CHECK_AND_RETURN_LOG(size > 0, "audioDeviceDescriptors is null");
 
- 	OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
- 	    (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+        (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
     if (audioDeviceDescriptorArray) {
- 	    audioDeviceDescriptorArray->descriptors =
- 	        (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
+        audioDeviceDescriptorArray->descriptors =
+            (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
         CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray->descriptors != nullptr,
             DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray), "failed to malloc descriptors.");
 
- 	    audioDeviceDescriptorArray->size = size;
- 	    uint32_t index = 0;
- 	    for (auto deviceDescriptor : desc) {
- 	        audioDeviceDescriptorArray->descriptors[index] =
- 	            (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
+        audioDeviceDescriptorArray->size = size;
+        uint32_t index = 0;
+        for (auto deviceDescriptor : desc) {
+            audioDeviceDescriptorArray->descriptors[index] =
+                (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
             CHECK_AND_RETURN_RET(audioDeviceDescriptorArray->descriptors[index] != nullptr,
                 DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray));
- 	        index++;
- 	    }
+            index++;
+        }
     }
- 	callback_(audioDeviceDescriptorArray);
+    callback_(audioDeviceDescriptorArray);
 }
 
 OH_AudioCommon_Result OHAudioRoutingManager::SetPreferredInputDeviceChangeCallback(
@@ -660,28 +660,28 @@ void OHAudioPreferredInputDeviceChangedCallback::OnPreferredInputDeviceUpdated(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
 {
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the fuction is nullptr");
- 	uint32_t size = desc.size();
+    uint32_t size = desc.size();
     CHECK_AND_RETURN_LOG(size > 0, "audioDeviceDescriptors is null");
 
- 	OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
- 	    (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+        (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
     if (audioDeviceDescriptorArray) {
- 	    audioDeviceDescriptorArray->descriptors =
- 	        (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
+        audioDeviceDescriptorArray->descriptors =
+            (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
         CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray->descriptors != nullptr,
             DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray), "failed to malloc descriptors.");
 
- 	    audioDeviceDescriptorArray->size = size;
- 	    uint32_t index = 0;
- 	    for (auto deviceDescriptor : desc) {
- 	        audioDeviceDescriptorArray->descriptors[index] =
- 	            (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
+        audioDeviceDescriptorArray->size = size;
+        uint32_t index = 0;
+        for (auto deviceDescriptor : desc) {
+            audioDeviceDescriptorArray->descriptors[index] =
+                (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
             CHECK_AND_RETURN_RET(audioDeviceDescriptorArray->descriptors[index] != nullptr,
                 DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray));
- 	        index++;
- 	    }
+            index++;
+        }
     }
- 	callback_(audioDeviceDescriptorArray);
+    callback_(audioDeviceDescriptorArray);
 }
 
 void OHMicrophoneBlockCallback::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)
