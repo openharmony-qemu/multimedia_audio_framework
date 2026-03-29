@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,6 +87,7 @@ public:
     void UpdateInputStreamState(int32_t uid, uint32_t streamId, SourceType sourceType, StreamState state);
     void UpdateOutputStreamState(int32_t uid, uint32_t streamId, StreamUsage streamUsage, StreamState state);
 
+    int32_t GetHighestOutputPriorityApp();
     bool HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes);
     std::vector<SourceType> GetHighestPriorityRunningSourceTypes();
     std::vector<StreamUsage> GetHighestPriorityRunningStreamUsages();
@@ -121,6 +121,7 @@ private:
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     bool HasRunningInputStream(int32_t uid);
     bool HasRunningOutputStream(int32_t uid);
+    bool HasAppSelectOutputDevice(int32_t uid);
     int64_t GetCurrentTimeMs() const;
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
