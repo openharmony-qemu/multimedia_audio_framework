@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -206,6 +205,20 @@ int32_t AudioSessionClientManager::SetDefaultOutputDevice(DeviceType deviceType)
     return ret;
 }
 
+int32_t AudioSessionClientManager::SetMediaOutputDevice(DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("SetMediaOutputDevice with deviceType: %{public}d", static_cast<int32_t>(deviceType));
+    int32_t ret = AudioPolicyManager::GetInstance().SetMediaOutputDevice(deviceType);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetMediaOutputDevice failed ret:%{public}d", ret);
+
+    std::lock_guard<std::mutex> lock(setMediaOutputDeviceMutex_);
+    setMediaOutputDevice_ = true;
+    setMediaDeviceType_ = deviceType;
+
+    RegisterAudioPolicyServerDiedCb();
+    return ret;
+}
+
 int32_t AudioSessionClientManager::SetAudioSessionCurrentDeviceChangeCallback(
     const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
 {
@@ -338,6 +351,15 @@ bool AudioSessionClientManager::Restore()
             AUDIO_INFO_LOG("restore need SetDefaultOutputDevice");
             auto ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(setDeviceType_);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "SetDefaultOutputDevice failed, ret:%{public}d", ret);
+        }
+    }
+    
+    {
+        std::lock_guard<std::mutex> lock(setMediaOutputDeviceMutex_);
+        if (setMediaOutputDevice_) {
+            AUDIO_INFO_LOG("restore need SetMediaOutputDevice");
+            auto ret = AudioPolicyManager::GetInstance().SetMediaOutputDevice(setMediaDeviceType_);
+            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "SetMediaOutputDevice failed, ret:%{public}d", ret);
         }
     }
 
