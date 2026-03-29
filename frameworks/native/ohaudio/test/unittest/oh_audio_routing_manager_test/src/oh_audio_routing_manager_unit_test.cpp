@@ -31,7 +31,6 @@ void OHAudioRoutingManagerUnitTest::TearDown(void) { }
 
 int32_t callbackRet = -1;
 
-
 static int32_t DeviceChangeCallback(OH_AudioDevice_ChangeType type,
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
 {
@@ -49,6 +48,38 @@ static int32_t DeviceChangeCallback(OH_AudioDevice_ChangeType type,
         }
     }
     return 0;
+}
+
+static int32_t PreferredOutputDeviceChangedCallback(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
+{
+    CHECK_AND_RETURN_RET(audioDeviceDescriptorArray != nullptr, 0);
+    int size = audioDeviceDescriptorArray->size;
+    callbackRet = 0;
+    for (int index = 0; index < size; index++) {
+        OH_AudioDeviceDescriptor *audioDeviceDescriptor = audioDeviceDescriptorArray->descriptors[index];
+        if (audioDeviceDescriptor) {
+            OH_AudioDevice_Role deviceRole = AUDIO_DEVICE_ROLE_OUTPUT;
+            OH_AudioDeviceDescriptor_GetDeviceRole(audioDeviceDescriptor, &deviceRole);
+            OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_INVALID;
+            OH_AudioDeviceDescriptor_GetDeviceType(audioDeviceDescriptor, &deviceType);
+        }
+    }
+}
+
+static int32_t PreferredInputDeviceChangedCallback(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
+{
+    CHECK_AND_RETURN_RET(audioDeviceDescriptorArray != nullptr, 0);
+    int size = audioDeviceDescriptorArray->size;
+    callbackRet = 0;
+    for (int index = 0; index < size; index++) {
+        OH_AudioDeviceDescriptor *audioDeviceDescriptor = audioDeviceDescriptorArray->descriptors[index];
+        if (audioDeviceDescriptor) {
+            OH_AudioDevice_Role deviceRole = AUDIO_DEVICE_ROLE_INPUT;
+            OH_AudioDeviceDescriptor_GetDeviceRole(audioDeviceDescriptor, &deviceRole);
+            OH_AudioDevice_Type deviceType = AUDIO_DEVICE_TYPE_INVALID;
+            OH_AudioDeviceDescriptor_GetDeviceType(audioDeviceDescriptor, &deviceType);
+        }
+    }
 }
 
 static void DeviceBlockStatusCallback(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray,
@@ -447,6 +478,40 @@ HWTEST(OHAudioRoutingManagerUnitTest, OnDeviceChange_001, TestSize.Level0)
     action.deviceDescriptors.push_back(audioDeviceDescriptor);
     ohAudioOnDeviceChangedCallback->OnDeviceChange(action);
     EXPECT_EQ(callbackRet, AUDIOCOMMON_RESULT_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnPreferredOutputDeviceUpdated.
+ * @tc.number: OnPreferredOutputDeviceUpdated_001
+ * @tc.desc  : Test OnPreferredOutputDeviceUpdated.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, OnPreferredOutputDeviceUpdated_001, TestSize.Level0)
+{
+    OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback = PreferredOutputDeviceChangedCallback;
+    std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback> ohAudioPreferredOutputDeviceCallback =
+        std::make_shared<OHAudioPreferredOutputDeviceChangedCallback>(callback);
+    EXPECT_NE(ohAudioPreferredOutputDeviceCallback, nullptr);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    callbackRet = -1;
+    ohAudioPreferredOutputDeviceCallback->OnPreferredOutputDeviceUpdated(desc);
+    EXPECT_EQ(callbackRet, -1);
+}
+
+/**
+ * @tc.name  : Test OnPreferredInputDeviceUpdated.
+ * @tc.number: OnPreferredInputDeviceUpdated_001
+ * @tc.desc  : Test OnPreferredInputDeviceUpdated.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, OnPreferredInputDeviceUpdated_001, TestSize.Level0)
+{
+    OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback = PreferredInputDeviceChangedCallback;
+    std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback> ohAudioPreferredInputDeviceCallback =
+        std::make_shared<OHAudioPreferredInputDeviceChangedCallback>(callback);
+    EXPECT_NE(ohAudioPreferredInputDeviceCallback, nullptr);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    callbackRet = -1;
+    ohAudioPreferredInputDeviceCallback->OnPreferredInputDeviceUpdated(desc);
+    EXPECT_EQ(callbackRet, -1);
 }
 
 /**
