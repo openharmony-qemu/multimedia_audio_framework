@@ -1366,6 +1366,21 @@ bool NapiAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceTy
     return result;
 }
 
+bool NapiAudioEnum::IsLegalInputArgumentSetMediaOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case DeviceType::DEVICE_TYPE_SPEAKER:
+        case DeviceType::DEVICE_TYPE_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
 int32_t NapiAudioEnum::GetJsAudioVolumeMode(AudioVolumeMode volumeMode)
 {
     int32_t result = NapiAudioEnum::SYSTEM_GLOBAL;
