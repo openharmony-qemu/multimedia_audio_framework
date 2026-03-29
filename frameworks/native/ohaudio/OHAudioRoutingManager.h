@@ -165,7 +165,8 @@ private:
     AudioSystemManager *audioSystemManager_ = AudioSystemManager::GetInstance();
     AudioRoutingManager *audioRoutingManager_ =  AudioRoutingManager::GetInstance();
     std::vector<std::shared_ptr<OHAudioDeviceChangedCallback>> ohAudioOnDeviceChangedCallbackArray_;
-    std::vector<std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback>> ohAudioPreferredOutputDeviceCallbackArray_;
+    std::vector<std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback>>
+        ohAudioPreferredOutputDeviceCallbackArray_;
     std::vector<std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback>> ohAudioPreferredInputDeviceCallbackArray_;
     std::vector<std::shared_ptr<OHMicrophoneBlockCallback>> ohMicroPhoneBlockCallbackArray_;
 
