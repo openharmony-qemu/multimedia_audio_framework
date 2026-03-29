@@ -64,6 +64,7 @@ static int32_t PreferredOutputDeviceChangedCallback(OH_AudioDeviceDescriptorArra
             OH_AudioDeviceDescriptor_GetDeviceType(audioDeviceDescriptor, &deviceType);
         }
     }
+    return 0;
 }
 
 static int32_t PreferredInputDeviceChangedCallback(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
@@ -80,6 +81,7 @@ static int32_t PreferredInputDeviceChangedCallback(OH_AudioDeviceDescriptorArray
             OH_AudioDeviceDescriptor_GetDeviceType(audioDeviceDescriptor, &deviceType);
         }
     }
+    return 0;
 }
 
 static void DeviceBlockStatusCallback(OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray,
