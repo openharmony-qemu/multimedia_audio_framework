@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -97,6 +96,17 @@ std::string AudioPolicyManager::GetSelectedDeviceInfo(int32_t uid, int32_t pid, 
     std::string out{};
     gsp->GetSelectedDeviceInfo(uid, pid, streamType, out);
     return out;
+}
+
+int32_t AudioPolicyManager::SetMediaOutputDevice(DeviceType deviceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(deviceType == DEVICE_TYPE_SPEAKER || deviceType == DEVICE_TYPE_DEFAULT,
+        ERROR, "invaild deviceType.");
+    int32_t result = CheckAudioPolicyClientRegisted();
+    CHECK_AND_RETURN_RET(result == SUCCESS, result);
+    return gsp->SetMediaOutputDevice(deviceType);
 }
 
 int32_t AudioPolicyManager::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
