@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -132,6 +131,28 @@ void AudioSessionManagerImpl::SetDefaultOutputDeviceSync(DeviceType deviceType)
     OHOS::AudioStandard::DeviceType audioDeviceType =
         static_cast<OHOS::AudioStandard::DeviceType>(deviceType.get_value());
     int32_t ret = audioSessionMngr_->SetDefaultOutputDevice(audioDeviceType);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
+}
+
+void AudioSessionManagerImpl::SetMediaOutputDeviceSync(DeviceType deviceType)
+{
+    if (audioSessionMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngr_ is nullptr");
+        return;
+    }
+
+    if (!(TaiheAudioEnum::IsLegalInputArgumentSetMediaOutputDeviceType(deviceType.get_value()))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of mode must be enum deviceType");
+        return;
+    }
+
+    OHOS::AudioStandard::DeviceType audioDeviceType =
+        static_cast<OHOS::AudioStandard::DeviceType>(deviceType.get_value());
+    int32_t ret = audioSessionMngr_->SetMediaOutputDevice(audioDeviceType);
     if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
         return;
