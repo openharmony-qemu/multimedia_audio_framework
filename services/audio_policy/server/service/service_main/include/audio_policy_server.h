@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -177,6 +176,8 @@ public:
     int32_t RestoreOutputDevice(const sptr<AudioRendererFilter> &audioRendererFilter) override;
 
     int32_t GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamType, std::string &info) override;
+
+    int32_t SetMediaOutputDevice(int32_t deviceTypeIn) override;
 
     int32_t SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
