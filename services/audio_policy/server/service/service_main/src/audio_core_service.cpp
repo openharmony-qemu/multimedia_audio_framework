@@ -1063,8 +1063,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         HILOG_COMM_ERROR("[StartClient]newDeviceDescs_ is empty"));
     // [Capturer NOTE 1.0] be careful device may be changed.
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->GetMainNewDeviceDesc();
-    CHECK_AND_CALL_FUNC_RETURN_RET(deviceDesc, ERR_NULL_POINTER,
-        HILOG_COMM_ERROR("[StartClient]deviceDesc is nullptr"));
+    CHECK_AND_CALL_FUNC_RETURN_RET(deviceDesc, ERR_NULL_POINTER, HILOG_COMM_ERROR("deviceDesc is nullptr"));
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
     // will reset a2dp device to none.
     audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
@@ -1098,8 +1097,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         CHECK_AND_RETURN_RET_LOG(inputRet != REFETCH_DEVICE, SUCCESS, "Activate input device failed, refetch device");
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(deviceDesc, GetRealUid(streamDesc));
-        audioActiveDevice_.UpdateActiveDeviceRoute(
-            deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDesc->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
             deviceDesc->deviceName_, deviceDesc->networkId_);
         streamCollector_.UpdateCapturerDeviceInfo(deviceDesc);
     }
