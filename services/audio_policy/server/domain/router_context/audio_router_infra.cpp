@@ -622,13 +622,13 @@ void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream,
     bool isForeground, bool isSelfSelecting)
 {
     if (isSelfSelecting) {
-        if (isForeground && hasRunningStream && HasAppSelectOutputDevice(uid)) {
+        if (isForeground && hasRunningStream) {
             CHECK_AND_RETURN(HasAppSelectOutputDevice(uid));
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
         }
     } else {
-        if (hasRunningStream && HasAppSelectOutputDevice(uid)) {
+        if (hasRunningStream) {
             CHECK_AND_RETURN(HasAppSelectOutputDevice(uid));
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
