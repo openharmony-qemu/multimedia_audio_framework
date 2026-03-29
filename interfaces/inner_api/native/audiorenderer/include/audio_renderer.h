@@ -1016,6 +1016,12 @@ public:
         return -1;
     }
 
+    virtual int32_t SetMainUseArk(bool isMainUseArk)
+    {
+        (void)isMainUseArk;
+        return 0;
+    }
+    
     /**
      * @brief Gets the audio effect mode.
      *

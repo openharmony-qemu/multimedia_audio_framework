@@ -133,6 +133,7 @@ private:
     AudioProcessConfig processConfig_;
     std::weak_ptr<IStatusCallback> statusCallback_;
     std::weak_ptr<IWriteCallback> writeCallback_;
+    std::weak_ptr<IStatusCallback> offloadStateCallback_;
     State state_ = INVALID;
     std::future<void> offloadVolumeRmap_;
 

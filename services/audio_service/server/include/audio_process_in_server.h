@@ -194,6 +194,7 @@ public:
 
     int32_t ResetStaticPlayPosition() override;
     int32_t SetMuteHint(bool mute) override;
+    void ReportExceptionForFast();
 public:
     const AudioProcessConfig processConfig_;
 
@@ -319,6 +320,7 @@ private:
     std::mutex runnerMutex_;
     std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
     std::shared_ptr<AudioProcessInServerHandler> handler_ = nullptr;
+    int64_t runningStamp_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

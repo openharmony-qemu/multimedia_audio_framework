@@ -177,6 +177,7 @@ public:
     int32_t SetStaticBufferCallback(std::shared_ptr<StaticBufferEventCallback> callback);
     bool IsRendererFlagsSupportStatic(const int32_t rendererFlags);
     int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior) override;
+    int32_t SetMainUseArk(bool isMainUseArk) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
@@ -332,6 +333,7 @@ private:
     std::mutex inSwitchingMtx_;
     bool inSwitchingFlag_ = false;
     std::atomic<int32_t> audioInterruptState_ = INVALID;
+    bool isFirstSetMainUseArk_ = true;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

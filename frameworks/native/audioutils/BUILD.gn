@@ -36,6 +36,7 @@ ohos_shared_library("audio_utils") {
     "./include",
     "../../../interfaces/inner_api/native/audiocommon/include/",
     "../../../services/audio_service/client/include",
+    "../../../services/audio_service/server/include",
   ]
 
   sources = [

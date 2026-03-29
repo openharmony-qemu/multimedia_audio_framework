@@ -26,6 +26,7 @@
 #include "audio_zone_service.h"
 #include "parameters.h"
 #include <fstream>
+#include "app_bundle_manager.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -1172,6 +1173,20 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     return SUCCESS;
 }
 
+void AudioStreamCollector::ReportExceptionForBackMute(uint32_t sessionId, uint32_t usage, int32_t uid)
+{
+    std::string appName = AppBundleManager::GetBundleNameFromUid(uid);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", GetStreamType(sessionId));
+    bean->Add("TYPE", TYPE_BACKGROUND_PLAYBACK);
+    AUDIO_ERR_LOG("ReportExceptionForBackMute: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
+        appName.c_str(), GetStreamType(sessionId), TYPE_BACKGROUND_PLAYBACK);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool mute, bool &notifyMute, bool hasBackTask)
 {
     if (VolumeUtils::IsPCVolumeEnable()) {
@@ -1195,6 +1210,7 @@ void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool m
             setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
             setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
             if (mute && !changeInfo->backMute) {
+                ReportExceptionForBackMute(changeInfo->sessionId, setStateEvent.streamUsage, uid);
                 AUDIO_INFO_LOG("Mute the stream in uid=%{public}d", uid);
                 setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
                 callback->MuteStreamImpl(setStateEvent);

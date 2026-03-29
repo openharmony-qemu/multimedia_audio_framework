@@ -915,6 +915,11 @@ int32_t HpaeRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "SetOffloadPolicy failed, errcode is %{public}d", ret);
     offloadStatePolicy_.store(statePolicy);
+    std::shared_ptr<IStatusCallback> offloadStateCallback = offloadStateCallback_.lock();
+        if (offloadStateCallback != nullptr) {
+            offloadStateCallback->OnStatusUpdate(statePolicy == OFFLOAD_INACTIVE_BACKGROUND ?
+                OFFLOAD_INACTIVE_BACKGROUND_RUNNING : OFFLOAD_ACTIVE_FOREGROUND_RUNNING);
+        }
 #else
     AUDIO_INFO_LOG("not available, FEATURE_POWER_MANAGER no define");
 #endif
