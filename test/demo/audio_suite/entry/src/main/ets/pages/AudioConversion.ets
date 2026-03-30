@@ -1,8 +1,3 @@
-/*
-* Copyright (c) 2026 Huawei Device Co., Ltd. 2026-2026. All rights reserved.
-*/
-
-
 import { Logger } from '../utils/Logger';
 import { StyleConst } from '../utils/StyleConst';
 import audioNapi from 'libentry.so';
@@ -16,16 +11,6 @@ import { SongInfo } from '../utils/InterfaceInfo';
 import { taskpool } from '@kit.ArkTS';
 
 const TAG: string = 'AudioConversion';
-
-const bufferSize = 100 * 1024 * 1024; // 100MB
-const zeroBuffer = new ArrayBuffer(bufferSize);
-
-// Input status enum
-enum OH_AudioConverter_InputStatus {
-  AUDIOCONVERTER_INPUT_HAVE_DATA = 1,
-  AUDIOCONVERTER_INPUT_NO_AVAILABLE_DATA = 2,
-  AUDIOCONVERTER_INPUT_DATA_FINISHED = 3
-}
 
 // Sample format enum
 enum AudioSampleFormat {
@@ -94,21 +79,11 @@ enum AudioChannelLayout {
 }
 
 // Audio converter format
-interface OH_AudioConverter_Format {
+interface AudioConverterFormat {
   encodingType: number;
   samplingRate: number;
   channelLayout: number;
   sampleFormat: number;
-}
-
-// Converter output parameters
-interface ConverterHandle {
-  handle: number;
-}
-
-// OutputSize output parameters
-interface OutputSize {
-  value: number;
 }
 
 @Builder
@@ -127,14 +102,13 @@ export async function saveFileBuffer(): Promise<ArrayBuffer> {
 
 @Concurrent
 export async function audioConverterProcess(converterHandle: number): Promise<ArrayBuffer> {
-  let result = audioNapi.ohAudioConverterProcess(converterHandle);
+  let result = audioNapi.audioConverterProcess(converterHandle);
   return result;
 }
 
 @Component
 export struct AudioConversion {
   pageInfos: NavPathStack = new NavPathStack();
-  @StorageLink('playList') playList: Map<string, SongInfo> = new Map();
   @State message: string = '音频格式转换';
   @State converterHandle: number = 0;
   @State createResult: string = '';
@@ -144,24 +118,20 @@ export struct AudioConversion {
   @State selectedFileUri: string = '';
   @State convertedData: ArrayBuffer | null = null;
   @State selectedFileName: string = '';
-  @State inputFormat: OH_AudioConverter_Format = {
+  @State inputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
     samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
     channelLayout: 3,
     sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE
   };
-  @State outputFormat: OH_AudioConverter_Format = {
+  @State outputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
     samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_48000,
     channelLayout: 3,
     sampleFormat: AudioSampleFormat.AUDIO_SAMPLE_S16LE
   };
-  @State isProcessing: boolean = false;
   @State isConverting: boolean = false;
   private context = getContext(this) as common.UIAbilityContext;
-  private fileHandle: number = 0;
-  private fileData: ArrayBuffer = new ArrayBuffer(0);
-  private readOffset: number = 0;
 
   build() {
     NavDestination() {
@@ -187,14 +157,14 @@ export struct AudioConversion {
 
           Row() {
             Column() {
-              this.FormatConfigSection('输入格式', this.inputFormat, (format: OH_AudioConverter_Format) => {
+              this.FormatConfigSection('输入格式', this.inputFormat, (format: AudioConverterFormat) => {
                 this.inputFormat = format;
               }, true)
             }
             .layoutWeight(1)
 
             Column() {
-              this.FormatConfigSection('输出格式', this.outputFormat, (newFormat: OH_AudioConverter_Format) => {
+              this.FormatConfigSection('输出格式', this.outputFormat, (newFormat: AudioConverterFormat) => {
                 this.outputFormat = {
                   encodingType: newFormat.encodingType,
                   samplingRate: newFormat.samplingRate,
@@ -214,7 +184,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.ohAudioConverterCreate();
+                this.audioConverterCreate();
               })
 
             Text(this.createResult)
@@ -227,7 +197,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.ohAudioConverterSetInputCallback();
+                this.audioConverterSetInputCallback();
               })
 
             Text(this.callbackResult)
@@ -240,7 +210,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.ohAudioConverterProcess();
+                this.audioConverterProcess();
               })
 
             Text(this.processResult)
@@ -253,7 +223,7 @@ export struct AudioConversion {
               .height(40)
               .margin({ top: 5 })
               .onClick(() => {
-                this.ohAudioConverterDestroy();
+                this.audioConverterDestroy();
               })
 
             Text(this.destroyResult)
@@ -296,7 +266,9 @@ export struct AudioConversion {
   }
 
   @Builder
-  FormatConfigSection(title: string, format: OH_AudioConverter_Format, onChange: (format: OH_AudioConverter_Format) => void, isInput: boolean) {
+  FormatConfigSection(title: string, format: AudioConverterFormat, onChange: (format: AudioConverterFormat) => void,
+    isInput: boolean)
+  {
     Column() {
       Text(title)
         .fontSize(16)
@@ -327,7 +299,7 @@ export struct AudioConversion {
             value=${[8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200, 96000][index]}`);
 
             const rates = [8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000, 64000, 88200, 96000];
-            let newFormat: OH_AudioConverter_Format = {
+            let newFormat: AudioConverterFormat = {
               encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
               samplingRate: rates[index],
               channelLayout: isInput ? this.inputFormat.channelLayout : this.outputFormat.channelLayout,
@@ -378,15 +350,18 @@ export struct AudioConversion {
           { value: '7POINT1_WIDE' },
           { value: '7POINT1_WIDE_BACK' }
         ])
-          .selected(this.getChannelLayoutIndex(isInput ? this.inputFormat.channelLayout : this.outputFormat.channelLayout))
+          .selected(this.getChannelLayoutIndex(isInput ? this.inputFormat.channelLayout :
+            this.outputFormat.channelLayout))
           .onSelect((index: number) => {
             Logger.info(TAG, `${isInput ? 'Input' : 'Output'} channelLayout selected: index=${index},
-            value=${[4,3,1610612736,11,259,7,15,263,1539,51,206158430211,271,1543,55,
-              206158430219, 206158430215, 1551,63,1799, 20495,1731,311,1807,319,1739,1591,1735,1599,1847,206158431759,255,255][index]}`);
+            value=${[4, 3, 1610612736, 11, 259, 7, 15, 263, 1539, 51, 206158430211, 271, 1543, 55,
+              206158430219, 206158430215, 1551, 63, 1799, 20495, 1731, 311, 1807, 319, 1739, 1591, 1735, 1599, 1847,
+              206158431759, 255, 255][index]}`);
 
-            const layouts = [4,3,1610612736,11,259,7,15,263,1539,51,206158430211,271,1543,55,
-              206158430219, 206158430215, 1551,63,1799, 20495,1731,311,1807,319,1739,1591,1735,1599,1847,206158431759,255,255];
-            let newFormat: OH_AudioConverter_Format = {
+            const layouts = [4, 3, 1610612736, 11, 259, 7, 15, 263, 1539, 51, 206158430211, 271, 1543, 55,
+              206158430219, 206158430215, 1551, 63, 1799, 20495, 1731, 311, 1807, 319, 1739, 1591, 1735, 1599, 1847,
+              206158431759, 255, 255];
+            let newFormat: AudioConverterFormat = {
               encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
               samplingRate: isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate,
               channelLayout: layouts[index],
@@ -412,11 +387,17 @@ export struct AudioConversion {
           .selected(this.getSampleFormatIndex(isInput ? this.inputFormat.sampleFormat : this.outputFormat.sampleFormat))
           .onSelect((index: number) => {
             Logger.info(TAG, `${isInput ? 'Input' : 'Output'} sampleFormat selected: index=${index},
-            value=${[AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE, AudioSampleFormat.AUDIO_SAMPLE_S24LE, AudioSampleFormat.AUDIO_SAMPLE_S32LE, AudioSampleFormat.AUDIO_SAMPLE_F32LE][index]}`);
-            Logger.info(TAG, `Current ${isInput ? 'inputFormat' : 'outputFormat'}.samplingRate before update: ${isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate}`);
+            value=${[AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE,
+              AudioSampleFormat.AUDIO_SAMPLE_S24LE, AudioSampleFormat.AUDIO_SAMPLE_S32LE,
+              AudioSampleFormat.AUDIO_SAMPLE_F32LE][index]}`);
+            Logger.info(TAG,
+              `Current ${isInput ? 'inputFormat' : 'outputFormat'}.samplingRate before update: ${isInput ?
+                this.inputFormat.samplingRate : this.outputFormat.samplingRate}`);
 
-            const sampleFormats = [AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE, AudioSampleFormat.AUDIO_SAMPLE_S24LE, AudioSampleFormat.AUDIO_SAMPLE_S32LE, AudioSampleFormat.AUDIO_SAMPLE_F32LE];
-            let newFormat: OH_AudioConverter_Format = {
+            const sampleFormats = [AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE,
+              AudioSampleFormat.AUDIO_SAMPLE_S24LE, AudioSampleFormat.AUDIO_SAMPLE_S32LE,
+              AudioSampleFormat.AUDIO_SAMPLE_F32LE];
+            let newFormat: AudioConverterFormat = {
               encodingType: isInput ? this.inputFormat.encodingType : this.outputFormat.encodingType,
               samplingRate: isInput ? this.inputFormat.samplingRate : this.outputFormat.samplingRate,
               channelLayout: isInput ? this.inputFormat.channelLayout : this.outputFormat.channelLayout,
@@ -436,19 +417,63 @@ export struct AudioConversion {
   }
 
   getSampleRateIndex(rate: number): number {
-    const rates = [8000, 11025, 12000, 16000, 22050, 24000, 32000,
-      44100, 48000, 64000, 88200, 96000];
+    const rates = [
+      AudioSampleRate.AUDIO_SAMPLE_RATE_8000,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_11025,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_12000,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_16000,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_22050,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_24000,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_32000,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_48000,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_64000,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_88200,
+      AudioSampleRate.AUDIO_SAMPLE_RATE_96000];
     return rates.indexOf(rate);
   }
 
   getChannelLayoutIndex(layout: number): number {
-    const layouts = [4,3,1610612736,11,259,7,15,263,1539,51,206158430211,271,1543,55,
-      206158430219, 206158430215, 1551,63,1799, 20495,1731,311,1807,319,1739,1591,1735,1599,1847,206158431759,255,255];
+    const layouts = [
+      AudioChannelLayout.CH_LAYOUT_MONO,
+      AudioChannelLayout.CH_LAYOUT_STEREO,
+      AudioChannelLayout.CH_LAYOUT_STEREO_DOWNMIX,
+      AudioChannelLayout.CH_LAYOUT_2POINT1,
+      AudioChannelLayout.CH_LAYOUT_3POINT0,
+      AudioChannelLayout.CH_LAYOUT_SURROUND,
+      AudioChannelLayout.CH_LAYOUT_3POINT1,
+      AudioChannelLayout.CH_LAYOUT_4POINT0,
+      AudioChannelLayout.CH_LAYOUT_QUAD_SIDE,
+      AudioChannelLayout.CH_LAYOUT_QUAD,
+      AudioChannelLayout.CH_LAYOUT_2POINT0POINT2,
+      AudioChannelLayout.CH_LAYOUT_4POINT1,
+      AudioChannelLayout.CH_LAYOUT_5POINT0,
+      AudioChannelLayout.CH_LAYOUT_5POINT0_BACK,
+      AudioChannelLayout.CH_LAYOUT_2POINT1POINT2,
+      AudioChannelLayout.CH_LAYOUT_3POINT0POINT2,
+      AudioChannelLayout.CH_LAYOUT_5POINT1,
+      AudioChannelLayout.CH_LAYOUT_5POINT1_BACK,
+      AudioChannelLayout.CH_LAYOUT_6POINT0,
+      AudioChannelLayout.CH_LAYOUT_3POINT1POINT2,
+      AudioChannelLayout.CH_LAYOUT_6POINT0_FRONT,
+      AudioChannelLayout.CH_LAYOUT_HEXAGONAL,
+      AudioChannelLayout.CH_LAYOUT_6POINT1,
+      AudioChannelLayout.CH_LAYOUT_6POINT1_BACK,
+      AudioChannelLayout.CH_LAYOUT_6POINT1_FRONT,
+      AudioChannelLayout.CH_LAYOUT_7POINT0,
+      AudioChannelLayout.CH_LAYOUT_7POINT0_FRONT,
+      AudioChannelLayout.CH_LAYOUT_7POINT1,
+      AudioChannelLayout.CH_LAYOUT_OCTAGONAL,
+      AudioChannelLayout.CH_LAYOUT_5POINT1POINT2,
+      AudioChannelLayout.CH_LAYOUT_7POINT1_WIDE,
+      AudioChannelLayout.CH_LAYOUT_7POINT1_WIDE_BACK];
     return layouts.indexOf(layout);
   }
 
   getSampleFormatIndex(sampleFormat: number): number {
-    const sampleFormats = [AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE, AudioSampleFormat.AUDIO_SAMPLE_S24LE, AudioSampleFormat.AUDIO_SAMPLE_S32LE, AudioSampleFormat.AUDIO_SAMPLE_F32LE];
+    const sampleFormats =
+      [AudioSampleFormat.AUDIO_SAMPLE_U8, AudioSampleFormat.AUDIO_SAMPLE_S16LE, AudioSampleFormat.AUDIO_SAMPLE_S24LE,
+        AudioSampleFormat.AUDIO_SAMPLE_S32LE, AudioSampleFormat.AUDIO_SAMPLE_F32LE];
     return sampleFormats.indexOf(sampleFormat);
   }
 
@@ -474,8 +499,8 @@ export struct AudioConversion {
     }
   }
 
-  ohAudioConverterCreate(): void {
-    Logger.info(TAG, 'OH_AudioConverter_Create 接口调用');
+  audioConverterCreate(): void {
+    Logger.info(TAG, 'AudioConverterCreate start');
     try {
       Logger.info(TAG, `InputFormat: encodingType=${this.inputFormat.encodingType},
       samplingRate=${this.inputFormat.samplingRate},
@@ -493,15 +518,16 @@ export struct AudioConversion {
       const outputBits = this.getBitsPerSample(this.outputFormat.sampleFormat);
 
       Logger.info(TAG, `Channel conversion: ${inputChannels} -> ${outputChannels}`);
-      Logger.info(TAG, `Sample rate conversion: ${this.inputFormat.samplingRate} Hz -> ${this.outputFormat.samplingRate} Hz`);
-      Logger.info(TAG, `Bit depth conversion: ${inputBits} bits -> ${outputBits} bits`);
+      Logger.info(TAG,
+        `Sample rate conversion: ${this.inputFormat.samplingRate} Hz -> ${this.outputFormat.samplingRate} Hz`);
 
       // Detect special format conversions
       if (inputChannels !== outputChannels) {
         Logger.warn(TAG, `Channel count conversion: ${inputChannels} -> ${outputChannels}`);
       }
       if (this.inputFormat.samplingRate !== this.outputFormat.samplingRate) {
-        Logger.warn(TAG, `Sample rate conversion: ${this.inputFormat.samplingRate} -> ${this.outputFormat.samplingRate}`);
+        Logger.warn(TAG,
+          `Sample rate conversion: ${this.inputFormat.samplingRate} -> ${this.outputFormat.samplingRate}`);
       }
       if (inputBits !== outputBits) {
         Logger.warn(TAG, `Bit depth conversion: ${inputBits} -> ${outputBits}`);
@@ -513,28 +539,26 @@ export struct AudioConversion {
       let fsStat  = fs.statSync(path);
       Logger.info(TAG, `fileSize : ${fsStat.size}`);
 
-      const result = audioNapi.ohAudioConverterCreate(this.inputFormat, this.outputFormat, file.fd);
+      const result = audioNapi.audioConverterCreate(this.inputFormat, this.outputFormat, file.fd);
 
-      // Note: The C++ layer has already read the data and closed the file descriptor, so there is no need to close it again here.
-      // Check if the return value is a valid converter handle (non-zero and negative values indicate an error).
       if (result > 0) {
         this.converterHandle = result;  // Storage converter handle.
         this.createResult = `Create 调用成功, converter handle: ${result}`;
-        Logger.info(TAG, `OH_AudioConverter_Create success, converter handle: ${result}`);
+        Logger.info(TAG, `AudioConverterCreate success, converter handle: ${result}`);
       } else {
         this.converterHandle = 0;  // Resetting Handles
         this.createResult = `Create 调用失败, error code: ${result}`;
-        Logger.error(TAG, `OH_AudioConverter_Create failed, error code: ${result}`);
+        Logger.error(TAG, `AudioConverterCreate failed, error code: ${result}`);
       }
     } catch (e) {
       this.createResult = `Create 调用失败: ${JSON.stringify(e)}`;
       Logger.info(TAG, `err: ${e}`);
-      Logger.error(TAG, `OH_AudioConverter_Create error: ${JSON.stringify(e)}`);
+      Logger.error(TAG, `AudioConverterCreate error: ${JSON.stringify(e)}`);
     }
   }
 
-  ohAudioConverterSetInputCallback(): void {
-    Logger.info(TAG, 'OH_AudioConverter_SetCallback 接口调用');
+  audioConverterSetInputCallback(): void {
+    Logger.info(TAG, 'AudioConverterSetCallback start');
     try {
       if (this.selectedFileUri === '') {
         this.callbackResult = '请先选择音频文件';
@@ -553,18 +577,18 @@ export struct AudioConversion {
         this.callbackResult = `Received callback data, size: ${data.byteLength} bytes`;
       };
 
-      // Call C++ interface, passing callback function and user data
-      const result = audioNapi.ohAudioConverterSetInputCallback(this.converterHandle, callback, 0);
-      this.callbackResult = `SetInputCallback 调用成功, result: ${result}`;
-      Logger.info(TAG, `OH_AudioConverter_SetInputCallback result: ${result}`);
+      // Call C++ interface, passing callback function
+      const result = audioNapi.audioConverterSetInputCallback(this.converterHandle, callback, 0);
+      this.callbackResult = `SetInputCallback success, result: ${result}`;
+      Logger.info(TAG, `AudioConverterSetInputCallback result: ${result}`);
     } catch (e) {
       this.callbackResult = `SetInputCallback 调用失败: ${JSON.stringify(e)}`;
-      Logger.error(TAG, `OH_AudioConverter_SetInputCallback error: ${JSON.stringify(e)}`);
+      Logger.error(TAG, `AudioConverterSetInputCallback error: ${JSON.stringify(e)}`);
     }
   }
 
-  ohAudioConverterProcess(): void {
-    Logger.info(TAG, 'OH_AudioConverter_Process 接口调用');
+  audioConverterProcess(): void {
+    Logger.info(TAG, 'AudioConverterProcess start');
 
     // Checking whether the converter handle is valid.
     if (this.converterHandle === 0) {
@@ -583,24 +607,24 @@ export struct AudioConversion {
 
         this.convertedData = result;
         this.processResult = `Process 完成，输出大小: ${result.byteLength} 字节`;
-        Logger.info(TAG, `OH_AudioConverter_Process 成功, 输出大小: ${result.byteLength}`);
+        Logger.info(TAG, `AudioConverterProcess success, outputdata: ${result.byteLength}`);
       } else {
 
         this.convertedData = null;
         this.processResult = `Process 失败`;
-        Logger.error(TAG, `OH_AudioConverter_Process 失败`);
+        Logger.error(TAG, `AudioConverterProcess failed`);
       }
       this.isConverting = false;
     }).catch((error: Error) => {
       this.convertedData = null;
       this.processResult = `Process 调用失败: ${error.message}`;
-      Logger.error(TAG, `OH_AudioConverter_Process error: ${error.message}`);
+      Logger.error(TAG, `AudioConverterProcess error: ${error.message}`);
       this.isConverting = false;
     });
   }
 
-  ohAudioConverterDestroy(): void {
-    Logger.info(TAG, 'OH_AudioConverter_Destroy 接口调用');
+  audioConverterDestroy(): void {
+    Logger.info(TAG, 'AudioConverterDestroy start');
     try {
       if (this.converterHandle === 0) {
         this.destroyResult = '无需销毁，转换器句柄无效';
@@ -608,13 +632,13 @@ export struct AudioConversion {
         return;
       }
 
-      audioNapi.ohAudioConverterDestroy(this.converterHandle);
+      audioNapi.audioConverterDestroy(this.converterHandle);
       this.converterHandle = 0;
       this.destroyResult = 'Destroy 调用成功';
-      Logger.info(TAG, 'OH_AudioConverter_Destroy 调用成功');
+      Logger.info(TAG, 'AudioConverterDestroy success');
     } catch (e) {
       this.destroyResult = `Destroy 调用失败: ${JSON.stringify(e)}`;
-      Logger.error(TAG, `OH_AudioConverter_Destroy error: ${JSON.stringify(e)}`);
+      Logger.error(TAG, `AudioConverterDestroy error: ${JSON.stringify(e)}`);
     }
   }
 
@@ -651,8 +675,6 @@ export struct AudioConversion {
 
         // Generate WAV file header
         Logger.info(TAG, `Preparing to generate WAV file header: pcmData length=${pcmData.byteLength}`);
-        Logger.info(TAG, `Output format parameters: samplingRate=${this.outputFormat.samplingRate}, channelLayout=${this.outputFormat.channelLayout}, sampleFormat=${this.outputFormat.sampleFormat}`);
-        Logger.info(TAG, `Calculated parameters: channels=${this.getChannelCount(this.outputFormat.channelLayout)}, bitsPerSample=${this.getBitsPerSample(this.outputFormat.sampleFormat)}`);
 
         const wavFileData = this.writeWavFileHeaderCorrected(
           pcmData,
@@ -669,15 +691,15 @@ export struct AudioConversion {
         const writeLen = fs.writeSync(file.fd, wavFileData);
         fs.closeSync(file.fd);
 
-        Logger.info(TAG, `文件保存成功，写入字节数: ${writeLen}`);
+        Logger.info(TAG, `SavefileSuccess，datasize: ${writeLen}`);
         this.showToast(`文件保存成功: ${fileName}`);
       }).catch((err: BusinessError) => {
-        Logger.error(TAG, `文件保存失败: ${err.code}, ${err.message}`);
+        Logger.error(TAG, `Savefilefailed: ${err.code}, ${err.message}`);
         this.showToast('文件保存失败');
       });
 
     } catch (error) {
-      Logger.error(TAG, 'saveConvertedFile 失败:', error);
+      Logger.error(TAG, 'saveConvertedFile failed:', error);
       this.showToast('保存文件时发生错误');
     }
   }
@@ -695,7 +717,7 @@ export struct AudioConversion {
       case AudioChannelLayout.CH_LAYOUT_3POINT0:
         return 3;
       case AudioChannelLayout.CH_LAYOUT_SURROUND:
-        return 3;
+        return 4;
       case AudioChannelLayout.CH_LAYOUT_3POINT1:
         return 4;
       case AudioChannelLayout.CH_LAYOUT_4POINT0:
@@ -772,22 +794,21 @@ export struct AudioConversion {
   }
 
   // The correct WAV file header generation function can distinguish between S32LE and F32LE.
-  private writeWavFileHeaderCorrected(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number, bitsPerSample: number, sampleFormat: number): ArrayBuffer {
-    Logger.info(TAG,
-      `writeWavFileHeaderCorrected sampleRate: ${sampleRate}, channels: ${channels}, bitsPerSample: ${bitsPerSample}, sampleFormat: ${sampleFormat}`);
+  private writeWavFileHeaderCorrected(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
+    bitsPerSample: number, sampleFormat: number): ArrayBuffer {
 
     if (channels <= 0 || channels > 8) {
-      Logger.error(TAG, `无效的声道数: ${channels}，WAV标准支持1-8声道`);
+      Logger.error(TAG, `unknown channel: ${channels}，WAV Supports 1~8 channels.`);
       throw new Error(`Invalid channel count: ${channels}`);
     }
 
     if (sampleRate <= 0) {
-      Logger.error(TAG, `无效的采样率: ${sampleRate}`);
+      Logger.error(TAG, `unknown sampleRate: ${sampleRate}`);
       throw new Error(`Invalid sample rate: ${sampleRate}`);
     }
 
     if (bitsPerSample !== 8 && bitsPerSample !== 16 && bitsPerSample !== 24 && bitsPerSample !== 32) {
-      Logger.error(TAG, `不支持的位深: ${bitsPerSample}，支持8/16/24/32位`);
+      Logger.error(TAG, `unknown bitsPerSample: ${bitsPerSample}，Supports 8,16,24,32-bit.`);
       throw new Error(`Unsupported bits per sample: ${bitsPerSample}`);
     }
 
@@ -805,7 +826,7 @@ export struct AudioConversion {
     const totalDataLen = pcmBuffer.byteLength + 44;
     dv.setUint32(4, totalDataLen, true);
     writeString(dv, 8, 'WAVE');
-    Logger.info(TAG, `RIFF块设置完成，总大小: ${totalDataLen} bytes`);
+    Logger.info(TAG, `RIFF Opinion Success Size: ${totalDataLen} bytes`);
 
     // fmt chunk
     writeString(dv, 12, 'fmt ');
@@ -822,26 +843,26 @@ export struct AudioConversion {
     }
 
     dv.setUint16(22, channels, true);
-    Logger.info(TAG, `声道数: ${channels}`);
+    Logger.info(TAG, `channels: ${channels}`);
 
     dv.setUint32(24, sampleRate, true);
-    Logger.info(TAG, `采样率: ${sampleRate} Hz`);
+    Logger.info(TAG, `sampleRate: ${sampleRate} Hz`);
 
     const byteRate = sampleRate * channels * (bitsPerSample / 8);
     dv.setUint32(28, byteRate, true);
-    Logger.info(TAG, `比特率: ${byteRate} bytes/s`);
+    Logger.info(TAG, `bitsPerSample: ${byteRate} bytes/s`);
 
     const blockAlign = channels * (bitsPerSample / 8);
     dv.setUint16(32, blockAlign, true);
-    Logger.info(TAG, `块对齐: ${blockAlign} bytes`);
+    Logger.info(TAG, `blockAlign: ${blockAlign} bytes`);
 
     dv.setUint16(34, bitsPerSample, true);
-    Logger.info(TAG, `位深: ${bitsPerSample} bits`);
+    Logger.info(TAG, `bitsPerSample: ${bitsPerSample} bits`);
 
     // data chunk
     writeString(dv, 36, 'data');
     dv.setUint32(40, pcmBuffer.byteLength, true);
-    Logger.info(TAG, `data块大小: ${pcmBuffer.byteLength} bytes`);
+    Logger.info(TAG, `pcmBuffer.byteLengt: ${pcmBuffer.byteLength} bytes`);
 
     // Merging the file header and PCM data.
     const viewWavHeader = new Uint8Array(header);
@@ -851,7 +872,7 @@ export struct AudioConversion {
     resultView.set(viewWavHeader);
     resultView.set(viewPcm, viewWavHeader.length);
 
-    Logger.info(TAG, `WAV文件生成完成，总大小: ${resultBuffer.byteLength} bytes`);
+    Logger.info(TAG, `resultBuffer.byteLength: ${resultBuffer.byteLength} bytes`);
     return resultBuffer;
   }
 
