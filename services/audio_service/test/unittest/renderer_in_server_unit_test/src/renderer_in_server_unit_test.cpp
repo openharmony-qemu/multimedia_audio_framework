@@ -3703,7 +3703,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_004, TestSize
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
     rendererInServer->spanSizeInByte_ = 100;
 
-    // Test: managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) <= currentWriteFrame -> return false
     uint64_t currentReadFrame = 10;
     uint64_t currentWriteFrame = 150;
     // currentReadFrame(10) + spanSizeInByte_(100) = 110 <= currentWriteFrame(150) -> false

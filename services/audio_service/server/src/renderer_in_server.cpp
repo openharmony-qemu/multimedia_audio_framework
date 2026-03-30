@@ -800,12 +800,10 @@ int32_t RendererInServer::Write3DAModeData(uint64_t currentReadFrame, uint64_t c
 
 bool RendererInServer::CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame)
 {
-    if (managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame)
-    {
+    if (managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame) {
         return true;
     }
-    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame)
-    {
+    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame) {
         return true;
     }
     return false;
