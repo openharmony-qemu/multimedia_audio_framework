@@ -314,11 +314,29 @@ static inline uint32_t GetClientDumpChannels(const AudioCapturerInfo &capturerIn
 }
 
 static inline bool IsVoiceRecognitionMicInEcUsbArmFallback(const AudioCapturerInfo &capturerInfo,
-    const AudioStreamParams &audioStreamParams)
+    const AudioStreamParams &audioStreamParams, bool checkPreferredInput = false)
 {
-    return capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
-        (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW) &&
-        AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_ARM_HEADSET;
+    bool isVoiceRecognitionMicInEcRequest = capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW);
+    CHECK_AND_RETURN_RET(isVoiceRecognitionMicInEcRequest, false);
+    if (AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return true;
+    }
+    if (!checkPreferredInput) {
+        return false;
+    }
+
+    AudioCapturerInfo queryInfo = capturerInfo;
+    queryInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    queryInfo.encodingType = audioStreamParams.encoding;
+    queryInfo.channelLayout = audioStreamParams.channelLayout;
+    auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
+    for (const auto &deviceDesc : preferredInputDevices) {
+        if (deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+            return true;
+        }
+    }
+    return false;
 }
 
 static inline void ClearMicInEcStreamInfo(AudioStreamInfo &micInStreamInfo, AudioStreamInfo &ecStreamInfo)
@@ -602,7 +620,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.ecChannels);
     streamDesc->ecStreamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.ecEncoding);
     streamDesc->ecStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.ecChannelLayout);
-    if (IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams)) {
+    if (IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams, true)) {
         ClearMicInEcStreamInfo(streamDesc->micInStreamInfo_, streamDesc->ecStreamInfo_);
         AUDIO_INFO_LOG("usb arm voice recognition: clear micIn/ec stream info for policy");
     }
@@ -2393,7 +2411,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GenerateStreamDesc(
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.ecChannels);
     streamDesc->ecStreamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.ecEncoding);
     streamDesc->ecStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.ecChannelLayout);
-    if (IsVoiceRecognitionMicInEcUsbArmFallback(switchInfo.capturerInfo, switchInfo.params)) {
+    if (IsVoiceRecognitionMicInEcUsbArmFallback(switchInfo.capturerInfo, switchInfo.params, true)) {
         ClearMicInEcStreamInfo(streamDesc->micInStreamInfo_, streamDesc->ecStreamInfo_);
         AUDIO_INFO_LOG("usb arm voice recognition: clear micIn/ec stream info for policy on switch");
     }

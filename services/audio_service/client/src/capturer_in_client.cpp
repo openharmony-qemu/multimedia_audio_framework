@@ -78,11 +78,29 @@ inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerIn
         (params.micInChannels > CHANNEL_UNKNOW || params.ecChannels > CHANNEL_UNKNOW);
 }
 
+inline bool IsUsbArmInputForCapturer(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
+{
+    if (AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_ARM_HEADSET) {
+        return true;
+    }
+
+    AudioCapturerInfo queryInfo = capturerInfo;
+    queryInfo.samplingRate = static_cast<AudioSamplingRate>(params.samplingRate);
+    queryInfo.encodingType = params.encoding;
+    queryInfo.channelLayout = params.channelLayout;
+    auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
+    for (const auto &deviceDesc : preferredInputDevices) {
+        if (deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+            return true;
+        }
+    }
+    return false;
+}
+
 inline bool IsUsbArmVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
     const AudioStreamParams &params)
 {
-    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) &&
-        AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_ARM_HEADSET;
+    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && IsUsbArmInputForCapturer(capturerInfo, params);
 }
 }
 
