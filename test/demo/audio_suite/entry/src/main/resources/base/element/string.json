@@ -103,14 +103,6 @@
     {
       "name": "audio_waves",
       "value": "音频波"
-    },
-    {
-      "name": "audio_format_conversion",
-      "value": "音频格式转换"
-    },
-    {
-      "name": "audio_format_conversion_desc",
-      "value": "格式转换 一键操作"
     }
   ]
 }
