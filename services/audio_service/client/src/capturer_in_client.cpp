@@ -41,6 +41,7 @@
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"
+#include "audio_device_info.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_process_config.h"
@@ -78,9 +79,20 @@ inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerIn
         (params.micInChannels > CHANNEL_UNKNOW || params.ecChannels > CHANNEL_UNKNOW);
 }
 
+inline bool IsUsbArmInputDeviceType(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
+}
+
+inline bool IsUsbArmOrDistributedInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr &&
+        (IsUsbArmInputDeviceType(deviceDesc->deviceType_) || deviceDesc->networkId_ != LOCAL_NETWORK_ID);
+}
+
 inline bool IsUsbArmInputForCapturer(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
 {
-    if (AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_ARM_HEADSET) {
+    if (IsUsbArmInputDeviceType(AudioPolicyManager::GetInstance().GetActiveInputDevice())) {
         return true;
     }
 
@@ -90,7 +102,7 @@ inline bool IsUsbArmInputForCapturer(const AudioCapturerInfo &capturerInfo, cons
     queryInfo.channelLayout = params.channelLayout;
     auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
     for (const auto &deviceDesc : preferredInputDevices) {
-        if (deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        if (IsUsbArmOrDistributedInputDeviceDesc(deviceDesc)) {
             return true;
         }
     }

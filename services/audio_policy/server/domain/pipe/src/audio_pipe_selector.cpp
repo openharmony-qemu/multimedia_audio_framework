@@ -55,12 +55,16 @@ static bool IsUsbArmInputStream(const std::shared_ptr<AudioStreamDescriptor> &st
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     for (const auto &deviceDesc : streamDesc->newDeviceDescs_) {
-        if (deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        if (deviceDesc != nullptr &&
+            (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET ||
+            deviceDesc->networkId_ != LOCAL_NETWORK_ID)) {
             return true;
         }
     }
     for (const auto &deviceDesc : streamDesc->oldDeviceDescs_) {
-        if (deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        if (deviceDesc != nullptr &&
+            (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET ||
+            deviceDesc->networkId_ != LOCAL_NETWORK_ID)) {
             return true;
         }
     }

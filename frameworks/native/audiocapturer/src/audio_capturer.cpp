@@ -313,16 +313,33 @@ static inline uint32_t GetClientDumpChannels(const AudioCapturerInfo &capturerIn
     return appChannels;
 }
 
+static inline bool IsUsbArmInputDeviceType(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
+}
+
+static inline bool IsPotentialDistributedInputDeviceType(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_REMOTE_DAUDIO || deviceType == DEVICE_TYPE_REMOTE_CAST;
+}
+
+static inline bool IsUsbArmOrDistributedInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr &&
+        (IsUsbArmInputDeviceType(deviceDesc->deviceType_) || deviceDesc->networkId_ != LOCAL_NETWORK_ID);
+}
+
 static inline bool IsVoiceRecognitionMicInEcUsbArmFallback(const AudioCapturerInfo &capturerInfo,
     const AudioStreamParams &audioStreamParams, bool checkPreferredInput = false)
 {
     bool isVoiceRecognitionMicInEcRequest = capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
         (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW);
     CHECK_AND_RETURN_RET(isVoiceRecognitionMicInEcRequest, false);
-    if (AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_ARM_HEADSET) {
+    DeviceType activeInputDevice = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    if (IsUsbArmInputDeviceType(activeInputDevice)) {
         return true;
     }
-    if (!checkPreferredInput) {
+    if (!checkPreferredInput && !IsPotentialDistributedInputDeviceType(activeInputDevice)) {
         return false;
     }
 
@@ -332,7 +349,7 @@ static inline bool IsVoiceRecognitionMicInEcUsbArmFallback(const AudioCapturerIn
     queryInfo.channelLayout = audioStreamParams.channelLayout;
     auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
     for (const auto &deviceDesc : preferredInputDevices) {
-        if (deviceDesc != nullptr && deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        if (IsUsbArmOrDistributedInputDeviceDesc(deviceDesc)) {
             return true;
         }
     }
