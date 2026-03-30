@@ -511,26 +511,9 @@ export struct AudioConversion {
       channelLayout=${this.outputFormat.channelLayout},
       sampleFormat=${this.outputFormat.sampleFormat}`);
 
-      // Add detailed information about channel count and format conversion
-      const inputChannels = this.getChannelCount(this.inputFormat.channelLayout);
-      const outputChannels = this.getChannelCount(this.outputFormat.channelLayout);
-      const inputBits = this.getBitsPerSample(this.inputFormat.sampleFormat);
-      const outputBits = this.getBitsPerSample(this.outputFormat.sampleFormat);
-
-      Logger.info(TAG, `Channel conversion: ${inputChannels} -> ${outputChannels}`);
-      Logger.info(TAG,
-        `Sample rate conversion: ${this.inputFormat.samplingRate} Hz -> ${this.outputFormat.samplingRate} Hz`);
-
-      // Detect special format conversions
-      if (inputChannels !== outputChannels) {
-        Logger.warn(TAG, `Channel count conversion: ${inputChannels} -> ${outputChannels}`);
-      }
       if (this.inputFormat.samplingRate !== this.outputFormat.samplingRate) {
         Logger.warn(TAG,
           `Sample rate conversion: ${this.inputFormat.samplingRate} -> ${this.outputFormat.samplingRate}`);
-      }
-      if (inputBits !== outputBits) {
-        Logger.warn(TAG, `Bit depth conversion: ${inputBits} -> ${outputBits}`);
       }
 
       let path: string = new fileUri.FileUri(this.selectedFileUri).path;
