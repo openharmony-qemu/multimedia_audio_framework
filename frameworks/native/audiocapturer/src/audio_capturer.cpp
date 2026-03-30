@@ -313,6 +313,14 @@ static inline uint32_t GetClientDumpChannels(const AudioCapturerInfo &capturerIn
     return appChannels;
 }
 
+static inline bool IsVoiceRecognitionMicInEcUsbArmFallback(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &audioStreamParams)
+{
+    return capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW) &&
+        AudioPolicyManager::GetInstance().GetActiveInputDevice() == DEVICE_TYPE_USB_ARM_HEADSET;
+}
+
 static inline void FillCreateCapturerParams(AudioCapturerParams &params, const AudioCapturerOptions &capturerOptions)
 {
     FillEcParams(params, capturerOptions.ecStreamInfo);
@@ -1469,22 +1477,38 @@ int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &pr
     AudioStreamParams audioStreamParams;
     int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
-
-    MicInEcBufferLayout layout {};
-    ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+    int32_t sampleByteSize = GetFormatByteSize(audioStreamParams.format);
+    CHECK_AND_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM, "invalid sample format");
+    const size_t processFrameSize =
+        static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
+    CHECK_AND_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM, "invalid process frame size");
+    bool usbArmFallback = IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams);
 
     size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
         bufDesc.dataLength : bufDesc.bufLength;
-    CHECK_AND_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
-        "buffer length is invalid");
-    CHECK_AND_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
-        "buffer length is not frame aligned");
+    if (!usbArmFallback) {
+        MicInEcBufferLayout layout {};
+        ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+        CHECK_AND_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
+            "buffer length is invalid");
+        CHECK_AND_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
+            "buffer length is not frame aligned");
+        size_t frameCount = validDataLength / layout.byteSizePerFrame;
+        processBufSize = frameCount * layout.processChannels * layout.byteSizePerSample;
+        micInBufSize = frameCount * layout.micInChannels * layout.byteSizePerSample;
+        ecBufSize = frameCount * layout.ecChannels * layout.byteSizePerSample;
+        return SUCCESS;
+    }
 
-    size_t frameCount = validDataLength / layout.byteSizePerFrame;
-    processBufSize = frameCount * layout.processChannels * layout.byteSizePerSample;
-    micInBufSize = frameCount * layout.micInChannels * layout.byteSizePerSample;
-    ecBufSize = frameCount * layout.ecChannels * layout.byteSizePerSample;
+    CHECK_AND_RETURN_RET_LOG(validDataLength >= processFrameSize, ERROR_INVALID_PARAM, "buffer length is invalid");
+    CHECK_AND_RETURN_RET_LOG(validDataLength % processFrameSize == 0, ERROR_INVALID_PARAM,
+        "buffer length is not process frame aligned");
+    size_t frameCount = validDataLength / processFrameSize;
+    processBufSize = frameCount * processFrameSize;
+    micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) * static_cast<size_t>(sampleByteSize);
+    ecBufSize = frameCount * static_cast<size_t>(audioStreamParams.ecChannels) * static_cast<size_t>(sampleByteSize);
+    AUDIO_INFO_LOG("GetMicInBufferSize use usb arm fallback, frameCount:%{public}zu", frameCount);
     return SUCCESS;
 }
 
@@ -1492,16 +1516,54 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc)
 {
     CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "bufDesc buffer is null");
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    AudioStreamParams audioStreamParams;
+    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
+    bool usbArmFallback = IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams);
+    bool processOnlyFrameLayout = usbArmFallback;
+
     MicInEcBufferSizes bufferSizes {};
-    int32_t ret = GetMicInBufferSize(bufDesc, bufferSizes.processBufSize, bufferSizes.micInBufSize,
+    ret = GetMicInBufferSize(bufDesc, bufferSizes.processBufSize, bufferSizes.micInBufSize,
         bufferSizes.ecBufSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetMicInBufferSize failed");
     DeinterleaveTargetBuffers targetBuffers {processBufDesc, micInBufDesc, ecBufferDesc};
     ret = ValidateDeinterleaveOutputBuffer(targetBuffers, bufferSizes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "output buffer is invalid");
 
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    if (processOnlyFrameLayout) {
+        int32_t copyRet = memcpy_s(processBufDesc.buffer, processBufDesc.bufLength, bufDesc.buffer,
+            bufferSizes.processBufSize);
+        CHECK_AND_RETURN_RET_LOG(copyRet == EOK, ERR_OPERATION_FAILED, "copy process frame failed");
+        if (bufferSizes.micInBufSize > 0) {
+            CHECK_AND_RETURN_RET_LOG(micInBufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "micIn buffer is null");
+            CHECK_AND_RETURN_RET_LOG(memset_s(micInBufDesc.buffer, micInBufDesc.bufLength, 0,
+                bufferSizes.micInBufSize) == EOK, ERR_OPERATION_FAILED, "clear micIn buffer failed");
+        }
+        if (bufferSizes.ecBufSize > 0) {
+            CHECK_AND_RETURN_RET_LOG(ecBufferDesc.buffer != nullptr, ERROR_INVALID_PARAM, "ec buffer is null");
+            CHECK_AND_RETURN_RET_LOG(memset_s(ecBufferDesc.buffer, ecBufferDesc.bufLength, 0,
+                bufferSizes.ecBufSize) == EOK, ERR_OPERATION_FAILED, "clear ec buffer failed");
+        }
+        processBufDesc.dataLength = bufferSizes.processBufSize;
+        micInBufDesc.dataLength = bufferSizes.micInBufSize;
+        ecBufferDesc.dataLength = bufferSizes.ecBufSize;
+        if (bufferSizes.processBufSize > 0) {
+            DumpFileUtil::WriteDumpFile(dumpProcessFile_, static_cast<void *>(processBufDesc.buffer),
+                bufferSizes.processBufSize);
+        }
+        if (bufferSizes.micInBufSize > 0) {
+            DumpFileUtil::WriteDumpFile(dumpMicInFile_, static_cast<void *>(micInBufDesc.buffer),
+                bufferSizes.micInBufSize);
+        }
+        if (bufferSizes.ecBufSize > 0) {
+            DumpFileUtil::WriteDumpFile(dumpEcFile_, static_cast<void *>(ecBufferDesc.buffer), bufferSizes.ecBufSize);
+        }
+        AUDIO_INFO_LOG("DeinterleaveBuffer use usb arm fallback, micIn/ec filled with silence");
+        return SUCCESS;
+    }
+
     MicInEcBufferLayout layout {};
     ret = GetMicInEcBufferLayoutFromStream(currentStream, layout);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetMicInEcBufferLayoutFromStream failed");
