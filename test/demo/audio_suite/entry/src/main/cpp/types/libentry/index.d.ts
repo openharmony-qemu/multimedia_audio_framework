@@ -78,6 +78,6 @@ export const audioConverterCreate: (inputFormat: {
   channelLayout: number;
   sampleFormat: number;
 }, fd: number) => number;
-export const audioConverterSetInputCallback: (converter: number, callback: Function, userData: number) => number;
+export const audioConverterSetInputCallback: (converter: number) => number;
 export const audioConverterProcess: (converter: number) => ArrayBuffer;
 export const audioConverterDestroy: (converter: number) => void;
