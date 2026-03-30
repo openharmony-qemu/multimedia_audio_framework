@@ -228,6 +228,12 @@ struct DeinterleaveTargetBuffers {
     BufferDesc &ecBufferDesc;
 };
 
+struct DeinterleaveDumpFiles {
+    FILE *processDumpFile = nullptr;
+    FILE *micInDumpFile = nullptr;
+    FILE *ecDumpFile = nullptr;
+};
+
 static int32_t ParseMicInEcBufferLayout(const AudioStreamParams &params, MicInEcBufferLayout &layout)
 {
     int32_t sampleByteSize = GetFormatByteSize(params.format);
@@ -280,20 +286,22 @@ static inline void UpdateDeinterleaveDataLength(BufferDesc &processBufDesc, Buff
     ecBufferDesc.dataLength = bufferSizes.ecBufSize;
 }
 
-static inline void DumpDeinterleaveBuffers(FILE *dumpProcessFile, FILE *dumpMicInFile, FILE *dumpEcFile,
-    const BufferDesc &processBufDesc, const BufferDesc &micInBufDesc, const BufferDesc &ecBufferDesc,
-    const MicInEcBufferSizes &bufferSizes)
+static inline void DumpDeinterleaveBuffers(const DeinterleaveDumpFiles &dumpFiles,
+    const DeinterleaveTargetBuffers &targetBuffers, const MicInEcBufferSizes &bufferSizes)
 {
     if (bufferSizes.processBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpProcessFile, static_cast<void *>(processBufDesc.buffer),
+        DumpFileUtil::WriteDumpFile(dumpFiles.processDumpFile,
+            static_cast<void *>(targetBuffers.processBufDesc.buffer),
             bufferSizes.processBufSize);
     }
     if (bufferSizes.micInBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpMicInFile, static_cast<void *>(micInBufDesc.buffer),
+        DumpFileUtil::WriteDumpFile(dumpFiles.micInDumpFile,
+            static_cast<void *>(targetBuffers.micInBufDesc.buffer),
             bufferSizes.micInBufSize);
     }
     if (bufferSizes.ecBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpEcFile, static_cast<void *>(ecBufferDesc.buffer), bufferSizes.ecBufSize);
+        DumpFileUtil::WriteDumpFile(dumpFiles.ecDumpFile,
+            static_cast<void *>(targetBuffers.ecBufferDesc.buffer), bufferSizes.ecBufSize);
     }
 }
 
@@ -1627,6 +1635,7 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
         bufferSizes.ecBufSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetMicInBufferSize failed");
     DeinterleaveTargetBuffers targetBuffers {processBufDesc, micInBufDesc, ecBufferDesc};
+    DeinterleaveDumpFiles dumpFiles {dumpProcessFile_, dumpMicInFile_, dumpEcFile_};
     ret = ValidateDeinterleaveOutputBuffer(targetBuffers, bufferSizes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "output buffer is invalid");
 
@@ -1634,8 +1643,7 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
         ret = FillDegradeFallbackSilentBuffers(bufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FillDegradeFallbackSilentBuffers failed");
         UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
-        DumpDeinterleaveBuffers(dumpProcessFile_, dumpMicInFile_, dumpEcFile_, processBufDesc,
-            micInBufDesc, ecBufferDesc, bufferSizes);
+        DumpDeinterleaveBuffers(dumpFiles, targetBuffers, bufferSizes);
         AUDIO_INFO_LOG("DeinterleaveBuffer use degrade fallback, micIn/ec filled with silence");
         return SUCCESS;
     }
@@ -1647,8 +1655,7 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DeinterleaveMicInEcFrames failed");
 
     UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
-    DumpDeinterleaveBuffers(dumpProcessFile_, dumpMicInFile_, dumpEcFile_, processBufDesc,
-        micInBufDesc, ecBufferDesc, bufferSizes);
+    DumpDeinterleaveBuffers(dumpFiles, targetBuffers, bufferSizes);
     return SUCCESS;
 }
 
