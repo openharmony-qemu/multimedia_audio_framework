@@ -1451,7 +1451,7 @@ static napi_status CreateThreadSafeConverterCallback(napi_env env)
 static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "OH_AudioConverter_SetInputCallback start");
-    size_t argc = 2;
+    size_t argc = 1;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
@@ -1464,21 +1464,6 @@ static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_inf
         return nullptr;
     }
     OH_AudioConverter *converter = reinterpret_cast<OH_AudioConverter *>(converterHandle);
-
-    // Release previous callback
-    ReleasePreviousConverterCallback(env);
-
-    // Create new callback reference
-    napi_create_reference(env, argv[1], 1, &g_converterCallbackRef);
-    g_converterEnv = env;
-
-    // Create thread-safe function
-    status = CreateThreadSafeConverterCallback(env);
-    if (status != napi_ok) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Create threadsafe function failed");
-        delete[] argv;
-        return nullptr;
-    }
 
     // Set callback
     OH_AudioConverter_Result result =
