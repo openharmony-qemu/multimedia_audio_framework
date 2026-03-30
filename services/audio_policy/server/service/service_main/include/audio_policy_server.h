@@ -830,7 +830,6 @@ private:
     void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
-    bool IsRingerModeValid(AudioRingerMode ringMode);
 
     int32_t SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage);
     int32_t GetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t &volumePercentage);

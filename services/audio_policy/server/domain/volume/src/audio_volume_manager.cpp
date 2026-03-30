@@ -2360,5 +2360,22 @@ bool AudioVolumeManager::CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType
     }
     return true;
 }
+
+bool AudioVolumeManager::IsRingerModeValid(AudioRingerMode ringMode)
+{
+    bool result = false;
+    switch (ringMode) {
+        case RINGER_MODE_SILENT:
+        case RINGER_MODE_VIBRATE:
+        case RINGER_MODE_NORMAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            AUDIO_ERR_LOG("IsRingerModeValid: ringMode[%{public}d] is not supported", ringMode);
+            break;
+    }
+    return result;
+}
 }
 }

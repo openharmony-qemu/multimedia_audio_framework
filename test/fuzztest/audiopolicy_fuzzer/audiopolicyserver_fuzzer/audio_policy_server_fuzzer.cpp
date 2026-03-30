@@ -272,7 +272,7 @@ void AudioPolicyServerIsRingerModeValidFuzzTest()
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioRingerMode ringMode = AudioRingerMode::RINGER_MODE_SILENT;
-    audioPolicyServer->IsRingerModeValid(ringMode);
+    audioPolicyServer->audioVolumeManager_.IsRingerModeValid(ringMode);
 }
 
 void AudioPolicyServerSubscribeOsAccountChangeEventsFuzzTest()

@@ -207,6 +207,7 @@ public:
     void TriggerAudioZoneVolumeSync(int32_t zoneId);
     void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
+    bool IsRingerModeValid(AudioRingerMode ringMode);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
