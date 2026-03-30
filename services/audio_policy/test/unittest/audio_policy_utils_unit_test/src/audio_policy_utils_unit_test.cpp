@@ -466,8 +466,10 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_019, TestSize.Level1)
 
     std::string bundleName = "com.ohos.test";
     bool hasSystemPermission = false;
-    audioPolicyUtilsTest_->SetDeclaredDeviceTypes(bundleName, {DEVICE_TYPE_NEARLINK});
+    audioPolicyUtilsTest_->SetDeclaredDeviceTypes(bundleName, {DEVICE_TYPE_NEARLINK, DEVICE_TYPE_HEARING_AID});
     int32_t ret = audioPolicyUtilsTest_->IsSupportedDevice(bundleName, DEVICE_TYPE_NEARLINK, hasSystemPermission);
+    EXPECT_EQ(ret, true);
+    ret = audioPolicyUtilsTest_->IsSupportedDevice(bundleName, DEVICE_TYPE_NEARLINK_IN, hasSystemPermission);
     EXPECT_EQ(ret, true);
 }
 
