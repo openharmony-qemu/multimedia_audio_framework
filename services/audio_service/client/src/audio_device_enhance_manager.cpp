@@ -17,7 +17,9 @@
 
 #include <unistd.h>
 #include "audio_errors.h"
+#include "audio_capturer.h"
 #include "audio_policy_manager.h"
+#include "audio_renderer.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,6 +60,20 @@ int32_t AudioDeviceEnhanceManager::SelectInputDevice(const std::shared_ptr<Audio
     audioCapturerFilter->uid = uid;
     audioCapturerFilter->audioDeviceSelectMode = APP_SELECT_INDEPENDENT;
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+}
+
+int32_t AudioDeviceEnhanceManager::SelectOutputDeviceForAudioRenderer(
+    std::shared_ptr<AudioRenderer> &renderer, const std::shared_ptr<AudioDeviceDescriptor> &desc) const
+{
+    CHECK_AND_RETURN_RET_LOG(renderer != nullptr, ERR_INVALID_PARAM, "renderer is nullptr");
+    return renderer->SelectOutputDevice(desc);
+}
+
+int32_t AudioDeviceEnhanceManager::SelectInputDeviceForAudioCapturer(
+    std::shared_ptr<AudioCapturer> &capturer, const std::shared_ptr<AudioDeviceDescriptor> &desc) const
+{
+    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, ERR_INVALID_PARAM, "capturer is nullptr");
+    return capturer->SelectInputDevice(desc);
 }
 } // namespace AudioStandard
 } // namespace OHOS

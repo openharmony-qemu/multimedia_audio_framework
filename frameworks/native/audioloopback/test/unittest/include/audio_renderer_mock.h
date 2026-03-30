@@ -88,6 +88,7 @@ public:
     MOCK_METHOD(float, GetMaxStreamVolume, (), (const, override));
     MOCK_METHOD(uint32_t, GetUnderflowCount, (), (const, override));
     MOCK_METHOD(int32_t, GetCurrentOutputDevices, (AudioDeviceDescriptor &deviceInfo), (const, override));
+    MOCK_METHOD(int32_t, SelectOutputDevice, (const std::shared_ptr<AudioDeviceDescriptor> &desc), (const, override));
     MOCK_METHOD(AudioEffectMode, GetAudioEffectMode, (), (const, override));
     MOCK_METHOD(int64_t, GetFramesWritten, (), (const, override));
     MOCK_METHOD(int32_t, SetAudioEffectMode, (AudioEffectMode effectMode), (const, override));

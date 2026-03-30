@@ -865,7 +865,7 @@ public:
     virtual uint32_t GetOverflowCount() const = 0;
 
     /**
-     * @brief Select the input device for the current renderer.
+     * @brief Select the input device for the current capturer.
      *
      * @param desc Target audio device descriptor.
      * @return Returns {@link SUCCESS} if the device is selected successfully; returns an error code
@@ -875,7 +875,7 @@ public:
     virtual int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
     {
         (void)desc;
-        return ERR_NOT_SUPPORTED;
+        return -1;
     }
 
     virtual int32_t SetInputDevice(DeviceType deviceType) const = 0;

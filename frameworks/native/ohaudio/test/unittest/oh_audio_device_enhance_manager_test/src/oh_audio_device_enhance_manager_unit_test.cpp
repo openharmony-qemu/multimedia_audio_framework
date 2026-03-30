@@ -58,6 +58,23 @@ HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioManager_GetAudioDeviceEnhanc
 }
 
 /**
+ * @tc.name  : Test OH_AudioManager_GetAudioDeviceEnhanceManager.
+ * @tc.number: OH_AudioManager_GetAudioDeviceEnhanceManager_003
+ * @tc.desc  : Test returned manager matches singleton wrapper instance.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioManager_GetAudioDeviceEnhanceManager_003, TestSize.Level0)
+{
+    OH_AudioDeviceEnhanceManager *manager = nullptr;
+    auto ret = OH_AudioManager_GetAudioDeviceEnhanceManager(&manager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(manager, nullptr);
+
+    auto &instance = OHAudioDeviceEnhanceManager::GetInstance();
+    auto *expected = reinterpret_cast<OH_AudioDeviceEnhanceManager *>(&instance);
+    EXPECT_EQ(manager, expected);
+}
+
+/**
  * @tc.name  : Test OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported.
  * @tc.number: OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_001
  * @tc.desc  : Test invalid parameter.
@@ -104,6 +121,29 @@ HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_IsEnhan
     ret = OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported(manager, &supported);
     EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
     EXPECT_EQ(supported, true);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported.
+ * @tc.number: OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_004
+ * @tc.desc  : Test C API result is consistent with native wrapper result.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported_004,
+    TestSize.Level0)
+{
+    OH_AudioDeviceEnhanceManager *manager = nullptr;
+    auto ret = OH_AudioManager_GetAudioDeviceEnhanceManager(&manager);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(manager, nullptr);
+
+    bool cApiSupported = false;
+    ret = OH_AudioDeviceEnhanceManager_IsEnhancedRoutingSupported(manager, &cApiSupported);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_SUCCESS);
+
+    bool nativeSupported = false;
+    auto nativeRet = OHAudioDeviceEnhanceManager::GetInstance().IsEnhancedRoutingSupported(nativeSupported);
+    EXPECT_EQ(nativeRet, SUCCESS);
+    EXPECT_EQ(cApiSupported, nativeSupported);
 }
 
 /**
@@ -185,6 +225,30 @@ HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectI
 {
     auto *capturer = reinterpret_cast<OH_AudioCapturer *>(0x1);
     auto ret = OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer(nullptr, capturer, nullptr);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer.
+ * @tc.number: OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer_003
+ * @tc.desc  : Test null manager and null renderer.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer_003,
+    TestSize.Level0)
+{
+    auto ret = OH_AudioDeviceEnhanceManager_SelectOutputDeviceForAudioRenderer(nullptr, nullptr, nullptr);
+    EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer.
+ * @tc.number: OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer_003
+ * @tc.desc  : Test null manager and null capturer.
+ */
+HWTEST(OHAudioDeviceEnhanceManagerUnitTest, OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer_003,
+    TestSize.Level0)
+{
+    auto ret = OH_AudioDeviceEnhanceManager_SelectInputDeviceForAudioCapturer(nullptr, nullptr, nullptr);
     EXPECT_EQ(ret, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 } // namespace AudioStandard

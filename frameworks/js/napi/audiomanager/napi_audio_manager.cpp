@@ -22,6 +22,7 @@
 #include "napi_audio_volume_manager.h"
 #include "napi_audio_interrupt_manager.h"
 #include "napi_audio_collaborative_manager.h"
+#include "napi_audio_device_enhance_manager.h"
 #include "napi_audio_spatialization_manager.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_error.h"
@@ -140,6 +141,7 @@ napi_status NapiAudioManager::InitNapiAudioManager(napi_env env, napi_value &con
         DECLARE_NAPI_FUNCTION("disableSafeMediaVolume", DisableSafeMediaVolume),
         DECLARE_NAPI_FUNCTION("getCollaborativeManager", GetCollaborativeManager),
         DECLARE_NAPI_FUNCTION("reportPlaybackCaptureUserChoice", ReportPlaybackCaptureUserChoice),
+        DECLARE_NAPI_FUNCTION("getDeviceEnhanceManager", GetDeviceEnhanceManager),
     };
 
     napi_status status = napi_define_class(env, NAPI_AUDIO_MNGR_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH,
@@ -1660,6 +1662,25 @@ napi_value NapiAudioManager::ReportPlaybackCaptureUserChoice(napi_env env, napi_
     napi_value result = nullptr;
     napi_create_int32(env, ret, &result);
     return result;
+#else
+    return nullptr;
+#endif
+}
+
+napi_value NapiAudioManager::GetDeviceEnhanceManager(napi_env env, napi_callback_info info)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+
+    napi_status status;
+    size_t argCount = 0;
+    status = napi_get_cb_info(env, info, &argCount, nullptr, nullptr, nullptr);
+    if (status != napi_ok || argCount != 0) {
+        AUDIO_ERR_LOG("Invalid arguments!");
+        return nullptr;
+    }
+#ifndef CROSS_PLATFORM
+    return NapiAudioDeviceEnhanceManager::CreateDeviceEnhanceManagerWrapper(env);
 #else
     return nullptr;
 #endif

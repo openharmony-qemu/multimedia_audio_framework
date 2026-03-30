@@ -79,6 +79,7 @@ public:
     MOCK_METHOD(int32_t, GetCurrentInputDevices, (AudioDeviceDescriptor &deviceInfo), (const, override));
     MOCK_METHOD(int32_t, GetCurrentCapturerChangeInfo, (AudioCapturerChangeInfo &changeInfo), (const, override));
     MOCK_METHOD(std::vector<sptr<MicrophoneDescriptor>>, GetCurrentMicrophones, (), (const, override));
+    MOCK_METHOD(int32_t, SelectInputDevice, (const std::shared_ptr<AudioDeviceDescriptor> &desc), (const, override));
     MOCK_METHOD(int32_t, GetAudioTimestampInfo,
         (Timestamp &timestamp, Timestamp::Timestampbase base), (const, override));
     MOCK_METHOD(uint32_t, GetOverflowCount, (), (const, override));
