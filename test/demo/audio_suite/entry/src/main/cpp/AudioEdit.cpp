@@ -71,8 +71,6 @@ const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int INPUTNODES_SIZE2 = 2;
 
-static napi_threadsafe_function g_converterCallback = nullptr;
-static napi_ref g_converterCallbackRef = nullptr;
 static napi_env g_converterEnv = nullptr;
 static int32_t g_converterInputSize = 0;
 
@@ -1408,46 +1406,6 @@ static int32_t AudioConverterRequestDataCallback(void *userData, const void **ou
     return dataSizeToReturn;
 }
 
-// AudioConverter callback wrapper function - thread-safe callback for JS
-static void AudioConverterCallbackWrapper(napi_env env, napi_value js_callback, void *context, void *data)
-{
-    (void)context;
-    (void)data;
-    
-    // This is the thread-safe wrapper that will be called from C++ to invoke JS callback
-    // The actual callback parameters will be passed through the data parameter
-    // For now, this is a placeholder for the thread-safe mechanism
-    napi_value result;
-    napi_call_function(env, NULL, js_callback, 0, NULL, &result);
-}
-
-// Release previous converter callback resources
-static void ReleasePreviousConverterCallback(napi_env env)
-{
-    if (g_converterCallbackRef != nullptr) {
-        napi_delete_reference(env, g_converterCallbackRef);
-        g_converterCallbackRef = nullptr;
-    }
-    if (g_converterCallback != nullptr) {
-        napi_release_threadsafe_function(g_converterCallback, napi_tsfn_release);
-        g_converterCallback = nullptr;
-    }
-}
-
-// Create thread-safe function for converter callback
-static napi_status CreateThreadSafeConverterCallback(napi_env env)
-{
-    napi_value global;
-    napi_get_global(env, &global);
-    napi_value callback;
-    napi_get_reference_value(env, g_converterCallbackRef, &callback);
-    napi_value name;
-    napi_status status = napi_create_string_utf8(env, "AudioConverterCallbackWrapper", NAPI_AUTO_LENGTH, &name);
-    status = napi_create_threadsafe_function(env, callback, NULL, name, 1, 1, NULL, NULL, NULL,
-                                             AudioConverterCallbackWrapper, &g_converterCallback);
-    return status;
-}
-
 static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "OH_AudioConverter_SetInputCallback start");
@@ -1852,16 +1810,6 @@ static napi_value AudioConverterDestroy(napi_env env, napi_callback_info info)
         return nullptr;
     }
     OH_AudioConverter *converter = reinterpret_cast<OH_AudioConverter *>(converterHandle);
-
-    // Release callback resources following audio edit pattern
-    if (g_converterCallback != nullptr) {
-        napi_release_threadsafe_function(g_converterCallback, napi_tsfn_release);
-        g_converterCallback = nullptr;
-    }
-    if (g_converterCallbackRef != nullptr) {
-        napi_delete_reference(env, g_converterCallbackRef);
-        g_converterCallbackRef = nullptr;
-    }
 
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Converter output data kept for file saving");
 
