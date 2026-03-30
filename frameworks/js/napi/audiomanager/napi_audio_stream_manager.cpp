@@ -989,7 +989,8 @@ napi_value NapiAudioStreamMgr::IsFastPlaybackSupported(napi_env env, napi_callba
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
 
-    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    int32_t streamUsage;
+    NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         result, "get streamUsage failed");
 
@@ -1048,7 +1049,8 @@ napi_value NapiAudioStreamMgr::IsMultichannelPlaybackSupported(napi_env env, nap
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
 
-    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    int32_t streamUsage;
+    NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         result, "get streamUsage failed");
     
@@ -1076,7 +1078,8 @@ napi_value NapiAudioStreamMgr::IsDirectPlaybackSupported(napi_env env, napi_call
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
 
-    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    int32_t streamUsage;
+    NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         result, "get streamUsage failed");
     
@@ -1104,7 +1107,8 @@ napi_value NapiAudioStreamMgr::IsOffloadPlaybackSupported(napi_env env, napi_cal
     napi_status status = NapiParamUtils::GetStreamInfo(env, &audioStreamInfo, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, result, "GetStreamInfo failed");
 
-    int32_t streamUsage = NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
+    int32_t streamUsage;
+    NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         result, "get streamUsage failed");
     
