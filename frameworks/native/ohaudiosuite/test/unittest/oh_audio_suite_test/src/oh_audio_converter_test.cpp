@@ -73,6 +73,8 @@ constexpr uint32_t MD5_INIT_STATE_0 = 0x67452301;
 constexpr uint32_t MD5_INIT_STATE_1 = 0xEFCDAB89;
 constexpr uint32_t MD5_INIT_STATE_2 = 0x98BADCFE;
 constexpr uint32_t MD5_INIT_STATE_3 = 0x10325476;
+constexpr uint32_t MD5_R1_K8 = 0x698098D8;
+constexpr uint32_t MD5_R2_K10 = 0xF4D50D87;
 constexpr int BYTE_WIDTH = 2;
 
 static int32_t RequestDataCallback(void* userData, const void** outInputData,
@@ -187,10 +189,10 @@ static void BinHashEncodeBits(uint8_t bits[8], const uint32_t count[2]);
 static void BinHashEncodeDigest(uint8_t digest[16], const uint32_t state[4]);
 static void BinHashProcessBuffer(MD5Context* ctx, const uint8_t** data, size_t* len, uint32_t originalCount);
 static void BinHashDecodeBlock(uint32_t x[16], const uint8_t block[64]);
-static void BinHashRound1(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
-static void BinHashRound2(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
-static void BinHashRound3(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
-static void BinHashRound4(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashRoundOne(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashRoundTwo(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashRoundThree(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashRoundFour(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
 
 static void BinHashInit(MD5Context* ctx)
 {
@@ -289,56 +291,56 @@ struct MD5OpParams {
 };
 
 // MD5 helper functions (replacing macros)
-static inline uint32_t BinHash_F(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHashF(uint32_t x, uint32_t y, uint32_t z)
 {
     return (x & y) | (~x & z);
 }
 
-static inline uint32_t BinHash_G(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHashG(uint32_t x, uint32_t y, uint32_t z)
 {
     return (x & z) | (y & ~z);
 }
 
-static inline uint32_t BinHash_H(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHashH(uint32_t x, uint32_t y, uint32_t z)
 {
     return x ^ y ^ z;
 }
 
-static inline uint32_t BinHash_I(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHashI(uint32_t x, uint32_t y, uint32_t z)
 {
     return y ^ (x | ~z);
 }
 
-static inline uint32_t BinHash_RotateLeft(uint32_t x, int n)
+static inline uint32_t BinHashRotateLeft(uint32_t x, int n)
 {
     return (x << n) | (x >> (MD5_BITS_PER_WORD - n));
 }
 
-static inline void BinHash_FF(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHashFF(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += BinHash_F(b, c, d) + params.x + params.ac;
-    a = BinHash_RotateLeft(a, params.s);
+    a += BinHashF(b, c, d) + params.x + params.ac;
+    a = BinHashRotateLeft(a, params.s);
     a += b;
 }
 
-static inline void BinHash_GG(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHashGG(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += BinHash_G(b, c, d) + params.x + params.ac;
-    a = BinHash_RotateLeft(a, params.s);
+    a += BinHashG(b, c, d) + params.x + params.ac;
+    a = BinHashRotateLeft(a, params.s);
     a += b;
 }
 
-static inline void BinHash_HH(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHashHH(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += BinHash_H(b, c, d) + params.x + params.ac;
-    a = BinHash_RotateLeft(a, params.s);
+    a += BinHashH(b, c, d) + params.x + params.ac;
+    a = BinHashRotateLeft(a, params.s);
     a += b;
 }
 
-static inline void BinHash_II(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHashII(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += BinHash_I(b, c, d) + params.x + params.ac;
-    a = BinHash_RotateLeft(a, params.s);
+    a += BinHashI(b, c, d) + params.x + params.ac;
+    a = BinHashRotateLeft(a, params.s);
     a += b;
 }
 
@@ -356,84 +358,84 @@ static void BinHashDecodeBlock(uint32_t x[MD5_WORD_COUNT], const uint8_t block[M
     }
 }
 
-static void BinHashRound1(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRoundOne(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    BinHash_FF(a, b, c, d, {x[0], 7, 0xD76AA478});
-    BinHash_FF(d, a, b, c, {x[1], 12, 0xE8C7B756});
-    BinHash_FF(c, d, a, b, {x[2], 17, 0x242070DB});
-    BinHash_FF(b, c, d, a, {x[3], 22, 0xC1BDCEEE});
-    BinHash_FF(a, b, c, d, {x[4], 7, 0xF57C0FAF});
-    BinHash_FF(d, a, b, c, {x[5], 12, 0x4787C62A});
-    BinHash_FF(c, d, a, b, {x[6], 17, 0xA8304613});
-    BinHash_FF(b, c, d, a, {x[7], 22, 0xFD469501});
-    BinHash_FF(a, b, c, d, {x[8], 7, 0x698098D8});
-    BinHash_FF(d, a, b, c, {x[9], 12, 0x8B44F7AF});
-    BinHash_FF(c, d, a, b, {x[10], 17, 0xFFFF5BB1});
-    BinHash_FF(b, c, d, a, {x[11], 22, 0x895CD7BE});
-    BinHash_FF(a, b, c, d, {x[12], 7, 0x6B901122});
-    BinHash_FF(d, a, b, c, {x[13], 12, 0xFD987193});
-    BinHash_FF(c, d, a, b, {x[14], 17, 0xA679438E});
-    BinHash_FF(b, c, d, a, {x[15], 22, 0x49B40821});
+    BinHashFF(a, b, c, d, {x[0], 7, 0xD76AA478});
+    BinHashFF(d, a, b, c, {x[1], 12, 0xE8C7B756});
+    BinHashFF(c, d, a, b, {x[2], 17, 0x242070DB});
+    BinHashFF(b, c, d, a, {x[3], 22, 0xC1BDCEEE});
+    BinHashFF(a, b, c, d, {x[4], 7, 0xF57C0FAF});
+    BinHashFF(d, a, b, c, {x[5], 12, 0x4787C62A});
+    BinHashFF(c, d, a, b, {x[6], 17, 0xA8304613});
+    BinHashFF(b, c, d, a, {x[7], 22, 0xFD469501});
+    BinHashFF(a, b, c, d, {x[8], 7, MD5_R1_K8});
+    BinHashFF(d, a, b, c, {x[9], 12, 0x8B44F7AF});
+    BinHashFF(c, d, a, b, {x[10], 17, 0xFFFF5BB1});
+    BinHashFF(b, c, d, a, {x[11], 22, 0x895CD7BE});
+    BinHashFF(a, b, c, d, {x[12], 7, 0x6B901122});
+    BinHashFF(d, a, b, c, {x[13], 12, 0xFD987193});
+    BinHashFF(c, d, a, b, {x[14], 17, 0xA679438E});
+    BinHashFF(b, c, d, a, {x[15], 22, 0x49B40821});
 }
 
-static void BinHashRound2(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRoundTwo(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    BinHash_GG(a, b, c, d, {x[1], 5, 0xF61E2562});
-    BinHash_GG(d, a, b, c, {x[6], 9, 0xC040B340});
-    BinHash_GG(c, d, a, b, {x[11], 14, 0x265E5A51});
-    BinHash_GG(b, c, d, a, {x[0], 20, 0xE9B6C7AA});
-    BinHash_GG(a, b, c, d, {x[5], 5, 0xD62F105D});
-    BinHash_GG(d, a, b, c, {x[10], 9, 0x02441453});
-    BinHash_GG(c, d, a, b, {x[15], 14, 0xD8A1E681});
-    BinHash_GG(b, c, d, a, {x[4], 20, 0xE7D3FBC8});
-    BinHash_GG(a, b, c, d, {x[9], 5, 0x21E1CDE6});
-    BinHash_GG(d, a, b, c, {x[14], 9, 0xC33707D6});
-    BinHash_GG(c, d, a, b, {x[3], 14, 0xF4D50D87});
-    BinHash_GG(b, c, d, a, {x[8], 20, 0x455A14ED});
-    BinHash_GG(a, b, c, d, {x[13], 5, 0xA9E3E905});
-    BinHash_GG(d, a, b, c, {x[2], 9, 0xFCEFA3F8});
-    BinHash_GG(c, d, a, b, {x[7], 14, 0x676F02D9});
-    BinHash_GG(b, c, d, a, {x[12], 20, 0x8D2A4C8A});
+    BinHashGG(a, b, c, d, {x[1], 5, 0xF61E2562});
+    BinHashGG(d, a, b, c, {x[6], 9, 0xC040B340});
+    BinHashGG(c, d, a, b, {x[11], 14, 0x265E5A51});
+    BinHashGG(b, c, d, a, {x[0], 20, 0xE9B6C7AA});
+    BinHashGG(a, b, c, d, {x[5], 5, 0xD62F105D});
+    BinHashGG(d, a, b, c, {x[10], 9, 0x02441453});
+    BinHashGG(c, d, a, b, {x[15], 14, 0xD8A1E681});
+    BinHashGG(b, c, d, a, {x[4], 20, 0xE7D3FBC8});
+    BinHashGG(a, b, c, d, {x[9], 5, 0x21E1CDE6});
+    BinHashGG(d, a, b, c, {x[14], 9, 0xC33707D6});
+    BinHashGG(c, d, a, b, {x[3], 14, MD5_R2_K10});
+    BinHashGG(b, c, d, a, {x[8], 20, 0x455A14ED});
+    BinHashGG(a, b, c, d, {x[13], 5, 0xA9E3E905});
+    BinHashGG(d, a, b, c, {x[2], 9, 0xFCEFA3F8});
+    BinHashGG(c, d, a, b, {x[7], 14, 0x676F02D9});
+    BinHashGG(b, c, d, a, {x[12], 20, 0x8D2A4C8A});
 }
 
-static void BinHashRound3(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRoundThree(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    BinHash_HH(a, b, c, d, {x[5], 4, 0xFFFA3942});
-    BinHash_HH(d, a, b, c, {x[8], 11, 0x8771F681});
-    BinHash_HH(c, d, a, b, {x[11], 16, 0x6D9D6122});
-    BinHash_HH(b, c, d, a, {x[14], 23, 0xFDE5380C});
-    BinHash_HH(a, b, c, d, {x[1], 4, 0xA4BEEA44});
-    BinHash_HH(d, a, b, c, {x[4], 11, 0x4BDECFA9});
-    BinHash_HH(c, d, a, b, {x[7], 16, 0xF6BB4B60});
-    BinHash_HH(b, c, d, a, {x[10], 23, 0xBEBFBC70});
-    BinHash_HH(a, b, c, d, {x[13], 4, 0x289B7EC6});
-    BinHash_HH(d, a, b, c, {x[0], 11, 0xEAA127FA});
-    BinHash_HH(c, d, a, b, {x[3], 16, 0xD4EF3085});
-    BinHash_HH(b, c, d, a, {x[6], 23, 0x04881D05});
-    BinHash_HH(a, b, c, d, {x[9], 4, 0xD9D4D039});
-    BinHash_HH(d, a, b, c, {x[12], 11, 0xE6DB99E5});
-    BinHash_HH(c, d, a, b, {x[15], 16, 0x1FA27CF8});
-    BinHash_HH(b, c, d, a, {x[2], 23, 0xC4AC5665});
+    BinHashHH(a, b, c, d, {x[5], 4, 0xFFFA3942});
+    BinHashHH(d, a, b, c, {x[8], 11, 0x8771F681});
+    BinHashHH(c, d, a, b, {x[11], 16, 0x6D9D6122});
+    BinHashHH(b, c, d, a, {x[14], 23, 0xFDE5380C});
+    BinHashHH(a, b, c, d, {x[1], 4, 0xA4BEEA44});
+    BinHashHH(d, a, b, c, {x[4], 11, 0x4BDECFA9});
+    BinHashHH(c, d, a, b, {x[7], 16, 0xF6BB4B60});
+    BinHashHH(b, c, d, a, {x[10], 23, 0xBEBFBC70});
+    BinHashHH(a, b, c, d, {x[13], 4, 0x289B7EC6});
+    BinHashHH(d, a, b, c, {x[0], 11, 0xEAA127FA});
+    BinHashHH(c, d, a, b, {x[3], 16, 0xD4EF3085});
+    BinHashHH(b, c, d, a, {x[6], 23, 0x04881D05});
+    BinHashHH(a, b, c, d, {x[9], 4, 0xD9D4D039});
+    BinHashHH(d, a, b, c, {x[12], 11, 0xE6DB99E5});
+    BinHashHH(c, d, a, b, {x[15], 16, 0x1FA27CF8});
+    BinHashHH(b, c, d, a, {x[2], 23, 0xC4AC5665});
 }
 
-static void BinHashRound4(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRoundFour(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    BinHash_II(a, b, c, d, {x[0], 6, 0xF4292244});
-    BinHash_II(d, a, b, c, {x[7], 10, 0x432AFF97});
-    BinHash_II(c, d, a, b, {x[14], 15, 0xAB9423A7});
-    BinHash_II(b, c, d, a, {x[5], 21, 0xFC93A039});
-    BinHash_II(a, b, c, d, {x[12], 6, 0x655B59C3});
-    BinHash_II(d, a, b, c, {x[3], 10, 0x8F0CCC92});
-    BinHash_II(c, d, a, b, {x[10], 15, 0xFFEFF47D});
-    BinHash_II(b, c, d, a, {x[1], 21, 0x85845DD1});
-    BinHash_II(a, b, c, d, {x[8], 6, 0x6FA87E4F});
-    BinHash_II(d, a, b, c, {x[15], 10, 0xFE2CE6E0});
-    BinHash_II(c, d, a, b, {x[6], 15, 0xA3014314});
-    BinHash_II(b, c, d, a, {x[13], 21, 0x4E0811A1});
-    BinHash_II(a, b, c, d, {x[4], 6, 0xF7537E82});
-    BinHash_II(d, a, b, c, {x[11], 10, 0xBD3AF235});
-    BinHash_II(c, d, a, b, {x[2], 15, 0x2AD7D2BB});
-    BinHash_II(b, c, d, a, {x[9], 21, 0xEB86D391});
+    BinHashII(a, b, c, d, {x[0], 6, 0xF4292244});
+    BinHashII(d, a, b, c, {x[7], 10, 0x432AFF97});
+    BinHashII(c, d, a, b, {x[14], 15, 0xAB9423A7});
+    BinHashII(b, c, d, a, {x[5], 21, 0xFC93A039});
+    BinHashII(a, b, c, d, {x[12], 6, 0x655B59C3});
+    BinHashII(d, a, b, c, {x[3], 10, 0x8F0CCC92});
+    BinHashII(c, d, a, b, {x[10], 15, 0xFFEFF47D});
+    BinHashII(b, c, d, a, {x[1], 21, 0x85845DD1});
+    BinHashII(a, b, c, d, {x[8], 6, 0x6FA87E4F});
+    BinHashII(d, a, b, c, {x[15], 10, 0xFE2CE6E0});
+    BinHashII(c, d, a, b, {x[6], 15, 0xA3014314});
+    BinHashII(b, c, d, a, {x[13], 21, 0x4E0811A1});
+    BinHashII(a, b, c, d, {x[4], 6, 0xF7537E82});
+    BinHashII(d, a, b, c, {x[11], 10, 0xBD3AF235});
+    BinHashII(c, d, a, b, {x[2], 15, 0x2AD7D2BB});
+    BinHashII(b, c, d, a, {x[9], 21, 0xEB86D391});
 }
 
 static void BinHashTransform(uint32_t state[4], const uint8_t block[64])
@@ -445,10 +447,10 @@ static void BinHashTransform(uint32_t state[4], const uint8_t block[64])
     uint32_t x[16];
 
     BinHashDecodeBlock(x, block);
-    BinHashRound1(a, b, c, d, x);
-    BinHashRound2(a, b, c, d, x);
-    BinHashRound3(a, b, c, d, x);
-    BinHashRound4(a, b, c, d, x);
+    BinHashRoundOne(a, b, c, d, x);
+    BinHashRoundTwo(a, b, c, d, x);
+    BinHashRoundThree(a, b, c, d, x);
+    BinHashRoundFour(a, b, c, d, x);
 
     state[STATE_A_INDEX] += a;
     state[STATE_B_INDEX] += b;
@@ -488,15 +490,6 @@ static std::string CalculateBinHash(const std::string& filePath)
 static void CompareOutputWithReference(const std::string& outputFilePath, const std::string& compareFilePath)
 {
     std::string outputMd5 = CalculateBinHash(outputFilePath);
-    // std::string compareMd5 = CalculateBinHash(compareFilePath);
-
-    // ASSERT_FALSE(outputMd5.empty()) << "Failed to calculate BinHash for output file: " << outputFilePath;
-    // ASSERT_FALSE(compareMd5.empty()) << "Failed to calculate BinHash for compare file: " << compareFilePath;
-
-    // AUDIO_INFO_LOG("Output file BinHash: %{public}s", outputMd5.c_str());
-    // AUDIO_INFO_LOG("Compare file BinHash: %{public}s", compareMd5.c_str());
-    // std::cout<<compareFilePath<<"Compare file BinHash:"<<compareMd5.c_str()<<std::endl;
-
     EXPECT_EQ(outputMd5.empty(), false);
     EXPECT_EQ(outputMd5, compareFilePath);
 }
