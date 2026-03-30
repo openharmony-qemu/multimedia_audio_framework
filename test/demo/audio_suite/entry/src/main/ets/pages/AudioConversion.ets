@@ -578,7 +578,7 @@ export struct AudioConversion {
       };
 
       // Call C++ interface, passing callback function
-      const result = audioNapi.audioConverterSetInputCallback(this.converterHandle, callback, 0);
+      const result = audioNapi.audioConverterSetInputCallback(this.converterHandle);
       this.callbackResult = `SetInputCallback success, result: ${result}`;
       Logger.info(TAG, `AudioConverterSetInputCallback result: ${result}`);
     } catch (e) {
