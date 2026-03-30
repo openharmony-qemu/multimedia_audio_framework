@@ -230,7 +230,7 @@ static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t 
     return true;
 }
 
-static bool IsUsbArmInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+static bool IsDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     for (const auto &deviceDesc : streamDesc->newDeviceDescs_) {
@@ -254,7 +254,7 @@ static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStream
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
-        !IsUsbArmInputStream(streamDesc) &&
+        !IsDegradeInputStream(streamDesc) &&
         (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
 }
 
@@ -772,7 +772,8 @@ bool AudioCoreService::IsHWDecoding(std::shared_ptr<AudioStreamDescriptor> strea
     return true;
 }
 
-void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
+void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    bool isCreateProcess)
 {
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
     SelectA2dpType(streamDesc, isCreateProcess);

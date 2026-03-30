@@ -297,7 +297,7 @@ static inline void DumpDeinterleaveBuffers(FILE *dumpProcessFile, FILE *dumpMicI
     }
 }
 
-static inline int32_t FillUsbArmFallbackSilentBuffers(const BufferDesc &srcBufDesc,
+static inline int32_t FillDegradeFallbackSilentBuffers(const BufferDesc &srcBufDesc,
     BufferDesc &processBufDesc, BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc,
     const MicInEcBufferSizes &bufferSizes)
 {
@@ -368,13 +368,13 @@ static inline bool IsPotentialDistributedInputDeviceType(DeviceType deviceType)
     return deviceType == DEVICE_TYPE_REMOTE_DAUDIO || deviceType == DEVICE_TYPE_REMOTE_CAST;
 }
 
-static inline bool IsUsbArmOrDistributedInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+static inline bool IsDegradeInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
     return deviceDesc != nullptr &&
         (IsUsbArmInputDeviceType(deviceDesc->deviceType_) || deviceDesc->networkId_ != LOCAL_NETWORK_ID);
 }
 
-static inline bool IsVoiceRecognitionMicInEcUsbArmFallback(const AudioCapturerInfo &capturerInfo,
+static inline bool IsVoiceRecognitionMicInEcDegradeFallback(const AudioCapturerInfo &capturerInfo,
     const AudioStreamParams &audioStreamParams, bool checkPreferredInput = false)
 {
     bool isVoiceRecognitionMicInEcRequest = capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
@@ -394,7 +394,7 @@ static inline bool IsVoiceRecognitionMicInEcUsbArmFallback(const AudioCapturerIn
     queryInfo.channelLayout = audioStreamParams.channelLayout;
     auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
     for (const auto &deviceDesc : preferredInputDevices) {
-        if (IsUsbArmOrDistributedInputDeviceDesc(deviceDesc)) {
+        if (IsDegradeInputDeviceDesc(deviceDesc)) {
             return true;
         }
     }
@@ -682,9 +682,9 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.ecChannels);
     streamDesc->ecStreamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.ecEncoding);
     streamDesc->ecStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.ecChannelLayout);
-    if (IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams, true)) {
+    if (IsVoiceRecognitionMicInEcDegradeFallback(capturerInfo_, audioStreamParams, true)) {
         ClearMicInEcStreamInfo(streamDesc->micInStreamInfo_, streamDesc->ecStreamInfo_);
-        AUDIO_INFO_LOG("usb arm voice recognition: clear micIn/ec stream info for policy");
+        AUDIO_INFO_LOG("degrade input voice recognition: clear micIn/ec stream info for policy");
     }
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
@@ -1581,11 +1581,11 @@ int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &pr
     const size_t processFrameSize =
         static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
     CHECK_AND_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM, "invalid process frame size");
-    bool usbArmFallback = IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams);
+    bool degradeFallback = IsVoiceRecognitionMicInEcDegradeFallback(capturerInfo_, audioStreamParams);
 
     size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
         bufDesc.dataLength : bufDesc.bufLength;
-    if (!usbArmFallback) {
+    if (!degradeFallback) {
         MicInEcBufferLayout layout {};
         ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
@@ -1608,7 +1608,7 @@ int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &pr
     micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) *
         static_cast<size_t>(sampleByteSize);
     ecBufSize = frameCount * static_cast<size_t>(audioStreamParams.ecChannels) * static_cast<size_t>(sampleByteSize);
-    AUDIO_INFO_LOG("GetMicInBufferSize use usb arm fallback, frameCount:%{public}zu", frameCount);
+    AUDIO_INFO_LOG("GetMicInBufferSize use degrade fallback, frameCount:%{public}zu", frameCount);
     return SUCCESS;
 }
 
@@ -1630,13 +1630,13 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     ret = ValidateDeinterleaveOutputBuffer(targetBuffers, bufferSizes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "output buffer is invalid");
 
-    if (IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams)) {
-        ret = FillUsbArmFallbackSilentBuffers(bufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FillUsbArmFallbackSilentBuffers failed");
+    if (IsVoiceRecognitionMicInEcDegradeFallback(capturerInfo_, audioStreamParams)) {
+        ret = FillDegradeFallbackSilentBuffers(bufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FillDegradeFallbackSilentBuffers failed");
         UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
         DumpDeinterleaveBuffers(dumpProcessFile_, dumpMicInFile_, dumpEcFile_, processBufDesc,
             micInBufDesc, ecBufferDesc, bufferSizes);
-        AUDIO_INFO_LOG("DeinterleaveBuffer use usb arm fallback, micIn/ec filled with silence");
+        AUDIO_INFO_LOG("DeinterleaveBuffer use degrade fallback, micIn/ec filled with silence");
         return SUCCESS;
     }
 
@@ -2439,9 +2439,9 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GenerateStreamDesc(
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.ecChannels);
     streamDesc->ecStreamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.ecEncoding);
     streamDesc->ecStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.ecChannelLayout);
-    if (IsVoiceRecognitionMicInEcUsbArmFallback(switchInfo.capturerInfo, switchInfo.params, true)) {
+    if (IsVoiceRecognitionMicInEcDegradeFallback(switchInfo.capturerInfo, switchInfo.params, true)) {
         ClearMicInEcStreamInfo(streamDesc->micInStreamInfo_, streamDesc->ecStreamInfo_);
-        AUDIO_INFO_LOG("usb arm voice recognition: clear micIn/ec stream info for policy on switch");
+        AUDIO_INFO_LOG("degrade input voice recognition: clear micIn/ec stream info for policy on switch");
     }
     streamDesc->capturerInfo_= switchInfo.capturerInfo;
     streamDesc->sessionId_ = switchInfo.sessionId;

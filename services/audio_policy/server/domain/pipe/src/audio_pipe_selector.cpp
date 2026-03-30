@@ -51,7 +51,7 @@ static std::map<AudioSampleFormat, std::string> formatStrToHpae = {
     {SAMPLE_F32LE, "f32"},
 };
 
-static bool IsUsbArmInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+static bool IsDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     for (const auto &deviceDesc : streamDesc->newDeviceDescs_) {
@@ -75,7 +75,7 @@ static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStream
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
     return streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
-        !IsUsbArmInputStream(streamDesc) &&
+        !IsDegradeInputStream(streamDesc) &&
         (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW || streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW);
 }
 

@@ -84,13 +84,13 @@ inline bool IsUsbArmInputDeviceType(DeviceType deviceType)
     return deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
 }
 
-inline bool IsUsbArmOrDistributedInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+inline bool IsDegradeInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
     return deviceDesc != nullptr &&
         (IsUsbArmInputDeviceType(deviceDesc->deviceType_) || deviceDesc->networkId_ != LOCAL_NETWORK_ID);
 }
 
-inline bool IsUsbArmInputForCapturer(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
+inline bool IsDegradeInputForCapturer(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
 {
     if (IsUsbArmInputDeviceType(AudioPolicyManager::GetInstance().GetActiveInputDevice())) {
         return true;
@@ -102,17 +102,17 @@ inline bool IsUsbArmInputForCapturer(const AudioCapturerInfo &capturerInfo, cons
     queryInfo.channelLayout = params.channelLayout;
     auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
     for (const auto &deviceDesc : preferredInputDevices) {
-        if (IsUsbArmOrDistributedInputDeviceDesc(deviceDesc)) {
+        if (IsDegradeInputDeviceDesc(deviceDesc)) {
             return true;
         }
     }
     return false;
 }
 
-inline bool IsUsbArmVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
+inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
     const AudioStreamParams &params)
 {
-    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && IsUsbArmInputForCapturer(capturerInfo, params);
+    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && IsDegradeInputForCapturer(capturerInfo, params);
 }
 }
 
@@ -256,7 +256,7 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
             HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"));
-    } else if (IsUsbArmVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
+    } else if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
         CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
             HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
@@ -493,9 +493,9 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
-    } else if (IsUsbArmVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
+    } else if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
-        AUDIO_INFO_LOG("voice recognition use process channels only for usb arm, channels:%{public}d",
+        AUDIO_INFO_LOG("voice recognition use process channels only for degrade input, channels:%{public}d",
             config.streamInfo.channels);
     } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.micInChannels +
