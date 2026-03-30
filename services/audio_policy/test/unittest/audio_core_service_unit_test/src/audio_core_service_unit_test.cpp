@@ -475,6 +475,45 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateCapturerClient_007
+* @tc.desc  : Test remote input stream bypasses voice recognition micIn/ec permission and route checks.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateCapturerClient_007, TestSize.Level1)
+{
+    GetNonSystemPermission();
+    auto oldSourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    auto sourceStrategyMap = std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    sourceStrategyMap->emplace(SOURCE_TYPE_VOICE_RECOGNITION,
+        AudioSourceStrategyType {
+        "AUDIO_INPUT_VOICE_RECOGNITION_TYPE", // hdiSource
+        "primary", // adapterName
+        "primary_input", // pipeName, not independent route
+        AUDIO_INPUT_FLAG_VOICE_RECOGNITION, // audioFlag
+        1 // priority
+        });
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(sourceStrategyMap);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.channels = AudioChannel::CHANNEL_4;
+    streamDesc->ecStreamInfo_.channels = AudioChannel::STEREO;
+    auto inputDevice = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    inputDevice->networkId_ = "RemoteDevice";
+    streamDesc->newDeviceDescs_.push_back(inputDevice);
+
+    AudioCoreService audioCoreService;
+    uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
+    uint32_t sessionId = 0;
+    auto ret = audioCoreService.CreateCapturerClient(streamDesc, flag, sessionId);
+    EXPECT_NE(ret, ERR_PERMISSION_DENIED);
+    EXPECT_NE(ret, ERR_NOT_SUPPORTED);
+
+    AudioSourceStrategyData::GetInstance().SetSourceStrategyMap(oldSourceStrategyMap);
+    ResetSystemPermission();
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: SetPreferredInputDeviceIfValid_001
 * @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
 */
@@ -5912,6 +5951,20 @@ static void ExpectReloadSourceModuleInfo(const std::shared_ptr<AudioPipeInfo> &p
     EXPECT_EQ(pipeInfo->moduleInfo_.micRefFormat, "s16");
 }
 
+static void ExpectReloadSourceMicEcModuleInfoEmpty(const std::shared_ptr<AudioPipeInfo> &pipeInfo)
+{
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecType, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecSamplingRate, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecChannels, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.ecFormat, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micInRate, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micInChannels, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micInFormat, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micRefRate, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micRefChannels, "");
+    EXPECT_EQ(pipeInfo->moduleInfo_.micRefFormat, "");
+}
+
 /**
 * @tc.name  : Test AudioEcManager.
 * @tc.number: ReloadSourceForInputPipe_001
@@ -5943,6 +5996,47 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_001, TestSize.Level1
     EXPECT_TRUE(ret == SUCCESS || ret == ERR_INVALID_HANDLE);
     if (ret == SUCCESS) {
         ExpectReloadSourceModuleInfo(pipeInfo, streamDesc);
+    }
+
+    if (hadOldIoHandle) {
+        ioHandleMap.AddIOHandleInfo(moduleName, oldIoHandle);
+    } else {
+        ioHandleMap.DelIOHandleInfo(moduleName);
+    }
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: ReloadSourceForInputPipe_002
+* @tc.desc  : Test ReloadSourceForInputPipe keeps micIn/ec module info empty for remote input device.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_TRUE(audioCoreService != nullptr);
+    auto &ioHandleMap = audioCoreService->audioIOHandleMap_;
+
+    constexpr uint32_t targetSessionId = 123457;
+    const std::string moduleName = "ut_voice_recognition_remote_reload_pipe";
+    AudioIOHandle oldIoHandle = 0;
+    bool hadOldIoHandle = ioHandleMap.GetModuleIdByKey(moduleName, oldIoHandle);
+
+    auto pipeInfo = CreateReloadSourceInputPipeInfo(moduleName);
+    ASSERT_TRUE(pipeInfo != nullptr);
+    auto streamDesc = CreateVoiceRecognitionStreamDesc(targetSessionId);
+    ASSERT_TRUE(streamDesc != nullptr);
+    ASSERT_FALSE(streamDesc->newDeviceDescs_.empty());
+    streamDesc->newDeviceDescs_.front()->networkId_ = "RemoteDevice";
+
+    pipeInfo->streamDescMap_[targetSessionId] = streamDesc;
+    ioHandleMap.AddIOHandleInfo(moduleName, static_cast<AudioIOHandle>(targetSessionId));
+    AudioIOHandle ioHandleInMap = 0;
+    ASSERT_TRUE(ioHandleMap.GetModuleIdByKey(moduleName, ioHandleInMap));
+
+    int32_t ret = audioCoreService->ReloadSourceForInputPipe(pipeInfo, targetSessionId);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_INVALID_HANDLE);
+    if (ret == SUCCESS) {
+        ExpectReloadSourceMicEcModuleInfoEmpty(pipeInfo);
     }
 
     if (hadOldIoHandle) {

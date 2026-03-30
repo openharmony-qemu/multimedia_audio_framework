@@ -272,6 +272,51 @@ static inline int32_t ValidateDeinterleaveOutputBuffer(const DeinterleaveTargetB
     return SUCCESS;
 }
 
+static inline void UpdateDeinterleaveDataLength(BufferDesc &processBufDesc, BufferDesc &micInBufDesc,
+    BufferDesc &ecBufferDesc, const MicInEcBufferSizes &bufferSizes)
+{
+    processBufDesc.dataLength = bufferSizes.processBufSize;
+    micInBufDesc.dataLength = bufferSizes.micInBufSize;
+    ecBufferDesc.dataLength = bufferSizes.ecBufSize;
+}
+
+static inline void DumpDeinterleaveBuffers(FILE *dumpProcessFile, FILE *dumpMicInFile, FILE *dumpEcFile,
+    const BufferDesc &processBufDesc, const BufferDesc &micInBufDesc, const BufferDesc &ecBufferDesc,
+    const MicInEcBufferSizes &bufferSizes)
+{
+    if (bufferSizes.processBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpProcessFile, static_cast<void *>(processBufDesc.buffer),
+            bufferSizes.processBufSize);
+    }
+    if (bufferSizes.micInBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpMicInFile, static_cast<void *>(micInBufDesc.buffer),
+            bufferSizes.micInBufSize);
+    }
+    if (bufferSizes.ecBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpEcFile, static_cast<void *>(ecBufferDesc.buffer), bufferSizes.ecBufSize);
+    }
+}
+
+static inline int32_t FillUsbArmFallbackSilentBuffers(const BufferDesc &srcBufDesc,
+    BufferDesc &processBufDesc, BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc,
+    const MicInEcBufferSizes &bufferSizes)
+{
+    int32_t copyRet = memcpy_s(processBufDesc.buffer, processBufDesc.bufLength, srcBufDesc.buffer,
+        bufferSizes.processBufSize);
+    CHECK_AND_RETURN_RET_LOG(copyRet == EOK, ERR_OPERATION_FAILED, "copy process frame failed");
+    if (bufferSizes.micInBufSize > 0) {
+        CHECK_AND_RETURN_RET_LOG(micInBufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "micIn buffer is null");
+        CHECK_AND_RETURN_RET_LOG(memset_s(micInBufDesc.buffer, micInBufDesc.bufLength, 0,
+            bufferSizes.micInBufSize) == EOK, ERR_OPERATION_FAILED, "clear micIn buffer failed");
+    }
+    if (bufferSizes.ecBufSize > 0) {
+        CHECK_AND_RETURN_RET_LOG(ecBufferDesc.buffer != nullptr, ERROR_INVALID_PARAM, "ec buffer is null");
+        CHECK_AND_RETURN_RET_LOG(memset_s(ecBufferDesc.buffer, ecBufferDesc.bufLength, 0,
+            bufferSizes.ecBufSize) == EOK, ERR_OPERATION_FAILED, "clear ec buffer failed");
+    }
+    return SUCCESS;
+}
+
 static int32_t DeinterleaveMicInEcFrames(const BufferDesc &srcBufDesc, const MicInEcBufferLayout &layout,
     const MicInEcBufferSizes &bufferSizes, DeinterleaveTargetBuffers &targetBuffers)
 {
@@ -1560,7 +1605,8 @@ int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &pr
         "buffer length is not process frame aligned");
     size_t frameCount = validDataLength / processFrameSize;
     processBufSize = frameCount * processFrameSize;
-    micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) * static_cast<size_t>(sampleByteSize);
+    micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) *
+        static_cast<size_t>(sampleByteSize);
     ecBufSize = frameCount * static_cast<size_t>(audioStreamParams.ecChannels) * static_cast<size_t>(sampleByteSize);
     AUDIO_INFO_LOG("GetMicInBufferSize use usb arm fallback, frameCount:%{public}zu", frameCount);
     return SUCCESS;
@@ -1575,8 +1621,6 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     AudioStreamParams audioStreamParams;
     int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
-    bool usbArmFallback = IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams);
-    bool processOnlyFrameLayout = usbArmFallback;
 
     MicInEcBufferSizes bufferSizes {};
     ret = GetMicInBufferSize(bufDesc, bufferSizes.processBufSize, bufferSizes.micInBufSize,
@@ -1586,34 +1630,12 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     ret = ValidateDeinterleaveOutputBuffer(targetBuffers, bufferSizes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "output buffer is invalid");
 
-    if (processOnlyFrameLayout) {
-        int32_t copyRet = memcpy_s(processBufDesc.buffer, processBufDesc.bufLength, bufDesc.buffer,
-            bufferSizes.processBufSize);
-        CHECK_AND_RETURN_RET_LOG(copyRet == EOK, ERR_OPERATION_FAILED, "copy process frame failed");
-        if (bufferSizes.micInBufSize > 0) {
-            CHECK_AND_RETURN_RET_LOG(micInBufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "micIn buffer is null");
-            CHECK_AND_RETURN_RET_LOG(memset_s(micInBufDesc.buffer, micInBufDesc.bufLength, 0,
-                bufferSizes.micInBufSize) == EOK, ERR_OPERATION_FAILED, "clear micIn buffer failed");
-        }
-        if (bufferSizes.ecBufSize > 0) {
-            CHECK_AND_RETURN_RET_LOG(ecBufferDesc.buffer != nullptr, ERROR_INVALID_PARAM, "ec buffer is null");
-            CHECK_AND_RETURN_RET_LOG(memset_s(ecBufferDesc.buffer, ecBufferDesc.bufLength, 0,
-                bufferSizes.ecBufSize) == EOK, ERR_OPERATION_FAILED, "clear ec buffer failed");
-        }
-        processBufDesc.dataLength = bufferSizes.processBufSize;
-        micInBufDesc.dataLength = bufferSizes.micInBufSize;
-        ecBufferDesc.dataLength = bufferSizes.ecBufSize;
-        if (bufferSizes.processBufSize > 0) {
-            DumpFileUtil::WriteDumpFile(dumpProcessFile_, static_cast<void *>(processBufDesc.buffer),
-                bufferSizes.processBufSize);
-        }
-        if (bufferSizes.micInBufSize > 0) {
-            DumpFileUtil::WriteDumpFile(dumpMicInFile_, static_cast<void *>(micInBufDesc.buffer),
-                bufferSizes.micInBufSize);
-        }
-        if (bufferSizes.ecBufSize > 0) {
-            DumpFileUtil::WriteDumpFile(dumpEcFile_, static_cast<void *>(ecBufferDesc.buffer), bufferSizes.ecBufSize);
-        }
+    if (IsVoiceRecognitionMicInEcUsbArmFallback(capturerInfo_, audioStreamParams)) {
+        ret = FillUsbArmFallbackSilentBuffers(bufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FillUsbArmFallbackSilentBuffers failed");
+        UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+        DumpDeinterleaveBuffers(dumpProcessFile_, dumpMicInFile_, dumpEcFile_, processBufDesc,
+            micInBufDesc, ecBufferDesc, bufferSizes);
         AUDIO_INFO_LOG("DeinterleaveBuffer use usb arm fallback, micIn/ec filled with silence");
         return SUCCESS;
     }
@@ -1624,20 +1646,9 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     ret = DeinterleaveMicInEcFrames(bufDesc, layout, bufferSizes, targetBuffers);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DeinterleaveMicInEcFrames failed");
 
-    processBufDesc.dataLength = bufferSizes.processBufSize;
-    micInBufDesc.dataLength = bufferSizes.micInBufSize;
-    ecBufferDesc.dataLength = bufferSizes.ecBufSize;
-    if (bufferSizes.processBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpProcessFile_, static_cast<void *>(processBufDesc.buffer),
-            bufferSizes.processBufSize);
-    }
-    if (bufferSizes.micInBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpMicInFile_, static_cast<void *>(micInBufDesc.buffer),
-            bufferSizes.micInBufSize);
-    }
-    if (bufferSizes.ecBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpEcFile_, static_cast<void *>(ecBufferDesc.buffer), bufferSizes.ecBufSize);
-    }
+    UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+    DumpDeinterleaveBuffers(dumpProcessFile_, dumpMicInFile_, dumpEcFile_, processBufDesc,
+        micInBufDesc, ecBufferDesc, bufferSizes);
     return SUCCESS;
 }
 
