@@ -3594,5 +3594,209 @@ HWTEST_F(RendererInServerUnitTest, CalculateCacheCount_006, TestSize.Level1)
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
     EXPECT_EQ(cacheCount, 0);
 }
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_001
+ * @tc.desc  : Test CheckIsUnderrun when managerType_ is PLAYBACK and currentReadFrame >= currentWriteFrame.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_001, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to PLAYBACK (non-DIRECT_PLAYBACK)
+    rendererInServer->managerType_ = PLAYBACK;
+    rendererInServer->spanSizeInByte_ = 100;
+
+    // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame -> return true
+    uint64_t currentReadFrame = 100;
+    uint64_t currentWriteFrame = 50;
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_002
+ * @tc.desc  : Test CheckIsUnderrun when managerType_ is PLAYBACK and currentReadFrame < currentWriteFrame.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_002, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to PLAYBACK (non-DIRECT_PLAYBACK)
+    rendererInServer->managerType_ = PLAYBACK;
+    rendererInServer->spanSizeInByte_ = 100;
+
+    // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame < currentWriteFrame -> return false
+    uint64_t currentReadFrame = 50;
+    uint64_t currentWriteFrame = 100;
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_003
+ * @tc.desc  : Test CheckIsUnderrun when managerType_ is DIRECT_PLAYBACK and
+ *             currentReadFrame + spanSizeInByte_ > currentWriteFrame.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to DIRECT_PLAYBACK
+    rendererInServer->managerType_ = DIRECT_PLAYBACK;
+    rendererInServer->spanSizeInByte_ = 100;
+
+    // Test: managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame -> return true
+    uint64_t currentReadFrame = 10;
+    uint64_t currentWriteFrame = 50;
+    // currentReadFrame(10) + spanSizeInByte_(100) = 110 > currentWriteFrame(50) -> true
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_004
+ * @tc.desc  : Test CheckIsUnderrun when managerType_ is DIRECT_PLAYBACK and
+ *             currentReadFrame + spanSizeInByte_ <= currentWriteFrame.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_004, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to DIRECT_PLAYBACK
+    rendererInServer->managerType_ = DIRECT_PLAYBACK;
+    rendererInServer->spanSizeInByte_ = 100;
+
+    // Test: managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) <= currentWriteFrame -> return false
+    uint64_t currentReadFrame = 10;
+    uint64_t currentWriteFrame = 150;
+    // currentReadFrame(10) + spanSizeInByte_(100) = 110 <= currentWriteFrame(150) -> false
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_005
+ * @tc.desc  : Test CheckIsUnderrun when managerType_ is DIRECT_PLAYBACK and
+ *             currentReadFrame + spanSizeInByte_ == currentWriteFrame (boundary condition).
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_005, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to DIRECT_PLAYBACK
+    rendererInServer->managerType_ = DIRECT_PLAYBACK;
+    rendererInServer->spanSizeInByte_ = 100;
+
+    // Test: managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) == currentWriteFrame
+    // Since condition is > (not >=), this should return false
+    uint64_t currentReadFrame = 50;
+    uint64_t currentWriteFrame = 150;
+    // currentReadFrame(50) + spanSizeInByte_(100) = 150 == currentWriteFrame(150) -> false (not >)
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_006
+ * @tc.desc  : Test CheckIsUnderrun when managerType_ is PLAYBACK and
+ *             currentReadFrame == currentWriteFrame (boundary condition).
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_006, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to PLAYBACK (non-DIRECT_PLAYBACK)
+    rendererInServer->managerType_ = PLAYBACK;
+    rendererInServer->spanSizeInByte_ = 100;
+
+    // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame == currentWriteFrame -> return true
+    uint64_t currentReadFrame = 100;
+    uint64_t currentWriteFrame = 100;
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_007
+ * @tc.desc  : Test CheckIsUnderrun with VOIP_PLAYBACK managerType_.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_007, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to VOIP_PLAYBACK (non-DIRECT_PLAYBACK)
+    rendererInServer->managerType_ = VOIP_PLAYBACK;
+    rendererInServer->spanSizeInByte_ = 100;
+
+    // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame -> return true
+    uint64_t currentReadFrame = 100;
+    uint64_t currentWriteFrame = 50;
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_TRUE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS

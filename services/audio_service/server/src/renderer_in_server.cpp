@@ -798,12 +798,25 @@ int32_t RendererInServer::Write3DAModeData(uint64_t currentReadFrame, uint64_t c
     return SUCCESS;
 }
 
+bool RendererInServer::CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame)
+{
+    if (managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame)
+    {
+        return true;
+    }
+    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame)
+    {
+        return true;
+    }
+    return false;
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
-    if (currentReadFrame >= currentWriteFrame) {
+    if (CheckIsUnderrun(currentReadFrame, currentWriteFrame)) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
             CHECK_AND_CALL_FUNC_RETURN_RET(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
