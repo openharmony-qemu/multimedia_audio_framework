@@ -148,6 +148,23 @@
             <option name="push" value="base_rotation.pcm -> /data/audiosuite/sr/" src="res"/>
             <option name="push" value="base_extension.pcm -> /data/audiosuite/sr/" src="res"/>
             <option name="shell" value="restorecon /data/audiosuite/sr/"/>
+            <option name="shell" value="mkdir -p /data/audiosuite/converter/"/>
+            <option name="push" value="in_converter_44100_2_s16le.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="in_converter_11025_1_s16.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="in_converter_22050_2_s24le.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_001.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_002.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_003.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_004.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_005.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_006.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_007.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_008.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_009.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_010.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_011.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_012.pcm -> /data/audiosuite/converter/" src="res"/>
+            <option name="shell" value="restorecon /data/audiosuite/converter/"/>
         </preparer>
     </target>
     <target name="audio_suite_utils_test">

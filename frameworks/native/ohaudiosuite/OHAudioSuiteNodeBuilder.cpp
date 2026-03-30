@@ -98,29 +98,52 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetRequestDataCallback(
 namespace OHOS {
 namespace AudioStandard {
 
+static std::unordered_map<OH_AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHANNEL = {
+    {OH_AudioChannelLayout::CH_LAYOUT_MONO, AudioChannel::MONO},
+    {OH_AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannel::STEREO},
+    {OH_AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX, AudioChannel::STEREO},
+    {OH_AudioChannelLayout::CH_LAYOUT_2POINT1, AudioChannel::CHANNEL_3},
+    {OH_AudioChannelLayout::CH_LAYOUT_3POINT0, AudioChannel::CHANNEL_3},
+    {OH_AudioChannelLayout::CH_LAYOUT_SURROUND, AudioChannel::CHANNEL_3},
+    {OH_AudioChannelLayout::CH_LAYOUT_3POINT1, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_4POINT0, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_QUAD_SIDE, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_QUAD, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_2POINT0POINT2, AudioChannel::CHANNEL_4},
+    {OH_AudioChannelLayout::CH_LAYOUT_4POINT1, AudioChannel::CHANNEL_5},
+    {OH_AudioChannelLayout::CH_LAYOUT_5POINT0, AudioChannel::CHANNEL_5},
+    {OH_AudioChannelLayout::CH_LAYOUT_5POINT0_BACK, AudioChannel::CHANNEL_5},
+    {OH_AudioChannelLayout::CH_LAYOUT_2POINT1POINT2, AudioChannel::CHANNEL_5},
+    {OH_AudioChannelLayout::CH_LAYOUT_3POINT0POINT2, AudioChannel::CHANNEL_5},
+    {OH_AudioChannelLayout::CH_LAYOUT_5POINT1, AudioChannel::CHANNEL_6},
+    {OH_AudioChannelLayout::CH_LAYOUT_5POINT1_BACK, AudioChannel::CHANNEL_6},
+    {OH_AudioChannelLayout::CH_LAYOUT_6POINT0, AudioChannel::CHANNEL_6},
+    {OH_AudioChannelLayout::CH_LAYOUT_HEXAGONAL, AudioChannel::CHANNEL_6},
+    {OH_AudioChannelLayout::CH_LAYOUT_3POINT1POINT2, AudioChannel::CHANNEL_6},
+    {OH_AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT, AudioChannel::CHANNEL_6},
+    {OH_AudioChannelLayout::CH_LAYOUT_6POINT1, AudioChannel::CHANNEL_7},
+    {OH_AudioChannelLayout::CH_LAYOUT_6POINT1_BACK, AudioChannel::CHANNEL_7},
+    {OH_AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT, AudioChannel::CHANNEL_7},
+    {OH_AudioChannelLayout::CH_LAYOUT_7POINT0, AudioChannel::CHANNEL_7},
+    {OH_AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT, AudioChannel::CHANNEL_7},
+    {OH_AudioChannelLayout::CH_LAYOUT_7POINT1, AudioChannel::CHANNEL_8},
+    {OH_AudioChannelLayout::CH_LAYOUT_OCTAGONAL, AudioChannel::CHANNEL_8},
+    {OH_AudioChannelLayout::CH_LAYOUT_5POINT1POINT2, AudioChannel::CHANNEL_8},
+    {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE, AudioChannel::CHANNEL_8},
+    {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
+};
+
 using namespace OHOS::AudioStandard::AudioSuite;
 
 static bool CheckChannelInfoValid(int32_t channelCount, OH_AudioChannelLayout channelLayout)
 {
     AUDIO_DEBUG_LOG("Check channelCount:%{public}d, channelLayout:%{public}" PRIu64, channelCount, channelLayout);
-    switch (channelCount) {
-        case AudioChannel::MONO:
-        case AudioChannel::STEREO:
-            break;
-        default:
-            return false;
-    }
-
-    switch (channelLayout) {
-        case OH_AudioChannelLayout::CH_LAYOUT_MONO:
-            return channelCount == AudioChannel::MONO;
-        case OH_AudioChannelLayout::CH_LAYOUT_STEREO:
-            return channelCount == AudioChannel::STEREO;
-        default:
-            return false;
-    }
-
-    return false;
+    CHECK_AND_RETURN_RET_LOG(MAP_LAYOUT_TO_CHANNEL.find(channelLayout) != MAP_LAYOUT_TO_CHANNEL.end(),
+        false,
+        "Channel layout parameters do not exist");
+    CHECK_AND_RETURN_RET_LOG(
+        MAP_LAYOUT_TO_CHANNEL[channelLayout] == channelCount, false, "Channel parameter settings incorrect");
+    return true;
 }
 
 bool CheckAudioFormat(OH_AudioFormat audioFormat)
