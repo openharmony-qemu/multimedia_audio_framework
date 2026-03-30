@@ -2251,6 +2251,19 @@ HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Leve
 
 /**
 * @tc.name  : Test AudioCoreService
+* @tc.number: StandbyClient_001
+* @tc.desc  : Test StandbyClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, StandbyClient_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    auto ret = audioCoreService->StandbyClient(1000);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
 * @tc.number: IsStreamSupportLowpower_004
 * @tc.desc  : Test interface IsStreamSupportLowpower
 */

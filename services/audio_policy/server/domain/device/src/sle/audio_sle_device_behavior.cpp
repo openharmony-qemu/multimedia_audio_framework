@@ -43,7 +43,7 @@ int32_t AudioSleDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
     CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "Device desc is nullptr");
 
     std::variant<StreamUsage, SourceType> audioStreamConfig;
-    bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
+    bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED && !streamDesc->isStandby_;
     bool isVoiceType = true;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;

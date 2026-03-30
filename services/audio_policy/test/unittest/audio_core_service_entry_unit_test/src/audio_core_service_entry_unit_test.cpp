@@ -488,7 +488,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_021, TestSize.Level1)
     std::string macAddress = "macAddress";
     eventEntry->OnPrivacyDeviceSelected(devType, macAddress);
     eventEntry->OnForcedDeviceSelected(devType, macAddress);
-    
+
     auto &devMan = AudioDeviceManager::GetAudioDeviceManager();
     AudioDeviceStatus::GetInstance().OnPrivacyDeviceSelected(devType, macAddress);
     auto devDesc = make_shared<AudioDeviceDescriptor>();
@@ -525,44 +525,44 @@ public:
           callRenderRet_(std::move(callRenderRet)),
           callCaptureRet_(std::move(callCaptureRet)),
           recordCaptureRet_(std::move(recordCaptureRet)) {}
- 
+
     std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
     {
         return mediaRenderRet_;
     }
- 
+
     std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
     {
         return callRenderRet_;
     }
- 
+
     std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType, int32_t, const uint32_t) override
     {
         return callCaptureRet_;
     }
- 
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override
     {
         static const std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyVector;
         return emptyVector;
     }
- 
+
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override
     {
         return recordCaptureRet_;
     }
- 
+
     std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage, int32_t) override
     {
         return std::shared_ptr<AudioDeviceDescriptor>();
     }
- 
+
     RouterType GetRouterType() override
     {
         return routerType_;
     }
 };
- 
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_041
