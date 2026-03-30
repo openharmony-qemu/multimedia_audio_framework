@@ -67,7 +67,7 @@ export const unregisterAudioCacheCallback: () => void;
 export const ModifyRender: (notRenderTrackIds: string[], renderTrackIds: string[]) => void;
 export const setCurrentTime: (currentTime: number) => void;
 export const setEffectNodeBypass: (inputId: string, effectId: string, is: boolean) => boolean;
-export const ohAudioConverterCreate: (inputFormat: {
+export const audioConverterCreate: (inputFormat: {
   encodingType: number;
   samplingRate: number;
   channelLayout: number;
@@ -78,7 +78,6 @@ export const ohAudioConverterCreate: (inputFormat: {
   channelLayout: number;
   sampleFormat: number;
 }, fd: number) => number;
-export const ohAudioConverterSetInputCallback: (converter: number, callback: Function, userData: number) => number;
-export const ohAudioConverterProcess: (converter: number) => ArrayBuffer;
-export const ohAudioConverterDestroy: (converter: number) => void;
-export const saveConverterFile: () => ArrayBuffer;
+export const audioConverterSetInputCallback: (converter: number, callback: Function, userData: number) => number;
+export const audioConverterProcess: (converter: number) => ArrayBuffer;
+export const audioConverterDestroy: (converter: number) => void;
