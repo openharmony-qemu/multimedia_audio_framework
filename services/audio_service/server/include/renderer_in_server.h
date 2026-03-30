@@ -251,6 +251,7 @@ private:
     void MarkStaticFadeIn(bool isRefresh);
     void HandleIsWriteFirst(bool isWriteFirst);
     void HandleStreamUnderrun();
+    bool CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
