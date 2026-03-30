@@ -32,9 +32,9 @@ namespace AudioStandard {
 
 constexpr uint32_t DEFAULT_BUFFER_SIZE = 1024;
 constexpr uint32_t DOUBLE_BUFFER_SIZE = 2048;
-constexpr uint32_t FILE_BUFFER_SIZE = 7056; //*60
+constexpr uint32_t FILE_BUFFER_SIZE = 8000;
 constexpr uint32_t LARGE_BUFFER_SIZE = 10240;
-constexpr uint32_t EXTRA_LARGE_BUFFER_SIZE = 50000; //500000
+constexpr uint32_t EXTRA_LARGE_BUFFER_SIZE = 50000;
 constexpr uint32_t SMALL_BUFFER_SIZE = 3;
 constexpr uint32_t CUSTOM_BUFFER_SIZE_1022 = 1022;
 constexpr uint32_t CUSTOM_BUFFER_SIZE_19200 = 19200;
@@ -73,7 +73,7 @@ constexpr uint32_t MD5_INIT_STATE_0 = 0x67452301;
 constexpr uint32_t MD5_INIT_STATE_1 = 0xEFCDAB89;
 constexpr uint32_t MD5_INIT_STATE_2 = 0x98BADCFE;
 constexpr uint32_t MD5_INIT_STATE_3 = 0x10325476;
-constexpr int Byte_Width = 2;
+constexpr int BYTE_WIDTH = 2;
 
 static int32_t RequestDataCallback(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
@@ -149,13 +149,8 @@ static int32_t RequestDataCallbackCustomSize(void* userData, const void** outInp
 static int32_t ReadFileCallback(void* userData, const void** outInputData,
     OH_AudioConverter_InputStatus* outStatus)
 {
-    // 使用 thread_local 替代 static，解决多线程竞争问题
-    // 在单线程环境下行为与 static 完全一致
     thread_local uint8_t fileBuffer[FILE_BUFFER_SIZE];
     
-    // 兼容性处理：如果提供了 userData，使用它；否则使用全局变量
-    // 多线程测试通过 userData 传递线程专属的文件指针
-    // 单线程测试可以继续使用全局 g_inputFile
     FILE* inputFile = (userData != nullptr) ?
                      static_cast<FILE*>(userData) : g_inputFile;
     
@@ -184,20 +179,20 @@ struct MD5Context {
     uint8_t buffer[MD5_BLOCK_SIZE];
 };
 
-static void MD5Init(MD5Context* ctx);
-static void MD5Update(MD5Context* ctx, const void* data, size_t len);
-static void MD5Final(uint8_t digest[16], MD5Context* ctx);
-static void MD5Transform(uint32_t state[4], const uint8_t block[64]);
-static void MD5EncodeBits(uint8_t bits[8], const uint32_t count[2]);
-static void MD5EncodeDigest(uint8_t digest[16], const uint32_t state[4]);
-static void MD5ProcessBuffer(MD5Context* ctx, const uint8_t** data, size_t* len, uint32_t originalCount);
-static void MD5DecodeBlock(uint32_t x[16], const uint8_t block[64]);
-static void MD5Round1(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
-static void MD5Round2(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
-static void MD5Round3(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
-static void MD5Round4(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashInit(MD5Context* ctx);
+static void BinHashUpdate(MD5Context* ctx, const void* data, size_t len);
+static void BinHashFinal(uint8_t digest[16], MD5Context* ctx);
+static void BinHashTransform(uint32_t state[4], const uint8_t block[64]);
+static void BinHashEncodeBits(uint8_t bits[8], const uint32_t count[2]);
+static void BinHashEncodeDigest(uint8_t digest[16], const uint32_t state[4]);
+static void BinHashProcessBuffer(MD5Context* ctx, const uint8_t** data, size_t* len, uint32_t originalCount);
+static void BinHashDecodeBlock(uint32_t x[16], const uint8_t block[64]);
+static void BinHashRound1(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashRound2(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashRound3(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
+static void BinHashRound4(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16]);
 
-static void MD5Init(MD5Context* ctx)
+static void BinHashInit(MD5Context* ctx)
 {
     int32_t stateTwo = 2;
     int32_t stateThree = 3;
@@ -209,7 +204,7 @@ static void MD5Init(MD5Context* ctx)
     ctx->state[stateThree] = MD5_INIT_STATE_3;
 }
 
-static void MD5EncodeBits(uint8_t bits[MD5_LENGTH_BYTES], const uint32_t count[2])
+static void BinHashEncodeBits(uint8_t bits[MD5_LENGTH_BYTES], const uint32_t count[2])
 {
     int32_t moveTwo = 2;
     int32_t moveThree = 3;
@@ -218,7 +213,7 @@ static void MD5EncodeBits(uint8_t bits[MD5_LENGTH_BYTES], const uint32_t count[2
     }
 }
 
-static void MD5EncodeDigest(uint8_t digest[MD5_DIGEST_SIZE], const uint32_t state[MD5_STATE_SIZE])
+static void BinHashEncodeDigest(uint8_t digest[MD5_DIGEST_SIZE], const uint32_t state[MD5_STATE_SIZE])
 {
     int32_t moveRightTwo = 2;
     int32_t moveThree = 3;
@@ -227,7 +222,7 @@ static void MD5EncodeDigest(uint8_t digest[MD5_DIGEST_SIZE], const uint32_t stat
     }
 }
 
-static void MD5ProcessBuffer(MD5Context* ctx, const uint8_t** data, size_t* len, uint32_t originalCount)
+static void BinHashProcessBuffer(MD5Context* ctx, const uint8_t** data, size_t* len, uint32_t originalCount)
 {
     uint8_t* p = ctx->buffer + ((originalCount >> 3) & (MD5_BLOCK_SIZE - 1));
     size_t remaining = MD5_BLOCK_SIZE - ((originalCount >> 3) & (MD5_BLOCK_SIZE - 1));
@@ -237,12 +232,12 @@ static void MD5ProcessBuffer(MD5Context* ctx, const uint8_t** data, size_t* len,
         return;
     }
     std::copy(*data, *data + remaining, p);
-    MD5Transform(ctx->state, ctx->buffer);
+    BinHashTransform(ctx->state, ctx->buffer);
     *data += remaining;
     *len -= remaining;
 }
 
-static void MD5Update(MD5Context* ctx, const void* data, size_t len)
+static void BinHashUpdate(MD5Context* ctx, const void* data, size_t len)
 {
     const uint8_t* bytes = static_cast<const uint8_t*>(data);
     uint32_t i = ctx->count[0];
@@ -253,11 +248,11 @@ static void MD5Update(MD5Context* ctx, const void* data, size_t len)
     ctx->count[1] += static_cast<uint32_t>(len >> (MD5_BITS_PER_WORD - MD5_BITS_LEFT_BYTE));
 
     if ((i >> moveRight) & (MD5_BLOCK_SIZE - 1)) {
-        MD5ProcessBuffer(ctx, &bytes, &len, i);
+        BinHashProcessBuffer(ctx, &bytes, &len, i);
     }
 
     while (len >= MD5_BLOCK_SIZE) {
-        MD5Transform(ctx->state, bytes);
+        BinHashTransform(ctx->state, bytes);
         bytes += MD5_BLOCK_SIZE;
         len -= MD5_BLOCK_SIZE;
     }
@@ -265,12 +260,12 @@ static void MD5Update(MD5Context* ctx, const void* data, size_t len)
     std::copy(bytes, bytes + len, ctx->buffer);
 }
 
-static void MD5Final(uint8_t digest[MD5_DIGEST_SIZE], MD5Context* ctx)
+static void BinHashFinal(uint8_t digest[MD5_DIGEST_SIZE], MD5Context* ctx)
 {
     uint8_t bits[MD5_LENGTH_BYTES];
     size_t padLen;
 
-    MD5EncodeBits(bits, ctx->count);
+    BinHashEncodeBits(bits, ctx->count);
     int32_t moveOne = 1;
     int32_t moveThree = 3;
     padLen = MD5_BLOCK_SIZE - ((ctx->count[0] >> moveThree) & (MD5_BLOCK_SIZE - moveOne));
@@ -279,10 +274,10 @@ static void MD5Final(uint8_t digest[MD5_DIGEST_SIZE], MD5Context* ctx)
     }
 
     static const uint8_t padding[MD5_BLOCK_SIZE] = { MD5_PADDING_BYTE };
-    MD5Update(ctx, padding, padLen - MD5_LENGTH_BYTES);
-    MD5Update(ctx, bits, MD5_LENGTH_BYTES);
+    BinHashUpdate(ctx, padding, padLen - MD5_LENGTH_BYTES);
+    BinHashUpdate(ctx, bits, MD5_LENGTH_BYTES);
 
-    MD5EncodeDigest(digest, ctx->state);
+    BinHashEncodeDigest(digest, ctx->state);
     memset_s(ctx, sizeof(*ctx), 0, sizeof(*ctx));
 }
 
@@ -294,61 +289,61 @@ struct MD5OpParams {
 };
 
 // MD5 helper functions (replacing macros)
-static inline uint32_t MD5_F(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHash_F(uint32_t x, uint32_t y, uint32_t z)
 {
     return (x & y) | (~x & z);
 }
 
-static inline uint32_t MD5_G(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHash_G(uint32_t x, uint32_t y, uint32_t z)
 {
     return (x & z) | (y & ~z);
 }
 
-static inline uint32_t MD5_H(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHash_H(uint32_t x, uint32_t y, uint32_t z)
 {
     return x ^ y ^ z;
 }
 
-static inline uint32_t MD5_I(uint32_t x, uint32_t y, uint32_t z)
+static inline uint32_t BinHash_I(uint32_t x, uint32_t y, uint32_t z)
 {
     return y ^ (x | ~z);
 }
 
-static inline uint32_t MD5_RotateLeft(uint32_t x, int n)
+static inline uint32_t BinHash_RotateLeft(uint32_t x, int n)
 {
     return (x << n) | (x >> (MD5_BITS_PER_WORD - n));
 }
 
-static inline void MD5_FF(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHash_FF(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += MD5_F(b, c, d) + params.x + params.ac;
-    a = MD5_RotateLeft(a, params.s);
+    a += BinHash_F(b, c, d) + params.x + params.ac;
+    a = BinHash_RotateLeft(a, params.s);
     a += b;
 }
 
-static inline void MD5_GG(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHash_GG(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += MD5_G(b, c, d) + params.x + params.ac;
-    a = MD5_RotateLeft(a, params.s);
+    a += BinHash_G(b, c, d) + params.x + params.ac;
+    a = BinHash_RotateLeft(a, params.s);
     a += b;
 }
 
-static inline void MD5_HH(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHash_HH(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += MD5_H(b, c, d) + params.x + params.ac;
-    a = MD5_RotateLeft(a, params.s);
+    a += BinHash_H(b, c, d) + params.x + params.ac;
+    a = BinHash_RotateLeft(a, params.s);
     a += b;
 }
 
-static inline void MD5_II(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
+static inline void BinHash_II(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, const MD5OpParams& params)
 {
-    a += MD5_I(b, c, d) + params.x + params.ac;
-    a = MD5_RotateLeft(a, params.s);
+    a += BinHash_I(b, c, d) + params.x + params.ac;
+    a = BinHash_RotateLeft(a, params.s);
     a += b;
 }
 
 
-static void MD5DecodeBlock(uint32_t x[MD5_WORD_COUNT], const uint8_t block[MD5_BLOCK_SIZE])
+static void BinHashDecodeBlock(uint32_t x[MD5_WORD_COUNT], const uint8_t block[MD5_BLOCK_SIZE])
 {
     int32_t moveOne = 1;
     int32_t moveTwo = 2;
@@ -361,87 +356,87 @@ static void MD5DecodeBlock(uint32_t x[MD5_WORD_COUNT], const uint8_t block[MD5_B
     }
 }
 
-static void MD5Round1(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRound1(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    MD5_FF(a, b, c, d, {x[0], 7, 0xD76AA478});
-    MD5_FF(d, a, b, c, {x[1], 12, 0xE8C7B756});
-    MD5_FF(c, d, a, b, {x[2], 17, 0x242070DB});
-    MD5_FF(b, c, d, a, {x[3], 22, 0xC1BDCEEE});
-    MD5_FF(a, b, c, d, {x[4], 7, 0xF57C0FAF});
-    MD5_FF(d, a, b, c, {x[5], 12, 0x4787C62A});
-    MD5_FF(c, d, a, b, {x[6], 17, 0xA8304613});
-    MD5_FF(b, c, d, a, {x[7], 22, 0xFD469501});
-    MD5_FF(a, b, c, d, {x[8], 7, 0x698098D8});
-    MD5_FF(d, a, b, c, {x[9], 12, 0x8B44F7AF});
-    MD5_FF(c, d, a, b, {x[10], 17, 0xFFFF5BB1});
-    MD5_FF(b, c, d, a, {x[11], 22, 0x895CD7BE});
-    MD5_FF(a, b, c, d, {x[12], 7, 0x6B901122});
-    MD5_FF(d, a, b, c, {x[13], 12, 0xFD987193});
-    MD5_FF(c, d, a, b, {x[14], 17, 0xA679438E});
-    MD5_FF(b, c, d, a, {x[15], 22, 0x49B40821});
+    BinHash_FF(a, b, c, d, {x[0], 7, 0xD76AA478});
+    BinHash_FF(d, a, b, c, {x[1], 12, 0xE8C7B756});
+    BinHash_FF(c, d, a, b, {x[2], 17, 0x242070DB});
+    BinHash_FF(b, c, d, a, {x[3], 22, 0xC1BDCEEE});
+    BinHash_FF(a, b, c, d, {x[4], 7, 0xF57C0FAF});
+    BinHash_FF(d, a, b, c, {x[5], 12, 0x4787C62A});
+    BinHash_FF(c, d, a, b, {x[6], 17, 0xA8304613});
+    BinHash_FF(b, c, d, a, {x[7], 22, 0xFD469501});
+    BinHash_FF(a, b, c, d, {x[8], 7, 0x698098D8});
+    BinHash_FF(d, a, b, c, {x[9], 12, 0x8B44F7AF});
+    BinHash_FF(c, d, a, b, {x[10], 17, 0xFFFF5BB1});
+    BinHash_FF(b, c, d, a, {x[11], 22, 0x895CD7BE});
+    BinHash_FF(a, b, c, d, {x[12], 7, 0x6B901122});
+    BinHash_FF(d, a, b, c, {x[13], 12, 0xFD987193});
+    BinHash_FF(c, d, a, b, {x[14], 17, 0xA679438E});
+    BinHash_FF(b, c, d, a, {x[15], 22, 0x49B40821});
 }
 
-static void MD5Round2(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRound2(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    MD5_GG(a, b, c, d, {x[1], 5, 0xF61E2562});
-    MD5_GG(d, a, b, c, {x[6], 9, 0xC040B340});
-    MD5_GG(c, d, a, b, {x[11], 14, 0x265E5A51});
-    MD5_GG(b, c, d, a, {x[0], 20, 0xE9B6C7AA});
-    MD5_GG(a, b, c, d, {x[5], 5, 0xD62F105D});
-    MD5_GG(d, a, b, c, {x[10], 9, 0x02441453});
-    MD5_GG(c, d, a, b, {x[15], 14, 0xD8A1E681});
-    MD5_GG(b, c, d, a, {x[4], 20, 0xE7D3FBC8});
-    MD5_GG(a, b, c, d, {x[9], 5, 0x21E1CDE6});
-    MD5_GG(d, a, b, c, {x[14], 9, 0xC33707D6});
-    MD5_GG(c, d, a, b, {x[3], 14, 0xF4D50D87});
-    MD5_GG(b, c, d, a, {x[8], 20, 0x455A14ED});
-    MD5_GG(a, b, c, d, {x[13], 5, 0xA9E3E905});
-    MD5_GG(d, a, b, c, {x[2], 9, 0xFCEFA3F8});
-    MD5_GG(c, d, a, b, {x[7], 14, 0x676F02D9});
-    MD5_GG(b, c, d, a, {x[12], 20, 0x8D2A4C8A});
+    BinHash_GG(a, b, c, d, {x[1], 5, 0xF61E2562});
+    BinHash_GG(d, a, b, c, {x[6], 9, 0xC040B340});
+    BinHash_GG(c, d, a, b, {x[11], 14, 0x265E5A51});
+    BinHash_GG(b, c, d, a, {x[0], 20, 0xE9B6C7AA});
+    BinHash_GG(a, b, c, d, {x[5], 5, 0xD62F105D});
+    BinHash_GG(d, a, b, c, {x[10], 9, 0x02441453});
+    BinHash_GG(c, d, a, b, {x[15], 14, 0xD8A1E681});
+    BinHash_GG(b, c, d, a, {x[4], 20, 0xE7D3FBC8});
+    BinHash_GG(a, b, c, d, {x[9], 5, 0x21E1CDE6});
+    BinHash_GG(d, a, b, c, {x[14], 9, 0xC33707D6});
+    BinHash_GG(c, d, a, b, {x[3], 14, 0xF4D50D87});
+    BinHash_GG(b, c, d, a, {x[8], 20, 0x455A14ED});
+    BinHash_GG(a, b, c, d, {x[13], 5, 0xA9E3E905});
+    BinHash_GG(d, a, b, c, {x[2], 9, 0xFCEFA3F8});
+    BinHash_GG(c, d, a, b, {x[7], 14, 0x676F02D9});
+    BinHash_GG(b, c, d, a, {x[12], 20, 0x8D2A4C8A});
 }
 
-static void MD5Round3(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRound3(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    MD5_HH(a, b, c, d, {x[5], 4, 0xFFFA3942});
-    MD5_HH(d, a, b, c, {x[8], 11, 0x8771F681});
-    MD5_HH(c, d, a, b, {x[11], 16, 0x6D9D6122});
-    MD5_HH(b, c, d, a, {x[14], 23, 0xFDE5380C});
-    MD5_HH(a, b, c, d, {x[1], 4, 0xA4BEEA44});
-    MD5_HH(d, a, b, c, {x[4], 11, 0x4BDECFA9});
-    MD5_HH(c, d, a, b, {x[7], 16, 0xF6BB4B60});
-    MD5_HH(b, c, d, a, {x[10], 23, 0xBEBFBC70});
-    MD5_HH(a, b, c, d, {x[13], 4, 0x289B7EC6});
-    MD5_HH(d, a, b, c, {x[0], 11, 0xEAA127FA});
-    MD5_HH(c, d, a, b, {x[3], 16, 0xD4EF3085});
-    MD5_HH(b, c, d, a, {x[6], 23, 0x04881D05});
-    MD5_HH(a, b, c, d, {x[9], 4, 0xD9D4D039});
-    MD5_HH(d, a, b, c, {x[12], 11, 0xE6DB99E5});
-    MD5_HH(c, d, a, b, {x[15], 16, 0x1FA27CF8});
-    MD5_HH(b, c, d, a, {x[2], 23, 0xC4AC5665});
+    BinHash_HH(a, b, c, d, {x[5], 4, 0xFFFA3942});
+    BinHash_HH(d, a, b, c, {x[8], 11, 0x8771F681});
+    BinHash_HH(c, d, a, b, {x[11], 16, 0x6D9D6122});
+    BinHash_HH(b, c, d, a, {x[14], 23, 0xFDE5380C});
+    BinHash_HH(a, b, c, d, {x[1], 4, 0xA4BEEA44});
+    BinHash_HH(d, a, b, c, {x[4], 11, 0x4BDECFA9});
+    BinHash_HH(c, d, a, b, {x[7], 16, 0xF6BB4B60});
+    BinHash_HH(b, c, d, a, {x[10], 23, 0xBEBFBC70});
+    BinHash_HH(a, b, c, d, {x[13], 4, 0x289B7EC6});
+    BinHash_HH(d, a, b, c, {x[0], 11, 0xEAA127FA});
+    BinHash_HH(c, d, a, b, {x[3], 16, 0xD4EF3085});
+    BinHash_HH(b, c, d, a, {x[6], 23, 0x04881D05});
+    BinHash_HH(a, b, c, d, {x[9], 4, 0xD9D4D039});
+    BinHash_HH(d, a, b, c, {x[12], 11, 0xE6DB99E5});
+    BinHash_HH(c, d, a, b, {x[15], 16, 0x1FA27CF8});
+    BinHash_HH(b, c, d, a, {x[2], 23, 0xC4AC5665});
 }
 
-static void MD5Round4(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
+static void BinHashRound4(uint32_t& a, uint32_t& b, uint32_t& c, uint32_t& d, const uint32_t x[16])
 {
-    MD5_II(a, b, c, d, {x[0], 6, 0xF4292244});
-    MD5_II(d, a, b, c, {x[7], 10, 0x432AFF97});
-    MD5_II(c, d, a, b, {x[14], 15, 0xAB9423A7});
-    MD5_II(b, c, d, a, {x[5], 21, 0xFC93A039});
-    MD5_II(a, b, c, d, {x[12], 6, 0x655B59C3});
-    MD5_II(d, a, b, c, {x[3], 10, 0x8F0CCC92});
-    MD5_II(c, d, a, b, {x[10], 15, 0xFFEFF47D});
-    MD5_II(b, c, d, a, {x[1], 21, 0x85845DD1});
-    MD5_II(a, b, c, d, {x[8], 6, 0x6FA87E4F});
-    MD5_II(d, a, b, c, {x[15], 10, 0xFE2CE6E0});
-    MD5_II(c, d, a, b, {x[6], 15, 0xA3014314});
-    MD5_II(b, c, d, a, {x[13], 21, 0x4E0811A1});
-    MD5_II(a, b, c, d, {x[4], 6, 0xF7537E82});
-    MD5_II(d, a, b, c, {x[11], 10, 0xBD3AF235});
-    MD5_II(c, d, a, b, {x[2], 15, 0x2AD7D2BB});
-    MD5_II(b, c, d, a, {x[9], 21, 0xEB86D391});
+    BinHash_II(a, b, c, d, {x[0], 6, 0xF4292244});
+    BinHash_II(d, a, b, c, {x[7], 10, 0x432AFF97});
+    BinHash_II(c, d, a, b, {x[14], 15, 0xAB9423A7});
+    BinHash_II(b, c, d, a, {x[5], 21, 0xFC93A039});
+    BinHash_II(a, b, c, d, {x[12], 6, 0x655B59C3});
+    BinHash_II(d, a, b, c, {x[3], 10, 0x8F0CCC92});
+    BinHash_II(c, d, a, b, {x[10], 15, 0xFFEFF47D});
+    BinHash_II(b, c, d, a, {x[1], 21, 0x85845DD1});
+    BinHash_II(a, b, c, d, {x[8], 6, 0x6FA87E4F});
+    BinHash_II(d, a, b, c, {x[15], 10, 0xFE2CE6E0});
+    BinHash_II(c, d, a, b, {x[6], 15, 0xA3014314});
+    BinHash_II(b, c, d, a, {x[13], 21, 0x4E0811A1});
+    BinHash_II(a, b, c, d, {x[4], 6, 0xF7537E82});
+    BinHash_II(d, a, b, c, {x[11], 10, 0xBD3AF235});
+    BinHash_II(c, d, a, b, {x[2], 15, 0x2AD7D2BB});
+    BinHash_II(b, c, d, a, {x[9], 21, 0xEB86D391});
 }
 
-static void MD5Transform(uint32_t state[4], const uint8_t block[64])
+static void BinHashTransform(uint32_t state[4], const uint8_t block[64])
 {
     uint32_t a = state[0];
     uint32_t b = state[1];
@@ -449,11 +444,11 @@ static void MD5Transform(uint32_t state[4], const uint8_t block[64])
     uint32_t d = state[3];
     uint32_t x[16];
 
-    MD5DecodeBlock(x, block);
-    MD5Round1(a, b, c, d, x);
-    MD5Round2(a, b, c, d, x);
-    MD5Round3(a, b, c, d, x);
-    MD5Round4(a, b, c, d, x);
+    BinHashDecodeBlock(x, block);
+    BinHashRound1(a, b, c, d, x);
+    BinHashRound2(a, b, c, d, x);
+    BinHashRound3(a, b, c, d, x);
+    BinHashRound4(a, b, c, d, x);
 
     state[STATE_A_INDEX] += a;
     state[STATE_B_INDEX] += b;
@@ -461,7 +456,7 @@ static void MD5Transform(uint32_t state[4], const uint8_t block[64])
     state[STATE_D_INDEX] += d;
 }
 
-static std::string CalculateMD5(const std::string& filePath)
+static std::string CalculateBinHash(const std::string& filePath)
 {
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
@@ -469,21 +464,21 @@ static std::string CalculateMD5(const std::string& filePath)
     }
 
     MD5Context ctx;
-    MD5Init(&ctx);
+    BinHashInit(&ctx);
 
     char buffer[8192];
     while (file) {
         file.read(buffer, sizeof(buffer));
-        MD5Update(&ctx, buffer, file.gcount());
+        BinHashUpdate(&ctx, buffer, file.gcount());
     }
 
     int32_t digestCount = 16;
     uint8_t digest[digestCount];
-    MD5Final(digest, &ctx);
+    BinHashFinal(digest, &ctx);
 
     std::stringstream ss;
     for (int i = 0; i < digestCount; i++) {
-        ss << std::hex << std::setw(Byte_Width) << std::setfill('0') << static_cast<int>(digest[i]);
+        ss << std::hex << std::setw(BYTE_WIDTH) << std::setfill('0') << static_cast<int>(digest[i]);
     }
 
     file.close();
@@ -492,15 +487,15 @@ static std::string CalculateMD5(const std::string& filePath)
 
 static void CompareOutputWithReference(const std::string& outputFilePath, const std::string& compareFilePath)
 {
-    std::string outputMd5 = CalculateMD5(outputFilePath);
-    // std::string compareMd5 = CalculateMD5(compareFilePath);
+    std::string outputMd5 = CalculateBinHash(outputFilePath);
+    // std::string compareMd5 = CalculateBinHash(compareFilePath);
 
-    // ASSERT_FALSE(outputMd5.empty()) << "Failed to calculate MD5 for output file: " << outputFilePath;
-    // ASSERT_FALSE(compareMd5.empty()) << "Failed to calculate MD5 for compare file: " << compareFilePath;
+    // ASSERT_FALSE(outputMd5.empty()) << "Failed to calculate BinHash for output file: " << outputFilePath;
+    // ASSERT_FALSE(compareMd5.empty()) << "Failed to calculate BinHash for compare file: " << compareFilePath;
 
-    // AUDIO_INFO_LOG("Output file MD5: %{public}s", outputMd5.c_str());
-    // AUDIO_INFO_LOG("Compare file MD5: %{public}s", compareMd5.c_str());
-    // std::cout<<compareFilePath<<"Compare file MD5:"<<compareMd5.c_str()<<std::endl;
+    // AUDIO_INFO_LOG("Output file BinHash: %{public}s", outputMd5.c_str());
+    // AUDIO_INFO_LOG("Compare file BinHash: %{public}s", compareMd5.c_str());
+    // std::cout<<compareFilePath<<"Compare file BinHash:"<<compareMd5.c_str()<<std::endl;
 
     EXPECT_EQ(outputMd5.empty(), false);
     EXPECT_EQ(outputMd5, compareFilePath);
@@ -521,7 +516,7 @@ struct OHConverterTestInfo {
 static const std::string CONVERTER_TEST_DIR = "/data/audiosuite/converter/";
 
 static OHConverterTestInfo g_converterTestCases[] = {
-    {"in_converter_44100_2_s16le.pcm", "converterOut1.pcm", "9f68a71725ac44ff52edf8c40babdf4f",
+    {"in_converter_44100_2_s16le.pcm", "converterOut1.pcm", "faf42c578e910af946577a3a13b9fd96",
         OH_Audio_SampleRate::SAMPLE_RATE_44100, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE,
         OH_Audio_SampleRate::SAMPLE_RATE_11025, OH_AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
@@ -597,11 +592,16 @@ static OHConverterTestInfo g_converterTestCases[] = {
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE,
         OH_Audio_SampleRate::SAMPLE_RATE_48000, OH_AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE},
-    {"ch_in_011.pcm", "ch_out_011.pcm", "b853cef4732fb12807f9eb35263a84d2",
+    {"ch_in_011.pcm", "ch_out_011.pcm", "d370b791c57fa092b717a5dae7a36f5d",
         OH_Audio_SampleRate::SAMPLE_RATE_44100, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE,
         OH_Audio_SampleRate::SAMPLE_RATE_22050, OH_AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE},
+    {"ch_in_012.pcm", "ch_out_012.pcm", "0ff6ab66962f2f55a3ef956f1183d9e9",
+        OH_Audio_SampleRate::SAMPLE_RATE_22050, OH_AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE,
+        OH_Audio_SampleRate::SAMPLE_RATE_44100, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE},
 };
 
 static void SetupInputFormat(OH_AudioConverter_Format& format, const OHConverterTestInfo& info)
@@ -2287,6 +2287,33 @@ static int32_t RequestDataCallbackMultithread(void* userData, const void** outIn
     return DEFAULT_BUFFER_SIZE;
 }
 
+// 单个线程的创建/销毁测试任务（用于 Multithread_002）
+static void ThreadCreateDestroyTask(int iterations)
+{
+    for (int j = 0; j < iterations; j++) {
+        OH_AudioConverter_Format inputFormat;
+        inputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+        inputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
+        inputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
+        inputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
+
+        OH_AudioConverter_Format outputFormat;
+        outputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
+        outputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
+        outputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_MONO;
+        outputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
+
+        OH_AudioConverter* converter = nullptr;
+        OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
+        if (ret == AUDIOCONVERTER_SUCCESS && converter != nullptr) {
+            OH_AudioConverter_Destroy(converter);
+            g_mtSuccessCount++;
+        } else {
+            g_mtFailCount++;
+        }
+    }
+}
+
 // 单个线程的测试任务
 static void ThreadTestTask(int threadId, int iterations)
 {
@@ -2363,39 +2390,20 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Multithread_002, TestSize.Level
 {
     g_mtSuccessCount = 0;
     g_mtFailCount = 0;
+
     const int numThreads = 8;
     const int iterations = 20;
+
     std::vector<std::thread> threads;
+
     for (int i = 0; i < numThreads; i++) {
-        threads.emplace_back([]() {
-            for (int j = 0; j < iterations; j++) {
-                OH_AudioConverter_Format inputFormat;
-                inputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-                inputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_44100;
-                inputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_STEREO;
-                inputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE;
-
-                OH_AudioConverter_Format outputFormat;
-                outputFormat.encodingType = OH_Audio_EncodingType::AUDIO_ENCODING_TYPE_RAW;
-                outputFormat.samplingRate = OH_Audio_SampleRate::SAMPLE_RATE_48000;
-                outputFormat.channelLayout = OH_AudioChannelLayout::CH_LAYOUT_MONO;
-                outputFormat.sampleFormat = OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE;
-
-                OH_AudioConverter* converter = nullptr;
-                OH_AudioConverter_Result ret = OH_AudioConverter_Create(&inputFormat, &outputFormat, &converter);
-
-                if (ret == AUDIOCONVERTER_SUCCESS && converter != nullptr) {
-                    OH_AudioConverter_Destroy(converter);
-                    g_mtSuccessCount++;
-                } else {
-                    g_mtFailCount++;
-                }
-            }
-        });
+        threads.emplace_back(ThreadCreateDestroyTask, iterations);
     }
+
     for (auto& thread : threads) {
         thread.join();
     }
+
     EXPECT_EQ(g_mtSuccessCount, numThreads * iterations);
     EXPECT_EQ(g_mtFailCount, 0);
 }
@@ -2417,11 +2425,9 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Multithread_003, TestSize.Level
     // 每个线程处理不同的测试用例
     for (int i = 0; i < numThreads; i++) {
         threads.emplace_back([i]() {
-            // 确保每个线程使用不同的测试用例索引
             size_t testCaseIdx = i % (sizeof(g_converterTestCases) / sizeof(g_converterTestCases[0]));
             const OHConverterTestInfo& info = g_converterTestCases[testCaseIdx];
 
-            // 执行实际的音频文件转换测试
             bool success = RunOHConverterTest(info);
 
             if (success) {
