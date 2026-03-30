@@ -1370,7 +1370,6 @@ static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
     delete[] argv;
     return napiValue;
 }
-int64_t g_userData;
 
 // AudioConverter C callback function - called by converter engine
 static int32_t AudioConverterRequestDataCallback(void *userData, const void **outInputData,
@@ -1452,7 +1451,7 @@ static napi_status CreateThreadSafeConverterCallback(napi_env env)
 static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_info info)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "OH_AudioConverter_SetInputCallback start");
-    size_t argc = 3;
+    size_t argc = 2;
     napi_value *argv = new napi_value[argc];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
@@ -1465,16 +1464,6 @@ static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_inf
         return nullptr;
     }
     OH_AudioConverter *converter = reinterpret_cast<OH_AudioConverter *>(converterHandle);
-
-    // Parse userData
-    int64_t userData = 0;
-    status = napi_get_value_int64(env, argv[INDEXTWO], &userData);
-    if (status != napi_ok) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse userData failed");
-        delete[] argv;
-        return nullptr;
-    }
-    g_userData = userData;
 
     // Release previous callback
     ReleasePreviousConverterCallback(env);
@@ -2074,11 +2063,11 @@ static napi_value Init(napi_env env, napi_value exports)
         {"setEqualizerMode", nullptr, SetEqualizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setEqualizerFrequencyBandGains", nullptr, SetEqualizerFrequencyBandGains, nullptr, nullptr, nullptr,
          napi_default, nullptr},
-        {"ohAudioConverterCreate", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"ohAudioConverterSetInputCallback", nullptr, AudioConverterSetInputCallback, nullptr, nullptr, nullptr,
+        {"audioConverterCreate", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioConverterSetInputCallback", nullptr, AudioConverterSetInputCallback, nullptr, nullptr, nullptr,
          napi_default, nullptr},
-        {"ohAudioConverterProcess", nullptr, AudioConverterProcess, nullptr, nullptr, nullptr, napi_default, nullptr},
-        {"ohAudioConverterDestroy", nullptr, AudioConverterDestroy, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioConverterProcess", nullptr, AudioConverterProcess, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioConverterDestroy", nullptr, AudioConverterDestroy, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"saveConverterFile", nullptr, SaveConverterFile, nullptr, nullptr, nullptr, napi_default, nullptr}
     };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
