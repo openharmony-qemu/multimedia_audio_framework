@@ -447,7 +447,7 @@ void AudioPolicyServerCheckCanMuteVolumeTypeByStepFuzzTest()
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioVolumeType volumeType = AudioVolumeType::STREAM_VOICE_CALL;
     int32_t volumeLevel = GetData<int32_t>();
-    audioPolicyServer->CheckCanMuteVolumeTypeByStep(volumeType, volumeLevel);
+    audioPolicyServer->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(volumeType, volumeLevel);
 }
 
 void AudioPolicyServerGetSystemVolumeInDbFuzzTest()
@@ -521,7 +521,7 @@ void AudioPolicyServerProcUpdateRingerModeForMuteFuzzTest()
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     bool updateRingerMode = true;
     bool mute = true;
-    audioPolicyServer->ProcUpdateRingerModeForMute(updateRingerMode, mute);
+    audioPolicyServer->audioVolumeManager_.ProcUpdateRingerModeForMute(updateRingerMode, mute);
 }
 
 void AudioPolicyServerGetSystemVolumeDbFuzzTest()

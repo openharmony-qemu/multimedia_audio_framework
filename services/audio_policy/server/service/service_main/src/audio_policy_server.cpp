@@ -1469,16 +1469,6 @@ int32_t AudioPolicyServer::IsVolumeUnadjustable(bool &unadjustable)
     return SUCCESS;
 }
 
-bool AudioPolicyServer::CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel)
-{
-    if ((volumeLevel - volumeStep_) == 0 && !VolumeUtils::IsPCVolumeEnable() && (volumeType == STREAM_VOICE_ASSISTANT
-        || volumeType == STREAM_VOICE_CALL || volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY ||
-        volumeType == STREAM_VOICE_COMMUNICATION)) {
-        return false;
-    }
-    return true;
-}
-
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::AdjustVolumeByStep(int32_t adjustTypeIn)
 {
@@ -1518,7 +1508,7 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(int32_t adjustTypeIn)
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
         volumeLevelInInt = volumeLevelInInt + volumeStep_;
     } else {
-        if (!CheckCanMuteVolumeTypeByStep(streamInFocus, volumeLevelInInt)) {
+        if (!audioVolumeManager_.CheckCanMuteVolumeTypeByStep(streamInFocus, volumeLevelInInt)) {
             // This type can not set to mute, but don't return error
             AUDIO_INFO_LOG("SetSystemVolumeLevel this type can not set mute");
             return SUCCESS;
@@ -1564,7 +1554,7 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(int32_t volumeTypeIn, int32_
         CHECK_AND_RETURN_RET_LOG(volumeLevelInInt < maxRet, ERR_OPERATION_FAILED, "volumeLevelInInt is biggest");
         volumeLevelInInt = volumeLevelInInt + volumeStep_;
     } else {
-        if (!CheckCanMuteVolumeTypeByStep(volumeType, volumeLevelInInt)) {
+        if (!audioVolumeManager_.CheckCanMuteVolumeTypeByStep(volumeType, volumeLevelInInt)) {
             // This type can not set to mute, but don't return error
             AUDIO_INFO_LOG("SetSystemVolumeLevel this type can not set mute");
             return SUCCESS;
@@ -1730,24 +1720,10 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
         audioVolumeManager_.SetSystemVolumeLevel(streamType, 1, deviceDesc, zoneId);
     }
-    ProcUpdateRingerModeForMute(updateRingerMode, mute);
+    audioVolumeManager_.ProcUpdateRingerModeForMute(updateRingerMode, mute);
     SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId, previousVolume);
     UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi); // for PC
     return SUCCESS;
-}
-
-void AudioPolicyServer::ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute)
-{
-    if (updateRingerMode) {
-        AudioRingerMode ringerMode = mute ?
-            (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :	RINGER_MODE_NORMAL;
-        if (!supportVibrator_) {
-            AUDIO_INFO_LOG("The device does not support vibration");
-        }
-        AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring mute state", ringerMode);
-        // Update ringer mode but no need to update mute state again.
-        SetRingerModeInternal(ringerMode, true);
-    }
 }
 
 float AudioPolicyServer::GetSystemVolumeDb(AudioStreamType streamType)

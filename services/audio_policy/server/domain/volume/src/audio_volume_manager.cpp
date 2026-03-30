@@ -144,6 +144,8 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
     }
 #endif
     supportVibrator_ = system::GetBoolParameter("const.vibrator.support_vibrator", true);
+    volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
+    AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
     return true;
 }
 void AudioVolumeManager::DeInit(void)
@@ -2333,6 +2335,30 @@ int32_t AudioVolumeManager::SetAudioZoneVolumeConfig(const std::string &zoneName
 void AudioVolumeManager::TriggerAudioZoneVolumeSync(int32_t zoneId)
 {
     audioPolicyManager_.TriggerAudioZoneVolumeSync(zoneId);
+}
+
+void AudioVolumeManager::ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute)
+{
+    if (updateRingerMode) {
+        AudioRingerMode ringerMode = mute ?
+            (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :	RINGER_MODE_NORMAL;
+        if (!supportVibrator_) {
+            AUDIO_INFO_LOG("The device does not support vibration");
+        }
+        AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring mute state", ringerMode);
+        // Update ringer mode but no need to update mute state again.
+        SetRingerMode(ringerMode, true);
+    }
+}
+
+bool AudioVolumeManager::CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel)
+{
+    if ((volumeLevel - volumeStep_) == 0 && !VolumeUtils::IsPCVolumeEnable() && (volumeType == STREAM_VOICE_ASSISTANT
+        || volumeType == STREAM_VOICE_CALL || volumeType == STREAM_ALARM || volumeType == STREAM_ACCESSIBILITY ||
+        volumeType == STREAM_VOICE_COMMUNICATION)) {
+        return false;
+    }
+    return true;
 }
 }
 }

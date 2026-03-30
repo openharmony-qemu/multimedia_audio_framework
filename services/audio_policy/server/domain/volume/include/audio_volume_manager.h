@@ -205,6 +205,8 @@ public:
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs);
     void TriggerAudioZoneVolumeSync(int32_t zoneId);
+    void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
+    bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -268,6 +270,7 @@ private:
     std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
     bool supportVibrator_ = false;
+    int32_t volumeStep_ = 1;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
     int64_t activeSafeTimeBt_ = 0;
