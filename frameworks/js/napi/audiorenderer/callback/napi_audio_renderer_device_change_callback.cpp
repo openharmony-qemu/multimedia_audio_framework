@@ -337,7 +337,7 @@ void NapiAudioRendererOutputDeviceChangeWithInfoCallback::OnJsCallbackOutputDevi
     
     napi_value jsCallback = nullptr;
     napi_status status = napi_get_reference_value(env_, method, &jsCallback);
-    CHECK_AND_RETURN_LOG(status == napi_ok && jscallback != nullptr, "callback get reference value fail");
+    CHECK_AND_RETURN_LOG(status == napi_ok && jsCallback != nullptr, "callback get reference value fail");
     napi_ref newCallbackRef = nullptr;
     const int32_t refCount = 1;
     status = napi_create_reference(env_, jsCallback, refCount, &newCallbackRef);
