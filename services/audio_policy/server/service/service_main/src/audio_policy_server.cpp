@@ -1375,7 +1375,7 @@ int32_t AudioPolicyServer::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
     AUDIO_INFO_LOG("enter");
     int32_t appUid = IPCSkeleton::GetCallingUid();
-    return GetSelfAppVolumeLevelInternal(appUid, volumeLevel);
+    return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid, int32_t &volumeLevel)
@@ -1405,13 +1405,6 @@ int32_t AudioPolicyServer::GetSystemVolumeLevelNoMuteState(AudioStreamType strea
 int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId)
 {
     return audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId);
-}
-
-int32_t AudioPolicyServer::GetSelfAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel)
-{
-    int32_t ret = audioVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
-    AUDIO_DEBUG_LOG("GetSelfAppVolume appUid[%{public}d],volumeLevel[%{public}d]", appUid, volumeLevel);
-    return ret;
 }
 
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
@@ -3222,7 +3215,7 @@ int32_t AudioPolicyServer::RegisterTracker(int32_t modeIn, const AudioStreamChan
     streamChangeInfo.audioRendererChangeInfo.createrUID = callerUid;
     streamChangeInfo.audioCapturerChangeInfo.createrUID = callerUid;
     int appVolume = 0;
-    GetSelfAppVolumeLevelInternal(callerUid, appVolume);
+    audioPolicyManager_.GetAppVolumeLevel(callerUid, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     AUDIO_DEBUG_LOG("RegisterTracker: [caller uid: %{public}d]", callerUid);
     if (callerUid != MEDIA_SERVICE_UID) {
@@ -3266,7 +3259,7 @@ int32_t AudioPolicyServer::UpdateTracker(int32_t modeIn, const AudioStreamChange
         }
     }
     int appVolume = 0;
-    GetSelfAppVolumeLevelInternal(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
+    audioPolicyManager_.GetAppVolumeLevel(streamChangeInfo.audioRendererChangeInfo.clientUID, appVolume);
     streamChangeInfo.audioRendererChangeInfo.appVolume = appVolume;
     int32_t ret = eventEntry_->UpdateTracker(mode, streamChangeInfo);
     if (ret == SUCCESS && mode == AUDIO_MODE_RECORD) {

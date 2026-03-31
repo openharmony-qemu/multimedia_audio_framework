@@ -397,15 +397,6 @@ void AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest()
     audioPolicyServer->GetSystemVolumeLevelInternal(streamInFocus, zoneId);
 }
 
-void AudioPolicyServerGetSelfAppVolumeLevelInternalFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    int32_t appUid = GetData<int32_t>();
-    int32_t volumeLevel = GetData<int32_t>();
-    audioPolicyServer->GetSelfAppVolumeLevelInternal(appUid, volumeLevel);
-}
-
 void AudioPolicyServerSetLowPowerVolumeFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -2074,7 +2065,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetSystemVolumeLevelFuzzTest,
     AudioPolicyServerGetSystemVolumeLevelNoMuteStateFuzzTest,
     AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest,
-    AudioPolicyServerGetSelfAppVolumeLevelInternalFuzzTest,
     AudioPolicyServerSetLowPowerVolumeFuzzTest,
     AudioPolicyServerGetLowPowerVolumeFuzzTest,
     AudioPolicyServerGetSingleStreamVolumeFuzzTest,
