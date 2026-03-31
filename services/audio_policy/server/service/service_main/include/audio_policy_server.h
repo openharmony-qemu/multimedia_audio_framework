@@ -821,7 +821,6 @@ private:
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
         DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId = 0);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);

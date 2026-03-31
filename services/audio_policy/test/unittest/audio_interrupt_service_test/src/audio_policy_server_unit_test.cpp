@@ -3074,8 +3074,8 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_155, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    server->GetSystemVolumeLevelInternal(AudioStreamType::STREAM_ALL);
-    server->GetSystemVolumeLevelInternal(AudioStreamType::STREAM_VOICE_RING);
+    server->audioVolumeManager_.GetSystemVolumeLevelInterface(AudioStreamType::STREAM_ALL);
+    server->audioVolumeManager_.GetSystemVolumeLevelInterface(AudioStreamType::STREAM_VOICE_RING);
 }
 
 /**

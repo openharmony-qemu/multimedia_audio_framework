@@ -657,7 +657,7 @@ void AudioPolicyServer::TriggerMuteCheck()
     if (mutePlay) {
         // print volume info
         AudioStreamType streamInFocus = GetCurrentStreamInFocus();
-        int32_t volume = GetSystemVolumeLevelInternal(VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus));
+        int32_t volume = audioVolumeManager_.GetSystemVolumeLevelInterface(VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus));
         AUDIO_WARNING_LOG("StreamInFocus is [%{public}d], volume is %{public}d", streamInFocus, volume);
     }
 }
@@ -729,7 +729,7 @@ bool AudioPolicyServer::IsScreenOnAdjustVolume()
 int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId,
     const int32_t keyType)
 {
-    int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus, zoneId);
+    int32_t volumeLevelInInt = audioVolumeManager_.GetSystemVolumeLevelInterface(streamInFocus, zoneId);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     if (loudVolumeSupportMode_ != LOUD_VOLUME_NOT_SUPPORT) {
         if (loudVolumeManager_ == nullptr) {
@@ -1393,13 +1393,8 @@ int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid,
         zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     }
 #endif
-    volumeLevel = GetSystemVolumeLevelInternal(newStreamType, zoneId);
+    volumeLevel = audioVolumeManager_.GetSystemVolumeLevelInterface(newStreamType, zoneId);
     return SUCCESS;
-}
-
-int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId)
-{
-    return audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId);
 }
 
 int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
@@ -1460,7 +1455,7 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(int32_t adjustTypeIn)
             return SUCCESS;
         }
     }
-    volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus, zoneId);
+    volumeLevelInInt = audioVolumeManager_.GetSystemVolumeLevelInterface(streamInFocus, zoneId);
     int32_t minRet = -1;
     GetMinVolumeLevel(streamInFocus, minRet);
     int32_t maxRet = -1;
@@ -1506,7 +1501,7 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(int32_t volumeTypeIn, int32_
             return SUCCESS;
         }
     }
-    int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(volumeType);
+    int32_t volumeLevelInInt = audioVolumeManager_.GetSystemVolumeLevelInterface(volumeType);
     int32_t minRet = -1;
     GetMinVolumeLevel(volumeType, minRet);
     int32_t maxRet = -1;
@@ -1617,7 +1612,7 @@ void AudioPolicyServer::UpdateSystemMuteStateAccordingMusicState(AudioStreamType
         // If you STREAM_MUSIC unmute, you need to determine whether the volume is 0
         // if it is 0, the prompt sound will continue to be mute, and if it is not 0
         // you need to synchronize the unmute prompt sound
-        bool isMute = (GetSystemVolumeLevelInternal(STREAM_MUSIC) == 0) ? true : false;
+        bool isMute = (audioVolumeManager_.GetSystemVolumeLevelInterface(STREAM_MUSIC) == 0) ? true : false;
         audioVolumeManager_.SetStreamMute(STREAM_SYSTEM, isMute);
         SendMuteKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, isUpdateUi);
         AUDIO_WARNING_LOG("music is unmute and volume is 0 and need %{public}d system stream", isMute);
@@ -1629,7 +1624,7 @@ void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType stre
 {
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
-    volumeEvent.volume = GetSystemVolumeLevelInternal(streamType, zoneId);
+    volumeEvent.volume = audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId);
     volumeEvent.volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(streamType, zoneId);
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
@@ -1646,7 +1641,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     const DeviceType &deviceType, int32_t zoneId)
 {
     bool updateRingerMode = false;
-    int32_t previousVolume = GetSystemVolumeLevelInternal(streamType, zoneId);
+    int32_t previousVolume = audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId);
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
 
     if ((streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) &&
@@ -1676,7 +1671,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
     }
 
-    if (!mute && GetSystemVolumeLevelInternal(streamType, zoneId) == 0 && !VolumeUtils::IsPCVolumeEnable()) {
+    if (!mute && audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId) == 0 && !VolumeUtils::IsPCVolumeEnable()) {
         // If mute state is set to false but volume is 0, set volume to 1
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
         audioVolumeManager_.SetSystemVolumeLevel(streamType, 1, deviceDesc, zoneId);
@@ -2824,7 +2819,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     if (it != CAN_MIX_MUTED_STREAM.end()) {
         AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
             audioInterrupt.audioFocusType.streamType);
-        int32_t volumeLevel = GetSystemVolumeLevelInternal(streamInFocus);
+        int32_t volumeLevel = audioVolumeManager_.GetSystemVolumeLevelInterface(streamInFocus);
         if (volumeLevel == 0) {
             audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
@@ -3826,7 +3821,7 @@ int32_t AudioPolicyServer::SetA2dpDeviceVolume(const std::string &macAddress, in
     bool updateUi)
 {
     VolumeEvent volumeEvent;
-    volumeEvent.previousVolume = GetSystemVolumeLevelInternal(STREAM_MUSIC, 0);
+    volumeEvent.previousVolume = audioVolumeManager_.GetSystemVolumeLevelInterface(STREAM_MUSIC, 0);
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_BLUETOOTH_SA) {
         AUDIO_ERR_LOG("SetA2dpDeviceVolume: Error caller uid: %{public}d", callerUid);
@@ -4899,7 +4894,7 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
     AUDIO_INFO_LOG("Send VolumeKeyEvent to Rss");
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = STREAM_MUSIC;
-    volumeEvent.volume = GetSystemVolumeLevelInternal(STREAM_MUSIC);
+    volumeEvent.volume = audioVolumeManager_.GetSystemVolumeLevelInterface(STREAM_MUSIC);
     volumeEvent.volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(STREAM_MUSIC);
     volumeEvent.updateUi = false;
     volumeEvent.notifyRssWhenAccountsChange = true;

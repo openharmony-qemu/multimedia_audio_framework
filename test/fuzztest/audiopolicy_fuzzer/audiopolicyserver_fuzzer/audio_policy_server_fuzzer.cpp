@@ -394,7 +394,7 @@ void AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest()
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
     int32_t zoneId = GetData<int32_t>();
-    audioPolicyServer->GetSystemVolumeLevelInternal(streamInFocus, zoneId);
+    audioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelInterface(streamInFocus, zoneId);
 }
 
 void AudioPolicyServerSetLowPowerVolumeFuzzTest()
