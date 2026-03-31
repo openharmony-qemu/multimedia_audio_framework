@@ -552,8 +552,8 @@ void HpaeRendererManager::ConnectInputCluster(uint32_t sessionId, HpaeProcessorT
             sessionId, sceneType);
     }
     std::shared_ptr<HpaeGainNode> sessionGainNode = sceneClusterMap_[sceneType]->GetGainNodeById(sessionId);
-    if (sessionGainNode != nullptr) { 
-        sessionGainNode->ResetVolume(); 
+    if (sessionGainNode != nullptr) {
+        sessionGainNode->ResetVolume();
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
     sinkInputNodeMap_[sessionId]->connectedProcessorType_ =
