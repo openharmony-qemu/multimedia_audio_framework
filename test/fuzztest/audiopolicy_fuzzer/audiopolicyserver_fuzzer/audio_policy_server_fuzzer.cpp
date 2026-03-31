@@ -385,7 +385,7 @@ void AudioPolicyServerGetSystemVolumeLevelNoMuteStateFuzzTest()
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_ALL;
-    audioPolicyServer->GetSystemVolumeLevelNoMuteState(streamInFocus);
+    audioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamInFocus);
 }
 
 void AudioPolicyServerGetSystemVolumeLevelInternalFuzzTest()

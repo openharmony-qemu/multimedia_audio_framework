@@ -1397,11 +1397,6 @@ int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid,
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
-{
-    return audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamType);
-}
-
 int32_t AudioPolicyServer::GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId)
 {
     return audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId);
@@ -1670,7 +1665,7 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
 
     if (volumeType == AudioStreamType::STREAM_SYSTEM &&
         !mute &&
-        (GetSystemVolumeLevelNoMuteState(STREAM_MUSIC) == 0 ||
+        (audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(STREAM_MUSIC) == 0 ||
         audioVolumeManager_.GetStreamMuteInterface(STREAM_MUSIC, zoneId))) {
         // when music type volume is not mute,system type volume can be muted separately.
         // but when trying to mute system type volume while the volume for music type is mute

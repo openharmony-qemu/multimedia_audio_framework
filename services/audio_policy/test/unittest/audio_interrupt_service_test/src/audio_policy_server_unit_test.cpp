@@ -1069,10 +1069,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_042, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
 
     AudioStreamType streamType = STREAM_ALL;
-    int res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    int res = ptrAudioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamType);
     EXPECT_EQ(res, 5);
     streamType = STREAM_MUSIC;
-    res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    res = ptrAudioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamType);
     EXPECT_EQ(res, 5);
 }
 
