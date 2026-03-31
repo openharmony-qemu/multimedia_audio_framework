@@ -47,6 +47,8 @@
 #include "audio_stream_enum.h"
 #include "audio_stream_concurrency_detector.h"
 #include "audio_effect_chain_manager.h"
+#include "app_bundle_manager.h"
+#include "audio_resource_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -58,6 +60,7 @@ namespace {
     static const int32_t NO_FADING = 0;
     static const int32_t DO_FADINGOUT = 1;
     static const int32_t FADING_OUT_DONE = 2;
+    static const int64_t OFFLOAD_COUNT = 7;
     static const float FADINGOUT_BEGIN = 1.0f;
     static const float FADINGOUT_END = 0.0f;
     static constexpr int32_t ONE_MINUTE = 60;
@@ -360,7 +363,8 @@ void RendererInServer::OnStatusUpdateExt(IOperation operation, std::shared_ptr<I
         stateListener->OnOperationHandled(DRAIN_STREAM, 0);
     }
     afterDrain = true;
-    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_,
+        processConfig_.appInfo.appTokenId, processConfig_.appInfo.appPid);
 }
 
 void RendererInServer::HandleOperationStarted()
@@ -438,11 +442,27 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             }
             stateListener->OnOperationHandled(SET_OFFLOAD_ENABLE, operation == OPERATION_SET_OFFLOAD_ENABLE ? 1 : 0);
             break;
+        default:
+            OnStatusUpdateSubs(operation);
+    }
+}
+
+void RendererInServer::OnStatusUpdateSubs(IOperation operation)
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr!");
+    switch (operation) {
         case OPERATION_OFFLOAD_FLUSH_BEGIN:
             HandleIsWriteFirst(true);
             break;
         case OPERATION_OFFLOAD_FLUSH_END:
             HandleIsWriteFirst(false);
+            break;
+        case OFFLOAD_INACTIVE_BACKGROUND_RUNNING:
+            offloadState_ = OFFLOAD_INACTIVE_BACKGROUND_RUNNING;
+            break;
+        case OFFLOAD_ACTIVE_FOREGROUND_RUNNING:
+            offloadState_ = OFFLOAD_ACTIVE_FOREGROUND_RUNNING;
             break;
         default:
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
@@ -526,8 +546,23 @@ void RendererInServer::StandByCheck()
     }
 }
 
+void RendererInServer::ReportExceptionForOffload()
+{
+    std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", processConfig_.streamType);
+    bean->Add("TYPE", TYPE_OFFLOAD_NOT_ENOUGH_DATA);
+    AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
+        appName.c_str(), processConfig_.streamType, TYPE_OFFLOAD_NOT_ENOUGH_DATA);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 bool RendererInServer::ShouldEnableStandBy()
 {
+    uint32_t offloadStanby_ = 20;
     int64_t timeCost = ClockTime::GetCurNano() - lastWriteTime_;
     uint32_t maxStandByCounter = 50; // for 20ms, 50 * 20 = 1000ms
     int64_t timeLimit = 1000000000; // 1s
@@ -535,6 +570,12 @@ bool RendererInServer::ShouldEnableStandBy()
         maxStandByCounter = 400; // for 20ms, 50 * 400 = 8000ms
         timeLimit = 8 * AUDIO_NS_PER_SECOND; // for 20ms 8s
     }
+    if (offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING && standByCounter_ >= offloadStanby_) {
+        ReportExceptionForOffload();
+    } else if (offloadState_ == OFFLOAD_INACTIVE_BACKGROUND_RUNNING && timeCost >=
+        OFFLOAD_COUNT * AUDIO_NS_PER_SECOND) {
+        ReportExceptionForOffload();
+        }
     if (standByCounter_ >= maxStandByCounter && timeCost >= timeLimit) {
         AUDIO_INFO_LOG("sessionId:%{public}u reach the limit of stand by: %{public}u time:%{public}" PRId64"ns",
             streamIndex_, standByCounter_.load(), timeCost);
@@ -571,7 +612,8 @@ void RendererInServer::HandleOperationFlushed()
         default:
             AUDIO_WARNING_LOG("Invalid status before flusing");
     }
-    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_,
+        processConfig_.appInfo.appTokenId, processConfig_.appInfo.appPid);
 }
 
 void RendererInServer::HandleOperationStopped(RendererStage stage)
@@ -1202,7 +1244,9 @@ int32_t RendererInServer::Start()
     if (ret == SUCCESS) {
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
     }
-
+    if (!AudioResourceService::GetInstance()->IsProcessInWorkgroup(processConfig_.appInfo.appPid)) {
+        AudioPerformanceMonitor::GetInstance().UpdateIsTimeoutCB(streamIndex_, true);
+    }
     XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_START,
         processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
         processConfig_.appInfo.appUid);
@@ -1286,7 +1330,8 @@ int32_t RendererInServer::StartInner()
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
-    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_,
+        processConfig_.appInfo.appTokenId, processConfig_.appInfo.appPid);
     return SUCCESS;
 }
 
@@ -1496,7 +1541,8 @@ int32_t RendererInServer::Drain(bool stopFlag)
     }
     DrainAudioBuffer();
     drainedTime_ = ClockTime::GetCurNano();
-    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_,
+        processConfig_.appInfo.appTokenId, processConfig_.appInfo.appPid);
     int ret = stream_->Drain(stopFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
     {

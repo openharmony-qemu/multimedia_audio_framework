@@ -182,7 +182,7 @@ private:
     std::atomic<int32_t> paStatus_ = 1;
     std::string address_ = "";
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
-    AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
+    AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY_NM;
 
     // for setdeviceconnect flag
     bool deviceConnectedFlag_ = false;

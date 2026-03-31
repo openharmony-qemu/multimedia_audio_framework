@@ -1360,6 +1360,13 @@ enum RecordErrorType {
     RECORD_ERROR_TYPE_OVERFLOW,
 };
 
+enum PlayOtherErrorCode {
+    TYPE_BACKGROUND_PLAYBACK,
+    TYPE_OFFLOAD_NOT_ENOUGH_DATA,
+    TYPE_GET_TIMESTAMP_TOO_FREQUENTLY,
+    TYPE_FAST_ABUSE,
+};
+
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
 // LEGACY_MUTE_CAP: Called from hap build with api >= 12, will cap mute data.
 // MODERN_INNER_CAP: Called from SA with inner-cap right, work with filter.

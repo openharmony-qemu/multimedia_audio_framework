@@ -43,7 +43,7 @@ BluetoothAudioRenderSink::BluetoothAudioRenderSink(bool isBluetoothLowLatency, c
     : isBluetoothLowLatency_(isBluetoothLowLatency), halName_(halName)
 {
     if (halName_ == HDI_ID_INFO_HEARING_AID) {
-        sinkType_ = ADAPTER_TYPE_HEARING_AID;
+        sinkType_ = ADAPTER_TYPE_HEARING_AID_NM;
     }
 
     logTypeTag_ = isBluetoothLowLatency_ ? "fast" : "normal";

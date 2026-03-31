@@ -178,10 +178,12 @@ public:
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
     bool IsWriteFirst() const noexcept;
     int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
+    void ReportExceptionForOffload();
 public:
     const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
+    void OnStatusUpdateSubs(IOperation operation);
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(BufferDesc &bufferDesc);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
@@ -323,6 +325,7 @@ private:
     int32_t fadeoutFlag_ = 0;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     std::map<int32_t, int32_t> renderEmptyCountForInnerCapToInnerCapIdMap_;
+    IOperation offloadState_;
 
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;

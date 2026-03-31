@@ -29,6 +29,7 @@
 #include "background_task_subscriber.h"
 #include "background_task_mgr_helper.h"
 #include "media_monitor_manager.h"
+#include "audio_performance_monitor.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -84,6 +85,8 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
     if (!(appState.isBack && !appState.isSystem)) {
         streamCollector_.HandleStartStreamMuteState(startStreamInfo, false, false, silentControl);
         return true;
+    } else {
+        AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(sessionId, true);
     }
     bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
     if (appState.hasSession) {

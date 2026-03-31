@@ -95,7 +95,7 @@ enum class AdaptersType {
     TYPE_INVALID
 };
 
-enum class AdapterType {
+enum class AdapterTypeInfo {
     PIPES,
     DEVICES,
     UNKNOWN
