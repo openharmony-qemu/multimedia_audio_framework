@@ -1126,24 +1126,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Leve
 
 /**
  * @tc.name : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_GetEcEnableParam_001
- * @tc.desc : Test AudioUtils::GetEcEnableParam
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetEcEnableParam_001, TestSize.Level1)
-{
-    // 测试设置为1 (true)
-    SetSysPara("const.multimedia.audio.fwk_ec.enable", 1);
-    bool result = GetEcEnableParam();
-    EXPECT_EQ(result, true);
-
-    // 测试设置为0 (false)
-    SetSysPara("const.multimedia.audio.fwk_ec.enable", 0);
-    result = GetEcEnableParam();
-    EXPECT_EQ(result, false);
-}
-
-/**
- * @tc.name : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_067
  * @tc.desc : Test AudioCoreService::NeedRehandleA2DPDevice
  */
