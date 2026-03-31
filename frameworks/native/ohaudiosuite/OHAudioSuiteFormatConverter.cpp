@@ -390,6 +390,9 @@ OH_AudioConverter_Result OHAudioConverter::CalculateMinBytesForIntMsInternal(uin
 {
     int32_t cachedSize = static_cast<int32_t>(cachedInputData_.size());
     minBytesForIntMs = CalculateMinBytesForIntMs(inputBytesPerFrame);
+    CHECK_AND_RETURN_RET_LOG(minBytesForIntMs != 0,
+        AUDIOCONVERTER_ERROR_INVALID_PARAM,
+        "The minimum amount of data to process cannot be 0.");
     alignedCachedSize = (cachedSize / minBytesForIntMs) * minBytesForIntMs;
     if (alignedCachedSize == 0) {
         if (inputFinished_ && cachedSize > 0) {
