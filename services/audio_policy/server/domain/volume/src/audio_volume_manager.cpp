@@ -2377,5 +2377,15 @@ bool AudioVolumeManager::IsRingerModeValid(AudioRingerMode ringMode)
     }
     return result;
 }
+
+bool AudioVolumeManager::ShouldNotifyForLegacyVolume(int32_t volumeLevel)
+{
+    int32_t notifyVolumeLevel = VolumeUtils::GetLegacyVolumeNotificationLevel();
+    if (notifyVolumeLevel <= 0) {
+        AUDIO_DEBUG_LOG("legacy high volume notification not enable");
+        return false;
+    }
+    return volumeLevel > notifyVolumeLevel && !IsLegacyHighVolumeChecked();
+}
 }
 }

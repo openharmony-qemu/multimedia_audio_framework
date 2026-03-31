@@ -833,6 +833,7 @@ private:
 
     int32_t SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage);
     int32_t GetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t &volumePercentage);
+
     int32_t SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
 

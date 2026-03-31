@@ -208,6 +208,7 @@ public:
     void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
     bool IsRingerModeValid(AudioRingerMode ringMode);
+    bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
