@@ -729,5 +729,36 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_Ca
     EXPECT_EQ(app10001Result, nullptr);
 }
 
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_017, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE,
+        "00:00:00:00:00:01");
+    auto earpiece = AddDeviceDescriptor(DEVICE_TYPE_EARPIECE, OUTPUT_DEVICE,
+        "00:00:00:00:00:02");
+
+    AudioRouterFollowStrategy strategy;
+
+    strategy.SetMediaOutputDevice(SYSTEM_UID, -1, earpiece);
+    auto systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+    EXPECT_EQ(systemResult->deviceType_, DEVICE_TYPE_EARPIECE);
+    EXPECT_EQ(systemResult->deviceId_, earpiece->deviceId_);
+
+    strategy.SetMediaOutputDevice(456, -1, speaker);
+    AudioRouterInfra::GetInstance().UpdateOutputStreamState(
+        456, 100000, STREAM_USAGE_MEDIA, StreamState::STARTED);
+    auto appResult = strategy.GetMediaOutputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(appResult, nullptr);
+
+    strategy.SetMediaOutputDevice(SYSTEM_UID, -1, earpiece);
+    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    ASSERT_NE(systemResult, nullptr);
+
+    strategy.SetMediaOutputDevice(SYSTEM_UID, -1, nullptr);
+    systemResult = strategy.GetMediaOutputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID);
+    strategy.SetMediaOutputDevice(456, -1, nullptr);
+}
 }
 }

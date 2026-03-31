@@ -35,6 +35,7 @@
 #include "bluetooth_device_manager.h"
 #include "audio_bluetooth_manager.h"
 #include "audio_scene_manager.h"
+#include "audio_router_follow_strategy.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -335,6 +336,28 @@ void AudioSelectInterfaceService::HandleFetchDeviceChange(const AudioStreamDevic
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }
+}
+
+int32_t AudioSelectInterfaceService::SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid)
+{
+    int32_t callerUid = GetPreferredUid(uid);
+    if (deviceType == DEVICE_TYPE_DEFAULT) {
+        AudioRouterFollowStrategy::GetInstance().SetMediaOutputDevice(
+            callerUid, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
+        return SUCCESS;
+    }
+    auto isPresent = [&deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
+        return deviceType == desc->deviceType_;
+    };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> mediaDevices = {
+        AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice()
+    };
+    auto itr = std::find_if(mediaDevices.begin(), mediaDevices.end(), isPresent);
+    CHECK_AND_RETURN_RET_LOG(itr != mediaDevices.end(), ERR_OPERATION_FAILED,
+        "Requested device not available %{public}d", deviceType);
+    AudioRouterFollowStrategy::GetInstance().SetMediaOutputDevice(callerUid, INVALID_STREAM_ID, *itr);
+    return SUCCESS;
 }
 
 int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,

@@ -52,6 +52,7 @@
 #include "audio_safe_volume_event_subscriber.h"
 #include "audio_volume_utils.h"
 #include "audio_select_interface_service.h"
+#include "audio_router_infra.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -1908,6 +1909,13 @@ int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetMediaOutputDevice(int32_t deviceTypeIn)
+{
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERROR, "eventEntry_ is nullptr");
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    return eventEntry_->SetMediaOutputDeviceByUid(static_cast<DeviceType>(deviceTypeIn), callerUid);
+}
+
 int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
@@ -3343,6 +3351,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectRendererDevice(uid);
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
 #ifdef INPUT_FEATURE_INDEPENDENT_MODE
     audioActiveDevice_.DelCurrentInputDevice(uid);
 #endif
@@ -3372,6 +3381,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");

@@ -53,6 +53,7 @@ private:
     void ClearCallOutputDevice(int32_t uid, uint32_t streamId, const std::string caller);
     void RefreshCallOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
+    bool HasVaildSelectDevice(AudioSelectDeviceInfo selectInfo);
 };
 
 }

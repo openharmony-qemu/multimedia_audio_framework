@@ -336,4 +336,5 @@ interface IAudioPolicy {
     void GetActiveStreamsVolumeInfo([out] List<ActiveStreamVolumeInfo> ActiveStreamsVolumeInfo);
     void SetAudioZoneVolumeConfig([in] String zoneName, [in] List<AudioZoneVolumeConfig> configs);
     void TriggerAudioZoneVolumeSync();
+    void SetMediaOutputDevice([in] int deviceType /* deviceType */);
 }

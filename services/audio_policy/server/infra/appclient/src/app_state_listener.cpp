@@ -32,6 +32,7 @@
 #include "audio_stream_monitor.h"
 #include "audio_session_service.h"
 #include "audio_usr_select_manager.h"
+#include "audio_router_infra.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -99,6 +100,16 @@ void AppStateListener::HandleBackgroundAppStateChange(int32_t pid, int32_t uid, 
 
     AudioBackgroundManager::GetInstance().NotifyAppStateChange(uid, pid, appState);
     AudioUsrSelectManager::GetAudioUsrSelectManager().UpdateAppIsBackState(uid, appState);
+    switch (appState) {
+        case AppIsBackState::STATE_FOREGROUND:
+            AudioRouterInfra::GetInstance().UpdateAppForegroundState(uid, true);
+            return;
+        case AppIsBackState::STATE_BACKGROUND:
+            AudioRouterInfra::GetInstance().UpdateAppForegroundState(uid, false);
+            return;
+        default:
+            return;
+    }
 }
 }
 }

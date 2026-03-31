@@ -148,6 +148,15 @@ public:
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
 
     /**
+     * @brief Set the audio output device to the built-in speaker.
+     * @param deviceType. The available deviceTypes are SPEAKER/DEFAULT.
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 26.0.0 dynamic&static
+     */
+    int32_t SetMediaOutputDevice(DeviceType deviceType);
+
+    /**
      * @brief Subscribes device changed event callback.
      * The event is triggered when device changed.
      *

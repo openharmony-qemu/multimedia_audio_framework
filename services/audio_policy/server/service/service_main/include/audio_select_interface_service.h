@@ -40,6 +40,7 @@ public:
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc,
         const int32_t audioDeviceSelectMode = 0, const bool isNeedNotifyBt = true);
+    int32_t SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid);
 
     // AudioRoutingManager#selectInputDeviceByFilter
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,

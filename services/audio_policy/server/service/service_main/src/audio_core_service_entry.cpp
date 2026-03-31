@@ -466,6 +466,13 @@ int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilte
     return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
 }
 
+int32_t AudioCoreService::EventEntry::SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::SetMediaOutputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetMediaOutputDeviceByUid(deviceType, uid);
+}
+
 int32_t AudioCoreService::EventEntry::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {

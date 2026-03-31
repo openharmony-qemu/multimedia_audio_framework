@@ -161,7 +161,7 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
-            strategy.SetMediaOutputDevice(uid, INVALID_STREAM_ID, desc);
+            strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
             break;
         case AUDIO_CALL_RENDER:
             strategy.SetCallOutputDevice(AudioSelectInterfaceService::GetInstance().GetPreferredUid(uid),

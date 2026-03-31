@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -46,6 +45,7 @@ public:
     bool IsOtherMediaPlaying();
     DeviceType GetDefaultOutputDevice();
     void SetDefaultOutputDeviceSync(DeviceType deviceType);
+    void SetMediaOutputDeviceSync(DeviceType deviceType);
     void SetAudioSessionScene(AudioSessionScene scene);
     void EnableMuteSuggestionWhenMixWithOthers(bool enable);
     void SetCaptureMuteHintSync(bool mute);
