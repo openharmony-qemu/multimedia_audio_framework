@@ -766,7 +766,8 @@ void AudioCoreServicePrivateUpdateRouteForCollaborationFuzzTest(FuzzedDataProvid
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     InternalDeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     AudioCollaborativeService::GetAudioCollaborativeService().isCollaborativeStateEnabled_ = true;
-    audioCoreService->UpdateRouteForCollaboration(deviceType);
+    uint32_t sessionID = GetData<uint32_t>();
+    audioCoreService->UpdateRouteForCollaboration(deviceType, sessionID);
 }
 
 void Test(FuzzedDataProvider& fdp)

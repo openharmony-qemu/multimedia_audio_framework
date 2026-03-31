@@ -38,7 +38,6 @@ vector<IStandardAudioServiceIpcCode> IStandardAudioServiceIpcCodeVec = {
     IStandardAudioServiceIpcCode::COMMAND_SET_EXTRA_PARAMETERS,
     IStandardAudioServiceIpcCode::COMMAND_SET_MICROPHONE_MUTE,
     IStandardAudioServiceIpcCode::COMMAND_SET_AUDIO_SCENE,
-    IStandardAudioServiceIpcCode::COMMAND_UPDATE_ACTIVE_DEVICE_ROUTE,
     IStandardAudioServiceIpcCode::COMMAND_UPDATE_ACTIVE_DEVICES_ROUTE,
     IStandardAudioServiceIpcCode::COMMAND_UPDATE_DUAL_TONE_STATE,
     IStandardAudioServiceIpcCode::COMMAND_SET_PARAMETER_CALLBACK,

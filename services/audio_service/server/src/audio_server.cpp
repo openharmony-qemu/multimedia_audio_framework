@@ -140,6 +140,8 @@ static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
     AAM_CONN_SVC_UID
 };
 const int32_t RSS_THRESHOLD = 2;
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enbale";
+const bool IS_DEVICE_ENHANCED_SUPPORTED = system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 // using pass-in appInfo for uids:
 constexpr int32_t UID_MEDIA_SA = 1013;
 enum PermissionStatus {
@@ -201,6 +203,7 @@ static constexpr int32_t MAX_WAIT_IN_SERVER_COUNT = 5;
 static constexpr int32_t RESTORE_SESSION_TRY_COUNT = 10;
 static constexpr uint32_t  RESTORE_SESSION_RETRY_WAIT_TIME_IN_MS = 50000;
 static constexpr unsigned int CREATE_TIMEOUT_IN_SECOND = 9;
+static constexpr uint32_t  DEFAULT_PIPE_ID = 0;
 
 static const std::vector<SourceType> AUDIO_SUPPORTED_SOURCE_TYPES = {
     SOURCE_TYPE_INVALID,
@@ -1500,27 +1503,76 @@ int32_t AudioServer::SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadS
 // LCOV_EXCL_STOP
 
 int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-    BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName, const std::string &networkId)
+    BluetoothOffloadState a2dpOffloadFlag, const uint32_t pipeId, const std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
-    DeviceType type = activeDevices.front().first;
-    DeviceFlag flag = activeDevices.front().second;
 
     std::vector<DeviceType> deviceTypes;
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
+    DeviceFlag flag = activeDevices.front().second;
     HILOG_COMM_INFO("[SetIORoutes] 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
-        type, deviceTypes.size(), flag);
-    int32_t ret = networkId == LOCAL_NETWORK_ID ? SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName) :
-        SetIORoutesForRemote(type, flag, deviceTypes, networkId);
-    return ret;
+        activeDevices.front().first, deviceTypes.size(), flag);
+
+    if (deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
+        deviceTypes[0] = DEVICE_TYPE_NONE;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(audioSceneMutex_);
+        isEarpiece_ = (deviceTypes[0] == DEVICE_TYPE_EARPIECE);
+        SetAudioBalanceStatus();
+    }
+
+    if (IS_DEVICE_ENHANCED_SUPPORTED) {
+        return SetIORoutesForSpecificPipe(flag, deviceTypes, pipeId, networkId);
+    } else {
+        int32_t ret = networkId == LOCAL_NETWORK_ID ? SetIORoutes(flag, deviceTypes) :
+            SetIORoutesForRemote(flag, deviceTypes, networkId);
+        return ret;
+    }
 }
 
-int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-    BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
+int32_t AudioServer::SetIORoutesForSpecificPipe(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
+    const uint32_t pipeId, const std::string &networkId)
 {
+    std::shared_ptr<IAudioRenderSink> sink = nullptr;
+    std::shared_ptr<IAudioCaptureSource> source = nullptr;
+    if (pipeId == DEFAULT_PIPE_ID) { // Default pipe id is used for modem communication and wifi-soundbox
+        sink = networkId == LOCAL_NETWORK_ID ? GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true) :
+            GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId, true);
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, false);
+    } else {
+        sink = HdiAdapterManager::GetInstance().GetRenderSink(pipeId, true);
+        source = HdiAdapterManager::GetInstance().GetCaptureSource(pipeId, false);
+    }
+
+    if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
+        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
+        source->UpdateActiveDevice(deviceTypes[0]);
+    } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
+        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
+        PolicyHandler::GetInstance().SetActiveOutputDevice(deviceTypes[0]);
+        sink->UpdateActiveDevice(deviceTypes);
+    } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
+        CHECK_AND_RETURN_RET_LOG(source != nullptr, ERR_INVALID_PARAM, "Capturer is not initialized");
+        CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "Renderer is not initialized");
+        source->UpdateActiveDevice(deviceTypes[0]);
+        PolicyHandler::GetInstance().SetActiveOutputDevice(deviceTypes[0]);
+        sink->UpdateActiveDevice(deviceTypes);
+    } else {
+        AUDIO_ERR_LOG("SetIORoutes invalid device flag");
+        return ERR_INVALID_PARAM;
+    }
+    return SUCCESS;
+}
+
+int32_t AudioServer::SetIORoutes(const DeviceFlag flag, std::vector<DeviceType> deviceTypes)
+{
+    DeviceType type = deviceTypes[0];
+
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
 
@@ -1530,16 +1582,10 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
     } else {
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
-        if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
-            deviceTypes[0] = DEVICE_TYPE_NONE;
-        }
     }
     CHECK_AND_RETURN_RET_LOG(sink != nullptr || source != nullptr,
         ERR_INVALID_PARAM, "SetIORoutes failed for null instance!");
 
-    std::lock_guard<std::mutex> lock(audioSceneMutex_);
-    isEarpiece_ = (type == DEVICE_TYPE_EARPIECE);
-    SetAudioBalanceStatus();
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         UpdateDeviceForAllSource(source, type);
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
@@ -1558,12 +1604,9 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     return SUCCESS;
 }
 
-int32_t AudioServer::SetIORoutesForRemote(DeviceType type, DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
+int32_t AudioServer::SetIORoutesForRemote(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
     const std::string &networkId)
 {
-    std::lock_guard<std::mutex> lock(audioSceneMutex_);
-    isEarpiece_ = (type == DEVICE_TYPE_EARPIECE);
-    SetAudioBalanceStatus();
     CHECK_AND_RETURN_RET(flag == DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, ERR_INVALID_PARAM);
     std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_REMOTE, networkId, true);
     CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_PARAM, "sink is nullptr");
@@ -1571,18 +1614,8 @@ int32_t AudioServer::SetIORoutesForRemote(DeviceType type, DeviceFlag flag, std:
     return SUCCESS;
 }
 
-int32_t AudioServer::UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag)
-{
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
-
-    std::vector<IntPair> activeDevices;
-    activeDevices.push_back({type, flag});
-    return UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, "");
-}
-
 int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
-    int32_t a2dpOffloadFlag, const std::string &deviceName, const std::string &networkId)
+    int32_t a2dpOffloadFlag, const uint32_t pipeId, const std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "Invalid audio devices.");
@@ -1594,8 +1627,7 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
         DeviceFlag flag = static_cast<DeviceFlag>(activeDevice.secondParam);
         activeOutputDevices.push_back({type, flag});
     }
-    return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), deviceName,
-        networkId);
+    return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), pipeId, networkId);
 }
 
 int32_t AudioServer::ReleaseActiveDeviceRoute(int32_t deviceType, int32_t deviceFlag, const std::string &networkId)

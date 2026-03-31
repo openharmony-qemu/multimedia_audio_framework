@@ -689,7 +689,7 @@ private:
     bool WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     // for collaboration
-    void UpdateRouteForCollaboration(InternalDeviceType deviceType);
+    void UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t sessionId);
     void CheckAndUpdateHearingAidCall(const DeviceType deviceType);
     int32_t CheckModuleForHearingAid(uint32_t &paIndex);
     void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);

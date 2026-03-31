@@ -43,6 +43,9 @@
 #define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr uint32_t DEFAULT_PIPE_ID = 0;
+}
 
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
@@ -286,7 +289,7 @@ void AudioActiveDevice::NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDe
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
-    UpdateActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, desc->deviceName_,
+    UpdateActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, DEFAULT_PIPE_ID,
         desc->networkId_);
 }
 
@@ -336,17 +339,17 @@ bool AudioActiveDevice::IsDeviceActive(DeviceType deviceType)
     return GetCurrentOutputDeviceType() == deviceType;
 }
 
-void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag,
-    const std::string &deviceName, std::string networkId)
+void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag, const uint32_t pipeId,
+    const std::string &networkId)
 {
     Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));
-    UpdateActiveDevicesRoute(activeDevices, deviceName, networkId);
+    UpdateActiveDevicesRoute(activeDevices, pipeId, networkId);
 }
 
-void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>>
-    &activeDevices, const std::string &deviceName, const std::string &networkId)
+void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+    const uint32_t pipeId, const std::string &networkId)
 {
     CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
 
@@ -358,7 +361,7 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
 
     Trace trace("AudioActiveDevice::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
-        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), deviceName, networkId);
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), pipeId, networkId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
