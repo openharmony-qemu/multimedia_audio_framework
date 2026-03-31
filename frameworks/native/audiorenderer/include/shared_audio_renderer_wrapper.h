@@ -542,6 +542,11 @@ public:
         return sharedAudioRenderer_->SelectOutputDevice(desc);
     }
 
+    int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior) override
+    {
+        return sharedAudioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
+    }
+
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)
     {
     }
