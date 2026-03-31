@@ -2117,6 +2117,10 @@ int32_t AudioRendererPrivate::SelectOutputDeviceInner(const std::shared_ptr<Audi
 
 int32_t AudioRendererPrivate::SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
 {
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     selectedDevice_ = desc;
     return SelectOutputDeviceInner(selectedDevice_);
 }

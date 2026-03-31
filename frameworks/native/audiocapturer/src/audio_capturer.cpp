@@ -663,6 +663,10 @@ int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<Audio
 
 int32_t AudioCapturerPrivate::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
 {
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     selectedDevice_ = desc;
     return SelectInputDeviceInner(selectedDevice_);
 }

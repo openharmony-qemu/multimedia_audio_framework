@@ -16,6 +16,7 @@
 #include "audio_renderer_unit_test.h"
 
 #include <chrono>
+#include <future>
 #include <thread>
 
 #include "audio_renderer_proxy_obj.h"
@@ -4503,6 +4504,57 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_RestoreAudioInLoop_001, TestSize.Le
     audioRenderer->RestoreAudioInLoop(restoreResult, tryCounter);
     EXPECT_EQ(true, restoreResult);
 
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test SelectOutputDevice will wait for renderer mutex
+ * @tc.number: Audio_Renderer_SelectOutputDevice_001
+ * @tc.desc  : Test SelectOutputDevice is synchronized with renderer mutex.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SelectOutputDevice_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    std::unique_lock<std::shared_mutex> lock(audioRenderer->rendererMutex_);
+    auto future = std::async(std::launch::async, [audioRenderer, desc]() {
+        return audioRenderer->SelectOutputDevice(desc);
+    });
+
+    EXPECT_EQ(future.wait_for(std::chrono::milliseconds(50)), std::future_status::timeout);
+    lock.unlock();
+    EXPECT_NE(future.wait_for(std::chrono::seconds(3)), std::future_status::timeout);
+    (void)future.get();
+    EXPECT_EQ(audioRenderer->selectedDevice_, desc);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test SelectOutputDevice no need wait for renderer mutex
+ * @tc.number: Audio_Renderer_SelectOutputDevice_002
+ * @tc.desc  : Test SelectOutputDevice is synchronized with renderer mutex.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SelectOutputDevice_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    auto id = audioRenderer->callbackLoopTid_;
+    audioRenderer->callbackLoopTid_ = gettid();
+    audioRenderer->SelectOutputDevice(desc);
+    EXPECT_EQ(audioRenderer->selectedDevice_, desc);
+    
+    audioRenderer->callbackLoopTid_ = id;
     bool isReleased = audioRenderer->Release();
     EXPECT_EQ(true, isReleased);
 }

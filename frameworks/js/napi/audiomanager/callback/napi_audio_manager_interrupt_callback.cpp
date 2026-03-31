@@ -27,6 +27,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+inline const std::string INTERRUPT_CALLBACK_NAME = "interrupt";
 NapiAudioManagerInterruptCallback::NapiAudioManagerInterruptCallback(napi_env env)
     : env_(env)
 {
