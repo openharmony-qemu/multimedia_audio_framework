@@ -410,17 +410,17 @@ int32_t HpaeRendererManager::DeleteProcessClusterInner(uint32_t sessionId, HpaeP
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
+int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId, bool needInitEffect)
 {
     if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
         AUDIO_INFO_LOG("could not find session:%{public}d", sessionId);
         return SUCCESS;
     }
+    AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(needInitEffect);
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->connectedProcessorType_;
     DereferenceInputCluster(sessionId);
     DisConnectCoBufferFromDeleteProcessCluster(sceneType);
-    AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(true);
     DisConnectOutputCluster(sceneType);
     
     HpaeProcessorType sceneTypeToDestroyNodes = GetProcessorType(sessionId);
@@ -1019,9 +1019,8 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", GetEncryptStr(sinkInfo.deviceName).c_str());
         StopOuputNode();
         for (const auto &it : sinkInputNodeMap_) {
-            AudioEffectChainManager::GetInstance()->SetInitEffectBufferFlag(false);
             TriggerStreamState(it.first, it.second);
-            DeleteProcessCluster(it.first);
+            DeleteProcessCluster(it.first, false);
         }
         AUDIO_INFO_LOG("delete device:%{public}s all input processor end", GetEncryptStr(sinkInfo.deviceName).c_str());
         sinkInfo_ = sinkInfo;
