@@ -70,7 +70,7 @@ struct Index {
         });
       } catch (exception) {
         Logger.error(TAG,
-        `Failed to set the system bar properties. Cause code: ${exception.code}, message: ${exception.message}`);
+          `Failed to set the system bar properties. Cause code: ${exception.code}, message: ${exception.message}`);
       }
     })
   }
@@ -211,7 +211,7 @@ struct Index {
                   .objectFit(ImageFit.Contain)
               }
               .width(StyleConst.THIRTY_PERCENT_WIDTH)
- 
+
               Column() {
                 Text($r('app.string.pipeline_cascad'))
                   .fontSize($r('app.float.font_size_24'))
@@ -309,6 +309,45 @@ struct Index {
                 name: 'audioTrackEdit',
                 param: { mode: OFFLINEPIPELINE, pipelineCascadMode: PIPELINECASCADMODE_0 } as NavigationParams
               })
+            })
+          }
+          .width(StyleConst.FULL_WIDTH)
+          .height($r('app.float.height_100'))
+          .padding({
+            left: $r('app.float.padding_20'),
+            right: $r('app.float.padding_20')
+          })
+          .margin({bottom: $r('app.float.margin_10'), top: $r('app.float.margin_10')})
+          .border({ radius: $r('app.float.border_16') })
+          .backgroundColor($r('app.color.index_audio_clip_card'))
+
+          Column() {
+            Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Start, alignItems: ItemAlign.Center }) {
+              Column() {
+                Image($r('app.media.icon_home_clip'))
+                  .width(StyleConst.SIXTY_PERCENT_WIDTH)
+                  .height(StyleConst.SIXTY_PERCENT_HEIGHT)
+                  .objectFit(ImageFit.Contain)
+              }
+              .width(StyleConst.THIRTY_PERCENT_WIDTH)
+
+              Column() {
+                Text('音频格式转换')
+                  .fontSize($r('app.float.font_size_24'))
+                  .fontColor($r('app.color.index_title_text_color'))
+                Text('采样率、位深、声道转换')
+                  .fontSize($r('app.float.font_size_20'))
+                  .fontColor($r('app.color.index_title_text_color'))
+                  .opacity(0.5)
+              }
+              .width('100%')
+              .alignItems(HorizontalAlign.Center)
+              .justifyContent(FlexAlign.Center)
+            }
+            .width(StyleConst.FULL_WIDTH)
+            .height(StyleConst.FULL_HEIGHT)
+            .onClick(() => {
+              this.pageInfos.pushPath({ name: 'audioConversion' })
             })
           }
           .width(StyleConst.FULL_WIDTH)

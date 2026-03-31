@@ -10,6 +10,7 @@
 #include <map>
 #include <algorithm>
 #include <sys/stat.h>
+#include <new>
 #include "napi/native_api.h"
 #include <unistd.h>
 #include "hilog/log.h"
@@ -53,6 +54,12 @@
 #include <multimedia/player_framework/native_avformat.h>
 #include <multimedia/player_framework/native_avbuffer.h>
 #include <fcntl.h>
+#include "ohaudiosuite/native_audio_converter.h"
+#include "ohaudiosuite/native_audio_suite_base.h"
+#include <cmath>
+
+#define INDEXTWO 2
+#define INDEXTHREE 3
 
 const int GLOBAL_RESMGR = 0xFF00;
 const char *TAG = "[AudioEditTestApp_AudioEdit_cpp]";
@@ -63,6 +70,68 @@ const int SAMPLINGRATE_MULTI = 20;
 const int CHANNELCOUNT_MULTI = 1000;
 const int BITSPERSAMPLE_MULTI = 8;
 const int INPUTNODES_SIZE2 = 2;
+
+static napi_env g_converterEnv = nullptr;
+static int32_t g_converterInputSize = 0;
+
+OH_AudioConverter* g_converter = nullptr;
+uint8_t *g_inputData = nullptr;
+uint32_t g_inputDataLen = 0;
+uint32_t g_outdata = 0;
+uint8_t *g_outputData = nullptr;  // Saving the Transformed Output Data
+uint32_t g_outputDataLen = 0; // Length of the output data
+uint32_t g_dataOffset = 0; // Offset of the read data
+int32_t g_inputSampleRate = 0;
+int32_t g_outputChannelCount = 0;
+int32_t g_outputSampleFormat = 0;
+
+const size_t MAX_FILE_SIZE = 2ULL * 1024 * 1024 * 1024;
+const uint32_t WAV_HEADER_SIZE = 44;
+const uint32_t DATA_CHUNK_SIZE = 400 * 1024;
+const int32_t MAX_PROCESS_ATTEMPTS = 10000;
+const uint32_t RETRY_BUFFER_SIZE = 256 * 1024;
+const size_t MAX_OUTPUT_SIZE = 4ULL * 1024 * 1024 * 1024;
+const size_t MAX_SINGLE_ALLOC = 500 * 1024 * 1024;
+const int32_t BASE_BUFFER_SIZE_96K = 8 * 1024 * 1024;
+const int32_t BASE_BUFFER_SIZE_48K = 4 * 1024 * 1024;
+const int32_t BASE_BUFFER_SIZE_LOW = 2 * 1024 * 1024;
+const int32_t CHANNEL_COUNT_STEREO = 2;
+const int32_t ZERO_OUTPUT_THRESHOLD = 1;
+
+const int32_t AUDIOCONVERTER_ERROR_UNKNOWN_CODE = 5;
+const int32_t FIRST_PROCESS_ATTEMPT = 1;
+
+const int32_t BYTES_PER_KB = 1024;
+const int32_t BYTES_PER_MB = 1024 * 1024;
+const int32_t BUFFER_EXPANSION_FACTOR = 2;
+
+const int32_t CHANNEL_COUNT_MONO = 1;
+const int32_t CHANNEL_COUNT_2POINT1 = 3;
+const int32_t CHANNEL_COUNT_QUAD = 4;
+const int32_t CHANNEL_COUNT_5POINT0 = 5;
+const int32_t CHANNEL_COUNT_5POINT1 = 6;
+const int32_t CHANNEL_COUNT_7POINT0 = 7;
+const int32_t CHANNEL_COUNT_7POINT1 = 8;
+
+const int32_t SAMPLE_RATE_THRESHOLD_HIGH = 96000;
+const int32_t SAMPLE_RATE_THRESHOLD_MID = 44100;
+
+const int32_t WAV_RIFF_HEADER_SIZE = 12; // WAV RIFF: 12
+const int32_t WAV_CHUNK_HEADER_SIZE = 8; // WAV: 8
+const int32_t WAV_CHUNK_ID_SIZE = 4; // WAV: 4
+const int32_t WAV_CHUNK_SIZE_OFFSET = 4; // WAV: 4
+
+const int32_t WAV_AUDIO_FORMAT_OFFSET = 20; // WAV: 20
+const int32_t WAV_SAMPLE_RATE_OFFSET = 24; // WAV: 24
+const int32_t WAV_BLOCK_ALIGN_OFFSET = 32; // WAV: 32
+const int32_t WAV_NUM_CHANNELS_OFFSET = 22; // WAV: 22
+const int32_t WAV_BYTE_RATE_OFFSET = 28; // WAV: 28
+const int32_t WAV_BITS_PER_SAMPLE_OFFSET = 34; // WAV: 34
+
+const int32_t INVALID_FD = -1;
+const int32_t HUNDRED = 100;
+const char DATA_CHUNK_ID[] = {'d', 'a', 't', 'a'};
+const int32_t DATA_HEADER_INDEX[] = {'R', 'I', 'F', 'F'};
 
 static napi_value AudioEditNodeInit(napi_env env, napi_callback_info info)
 {
@@ -1001,6 +1070,791 @@ static napi_value SetEffectNodeBypass(napi_env env, napi_callback_info info)
     return result;
 }
 
+// OH_AudioConverter_Create NAPI binding
+// Parse audio format from NAPI object
+static bool ParseAudioFormat(napi_env env, napi_value formatObj, OH_AudioConverter_Format &format)
+{
+    napi_value encodingTypeProp;
+    napi_get_named_property(env, formatObj, "encodingType", &encodingTypeProp);
+    napi_status status = napi_get_value_int32(env, encodingTypeProp, reinterpret_cast<int32_t*>(&format.encodingType));
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse encodingType failed");
+        return false;
+    }
+
+    napi_value samplingRateProp;
+    napi_get_named_property(env, formatObj, "samplingRate", &samplingRateProp);
+    int32_t samplingRateValue;
+    status = napi_get_value_int32(env, samplingRateProp, &samplingRateValue);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse samplingRate failed");
+        return false;
+    }
+    format.samplingRate = static_cast<OH_Audio_SampleRate>(samplingRateValue);
+
+    napi_value channelLayoutProp;
+    napi_get_named_property(env, formatObj, "channelLayout", &channelLayoutProp);
+    status = napi_get_value_int64(env, channelLayoutProp, reinterpret_cast<int64_t*>(&format.channelLayout));
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse channelLayout failed");
+        return false;
+    }
+
+    napi_value sampleFormatProp;
+    napi_get_named_property(env, formatObj, "sampleFormat", &sampleFormatProp);
+    status = napi_get_value_int32(env, sampleFormatProp, reinterpret_cast<int32_t*>(&format.sampleFormat));
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse sampleFormat failed");
+        return false;
+    }
+
+    return true;
+}
+
+// Calculate output channel count from channel layout
+static int32_t CalculateOutputChannelCount(OH_AudioChannelLayout channelLayout)
+{
+    switch (channelLayout) {
+        case CH_LAYOUT_MONO:
+            return CHANNEL_COUNT_MONO;
+        case CH_LAYOUT_STEREO:
+        case CH_LAYOUT_STEREO_DOWNMIX:
+            return CHANNEL_COUNT_STEREO;
+        case CH_LAYOUT_2POINT1:
+        case CH_LAYOUT_3POINT0:
+        case CH_LAYOUT_SURROUND:
+            return CHANNEL_COUNT_2POINT1;
+        case CH_LAYOUT_3POINT1:
+        case CH_LAYOUT_4POINT0:
+        case CH_LAYOUT_QUAD:
+        case CH_LAYOUT_QUAD_SIDE:
+        case CH_LAYOUT_2POINT0POINT2:
+            return CHANNEL_COUNT_QUAD;
+        case CH_LAYOUT_4POINT1:
+        case CH_LAYOUT_5POINT0:
+        case CH_LAYOUT_5POINT0_BACK:
+        case CH_LAYOUT_2POINT1POINT2:
+        case CH_LAYOUT_3POINT0POINT2:
+            return CHANNEL_COUNT_5POINT0;
+        case CH_LAYOUT_5POINT1:
+        case CH_LAYOUT_5POINT1_BACK:
+        case CH_LAYOUT_6POINT0:
+        case CH_LAYOUT_3POINT1POINT2:
+        case CH_LAYOUT_6POINT0_FRONT:
+            return CHANNEL_COUNT_5POINT1;
+        case CH_LAYOUT_HEXAGONAL:
+        case CH_LAYOUT_6POINT1:
+        case CH_LAYOUT_6POINT1_BACK:
+        case CH_LAYOUT_6POINT1_FRONT:
+        case CH_LAYOUT_7POINT0:
+        case CH_LAYOUT_7POINT0_FRONT:
+            return CHANNEL_COUNT_7POINT0;
+        case CH_LAYOUT_7POINT1:
+        case CH_LAYOUT_OCTAGONAL:
+        case CH_LAYOUT_7POINT1_WIDE:
+        case CH_LAYOUT_7POINT1_WIDE_BACK:
+            return CHANNEL_COUNT_7POINT1;
+        default:
+            return CHANNEL_COUNT_STEREO;
+    }
+}
+
+// Parse WAV file and extract data information
+static bool ParseWavFile(int fd, off_t fileSize, uint32_t &wavDataSize, uint32_t &wavDataStart)
+{
+    uint8_t header[WAV_HEADER_SIZE];
+    int headerRead = read(fd, header, WAV_HEADER_SIZE);
+    if (headerRead < WAV_HEADER_SIZE) {
+        return false;
+    }
+
+    if (header[0] != DATA_HEADER_INDEX[0] || header[1] != DATA_HEADER_INDEX[1] ||
+        header[INDEXTWO] != DATA_HEADER_INDEX[INDEXTWO] || header[INDEXTHREE] != DATA_HEADER_INDEX[INDEXTHREE]) {
+        return false;
+    }
+
+    uint16_t audioFormat = *reinterpret_cast<uint16_t*>(&header[WAV_AUDIO_FORMAT_OFFSET]);
+    uint16_t numChannels = *reinterpret_cast<uint16_t*>(&header[WAV_NUM_CHANNELS_OFFSET]);
+    uint32_t sampleRate = *reinterpret_cast<uint32_t*>(&header[WAV_SAMPLE_RATE_OFFSET]);
+    uint32_t byteRate = *reinterpret_cast<uint32_t*>(&header[WAV_BYTE_RATE_OFFSET]);
+    uint16_t blockAlign = *reinterpret_cast<uint16_t*>(&header[WAV_BLOCK_ALIGN_OFFSET]);
+    uint16_t bitsPerSample = *reinterpret_cast<uint16_t*>(&header[WAV_BITS_PER_SAMPLE_OFFSET]);
+    lseek(fd, WAV_RIFF_HEADER_SIZE, SEEK_SET);
+    bool foundDataChunk = false;
+    uint8_t chunkHeader[WAV_CHUNK_HEADER_SIZE];
+
+    while (!foundDataChunk) {
+        int bytesRead = read(fd, chunkHeader, WAV_CHUNK_HEADER_SIZE);
+        if (bytesRead < WAV_CHUNK_HEADER_SIZE) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Failed to find data chunk");
+            break;
+        }
+
+        // Check if it's a data chunk
+        if (chunkHeader[0] == DATA_CHUNK_ID[0] && chunkHeader[1] == DATA_CHUNK_ID[1] &&
+            chunkHeader[INDEXTWO] == DATA_CHUNK_ID[INDEXTWO] && chunkHeader[INDEXTHREE] == DATA_CHUNK_ID[INDEXTHREE]) {
+            foundDataChunk = true;
+            wavDataSize = *reinterpret_cast<uint32_t*>(&chunkHeader[WAV_CHUNK_SIZE_OFFSET]);
+            wavDataStart = lseek(fd, 0, SEEK_CUR);
+            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                         "Found data chunk at position: %{public}u, size: %{public}u bytes", wavDataStart, wavDataSize);
+        } else {
+            uint32_t chunkSize = *reinterpret_cast<uint32_t*>(&chunkHeader[WAV_CHUNK_SIZE_OFFSET]);
+            lseek(fd, chunkSize, SEEK_CUR);
+            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Skipping chunk, size: %{public}u bytes", chunkSize);
+        }
+
+        // Prevent infinite loops
+        if (lseek(fd, 0, SEEK_CUR) >= fileSize) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Reached end of file without finding data chunk");
+            break;
+        }
+    }
+
+    return foundDataChunk;
+}
+
+// Read file data into buffer
+static bool ReadFileData(int fd, off_t fileSize, bool isWavFile, uint32_t wavDataSize, uint32_t wavDataStart)
+{
+    uint32_t bytesToRead = 0;
+
+    if (isWavFile) {
+        lseek(fd, wavDataStart, SEEK_SET);
+        bytesToRead =
+            (wavDataSize > 0 && wavDataSize < (fileSize - wavDataStart)) ? wavDataSize : (fileSize - wavDataStart);
+        g_inputDataLen = read(fd, g_inputData, bytesToRead);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                     "Read %{public}u bytes from WAV data (expected: %{public}u bytes)", g_inputDataLen, bytesToRead);
+    } else {
+        lseek(fd, 0, SEEK_SET);
+        g_inputDataLen = read(fd, g_inputData, fileSize);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Read %{public}u bytes from non-WAV file", g_inputDataLen);
+    }
+
+    close(fd);
+    g_dataOffset = 0;
+    
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Read %{public}u bytes of PCM input data (WAV: %{public}s)",
+                 g_inputDataLen, isWavFile ? "yes" : "no");
+    
+    return g_inputDataLen > 0;
+}
+
+// Clear old input and output data
+static void ClearOldData()
+{
+    if (g_inputData != nullptr) {
+        free(g_inputData);
+        g_inputData = nullptr;
+        g_inputDataLen = 0;
+    }
+    if (g_outputData != nullptr) {
+        delete[] g_outputData;
+        g_outputData = nullptr;
+        g_outputDataLen = 0;
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Old output data cleared");
+    }
+}
+
+// Validate and get file size
+static bool ValidateAndGetFileSize(int fd, off_t &fileSize)
+{
+    fileSize = lseek(fd, 0, SEEK_END);
+    if (fileSize < 0 || fileSize > MAX_FILE_SIZE) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Invalid file size: %{public}ld bytes", fileSize);
+        close(fd);
+        return false;
+    }
+    lseek(fd, 0, SEEK_SET);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "File size: %{public}ld bytes", fileSize);
+    return true;
+}
+
+// Allocate memory for input data
+static bool AllocateInputData(off_t fileSize, uint8_t *&inputData)
+{
+    if (fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Invalid memory allocation size: %{public}ld bytes",
+                     fileSize);
+        return false;
+    }
+
+    inputData = static_cast<uint8_t *>(malloc(fileSize));
+    if (inputData == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Failed to allocate memory for input data");
+        return false;
+    }
+    std::fill(inputData, inputData + fileSize, 0);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Memory allocated for input data: %{public}ld bytes", fileSize);
+    return true;
+}
+
+// Set output parameters
+static void SetOutputParameters(OH_AudioConverter_Format &inputFormat, OH_AudioConverter_Format &outputFormat)
+{
+    g_inputSampleRate = inputFormat.samplingRate;
+    g_outputChannelCount = CalculateOutputChannelCount(outputFormat.channelLayout);
+    g_outputSampleFormat = outputFormat.sampleFormat;
+}
+
+// Create converter result
+static napi_value CreateConverterResult(napi_env env, OH_AudioConverter_Result result)
+{
+    napi_value napiValue;
+    if (result == AUDIOCONVERTER_SUCCESS && g_converter != nullptr) {
+        napi_create_int64(env, reinterpret_cast<int64_t>(g_converter), &napiValue);
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                     "AudioConverterCreate success, returning converter handle: %{public}p", g_converter);
+    } else {
+        napi_create_int64(env, static_cast<int>(result), &napiValue);
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "AudioConverterCreate failed with result: %{public}d",
+                     static_cast<int>(result));
+    }
+    return napiValue;
+}
+
+static napi_value AudioConverterCreate(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "OH_AudioConverter_Create start");
+    size_t argc = 3;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    OH_AudioConverter_Format inputFormat;
+    if (!ParseAudioFormat(env, argv[0], inputFormat)) {
+        delete[] argv;
+        return nullptr;
+    }
+
+    OH_AudioConverter_Format outputFormat;
+    if (!ParseAudioFormat(env, argv[1], outputFormat)) {
+        delete[] argv;
+        return nullptr;
+    }
+    
+    int32_t fd = INVALID_FD;
+    napi_status status = napi_get_value_int32(env, argv[2], &fd);
+    if (status != napi_ok || fd < 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Invalid file descriptor");
+        delete[] argv;
+        return nullptr;
+    }
+
+    ClearOldData();
+    off_t fileSize = 0;
+    if (!ValidateAndGetFileSize(fd, fileSize)) {
+        delete[] argv;
+        return nullptr;
+    }
+
+    if (!AllocateInputData(fileSize, g_inputData)) {
+        close(fd);
+        delete[] argv;
+        return nullptr;
+    }
+
+    uint32_t wavDataSize = 0;
+    uint32_t wavDataStart = WAV_HEADER_SIZE;
+    bool isWavFile = ParseWavFile(fd, fileSize, wavDataSize, wavDataStart);
+    if (!ReadFileData(fd, fileSize, isWavFile, wavDataSize, wavDataStart)) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Failed to read file data");
+        delete[] argv;
+        return nullptr;
+    }
+
+    SetOutputParameters(inputFormat, outputFormat);
+    OH_AudioConverter_Result result = OH_AudioConverter_Create(&inputFormat, &outputFormat, &g_converter);
+    napi_value napiValue = CreateConverterResult(env, result);
+    delete[] argv;
+    return napiValue;
+}
+
+// AudioConverter C callback function - called by converter engine
+static int32_t AudioConverterRequestDataCallback(void *userData, const void **outInputData,
+                                                 OH_AudioConverter_InputStatus *outStatus)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "AudioConverterRequestDataCallback called, offset: %{public}u, totalLen: %{public}u", g_dataOffset,
+                 g_inputDataLen);
+
+    if (g_inputData == nullptr || g_inputDataLen == 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "No input data available");
+        *outInputData = nullptr;
+        *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
+        return 0;
+    }
+
+    if (g_dataOffset >= g_inputDataLen) {
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "All input data consumed");
+        *outInputData = nullptr;
+        *outStatus = AUDIOCONVERTER_INPUT_DATA_FINISHED;
+        return 0;
+    }
+
+    // Returns data each time, improving data transfer efficiency and ensuring
+    // that all audio data can be correctly processed
+    uint32_t remainingData = g_inputDataLen - g_dataOffset;
+    uint32_t dataSizeToReturn = (remainingData > DATA_CHUNK_SIZE) ? DATA_CHUNK_SIZE : remainingData;
+    *outInputData = g_inputData + g_dataOffset;
+    *outStatus = AUDIOCONVERTER_INPUT_HAVE_DATA;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Returning %{public}u bytes of input data (offset: %{public}u, remaining: %{public}u)",
+                 dataSizeToReturn, g_dataOffset, remainingData);
+
+    // Update the offset, indicating that the data has been provided.
+    g_dataOffset += dataSizeToReturn;
+    return dataSizeToReturn;
+}
+
+static napi_value AudioConverterSetInputCallback(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "OH_AudioConverter_SetInputCallback start");
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    // Parse converter handle
+    int64_t converterHandle = 0;
+    napi_status status = napi_get_value_int64(env, argv[0], &converterHandle);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse converterHandle failed");
+        delete[] argv;
+        return nullptr;
+    }
+    OH_AudioConverter *converter = reinterpret_cast<OH_AudioConverter *>(converterHandle);
+
+    // Set callback
+    OH_AudioConverter_Result result =
+        OH_AudioConverter_SetInputCallback(converter, AudioConverterRequestDataCallback, nullptr);
+
+    napi_value napiValue;
+    napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
+    return napiValue;
+}
+
+// Calculate buffer size based on audio parameters
+static int32_t CalculateBufferSize()
+{
+    int32_t bufferSize;
+
+    // Determine base size based on sampling rate
+    if (g_inputSampleRate >= SAMPLE_RATE_THRESHOLD_HIGH) {
+        bufferSize = BASE_BUFFER_SIZE_96K;
+    } else if (g_inputSampleRate >= SAMPLE_RATE_THRESHOLD_MID) {
+        bufferSize = BASE_BUFFER_SIZE_48K;
+    } else {
+        bufferSize = BASE_BUFFER_SIZE_LOW;
+    }
+
+    // Adjust buffer size based on channel count
+    if (g_outputChannelCount > 0) {
+        bufferSize = bufferSize * g_outputChannelCount / CHANNEL_COUNT_STEREO;
+    }
+
+    // Adjust buffer size based on sample format
+    int32_t sampleFormatMultiplier = 1;
+    switch (g_outputSampleFormat) {
+        case AUDIO_SAMPLE_U8:
+            sampleFormatMultiplier = 1;
+            break;
+        case AUDIO_SAMPLE_S16LE:
+            sampleFormatMultiplier = 1;
+            break;
+        case AUDIO_SAMPLE_S24LE:
+            sampleFormatMultiplier = INDEXTWO;
+            break;
+        case AUDIO_SAMPLE_S32LE:
+            sampleFormatMultiplier = INDEXTWO;
+            break;
+        case AUDIO_SAMPLE_F32LE:
+            sampleFormatMultiplier = INDEXTWO;
+            break;
+        default:
+            sampleFormatMultiplier = 1;
+            break;
+    }
+    bufferSize = bufferSize * sampleFormatMultiplier;
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Buffer calculation: Sample rate = %d Hz, Number of channels = %d", g_inputSampleRate,
+                 g_outputChannelCount);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Sample format = %d, Final size = %d MB", g_outputSampleFormat,
+                 bufferSize / BYTES_PER_MB);
+
+    return bufferSize;
+}
+
+// Accumulate output data with buffer expansion
+static bool AccumulateOutputData(const void *outputData, int32_t outputSize)
+{
+    if (g_outputDataLen + outputSize > MAX_OUTPUT_SIZE) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Output size exceeds maximum limit: current=%{public}u, adding=%{public}u",
+                     g_outputDataLen, outputSize);
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "max=%{public}zu", MAX_OUTPUT_SIZE);
+        return false;
+    }
+
+    // Calculate new buffer size with exponential growth
+    size_t newBufferSize = g_outputDataLen + outputSize;
+    size_t allocatedBufferSize = (g_outputDataLen > 0) ? g_outputDataLen : 1;
+
+    while (allocatedBufferSize < newBufferSize) {
+        allocatedBufferSize *= BUFFER_EXPANSION_FACTOR;
+    }
+
+    // Limit maximum single allocation
+    if (allocatedBufferSize > MAX_SINGLE_ALLOC && g_outputDataLen + outputSize < MAX_SINGLE_ALLOC) {
+        allocatedBufferSize = g_outputDataLen + outputSize;
+    }
+
+    uint8_t *newBuffer = new (std::nothrow) uint8_t[allocatedBufferSize];
+    if (newBuffer == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Failed to allocate memory for output buffer: %{public}zu bytes", allocatedBufferSize);
+        return false;
+    }
+
+    // Copy old data
+    if (g_outputData != nullptr && g_outputDataLen > 0) {
+        std::copy(static_cast<const uint8_t*>(g_outputData),
+                  static_cast<const uint8_t*>(g_outputData) + g_outputDataLen, newBuffer);
+    }
+
+    // Copy new data
+    std::copy(static_cast<const uint8_t*>(outputData), static_cast<const uint8_t*>(outputData) + outputSize,
+              newBuffer + g_outputDataLen);
+    g_outputDataLen += outputSize;
+
+    // Release old buffer
+    if (g_outputData != nullptr) {
+        delete[] g_outputData;
+    }
+    g_outputData = newBuffer;
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Accumulated output %{public}u bytes (buffer: %{public}zu bytes)", g_outputDataLen,
+                 allocatedBufferSize);
+
+    return true;
+}
+
+// Get error message string from result code
+static const char* GetErrorMessage(OH_AudioConverter_Result result)
+{
+    switch (result) {
+        case AUDIOCONVERTER_SUCCESS:
+            return "SUCCESS";
+        case AUDIOCONVERTER_ERROR_INVALID_PARAM:
+            return "INVALID_PARAM";
+        case AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT:
+            return "UNSUPPORTED_FORMAT";
+        case AUDIOCONVERTER_ERROR_SYSTEM:
+            return "SYSTEM_ERROR";
+        default:
+            return "UNKNOWN_ERROR";
+    }
+}
+
+// Reset output data and offset
+static void ResetOutputData()
+{
+    if (g_outputData != nullptr) {
+        delete[] g_outputData;
+        g_outputData = nullptr;
+    }
+    g_outputDataLen = 0;
+    g_dataOffset = 0;
+}
+
+// Log process result
+static void LogProcessResult(int32_t processCount, OH_AudioConverter_Result result, const char *errorMsg,
+                             int32_t outputSize)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Process success %{public}d: result=%{public}d (%{public}s), outputSize=%{public}d", processCount,
+                 static_cast<int>(result), errorMsg, outputSize);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "dataOffset=%{public}u, remainingData=%{public}u", g_dataOffset,
+                 (g_inputDataLen > g_dataOffset) ? (g_inputDataLen - g_dataOffset) : 0);
+}
+
+// Log process error
+static void LogProcessError(OH_AudioConverter_Result result, const char *errorMsg)
+{
+    OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                 "Process failed: result=%{public}d (%{public}s), dataOffset=%{public}u",
+                 static_cast<int>(result), errorMsg, g_dataOffset);
+    OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "totalInputLen=%{public}u, processedOutput=%{public}u",
+                 g_inputDataLen, g_outputDataLen);
+}
+
+// Reset process state for retry
+static void ResetProcessState()
+{
+    g_dataOffset = 0;
+    if (g_outputData != nullptr) {
+        delete[] g_outputData;
+        g_outputData = nullptr;
+    }
+    g_outputDataLen = 0;
+}
+
+// Log conversion completion
+static void LogConversionCompletion(int32_t processCount)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Conversion completed. Total output size: %{public}u bytes", g_outputDataLen);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Number of process calls: %{public}d", processCount);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Input %{public}u bytes, Output %{public}u bytes, Compression ratio: %{public}.2f%%",
+                 g_inputDataLen, g_outputDataLen, (g_outputDataLen * HUNDRED) / g_inputDataLen);
+
+    size_t totalMemoryUsed = g_inputDataLen + g_outputDataLen;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Memory usage statistics: Input buffer = %{public}u bytes, Output buffer = %{public}u bytes",
+                 g_inputDataLen, g_outputDataLen);
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Total = %{public}u bytes (%.2f MB)",
+                 totalMemoryUsed, totalMemoryUsed / static_cast<double>(BYTES_PER_MB));
+}
+
+// Create output ArrayBuffer
+static napi_value CreateOutputArrayBuffer(napi_env env)
+{
+    napi_value napiValue;
+    void *arrayBufferData = nullptr;
+    napi_create_arraybuffer(env, g_outputDataLen, &arrayBufferData, &napiValue);
+    std::copy(static_cast<const uint8_t*>(g_outputData),
+              static_cast<const uint8_t*>(g_outputData) + g_outputDataLen,
+              static_cast<uint8_t*>(arrayBufferData));
+
+    float ratio = (g_inputDataLen > 0) ? static_cast<float>(g_outputDataLen) / g_inputDataLen : 0.0f;
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Process Success", g_inputDataLen, g_outputDataLen, ratio);
+
+    return napiValue;
+}
+
+// Parse and validate converter handle
+static OH_AudioConverter* ParseAndValidateConverter(napi_env env, napi_value argv[])
+{
+    int64_t converterHandle = 0;
+    napi_status status = napi_get_value_int64(env, argv[0], &converterHandle);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse converterHandle failed");
+        return nullptr;
+    }
+    OH_AudioConverter *converter = reinterpret_cast<OH_AudioConverter *>(converterHandle);
+
+    if (converter == nullptr) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Converter is null");
+        return nullptr;
+    }
+    return converter;
+}
+
+// Validate input data
+static bool ValidateInputData()
+{
+    if (g_inputData == nullptr || g_inputDataLen == 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                     "Input data is null or empty, g_inputData=%{public}p, g_inputDataLen=%{public}u", g_inputData,
+                     g_inputDataLen);
+        return false;
+    }
+    return true;
+}
+
+// Initialize process parameters
+static void InitializeProcessParameters(int32_t &bufferSize, int32_t &processCount, int32_t &zeroOutputCount,
+                                        bool &hasError, bool &retryWithSmallerBuffer)
+{
+    bufferSize = CalculateBufferSize();
+    processCount = 0;
+    zeroOutputCount = 0;
+    hasError = false;
+    retryWithSmallerBuffer = false;
+}
+
+// Process single iteration
+static bool ProcessIteration(OH_AudioConverter *converter, int32_t bufferSize, int32_t &processCount,
+                             int32_t &zeroOutputCount, bool &hasError, bool &retryWithSmallerBuffer)
+{
+    int32_t currentBufferSize = retryWithSmallerBuffer ? RETRY_BUFFER_SIZE : bufferSize;
+    void *outputData = new uint8_t[currentBufferSize];
+
+    int32_t outputSize = 0;
+    OH_AudioConverter_Result result =
+        OH_AudioConverter_Process(converter, outputData, currentBufferSize, &outputSize);
+
+    processCount++;
+    const char *errorMsg = GetErrorMessage(result);
+
+    LogProcessResult(processCount, result, errorMsg, outputSize);
+
+    // Handle errors
+    if (result != AUDIOCONVERTER_SUCCESS) {
+        LogProcessError(result, errorMsg);
+        
+        if (result == AUDIOCONVERTER_ERROR_UNKNOWN_CODE && !retryWithSmallerBuffer &&
+            processCount == FIRST_PROCESS_ATTEMPT) {
+            retryWithSmallerBuffer = true;
+            delete[] static_cast<uint8_t*>(outputData);
+            ResetProcessState();
+            return true; // Continue retry
+        }
+
+        hasError = true;
+        delete[] static_cast<uint8_t*>(outputData);
+        return false; // Stop processing
+    }
+
+    // Accumulate output data
+    if (outputSize > 0) {
+        if (!AccumulateOutputData(outputData, outputSize)) {
+            delete[] static_cast<uint8_t*>(outputData);
+            hasError = true;
+            return false; // Stop processing
+        }
+        zeroOutputCount = 0;
+    } else {
+        zeroOutputCount++;
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Returned 0 bytes for the %{public}d consecutive time.",
+                     zeroOutputCount);
+
+        if (zeroOutputCount >= ZERO_OUTPUT_THRESHOLD) {
+            LogConversionCompletion(processCount);
+            delete[] static_cast<uint8_t*>(outputData);
+            return false; // Processing complete
+        }
+    }
+
+    delete[] static_cast<uint8_t*>(outputData);
+    return true; // Continue processing
+}
+
+// Create final result value
+static napi_value CreateFinalResult(napi_env env, bool hasError)
+{
+    napi_value napiValue;
+    if (hasError || g_outputDataLen == 0) {
+        napi_get_null(env, &napiValue);
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Process fails or no data is available, return null");
+    } else {
+        napiValue = CreateOutputArrayBuffer(env);
+    }
+    return napiValue;
+}
+
+static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "AudioConverterProcess start");
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    OH_AudioConverter *converter = ParseAndValidateConverter(env, argv);
+    if (converter == nullptr) {
+        delete[] argv;
+        return nullptr;
+    }
+
+    if (!ValidateInputData()) {
+        delete[] argv;
+        return nullptr;
+    }
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Process started, converter pointer: %{public}p, input data size: %{public}u bytes", converter,
+                 g_inputDataLen);
+
+    // Reset output data
+    ResetOutputData();
+    int32_t bufferSize;
+    int32_t processCount;
+    int32_t zeroOutputCount;
+    bool hasError;
+    bool retryWithSmallerBuffer;
+    InitializeProcessParameters(bufferSize, processCount, zeroOutputCount, hasError, retryWithSmallerBuffer);
+
+    while (processCount < MAX_PROCESS_ATTEMPTS) {
+        bool shouldContinue =
+            ProcessIteration(converter, bufferSize, processCount, zeroOutputCount, hasError, retryWithSmallerBuffer);
+        if (!shouldContinue) {
+            break;
+        }
+    }
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                 "Processed: Invocations = %{public}d, Total output size = %{public}u bytes, Errors = %{public}s",
+                 processCount, g_outputDataLen, hasError ? "true" : "false");
+
+    napi_value napiValue = CreateFinalResult(env, hasError);
+    delete[] argv;
+    return napiValue;
+}
+
+// OH_AudioConverter_Destroy NAPI binding
+static napi_value AudioConverterDestroy(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "AudioConverterDestroy start");
+    size_t argc = 1;
+    napi_value *argv = new napi_value[argc];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    // Parse converter handle
+    int64_t converterHandle = 0;
+    napi_status status = napi_get_value_int64(env, argv[0], &converterHandle);
+    if (status != napi_ok) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "Parse converterHandle failed");
+        delete[] argv;
+        return nullptr;
+    }
+    OH_AudioConverter *converter = reinterpret_cast<OH_AudioConverter *>(converterHandle);
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Converter output data kept for file saving");
+
+    OH_AudioConverter_Destroy(converter); // Directly calling the void function.
+    g_converter = nullptr;                // Avoiding dangling pointers
+    OH_AudioConverter_Result result = AUDIOCONVERTER_SUCCESS;
+
+    napi_value napiValue;
+    napi_create_int64(env, static_cast<int>(result), &napiValue);
+    delete[] argv;
+    return napiValue;
+}
+
+// SaveConverterFile NAPI binding - Saving the converted audio data.
+static napi_value SaveConverterFile(napi_env env, napi_callback_info info)
+{
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "SaveConverterFile start");
+
+    // Checking whether there is output data.
+    if (g_outputData == nullptr || g_outputDataLen == 0) {
+        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG, "No converter output data available");
+        napi_value emptyArray;
+        void *emptyData = nullptr;
+        napi_create_arraybuffer(env, 0, &emptyData, &emptyArray);
+        return emptyArray;
+    }
+
+    OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "Saving converter output data, size: %{public}d",
+                 g_outputDataLen);
+
+    // Create an ArrayBuffer and return it.
+    void *data = nullptr;
+    napi_value arrayBuffer;
+    napi_create_arraybuffer(env, g_outputDataLen, &data, &arrayBuffer);
+
+    if (data != nullptr && g_outputDataLen > 0) {
+        // Copying Output Data to ArrayBuffer
+        std::copy(static_cast<const uint8_t *>(g_outputData),
+                  static_cast<const uint8_t *>(g_outputData) + g_outputDataLen, static_cast<uint8_t *>(data));
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "ArrayBuffer created and data copied successfully");
+    }
+
+    return arrayBuffer;
+}
+
 const std::vector<napi_property_descriptor> recordDescriptors = {
     {"audioCapturerInit", nullptr, AudioCapturerInit,
         nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -1121,7 +1975,7 @@ const std::vector<napi_property_descriptor> otherDescriptors = {
     {"setEffectNodeBypass", nullptr, SetEffectNodeBypass, nullptr, nullptr, nullptr, napi_default, nullptr}
 };
 
-EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
+static napi_value Init(napi_env env, napi_value exports)
 {
     std::vector<napi_property_descriptor> desc = {
         {"record", nullptr, Record, nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -1132,7 +1986,7 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"audioRendererStop", nullptr, AudioRendererStop, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"getRendererState", nullptr, GetRendererState, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"resetTotalWriteAudioDataSize", nullptr, ResetTotalWriteAudioDataSize, nullptr, nullptr, nullptr, napi_default,
-            nullptr},
+         nullptr},
         {"realTimeSaveFileBuffer", nullptr, RealTimeSaveFileBuffer, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioEditNodeInit", nullptr, AudioEditNodeInit, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"audioInAndOutInit", nullptr, AudioInAndOutInit, nullptr, nullptr, nullptr, napi_default, nullptr},
@@ -1141,7 +1995,13 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
         {"setFormat", nullptr, SetFormat, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setEqualizerMode", nullptr, SetEqualizerMode, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"setEqualizerFrequencyBandGains", nullptr, SetEqualizerFrequencyBandGains, nullptr, nullptr, nullptr,
-            napi_default, nullptr}
+         napi_default, nullptr},
+        {"audioConverterCreate", nullptr, AudioConverterCreate, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioConverterSetInputCallback", nullptr, AudioConverterSetInputCallback, nullptr, nullptr, nullptr,
+         napi_default, nullptr},
+        {"audioConverterProcess", nullptr, AudioConverterProcess, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"audioConverterDestroy", nullptr, AudioConverterDestroy, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"saveConverterFile", nullptr, SaveConverterFile, nullptr, nullptr, nullptr, napi_default, nullptr}
     };
     desc.insert(desc.end(), multiPipelineDescriptors.begin(), multiPipelineDescriptors.end());
     desc.insert(desc.end(), voiceChangeDescriptors.begin(), voiceChangeDescriptors.end());
@@ -1153,7 +2013,6 @@ EXTERN_C_START static napi_value Init(napi_env env, napi_value exports)
     napi_define_properties(env, exports, desc.size(), desc.data());
     return exports;
 }
-EXTERN_C_END
 
 static napi_module demoModule = {
     .nm_version = 1,
