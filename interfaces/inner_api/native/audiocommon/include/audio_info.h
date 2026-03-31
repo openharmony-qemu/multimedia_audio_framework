@@ -936,6 +936,7 @@ enum AudioDeviceUsage : uint32_t {
      * @since 11
      */
     CALL_OUTPUT_DEVICES = 4,
+    ALL_OUTPUT_DEVICES = 5,
     /**
      * Call input devices.
      * @syscap SystemCapability.Multimedia.Audio.Device
@@ -943,6 +944,7 @@ enum AudioDeviceUsage : uint32_t {
      * @since 11
      */
     CALL_INPUT_DEVICES = 8,
+    ALL_INPUT_DEVICES = 10,
     /**
      * All call devices.
      * @syscap SystemCapability.Multimedia.Audio.Device
