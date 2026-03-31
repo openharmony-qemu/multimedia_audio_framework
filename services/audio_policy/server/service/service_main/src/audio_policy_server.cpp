@@ -491,7 +491,7 @@ bool AudioPolicyServer::MaxOrMinVolumeOption(const int32_t &volLevel, const int3
         VolumeEvent volumeEvent;
         volumeEvent.volumeType = (streamInFocus == STREAM_ALL) ? STREAM_MUSIC : streamInFocus;
         volumeEvent.volume = volLevel;
-        volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(streamInFocus, zoneId);
+        volumeEvent.volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(streamInFocus, zoneId);
         volumeEvent.updateUi = true;
         volumeEvent.volumeGroupId = 0;
         volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -1635,7 +1635,7 @@ void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType stre
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = streamType;
     volumeEvent.volume = GetSystemVolumeLevelInternal(streamType, zoneId);
-    volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(streamType, zoneId);
+    volumeEvent.volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(streamType, zoneId);
     volumeEvent.updateUi = isUpdateUi;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
@@ -4905,7 +4905,7 @@ void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
     VolumeEvent volumeEvent;
     volumeEvent.volumeType = STREAM_MUSIC;
     volumeEvent.volume = GetSystemVolumeLevelInternal(STREAM_MUSIC);
-    volumeEvent.volumeDegree = GetSystemVolumeDegreeInternal(STREAM_MUSIC);
+    volumeEvent.volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(STREAM_MUSIC);
     volumeEvent.updateUi = false;
     volumeEvent.notifyRssWhenAccountsChange = true;
     volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
@@ -5792,14 +5792,9 @@ int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
     int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
-
-    volumeDegree = GetSystemVolumeDegreeInternal(newStreamType, zoneId);
+    
+    volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(newStreamType, zoneId);
     return SUCCESS;
-}
-
-int32_t AudioPolicyServer::GetSystemVolumeDegreeInternal(AudioStreamType streamType, int32_t zoneId)
-{
-    return audioVolumeManager_.GetSystemVolumeDegreeInterface(streamType, zoneId);
 }
 
 int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t deviceType, int32_t &volumeDegree)

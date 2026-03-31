@@ -899,7 +899,6 @@ private:
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
-    int32_t GetSystemVolumeDegreeInternal(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t UpdateAudioSceneAfterActivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt,
         bool isUpdatedAudioStrategy);
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
