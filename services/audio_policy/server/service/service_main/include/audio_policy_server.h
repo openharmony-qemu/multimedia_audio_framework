@@ -815,7 +815,6 @@ private:
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedRingtoneVolume = false);
     int32_t SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
-    int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
         bool isUpdateUi, DeviceType deviceType);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
