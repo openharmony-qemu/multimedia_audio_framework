@@ -2127,10 +2127,9 @@ bool AudioEffectChainManager::IsChannelLayoutSupportedForDspEffect(AudioChannelL
     uint64_t* tempChannelLayout = reinterpret_cast<uint64_t *>(effectHdiInput_ + 1);
     *tempChannelLayout = channelLayout;
     CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_ != nullptr, false, "audioEffectHdiParam_ is nullptr");
-    if (audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, deviceType_) != SUCCESS) {
-        AUDIO_WARNING_LOG("query channel layout support failed :%{public}" PRIu64, channelLayout);
-        return false;
-    }
+    DeviceType deviceTypeTemp = deviceType_ == DEVICE_TYPE_NEARLINK ? DEVICE_TYPE_BLUETOOTH_A2DP : deviceType_;
+    CHECK_AND_RETURN_RET_LOG(audioEffectHdiParam_->UpdateHdiState(effectHdiInput_, deviceTypeTemp) == SUCCESS, false,
+        "query channel layout support failed :%{public}" PRIu64, channelLayout);
     return true;
 }
 

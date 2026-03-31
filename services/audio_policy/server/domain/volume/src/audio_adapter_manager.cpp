@@ -1897,6 +1897,13 @@ int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnable
     return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
+int32_t AudioAdapterManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    AUDIO_INFO_LOG("AudioSpatializationService UpdateSpatializationState entered!");
+    return audioServiceAdapter_->UpdateSpatializationState(spatializationState);
+}
+
 void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {

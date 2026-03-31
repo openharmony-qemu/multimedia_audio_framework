@@ -287,6 +287,7 @@ public:
         DeviceType deviceType) = 0;
 
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
+    virtual int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) = 0;
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
     virtual void RegisterAppIndividualVolumeEnableObserver() = 0;

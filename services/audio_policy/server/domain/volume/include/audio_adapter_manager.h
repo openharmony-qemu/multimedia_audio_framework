@@ -325,6 +325,7 @@ public:
 
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
+    int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
     void RegisterMdmMuteSwitchCallback();
