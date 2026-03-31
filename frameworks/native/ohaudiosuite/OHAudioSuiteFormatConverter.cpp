@@ -78,8 +78,7 @@ static std::unordered_map<OH_AudioChannelLayout, AudioChannel> MAP_LAYOUT_TO_CHA
     {OH_AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK, AudioChannel::CHANNEL_8},
 };
 
-static const std::unordered_set<OH_Audio_SampleRate> SUPPORTED_SAMPLE_RATES = {
-    OH_Audio_SampleRate::SAMPLE_RATE_8000,
+static const std::unordered_set<OH_Audio_SampleRate> SUPPORTED_SAMPLE_RATES = {OH_Audio_SampleRate::SAMPLE_RATE_8000,
     OH_Audio_SampleRate::SAMPLE_RATE_11025,
     OH_Audio_SampleRate::SAMPLE_RATE_12000,
     OH_Audio_SampleRate::SAMPLE_RATE_16000,
@@ -92,7 +91,8 @@ static const std::unordered_set<OH_Audio_SampleRate> SUPPORTED_SAMPLE_RATES = {
     OH_Audio_SampleRate::SAMPLE_RATE_88200,
     OH_Audio_SampleRate::SAMPLE_RATE_96000,
     OH_Audio_SampleRate::SAMPLE_RATE_176400,
-    OH_Audio_SampleRate::SAMPLE_RATE_192000};
+    OH_Audio_SampleRate::SAMPLE_RATE_192000
+    };
 
 static const std::unordered_set<OH_Audio_SampleFormat> SUPPORTED_SAMPLE_FORMATS = {
     OH_Audio_SampleFormat::AUDIO_SAMPLE_U8,
@@ -100,7 +100,7 @@ static const std::unordered_set<OH_Audio_SampleFormat> SUPPORTED_SAMPLE_FORMATS 
     OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE,
     OH_Audio_SampleFormat::AUDIO_SAMPLE_S32LE,
     OH_Audio_SampleFormat::AUDIO_SAMPLE_F32LE
-};
+    };
 
 static OHAudioConverter *ConvertAudioSuiteConverter(OH_AudioConverter *audioSuiteConverter)
 {
@@ -119,7 +119,7 @@ OH_AudioConverter_Result OH_AudioConverter_Create(
 
     OHAudioConverter *suiteConverter = new OHAudioConverter();
     CHECK_AND_RETURN_RET_LOG(suiteConverter != nullptr,
-        AUDIOCONVERTER_ERROR_INVALID_PARAM, "Get suiteConverter suiteConverter is nullptr");
+        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "Get suiteConverter suiteConverter is nullptr");
 
     OH_AudioConverter_Result ret = suiteConverter->Create(inputFormat, outputFormat);
     if (ret != AUDIOCONVERTER_SUCCESS) {
@@ -146,7 +146,7 @@ OH_AudioConverter_Result OH_AudioConverter_SetInputCallback(
     OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
 
     CHECK_AND_RETURN_RET_LOG(suiteConverter != nullptr,
-        AUDIOCONVERTER_ERROR_INVALID_PARAM, "SetInputCallback suiteConverter is nullptr");
+        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "SetInputCallback suiteConverter is nullptr");
 
     return suiteConverter->SetRequestDataCallback(callback, userData);
 }
@@ -164,7 +164,7 @@ OH_AudioConverter_Result OH_AudioConverter_Process(
     OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
 
     CHECK_AND_RETURN_RET_LOG(suiteConverter != nullptr,
-        AUDIOCONVERTER_ERROR_INVALID_PARAM, "Process suiteConverter is nullptr");
+        AUDIOCONVERTER_ERROR_NOT_INITIALIZED, "Process suiteConverter is nullptr");
 
     OH_AudioConverter_Result ret = suiteConverter->Process(audioData, outputCapacity, outputSize);
     return ret;
@@ -178,12 +178,10 @@ void OH_AudioConverter_Destroy(OH_AudioConverter* converter)
     }
 
     OHAudioConverter *suiteConverter = ConvertAudioSuiteConverter(converter);
-
     if (suiteConverter == nullptr) {
         AUDIO_ERR_LOG("Data Destroy failed: OHAudioConverter Converter is a null pointer");
         return;
     }
-    
     suiteConverter->Destroy();
 
     delete suiteConverter;
@@ -272,7 +270,7 @@ OH_AudioConverter_Result OHAudioConverter::Create(
     return AUDIOCONVERTER_SUCCESS;
 }
 
-OH_AudioConverter_Result OHAudioConverter::Destroy()
+void OHAudioConverter::Destroy()
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -287,7 +285,7 @@ OH_AudioConverter_Result OHAudioConverter::Destroy()
     cachedOutputData_.clear();
 
     AUDIO_INFO_LOG("Destroy: success");
-    return AUDIOCONVERTER_SUCCESS;
+    return;
 }
 
 OH_AudioConverter_Result OHAudioConverter::SetRequestDataCallback(
@@ -323,12 +321,15 @@ OH_AudioConverter_Result OHAudioConverter::ValidateProcessParams(
     return AUDIOCONVERTER_SUCCESS;
 }
 
-void OHAudioConverter::CalculateOutputFormatParams(
-    int32_t outputCapacity, int32_t* outputBytesPerFrame, int32_t* maxOutputFrames)
+OH_AudioConverter_Result OHAudioConverter::CalculateOutputFormatParams(
+    int32_t outputCapacity, int32_t& outputBytesPerFrame, int32_t& maxOutputFrames)
 {
     uint32_t outputSampleSize = AudioSuiteUtil::GetSampleSize(outputFormat_.sampleFormat);
-    *outputBytesPerFrame = outputSampleSize * outputFormat_.channelCount;
-    *maxOutputFrames = outputCapacity / *outputBytesPerFrame;
+    outputBytesPerFrame = outputSampleSize * outputFormat_.channelCount;
+    CHECK_AND_RETURN_RET_LOG(
+        outputBytesPerFrame != 0, AUDIOCONVERTER_ERROR_INVALID_PARAM, "The output format frame length cannot be 0.");
+    maxOutputFrames = outputCapacity / outputBytesPerFrame;
+    return AUDIOCONVERTER_SUCCESS;
 }
 
 int32_t OHAudioConverter::CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame)
@@ -357,7 +358,7 @@ OH_AudioConverter_Result OHAudioConverter::ReadAndCacheInputData(bool* shouldSto
     if (inputSize > maxCallbackDataSize || inputSize < 0) {
         AUDIO_ERR_LOG("The callback function returned an error indicating the amount of data was incorrect: %{public}d",
             inputSize);
-        return AUDIOCONVERTER_ERROR_SYSTEM;
+        return AUDIOCONVERTER_ERROR_CALLBACK_INVALID;
     }
 
     if (inputStatus == AUDIOCONVERTER_INPUT_DATA_FINISHED) {
@@ -385,35 +386,33 @@ OH_AudioConverter_Result OHAudioConverter::ReadAndCacheInputData(bool* shouldSto
 }
 
 OH_AudioConverter_Result OHAudioConverter::CalculateMinBytesForIntMsInternal(uint32_t inputBytesPerFrame,
-    int32_t *minBytesForIntMs, int32_t *alignedCachedSize, bool *shouldStopProcessing, uint32_t outputCapacity)
+    int32_t& minBytesForIntMs, int32_t& alignedCachedSize, bool& shouldStopProcessing, uint32_t outputCapacity)
 {
     int32_t cachedSize = static_cast<int32_t>(cachedInputData_.size());
-    *minBytesForIntMs = CalculateMinBytesForIntMs(inputBytesPerFrame);
-    *alignedCachedSize = (cachedSize / *minBytesForIntMs) * *minBytesForIntMs;
-    if (*alignedCachedSize == 0) {
+    minBytesForIntMs = CalculateMinBytesForIntMs(inputBytesPerFrame);
+    alignedCachedSize = (cachedSize / minBytesForIntMs) * minBytesForIntMs;
+    if (alignedCachedSize == 0) {
         if (inputFinished_ && cachedSize > 0) {
-            int32_t paddingSize = *minBytesForIntMs - cachedSize;
+            int32_t paddingSize = minBytesForIntMs - cachedSize;
             cachedInputData_.insert(cachedInputData_.end(), paddingSize, 0);
-            *alignedCachedSize = *minBytesForIntMs;
+            alignedCachedSize = minBytesForIntMs;
             AUDIO_DEBUG_LOG("Process: padding %{public}d bytes for final data to meet int ms", paddingSize);
-            *shouldStopProcessing = false;
+            shouldStopProcessing = false;
         } else {
             AUDIO_DEBUG_LOG("Process: waiting for more data, cachedSize=%{public}d, minBytesForIntMs=%{public}d",
                 cachedSize,
-                *minBytesForIntMs);
-            *shouldStopProcessing = true;
+                minBytesForIntMs);
+            shouldStopProcessing = true;
             return AUDIOCONVERTER_SUCCESS;
         }
     }
 
-    AUDIO_ERR_LOG("OHAudioConverter::Process550");
-
-    *shouldStopProcessing = false;
+    shouldStopProcessing = false;
     return AUDIOCONVERTER_SUCCESS;
 }
 
 OH_AudioConverter_Result OHAudioConverter::CalculateProcessableBytesInternal(
-    const ProcessableBytesCalculationParams& params, uint32_t* alignedProcessableBytes, bool* shouldStopProcessing)
+    const ProcessableBytesCalculationParams& params, uint32_t& alignedProcessableBytes, bool& shouldStopProcessing)
 {
     double sampleRateRatio =
         static_cast<double>(inputFormat_.sampleRate) / static_cast<double>(outputFormat_.sampleRate);
@@ -431,16 +430,16 @@ OH_AudioConverter_Result OHAudioConverter::CalculateProcessableBytesInternal(
 
     if (is11025SampleRate) {
         if (maxProcessableBytes >= params.minBytesForIntMs) {
-            *alignedProcessableBytes = params.minBytesForIntMs;
+            alignedProcessableBytes = params.minBytesForIntMs;
         } else {
-            *alignedProcessableBytes = 0;
+            alignedProcessableBytes = 0;
         }
     } else {
-        *alignedProcessableBytes = (maxProcessableBytes / params.minBytesForIntMs) *
+        alignedProcessableBytes = (maxProcessableBytes / params.minBytesForIntMs) *
                                     params.minBytesForIntMs;
     }
 
-    CHECK_AND_RETURN_RET_LOG(*alignedProcessableBytes != 0,
+    CHECK_AND_RETURN_RET_LOG(alignedProcessableBytes != 0,
         AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL,
         "Process: output capacity too small, maxProcessableBytes=%{public}d, minBytesForIntMs=%{public}d",
         maxProcessableBytes,
@@ -470,20 +469,20 @@ OH_AudioConverter_Result OHAudioConverter::WrapAndConvertInputData(
 }
 
 OH_AudioConverter_Result OHAudioConverter::CheckAndProcessInputData(
-    const InputProcessParams& params, int32_t* minBytesForIntMs, int32_t* alignedCachedSize,
-    uint32_t* alignedProcessableBytes, bool* shouldStopProcessing)
+    const InputProcessParams& params, int32_t& minBytesForIntMs, int32_t& alignedCachedSize,
+    uint32_t& alignedProcessableBytes, bool& shouldStopProcessing)
 {
     OH_AudioConverter_Result ret = CalculateMinBytesForIntMsInternal(
         params.inputBytesPerFrame, minBytesForIntMs, alignedCachedSize, shouldStopProcessing, params.outputCapacity);
     CHECK_AND_RETURN_RET_LOG(
         ret == AUDIOCONVERTER_SUCCESS, ret, "Failed to calculate minimum number of bytes to process");
-    if (*shouldStopProcessing) {
+    if (shouldStopProcessing) {
         return AUDIOCONVERTER_SUCCESS;
     }
 
     ProcessableBytesCalculationParams processableParams = {
         params.inputBytesPerFrame, params.maxOutputFrames,
-        params.outputBytesPerFrame, *minBytesForIntMs, *alignedCachedSize
+        params.outputBytesPerFrame, minBytesForIntMs, alignedCachedSize
     };
     ret = CalculateProcessableBytesInternal(processableParams, alignedProcessableBytes, shouldStopProcessing);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIOCONVERTER_SUCCESS, ret, "Insufficient output capacity");
@@ -496,7 +495,7 @@ OH_AudioConverter_Result OHAudioConverter::InitializeProcessingContext(void *aud
 {
     context.outputBufferPtr = static_cast<uint8_t *>(audioData);
 
-    AUDIO_ERR_LOG("Process: processed block, outputCapacity=%{public}d", outputCapacity);
+    AUDIO_DEBUG_LOG("Process: processed block, outputCapacity=%{public}d", outputCapacity);
 
     int32_t cachedSize = static_cast<int32_t>(cachedInputData_.size());
     int32_t tempMinBytesForIntMs = CalculateMinBytesForIntMs(inputBytesPerFrame);
@@ -525,7 +524,8 @@ OH_AudioConverter_Result OHAudioConverter::ValidateOutputCapacity(
     uint32_t availableFrames = convertedBuffer.GetFrameLen();
     uint32_t outputSampleSize = AudioSuiteUtil::GetSampleSize(outputFormat_.sampleFormat);
     uint32_t outputBytesPerFrame = outputFormat_.channelCount * outputSampleSize;
-
+    CHECK_AND_RETURN_RET_LOG(
+        outputBytesPerFrame != 0, AUDIOCONVERTER_ERROR_INVALID_PARAM, "The output format frame length cannot be 0.");
     uint32_t maxFramesByCapacity = remainingCapacity / outputBytesPerFrame;
 
     *framesToWrite = (availableFrames < maxFramesByCapacity) ? availableFrames : maxFramesByCapacity;
@@ -551,7 +551,7 @@ void OHAudioConverter::UpdateProcessingState(
     context.remainingCapacity -= actualOutputDataSize;
     cachedInputData_.erase(cachedInputData_.begin(), cachedInputData_.begin() + processableSize);
 
-    AUDIO_ERR_LOG("Process: processed block, outputBytes=%{public}d, totalOutput=%{public}d, remaining=%{public}d",
+    AUDIO_DEBUG_LOG("Process: processed block, outputBytes=%{public}d, totalOutput=%{public}d, remaining=%{public}d",
         actualOutputDataSize, context.totalOutputSize, context.remainingCapacity);
 }
 
@@ -570,7 +570,7 @@ OH_AudioConverter_Result OHAudioConverter::ProcessSingleBlock(
     InputProcessParams inputParams = {
         inputBytesPerFrame, currentMaxOutputFrames, outputBytesPerFrame, context.remainingCapacity};
     OH_AudioConverter_Result ret = CheckAndProcessInputData(
-        inputParams, &minBytesForIntMs, &alignedCachedSize, &alignedProcessableBytes, &shouldStopProcessing);
+        inputParams, minBytesForIntMs, alignedCachedSize, alignedProcessableBytes, shouldStopProcessing);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIOCONVERTER_SUCCESS, ret, "Input data processing failed");
     if (shouldStopProcessing) {
         return AUDIOCONVERTER_SUCCESS;
@@ -709,7 +709,9 @@ OH_AudioConverter_Result OHAudioConverter::Process(
 
     int32_t outputBytesPerFrame = 0;
     int32_t maxOutputFrames = 0;
-    CalculateOutputFormatParams(outputCapacity, &outputBytesPerFrame, &maxOutputFrames);
+    ret = CalculateOutputFormatParams(outputCapacity, outputBytesPerFrame, maxOutputFrames);
+    CHECK_AND_RETURN_RET_LOG(
+        ret == AUDIOCONVERTER_SUCCESS, ret, "Failed to calculate minimum data volume for output format.");
     if (outputBytesPerFrame >  outputCapacity) {
         return AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL;
     }

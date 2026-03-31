@@ -164,6 +164,8 @@
 			<option name="push" value="ch_in_010.pcm -> /data/audiosuite/converter/" src="res"/>
 			<option name="push" value="ch_in_011.pcm -> /data/audiosuite/converter/" src="res"/>
 			<option name="push" value="ch_in_012.pcm -> /data/audiosuite/converter/" src="res"/>
+            <option name="push" value="ch_in_013.pcm -> /data/audiosuite/converter/" src="res"/>
+			<option name="push" value="ch_in_014.pcm -> /data/audiosuite/converter/" src="res"/>
             <option name="shell" value="restorecon /data/audiosuite/converter/"/>
         </preparer>
     </target>

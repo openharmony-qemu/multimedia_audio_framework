@@ -73,8 +73,8 @@ constexpr uint32_t MD5_INIT_STATE_0 = 0x67452301;
 constexpr uint32_t MD5_INIT_STATE_1 = 0xEFCDAB89;
 constexpr uint32_t MD5_INIT_STATE_2 = 0x98BADCFE;
 constexpr uint32_t MD5_INIT_STATE_3 = 0x10325476;
-constexpr uint32_t MD5_R1_K8 = 0x698098D8;
-constexpr uint32_t MD5_R2_K10 = 0xF4D50D87;
+constexpr uint32_t MD5_R1_K8 = 0x698098D8U;
+constexpr uint32_t MD5_R2_K10 = 0xF4D50D87U;
 constexpr int BYTE_WIDTH = 2;
 
 static int32_t RequestDataCallback(void* userData, const void** outInputData,
@@ -534,6 +534,11 @@ static OHConverterTestInfo g_converterTestCases[] = {
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE,
         OH_Audio_SampleRate::SAMPLE_RATE_22050, OH_AudioChannelLayout::CH_LAYOUT_MONO,
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE},
+    {"in_converter_44100_2_s16le.pcm", "converterOut6.pcm", "d426bc086b9df8bd5ac01658d8678847",
+        OH_Audio_SampleRate::SAMPLE_RATE_44100, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE,
+        OH_Audio_SampleRate::SAMPLE_RATE_192000, OH_AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE},
 
     {"ch_in_001.pcm", "ch_out_001.pcm", "7ad1dea7cfa24bc384abf10361f68589",
         OH_Audio_SampleRate::SAMPLE_RATE_48000, OH_AudioChannelLayout::CH_LAYOUT_MONO,
@@ -595,6 +600,21 @@ static OHConverterTestInfo g_converterTestCases[] = {
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE,
         OH_Audio_SampleRate::SAMPLE_RATE_44100, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
         OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE},
+    {"ch_in_012.pcm", "ch_out_013.pcm", "e7b4dffd3a278a68b5b1d2379fbb5529",
+        OH_Audio_SampleRate::SAMPLE_RATE_22050, OH_AudioChannelLayout::CH_LAYOUT_HEXAGONAL,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE,
+        OH_Audio_SampleRate::SAMPLE_RATE_176400, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE},
+    {"ch_in_013.pcm", "ch_out_014.pcm", "2245409757890e65c3f077ac0c72f9ff",
+        OH_Audio_SampleRate::SAMPLE_RATE_176400, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE,
+        OH_Audio_SampleRate::SAMPLE_RATE_16000, OH_AudioChannelLayout::CH_LAYOUT_3POINT1POINT2,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE},
+    {"ch_in_014.pcm", "ch_out_015.pcm", "eb7b81b2c5793dbbf13d16d6d34f0b2d",
+        OH_Audio_SampleRate::SAMPLE_RATE_192000, OH_AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S24LE,
+        OH_Audio_SampleRate::SAMPLE_RATE_8000, OH_AudioChannelLayout::CH_LAYOUT_STEREO,
+        OH_Audio_SampleFormat::AUDIO_SAMPLE_S16LE}
 };
 
 static void SetupInputFormat(OH_AudioConverter_Format& format, const OHConverterTestInfo& info)
@@ -855,7 +875,7 @@ static int32_t RunAllOHConverterTests()
     
     for (size_t idx = 0; idx < count; idx++) {
         const OHConverterTestInfo& info = g_converterTestCases[idx];
-        RunOHConverterTest(info);
+        EXPECT_TRUE(RunOHConverterTest(info));
     }
     return SUCCESS;
 }
@@ -2182,7 +2202,7 @@ HWTEST_F(OHAudioConverterTest, OH_AudioConverter_Process_034, TestSize.Level0)
     std::vector<uint8_t> outputData(INPUT_DATA_SIZE_PLUS, 0);
     int32_t outputSize = 0;
     ret = OH_AudioConverter_Process(converter, outputData.data(), INPUT_DATA_SIZE_PLUS * 2, &outputSize);
-    EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_SYSTEM);
+    EXPECT_EQ(ret, AUDIOCONVERTER_ERROR_CALLBACK_INVALID);
     EXPECT_EQ(outputSize, 0);
 
     OH_AudioConverter_Destroy(converter);
