@@ -74,7 +74,6 @@ int32_t AudioStaticBufferProvider::GetDataFromStaticBuffer(int8_t *inputData, si
                 offset += remainSize;
                 remainSize = 0;
                 needFadeOut_ = true;
-                playFinished_ = true;
             }
             sharedBuffer_->WakeFutex();
         }
@@ -198,7 +197,6 @@ void AudioStaticBufferProvider::NeedProcessFadeIn()
     Trace trace("NeedProcessFadeIn");
     std::unique_lock<std::mutex> lock(eventMutex_);
     needFadeIn_ = true;
-    playFinished_ = false;
 }
 
 void AudioStaticBufferProvider::NeedProcessFadeOut()
@@ -216,7 +214,7 @@ bool AudioStaticBufferProvider::IsLoopEnd()
 
 bool AudioStaticBufferProvider::NeedProvideData()
 {
-    if (currentLoopTimes_ == totalLoopTimes_ || playFinished_) {
+    if (currentLoopTimes_ == totalLoopTimes_) {
         Trace tracezero("GetDataFromStaticBuffer ZeroData LoopEnd");
         return false;
     }

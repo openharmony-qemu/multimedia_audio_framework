@@ -231,8 +231,8 @@ private:
 
     int32_t CreateServerBuffer();
     int32_t ProcessAndSetStaticBuffer();
-    void MarkStaticFadeOut(bool isRefresh);
-    void MarkStaticFadeIn();
+    void MarkStaticFadeOut();
+    void MarkStaticFadeIn(bool isRefresh);
     void OnHandle(uint32_t code, int64_t data) override;
     void InitCallbackHandler();
     void ReleaseCallbackHandler();

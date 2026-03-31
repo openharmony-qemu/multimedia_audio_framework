@@ -386,17 +386,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
-
-    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
-    auto preferredDeviceDesc = std::make_shared<AudioDeviceDescriptor>(desc);
-    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(preferredDeviceDesc);
-    updateCommand = USAGE_UPDATE;
-    desc.deviceUsage_ = VOICE;
-    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
-    auto targetDevice = audioDeviceStatus.audioStateManager_.GetPreferredMediaRenderDevice();
-    bool result = targetDevice->deviceType_ == DEVICE_TYPE_NEARLINK && targetDevice->deviceUsage_ == VOICE;
-    audioDeviceStatus.audioStateManager_.SetPreferredMediaRenderDevice(std::make_shared<AudioDeviceDescriptor>());
-    EXPECT_EQ(true, result);
 }
 
 /**
@@ -1002,6 +991,29 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_073, TestSize.Level1)
 
     result = audioDeviceStatus.HandleLocalDeviceDisconnected(updatedDesc);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_074
+* @tc.desc  : Test GetDeviceTypeFromPin interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_074, TestSize.Level1)
+{
+    AudioPin hdiPin = AUDIO_PIN_NONE;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
+
+    hdiPin = AUDIO_PIN_IN_LINEIN;
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
+
+    hdiPin = AUDIO_PIN_OUT_LINEOUT;
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
 }
 
 /**

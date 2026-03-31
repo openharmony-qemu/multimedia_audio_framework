@@ -38,7 +38,11 @@
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
 #endif
+#include "audio_privacy_ui_ext_connection.h"
 #include "app_mgr_client.h"
+#include "extension_manager_client.h"
+#include "want.h"
+#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -963,24 +967,31 @@ int32_t CapturerInServer::GetLatency(uint64_t &latency)
     return stream_->GetLatency(latency);
 }
 
-int32_t CapturerInServer::RequestUserPrivacyAuthority()
+int32_t CapturerInServer::RequestUserPrivacyAuthority(uint32_t sessionId)
 {
+    AUDIO_INFO_LOG("RequestUserPrivacyAuthority called");
+
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED, "IStreamListener is nullptr");
-    if (status_ == I_STATUS_STARTING || status_ == I_STATUS_STARTED) {
-        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_FAILED);
-        AUDIO_ERR_LOG("Inner capturer already start");
-        return SUCCESS;
-    }
-    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION, IPCSkeleton::GetCallingTokenID())) {
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_OPERATION_FAILED,
+        "IStreamListener is nullptr");
+
+    if (PermissionUtil::VerifyPermission(CAPTURE_SERVER_PLAYBACK_PERMISSION,
+        IPCSkeleton::GetCallingTokenID())) {
         hasRequestUserPrivacyAuthority_ = true;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
-        AUDIO_INFO_LOG("request user privacy authority success");
-    } else {
+        AUDIO_INFO_LOG("Has static permission, granted");
+        return SUCCESS;
+    }
+
+    int32_t ret = StartPrivacyConfirmDialog(sessionId);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Start privacy window failed, ret=%{public}d", ret);
         hasRequestUserPrivacyAuthority_ = false;
         stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
-        AUDIO_ERR_LOG("request user privacy authority failed");
+        return ERR_OPERATION_FAILED;
     }
+
+    AUDIO_INFO_LOG("Privacy window started, waiting for user choice");
     return SUCCESS;
 }
 
@@ -1117,6 +1128,68 @@ void CapturerInServer::NotifyVoIPStart(SourceType sourceType, int32_t uid)
     std::lock_guard<std::mutex> lock(runnerMutex_);
     CHECK_AND_RETURN(callbackHandler_ != nullptr);
     callbackHandler_->SendCallbackEvent(NOTIFY_VOIP_START, uid);
+}
+
+int32_t CapturerInServer::StartPrivacyConfirmDialog(uint32_t sessionId)
+{
+    AAFwk::Want want;
+    std::string bundleName =
+        system::GetParameter("const.multimedia.screencapture.dialogconnectionbundlename", "default");
+    std::string abilityName =
+        system::GetParameter("const.multimedia.screencapture.dialogconnectionabilityname", "default");
+    if (bundleName == "default" || abilityName == "default") {
+        AUDIO_ERR_LOG("Failed to get want params");
+        return ERR_NOT_SUPPORTED;
+    }
+    AUDIO_INFO_LOG("StartPrivacyConfirmDialog bundleName:%{public}s abilityName:%{public}s",
+        bundleName.c_str(), abilityName.c_str());
+
+    want.SetElementName(bundleName, abilityName);
+    auto connectionHolder = std::make_shared<sptr<AudioPrivacyUIExtConnection>>();
+    *connectionHolder = sptr<AudioPrivacyUIExtConnection>(
+        new (std::nothrow) AudioPrivacyUIExtConnection(sessionId)
+    );
+
+    if (*connectionHolder == nullptr) {
+        AUDIO_ERR_LOG("Failed to create connection");
+        return ERR_NO_MEMORY;
+    }
+
+    auto ret = OHOS::AAFwk::ExtensionManagerClient::GetInstance()
+        .ConnectServiceExtensionAbility(want, *connectionHolder, nullptr, -1);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("Connection failed");
+        *connectionHolder = nullptr;
+        return ret;
+    }
+    return ret;
+}
+ 
+void CapturerInServer::OnPrivacyAuthorityResult(bool isAllowed)
+{
+    std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
+
+    if (isAllowed) {
+        hasRequestUserPrivacyAuthority_ = true;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_SUCCESS);
+        AUDIO_INFO_LOG("User granted audio privacy authority");
+    } else {
+        hasRequestUserPrivacyAuthority_ = false;
+        stateListener->OnOperationHandled(USER_PRIVACY_AUTHORITY, START_STATE_NOT_AUTHORIZED);
+        AUDIO_WARNING_LOG("User denied audio privacy authority");
+    }
+}
+ 
+int32_t CapturerInServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice)
+{
+    uint32_t curSessionId = 0;
+    int32_t ret = GetSessionId(curSessionId);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed to get current sessionId");
+    CHECK_AND_RETURN_RET_LOG(curSessionId == sessionId, ERR_INVALID_PARAM, "illegal sessionId ");
+    AUDIO_INFO_LOG("ReportPlaybackCaptureUserChoice choice:%{public}d", choice);
+    OnPrivacyAuthorityResult(choice);
+    return SUCCESS;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

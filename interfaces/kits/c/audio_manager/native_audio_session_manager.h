@@ -750,7 +750,7 @@ OH_AudioCommon_Result OH_AudioSessionManager_EnableMuteSuggestionWhenMixWithOthe
  *     or {@link #AUDIOCOMMON_RESULT_ERROR_SYSTEM} Audio client call audio service error, system internal error.
  * @since 23
  */
-OH_AudioCommon_Result OH_AudioSessionManager_SetCapturerMuteHint(
+OH_AudioCommon_Result OH_AudioSessionManager_SetCaptureMuteHint(
     OH_AudioSessionManager *audioSessionManager, bool mute);
 
 /**

@@ -62,6 +62,7 @@ public:
     AudioTimestampInfo GetAudioTimestampInfoSync();
     int64_t GetOverflowCountSync();
     void SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted);
+    void SetMuteHintSync(bool mute);
     taihe::array<AudioDeviceDescriptor> GetCurrentInputDevices();
     AudioCapturerChangeInfo GetCurrentAudioCapturerChangeInfo();
     void SetInputDeviceToAccessory();

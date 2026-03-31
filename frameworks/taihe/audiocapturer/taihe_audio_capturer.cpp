@@ -525,6 +525,23 @@ void AudioCapturerImpl::SetWillMuteWhenInterruptedSync(bool muteWhenInterrupted)
     }
 }
 
+void AudioCapturerImpl::SetMuteHintSync(bool mute)
+{
+    if (audioCapturer_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
+        return;
+    }
+
+    int32_t ret = audioCapturer_->SetMuteHint(mute);
+    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetMuteHint failed");
+    } else if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "SetMuteHint failed");
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetMuteHint failed");
+    }
+}
+
 taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevices()
 {
     if (audioCapturer_ == nullptr) {
@@ -613,7 +630,7 @@ void AudioCapturerImpl::SetIndependentAudioSessionStrategy(
             return;
     }
     CHECK_AND_RETURN_RET_LOG(
-        behavior < (static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        (behavior & ~static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR)) == 0,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invaild behavior param");
     int32_t ret = audioCapturer_->SetIndependentAudioSessionStrategy(audioSessionStrategy, behavior);
     if (ret != OHOS::AudioStandard::SUCCESS) {

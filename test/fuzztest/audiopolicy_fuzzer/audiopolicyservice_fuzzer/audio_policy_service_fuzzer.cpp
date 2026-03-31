@@ -253,14 +253,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.DeviceParamsCheck(fuzzDeviceRole,
         fuzzAudioDeviceDescriptorSptrVector);
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.NotifyUserSelectionEventToBt(fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SetRenderDeviceForUsage(fuzzStreamUsage,
-        fuzzAudioDeviceDescriptorSptr);
-    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectOutputDevice(
-        fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptrVector);
-    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.WriteSelectOutputSysEvents(
-        fuzzAudioDeviceDescriptorSptrVector, fuzzStreamUsage);
-    GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.SelectFastOutputDevice(
-        fuzzAudioRendererFilter, fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.FilterSourceOutputs(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(fuzzAudioDeviceDescriptor, fuzzBool);
 }

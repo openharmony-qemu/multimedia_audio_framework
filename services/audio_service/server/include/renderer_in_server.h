@@ -63,6 +63,7 @@ private:
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
     std::atomic<bool> isFirstWriteDataFlag_ = true;
+    std::mutex dupMutex_;
 };
 
 class RendererInServer : public IStatusCallback, public IWriteCallback,
@@ -246,10 +247,11 @@ private:
     int32_t CreateServerBuffer();
     int32_t ProcessAndSetStaticBuffer();
     int32_t SelectModeAndWriteData(int8_t *inputData, size_t requestDataLen);
-    void MarkStaticFadeOut(bool isRefresh);
-    void MarkStaticFadeIn();
+    void MarkStaticFadeOut();
+    void MarkStaticFadeIn(bool isRefresh);
     void HandleIsWriteFirst(bool isWriteFirst);
     void HandleStreamUnderrun();
+    bool CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

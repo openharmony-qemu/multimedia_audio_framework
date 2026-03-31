@@ -137,6 +137,28 @@ void AudioSessionManagerImpl::SetDefaultOutputDeviceSync(DeviceType deviceType)
     }
 }
 
+void AudioSessionManagerImpl::SetMediaOutputDeviceSync(DeviceType deviceType)
+{
+    if (audioSessionMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngr_ is nullptr");
+        return;
+    }
+
+    if (!(TaiheAudioEnum::IsLegalInputArgumentSetMediaOutputDeviceType(deviceType.get_value()))) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of mode must be enum deviceType");
+        return;
+    }
+
+    OHOS::AudioStandard::DeviceType audioDeviceType =
+        static_cast<OHOS::AudioStandard::DeviceType>(deviceType.get_value());
+    int32_t ret = audioSessionMngr_->SetMediaOutputDevice(audioDeviceType);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
+}
+
 void AudioSessionManagerImpl::SetAudioSessionScene(AudioSessionScene scene)
 {
     if (audioSessionMngr_ == nullptr) {
@@ -178,6 +200,24 @@ void AudioSessionManagerImpl::EnableMuteSuggestionWhenMixWithOthers(bool enable)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE);
     } else if (ret != OHOS::AudioStandard::SUCCESS) {
         AUDIO_ERR_LOG("EnableMuteSuggestionWhenMixWithOthers Failed, ret = %{public}d", ret);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+    }
+}
+
+void AudioSessionManagerImpl::SetCaptureMuteHintSync(bool mute)
+{
+    if (audioSessionMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "can not get session");
+        return;
+    }
+
+    int32_t ret = audioSessionMngr_->SetCapturerMuteHint(mute);
+    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE);
+    } else if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+    } else if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
     }
 }
@@ -888,7 +928,7 @@ void AudioSessionManagerImpl::SetAudioSessionBehavior(const uint32_t behavior)
         return;
     }
     CHECK_AND_RETURN_RET_LOG(
-        behavior < (static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED) << 1),
+        (behavior & ~static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR)) == 0,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM), "invalid behavior param");
  
     int32_t ret = audioSessionMngr_->SetAudioSessionBehavior(behavior);

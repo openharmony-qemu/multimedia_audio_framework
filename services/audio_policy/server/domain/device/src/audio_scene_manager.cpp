@@ -25,6 +25,7 @@
 #include "audio_policy_log.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
+#include "audio_router_select_strategy.h"
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
@@ -64,13 +65,13 @@ void AudioSceneManager::SetAudioScenePre(AudioScene audioScene, const int32_t ui
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_CAPTURE,
                 std::make_shared<AudioDeviceDescriptor>());
             std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevices =
-                AudioStateManager::GetAudioStateManager().GetExcludedDevices(CALL_OUTPUT_DEVICES);
-            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(CALL_OUTPUT_DEVICES, unexcludedDevices);
+                AudioRouterSelectStrategy::GetInstance().GetExcludedDevices(CALL_OUTPUT_DEVICES);
+            AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevices, CALL_OUTPUT_DEVICES);
         }
 #ifdef BLUETOOTH_ENABLE
         Bluetooth::AudioHfpManager::UpdateAudioScene(newScene);
         Bluetooth::AudioHfpManager::DisconnectSco();
-        AudioPolicyUtils::GetInstance().SetScoExcluded(false);
+        AudioRouterSelectStrategy::GetInstance().SetScoExcluded(false);
 #endif
     }
     if (newScene == AUDIO_SCENE_DEFAULT) {

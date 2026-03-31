@@ -329,129 +329,11 @@ bool AudioActiveDevice::UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &des
     return false;
 }
 
-void AudioActiveDevice::HandleActiveBt(DeviceType deviceType, std::string macAddress)
-{
-    if (GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_SCO &&
-        deviceType != DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_SLE);
-        Bluetooth::AudioHfpManager::DisconnectSco();
-    }
-    if (GetCurrentOutputDeviceType() != DEVICE_TYPE_BLUETOOTH_SCO &&
-        deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-            macAddress, USER_SELECT_SLE);
-    }
-    if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
-        deviceType != DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
-            STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
-    }
-    if (deviceType == DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
-            STREAM_USAGE_VOICE_COMMUNICATION, USER_SELECT_SLE);
-    }
-}
-
-void AudioActiveDevice::HandleNegtiveBt(DeviceType deviceType)
-{
-    if (GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_SCO &&
-        deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
-            GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_SLE);
-        Bluetooth::AudioHfpManager::DisconnectSco();
-    }
-    if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
-        deviceType == DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
-            STREAM_USAGE_VOICE_COMMUNICATION, USER_NOT_SELECT_SLE);
-    }
-}
-
 bool AudioActiveDevice::IsDeviceActive(DeviceType deviceType)
 {
     AUDIO_DEBUG_LOG("type [%{public}d]", deviceType);
     CHECK_AND_RETURN_RET(GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID, false);
     return GetCurrentOutputDeviceType() == deviceType;
-}
-
-int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, const int32_t uid)
-{
-    CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
-
-    // Activate new device if its already connected
-    auto isPresent = [&deviceType] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
-        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "SetDeviceActive::Invalid device descriptor");
-        return ((deviceType == desc->deviceType_) || (deviceType == DEVICE_TYPE_FILE_SINK));
-    };
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices
-        = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    for (const auto &desc : callDevices) {
-        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*desc);
-        deviceList.push_back(devDesc);
-    }
-
-    auto itr = std::find_if(deviceList.begin(), deviceList.end(), isPresent);
-    CHECK_AND_RETURN_RET_LOG(itr != deviceList.end(), ERR_OPERATION_FAILED,
-        "Requested device not available %{public}d ", deviceType);
-    int32_t ownerUid = AudioStateManager::GetAudioStateManager().GetAudioSceneOwnerUid();
-    int32_t callerUid = AudioStateManager::GetAudioStateManager().GetPreferredUid(uid);
-    if (!active) {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), uid, "SetDeviceActive");
-#ifdef BLUETOOTH_ENABLE
-        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
-        HandleNegtiveBt(deviceType);
-#endif
-    } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER, *itr, uid, "SetDeviceActive");
-#ifdef BLUETOOTH_ENABLE
-        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
-        HandleActiveBt(deviceType, (*itr)->macAddress_);
-#endif
-    }
-    return SUCCESS;
-}
-
-int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool active, std::string address,
-    const int32_t uid)
-{
-    // Activate new device if its already connected
-    auto isPresent = [&deviceType, &address] (const std::shared_ptr<AudioDeviceDescriptor> &desc) {
-        CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
-        return ((deviceType == desc->deviceType_) && (address == desc->macAddress_));
-    };
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> callDevices
-        = AudioPolicyUtils::GetInstance().GetAvailableDevicesInner(CALL_OUTPUT_DEVICES);
-
-    auto itr = std::find_if(callDevices.begin(), callDevices.end(), isPresent);
-    CHECK_AND_RETURN_RET_LOG(itr != callDevices.end(), ERR_OPERATION_FAILED,
-        "Requested device not available %{public}d ", deviceType);
-    int32_t ownerUid = AudioStateManager::GetAudioStateManager().GetAudioSceneOwnerUid();
-    int32_t callerUid = AudioStateManager::GetAudioStateManager().GetPreferredUid(uid);
-    if (active) {
-        if (deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-            (*itr)->isEnable_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(std::make_shared<AudioDeviceDescriptor>(**itr), ENABLE_UPDATE);
-            AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(address);
-        }
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(**itr), uid, "SetCallDeviceActive");
-#ifdef BLUETOOTH_ENABLE
-        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
-        HandleActiveBt(deviceType, (*itr)->macAddress_);
-#endif
-    } else {
-        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-            std::make_shared<AudioDeviceDescriptor>(), uid, "SetCallDeviceActive");
-#ifdef BLUETOOTH_ENABLE
-        CHECK_AND_RETURN_RET(callerUid == SYSTEM_UID || callerUid == ownerUid, SUCCESS);
-        HandleNegtiveBt(deviceType);
-#endif
-    }
-    return SUCCESS;
 }
 
 void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag,
@@ -601,6 +483,7 @@ bool AudioActiveDevice::IsAvailableFrontDeviceInVector(
 void AudioActiveDevice::SetAdjustVolumeForZone(int32_t zoneId)
 {
     volumeAdjustZoneId_ = zoneId;
+    UpdateStreamDeviceMap("SetAdjustVolumeForZone");
 }
 
 int32_t AudioActiveDevice::GetAdjustVolumeZoneId()

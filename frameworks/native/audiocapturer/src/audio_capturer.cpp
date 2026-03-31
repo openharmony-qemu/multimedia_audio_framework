@@ -1044,7 +1044,7 @@ int32_t AudioCapturerPrivate::StartImpl()
     CHECK_AND_RETURN_RET_LOG(!isSwitching_, ERR_ILLEGAL_STATE, "Operation failed, in switching");
 
     CHECK_AND_RETURN_RET(audioInterrupt_.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
-        audioInterrupt_.streamId != INVALID_SESSION_ID, ERR_ILLEGAL_STATE);
+        audioInterrupt_.streamId != INVALID_STREAM_ID, ERR_ILLEGAL_STATE);
     std::unique_lock<std::mutex> audioInterruptLock(audioInterruptMutex_);
     AudioInterrupt audioInterrupt = audioInterrupt_;
     audioInterruptLock.unlock();

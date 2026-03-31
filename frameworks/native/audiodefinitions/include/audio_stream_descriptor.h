@@ -63,6 +63,7 @@ public:
     int32_t oldOriginalFlag_ = AUDIO_FLAG_NORMAL;
     AudioStreamInfo micInStreamInfo_ = {};
     AudioStreamInfo ecStreamInfo_ = {};
+    volatile bool isStandby_{false};
 
     AudioStreamDescriptor() = default;
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo);

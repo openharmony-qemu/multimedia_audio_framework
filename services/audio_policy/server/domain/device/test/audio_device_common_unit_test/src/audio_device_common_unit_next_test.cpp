@@ -13,6 +13,7 @@
 * limitations under the License.
 */
 #include "audio_device_common_unit_next_test.h"
+#include "audio_router_select_strategy.h"
 
 using namespace testing::ext;
 
@@ -142,7 +143,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
     preferredMediaRenderDevice->macAddress_ = desc->macAddress_;
     preferredMediaRenderDevice->deviceRole_ = desc->deviceRole_;
     preferredMediaRenderDevice->networkId_ = desc->networkId_;
-    audioDeviceCommon.audioStateManager_.SetPreferredMediaRenderDevice(preferredMediaRenderDevice);
+    AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(
+        INVALID_UID, INVALID_STREAM_ID, preferredMediaRenderDevice);
 
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_DP);

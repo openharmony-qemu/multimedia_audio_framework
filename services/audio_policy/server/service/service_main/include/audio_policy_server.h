@@ -177,6 +177,8 @@ public:
 
     int32_t GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32_t streamType, std::string &info) override;
 
+    int32_t SetMediaOutputDevice(int32_t deviceTypeIn) override;
+
     int32_t SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) override;
 
@@ -801,7 +803,7 @@ private:
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status
-    int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
+    int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedRingtoneVolume = false);
     int32_t SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetAppRingMutedInternal(int32_t appUid, bool muted);

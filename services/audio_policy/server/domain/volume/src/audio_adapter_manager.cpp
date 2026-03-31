@@ -81,7 +81,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_HDMI, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
     {DEVICE_TYPE_HEARING_AID, {HEARING_AID_CLASS}},
-    {DEVICE_TYPE_LINE_DIGITAL, {DP_CLASS, DP_MCH_CLASS}},
+    {DEVICE_TYPE_LINE_DIGITAL, {PRIMARY_CLASS, DP_CLASS, DP_MCH_CLASS}},
     {DEVICE_TYPE_REMOTE_DAUDIO, {DP_CLASS, DP_MCH_CLASS}}
 };
 } // namespace
@@ -156,11 +156,11 @@ bool AudioAdapterManager::Init()
 void AudioAdapterManager::InitBootAnimationVolume()
 {
     char currentVolumeValue[3] = {0};
-    AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_RING;
+    AudioVolumeType typeForBootAnimation = VolumeUtils::IsPCVolumeEnable() ? STREAM_SYSTEM : STREAM_NOTIFICATION;
     int32_t bootAnimationVolume = GetStreamVolume(typeForBootAnimation);
     AUDIO_DEBUG_LOG("Init: Type[%{public}d],volume[%{public}d]", typeForBootAnimation, bootAnimationVolume);
     std::string defaultVolume = std::to_string(bootAnimationVolume);
-    auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", defaultVolume.c_str(),
+    auto ret = GetParameter("persist.multimedia.audio.notificationvolume", defaultVolume.c_str(),
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         auto desc = audioActiveDevice_.GetDeviceForVolume(typeForBootAnimation);
@@ -353,21 +353,22 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, std::
     return AudioVolumeUtils::GetInstance().GetMinVolumeLevel(desc, volumeType, zoneId);
 }
 
-void AudioAdapterManager::SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
     AudioVolumeType volumeType, int32_t volumeLevel)
 {
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
-    // PC Boot Animation Volume use STREAM_SYSTEM
-    if ((volumeType == STREAM_RING && !VolumeUtils::IsPCVolumeEnable()) || (audioVolumeMap == STREAM_SYSTEM &&
-        device->deviceType_ == DEVICE_TYPE_SPEAKER)) {
+    // Only use the volume of speaker as the Boot Animation Volume.
+    // use STREAM_NOTIFICATION on phone and use STREAM_SYSTEM on PC.
+    if ((volumeType == STREAM_NOTIFICATION || audioVolumeMap == STREAM_SYSTEM) &&
+        device->deviceType_ == DEVICE_TYPE_SPEAKER) {
         int32_t volumeLevel =
             GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
-        int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
+        int32_t ret = SetParameter("persist.multimedia.audio.notificationvolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
-            AUDIO_INFO_LOG("Save ringtone volume for boot success %{public}d", volumeLevel);
+            AUDIO_INFO_LOG("Save notification volume for boot success %{public}d", volumeLevel);
         } else {
-            AUDIO_ERR_LOG("Save ringtone volume for boot failed, result %{public}d", ret);
+            AUDIO_ERR_LOG("Save notification volume for boot failed, result %{public}d", ret);
         }
     }
 }
@@ -723,11 +724,11 @@ void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, boo
 
 void AudioAdapterManager::HandleRingerMode(AudioRingerMode ringerMode)
 {
-    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
-    int32_t volumeLevel =
-        volumeDataMaintainer_.LoadVolumeFromMap(desc, STREAM_RING) * ((ringerMode != RINGER_MODE_NORMAL) ? 0 : 1);
+    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_NOTIFICATION);
+    int32_t muteFactor = (ringerMode != RINGER_MODE_NORMAL) ? 0 : 1;
+    int32_t volumeLevel = volumeDataMaintainer_.LoadVolumeFromMap(desc, STREAM_NOTIFICATION) * muteFactor;
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(desc, STREAM_RING, volumeLevel);
+    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION, volumeLevel);
 
     volumeDataMaintainer_.SaveRingerMode(ringerMode);
 }
@@ -802,7 +803,7 @@ int32_t AudioAdapterManager::SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> 
     int32_t muteFactor = GetStreamMuteForVolumeSet(device, streamType) ? 0 : 1;
     int32_t volumeLevel = GetStreamVolumeInternal(device, streamType) * muteFactor;
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(device, streamType, volumeLevel);
+    SaveNotificationVolumeToLocal(device, streamType, volumeLevel);
 
     bool useSpeaker = Util::IsDualToneStreamType(streamType);
     DeviceType deviceType = useSpeaker ? DEVICE_TYPE_SPEAKER : device->deviceType_;
@@ -1378,7 +1379,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
         CHECK_AND_CONTINUE(desc != nullptr);
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != PASS_THROUGH_MODE);
         CHECK_AND_CONTINUE(desc->volumeBehavior_.controlMode != HILINK_MODE);
-        RedirectVolumeType(streamDesc, volumeType);
+        RedirectVolumeType(streamDesc, volumeType); // for STREAM_VOICE_ASSISTANT
         for (auto &tempDesc : streamDesc->newDeviceDescs_) {
             CHECK_AND_CONTINUE(tempDesc != nullptr);
             auto target = std::make_pair(tempDesc->GetName(), volumeType);
@@ -1896,6 +1897,13 @@ int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnable
     return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
+int32_t AudioAdapterManager::UpdateSpatializationState(AudioSpatializationState spatializationState)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    AUDIO_INFO_LOG("AudioSpatializationService UpdateSpatializationState entered!");
+    return audioServiceAdapter_->UpdateSpatializationState(spatializationState);
+}
+
 void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
 {
     if (!audioModuleInfo.name.empty()) {
@@ -2379,6 +2387,7 @@ DeviceVolumeType AudioAdapterManager::GetDeviceCategory(DeviceType deviceType)
         case DEVICE_TYPE_DP:
         case DEVICE_TYPE_HDMI:
         case DEVICE_TYPE_ACCESSORY:
+        case DEVICE_TYPE_LINE_DIGITAL:
             return SPEAKER_VOLUME_TYPE;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_WIRED_HEADPHONES:
@@ -2611,11 +2620,11 @@ void AudioAdapterManager::InitRingerMode(bool isFirstBoot)
     }
 
     ringerMode_.store(ringerMode);
-    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_RING);
+    auto desc = audioActiveDevice_.GetDeviceForVolume(STREAM_NOTIFICATION);
     int32_t volumeLevel =
-        GetStreamVolumeInternal(desc, STREAM_RING) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
+        GetStreamVolumeInternal(desc, STREAM_NOTIFICATION) * ((ringerMode_ != RINGER_MODE_NORMAL) ? 0 : 1);
     // Save volume in local prop for bootanimation
-    SaveRingtoneVolumeToLocal(desc, STREAM_RING, volumeLevel);
+    SaveNotificationVolumeToLocal(desc, STREAM_NOTIFICATION, volumeLevel);
 }
 
 void AudioAdapterManager::CloneVolumeMap(void)
@@ -3366,10 +3375,17 @@ void AudioAdapterManager::GetVolumePoints(AudioVolumeType streamType, DeviceVolu
 {
     auto streamVolInfo = streamVolumeInfos_.find(streamType);
     if (streamVolInfo == streamVolumeInfos_.end()) {
-        AUDIO_DEBUG_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
-        streamVolInfo = streamVolumeInfos_.find(STREAM_MUSIC);
+        // Failed to find the volume config in streamVolumeInfos_
+        if (streamType == STREAM_NOTIFICATION) {
+            // Failed to find the config of notification. Use the config of ringtone.
+            AUDIO_INFO_LOG("streamType == STREAM_NOTIFICATION. Use the volume config of ringtone");
+            streamVolInfo = streamVolumeInfos_.find(STREAM_RING);
+        } else {
+            AUDIO_DEBUG_LOG("Cannot find stream type %{public}d and try to use STREAM_MUSIC", streamType);
+            streamVolInfo = streamVolumeInfos_.find(STREAM_MUSIC);
+        }
         CHECK_AND_RETURN_LOG(streamVolInfo != streamVolumeInfos_.end(),
-            "Cannot find stream type STREAM_MUSIC");
+            "Cannot find the alternative configuration!");
     }
     auto deviceVolInfo = streamVolInfo->second->deviceVolumeInfos.find(deviceType);
     if (deviceVolInfo == streamVolInfo->second->deviceVolumeInfos.end()) {
@@ -4004,7 +4020,7 @@ int32_t AudioAdapterManager::SetVolumeDbForDeviceInPipe(std::shared_ptr<AudioDev
     }
     int32_t volumeLevel =
         GetStreamVolumeInternal(desc, streamType) * (GetStreamMuteInternal(desc, streamType) ? 0 : 1);
-    SaveRingtoneVolumeToLocal(desc, streamType, volumeLevel);
+    SaveNotificationVolumeToLocal(desc, streamType, volumeLevel);
     return SUCCESS;
 }
 

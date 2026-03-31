@@ -709,13 +709,12 @@ int32_t AudioSessionService::SetAudioSessionCapturerMuteHint(int32_t callerPid, 
 int32_t AudioSessionService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(callerPid);
-    CHECK_AND_RETURN_RET_LOG(session != sessionMap_.end() && session->second != nullptr, ERROR_ILLEGAL_STATE,
-        "The audio session of pid %{public}d has not been created", callerPid);
-
-    std::shared_ptr<AudioSession> audioSession = session->second;
-    CHECK_AND_RETURN_RET_LOG(audioSession->IsSceneParameterSet(), ERROR_ILLEGAL_STATE,
-        "The audio session of pid %{public}d not set audio session scene", callerPid);
+    // check session is active
+    auto audioSession = CreateAudioSession(callerPid);
+    if (audioSession == nullptr) {
+        AUDIO_ERR_LOG("Create audio session fail, pid: %{public}d!", callerPid);
+        return ERROR;
+    }
 
     return audioSession->SetAudioSessionBehavior(behavior);
 }

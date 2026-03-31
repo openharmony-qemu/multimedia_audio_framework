@@ -194,6 +194,62 @@ OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterDeviceChangeCallback(
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
+OH_AudioCommon_Result OH_AudioRoutingManager_RegisterPreferredOutputDevicesChangeCallback(
+    OH_AudioRoutingManager *audioRoutingManager, OH_AudioStream_Usage streamUsage,
+    OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(VALID_OH_STREAM_USAGES.count(streamUsage),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid streamUsage");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
+    StreamUsage usage = static_cast<StreamUsage>(streamUsage);
+    return ohAudioRoutingManager->SetPreferredOutputDeviceChangeCallback(usage, callback);
+}
+
+OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterPreferredOutputDevicesChangeCallback(
+    OH_AudioRoutingManager *audioRoutingManager,
+    OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
+    OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
+    return ohAudioRoutingManager->UnsetPreferredOutputDeviceChangeCallback(callback);
+}
+
+OH_AudioCommon_Result OH_AudioRoutingManager_RegisterPreferredInputDevicesChangeCallback(
+    OH_AudioRoutingManager *audioRoutingManager, OH_AudioStream_SourceType sourceType,
+    OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(VALID_OH_SOURCE_TYPES.count(sourceType),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid sourceType");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback is nullptr");
+    OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
+    SourceType type = static_cast<SourceType>(sourceType);
+    return ohAudioRoutingManager->SetPreferredInputDeviceChangeCallback(type, callback);
+}
+
+OH_AudioCommon_Result OH_AudioRoutingManager_UnregisterPreferredInputDevicesChangeCallback(
+    OH_AudioRoutingManager *audioRoutingManager,
+    OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "audioRoutingManager is nullptr");
+    OHAudioRoutingManager* ohAudioRoutingManager = convertManager(audioRoutingManager);
+    CHECK_AND_RETURN_RET_LOG(ohAudioRoutingManager != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "ohAudioRoutingManager is nullptr");
+    return ohAudioRoutingManager->UnsetPreferredInputDeviceChangeCallback(callback);
+}
+
 OH_AudioCommon_Result OH_AudioRoutingManager_ReleaseDevices(
     OH_AudioRoutingManager *audioRoutingManager,
     OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray)
@@ -436,6 +492,192 @@ void OHAudioDeviceChangedCallback::OnDeviceChange(const DeviceChangeAction &devi
         }
     }
     callback_(type, audioDeviceDescriptorArray);
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::SetPreferredOutputDeviceChangeCallback(
+    StreamUsage streamUsage, OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioRoutingManager is null");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid callback");
+
+    std::lock_guard<std::mutex> lock(audioPreferredOutputDeviceCbMutex_);
+    auto iter = std::find_if(ohAudioPreferredOutputDeviceCallbackArray_.begin(),
+        ohAudioPreferredOutputDeviceCallbackArray_.end(),
+        [&](const std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback> &item) {
+        return item->GetCallback() == callback;
+    });
+    CHECK_AND_RETURN_RET_LOG(iter == ohAudioPreferredOutputDeviceCallbackArray_.end(),
+        AUDIOCOMMON_RESULT_SUCCESS, "callback already registed");
+    std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback> ohAudioPreferredOutputDeviceCallback =
+        std::make_shared<OHAudioPreferredOutputDeviceChangedCallback>(callback);
+    CHECK_AND_RETURN_RET_LOG(ohAudioPreferredOutputDeviceCallback != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "Failed to create AudioPreferredOutputDevice callback!");
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.streamUsage = streamUsage;
+    int32_t ret = audioRoutingManager_->SetPreferredOutputDeviceChangeCallback(
+        rendererInfo, ohAudioPreferredOutputDeviceCallback);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to SetPreferredOutputDeviceChangeCallback.");
+    ohAudioPreferredOutputDeviceCallbackArray_.push_back(ohAudioPreferredOutputDeviceCallback);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::RemoveAllPreferredOutputDeviceCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioRoutingManager is null");
+    std::lock_guard<std::mutex> lock(audioPreferredOutputDeviceCbMutex_);
+    for (auto &iter : ohAudioPreferredOutputDeviceCallbackArray_) {
+        int32_t ret = audioRoutingManager_->UnsetPreferredOutputDeviceChangeCallback(iter);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+            "Unset one of preferred output device change callback failed!");
+    }
+    ohAudioPreferredOutputDeviceCallbackArray_.clear();
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::UnsetPreferredOutputDeviceChangeCallback(
+    OH_AudioRoutingManager_OnPreferredOutputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioRoutingManager is null");
+    CHECK_AND_RETURN_RET(callback != nullptr, RemoveAllPreferredOutputDeviceCallback());
+    std::lock_guard<std::mutex> lock(audioPreferredOutputDeviceCbMutex_);
+    auto iter = std::find_if(ohAudioPreferredOutputDeviceCallbackArray_.begin(),
+        ohAudioPreferredOutputDeviceCallbackArray_.end(),
+        [&](const std::shared_ptr<OHAudioPreferredOutputDeviceChangedCallback> &item) {
+        return item->GetCallback() == callback;
+    });
+    CHECK_AND_RETURN_RET_LOG(iter != ohAudioPreferredOutputDeviceCallbackArray_.end(),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback not registered");
+    int32_t ret = audioRoutingManager_->UnsetPreferredOutputDeviceChangeCallback(*iter);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to UnsetPreferredOutputDeviceChangeCallback.");
+    ohAudioPreferredOutputDeviceCallbackArray_.erase(iter);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+void OHAudioPreferredOutputDeviceChangedCallback::OnPreferredOutputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the fuction is nullptr");
+    uint32_t size = desc.size();
+    CHECK_AND_RETURN_LOG(size > 0, "audioDeviceDescriptors is null");
+
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+        (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+    if (audioDeviceDescriptorArray) {
+        audioDeviceDescriptorArray->descriptors =
+            (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
+        CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray->descriptors != nullptr,
+            DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray), "failed to malloc descriptors.");
+
+        audioDeviceDescriptorArray->size = size;
+        uint32_t index = 0;
+        for (auto deviceDescriptor : desc) {
+            audioDeviceDescriptorArray->descriptors[index] =
+                (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
+            CHECK_AND_RETURN_RET(audioDeviceDescriptorArray->descriptors[index] != nullptr,
+                DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray));
+            index++;
+        }
+    }
+    callback_(audioDeviceDescriptorArray);
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::SetPreferredInputDeviceChangeCallback(
+    SourceType sourceType, OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioRoutingManager is null");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "invalid callback");
+
+    std::lock_guard<std::mutex> lock(audioPreferredInputDeviceCbMutex_);
+    auto iter = std::find_if(ohAudioPreferredInputDeviceCallbackArray_.begin(),
+        ohAudioPreferredInputDeviceCallbackArray_.end(),
+        [&](const std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback> &item) {
+        return item->GetCallback() == callback;
+    });
+    CHECK_AND_RETURN_RET_LOG(iter == ohAudioPreferredInputDeviceCallbackArray_.end(),
+        AUDIOCOMMON_RESULT_SUCCESS, "callback already registed");
+    std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback> ohAudioPreferredInputDeviceCallback =
+        std::make_shared<OHAudioPreferredInputDeviceChangedCallback>(callback);
+    CHECK_AND_RETURN_RET_LOG(ohAudioPreferredInputDeviceCallback != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+        "Failed to create AudioPreferredInputDevice callback!");
+    AudioCapturerInfo capturerInfo = {};
+    capturerInfo.sourceType = sourceType;
+    int32_t ret = audioRoutingManager_->SetPreferredInputDeviceChangeCallback(
+        capturerInfo, ohAudioPreferredInputDeviceCallback);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to SetPreferredInputDeviceChangeCallback.");
+    ohAudioPreferredInputDeviceCallbackArray_.push_back(ohAudioPreferredInputDeviceCallback);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::RemoveAllPreferredInputDeviceCallback()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioRoutingManager is null");
+    std::lock_guard<std::mutex> lock(audioPreferredInputDeviceCbMutex_);
+    for (auto &iter : ohAudioPreferredInputDeviceCallbackArray_) {
+        int32_t ret = audioRoutingManager_->UnsetPreferredInputDeviceChangeCallback(iter);
+        CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS, AUDIOCOMMON_RESULT_ERROR_SYSTEM,
+            "Unset one of preferred input device change callback failed!");
+    }
+    ohAudioPreferredInputDeviceCallbackArray_.clear();
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+OH_AudioCommon_Result OHAudioRoutingManager::UnsetPreferredInputDeviceChangeCallback(
+    OH_AudioRoutingManager_OnPreferredInputDeviceChangedCallback callback)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRoutingManager_ != nullptr,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed, audioRoutingManager is null");
+    CHECK_AND_RETURN_RET(callback != nullptr, RemoveAllPreferredInputDeviceCallback());
+    std::lock_guard<std::mutex> lock(audioPreferredInputDeviceCbMutex_);
+    auto iter = std::find_if(ohAudioPreferredInputDeviceCallbackArray_.begin(),
+        ohAudioPreferredInputDeviceCallbackArray_.end(),
+        [&](const std::shared_ptr<OHAudioPreferredInputDeviceChangedCallback> &item) {
+        return item->GetCallback() == callback;
+    });
+    CHECK_AND_RETURN_RET_LOG(iter != ohAudioPreferredInputDeviceCallbackArray_.end(),
+        AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM, "callback not registered");
+    int32_t ret = audioRoutingManager_->UnsetPreferredInputDeviceChangeCallback(*iter);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIOCOMMON_RESULT_SUCCESS,
+        AUDIOCOMMON_RESULT_ERROR_SYSTEM, "failed to UnsetPreferredInputDeviceChangeCallback.");
+    ohAudioPreferredInputDeviceCallbackArray_.erase(iter);
+    return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+void OHAudioPreferredInputDeviceChangedCallback::OnPreferredInputDeviceUpdated(
+    const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc)
+{
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "failed, pointer to the fuction is nullptr");
+    uint32_t size = desc.size();
+    CHECK_AND_RETURN_LOG(size > 0, "audioDeviceDescriptors is null");
+
+    OH_AudioDeviceDescriptorArray *audioDeviceDescriptorArray =
+        (OH_AudioDeviceDescriptorArray *)malloc(sizeof(OH_AudioDeviceDescriptorArray));
+    if (audioDeviceDescriptorArray) {
+        audioDeviceDescriptorArray->descriptors =
+            (OH_AudioDeviceDescriptor**)malloc(sizeof(OH_AudioDeviceDescriptor*) * size);
+        CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptorArray->descriptors != nullptr,
+            DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray), "failed to malloc descriptors.");
+
+        audioDeviceDescriptorArray->size = size;
+        uint32_t index = 0;
+        for (auto deviceDescriptor : desc) {
+            audioDeviceDescriptorArray->descriptors[index] =
+                (OH_AudioDeviceDescriptor *)(new OHAudioDeviceDescriptor(deviceDescriptor));
+            CHECK_AND_RETURN_RET(audioDeviceDescriptorArray->descriptors[index] != nullptr,
+                DestroyAudioDeviceDescriptor(audioDeviceDescriptorArray));
+            index++;
+        }
+    }
+    callback_(audioDeviceDescriptorArray);
 }
 
 void OHMicrophoneBlockCallback::OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo)

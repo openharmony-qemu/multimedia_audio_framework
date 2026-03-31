@@ -25,6 +25,7 @@ using namespace std;
 constexpr int32_t NEED_TO_FETCH = 1;
 
 enum DEVICE_PRIORITY {
+    PRIORITY_APP,
     PRIORITY_PRIVACY,
     PRIORITY_PUBLIC,
     PRIORITY_BASE,
@@ -45,8 +46,8 @@ public:
     void OnXmlParsingCompleted(const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData);
     int32_t GetDeviceUsageFromType(const DeviceType devType) const;
     void ParseDeviceXml();
-    AudioStreamDeviceChangeReasonExt UpdateDevicesListInfo(
-        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const DeviceInfoUpdateCommand updateCommand);
+    bool UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
+        const DeviceInfoUpdateCommand updateCommand, AudioStreamDeviceChangeReasonExt &reason);
 
     vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();
@@ -179,7 +180,8 @@ private:
     bool UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    AudioStreamDeviceChangeReasonExt UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+    bool UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc,
+        AudioStreamDeviceChangeReasonExt &reason);
     bool IsDescMatchedInVector(const shared_ptr<AudioDeviceDescriptor> &devDesc, list<DevicePrivacyInfo> &deviceList);
 
     void RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc);

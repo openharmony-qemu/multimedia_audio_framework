@@ -814,6 +814,8 @@ AudioPortPin AudioRenderSink::GetAudioPortPin(void) const noexcept
              return PIN_OUT_HDMI;
         case DEVICE_TYPE_NEARLINK:
             return PIN_OUT_NEARLINK;
+        case DEVICE_TYPE_LINE_DIGITAL:
+            return PIN_OUT_LINEOUT;
         case DEVICE_TYPE_NONE:
             return PIN_NONE;
         default:

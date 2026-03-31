@@ -325,6 +325,7 @@ public:
 
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
+    int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
     void RegisterMdmMuteSwitchCallback();
@@ -446,7 +447,7 @@ private:
     void GetVolumePoints(AudioVolumeType streamType, DeviceVolumeType deviceType,
         std::vector<VolumePoint> &volumePoints);
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
-    void SaveRingtoneVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
+    void SaveNotificationVolumeToLocal(std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
     int32_t SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,

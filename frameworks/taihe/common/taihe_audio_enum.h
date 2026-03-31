@@ -128,6 +128,7 @@ public:
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
     static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentSetMediaOutputDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
     static bool IsLegalInputArgumentVolumeMode(int32_t volumeMode);
     static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);

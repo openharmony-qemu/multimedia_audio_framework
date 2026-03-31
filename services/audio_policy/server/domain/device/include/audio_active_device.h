@@ -63,9 +63,6 @@ public:
     std::string GetActiveBtDeviceMac();
     void SetActiveBtDeviceMac(const std::string macAddress);
     void SetActiveBtInDeviceMac(const std::string macAddress);
-    int32_t SetDeviceActive(DeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address,
-        const int32_t uid = INVALID_UID);
     bool GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, AudioStreamInfo &streamInfo);
 
     void SetCurrentInputDevice(const AudioDeviceDescriptor &desc, const int32_t uid = INVALID_UID);
@@ -112,8 +109,6 @@ private:
     ~AudioActiveDevice() {}
     void WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
         const AudioStreamDeviceChangeReason reason);
-    void HandleActiveBt(DeviceType deviceType, std::string macAddress);
-    void HandleNegtiveBt(DeviceType deviceType);
     void UpdateVolumeTypeDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
     void UpdateStreamUsageDeviceMap(std::shared_ptr<AudioStreamDescriptor> desc);
     void SortDevicesByPriority(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);

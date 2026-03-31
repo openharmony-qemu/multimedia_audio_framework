@@ -33,18 +33,20 @@ namespace AudioStandard {
 static bool g_socketRunThread = false;
 static bool g_inputRunThread = false;
 
-static std::string GetAudioEventInfo(const AudioEvent audioEvent)
+std::string GetAudioEventInfo(const AudioEvent audioEvent)
 {
     int32_t ret;
     char event[AUDIO_PNP_INFO_LEN_MAX] = {0};
-    if ((audioEvent.eventType == PNP_EVENT_UNKNOWN && audioEvent.anahsName == "") ||
-        (audioEvent.deviceType == PNP_DEVICE_UNKNOWN && audioEvent.anahsName == "")) {
-        AUDIO_ERR_LOG("audio event is not updated");
+    if ((audioEvent.eventType == AUDIO_EVENT_UNKNOWN && audioEvent.anahsName == "") ||
+        (audioEvent.deviceType == AUDIO_EVENT_UNKNOWN && audioEvent.anahsName == "")) {
+        AUDIO_ERR_LOG("audio event is not updated: eventType=%{public}u, deviceType=%{public}u,"
+            "anahsName=[%{public}s]", audioEvent.eventType, audioEvent.deviceType, audioEvent.anahsName.c_str());
         return event;
     }
     ret = snprintf_s(event, AUDIO_PNP_INFO_LEN_MAX, AUDIO_PNP_INFO_LEN_MAX - 1,
-        "EVENT_TYPE=%u;DEVICE_TYPE=%u;EVENT_NAME=%s;DEVICE_ADDRESS=%s;ANAHS_NAME=%s", audioEvent.eventType,
-        audioEvent.deviceType, audioEvent.name.c_str(), audioEvent.address.c_str(), audioEvent.anahsName.c_str());
+        "EVENT_TYPE=%u;DEVICE_TYPE=%u;DEVICE_ROLE=%d;EVENT_NAME=%s;DEVICE_ADDRESS=%s;ANAHS_NAME=%s",
+            audioEvent.eventType, audioEvent.deviceType, audioEvent.deviceRole, audioEvent.name.c_str(),
+                audioEvent.address.c_str(), audioEvent.anahsName.c_str());
     if (ret < 0) {
         AUDIO_ERR_LOG("snprintf_s failed");
         return event;
@@ -196,23 +198,40 @@ void AudioPnpServer::OpenAndReadWithSocket()
 
 void AudioPnpServer::DetectAudioDevice()
 {
-    AUDIO_INFO_LOG("Enter");
+    AUDIO_INFO_LOG("Enter DetectAudioDevice");
     int32_t ret;
     AudioEvent audioEvent = {0};
 
     ret = AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
-    if ((ret == SUCCESS) && (audioEvent.eventType == AUDIO_DEVICE_ADD)) {
-        AUDIO_INFO_LOG("audio detect analog headset");
+    if (ret == SUCCESS && audioEvent.eventType == PNP_EVENT_DEVICE_ADD) {
+        AUDIO_INFO_LOG("Audio detect headset (H2W) added");
         AudioSocketThread::UpdateDeviceState(audioEvent);
 
         eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
-        CHECK_AND_RETURN_LOG(!eventInfo_.empty(), "invalid detect info");
-        OnPnpDeviceStatusChanged(eventInfo_);
-        return;
+        if (!eventInfo_.empty()) {
+            AUDIO_INFO_LOG("Forwarding H2W event: %{public}s", eventInfo_.c_str());
+            OnPnpDeviceStatusChanged(eventInfo_);
+        }
+    } else {
+        AUDIO_INFO_LOG("H2W not detected or detection failed, continue to check post devices");
+    }
+
+    ret = AudioSocketThread::DetectPostAudioDevices(&audioEvent);
+    if (ret == SUCCESS && audioEvent.eventType == PNP_EVENT_DEVICE_ADD) {
+        AUDIO_INFO_LOG("Audio detect post audio device added");
+        AudioSocketThread::UpdateDeviceState(audioEvent);
+
+        eventInfo_ = GetAudioEventInfo(AudioSocketThread::audioSocketEvent_);
+        if (!eventInfo_.empty()) {
+            AUDIO_INFO_LOG("Forwarding Post Device event: %{public}s", eventInfo_.c_str());
+            OnPnpDeviceStatusChanged(eventInfo_);
+        }
+    } else {
+        AUDIO_INFO_LOG("Post audio devices not detected or detectino failed");
     }
 
     DetectAudioDpDevice();
-    AUDIO_INFO_LOG("Done");
+    AUDIO_INFO_LOG("DetectAudioDevice Done");
 }
 
 void AudioPnpServer::DetectAudioDpDevice()

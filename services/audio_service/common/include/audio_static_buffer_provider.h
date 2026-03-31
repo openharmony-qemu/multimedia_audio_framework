@@ -55,7 +55,6 @@ private:
     int64_t currentLoopTimes_ = 0;
     size_t curStaticDataPos_ = 0;
     bool delayRefreshBufferStatus_ = false;
-    bool playFinished_ = false;
     bool needFadeIn_ = false;
     bool needFadeOut_ = false;
 

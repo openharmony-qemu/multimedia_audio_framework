@@ -136,8 +136,9 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         case SESSION_OPERATION_START:
             return coreService_->StartClient(sessionId);
         case SESSION_OPERATION_PAUSE:
-        case SESSION_OPERATION_STANDBY:
             return coreService_->PauseClient(sessionId);
+        case SESSION_OPERATION_STANDBY:
+            return coreService_->StandbyClient(sessionId);
         case SESSION_OPERATION_STOP:
             return coreService_->StopClient(sessionId);
         case SESSION_OPERATION_RELEASE:
@@ -463,6 +464,13 @@ int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilte
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->SelectOutputDevice(audioRendererFilter, selectedDesc, audioDeviceSelectMode);
+}
+
+int32_t AudioCoreService::EventEntry::SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid)
+{
+    Trace trace("KeyAction AudioCoreService::SetMediaOutputDeviceByUid");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetMediaOutputDeviceByUid(deviceType, uid);
 }
 
 int32_t AudioCoreService::EventEntry::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,

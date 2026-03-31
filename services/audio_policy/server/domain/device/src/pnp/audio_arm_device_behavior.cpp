@@ -23,6 +23,8 @@
 #include "audio_iohandle_map.h"
 #include "audio_core_config_manager.h"
 #include "audio_policy_utils.h"
+#include "audio_pipe_manager.h"
+
 #include "audio_arm_device_behavior.h"
 
 namespace OHOS {
@@ -52,19 +54,20 @@ static std::map<std::string, AudioSampleFormat> formatStrToEnum = {
 int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "streamDesc is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM, "newDeviceDescs_ is empty");
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty() &&
+        streamDesc->newDeviceDescs_.front() != nullptr, ERR_NULL_POINTER, "param is invalid");
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_POINTER, "deviceDesc is nullptr");
 
     std::string address = deviceDesc->GetMacAddress();
     DeviceRole role = deviceDesc->getRole();
     AUDIO_INFO_LOG("address=%{public}s, role=%{public}d",
-        AudioPolicyUtils::GetInstance().GetEncryptAddr(address).c_str(), role);
+        AudioPolicyUtils::GetInstance().EncUsbAddr(address).c_str(), role);
     string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
-    CHECK_AND_RETURN_RET_LOG(address != activeArmAddr, ERR_INVALID_PARAM, "usb device addr already active");
+    CHECK_AND_RETURN_RET_LOG(address != activeArmAddr, SUCCESS, "usb device addr already active");
     std::list<AudioModuleInfo> moduleInfoList;
-    bool ret = AudioCoreConfigManager::GetInstance().GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_INVALID_PARAM, "pipeManager is nullptr");
+    bool ret = pipeManager->GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "GetModuleListByType empty");
     for (auto &moduleInfo : moduleInfoList) {
         DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
@@ -73,12 +76,11 @@ int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
         auto coreService = AudioCoreService::GetCoreService();
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is nullptr");
         bool isEcFeatureEnable = coreService->GetEcFeatureEnable();
+        auto currentOutputDevice = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
         if (!(isEcFeatureEnable && role == INPUT_DEVICE) &&
             AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
-            AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(
-                AudioActiveDevice::GetInstance().GetCurrentOutputDeviceNetworkId(),
-                AudioPolicyUtils::GetInstance().GetSinkPortName(
-                    AudioActiveDevice::GetInstance().GetCurrentOutputDeviceType()));
+            AudioIOHandleMap::GetInstance().MuteDefaultSinkPort(currentOutputDevice.networkId_,
+                AudioPolicyUtils::GetInstance().GetSinkPortName(currentOutputDevice.deviceType_));
             AudioIOHandleMap::GetInstance().ClosePortAndEraseIOHandle(moduleInfo.name);
         }
         UpdateArmModuleInfo(deviceDesc, moduleInfo);
@@ -91,7 +93,7 @@ int32_t AudioArmDeviceBehavior::ActivateDevice(const std::shared_ptr<AudioStream
             } else {
                 AUDIO_INFO_LOG("just save arm usb source module info, rate=%{public}s", moduleInfo.rate.c_str());
                 coreService->SetUsbSourceModuleInfo(moduleInfo);
-                AudioCoreConfigManager::GetInstance().UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
+                pipeManager->UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
             }
         } else {
             int32_t ret = AudioIOHandleMap::GetInstance().OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
@@ -146,6 +148,24 @@ int32_t AudioArmDeviceBehavior::DeactivateDevice()
 
 int32_t AudioArmDeviceBehavior::DeactivateDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_INVALID_PARAM, "deviceDesc is nullptr");
+    AUDIO_INFO_LOG("address=%{public}s, role=%{public}d",
+        AudioPolicyUtils::GetInstance().EncUsbAddr(deviceDesc->GetMacAddress()).c_str(), deviceDesc->getRole());
+    string &activeArmAddr = deviceDesc->getRole() == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
+    CHECK_AND_RETURN_RET_LOG(deviceDesc->GetMacAddress() == activeArmAddr, SUCCESS, "usb device addr not match");
+    std::list<AudioModuleInfo> moduleInfoList;
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, ERR_INVALID_PARAM, "pipeManager is nullptr");
+    bool ret = pipeManager->GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_INVALID_PARAM, "GetModuleListByType Failed");
+    for (auto &moduleInfo : moduleInfoList) {
+        DeviceRole configRole = moduleInfo.role == "sink" ? OUTPUT_DEVICE : INPUT_DEVICE;
+        if (configRole != deviceDesc->getRole()) {continue;}
+        if (AudioIOHandleMap::GetInstance().CheckIOHandleExist(moduleInfo.name)) {
+            AudioIOHandleMap::GetInstance().ClosePortAndEraseIOHandle(moduleInfo.name);
+        }
+    }
+    activeArmAddr = "";
     return SUCCESS;
 }
 

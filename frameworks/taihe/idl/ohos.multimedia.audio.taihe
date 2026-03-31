@@ -841,7 +841,7 @@ enum AudioSessionStateChangeHint: i32 {
 }
 
 enum AudioSessionBehaviorFlags: i32 {
-  DEFAULT = 0x00000000,
+  DEFAULT_BEHAVIOR = 0x00000000,
   VOIP_PRIVACY_TYPE_PUBLIC = 0x00000001,
   MUTE_WHEN_INTERRUPTED = 0x00000002,
 }
@@ -899,7 +899,12 @@ interface AudioSessionManager {
   @gen_promise("setDefaultOutputDevice")
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
+  @gen_promise("setMediaOutputDevice")
+  SetMediaOutputDeviceSync(deviceType: DeviceType): void;
+
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
+  @gen_promise("setCaptureMuteHint")
+  SetCaptureMuteHintSync(mute: bool): void;
 
   SetAudioSessionBehavior(behavior: i32): void;
 
@@ -1018,6 +1023,9 @@ interface AudioCapturer {
 
   @gen_promise("setWillMuteWhenInterrupted")
   SetWillMuteWhenInterruptedSync(muteWhenInterrupted: bool): void;
+
+  @gen_promise("setMuteHint")
+  SetMuteHintSync(mute: bool): void;
 
   GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 

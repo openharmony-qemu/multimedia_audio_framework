@@ -32,6 +32,7 @@
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
 #include "audio_volume.h"
+#include "audio_router_select_strategy.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -114,14 +115,14 @@ static void ExcludeIndirectUsbArmInput(const AudioDeviceDescriptor &updatedDesc)
     AUDIO_INFO_LOG("key=%{public}s, val=%{public}s", key.c_str(), val.c_str());
     CHECK_AND_RETURN(val == "true");
     vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(updatedDesc)};
-    AudioStateManager::GetAudioStateManager().ExcludeDevices(MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES, descs);
+    AudioRouterSelectStrategy::GetInstance().ExcludeDevices(descs, MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES);
 }
 
 static void UnexcludeIndirectUsbArmInput(const AudioDeviceDescriptor &updatedDesc)
 {
     CHECK_AND_RETURN(!updatedDesc.hasPair_ && updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET);
     vector<shared_ptr<AudioDeviceDescriptor>> descs{make_shared<AudioDeviceDescriptor>(updatedDesc)};
-    AudioStateManager::GetAudioStateManager().UnexcludeDevices(MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES, descs);
+    AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(descs, MEDIA_INPUT_DEVICES | CALL_INPUT_DEVICES);
 }
 #endif
 
@@ -201,7 +202,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
         if (preferredType == AUDIO_CALL_RENDER && uid >= 0) {
             bypassType = RouterType::ROUTER_TYPE_USER_SELECT;
             std::shared_ptr<AudioDeviceDescriptor> preferredDevice =
-                AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDeviceForUid(uid);
+                AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(uid, INVALID_STREAM_ID);
             CHECK_AND_RETURN_RET_LOG(preferredDevice != nullptr, deviceList, "preferredDevice is nullptr.");
             auto device = audioDeviceManager_.FindConnectedDeviceById(preferredDevice->deviceId_);
             if (device != nullptr && audioDeviceManager_.IsDeviceAvailable(CALL_OUTPUT_DEVICES, device)) {
@@ -389,14 +390,15 @@ void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updated
 
 void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     for (const auto& desc : descForCb) {
-        if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&
-            desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredMediaRenderDevice())) {
+        if (strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID) != nullptr &&
+            desc->IsSameDeviceDesc(*strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
                 std::make_shared<AudioDeviceDescriptor>());
         }
-        if (audioStateManager_.GetPreferredCallRenderDevice() != nullptr &&
-            desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredCallRenderDevice())) {
+        if (strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID) != nullptr &&
+            desc->IsSameDeviceDesc(*strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "UpdateConnectedDevicesWhenDisconnecting");
         }
@@ -479,7 +481,7 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
 #ifndef WIRELESS_DEFAULT_EXCLUDE
     std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
         make_shared<AudioDeviceDescriptor>(updatedDesc)};
-    AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
+    AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 #endif
     audioDeviceManager_.AddNewDevice(audioDescriptor);
     AudioAdapterManager::GetInstance().UpdateVolumeWhenDeviceConnect(audioDescriptor);
@@ -487,8 +489,9 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
         return;
     }
     DeviceUsage usage = audioDeviceManager_.GetDeviceUsage(updatedDesc);
-    if (NeedClearPreferredMediaRenderer(audioStateManager_.GetPreferredMediaRenderDevice(), audioDescriptor,
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
+    if (NeedClearPreferredMediaRenderer(
+        AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID),
+        audioDescriptor, audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
             "UpdateConnectedDevicesWhenConnectingForOutputDevice_1", ROUTER_TYPE_USER_SELECT), usage)) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
@@ -772,8 +775,11 @@ int32_t AudioDeviceCommon::OpenRemoteAudioDevice(std::string networkId, DeviceRo
 void AudioDeviceCommon::CheckAndNotifyUserSelectedDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
 {
-    shared_ptr<AudioDeviceDescriptor> userSelectedMediaDevice = audioStateManager_.GetPreferredMediaRenderDevice();
-    shared_ptr<AudioDeviceDescriptor> userSelectedCallDevice = audioStateManager_.GetPreferredCallRenderDevice();
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    shared_ptr<AudioDeviceDescriptor> userSelectedMediaDevice =
+        strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
+    shared_ptr<AudioDeviceDescriptor> userSelectedCallDevice =
+        strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
     if (userSelectedMediaDevice != nullptr
         && userSelectedMediaDevice->connectState_ == VIRTUAL_CONNECTED
         && deviceDescriptor->IsSameDeviceDesc(*userSelectedMediaDevice)) {

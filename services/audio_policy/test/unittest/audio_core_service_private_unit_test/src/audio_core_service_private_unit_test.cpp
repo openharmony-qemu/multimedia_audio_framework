@@ -1126,24 +1126,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_066, TestSize.Leve
 
 /**
  * @tc.name : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_GetEcEnableParam_001
- * @tc.desc : Test AudioUtils::GetEcEnableParam
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetEcEnableParam_001, TestSize.Level1)
-{
-    // 测试设置为1 (true)
-    SetSysPara("const.multimedia.audio.fwk_ec.enable", 1);
-    bool result = GetEcEnableParam();
-    EXPECT_EQ(result, true);
-
-    // 测试设置为0 (false)
-    SetSysPara("const.multimedia.audio.fwk_ec.enable", 0);
-    result = GetEcEnableParam();
-    EXPECT_EQ(result, false);
-}
-
-/**
- * @tc.name : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_067
  * @tc.desc : Test AudioCoreService::NeedRehandleA2DPDevice
  */
@@ -1341,6 +1323,36 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Leve
 
     state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_RELEASED);
     EXPECT_EQ(state, CAPTURER_RELEASED);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_075
+ * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
+ */
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_075, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_LINE_DIGITAL;
+    auto audioCoreService = AudioCoreService::GetCoreService();
+
+    bool result = audioCoreService->HasLowLatencyCapability(deviceType, false);
+
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_076
+ * @tc.desc : Test AudioCoreService::HasLowLatencyCapability
+ */
+HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_076, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_WIRED_MICIN;
+    auto audioCoreService = AudioCoreService::GetCoreService();
+
+    bool result = audioCoreService->HasLowLatencyCapability(deviceType, false);
+
+    EXPECT_EQ(result, true);
 }
 
 /**
@@ -2217,6 +2229,19 @@ HWTEST_F(AudioCoreServicePrivateTest, IsStreamSupportLowpower_003, TestSize.Leve
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest IsStreamSupportLower_003 end");
     EXPECT_EQ(isSupportLowPower, false);
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: StandbyClient_001
+* @tc.desc  : Test StandbyClient
+*/
+HWTEST_F(AudioCoreServicePrivateTest, StandbyClient_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    auto ret = audioCoreService->StandbyClient(1000);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

@@ -51,7 +51,7 @@ public:
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetLatency(uint64_t &latency);
-    int32_t RequestUserPrivacyAuthority();
+    int32_t RequestUserPrivacyAuthority(uint32_t sessionId);
     int32_t SetInMainThreadState(bool isInMainThread);
     bool IsAppStateBackground(int32_t appPid);
 
@@ -77,6 +77,7 @@ public:
     bool TurnOffMicIndicator(CapturerState capturerState);
     void TurnOnRemoteMicIndicator();
     void TurnOffRemoteMicIndicator();
+    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
 
 private:
     bool CheckBGCapture();
@@ -98,6 +99,8 @@ private:
     void RecordOverflowStatus(bool currentStatus);
     void ReportNoBgPermissionEvent();
     void ReportOverflowEvent();
+    int32_t StartPrivacyConfirmDialog(uint32_t sessionId);
+    void OnPrivacyAuthorityResult(bool isAllowed);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;

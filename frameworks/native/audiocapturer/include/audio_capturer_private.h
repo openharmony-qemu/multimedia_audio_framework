@@ -28,7 +28,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioCapturerStateChangeCallbackImpl;
 class CapturerPolicyServiceDiedCallback;
 class InputDeviceChangeWithInfoCallbackImpl;
@@ -216,7 +215,7 @@ private:
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, false}, 0};
     bool isVoiceCallCapturer_ = false;
-    uint32_t sessionID_ = INVALID_SESSION_ID;
+    uint32_t sessionID_ = INVALID_STREAM_ID;
     std::shared_ptr<AudioCapturerProxyObj> capturerProxyObj_;
     static std::map<AudioStreamType, SourceType> streamToSource_;
     std::mutex lock_;

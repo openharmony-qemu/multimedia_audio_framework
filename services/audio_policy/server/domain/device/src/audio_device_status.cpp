@@ -35,6 +35,7 @@
 #include "sle_audio_device_manager.h"
 #include "audio_zone_service.h"
 #include "audio_collaborative_service.h"
+#include "audio_router_select_strategy.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -680,7 +681,12 @@ void AudioDeviceStatus::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bo
         }
     }
     AudioStreamInfo streamInfo = {};
-    OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
+    if (desc.deviceType_ != DEVICE_TYPE_LINE_DIGITAL) {
+        OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
+    } else {
+        OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo,
+            desc.deviceRole_);
+    }
 }
 
 void AudioDeviceStatus::OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status)
@@ -840,7 +846,8 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
-            break;
+        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
+            return DeviceType::DEVICE_TYPE_LINE_DIGITAL;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:
@@ -857,8 +864,6 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
         case OHOS::AudioStandard::AUDIO_PIN_IN_UWB:
             return DeviceType::DEVICE_TYPE_ACCESSORY;
         case OHOS::AudioStandard::AUDIO_PIN_IN_HS_MIC:
-            break;
-        case OHOS::AudioStandard::AUDIO_PIN_IN_LINEIN:
             break;
         case OHOS::AudioStandard::AUDIO_PIN_IN_USB_EXT:
             break;
@@ -1368,7 +1373,7 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
 
 void AudioDeviceStatus::OnConnectFailed(AudioDeviceDescriptor &desc)
 {
-    CHECK_AND_RETURN(AudioStateManager::GetAudioStateManager().IsPreferredDevice(desc));
+    CHECK_AND_RETURN(AudioRouterSelectStrategy::GetInstance().IsPreferredDevice(desc));
     AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::SELECTED_DEVICE_CONNECT_FAILED};
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnConnectFailed", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnConnectFailed", reason);
@@ -1437,19 +1442,6 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
         }
-        shared_ptr<AudioDeviceDescriptor> userSelectMediaDevice =
-            AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
-        shared_ptr<AudioDeviceDescriptor> userSelectCallDevice =
-            AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
-        if ((userSelectMediaDevice->deviceType_ == desc.deviceType_ &&
-            userSelectMediaDevice->macAddress_ == desc.macAddress_ &&
-            userSelectMediaDevice->isEnable_ == desc.isEnable_) ||
-            (userSelectCallDevice->deviceType_ == desc.deviceType_ &&
-            userSelectCallDevice->macAddress_ == desc.macAddress_ &&
-            userSelectCallDevice->isEnable_ == desc.isEnable_)) {
-            AUDIO_INFO_LOG("Current enable state has been set true during user selection, no need to be set again.");
-            return;
-        }
     } else if (command == ENABLE_UPDATE && !desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
         audioActiveDevice_.GetCurrentOutputDeviceMacAddr() == desc.macAddress_) {
         audioIOHandleMap_.MuteDefaultSinkPort(audioActiveDevice_.GetCurrentOutputDeviceNetworkId(),
@@ -1459,10 +1451,14 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
     }
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(desc);
-    reason = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command);
+    bool result = audioDeviceManager_.UpdateDevicesListInfo(audioDescriptor, command, reason);
     CheckForA2dpSuspend(desc);
-
-    OnPreferredStateUpdated(desc, command, reason);
+    if (result) {
+        OnPreferredStateUpdated(desc, command, reason);
+    }
+#ifdef BLUETOOTH_ENABLE
+    ClearActiveHfpDevice(desc, command, reason);
+#endif
     UpdateChangeReasonForCollaboration(desc, command, reason);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("OnDeviceInfoUpdated", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("OnDeviceInfoUpdated", reason);
@@ -1502,9 +1498,12 @@ void AudioDeviceStatus::CheckForA2dpSuspend(AudioDeviceDescriptor &desc)
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceStatus::UserSelectDeviceMapInit()
 {
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     AudioStateManager& stateManager = AudioStateManager::GetAudioStateManager();
-    shared_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice = stateManager.GetPreferredMediaRenderDevice();
-    shared_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice = stateManager.GetPreferredCallRenderDevice();
+    shared_ptr<AudioDeviceDescriptor> userSelectMediaRenderDevice =
+        strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
+    shared_ptr<AudioDeviceDescriptor> userSelectCallRenderDevice =
+        strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
     shared_ptr<AudioDeviceDescriptor> userSelectCallCaptureDevice = stateManager.GetPreferredCallCaptureDevice();
     shared_ptr<AudioDeviceDescriptor> userSelectRecordCaptureDevice = stateManager.GetPreferredRecordCaptureDevice();
     vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap;
@@ -1537,7 +1536,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
     vector<shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap = UserSelectDeviceMapInit();
     if (updateCommand == CATEGORY_UPDATE) {
         if (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE) {
-            reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
             UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>());
             audioUsrSelectManager_.RestoreMediaControllerPreferredInputDevice(
                 std::make_shared<AudioDeviceDescriptor>(desc));
@@ -1554,21 +1552,11 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
 #ifndef WIRELESS_DEFAULT_EXCLUDE
             std::vector<shared_ptr<AudioDeviceDescriptor>> unexcludedDevice = {
                 make_shared<AudioDeviceDescriptor>(desc)};
-            AudioPolicyUtils::GetInstance().UnexcludeOutputDevices(D_ALL_DEVICES, unexcludedDevice);
+            AudioRouterSelectStrategy::GetInstance().UnexcludeDevices(unexcludedDevice, D_ALL_DEVICES);
 #endif
-            reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             ClearPreferredWhenCategoryUpdated(desc);
         }
-    } else if (updateCommand == ENABLE_UPDATE) {
-        UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
-        reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
-            AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
-    } else if (updateCommand == USAGE_UPDATE) {
-        UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
     }
-#ifdef BLUETOOTH_ENABLE
-    ClearActiveHfpDevice(desc, updateCommand, reason);
-#endif
 }
 
 void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor &desc)
@@ -1585,8 +1573,10 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
     auto mediaFetched = *AudioRouterCenter::GetAudioRouterCenter()
         .FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "ClearPreferredWhenCategoryUpdated_1", ROUTER_TYPE_USER_SELECT)
         .front();
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     if ((usage & MEDIA) == MEDIA &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, mediaFetched, *stateManager.GetPreferredMediaRenderDevice())) {
+        NeedClearPreferredWhenCategoryUpdated(*existed, mediaFetched,
+            *strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
             std::make_shared<AudioDeviceDescriptor>());
     }
@@ -1596,7 +1586,8 @@ void AudioDeviceStatus::ClearPreferredWhenCategoryUpdated(AudioDeviceDescriptor 
             ROUTER_TYPE_USER_SELECT)
         .front();
     if ((usage & VOICE) == VOICE &&
-        NeedClearPreferredWhenCategoryUpdated(*existed, callFetched, *stateManager.GetPreferredCallRenderDevice())) {
+        NeedClearPreferredWhenCategoryUpdated(*existed, callFetched,
+            *strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
         AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
             std::make_shared<AudioDeviceDescriptor>(), CLEAR_UID, "ClearPreferredWhenCategoryUpdated");
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
@@ -1626,20 +1617,12 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
 {
     if (userSelectDeviceMap[MEDIA_RENDER_ID]->deviceType_ == desc.deviceType_ &&
         userSelectDeviceMap[MEDIA_RENDER_ID]->macAddress_ == desc.macAddress_) {
-        if (userSelectDeviceMap[MEDIA_RENDER_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, selectDesc);
-        } else {
-            audioStateManager_.UpdatePreferredMediaRenderDeviceConnectState(desc.connectState_);
-        }
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, selectDesc);
     }
     if (userSelectDeviceMap[CALL_RENDER_ID]->deviceType_ == desc.deviceType_ &&
         userSelectDeviceMap[CALL_RENDER_ID]->macAddress_ == desc.macAddress_) {
-        if (userSelectDeviceMap[CALL_RENDER_ID]->connectState_ != VIRTUAL_CONNECTED) {
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                selectDesc, SYSTEM_UID, "UpdateAllUserSelectDevice");
-        } else {
-            audioStateManager_.UpdatePreferredCallRenderDeviceConnectState(desc.connectState_);
-        }
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
+            selectDesc, SYSTEM_UID, "UpdateAllUserSelectDevice");
     }
     if (userSelectDeviceMap[CALL_CAPTURE_ID]->deviceType_ == desc.deviceType_ &&
         userSelectDeviceMap[CALL_CAPTURE_ID]->macAddress_ == desc.macAddress_) {
@@ -1820,9 +1803,10 @@ bool AudioDeviceStatus::CheckIsIndexValidAndHandleErr(std::vector<std::shared_pt
         (*streamDescs.begin())->newDeviceDescs_.size() > 0, false, "a2dpAudioPort streamDescs is nullptr!");
     shared_ptr<AudioDeviceDescriptor> desc = (*streamDescs.begin())->newDeviceDescs_[0];
     desc->exceptionFlag_ = true;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     audioDeviceManager_.UpdateDevicesListInfo(
-        std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+        std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE, reason);
+    reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("RestoreNewA2dpPort", reason);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("RestoreNewA2dpPort", reason);
     return false;
@@ -1835,15 +1819,16 @@ bool AudioDeviceStatus::CheckNeedExclude(const AudioDeviceDescriptor &desc, bool
     }
 
 #ifdef WIRELESS_DEFAULT_EXCLUDE
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        if (desc.IsSameDeviceDescPtr(audioStateManager_.GetPreferredMediaRenderDevice())) {
+        if (desc.IsSameDeviceDescPtr(strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
         
         AudioDeviceDescriptor sco{DEVICE_TYPE_BLUETOOTH_SCO, DeviceRole::OUTPUT_DEVICE};
         sco.macAddress_ = desc.macAddress_;
         sco.networkId_ = desc.networkId_;
-        if (sco.IsSameDeviceDescPtr(audioStateManager_.GetPreferredCallRenderDevice())) {
+        if (sco.IsSameDeviceDescPtr(strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
 
@@ -1853,14 +1838,14 @@ bool AudioDeviceStatus::CheckNeedExclude(const AudioDeviceDescriptor &desc, bool
     }
 
     if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        if (desc.IsSameDeviceDescPtr(audioStateManager_.GetPreferredCallRenderDevice())) {
+        if (desc.IsSameDeviceDescPtr(strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
         
         AudioDeviceDescriptor a2dp{DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE};
         a2dp.macAddress_ = desc.macAddress_;
         a2dp.networkId_ = desc.networkId_;
-        if (a2dp.IsSameDeviceDescPtr(audioStateManager_.GetPreferredMediaRenderDevice())) {
+        if (a2dp.IsSameDeviceDescPtr(strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
 
@@ -1870,11 +1855,11 @@ bool AudioDeviceStatus::CheckNeedExclude(const AudioDeviceDescriptor &desc, bool
     }
 
     if (desc.deviceType_ == DEVICE_TYPE_NEARLINK) {
-        if (desc.IsSameDeviceDescPtr(audioStateManager_.GetPreferredMediaRenderDevice())) {
+        if (desc.IsSameDeviceDescPtr(strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
 
-        if (desc.IsSameDeviceDescPtr(audioStateManager_.GetPreferredCallRenderDevice())) {
+        if (desc.IsSameDeviceDescPtr(strategy.GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID))) {
             return false;
         }
 

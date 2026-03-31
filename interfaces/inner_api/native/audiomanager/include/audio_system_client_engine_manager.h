@@ -162,6 +162,15 @@ public:
      * @since 9
      */
     void SetAudioParameter(const std::string &key, const std::string &value);
+
+    /**
+     * @brief Report playback capture user choice.
+     *
+     * @param sessionId Specifies which playback capture session to report.
+     * @param choice The user choice
+     * @since 24
+     */
+    int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
 private:
     AudioSystemClientEngineManager() = default;
     ~AudioSystemClientEngineManager() = default;

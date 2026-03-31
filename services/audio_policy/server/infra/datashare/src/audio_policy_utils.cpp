@@ -30,7 +30,8 @@
 #include "audio_recovery_device.h"
 #include "audio_bus_selector.h"
 #include "audio_bundle_manager.h"
-
+#include "audio_router_select_strategy.h"
+#include "audio_select_interface_service.h"
 #include "audio_server_proxy.h"
 
 namespace OHOS {
@@ -157,12 +158,14 @@ int32_t AudioPolicyUtils::SetPreferredDevice(const PreferredType preferredType,
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_INVALID_PARAM, "desc is null");
     int32_t ret = SUCCESS;
     bool mediaControllerFlag = IsSelectedByMediaController();
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
     switch (preferredType) {
         case AUDIO_MEDIA_RENDER:
-            audioStateManager_.SetPreferredMediaRenderDevice(desc);
+            strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, desc);
             break;
         case AUDIO_CALL_RENDER:
-            audioStateManager_.SetPreferredCallRenderDevice(desc, uid, caller);
+            strategy.SetCallOutputDevice(AudioSelectInterfaceService::GetInstance().GetPreferredUid(uid),
+                INVALID_STREAM_ID, desc, caller);
             break;
         case AUDIO_CALL_CAPTURE:
             audioStateManager_.SetPreferredCallCaptureDevice(desc);
@@ -466,6 +469,8 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t 
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
         case DeviceType::DEVICE_TYPE_NEARLINK_IN:
+        case DeviceType::DEVICE_TYPE_WIRED_MICIN:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
             portName = ResolvePrimaryMicPort(routeFlag);
             AUDIO_INFO_LOG("use %{public}s for devicetype: %{public}d", portName.c_str(), deviceType);
             break;
@@ -864,32 +869,6 @@ PreferredType AudioPolicyUtils::GetPreferredTypeByStreamUsage(StreamUsage stream
     }
 }
 
-int32_t AudioPolicyUtils::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (isBTReconnecting_) {
-        return SUCCESS;
-    }
-
-    if ((audioDevUsage & MEDIA_OUTPUT_DEVICES) != 0) {
-        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(MEDIA_OUTPUT_DEVICES, descs);
-    }
-    if ((audioDevUsage & CALL_OUTPUT_DEVICES) != 0) {
-        AudioRecoveryDevice::GetInstance().UnexcludeOutputDevicesInner(CALL_OUTPUT_DEVICES, descs);
-    }
-    return SUCCESS;
-}
-
-void AudioPolicyUtils::SetScoExcluded(bool scoExcluded)
-{
-    isScoExcluded_ = scoExcluded;
-}
-
-bool AudioPolicyUtils::GetScoExcluded()
-{
-    return isScoExcluded_;
-}
-
 bool AudioPolicyUtils::IsDataShareReady()
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -984,6 +963,15 @@ int32_t AudioPolicyUtils::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolic
     std::lock_guard<std::mutex> lock(mutex_);
     audioClientInfoMgrCallback_ = callback;
     return 0;
+}
+
+string AudioPolicyUtils::EncUsbAddr(const string &src)
+{
+    const string head("card=");
+    auto pos = src.find(';', head.length());
+    CHECK_AND_RETURN_RET_LOG(pos != string::npos, "", "Illegal usb address");
+    auto num = src.substr(head.length(), pos - head.length());
+    return string("c**") + num + "**";
 }
 } // namespace AudioStandard
 } // namespace OHOS

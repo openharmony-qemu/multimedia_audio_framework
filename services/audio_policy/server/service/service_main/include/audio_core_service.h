@@ -166,6 +166,7 @@ public:
         void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
         int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0);
+        int32_t SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid);
         int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
         int32_t SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptor,
@@ -307,6 +308,7 @@ public:
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     int32_t StartClient(uint32_t sessionId);
     int32_t PauseClient(uint32_t sessionId);
+    int32_t StandbyClient(uint32_t sessionId);
     int32_t StopClient(uint32_t sessionId);
     int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT,
         bool needRemoveFromMap = false);
@@ -360,6 +362,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc, const int32_t audioDeviceSelectMode = 0,
         const bool isNeedNotifyBt = true);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
+    int32_t SetMediaOutputDeviceByUid(DeviceType deviceType, const int32_t uid);
     int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     int32_t SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc, int32_t uid);
@@ -457,6 +460,11 @@ public:
     void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+
+    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
+        const AudioStreamDeviceChangeReason reason);
+    void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
+        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
 
 private:
     void UpdateEnhanceEffectState(SourceType source);
@@ -585,10 +593,6 @@ private:
     void UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateRingerOrAlarmerDualDeviceOutputRouter(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void UpdateDupDeviceOutputRoute(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
-        const AudioStreamDeviceChangeReason reason);
-    void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId,
-        const AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::UNKNOWN);
     bool IsRingerOrAlarmerDualDevicesRange(const InternalDeviceType &deviceType);
     void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);

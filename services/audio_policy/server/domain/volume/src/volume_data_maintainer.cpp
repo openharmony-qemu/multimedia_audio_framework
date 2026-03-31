@@ -998,12 +998,12 @@ int32_t VolumeDataMaintainer::SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDes
         }
     }
 #ifdef FEATURE_AUDIO_ZONE
-    std::string volumeKey = GetVolumeKey(device, streamType) + GetZoneKey(zoneId);
-    std::string volumeDegreeKey = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE)
+    std::string volumeKey = GetVolumeKey(device, volumeType) + GetZoneKey(zoneId);
+    std::string volumeDegreeKey = GetVolumeKey(device, volumeType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE)
         + GetZoneKey(zoneId);
 #else
-    std::string volumeKey = GetVolumeKey(device, streamType);
-    std::string volumeDegreeKey = GetVolumeKey(device, streamType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE);
+    std::string volumeKey = GetVolumeKey(device, volumeType);
+    std::string volumeDegreeKey = GetVolumeKey(device, volumeType, VolumeKeyType::VOLUME_KEY_TYPE_DEGREE);
 #endif
     if (!volumeKey.compare("")) {
         WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_VOLUME_INTERNA_A),
@@ -1142,9 +1142,9 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
     for (auto stream : volumeList) {
         BoolValueInfo info {
 #ifdef FEATURE_AUDIO_ZONE
-            .key = GetVolumeKey(device, stream) + GetZoneKey(zoneId),
+            .key = GetMuteKey(device, stream) + GetZoneKey(zoneId),
 #else
-            .key = GetVolumeKey(device, stream),
+            .key = GetMuteKey(device, stream),
 #endif
             .defaultValue = false,
             .value = false
@@ -1185,9 +1185,9 @@ int32_t VolumeDataMaintainer::SaveMuteToDb(std::shared_ptr<AudioDeviceDescriptor
         }
     }
 #ifdef FEATURE_AUDIO_ZONE
-    std::string muteKey = GetMuteKey(device, streamType) + GetZoneKey(zoneId);
+    std::string muteKey = GetMuteKey(device, volumeType) + GetZoneKey(zoneId);
 #else
-    std::string muteKey = GetMuteKey(device, streamType);
+    std::string muteKey = GetMuteKey(device, volumeType);
 #endif
     if (!muteKey.compare("")) {
         WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(
@@ -1254,8 +1254,9 @@ int32_t VolumeDataMaintainer::LoadVolumeFromDb(std::shared_ptr<AudioDeviceDescri
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, ERROR, "device is null");
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     int32_t volumeLevel = 0;
-    std::string volumeKey = GetVolumeKey(device, streamType);
+    std::string volumeKey = GetVolumeKey(device, volumeType);
     if (!volumeKey.compare("")) {
         WriteVolumeDbAccessExceptionEvent(
             static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_VOLUME_INTERNAL_A),

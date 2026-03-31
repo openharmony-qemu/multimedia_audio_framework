@@ -22,6 +22,8 @@
 #include "hdf_types.h"
 #include "v6_0/audio_types.h"
 #include "audio_pnp_param.h"
+#include "audio_pnp_server.h"
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,24 +38,35 @@ public:
     static bool AudioPnpUeventParse(const char *msg, const ssize_t strLength);
     static void UpdateDeviceState(AudioEvent audioEvent);
     static int32_t DetectAnalogHeadsetState(AudioEvent *audioEvent);
-    static int32_t DetectDPState(AudioEvent *audioEvent);
+    static int32_t DetectPostAudioDevices(AudioEvent *audioEvent);
     static void SetAudioPnpUevent(AudioEvent *audioEvent, char switchState);
+    static int32_t DetectDPState(AudioEvent *audioEvent);
     static AudioEvent audioSocketEvent_;
 
 private:
-    static int32_t SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
-    static int32_t AudioAnalogHeadsetDetectDevice(struct AudioPnpUevent *audioPnpUevent);
-    static int32_t AudioDpDetectDevice(struct AudioPnpUevent *audioPnpUevent);
+    static int32_t ProcessSwitchDeviceConfig(AudioEvent *audioEvent, const char *switchName,
+        char switchState, const char *devName, const char *eventName);
+    static int32_t SetAudioPnpServerEventValue(AudioEvent *audioEvent, const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioAnalogHeadsetDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioMicInDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioLineInDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioLineOutDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t DetectSwitchDeviceState(const char* switchPath, const char* switchName,
+        AudioEvent* audioEvent, const char* logPrefix);
+    static int32_t AudioDpDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static std::mutex eventMutex_;
 #ifdef USB_ENABLE
     static int32_t AudioDetectUsbSoundCard(const AudioPnpUevent &audioPnpUevent);
 #endif
-    static int32_t AudioAnahsDetectDevice(struct AudioPnpUevent *audioPnpUevent);
-    static int32_t AudioHDMIDetectDevice(struct AudioPnpUevent *audioPnpUevent);
-    static int32_t SetAudioAnahsEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioAnahsDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioHDMIDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t SetAudioAnahsEventValue(AudioEvent *audioEvent, const struct AudioPnpUevent *audioPnpUevent);
     static int32_t ReadAndScanDpState(const std::string &path, uint32_t &eventType);
     static int32_t ReadAndScanDpName(const std::string &path, std::string &name);
-    static int32_t AudioNnDetectDevice(struct AudioPnpUevent *audioPnpUevent);
-    static int32_t AudioMicBlockDevice(struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioNnDetectDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static int32_t AudioMicBlockDevice(const struct AudioPnpUevent *audioPnpUevent);
+    static bool ProcessSwitchSubsystem(const struct AudioPnpUevent *uevent);
+    static bool ProcessOtherSubsystem(const struct AudioPnpUevent *uevent);
 };
 
 } // namespace AudioStandard

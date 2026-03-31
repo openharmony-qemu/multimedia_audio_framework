@@ -367,27 +367,6 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_020, TestSize.Level4)
 
 /**
  * @tc.name  : Test AudioDeviceStatus.
- * @tc.number: AudioDeviceStatus_021
- * @tc.desc  : Test OnDeviceInfoUpdated desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO.
- */
-HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_021, TestSize.Level4)
-{
-    AudioDeviceDescriptor desc;
-    desc.macAddress_ = "00:11:22:33:44:55";
-    desc.isEnable_ = true;
-    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    DeviceInfoUpdateCommand command = ENABLE_UPDATE;
-    AudioStateManager::GetAudioStateManager().ownerUid_ = 0;
-    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(desc);
-    AudioStateManager::GetAudioStateManager().forcedDeviceMapList_.push_back({ {1, deviceDesc} });
-    audioDeviceStatus_->OnDeviceInfoUpdated(desc, command);
-    auto descs = AudioPolicyUtils::GetInstance().audioDeviceManager_.GetDevicesByFilter(
-        DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_ROLE_NONE, desc.macAddress_, "", SUSPEND_CONNECTED);
-    EXPECT_TRUE(descs.empty());
-}
-
-/**
- * @tc.name  : Test AudioDeviceStatus.
  * @tc.number: AudioDeviceStatus_022
  * @tc.desc  : Test OnDeviceInfoUpdated command == ENABLE_UPDATE && !desc.isEnable_
  *             && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
@@ -395,7 +374,6 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_021, TestSize.Level4)
  */
 HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_022, TestSize.Level4)
 {
-    AudioStateManager::GetAudioStateManager().forcedDeviceMapList_.clear();
     AudioDeviceDescriptor desc;
     desc.macAddress_ = "00:11:22:33:44:55";
     desc.isEnable_ = false;
@@ -458,29 +436,6 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_024, TestSize.Level4)
     updateCommand = USAGE_UPDATE;
     audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::UNKNOWN);
-}
-
-/**
- * @tc.name  : Test AudioDeviceStatus.
- * @tc.number: AudioDeviceStatus_025
- * @tc.desc  : Test UpdateAllUserSelectDevice connectState_ == VIRTUAL_CONNECTED.
- */
-HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_025, TestSize.Level4)
-{
-    AudioDeviceDescriptor desc;
-    desc.deviceType_ = DEVICE_TYPE_EARPIECE;
-    desc.macAddress_ = "00:11:22:33:44:55";
-    desc.connectState_ = VIRTUAL_CONNECTED;
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> userSelectDeviceMap = {
-        std::make_shared<AudioDeviceDescriptor>(desc),
-        std::make_shared<AudioDeviceDescriptor>(desc),
-        std::make_shared<AudioDeviceDescriptor>(desc),
-        std::make_shared<AudioDeviceDescriptor>(desc),
-    };
-    
-    std::shared_ptr<AudioDeviceDescriptor> selectDesc;
-    audioDeviceStatus_->UpdateAllUserSelectDevice(userSelectDeviceMap, desc, selectDesc);
-    EXPECT_EQ(audioDeviceStatus_->audioStateManager_.preferredMediaRenderDevice_->connectState_, VIRTUAL_CONNECTED);
 }
 
 /**

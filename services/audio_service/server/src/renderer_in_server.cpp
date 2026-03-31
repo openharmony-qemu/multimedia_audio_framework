@@ -798,12 +798,23 @@ int32_t RendererInServer::Write3DAModeData(uint64_t currentReadFrame, uint64_t c
     return SUCCESS;
 }
 
+bool RendererInServer::CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame)
+{
+    if (managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame) {
+        return true;
+    }
+    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame) {
+        return true;
+    }
+    return false;
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     Trace trace1(traceTag_ + " WriteData"); // RendererInServer::sessionid:100001 WriteData
-    if (currentReadFrame >= currentWriteFrame) {
+    if (CheckIsUnderrun(currentReadFrame, currentWriteFrame)) {
         Trace trace2(traceTag_ + " near underrun"); // RendererInServer::sessionid:100001 near underrun
         if (!offloadEnable_) {
             CHECK_AND_CALL_FUNC_RETURN_RET(currentWriteFrame >= currentReadFrame, ERR_OPERATION_FAILED,
@@ -1243,9 +1254,10 @@ int32_t RendererInServer::StartInner()
 
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr && audioServerBuffer_->GetStreamStatus() != nullptr,
         ERR_OPERATION_FAILED, "null stream");
+
+    MarkStaticFadeIn(audioServerBuffer_->GetStreamStatus()->load() == STREAM_STOPPED);
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
     audioServerBuffer_->SetIsFirstFrame(true);
-    MarkStaticFadeIn();
 
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, ret,
@@ -1344,7 +1356,7 @@ int32_t RendererInServer::Pause()
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
-    MarkStaticFadeOut(false);
+    MarkStaticFadeOut();
 
     // remove eac3 param check
     int32_t ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK || managerType_ == EAC3_PLAYBACK ||
@@ -1553,7 +1565,7 @@ int32_t RendererInServer::StopInner()
         IStreamManager::GetPlaybackManager(managerType_).StopRender(streamIndex_) : stream_->Stop();
 
     AudioVolume::GetInstance()->SetStreamVolumeMute(streamIndex_, false);
-    MarkStaticFadeOut(true);
+    MarkStaticFadeOut();
 
     if (IsMovieOffloadStream()) {
         SetSoftLinkFunc([](auto &softLink) { softLink->Stop(); });
@@ -2035,6 +2047,7 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen) +
         "isFirstWriteDataFlag: " + std::to_string(isFirstWriteDataFlag_));
+    std::lock_guard<std::mutex> lock(dupMutex_);
     CHECK_AND_RETURN_RET_LOG(isFirstWriteDataFlag_ == false, ERROR, "audioStream is firstdata, overlap OnWriteData");
     CHECK_AND_RETURN_RET_LOG(!CheckIsWriteFirst(), ERROR, "audioStream is flush, overlap OnWriteData");
     int32_t engineFlag = GetEngineFlag();
@@ -2082,6 +2095,7 @@ bool StreamCallbacks::CheckIsWriteFirst() const noexcept
 
 int32_t StreamCallbacks::GetAvailableSize(size_t &length)
 {
+    std::lock_guard<std::mutex> lock(dupMutex_);
     if (dupRingBuffer_ == nullptr) {
         AUDIO_ERR_LOG("nullptr");
         return ERROR;
@@ -2097,6 +2111,7 @@ int32_t StreamCallbacks::GetAvailableSize(size_t &length)
 
 std::unique_ptr<AudioRingCache>& StreamCallbacks::GetDupRingBuffer()
 {
+    std::lock_guard<std::mutex> lock(dupMutex_);
     return dupRingBuffer_;
 }
 
@@ -3023,7 +3038,7 @@ int32_t RendererInServer::PauseDuringStandby()
     return SUCCESS;
 }
 
-void RendererInServer::MarkStaticFadeOut(bool isRefresh)
+void RendererInServer::MarkStaticFadeOut()
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
@@ -3031,17 +3046,17 @@ void RendererInServer::MarkStaticFadeOut(bool isRefresh)
     if (!staticBufferProvider_->IsLoopEnd()) {
         staticBufferProvider_->NeedProcessFadeOut();
     }
-    // Refresh needs to be called after fadeout
-    if (isRefresh || staticBufferProvider_->IsLoopEnd()) {
-        staticBufferProvider_->ResetStaticPlayPosition();
-    }
 }
 
-void RendererInServer::MarkStaticFadeIn()
+void RendererInServer::MarkStaticFadeIn(bool isRefresh)
 {
     CHECK_AND_RETURN(processConfig_.rendererInfo.isStatic);
     CHECK_AND_RETURN_LOG(staticBufferProvider_ != nullptr, "BufferProvider_ is nullptr");
     staticBufferProvider_->NeedProcessFadeIn();
+
+    if (isRefresh) {
+        staticBufferProvider_->ResetStaticPlayPosition();
+    }
 }
 
 void RendererInServer::HandleIsWriteFirst(bool isWriteFirst)

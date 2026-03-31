@@ -3379,5 +3379,26 @@ HWTEST(AudioServiceUnitTest, RequestUserPrivacyAuthority_002, TestSize.Level1)
     // Verify it returns error for non-existent session
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+ * @tc.name  : Test ReportPlaybackCaptureUserChoice API
+ * @tc.type  : FUNC
+ * @tc.number: ReportPlaybackCaptureUserChoice_001
+ * @tc.desc  : Test ReportPlaybackCaptureUserChoice interface
+ */
+HWTEST(AudioServiceUnitTest, ReportPlaybackCaptureUserChoice, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    int32_t result = audioService->ReportPlaybackCaptureUserChoice(1, false); // Non-existent session ID
+    EXPECT_EQ(result, ERROR);
+ 
+    audioService->allCapturerMap_.clear();
+    uint32_t sessionId = 100001;
+    std::shared_ptr<CapturerInServer> capturerInServer = nullptr;
+    audioService->allCapturerMap_.insert(std::make_pair(sessionId, capturerInServer));
+    result = audioService->ReportPlaybackCaptureUserChoice(sessionId, false); // Non-existent session ID
+    EXPECT_EQ(result, ERROR);
+    audioService->allCapturerMap_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS

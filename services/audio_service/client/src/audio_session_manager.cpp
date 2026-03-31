@@ -121,6 +121,11 @@ int32_t AudioSessionManager::SetDefaultOutputDevice(DeviceType deviceType)
     return AudioSessionClientManager::GetInstance().SetDefaultOutputDevice(deviceType);
 }
 
+int32_t AudioSessionManager::SetMediaOutputDevice(DeviceType deviceType)
+{
+    return AudioSessionClientManager::GetInstance().SetMediaOutputDevice(deviceType);
+}
+
 int32_t AudioSessionManager::SetAudioSessionCurrentDeviceChangeCallback(
     const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback)
 {

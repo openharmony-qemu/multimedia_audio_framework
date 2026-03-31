@@ -28,7 +28,8 @@ namespace AudioStandard {
 
 inline bool IsUsb(DeviceType deviceType)
 {
-    return deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
+    return deviceType == DEVICE_TYPE_USB_HEADSET || deviceType == DEVICE_TYPE_USB_ARM_HEADSET
+        || deviceType == DEVICE_TYPE_LINE_DIGITAL;
 }
 
 inline bool IsNearlinkDevice(DeviceType deviceType)

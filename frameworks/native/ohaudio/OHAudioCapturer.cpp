@@ -278,7 +278,8 @@ OH_AudioStream_Result OH_AudioCapturer_SetIndependentAudioSessionStrategy(
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert capturer failed");
     CHECK_AND_RETURN_RET_LOG(strategy != nullptr,
         AUDIOSTREAM_ERROR_INVALID_PARAM, "strategy is nullptr");
-    CHECK_AND_RETURN_RET_LOG(behavior < (OH_AudioSession_BehaviorFlags::MUTE_WHEN_INTERRUPTED << 1),
+    CHECK_AND_RETURN_RET_LOG(
+        (behavior & ~static_cast<uint32_t>(OHOS::AudioStandard::AudioSessionBehaviorFlags::MASK_VALID_BEHAVIOR)) == 0,
         AUDIOSTREAM_ERROR_INVALID_PARAM, "param behavior is invalid");
 
     OHOS::AudioStandard::AudioSessionStrategy audioStrategy;

@@ -352,11 +352,10 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
     }
 
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
-    
-    auto &sceneManager = AudioSceneManager::GetInstance();
-    AudioScene curScene = sceneManager.GetAudioScene(true);
 
-    bool streamInCall = curScene == AUDIO_SCENE_PHONE_CALL || curScene == AUDIO_SCENE_PHONE_CHAT;
+    // Make sure that the muteState of notification and RingerMode are consistent on the new device.
+    AudioRingerMode currentRingerMode = audioPolicyManager_.GetRingerMode();
+    SetStreamMute(STREAM_NOTIFICATION, currentRingerMode == RINGER_MODE_NORMAL ? false : true);
 
     audioPolicyManager_.UpdateVolumeForStreams();
 
@@ -921,6 +920,7 @@ void AudioVolumeManager::HandleLegacyHighVolumeEvent()
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
     int32_t ret = SetSystemVolumeLevel(legacyHighVolumeStreamType_, legacyHighVolumeLevel_, deviceDesc);
     AUDIO_INFO_LOG("handle AUDIO_LEGACY_HIGH_VOLUME_EVENT result: %{public}d", ret);
+    SetSafeVolumeCallback(legacyHighVolumeStreamType_, false);
 }
 
 bool AudioVolumeManager::IsLegacyHighVolumeChecked()
@@ -2089,30 +2089,41 @@ bool AudioVolumeManager::GetStreamMuteInterface(AudioStreamType streamType, int3
     return isMuted;
 }
 
-int32_t AudioVolumeManager::SetRingerMode(AudioRingerMode inputRingerMode, bool hasUpdatedVolume)
+int32_t AudioVolumeManager::SetRingerMode(AudioRingerMode inputRingerMode, bool hasUpdatedRingtoneVolume)
 {
     // PC ringmode not support silent or vibrate
     AudioRingerMode ringerMode = VolumeUtils::IsPCVolumeEnable() ? RINGER_MODE_NORMAL : inputRingerMode;
-    AUDIO_INFO_LOG("Set ringer mode to %{public}d. hasUpdatedVolume %{public}d", ringerMode, hasUpdatedVolume);
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d. hasUpdatedRingtoneVolume %{public}d",
+        ringerMode, hasUpdatedRingtoneVolume);
     std::shared_ptr<AudioCoreService> coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_UNKNOWN, "coreService is nullptr");
     int32_t ret = coreService->SetRingerMode(ringerMode);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set ringer mode!");
 
-    if (!hasUpdatedVolume) {
-        // need to set volume according to ringermode
-        bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;
+    // need to set volume according to ringermode
+    bool muteState = (ringerMode == RINGER_MODE_NORMAL) ? false : true;
+    if (!hasUpdatedRingtoneVolume) {
         AudioInterrupt audioInterrupt;
         int32_t zoneID = 0;
         CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERR_UNKNOWN, "interruptService is nullptr");
         interruptService_->GetSessionInfoInFocus(audioInterrupt, zoneID);
+        int32_t previousRingtoneVolume = GetSystemVolumeLevelInterface(STREAM_RING);
         SetStreamMute(STREAM_RING, muteState, audioInterrupt.streamUsage);
-        if (!muteState && GetSystemVolumeLevelInterface(STREAM_RING) == 0) {
+        if (!muteState && GetSystemVolumeLevelNoMuteStateInterface(STREAM_RING) == 0) {
             // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
             VolumeUpdateOption info = { false };
             SetSystemVolumeLevelWithOption(STREAM_RING, 1, DEFAULT_ZONE_ID, info);
         }
+        SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_RING, false, 0, nullptr, previousRingtoneVolume);
     }
+    int32_t previousNotificationVolume = GetSystemVolumeLevelInterface(STREAM_NOTIFICATION);
+    SetStreamMute(STREAM_NOTIFICATION, muteState);
+    if (!muteState && GetSystemVolumeLevelNoMuteStateInterface(STREAM_NOTIFICATION) == 0) {
+        // if mute state is false but volume is 0, set volume to 1. Send volumeChange callback.
+        VolumeUpdateOption info = { false };
+        SetSystemVolumeLevelWithOption(STREAM_NOTIFICATION, 1, DEFAULT_ZONE_ID, info);
+    }
+    SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_NOTIFICATION, false, 0, nullptr, previousNotificationVolume);
 
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringerMode);
@@ -2298,6 +2309,10 @@ int32_t AudioVolumeManager::SetSystemVolumeLevelWithOption(AudioStreamType strea
     bool adjustable = audioPolicyManager_.IsVolumeUnadjustable();
     if (adjustable) {
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
+        return ERR_OPERATION_FAILED;
+    }
+    if (streamType == STREAM_NOTIFICATION && audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL) {
+        AUDIO_INFO_LOG("Cannot adjust the notification volume because of the SILENT or VIBRATE mode");
         return ERR_OPERATION_FAILED;
     }
     bool mute = GetStreamMuteInterface(streamType, zoneId);

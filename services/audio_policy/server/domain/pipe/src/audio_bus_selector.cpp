@@ -15,6 +15,7 @@
 
 
 #include "audio_bus_selector.h"
+#include <numeric>
 #include "audio_errors.h"
 #include "audio_module_info.h"
 #include "audio_policy_utils.h"

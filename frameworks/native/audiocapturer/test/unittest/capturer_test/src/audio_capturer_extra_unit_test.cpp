@@ -1635,6 +1635,34 @@ HWTEST(AudioCapturerUnitTest, AsyncCheckAudioCapturer_001, TestSize.Level4)
 }
 
 /**
+ * @tc.name  : AudioCapturer_SetIndependentAudioSessionStrategy_001
+ * @tc.number: SetIndependentAudioSessionStrategy_001
+ * @tc.desc  : Test SetIndependentAudioSessionStrategy()
+ */
+HWTEST(AudioCapturerUnitTest, SetIndependentAudioSessionStrategy_001, TestSize.Level4)
+{
+    AppInfo appInfo = {};
+    auto testCapturerInner = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+
+    AudioSessionStrategy strategy = {};
+    uint32_t behavior = 0;
+    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
+    bool res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
+    EXPECT_FALSE(res);
+
+    behavior = 1;
+    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
+    res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
+    EXPECT_FALSE(res);
+
+    behavior = 3;
+    testCapturerInner->audioInterrupt_.audioFocusType.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    testCapturerInner->SetIndependentAudioSessionStrategy(strategy, behavior);
+    res = testCapturerInner->audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag;
+    EXPECT_TRUE(res);
+}
+
+/**
  * @tc.name  : AudioCapturer_SetInMainThreadState_001
  * @tc.number: SetInMainThreadState_001
  * @tc.desc  : Test SetInMainThreadState() for different cases

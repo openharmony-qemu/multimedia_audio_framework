@@ -242,24 +242,18 @@ void LoudVolumeManager::PublishLoudVolumeNotification(int32_t notificationId)
         reinterpret_cast<CreateLoudVolumeNotification*>(dlsym(libHandle, "CreateLoudVolumeNotificationImpl"));
     if (createLoudVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("createLoudVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
         dlclose(libHandle);
-#endif
         return;
     }
     AudioLoudVolumeNotification *audioLoudVolumeNotificationImpl = createLoudVolumeNotificationImpl();
     if (audioLoudVolumeNotificationImpl == nullptr) {
         AUDIO_ERR_LOG("audioLoudVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
         dlclose(libHandle);
-#endif
         return;
     }
     audioLoudVolumeNotificationImpl->PublishLoudVolumeNotification(notificationId);
     delete audioLoudVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
         dlclose(libHandle);
-#endif
 }
 
 void LoudVolumeManager::SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif)

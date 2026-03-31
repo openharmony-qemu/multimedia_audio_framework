@@ -108,12 +108,17 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_003, Tes
     bool isSpatializationSupported = false;
     bool isHeadTrackingSupported = false;
     AudioSpatializationState spatializationState(isSpatializationSupported, isHeadTrackingSupported);
-    sSpatializationService_->addressToSpatialEnabledMap_.insert(std::make_pair(encryptedAddress, spatializationState));
+    sSpatializationService_->addressToSpatialEnabledMap_[encryptedAddress] = spatializationState;
     sSpatializationService_->currentDeviceAddress_ = selectedAudioDevice->macAddress_;
     bool enable = true;
     EXPECT_EQ(sSpatializationService_->SetSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
     EXPECT_EQ(sSpatializationService_->SetAdaptiveSpatialRenderingEnabled(selectedAudioDevice, enable),
+        SPATIALIZATION_SERVICE_OK);
+
+    sSpatializationService_->currentDeviceAddress_ = "00:11:22:33:44:66";
+    enable = false;
+    EXPECT_EQ(sSpatializationService_->SetSpatializationEnabled(selectedAudioDevice, enable),
         SPATIALIZATION_SERVICE_OK);
 }
 

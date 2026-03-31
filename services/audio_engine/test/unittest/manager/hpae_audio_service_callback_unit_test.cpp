@@ -99,6 +99,11 @@ void HpaeAudioServiceCallbackUnitTest::OnGetCollaborativeUpdateCb(int32_t result
     getCollaborativeUpdateResult_ = result;
 }
 
+void HpaeAudioServiceCallbackUnitTest::OnUpdateSpatializationStateCb(int32_t result)
+{
+    updateSpatializationStateResult_ = result;
+}
+
 int32_t HpaeAudioServiceCallbackUnitTest::GetPortId() const noexcept
 {
     return portId_;

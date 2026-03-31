@@ -31,7 +31,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceSimpleDescriptor::GetOnlineDev
         if (device->deviceType_ == deviceType_ &&
             device->deviceRole_ == deviceRole_ &&
             device->deviceId_ == deviceId_ &&
-            device->networkId_ == networkId_) {
+            device->networkId_ == networkId_ &&
+            device->macAddress_ == macAddress_) {
             return device;
         }
     }

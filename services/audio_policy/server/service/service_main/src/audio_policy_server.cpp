@@ -51,6 +51,8 @@
 #include "audio_injector_policy.h"
 #include "audio_safe_volume_event_subscriber.h"
 #include "audio_volume_utils.h"
+#include "audio_select_interface_service.h"
+#include "audio_router_infra.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -1603,6 +1605,11 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
     AUDIO_INFO_LOG("SetStreamMuteInternal streamType: %{public}d, mute: %{public}d, updateUi: %{public}d",
         streamType, mute, isUpdateUi);
 
+    if (streamType == STREAM_NOTIFICATION && audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && !mute) {
+        AUDIO_INFO_LOG("Cannot unmute the notification volume because of the SILENT or VIBRATE mode");
+        return ERR_OPERATION_FAILED;
+    }
+
     if (streamType == STREAM_ALL) {
         for (auto audioStreamType : GET_STREAM_ALL_VOLUME_TYPES) {
             AUDIO_INFO_LOG("SetMute of STREAM_ALL for StreamType = %{public}d ", audioStreamType);
@@ -1699,15 +1706,15 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     }
     ProcUpdateRingerModeForMute(updateRingerMode, mute);
     SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId, previousVolume);
-    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
+    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi); // for PC
     return SUCCESS;
 }
 
 void AudioPolicyServer::ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute)
 {
     if (updateRingerMode) {
-        AudioRingerMode ringerMode = mute ? (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :
-            RINGER_MODE_NORMAL;
+        AudioRingerMode ringerMode = mute ?
+            (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :	RINGER_MODE_NORMAL;
         if (!supportVibrator_) {
             AUDIO_INFO_LOG("The device does not support vibration");
         }
@@ -1900,6 +1907,13 @@ int32_t AudioPolicyServer::GetSelectedDeviceInfo(int32_t uid, int32_t pid, int32
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     info = audioPolicyService_.GetSelectedDeviceInfo(uid, pid, streamType);
     return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetMediaOutputDevice(int32_t deviceTypeIn)
+{
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERROR, "eventEntry_ is nullptr");
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    return eventEntry_->SetMediaOutputDeviceByUid(static_cast<DeviceType>(deviceTypeIn), callerUid);
 }
 
 int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
@@ -2726,7 +2740,7 @@ int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObjec
     sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
 
     if (callback != nullptr) {
-        auto ret = audioStateManager_.SetAudioClientInfoMgrCallback(callback);
+        auto ret = AudioSelectInterfaceService::GetInstance().SetAudioClientInfoMgrCallback(callback);
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ret, "audioPolicyServerHandler_ is nullptr");
         audioPolicyServerHandler_->SetAudioClientInfoMgrCallback(callback);
         audioPolicyUtils_.SetAudioClientInfoMgrCallback(callback);
@@ -3337,6 +3351,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectRendererDevice(uid);
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
 #ifdef INPUT_FEATURE_INDEPENDENT_MODE
     audioActiveDevice_.DelCurrentInputDevice(uid);
 #endif
@@ -3366,6 +3381,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AudioBundleManager::RemoveBundleNameByUid(uid);
     AudioBundleManager::RemoveBundleInfoByUid(uid);
     StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
+    AudioRouterInfra::GetInstance().OnAppDied(uid);
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");

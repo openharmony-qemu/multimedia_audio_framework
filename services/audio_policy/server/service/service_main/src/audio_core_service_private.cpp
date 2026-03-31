@@ -402,19 +402,19 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
     pipeManager_->UpdateRingAndVoipStreamStatus(audioScene);
     pipeManager_->UpdateRingAndVoipStreamDevice(ringDescs, voipDescs);
 
-    auto streamDesc = pipeManager_->GetStreamDescForAudioScene(audioScene);
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
-    auto deviceDesc = streamDesc->newDeviceDescs_.front();
-    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
-    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
-        ActivateOutputDevice(streamDesc, reason);
-    }
-
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> ringAndVoipDescMap =
         pipeManager_->GetRingAndVoipDescMap();
     for (auto &entry : ringAndVoipDescMap) {
         CHECK_AND_CONTINUE_LOG(entry.second != nullptr, "StreamDesc is nullptr");
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(entry.second);
+    }
+
+    auto streamDesc = pipeManager_->GetStreamDescForAudioScene(audioScene);
+    CHECK_AND_RETURN(streamDesc != nullptr);
+    auto deviceDesc = streamDesc->newDeviceDescs_.front();
+    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        ActivateOutputDevice(streamDesc, reason);
     }
 }
 
@@ -1748,6 +1748,8 @@ bool AudioCoreService::HasLowLatencyCapability(DeviceType deviceType, bool isRem
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
         case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
+        case DeviceType::DEVICE_TYPE_WIRED_MICIN:
         case DeviceType::DEVICE_TYPE_DP:
             return true;
 

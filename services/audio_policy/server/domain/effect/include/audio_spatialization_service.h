@@ -95,7 +95,8 @@ public:
     void SetSpatialAudioSourceType(SpatialAudioSourceType mode);
 private:
     AudioSpatializationService()
-        :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance())
+        :audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
+        audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
     {}
 
     ~AudioSpatializationService();
@@ -150,6 +151,7 @@ private:
         spatializationStateCBMap_;
     std::map<std::string, AudioSpatialDeviceState> addressToSpatialDeviceStateMap_;
     SpatialAudioSourceType spatialAudioSourceType_ = SPATIAL_AUDIO_SOURCE_TYPE_STEREO;
+    IAudioPolicyInterface& audioPolicyManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -69,6 +69,8 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
@@ -106,7 +108,6 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType, int32_t uid)
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
-        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
@@ -117,6 +118,8 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType, int32_t uid)
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();
@@ -248,7 +251,6 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
     switch (volumeType) {
         case STREAM_MUSIC:
         case STREAM_RING:
-        case STREAM_NOTIFICATION:
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_VOICE_ASSISTANT:
@@ -259,6 +261,8 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
         case STREAM_NAVIGATION:
 #endif
             break;
+        // SystemAPI
+        case STREAM_NOTIFICATION:
         case STREAM_ULTRASONIC:
         case STREAM_ALL:{
             bool ret = PermissionUtil::VerifySelfPermission();

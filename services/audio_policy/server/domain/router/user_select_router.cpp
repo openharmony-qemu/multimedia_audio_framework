@@ -17,6 +17,7 @@
 #endif
 
 #include "user_select_router.h"
+#include "audio_router_select_strategy.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -31,7 +32,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
         return make_shared<AudioDeviceDescriptor>();
     }
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredMediaRenderDevice();
+        AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     bool ret = CheckStreamUsage(perDev_, streamUsage);
     CHECK_AND_RETURN_RET(ret, make_shared<AudioDeviceDescriptor>());
@@ -52,7 +53,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
 shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+        AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_OUTPUT_DEVICES);

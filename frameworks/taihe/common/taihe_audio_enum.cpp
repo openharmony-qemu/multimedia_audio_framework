@@ -788,7 +788,6 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioS
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::VOICE_CALL);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_RING:
-        case OHOS::AudioStandard::AudioStreamType::STREAM_DTMF:
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_MUSIC:
@@ -830,13 +829,20 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeTypeMore(OHOS::AudioStandard::Au
 {
     AudioVolumeType result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
     switch (volumeType) {
+        case OHOS::AudioStandard::AudioStreamType::STREAM_DTMF:
+#if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::NOTIFICATION);
+#else
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
+#endif
+            break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_SYSTEM:
         case OHOS::AudioStandard::AudioStreamType::STREAM_NOTIFICATION:
         case OHOS::AudioStandard::AudioStreamType::STREAM_SYSTEM_ENFORCED:
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
             result = (OHOS::system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0))?
                 TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::SYSTEM) :
-                    TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
+                    TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::NOTIFICATION);
 #else
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
 #endif
@@ -1000,6 +1006,21 @@ bool TaiheAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceT
     bool result = false;
     switch (deviceType) {
         case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_EARPIECE:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentSetMediaOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
         case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
         case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT:
             result = true;

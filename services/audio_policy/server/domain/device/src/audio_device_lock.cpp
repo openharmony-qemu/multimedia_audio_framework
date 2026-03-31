@@ -49,7 +49,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetPreferre
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
     std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    const int32_t ownerUid = audioStateManager_.GetAudioSceneOwnerUid();
+    const int32_t ownerUid = audioSceneManager_.GetAudioSceneOwnerUid();
     const int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (ownerUid == 0) {
         return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(rendererInfo, networkId, callingUid);
@@ -150,20 +150,6 @@ void AudioDeviceLock::OnConnectFailed(AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     audioDeviceStatus_.OnConnectFailed(desc);
-}
-
-int32_t AudioDeviceLock::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioRecoveryDevice_.UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
-}
-
-std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceLock::GetExcludedDevices(
-    AudioDeviceUsage audioDevUsage)
-{
-    std::shared_lock deviceLock(deviceStatusUpdateSharedMutex_);
-    return audioStateManager_.GetExcludedDevices(audioDevUsage);
 }
 
 // new lock

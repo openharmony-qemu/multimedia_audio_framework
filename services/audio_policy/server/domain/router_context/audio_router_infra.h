@@ -30,6 +30,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
+enum ExcludeDeviceType {
+    EXCLUDED = 0,
+    UNEXCLUDED = 1,
+};
 
 class AudioRouterInfra {
 public:
@@ -46,6 +50,7 @@ public:
     void SetRecognitionCaptureDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
+    AudioSelectDeviceInfo GetLatestAppSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetHighestPrioritySelectDevice(SelectDeviceType type);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetRecognitionCaptureDevice();
 
@@ -65,9 +70,12 @@ public:
         AudioDeviceUsage usage);
     void UnexcludeDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
         AudioDeviceUsage usage);
+    std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetExcludedDevices(AudioDeviceUsage usage);
     bool IsDeviceExcluded(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device,
         AudioDeviceUsage usage);
     void UnexcludeAllDevice();
+    void SetScoExcluded(bool scoExcluded);
+    bool GetScoExcluded();
 
     void UpdateCurrentOutputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
@@ -79,6 +87,7 @@ public:
     void UpdateInputStreamState(int32_t uid, uint32_t streamId, SourceType sourceType, StreamState state);
     void UpdateOutputStreamState(int32_t uid, uint32_t streamId, StreamUsage streamUsage, StreamState state);
 
+    int32_t GetHighestOutputPriorityApp();
     bool HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes);
     std::vector<SourceType> GetHighestPriorityRunningSourceTypes();
     std::vector<StreamUsage> GetHighestPriorityRunningStreamUsages();
@@ -89,6 +98,7 @@ public:
     void UpdateAppForegroundState(int32_t uid, bool isForeground);
     void OnAppDied(int32_t uid);
     bool IsSystemUid(int32_t uid) const;
+    bool IsPreferredDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &desc);
 
     void Lock();
     void Unlock();
@@ -111,7 +121,13 @@ private:
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     bool HasRunningInputStream(int32_t uid);
     bool HasRunningOutputStream(int32_t uid);
+    bool HasAppSelectOutputDevice(int32_t uid);
     int64_t GetCurrentTimeMs() const;
+
+    void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
+        const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);
+    void WriteSelectOutputSysEvents(
+        const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, SelectDeviceType type);
 
     struct CompareExcludedSimpleDevice {
         bool operator()(const std::shared_ptr<AudioDeviceSimpleDescriptor> &a,
@@ -136,6 +152,7 @@ private:
         CompareExcludedSimpleDevice> excludedDevices_;
     std::list<int32_t> inputPriorityList_;
     std::list<int32_t> outputPriorityList_;
+    std::atomic<bool> isScoExcluded_ {false};
 };
 
 }

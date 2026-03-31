@@ -71,6 +71,7 @@ constexpr int32_t EMPTY_UID = 0;
 constexpr int32_t AUDIO_NORMAL_MANAGER_TYPE = 0;
 constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 constexpr int32_t DEFAULT_ZONEID = 0;
+constexpr uint32_t INVALID_STREAM_ID = static_cast<uint32_t>(-1);
 
 constexpr uint32_t MIN_STREAMID = 100000;
 constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
@@ -935,6 +936,7 @@ enum AudioDeviceUsage : uint32_t {
      * @since 11
      */
     CALL_OUTPUT_DEVICES = 4,
+    ALL_OUTPUT_DEVICES = 5,
     /**
      * Call input devices.
      * @syscap SystemCapability.Multimedia.Audio.Device
@@ -942,6 +944,7 @@ enum AudioDeviceUsage : uint32_t {
      * @since 11
      */
     CALL_INPUT_DEVICES = 8,
+    ALL_INPUT_DEVICES = 10,
     /**
      * All call devices.
      * @syscap SystemCapability.Multimedia.Audio.Device

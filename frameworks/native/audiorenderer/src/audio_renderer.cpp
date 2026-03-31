@@ -1217,7 +1217,7 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
         HILOG_COMM_ERROR("[Start]Start failed. Switching state: %{public}d", isSwitching_));
 
     if (audioInterrupt_.audioFocusType.streamType == STREAM_DEFAULT ||
-        audioInterrupt_.streamId == INVALID_SESSION_ID) {
+        audioInterrupt_.streamId == INVALID_STREAM_ID) {
         return ERR_ILLEGAL_STATE;
     }
 
@@ -3301,6 +3301,11 @@ int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
     const AudioSessionStrategy &strategy, const uint32_t behavior)
 {
     audioInterrupt_.behaviorFlags_ = {};
+    if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) &&
+        (audioInterrupt_.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION)) {
+        audioInterrupt_.behaviorFlags_.voipNoPrivacyFlag = true;
+        AUDIO_INFO_LOG("Renderer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
+    }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {
         audioInterrupt_.behaviorFlags_.muteWhenInterruptFlag = true;
         AUDIO_INFO_LOG("Renderer id: %{public}d activated MUTE_WHEN_INTERRUPTED success", sessionID_);

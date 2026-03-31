@@ -60,6 +60,7 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    int32_t UpdateSpatializationState(AudioSpatializationState spatializationState) override;
     int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetSystemVolumeToEffect(AudioStreamType streamType, float volume) override;
     void AddCaptureInjector(const uint32_t &sinkPortIndex, const uint32_t &sourcePortIndex,
@@ -90,6 +91,7 @@ public:
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
     virtual void OnGetCollaborativeUpdateCb(int32_t result) override;
+    virtual void OnUpdateSpatializationStateCb(int32_t result) override;
 
 private:
     std::mutex lock_;
@@ -121,6 +123,7 @@ private:
     bool isFinishGetAudioEnhanceProperty_ = false;
     bool isFinishCollaborativeUpdate_ = false;
     int32_t collaborativeUpdateResult_ = -1;
+    bool isFinishUpdateSpatializationState_ = false;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

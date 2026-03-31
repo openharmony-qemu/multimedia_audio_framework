@@ -83,6 +83,7 @@ private:
     static void UnregisterSessionStateCallbackCarryParam(napi_env env, napi_value jsThis, napi_value *args);
     static napi_value GetDefaultOutputDevice(napi_env env, napi_callback_info info);
     static napi_value SetDefaultOutputDevice(napi_env env, napi_callback_info info);
+    static napi_value SetMediaOutputDevice(napi_env env, napi_callback_info info);
     static std::shared_ptr<NapiAudioSessionStateCallback> GetAudioSessionStateCallback(
         napi_value argv, NapiAudioSessionMgr *napiSessionMgr);
     static void RegisterAudioSessionDeviceCallback(napi_env env, napi_value *args,
@@ -105,7 +106,7 @@ private:
     static napi_value PreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
     static napi_value GetPreferBluetoothAndNearlinkRecord(napi_env env, napi_callback_info info);
     static napi_value EnableMuteSuggestionWhenMixWithOthers(napi_env env, napi_callback_info info);
-    static napi_value SetCaptureMuteHint(napi_env env, napi_callback_info info);
+    static napi_value SetCapturerMuteHint(napi_env env, napi_callback_info info);
     static napi_value SetAudioSessionBehavior(napi_env env, napi_callback_info info);
 
     static void RegisterAvaiableDeviceChangeCallback(napi_env env, napi_value *args,

@@ -85,16 +85,13 @@ public:
     DeviceType GetDeviceType(const std::string &deviceName);
     std::string GetEncryptAddr(const std::string &addr);
     std::string GetDevicesStr(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    std::string EncUsbAddr(const std::string &src);
 
     AudioDeviceUsage GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage);
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);
 
-    int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     std::string GetOutputDeviceClassBySinkPortName(std::string sinkPortName);
     std::string GetInputDeviceClassBySourcePortName(std::string sourcePortName);
-    void SetScoExcluded(bool scoExcluded);
-    bool GetScoExcluded();
     bool IsDataShareReady();
 
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);

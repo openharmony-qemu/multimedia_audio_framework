@@ -422,6 +422,25 @@ HWTEST_F(AudioInterruptServiceUnitTest, CanMixForIncomingSession_001, TestSize.L
 
 /**
  * @tc.name  : Test AudioInterruptService
+ * @tc.number: CanMixForIncomingSession_002
+ * @tc.desc  : Test CanMixForIncomingSession
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, CanMixForIncomingSession_002, TestSize.Level4)
+{
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.independentStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    AudioInterrupt activeInterrupt;
+    AudioFocusEntry focusEntry;
+    EXPECT_TRUE(audioInterruptService_->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry));
+
+    focusEntry.isReject = true;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    EXPECT_TRUE(audioInterruptService_->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry));
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService
  * @tc.number: CanMixForActiveSession_001
  * @tc.desc  : Test CanMixForActiveSession IsIncomingStreamLowPriority(focusEntry) == true
  */
@@ -457,6 +476,26 @@ HWTEST_F(AudioInterruptServiceUnitTest, CanMixForActiveSession_002, TestSize.Lev
     EXPECT_TRUE(audioInterruptService_->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry));
 
     activeInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    EXPECT_TRUE(audioInterruptService_->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry));
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService
+ * @tc.number: CanMixForActiveSession_003
+ * @tc.desc  : Test CanMixForActiveSession
+ */
+HWTEST_F(AudioInterruptServiceUnitTest, CanMixForActiveSession_003, TestSize.Level4)
+{
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activeInterrupt;
+    activeInterrupt.independentStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    AudioFocusEntry focusEntry;
+    EXPECT_TRUE(audioInterruptService_->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry));
+
+    focusEntry.actionOn = ActionTarget::CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_STOP;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    activeInterrupt.audioFocusType.streamType = STREAM_MUSIC;
     EXPECT_TRUE(audioInterruptService_->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry));
 }
 

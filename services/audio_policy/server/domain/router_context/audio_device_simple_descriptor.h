@@ -29,10 +29,12 @@ public:
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
     int32_t deviceId_ = 0;
     std::string networkId_;
+    std::string macAddress_;
 
     AudioDeviceSimpleDescriptor() = default;
-    AudioDeviceSimpleDescriptor(DeviceType type, DeviceRole role, int32_t deviceId, const std::string& networkId)
-        : deviceType_(type), deviceRole_(role), deviceId_(deviceId), networkId_(networkId) {}
+    AudioDeviceSimpleDescriptor(DeviceType type, DeviceRole role, int32_t deviceId, const std::string& networkId,
+        const std::string& macAddress)
+        : deviceType_(type), deviceRole_(role), deviceId_(deviceId), networkId_(networkId), macAddress_(macAddress) {}
     ~AudioDeviceSimpleDescriptor() = default;
 
     bool operator==(const AudioDeviceSimpleDescriptor& other) const
@@ -40,7 +42,8 @@ public:
         return deviceType_ == other.deviceType_ &&
                deviceRole_ == other.deviceRole_ &&
                deviceId_ == other.deviceId_ &&
-               networkId_ == other.networkId_;
+               networkId_ == other.networkId_ &&
+               macAddress_ == other.macAddress_;
     }
 
     bool operator!=(const AudioDeviceSimpleDescriptor& other) const
@@ -53,7 +56,8 @@ public:
         return deviceType_ == other.deviceType_ &&
                deviceRole_ == other.deviceRole_ &&
                deviceId_ == other.deviceId_ &&
-               networkId_ == other.networkId_;
+               networkId_ == other.networkId_ &&
+               macAddress_ == other.macAddress_;
     }
 
     bool operator!=(const AudioDeviceDescriptor& other) const

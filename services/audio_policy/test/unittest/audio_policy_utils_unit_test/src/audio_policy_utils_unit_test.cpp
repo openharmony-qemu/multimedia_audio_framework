@@ -415,27 +415,6 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016_ext03, TestSize.Le
 }
 
 /**
- * @tc.name  : Test UnexcludeOutputDevices API
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_016
- * @tc.desc  : Test UnexcludeOutputDevices
- */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
-{
-    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
-    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
-    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
-
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    audioPolicyUtilsTest_->isBTReconnecting_ = true;
-
-    int32_t ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(D_ALL_DEVICES, descs);
-    EXPECT_EQ(ret, SUCCESS);
-    ret = audioPolicyUtilsTest_->UnexcludeOutputDevices(MEDIA_INPUT_DEVICES, descs);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test IsSupportedDevice API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyUtilsUnitTest_017
@@ -487,8 +466,10 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_019, TestSize.Level1)
 
     std::string bundleName = "com.ohos.test";
     bool hasSystemPermission = false;
-    audioPolicyUtilsTest_->SetDeclaredDeviceTypes(bundleName, {DEVICE_TYPE_NEARLINK});
+    audioPolicyUtilsTest_->SetDeclaredDeviceTypes(bundleName, {DEVICE_TYPE_NEARLINK, DEVICE_TYPE_HEARING_AID});
     int32_t ret = audioPolicyUtilsTest_->IsSupportedDevice(bundleName, DEVICE_TYPE_NEARLINK, hasSystemPermission);
+    EXPECT_EQ(ret, true);
+    ret = audioPolicyUtilsTest_->IsSupportedDevice(bundleName, DEVICE_TYPE_NEARLINK_IN, hasSystemPermission);
     EXPECT_EQ(ret, true);
 }
 
@@ -538,6 +519,44 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_021, TestSize.Level1)
     ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
 
     DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+
+    std::string ret = audioPolicyUtilsTest_->GetSourcePortName(deviceType, routeFlag);
+    EXPECT_EQ(ret, PRIMARY_MIC);
+}
+
+/**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_024
+ * @tc.desc  : Test GetSourcePortName
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_024, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_MICIN;
+    uint32_t routeFlag = AUDIO_INPUT_FLAG_NORMAL;
+
+    std::string ret = audioPolicyUtilsTest_->GetSourcePortName(deviceType, routeFlag);
+    EXPECT_EQ(ret, PRIMARY_MIC);
+}
+
+/**
+ * @tc.name  : Test GetSourcePortName API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPolicyUtilsUnitTest_025
+ * @tc.desc  : Test GetSourcePortName
+ */
+HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_025, TestSize.Level1)
+{
+    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
+    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
+    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
+
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_LINE_DIGITAL;
     uint32_t routeFlag = AUDIO_INPUT_FLAG_NORMAL;
 
     std::string ret = audioPolicyUtilsTest_->GetSourcePortName(deviceType, routeFlag);
