@@ -179,8 +179,6 @@ public:
         const std::string &permissionName, uint32_t tokenId = 0, bool isRecording = false);
     static bool NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType);
     static bool VerifyBackgroundCapture(uint32_t tokenId, uint64_t fullTokenId);
-    static bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
-    static bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
     static int32_t StartUsingPermission(uint32_t targetTokenId, const char* permission);
     static int32_t StopUsingPermission(uint32_t targetTokenId, const char* permission);
     static bool CheckCallingUidPermission(const std::vector<uid_t> &allowedUids);

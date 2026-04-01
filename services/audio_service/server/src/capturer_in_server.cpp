@@ -34,6 +34,7 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "core_service_handler.h"
+#include "record_privacy_manager.h"
 #include "stream_dfx_manager.h"
 #ifdef FEATURE_CALL_MANAGER
 #include "call_manager_client.h"
@@ -594,7 +595,7 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", streamIndex_);
     } else {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
+        CHECK_AND_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
         AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = true;
@@ -615,7 +616,7 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
-        PermissionUtil::NotifyPrivacyStop(tokenId, streamIndex_);
+        RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, streamIndex_);
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", streamIndex_);
         isMicIndicatorOn_ = false;
     } else {
