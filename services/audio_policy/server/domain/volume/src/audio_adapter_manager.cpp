@@ -360,8 +360,9 @@ void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDev
     AudioVolumeType audioVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(volumeType);
     // Only use the volume of speaker as the Boot Animation Volume.
     // use STREAM_NOTIFICATION on phone and use STREAM_SYSTEM on PC.
-    if ((volumeType == STREAM_NOTIFICATION || audioVolumeMap == STREAM_SYSTEM) &&
-        device->deviceType_ == DEVICE_TYPE_SPEAKER) {
+    bool isRightVolumeType = VolumeUtils::IsPCVolumeEnable() ?
+        (audioVolumeMap == STREAM_SYSTEM) : (audioVolumeMap == STREAM_NOTIFICATION);
+    if (isRightVolumeType && device->deviceType_ == DEVICE_TYPE_SPEAKER) {
         int32_t volumeLevel =
             GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
         int32_t ret = SetParameter("persist.multimedia.audio.notificationvolume", std::to_string(volumeLevel).c_str());
@@ -4079,6 +4080,8 @@ void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDevi
     bool mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
     volumeDataMaintainer_.SaveMuteToMap(device, STREAM_RING, mute);
     volumeDataMaintainer_.SaveMuteToDb(device, STREAM_RING, mute);
+    volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, mute);
+    volumeDataMaintainer_.SaveMuteToDb(device, STREAM_NOTIFICATION, mute);
     AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_.load());
 }
 

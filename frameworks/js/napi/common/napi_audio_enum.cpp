@@ -17,6 +17,7 @@
 #endif
 
 #include "napi_audio_enum.h"
+#include "audio_utils.h"
 #include "audio_renderer.h"
 #include "audio_errors.h"
 #include "audio_stream_manager.h"
@@ -1430,8 +1431,7 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
         case AudioStreamType::STREAM_NOTIFICATION:
         case AudioStreamType::STREAM_SYSTEM_ENFORCED:
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-            result = (system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0))?
-                NapiAudioEnum::SYSTEM : NapiAudioEnum::NOTIFICATION;
+            result = VolumeUtils::IsPCVolumeEnable() ? NapiAudioEnum::SYSTEM : NapiAudioEnum::NOTIFICATION;
 #else
             result = NapiAudioEnum::RINGTONE;
 #endif
