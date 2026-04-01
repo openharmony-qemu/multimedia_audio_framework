@@ -338,6 +338,8 @@ private:
 
     int32_t CallStartWhenInStandby();
 
+    int32_t Standby();
+
     void NotifyStopWaiting();
 
     void UpdateStopState();
@@ -429,7 +431,7 @@ private:
     bool silentModeAndMixWithOthers_ = false;
 
     float loudnessGain_ = 0.0f;
-    
+
     bool flushAfterStop_ = false;
 
     uint64_t clientWrittenBytes_ = 0;

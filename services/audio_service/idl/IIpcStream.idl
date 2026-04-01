@@ -27,6 +27,7 @@ interface IIpcStream {
     void UpdatePosition();
     void GetAudioSessionID([out] unsigned int sessionId);
     void Start();
+    void Standby();
     void Pause();
     void Stop();
     void Release([in] boolean isSwitchStream); // isSwitchStream = false

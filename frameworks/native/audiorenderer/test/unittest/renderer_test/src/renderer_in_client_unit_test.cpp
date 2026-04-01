@@ -60,6 +60,8 @@ public:
 
     virtual int32_t Start() override { return 0; }
 
+    virtual int32_t Standby() override { return 0; }
+
     virtual int32_t Pause() override { return 0; }
 
     virtual int32_t Stop() override { return 0; }

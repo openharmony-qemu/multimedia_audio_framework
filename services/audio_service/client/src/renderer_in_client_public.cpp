@@ -146,6 +146,9 @@ void RendererInClientInner::HandleStatusChangeOperation(Operation operation)
         case STOP_STREAM :
             state_ = STOPPED;
             break;
+        case STANDBY:
+            Standby();
+            break;
         default :
             break;
     }

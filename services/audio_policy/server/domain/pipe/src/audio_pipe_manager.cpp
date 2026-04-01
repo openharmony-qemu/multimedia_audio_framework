@@ -268,6 +268,15 @@ void AudioPipeManager::PauseClient(uint32_t sessionId)
     streamDesc->streamStatus_ = STREAM_STATUS_PAUSED;
 }
 
+void AudioPipeManager::StandbyClient(uint32_t sessionId)
+{
+    Trace trace("AudioPipeManager::StandbyClient");
+    std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescByIdInner(sessionId);
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "StreamDesc is nullptr");
+    streamDesc->isStandby_ = true;
+}
+
 void AudioPipeManager::StopClient(uint32_t sessionId)
 {
     Trace trace("AudioPipeManager::StopClient");

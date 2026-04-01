@@ -531,7 +531,9 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
+    auto stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener, "streamListener_ expired");
+    stateListener->OnOperationHandled(STANDBY, 0);
     RecordStandbyTime(standByEnable_, true);
     enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
@@ -1252,6 +1254,11 @@ int32_t RendererInServer::Start()
         processConfig_.appInfo.appUid);
 
     return ret;
+}
+
+int32_t RendererInServer::Standby()
+{
+    return CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
 }
 
 int32_t RendererInServer::StartInnerDuringStandby()

@@ -82,6 +82,7 @@ public:
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
+    int32_t Standby();
     int32_t Pause();
     int32_t Flush();
     int32_t Drain(bool stopFlag = false);

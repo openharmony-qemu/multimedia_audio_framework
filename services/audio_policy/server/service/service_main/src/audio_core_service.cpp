@@ -1146,11 +1146,11 @@ int32_t AudioCoreService::PauseClient(uint32_t sessionId)
 
 int32_t AudioCoreService::StandbyClient(uint32_t sessionId)
 {
+    CHECK_AND_RETURN_RET(pipeManager_, SUCCESS);
+    pipeManager_->StandbyClient(sessionId);
     auto streamDesc = pipeManager_->GetStreamDescById(sessionId);
-    if (streamDesc) {
-        streamDesc->isStandby_ = true;
-        ForceRemoveSleStreamType(streamDesc);
-    }
+    CHECK_AND_RETURN_RET(streamDesc, SUCCESS);
+    ForceRemoveSleStreamType(streamDesc);
     return SUCCESS;
 }
 
@@ -1199,7 +1199,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
     audioOffloadStream_.UnsetOffloadStatus(sessionId);
 
     HandlePlaybackStoppingOperations(streamDesc, "ReleaseClient");
-    
+
     RemoveUnusedPipe();
     if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
         RemoveUnusedRecordPipe();
@@ -2693,7 +2693,7 @@ bool AudioCoreService::FindRemainingNormalSession(uint32_t sessionId, bool findR
             if (stream == nullptr || stream->sessionId_ == sessionId) {
                 continue;
             }
-                
+
             if (!specialSourceTypeSet_.count(stream->capturerInfo_.sourceType)) {
                 continue;
             }
@@ -3456,7 +3456,7 @@ void AudioCoreService::UpdateArmModuleInfo(const std::shared_ptr<AudioDeviceDesc
         moduleInfo.bufferSize = std::to_string(bufferSize);
         AUDIO_INFO_LOG("update arm usb buffer size: %{public}s", moduleInfo.bufferSize.c_str());
     }
-    
+
     moduleInfo.macAddress = deviceDesc->GetMacAddress();
 }
 
@@ -3497,7 +3497,7 @@ void AudioCoreService::UpdatePrimaryMicModuleInfo(std::shared_ptr<AudioPipeInfo>
             || inputDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         return;
     }
- 
+
     // update primary info for ec config to get later
     primaryMicModuleInfo_.channels = pipeInfo->moduleInfo_.channels;
     primaryMicModuleInfo_.rate = pipeInfo->moduleInfo_.rate;
@@ -3724,7 +3724,7 @@ int32_t AudioCoreService::ReloadSourceForInputPipe(std::shared_ptr<AudioPipeInfo
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     pipeManager_->GetStreamPropInfo(streamDesc, streamPropInfo);
     PipeStreamPropInfo targetInfo = *streamPropInfo;
-    
+
     AudioModuleInfo moduleInfo = pipeInfo->moduleInfo_;
     moduleInfo.channels = std::to_string(targetInfo.channels_);
     moduleInfo.rate = std::to_string(targetInfo.sampleRate_);

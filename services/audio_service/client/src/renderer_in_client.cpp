@@ -1189,6 +1189,13 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::Standby()
+{
+    std::unique_lock<std::mutex> stateLock(statusMutex_);
+    CHECK_AND_RETURN_RET(state_ == RUNNING, SUCCESS);
+    return ipcStream_->Standby();
+}
+
 int32_t RendererInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
