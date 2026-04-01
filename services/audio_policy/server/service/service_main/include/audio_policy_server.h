@@ -663,8 +663,6 @@ public:
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
-    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
-        int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0, int32_t previousVolume = -1);
 

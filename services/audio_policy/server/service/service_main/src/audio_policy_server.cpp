@@ -735,7 +735,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
         if (loudVolumeManager_ == nullptr) {
             AUDIO_ERR_LOG("loudVolumeManager_ is nullptr!");
         } else if (loudVolumeManager_->CheckLoudVolumeMode(volumeLevelInInt, keyType, streamInFocus)) {
-            SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
+            audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
             AUDIO_INFO_LOG("device %{public}d, stream %{public}d, loud volume mode operation",
                 audioActiveDevice_.GetCurrentOutputDeviceType(), streamInFocus);
             return AUDIO_OK;
@@ -754,7 +754,7 @@ int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInF
     VolumeUpdateOption info = { true, false, zoneId, -1, true };
     int32_t ret = audioVolumeManager_.SetSystemVolumeLevelWithOption(streamInFocus, volumeLevelInInt, zoneId, info);
     if (ret == ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED) {
-        SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
+        audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
     }
     if (volumeLevelInInt <= 0 && VolumeUtils::IsPCVolumeEnable()) {
         SetStreamMuteInternal(STREAM_SYSTEM, true, true);
@@ -1192,7 +1192,7 @@ int32_t AudioPolicyServer::SetAdjustVolumeForZone(int32_t zoneId)
 
     // when zone update, send a volume event to update the volume display
     auto deviceDesc = audioActiveDevice_.GetDeviceForVolume(STREAM_MUSIC);
-    SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_MUSIC, false, zoneId, deviceDesc);
+    audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(STREAM_MUSIC, false, zoneId, deviceDesc);
     return ret;
 }
 
@@ -1745,13 +1745,6 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelWithDeviceInternal(AudioStreamTyp
         return ERR_OPERATION_FAILED;
     }
     return SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
-}
-
-void AudioPolicyServer::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType,
-    const bool& isUpdateUi, int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> deviceDesc, int32_t previousVolume)
-{
-    audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(
-        streamType, isUpdateUi, zoneId, deviceDesc, previousVolume);
 }
 
 int32_t AudioPolicyServer::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,

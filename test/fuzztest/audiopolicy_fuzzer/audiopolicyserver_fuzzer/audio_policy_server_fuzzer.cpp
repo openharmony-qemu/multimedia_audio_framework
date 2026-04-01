@@ -572,7 +572,7 @@ void AudioPolicyServerSendVolumeKeyEventCbWithUpdateUiOrNotFuzztest()
     AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL_ASSISTANT;
     bool isUpdateUi = GetData<bool>();
     int32_t zoneId = GetData<int32_t>();
-    audioPolicyServer->SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId);
+    audioPolicyServer->audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId);
 }
 
 void AudioPolicyServerUpdateMuteStateAccordingToVolLevelFuzztest()

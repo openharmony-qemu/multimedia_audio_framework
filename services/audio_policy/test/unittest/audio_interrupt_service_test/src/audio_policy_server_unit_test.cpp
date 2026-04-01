@@ -2722,10 +2722,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_133, TestSize.Level1)
 
     bool isUpdateUi = true;
     server->audioPolicyServerHandler_ = nullptr;
-    server->SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 
     server->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    server->SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 }
 
 /**
