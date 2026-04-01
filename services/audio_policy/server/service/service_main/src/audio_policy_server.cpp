@@ -1685,11 +1685,6 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
     return SUCCESS;
 }
 
-float AudioPolicyServer::GetSystemVolumeDb(AudioStreamType streamType)
-{
-    return audioPolicyManager_.GetSystemVolumeDb(streamType);
-}
-
 int32_t AudioPolicyServer::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag)
 {
     AUDIO_INFO_LOG("SetSelfAppVolumeLevel volumeLevel: %{public}d, volumeFlag: %{public}d",

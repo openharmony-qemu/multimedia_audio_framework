@@ -520,7 +520,7 @@ void AudioPolicyServerGetSystemVolumeDbFuzzTest()
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     AudioStreamType streamType = AudioStreamType::STREAM_ALL;
-    audioPolicyServer->GetSystemVolumeDb(streamType);
+    audioPolicyServer->audioPolicyManager_.GetSystemVolumeDb(streamType);
 }
 
 void AudioPolicyServerSetSelfAppVolumeLevelFuzztest()
