@@ -1249,7 +1249,7 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, in
 int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage)
 {
     int32_t appliedVolumePercentage = VOLUME_PERCENTAGE_UNSET;
-    GetSystemAppVolumePercentageForUidInternal(appUid, appliedVolumePercentage);
+    audioVolumeManager_.GetSystemAppVolumePercentage(appUid, appliedVolumePercentage);
     AUDIO_INFO_LOG("appUid: %{public}d, new percentage: %{public}d, old percentage: %{public}d",
         appUid, volumePercentage, appliedVolumePercentage);
     // Skip setting if volume percentage is already up-to-date
@@ -1363,14 +1363,7 @@ int32_t AudioPolicyServer::GetSystemAppVolumePercentageForUid(int32_t appUid, in
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
         ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
-    return GetSystemAppVolumePercentageForUidInternal(appUid, volumePercentage);
-}
-
-int32_t AudioPolicyServer::GetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t &volumePercentage)
-{
-    int32_t ret = audioVolumeManager_.GetSystemAppVolumePercentage(appUid, volumePercentage);
-    AUDIO_INFO_LOG("appUid[%{public}d], volumePercentage[%{public}d]", appUid, volumePercentage);
-    return ret;
+    return audioVolumeManager_.GetSystemAppVolumePercentage(appUid, volumePercentage);
 }
 // LCOV_EXCL_STOP
 
