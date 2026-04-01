@@ -164,7 +164,7 @@ typedef enum {
  *
  * @param inputFormat Pointer to the input audio format configuration.
  * @param outputFormat Pointer to the output audio format configuration.
- * @param converter Pointer to a viriable to receive audio converter.
+ * @param converter Pointer to a variable to receive audio converter.
  * @return {@link #AUDIOCONVERTER_SUCCESS} if execution succeeds,
  * or {@link #AUDIOCONVERTER_ERROR_INVALID_PARAM} If the input parameters are invalid.
  * or {@link #AUDIOCONVERTER_ERROR_UNSUPPORTED_FORMAT} if the specified input/output format combination is unsupported.
@@ -225,6 +225,7 @@ typedef enum {
  *
  * The converter invokes this callback to actively request input audio data during OH_AudioConverter_Process().
  * The caller must populate the output parameters (outInputData, outStatus) and return the valid size of input data.
+  * The maximum data size returned by a single callback is 400KB.
  * The memory pointed to by outInputData must remain valid until OH_AudioConverter_Process() returns.
  * @param userData User-defined data passed to the callback.
  * @param outInputData Pointer to a pointer that the callback sets to point to the input audio data buffer.
@@ -264,8 +265,8 @@ OH_AudioConverter_Result OH_AudioConverter_SetInputCallback(
  * @brief Executing the audio format conversion.
  *
  * This function executes audio conversion to converts to the target format, and writes the result to the user-provided
- * output buffer. This function must be called after OH_AudioConverter_SetInputCallback . The output buffer must be
- * allocated and managed by the caller.
+ * output buffer. This function must be called after OH_AudioConverter_SetInputCallback.
+ * The output buffer must be allocated and managed by the caller.
  *
  * @param converter Reference created by OH_AudioConverter_Create.
  * @param outputData Pointer to the output buffer allocated by the caller.
@@ -274,10 +275,11 @@ OH_AudioConverter_Result OH_AudioConverter_SetInputCallback(
  * @return {@link #AUDIOCONVERTER_SUCCESS} if execution succeeds
  * or {@link #AUDIOCONVERTER_ERROR_INVALID_PARAM} if parameter is invalid, e.g. converter is nullptr, e.t.c.
  * or {@link #AUDIOCONVERTER_ERROR_NOT_INITIALIZED} if converter instance is not initialized.
- * or {@link #AUDIOCONVERTER_ERROR_CALLBACK_INVALID} if callback is invalid, e.g. callback returned an invalid value,
- * e.t.c. or {@link #AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET} no input callback is bound to the converter. or {@link
- * #AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL} output buffer capacity is insufficient. or {@link
- * #AUDIOCONVERTER_ERROR_SYSTEM} if the system has other abnormalities.
+ * or {@link #AUDIOCONVERTER_ERROR_CALLBACK_INVALID} if callback is invalid,
+ * e.g. callback returned an invalid value, e.t.c.
+ * or {@link #AUDIOCONVERTER_ERROR_CALLBACK_NOT_SET} no input callback is bound to the converter.
+ * or {@link #AUDIOCONVERTER_ERROR_BUFFER_TOO_SMALL} output buffer capacity is insufficient.
+ * or {@link #AUDIOCONVERTER_ERROR_SYSTEM} if the system has other abnormalities.
  * @since 26.0.0
  */
 OH_AudioConverter_Result OH_AudioConverter_Process(

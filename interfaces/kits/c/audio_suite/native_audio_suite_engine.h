@@ -194,7 +194,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline* audi
  *
  * For most nodes, a piece of data is obtained from the preceding node, processed,
  * and then passed on to the subsequent node.
- * For nodes with multiple outputs, such as the {@link EFFECT_MULTI_OUTPUT_NODE_TYPE_AUDIO_SEPARATION},
+ * For nodes with multiple outputs, such as the {@link EFFECT_MULTII_OUTPUT_NODE_TYPE_AUDIO_SEPARATION},
  * a piece of data is obtained from the preceding node, processed by an algorithm,
  * and then multiple pieces of data are passed on to the subsequent nodes.
  * If such nodes exist in the pipeline, this interface must be used to obtain the processed data.
@@ -205,7 +205,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline* audi
  * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
  * @param audioDataArray Audio data array pointer, where user should read,
  * The size of each one-dimensional array should be consistent.
- * @param responseSize Size of audio data the system realy write,
+ * @param responseSize Size of audio data the system really write,
  * The system ensures that the data size filled for each one-dimensional array is consistent.
  * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
