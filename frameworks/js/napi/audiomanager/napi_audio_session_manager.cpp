@@ -200,7 +200,7 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->ActivateAudioSession(context->audioSessionStrategy);
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Activate audio session fail.");
         }
     };
 
@@ -233,7 +233,7 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->DeactivateAudioSession();
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Deactivate audio session fail.");
         }
     };
 
@@ -991,7 +991,7 @@ napi_value NapiAudioSessionMgr::ClearSelectedMediaInputDevice(napi_env env, napi
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->ClearSelectedInputDevice();
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Clear selected input device fail.");
         }
     };
 
