@@ -225,7 +225,7 @@ typedef enum {
  *
  * The converter invokes this callback to actively request input audio data during OH_AudioConverter_Process().
  * The caller must populate the output parameters (outInputData, outStatus) and return the valid size of input data.
-  * The maximum data size returned by a single callback is 400KB.
+ * The maximum data size returned by a single callback is 400KB.
  * The memory pointed to by outInputData must remain valid until OH_AudioConverter_Process() returns.
  * @param userData User-defined data passed to the callback.
  * @param outInputData Pointer to a pointer that the callback sets to point to the input audio data buffer.
