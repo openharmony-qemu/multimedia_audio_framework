@@ -33,6 +33,7 @@
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
 #include "core_service_handler.h"
+#include "record_privacy_manager.h"
 #include "stream_dfx_manager.h"
 #include "audio_stream_concurrency_detector.h"
 #include "format_converter.h"
@@ -380,7 +381,7 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", sessionId_);
     } else {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
+        CHECK_AND_RETURN_RET_LOG(RecordPrivacyManager::GetInstance().NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
         AUDIO_INFO_LOG("MicIndicator:turn on,Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = true;
@@ -401,7 +402,7 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
     if (isMicIndicatorOn_) {
-        PermissionUtil::NotifyPrivacyStop(tokenId, sessionId_);
+        RecordPrivacyManager::GetInstance().NotifyPrivacyStop(tokenId, sessionId_);
         AUDIO_INFO_LOG("MicIndicator:turn off, Stream:%{public}u", sessionId_);
         isMicIndicatorOn_ = false;
     } else {

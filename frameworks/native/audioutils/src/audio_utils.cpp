@@ -42,7 +42,6 @@
 #include "xcollie/xcollie.h"
 #include "xcollie/xcollie_define.h"
 #include "securec.h"
-#include "privacy_error.h"
 
 using OHOS::Security::AccessToken::AccessTokenKit;
 using namespace std::chrono_literals;
@@ -72,7 +71,6 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t UID_DMSDP_SA = 7071;
-constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
 const uint32_t UNIQUE_ID_INTERVAL = 8;
@@ -829,9 +827,6 @@ bool SwitchStreamUtil::HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, S
     return true;
 }
 
-std::mutex g_recordMapMutex;
-std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
-
 int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char* permission)
 {
     Trace trace("PrivacyKit::StartUsingPermission");
@@ -889,62 +884,6 @@ int32_t PermissionUtil::AddRemotePermissionUsedRecord(const std::string &deviceI
         successCount, failCount);
     guard.CheckCurrTimeout();
     return res;
-}
-
-bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
-{
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStart", TIME_OUT_SECONDS,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    std::lock_guard<std::mutex> lock(g_recordMapMutex);
-    if (g_tokenIdRecordMap.count(targetTokenId)) {
-        if (!g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
-            g_tokenIdRecordMap[targetTokenId].emplace(sessionId);
-        } else {
-            AUDIO_WARNING_LOG("this stream %{public}u is already running, no need call start", sessionId);
-        }
-    } else {
-        AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
-            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
-        int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
-            "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
-        if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
-            AUDIO_ERR_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING error code:%{public}d", res);
-        }
-        WatchTimeout reguard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:NotifyPrivacyStart");
-        res = Security::AccessToken::PrivacyKit::AddPermissionUsedRecord(targetTokenId, MICROPHONE_PERMISSION, 1, 0);
-        reguard.CheckCurrTimeout();
-        CHECK_AND_RETURN_RET_LOG(res == 0, false, "AddPermissionUsedRecord for tokenId %{public}u!"
-            "The PrivacyKit error code:%{public}d", targetTokenId, res);
-        g_tokenIdRecordMap[targetTokenId] = {sessionId};
-    }
-    return true;
-}
-
-bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId)
-{
-    AudioXCollie audioXCollie("PermissionUtil::NotifyPrivacyStop", TIME_OUT_SECONDS,
-         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    std::unique_lock<std::mutex> lock(g_recordMapMutex);
-    if (!g_tokenIdRecordMap.count(targetTokenId)) {
-        AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
-        return true;
-    }
-
-    if (g_tokenIdRecordMap[targetTokenId].count(sessionId)) {
-        g_tokenIdRecordMap[targetTokenId].erase(sessionId);
-    }
-    AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
-        g_tokenIdRecordMap[targetTokenId].size());
-    if (g_tokenIdRecordMap[targetTokenId].empty()) {
-        g_tokenIdRecordMap.erase(targetTokenId);
-        AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
-            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
-        int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
-        CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
-            "The PrivacyKit error code:%{public}d", targetTokenId, res);
-    }
-    return true;
 }
 
 static std::unordered_map<int32_t, std::pair<uint32_t, std::string>> g_solePipeSourceMap = {};
