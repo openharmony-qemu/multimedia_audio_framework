@@ -873,6 +873,7 @@ void AudioInterruptServiceIsSameAppInShareModeFuzzTest(const uint8_t *rawData, s
     uint32_t testId = *reinterpret_cast<const uint32_t *>(rawData) % TEST_ID_MODULO;
     AudioInterrupt incomingInterrupt;
     AudioInterrupt activeInterrupt;
+    int32_t pid = 100;
     if (testId == 0) {
         incomingInterrupt.mode = INDEPENDENT_MODE;
         activeInterrupt.mode = INDEPENDENT_MODE;
@@ -884,8 +885,8 @@ void AudioInterruptServiceIsSameAppInShareModeFuzzTest(const uint8_t *rawData, s
     } else {
         incomingInterrupt.mode = SHARE_MODE;
         activeInterrupt.mode = SHARE_MODE;
-        incomingInterrupt.pid = AudioInterruptService::STREAM_DEFAULT_PRIORITY;
-        activeInterrupt.pid = AudioInterruptService::STREAM_DEFAULT_PRIORITY;
+        incomingInterrupt.pid = pid;
+        activeInterrupt.pid = pid;
     }
 
     interruptService->IsSameAppInShareMode(incomingInterrupt, activeInterrupt);

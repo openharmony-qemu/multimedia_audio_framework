@@ -30,7 +30,6 @@
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
-#include "audio_volume_manager.h"
 #include "istandard_audio_service.h"
 #include "audio_zone_service.h"
 #include "audio_server_proxy.h"
@@ -53,6 +52,7 @@ static sptr<IStandardAudioService> g_adProxy = nullptr;
 const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 constexpr int32_t RETRY_TIME_S = 5;
 constexpr int64_t SLEEP_TIME_S = 1;
+constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
@@ -99,7 +99,6 @@ static const unordered_map<AudioStreamType, int32_t> DEFAULT_STREAM_PRIORITY = {
     {STREAM_VOICE_CALL_ASSISTANT, 0},
     {STREAM_VOICE_COMMUNICATION, 0},
     {STREAM_VOICE_MESSAGE, 1},
-    {STREAM_NOTIFICATION, 2},
     {STREAM_VOICE_ASSISTANT, 3},
     {STREAM_RING, 4},
     {STREAM_VOICE_RING, 4},
@@ -114,6 +113,8 @@ static const unordered_map<AudioStreamType, int32_t> DEFAULT_STREAM_PRIORITY = {
     {STREAM_DTMF, 8},
     {STREAM_SYSTEM, 8},
     {STREAM_SYSTEM_ENFORCED, 9},
+    // Notification volume is not expected to be adjusted by volume keys.
+    {STREAM_NOTIFICATION, STREAM_DEFAULT_PRIORITY},
 };
 
 inline int32_t GetAudioScenePriority(const AudioScene audioScene)
@@ -1533,9 +1534,6 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
         if (iter->first.isAudioSessionInterrupt) {
             std::vector<AudioInterrupt> sessionStreams = sessionService_.GetStreams(iter->first.pid);
             for (auto stream : sessionStreams) {
-                CHECK_AND_CONTINUE_PRELOG(!(stream.audioFocusType.streamType == STREAM_NOTIFICATION &&
-                    AudioVolumeManager::GetInstance().GetSystemVolumeLevel(STREAM_NOTIFICATION) == 0),
-                    "Skip the notification type because its volume is 0.");
                 int32_t curPriority = GetStreamTypePriority(stream.audioFocusType.streamType);
                 if (curPriority < focusPriority) {
                     focusPriority = curPriority;
@@ -1545,9 +1543,6 @@ AudioStreamType AudioInterruptService::GetStreamInFocusInternal(const int32_t ui
                 }
             }
         } else {
-            CHECK_AND_CONTINUE_PRELOG(!((iter->first).audioFocusType.streamType == STREAM_NOTIFICATION &&
-                AudioVolumeManager::GetInstance().GetSystemVolumeLevel(STREAM_NOTIFICATION) == 0),
-                "Skip the notification type because its volume is 0.");
             int32_t curPriority = GetStreamTypePriority((iter->first).audioFocusType.streamType);
             if (curPriority < focusPriority) {
                 focusPriority = curPriority;
