@@ -347,7 +347,7 @@ int32_t OHAudioConverter::CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame)
 OH_AudioConverter_Result OHAudioConverter::ReadAndCacheInputData(bool* shouldStopProcessing)
 {
     const void* inputDataPtr = nullptr;
-    OH_AudioConverter_InputStatus inputStatus; //需要初始化一个不存在的值
+    OH_AudioConverter_InputStatus inputStatus = static_cast<OH_AudioConverter_InputStatus>(-1);
 
     int32_t inputSize = requestCallback_(
         callbackUserData_,
