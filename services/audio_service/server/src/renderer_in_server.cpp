@@ -800,10 +800,13 @@ int32_t RendererInServer::Write3DAModeData(uint64_t currentReadFrame, uint64_t c
 
 bool RendererInServer::CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame)
 {
+    // For non-DIRECT_PLAYBACK modes: underrun when read position catches up to write position
     if (managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame) {
         return true;
     }
-    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame) {
+    // For DIRECT_PLAYBACK mode: The direct path does not have the logic for filling in empty frames.
+    // therefore, if there are insufficinet frames, a pop may occur
+    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInFrame_) > currentWriteFrame) {
         return true;
     }
     return false;
