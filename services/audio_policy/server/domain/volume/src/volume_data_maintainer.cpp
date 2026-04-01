@@ -935,7 +935,9 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
     }
 
     for (size_t i = 0; i < volumeList.size(); i++) {
-        VolumeScale volume{infos[i].value, degreeInfos[i].value, infos[i].maxValue};
+        int32_t validDegree  = VolumeUtils::VolumeDegreeToLevel(degreeInfos[i].value,
+            infos[i].maxValue) == infos[i].value ? degreeInfos[i].value : -1;
+        VolumeScale volume{infos[i].value, validDegree, infos[i].maxValue};
         SaveVolumeToMap(device, volumeList[i], volume, zoneId);
     }
 }
