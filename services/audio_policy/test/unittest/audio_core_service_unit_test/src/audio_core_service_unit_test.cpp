@@ -6048,6 +6048,50 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_002, TestSize.Level1
 
 /**
 * @tc.name  : Test AudioEcManager.
+* @tc.number: ReloadSourceForInputPipe_003
+* @tc.desc  : Test remote old input device also keeps micIn/ec module info empty.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, ReloadSourceForInputPipe_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_TRUE(audioCoreService != nullptr);
+    auto &ioHandleMap = audioCoreService->audioIOHandleMap_;
+
+    constexpr uint32_t targetSessionId = 123458;
+    const std::string moduleName = "ut_voice_recognition_old_remote_reload_pipe";
+    AudioIOHandle oldIoHandle = 0;
+    bool hadOldIoHandle = ioHandleMap.GetModuleIdByKey(moduleName, oldIoHandle);
+
+    auto pipeInfo = CreateReloadSourceInputPipeInfo(moduleName);
+    ASSERT_TRUE(pipeInfo != nullptr);
+    auto streamDesc = CreateVoiceRecognitionStreamDesc(targetSessionId);
+    ASSERT_TRUE(streamDesc != nullptr);
+    ASSERT_FALSE(streamDesc->newDeviceDescs_.empty());
+    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    auto oldRemoteInput = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_MIC, INPUT_DEVICE);
+    oldRemoteInput->networkId_ = "RemoteDevice";
+    streamDesc->oldDeviceDescs_.push_back(oldRemoteInput);
+
+    pipeInfo->streamDescMap_[targetSessionId] = streamDesc;
+    ioHandleMap.AddIOHandleInfo(moduleName, static_cast<AudioIOHandle>(targetSessionId));
+    AudioIOHandle ioHandleInMap = 0;
+    ASSERT_TRUE(ioHandleMap.GetModuleIdByKey(moduleName, ioHandleInMap));
+
+    int32_t ret = audioCoreService->ReloadSourceForInputPipe(pipeInfo, targetSessionId);
+    EXPECT_TRUE(ret == SUCCESS || ret == ERR_INVALID_HANDLE);
+    if (ret == SUCCESS) {
+        ExpectReloadSourceMicEcModuleInfoEmpty(pipeInfo);
+    }
+
+    if (hadOldIoHandle) {
+        ioHandleMap.AddIOHandleInfo(moduleName, oldIoHandle);
+    } else {
+        ioHandleMap.DelIOHandleInfo(moduleName);
+    }
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
 * @tc.number: GetMicRefFeatureEnable_001
 * @tc.desc  : Test GetMicRefFeatureEnable interface.
 */
