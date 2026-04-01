@@ -7627,5 +7627,156 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyRemoteRouteStateChange_003, TestSize.Le
 
     GetServerPtr()->coreService_->audioConnectedDevice_.DelConnectedDevice("1234567892", DEVICE_TYPE_SPEAKER);
 }
+
+/**
+ * @tc.name  : GetActiveStreamsVolumeInfo_Empty
+ * @tc.number: GetActiveStreamsVolumeInfo_001
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo returns empty when no active streams exist
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_Empty, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto &streamCollector = audioCoreService->streamCollector_;
+    streamCollector.audioRendererChangeInfos_.clear();
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioCoreService->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_TRUE(activeStreamsVolumeInfo.empty());
+}
+
+/**
+ * @tc.name  : GetActiveStreamsVolumeInfo_SingleStream
+ * @tc.number: GetActiveStreamsVolumeInfo_002
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo returns single stream volume info
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_SingleStream, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto &streamCollector = audioCoreService->streamCollector_;
+    streamCollector.audioRendererChangeInfos_.clear();
+
+    auto changeInfo = std::make_shared<AudioRendererChangeInfo>();
+    changeInfo->clientUID = 1001;
+    changeInfo->rendererState = RENDERER_RUNNING;
+    changeInfo->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    changeInfo->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(changeInfo));
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioCoreService->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(1, static_cast<int32_t>(activeStreamsVolumeInfo.size()));
+
+    streamCollector.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : GetActiveStreamsVolumeInfo_MultipleStreams
+ * @tc.number: GetActiveStreamsVolumeInfo_003
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo returns multiple streams volume info
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_MultipleStreams, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto &streamCollector = audioCoreService->streamCollector_;
+    streamCollector.audioRendererChangeInfos_.clear();
+
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
+    info1->clientUID = 1001;
+    info1->rendererState = RENDERER_RUNNING;
+    info1->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info1->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info1));
+
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
+    info2->clientUID = 1002;
+    info2->rendererState = RENDERER_RUNNING;
+    info2->rendererInfo.contentType = CONTENT_TYPE_SPEECH;
+    info2->rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info2));
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioCoreService->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(2, static_cast<int32_t>(activeStreamsVolumeInfo.size()));
+
+    streamCollector.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : GetActiveStreamsVolumeInfo_DuplicateStreams
+ * @tc.number: GetActiveStreamsVolumeInfo_004
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo deduplicates same uid and streamType
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_DuplicateStreams, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto &streamCollector = audioCoreService->streamCollector_;
+    streamCollector.audioRendererChangeInfos_.clear();
+
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
+    info1->clientUID = 1001;
+    info1->sessionId = 1;
+    info1->rendererState = RENDERER_RUNNING;
+    info1->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info1->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info1));
+
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
+    info2->clientUID = 1001;
+    info2->sessionId = 2;
+    info2->rendererState = RENDERER_RUNNING;
+    info2->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info2->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info2));
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioCoreService->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(1, static_cast<int32_t>(activeStreamsVolumeInfo.size()));
+
+    streamCollector.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : GetActiveStreamsVolumeInfo_NonRunningState
+ * @tc.number: GetActiveStreamsVolumeInfo_005
+ * @tc.desc  : Test GetActiveStreamsVolumeInfo excludes non-RUNNING streams
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetActiveStreamsVolumeInfo_NonRunningState, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto &streamCollector = audioCoreService->streamCollector_;
+    streamCollector.audioRendererChangeInfos_.clear();
+
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
+    info1->clientUID = 1001;
+    info1->rendererState = RENDERER_RUNNING;
+    info1->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info1->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info1));
+
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
+    info2->clientUID = 1002;
+    info2->rendererState = RENDERER_PAUSED;
+    info2->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info2->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info2));
+
+    auto info3 = std::make_shared<AudioRendererChangeInfo>();
+    info3->clientUID = 1003;
+    info3->rendererState = RENDERER_STOPPED;
+    info3->rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    info3->rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    streamCollector.audioRendererChangeInfos_.push_back(std::move(info3));
+
+    std::vector<ActiveStreamVolumeInfo> activeStreamsVolumeInfo;
+    auto result = audioCoreService->GetActiveStreamsVolumeInfo(activeStreamsVolumeInfo);
+    EXPECT_EQ(SUCCESS, result);
+    EXPECT_EQ(1, static_cast<int32_t>(activeStreamsVolumeInfo.size()));
+
+    streamCollector.audioRendererChangeInfos_.clear();
+}
 } // namespace AudioStandard
 } // namespace OHOS

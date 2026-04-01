@@ -1732,6 +1732,76 @@ HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : ShouldApplySystemAppVolume_PCVolumeEnabled
+ * @tc.number: ShouldApplySystemAppVolume_001
+ * @tc.desc  : Test when IsPCVolumeEnable returns true
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_PCVolumeEnabled, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    bool isPCVolumeEnabled = true;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_TRUE(result);
+
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_AppIndividualVolumeDisabled
+ * @tc.number: ShouldApplySystemAppVolume_002
+ * @tc.desc  : Test when appIndividualVolumeEnabled is false
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_AppIndividualVolumeDisabled, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_StreamMusic
+ * @tc.number: ShouldApplySystemAppVolume_003
+ * @tc.desc  : Test returns true for STREAM_MUSIC when appIndividualVolumeEnabled is true
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_StreamMusic, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_TRUE(result);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+}
+
+/**
+ * @tc.name  : ShouldApplySystemAppVolume_StreamNotMusic
+ * @tc.number: ShouldApplySystemAppVolume_004
+ * @tc.desc  : Test returns false for non-MUSIC stream when appIndividualVolumeEnabled is true
+ */
+HWTEST_F(AudioVolumeUnitTest, ShouldApplySystemAppVolume_StreamNotMusic, TestSize.Level1)
+{
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    bool isPCVolumeEnabled = false;
+    VolumeUtils::SetPCVolumeEnable(isPCVolumeEnabled);
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    bool result = audioVolumeTest->ShouldApplySystemAppVolume(streamType);
+    EXPECT_FALSE(result);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+}
+
+/**
  * @tc.name  : Test IsSameVolume API
  * @tc.type  : FUNC
  * @tc.number: IsSameVolume_001
@@ -2029,6 +2099,156 @@ HWTEST_F(AudioVolumeUnitTest, RemovePipeVolume_002, TestSize.Level1)
     AudioVolume::GetInstance()->RemovePipeVolume(TEST_PIPE_ID, STREAM_MUSIC);
     std::string key = std::to_string(TEST_PIPE_ID) + "|" + std::to_string(STREAM_MUSIC);
     EXPECT_EQ(AudioVolume::GetInstance()->pipeVolume_.find(key), AudioVolume::GetInstance()->pipeVolume_.end());
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_NonMusicStream
+ * @tc.number: GetSystemAppVolume_001
+ * @tc.desc  : Test GetSystemAppVolume returns 1.0f when streamType is not MUSIC
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_NonMusicStream, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_AppIndividualVolumeDisabled
+ * @tc.number: GetSystemAppVolume_002
+ * @tc.desc  : Test GetSystemAppVolume returns 1.0f when appIndividualVolumeEnabled is false
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_AppIndividualVolumeDisabled, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_PCVolumeEnabled
+ * @tc.number: GetSystemAppVolume_003
+ * @tc.desc  : Test GetSystemAppVolume returns 1.0f when uid not found in systemAppVolume_
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_PCVolumeEnabled, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioVolumeTest->systemAppVolume_.clear();
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolume_WithVolumeRecord
+ * @tc.number: GetSystemAppVolume_004
+ * @tc.desc  : Test GetSystemAppVolume returns stored volume when uid exists
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolume_WithVolumeRecord, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(true);
+    audioVolumeTest->systemAppVolume_.clear();
+
+    SystemAppVolume systemAppVolume(uid, 0.5f, 1, false);
+    systemAppVolume.totalVolume_ = 0.8f;
+    audioVolumeTest->systemAppVolume_.insert({uid, systemAppVolume});
+
+    float result = audioVolumeTest->GetSystemAppVolume(uid, streamType);
+    EXPECT_EQ(0.8f, result);
+
+    audioVolumeTest->systemAppVolume_.clear();
+    VolumeUtils::SetPCVolumeEnable(false);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolumeEffective_NonMusicStream
+ * @tc.number: GetSystemAppVolumeEffective_001
+ * @tc.desc  : Test GetSystemAppVolumeEffective returns 1.0f when streamType is not MUSIC
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_NonMusicStream, TestSize.Level1)
+{
+    int32_t sessionId = 1;
+    int32_t streamType = STREAM_VOICE_CALL;
+    int32_t streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    int32_t uid = 1001;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolumeEffective_AppIndividualVolumeDisabled
+ * @tc.number: GetSystemAppVolumeEffective_002
+ * @tc.desc  : Test GetSystemAppVolumeEffective returns 1.0f when appIndividualVolumeEnabled is false
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_AppIndividualVolumeDisabled, TestSize.Level1)
+{
+    int32_t sessionId = 1;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1001;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = false;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
+    EXPECT_EQ(1.0f, result);
+}
+
+/**
+ * @tc.name  : GetSystemAppVolumeEffective_WithVolumeRecord
+ * @tc.number: GetSystemAppVolumeEffective_003
+ * @tc.desc  : Test GetSystemAppVolumeEffective returns stream.systemAppVolume_ when should apply
+ */
+HWTEST_F(AudioVolumeUnitTest, GetSystemAppVolumeEffective_WithVolumeRecord, TestSize.Level1)
+{
+    int32_t sessionId = 1;
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MEDIA;
+    int32_t uid = 1001;
+    int32_t pid = 1000;
+    bool isSystemApp = false;
+    int32_t mode = 1;
+    bool isVKB = false;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
+    streamVolume.systemAppVolume_ = 0.8f;
+
+    audioVolumeTest->appIndividualVolumeEnabled_ = true;
+    VolumeUtils::SetPCVolumeEnable(false);
+
+    float result = audioVolumeTest->GetSystemAppVolumeEffective(streamVolume);
+    EXPECT_EQ(0.8f, result);
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
