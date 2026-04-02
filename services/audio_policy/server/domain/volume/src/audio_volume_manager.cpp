@@ -2388,5 +2388,19 @@ bool AudioVolumeManager::ShouldNotifyForLegacyVolume(int32_t volumeLevel)
     return volumeLevel > notifyVolumeLevel && !IsLegacyHighVolumeChecked();
 }
 
+int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel,
+    bool isUpdateUi, DeviceType deviceType)
+{
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetDeviceForVolume(streamType)->deviceType_;
+    int32_t ret = SUCCESS;
+    if (curOutputDeviceType != deviceType) {
+        ret = SaveSpecifiedDeviceVolume(streamType, volumeLevel, deviceType);
+    } else {
+        bool mute = GetStreamMuteInterface(streamType);
+        VolumeUpdateOption option{isUpdateUi, mute};
+        ret = SetSingleStreamVolume(streamType, volumeLevel, option);
+    }
+    return ret;
+}
 }
 }

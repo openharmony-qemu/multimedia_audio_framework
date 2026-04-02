@@ -231,7 +231,8 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithDeviceInternal_001, TestSize
     int32_t result = ptrAudioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(
         streamType, volumeLevel, isUpdateUi, deviceType);
 
-    EXPECT_EQ(result, ptrAudioPolicyServer->SetSingleStreamVolumeWithDevice(
+    auto &audioVolumeManager = ptrAudioPolicyServer->audioVolumeManager_;
+    EXPECT_EQ(result, audioVolumeManager.SetSingleStreamVolumeWithDevice(
         streamType, volumeLevel, isUpdateUi, deviceType));
 }
 

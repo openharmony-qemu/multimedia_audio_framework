@@ -625,7 +625,8 @@ void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest()
     int32_t volumeLevel = GetData<int32_t>();
     bool isUpdateUi = GetData<bool>();
     DeviceType deviceType = GetData<DeviceType>();
-    audioPolicyServer->SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
+    auto &audioVolumeManager = audioPolicyServer->audioVolumeManager_;
+    audioVolumeManager.SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
 }
 
 void AudioPolicyServerGetStreamMuteFuzztest()
