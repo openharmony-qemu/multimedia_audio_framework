@@ -1924,5 +1924,20 @@ bool AudioDeviceManager::IsDeviceAvailable(AudioDeviceUsage audioDevUsage,
     }
     return false;
 }
+
+void AudioDeviceManager::UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    CHECK_AND_RETURN_LOG(deviceDescriptor != nullptr, "devDesc is nullptr");
+    auto isPresent = [&deviceDescriptor](const shared_ptr<AudioDeviceDescriptor> &desc) {
+        return desc->deviceRole_ == deviceDescriptor->deviceRole_
+            && desc->deviceType_ == deviceDescriptor->deviceType_
+            && desc->networkId_ == deviceDescriptor->networkId_
+            && desc->macAddress_ == deviceDescriptor->macAddress_;
+    };
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
+    auto itr = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
+    CHECK_AND_RETURN_LOG(itr != connectedDevices_.end(), "Device not found");
+    AudioDeviceStatus::GetInstance().UpdateDeviceDescriptorByCapability(*(*itr));
+}
 }
 }
