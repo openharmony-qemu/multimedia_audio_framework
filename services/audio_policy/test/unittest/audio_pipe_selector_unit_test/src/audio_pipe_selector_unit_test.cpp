@@ -974,7 +974,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_007, TestSize.Le
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
 
-    EXPECT_EQ(info.moduleInfo_.openMicRef, "1");
+    EXPECT_EQ(info.moduleInfo_.openMicRef, "");
     EXPECT_EQ(info.moduleInfo_.micInRate, "48000");
     EXPECT_EQ(info.moduleInfo_.micInChannels, "4");
     EXPECT_EQ(info.moduleInfo_.micInFormat, "s16");
