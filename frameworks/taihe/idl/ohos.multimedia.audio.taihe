@@ -722,6 +722,7 @@ struct VolumeEvent {
   networkId: String;
   volumeMode: Optional<AudioVolumeMode>;
   percentage: Optional<i32>;
+  appUid: Optional<i32>;
 }
 
 struct StreamVolumeEvent {
