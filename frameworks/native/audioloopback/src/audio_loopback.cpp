@@ -51,13 +51,6 @@ namespace {
 
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
-    // This is just to pre-validate potential errors, with the actual audio protection
-    // implemented where the recording stream is truly created.
-    Security::AccessToken::AccessTokenID tokenId = appInfo.appTokenId;
-    tokenId = (tokenId == Security::AccessToken::INVALID_TOKENID) ? IPCSkeleton::GetCallingTokenID() : tokenId;
-    int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
-    CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED, nullptr,
-        "Permission denied [tid:%{public}d]", tokenId);
     if (mode == LOOPBACK_HARDWARE) {
         static std::shared_ptr<AudioLoopbackPrivate> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
         return instance;
@@ -311,6 +304,9 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
 
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
+    if (isGlobal_) {
+        audioRenderer_->SetSilentModeAndMixWithOthers(true);
+    }
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
     if (audioCapturer_ == nullptr) {
         HILOG_COMM_INFO("[CreateAudioLoopback]CreateCapturer failed");
@@ -412,6 +408,9 @@ AudioCapturerOptions AudioLoopbackPrivate::GenerateCapturerConfig()
     capturerOptions.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
     capturerOptions.capturerInfo.isLoopback = true;
     capturerOptions.capturerInfo.loopbackMode = mode_;
+    // use silent for global
+    capturerOptions.strategy.concurrencyMode = isGlobal_ ? AudioConcurrencyMode::SILENT :
+        AudioConcurrencyMode::INVALID;
     return capturerOptions;
 }
 
@@ -426,6 +425,14 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
     // hifi  usb // enable
     activeOutputDevice_ = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
     activeInputDevice_ = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    AUDIO_INFO_LOG("activeOutputDevice is %{public}d, activeInputDevice is %{public}d", activeOutputDevice_,
+        activeInputDevice_);
+    if (activeOutputDevice_ == DEVICE_TYPE_NEARLINK && activeInputDevice_ == DEVICE_TYPE_MIC) {
+        isRendererUsb_ = true;
+        isCapturerUsb_ = true;
+        AUDIO_INFO_LOG("nearlink case!");
+        return DEFAULT_OK;
+    }
     CHECK_AND_RETURN_RET_LOG(activeOutputDevice_ == activeInputDevice_, ERROR_DEVICE_MISMATCH,
         "outputdevice dismatch inputdevice, output = %{public}u, input = %{public}u",
         activeOutputDevice_, activeInputDevice_);
@@ -482,7 +489,11 @@ void AudioLoopbackPrivate::RendererCallbackImpl::OnStateChange(
 void AudioLoopbackPrivate::RendererCallbackImpl::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason __attribute__((unused)) reason)
 {
-    parent_.isRendererUsb_ = parent_.activeOutputDevice_ == AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+    auto deviceType = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+    parent_.isRendererUsb_ = parent_.activeOutputDevice_ == deviceType;
+    if (deviceType == DEVICE_TYPE_NEARLINK) {
+        parent_.isRendererUsb_ = true;
+    }
     parent_.UpdateStatus();
 }
 
