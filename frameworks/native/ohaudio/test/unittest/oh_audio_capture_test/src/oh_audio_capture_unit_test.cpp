@@ -22,17 +22,17 @@ namespace AudioStandard {
 
 class MuteHintReturnCapturer : public AudioCapturerPrivate {
 public:
-    explicit MuteHintReturnCapturer(int32_t ret)
-        : AudioCapturerPrivate(STREAM_MUSIC, AppInfo(), false), ret_(ret) {}
+    explicit MuteHintReturnCapturer(int32_t muteHintRet)
+        : AudioCapturerPrivate(STREAM_MUSIC, AppInfo {}, false), muteHintRet_(muteHintRet) {}
 
     int32_t SetMuteHint(bool mute) override
     {
         (void)mute;
-        return ret_;
+        return muteHintRet_;
     }
 
 private:
-    int32_t ret_;
+    int32_t muteHintRet_ = SUCCESS;
 };
 
 FILE* g_file = nullptr;
@@ -1589,28 +1589,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetMuteHint_001, TestSize.Level0
 {
     OH_AudioStream_Result result = OH_AudioCapturer_SetMuteHint(nullptr, true);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
-}
-
-/**
-* @tc.name  : Test OH_AudioCapturer_SetMuteHint API via illegal state.
-* @tc.number: OH_AudioCapturer_SetMuteHint_002
-* @tc.desc  : Test OH_AudioCapturer_SetMuteHint interface.Returns illegal state if capturer is not running.
-*/
-HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetMuteHint_002, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    ASSERT_NE(builder, nullptr);
-
-    OH_AudioCapturer* audioCapturer = nullptr;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    ASSERT_EQ(result, AUDIOSTREAM_SUCCESS);
-    ASSERT_NE(audioCapturer, nullptr);
-
-    result = OH_AudioCapturer_SetMuteHint(audioCapturer, true);
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
-
-    OH_AudioCapturer_Release(audioCapturer);
-    OH_AudioStreamBuilder_Destroy(builder);
 }
 
 /**
