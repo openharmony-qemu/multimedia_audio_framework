@@ -53,6 +53,7 @@ struct HpaeCapturerSessionInfo {
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;
+    bool mixWithWakeUp = false;
 };
 
 struct HpaeSourceOutputInfo {

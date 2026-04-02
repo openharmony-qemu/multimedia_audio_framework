@@ -784,6 +784,7 @@ public:
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
+    bool mixWithWakeUp = false;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -805,7 +806,8 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
             parcel.WriteBool(isLoopback) &&
-            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode))&&
+            parcel.WriteBool(mixWithWakeUp);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -821,6 +823,7 @@ public:
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        mixWithWakeUp = parcel.ReadBool();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -1473,6 +1476,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(capturerInfo.recorderType);
         parcel.WriteBool(capturerInfo.isLoopback);
         parcel.WriteInt32(static_cast<int32_t>(capturerInfo.loopbackMode));
+        parcel.WriteBool(capturerInfo.mixWithWakeUp);
 
         // streamType
         parcel.WriteInt32(streamType);
@@ -1537,6 +1541,7 @@ struct AudioProcessConfig : public Parcelable {
         config->capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         config->capturerInfo.isLoopback = parcel.ReadBool();
         config->capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        config->capturerInfo.mixWithWakeUp = parcel.ReadBool();
 
         // streamType
         config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
@@ -2262,6 +2267,8 @@ struct CapturerStreamInfo {
     bool mute_ = MUTE_INVALID;
 
     int32_t uid_ = UID_INVALID;
+
+    bool mixWithWakeUp_ = false;
 };
 
 /**

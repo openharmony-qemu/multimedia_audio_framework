@@ -114,7 +114,7 @@ private:
     bool CheckMicRefCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &micRefNodeInfo);
     void StopOuputNode();
     void NotifyStreamChangeToSource(StreamChangeType change, uint32_t sessionId, CapturerState state,
-        uint32_t appUid = INVALID_UID, bool mute = false);
+        uint32_t appUid = INVALID_UID, bool mute = false, bool mixWithWakeUp = false);
     void UpdateSourceAttr(IAudioSourceAttr &attr);
     void UpdateSourceInputNodeInfoForRecognition(HpaeNodeInfo &nodeInfo);
     void UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo);
