@@ -1233,6 +1233,7 @@ int32_t AudioPolicyServer::SetSystemAppVolumeMutedForUidInternal(int32_t appUid,
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    volumeEvent.appUid = appUid;
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
     audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
     return ret;
@@ -1267,6 +1268,7 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUidInternal(int32_t ap
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    volumeEvent.appUid = appUid;
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
     audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
     return ret;
