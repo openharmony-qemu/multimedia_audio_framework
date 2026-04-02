@@ -1123,7 +1123,7 @@ napi_value NapiAudioSessionMgr::SetCapturerMuteHint(napi_env env, napi_callback_
         auto *napiSessionMgr = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioSessionStatus(napiSessionMgr, context), "AudioSession state is error.");
         context->intValue = napiSessionMgr->audioSessionMngr_->SetCapturerMuteHint(context->isTrue);
-        if (context->intValue == ERROR_ILLEGAL_STATE) {
+        if (context->intValue == ERROR_ILLEGAL_STATE || context->intValue == ERR_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE);
             return;
         }

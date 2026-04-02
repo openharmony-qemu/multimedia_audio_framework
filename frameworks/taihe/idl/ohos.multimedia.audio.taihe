@@ -903,8 +903,8 @@ interface AudioSessionManager {
   SetMediaOutputDeviceSync(deviceType: DeviceType): void;
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
-  @gen_promise("setCaptureMuteHint")
-  SetCaptureMuteHintSync(mute: bool): void;
+  @gen_promise("setCapturerMuteHint")
+  SetCapturerMuteHintSync(mute: bool): void;
 
   SetAudioSessionBehavior(behavior: i32): void;
 

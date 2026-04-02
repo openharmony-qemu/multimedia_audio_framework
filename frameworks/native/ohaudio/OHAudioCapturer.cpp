@@ -121,10 +121,10 @@ OH_AudioStream_Result OH_AudioCapturer_SetMuteHint(OH_AudioCapturer* capturer, b
     OHOS::AudioStandard::OHAudioCapturer *audioCapturer = convertCapturer(capturer);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert Capturer failed");
     int32_t ret = audioCapturer->SetMuteHint(mute);
-    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE) {
+    if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
         return AUDIOSTREAM_ERROR_ILLEGAL_STATE;
     }
-    if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM) {
+    if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
         return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
     return ret == OHOS::AudioStandard::SUCCESS ? AUDIOSTREAM_SUCCESS : AUDIOSTREAM_ERROR_SYSTEM;
