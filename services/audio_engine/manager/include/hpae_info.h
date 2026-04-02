@@ -100,6 +100,7 @@ struct HpaeStreamInfo {
     std::string deviceName;
     bool isMoveAble = true;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    bool mixWithWakeUp = false;
 };
 
 struct HpaeSinkInfo {

@@ -144,6 +144,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.capturerInfo.recorderType = capturerInfo_.recorderType;
         config.capturerInfo.isLoopback = capturerInfo_.isLoopback;
         config.capturerInfo.loopbackMode = capturerInfo_.loopbackMode;
+        config.capturerInfo.mixWithWakeUp = capturerInfo_.mixWithWakeUp;
     } else {
         return ERR_INVALID_OPERATION;
     }

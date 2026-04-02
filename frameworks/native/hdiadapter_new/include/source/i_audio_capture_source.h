@@ -89,8 +89,8 @@ public:
     virtual void RegistCallback(uint32_t type, IAudioSourceCallback *callback);
     virtual void RegistCallback(uint32_t type, std::shared_ptr<IAudioSourceCallback> callback);
 
-    virtual void NotifyStreamChangeToSource(StreamChangeType change,
-        uint32_t streamId, SourceType source, CapturerState state, uint32_t appUid = INVALID_UID, bool mute = false);
+    virtual void NotifyStreamChangeToSource(StreamChangeType change, uint32_t streamId, SourceType source,
+        CapturerState state, uint32_t appUid = INVALID_UID, bool mute = false, bool mixWithWakeUp = false);
     virtual std::shared_ptr<AudioInputPipeInfo> GetInputPipeInfo();
     // Implement by self (end)
 
@@ -100,8 +100,8 @@ protected:
         std::vector<DeviceType> devices = { DEVICE_TYPE_NONE });
     virtual void ChangePipeStatus(AudioPipeStatus state);
     virtual void ChangePipeDevice(const std::vector<DeviceType> &devices);
-    virtual void ChangePipeStream(StreamChangeType change,
-        uint32_t streamId, SourceType source, CapturerState state, bool mute, uint32_t appUid = INVALID_UID);
+    virtual void ChangePipeStream(StreamChangeType change, uint32_t streamId,
+        SourceType source, CapturerState state, bool mute, uint32_t appUid = INVALID_UID, bool mixWithWakeUp = false);
     virtual void DeinitPipeInfo();
 
     // Common variables

@@ -168,6 +168,7 @@ static bool IsAudioProcessConfigEqual(const AudioProcessConfig &a, const AudioPr
         a.capturerInfo.recorderType == b.capturerInfo.recorderType &&
         a.capturerInfo.isLoopback == b.capturerInfo.isLoopback &&
         a.capturerInfo.loopbackMode == b.capturerInfo.loopbackMode &&
+        a.capturerInfo.mixWithWakeUp == b.capturerInfo.mixWithWakeUp &&
         a.streamType == b.streamType &&
         a.deviceType == b.deviceType &&
         a.isInnerCapturer == b.isInnerCapturer &&

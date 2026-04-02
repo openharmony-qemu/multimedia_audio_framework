@@ -153,6 +153,8 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     filterConfig_ = capturerOptions.playbackCaptureConfig;
     strategy_ = capturerOptions.strategy;
+    mixWithWakeUp_ = capturerOptions.mixWithWakeUp;
+    capturerInfo_.mixWithWakeUp = mixWithWakeUp_;
 }
 
 // LCOV_EXCL_START
@@ -769,6 +771,7 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
     audioInterrupt_.sessionStrategy = strategy_;
+    audioInterrupt_.mixWithWakeUp = mixWithWakeUp_;
     audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();

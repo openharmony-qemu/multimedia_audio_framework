@@ -33,9 +33,9 @@ void IAudioCaptureSource::RegistCallback(uint32_t type, std::shared_ptr<IAudioSo
 }
 
 void IAudioCaptureSource::NotifyStreamChangeToSource(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state, uint32_t appUid, bool mute)
+    uint32_t streamId, SourceType source, CapturerState state, uint32_t appUid, bool mute, bool mixWithWakeUp)
 {
-    ChangePipeStream(change, streamId, source, state, mute, appUid);
+    ChangePipeStream(change, streamId, source, state, mute, appUid, mixWithWakeUp);
 }
 
 std::shared_ptr<AudioInputPipeInfo> IAudioCaptureSource::GetInputPipeInfo()
@@ -79,7 +79,7 @@ void IAudioCaptureSource::ChangePipeDevice(const std::vector<DeviceType> &device
 }
 
 void IAudioCaptureSource::ChangePipeStream(StreamChangeType change,
-    uint32_t streamId, SourceType source, CapturerState state, bool mute, uint32_t appUid)
+    uint32_t streamId, SourceType source, CapturerState state, bool mute, uint32_t appUid, bool mixWithWakeUp)
 {
     std::lock_guard<std::mutex> lock(pipeLock_);
     CHECK_AND_RETURN_LOG(pipeInfo_ != nullptr, "pipe info not inited");
@@ -88,7 +88,7 @@ void IAudioCaptureSource::ChangePipeStream(StreamChangeType change,
     switch (change) {
         case STREAM_CHANGE_TYPE_ADD:
             bundleName = AudioBundleManager::GetBundleNameFromUid(appUid);
-            pipeInfo_->AddStream(streamId, source, state, appUid, bundleName, mute);
+            pipeInfo_->AddStream(streamId, source, state, appUid, bundleName, mute, mixWithWakeUp);
             break;
         case STREAM_CHANGE_TYPE_REMOVE:
             pipeInfo_->RemoveStream(streamId);

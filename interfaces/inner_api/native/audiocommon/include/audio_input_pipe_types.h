@@ -104,7 +104,7 @@ public:
     }
 
     void AddStream(uint32_t streamId, SourceType source, CapturerState state, int32_t uid,
-        std::string bundleName = "", bool mute = false)
+        std::string bundleName = "", bool mute = false, bool mixWithWakeUp = false)
     {
         CapturerStreamInfo info;
         info.streamId_ = streamId;
@@ -113,6 +113,7 @@ public:
         info.uid_ = uid;
         info.bundleName_ = bundleName;
         info.mute_ = mute;
+        info.mixWithWakeUp_ = mixWithWakeUp;
         streams_[streamId] = info;
     }
 
@@ -186,7 +187,8 @@ private:
                 parcel.WriteInt32(stream.second.source_) &&
                 parcel.WriteString(stream.second.bundleName_) &&
                 parcel.WriteBool(stream.second.mute_) &&
-                parcel.WriteInt32(stream.second.uid_);
+                parcel.WriteInt32(stream.second.uid_) &&
+                parcel.WriteBool(stream.second.mixWithWakeUp_);
             AUDIO_CHECK_AND_RETURN_RET(ret, false);
         }
         return true;
@@ -214,6 +216,7 @@ private:
             stream.bundleName_ = parcel.ReadString();
             stream.mute_ = parcel.ReadBool();
             stream.uid_ = parcel.ReadInt32();
+            stream.mixWithWakeUp_ = parcel.ReadBool();
             streams_[stream.streamId_] = stream;
         }
     }

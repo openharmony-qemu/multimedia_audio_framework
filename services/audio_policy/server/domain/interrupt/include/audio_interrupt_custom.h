@@ -34,6 +34,8 @@ private:
         AudioFocusEntry &focusEntry);
     void CeliaCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
         AudioFocuState &incomingState, InterruptEventInternal &interruptEvent, const std::string &appName);
+    void UnprocessedCustomFocus(const AudioInterrupt &incomingInterrupt, const AudioInterrupt &activeInterrupt,
+        AudioFocuState &incomingState, InterruptEventInternal &interruptEvent);
 };
 
 } // namespace AudioStandard
