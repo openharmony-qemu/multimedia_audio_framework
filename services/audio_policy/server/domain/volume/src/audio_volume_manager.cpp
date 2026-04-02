@@ -2387,5 +2387,6 @@ bool AudioVolumeManager::ShouldNotifyForLegacyVolume(int32_t volumeLevel)
     }
     return volumeLevel > notifyVolumeLevel && !IsLegacyHighVolumeChecked();
 }
+
 }
 }

@@ -1206,7 +1206,8 @@ int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t
     if (bundleName == SCENE_BOARD_PACKAGE_NAME) {
         return SetSystemAppVolumeMutedForUidInternal(appUid, muted);
     }
-    return SetSelfAppVolumeMutedInternal(appUid, muted, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
+    return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
 }
 
 int32_t AudioPolicyServer::SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted)
@@ -1706,14 +1707,6 @@ int32_t AudioPolicyServer::SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t
     volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
     audioPolicyServerHandler_->SendSelfAppVolumeChangeCallback(appUid, volumeEvent);
-    return ret;
-}
-
-int32_t AudioPolicyServer::SetSelfAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi)
-{
-    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d, updateUi: %{public}d", appUid, muted, isUpdateUi);
-    int32_t ret = audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume mute");
     return ret;
 }
 
