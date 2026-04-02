@@ -191,7 +191,7 @@ public:
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
     int32_t SetStaticRenderRate(uint32_t renderRate) override;
-
+    int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal) override;
     int32_t ResetStaticPlayPosition() override;
     int32_t SetMuteHint(bool mute) override;
     void ReportExceptionForFast();

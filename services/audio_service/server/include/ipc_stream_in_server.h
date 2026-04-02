@@ -147,6 +147,8 @@ public:
 
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override; // for static renderer only
 
+    int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal) override;
+
     int32_t GetLatencyWithFlag(uint64_t &latency, uint32_t flag) override;
 
     int32_t ResetStaticPlayPosition() override; // for static renderer only

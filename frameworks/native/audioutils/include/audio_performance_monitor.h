@@ -77,7 +77,7 @@ struct FrameRecordInfo {
     bool isUseArk = false;
     bool isTimeoutCb = false;
     bool isNoDdl = false;
-    uint32_t appPid = 0;
+    int32_t appPid = 0;
 };
 
 class AudioPerformanceMonitor {
@@ -86,7 +86,7 @@ public:
 
     // silence Monitor records if server gets valid data from client
     void RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType, uint32_t uid);
-    void StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId, uint32_t appPid);
+    void StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId, int32_t appPid);
     void PauseSilenceMonitor(uint32_t sessionId);
     void DeleteSilenceMonitor(uint32_t sessionId);
 
@@ -96,7 +96,7 @@ public:
     void DeleteOvertimeMonitor(AdapterType adapterType);
 
     void DumpMonitorInfo(std::string &dumpString);
-    void UpdateIsBackPlay(uint32_t sessionId, bool isBackPlay);
+    void UpdateIsBackPlay(int32_t appPid, bool isBackPlay);
     void UpdateIsUseArk(uint32_t sessionId, bool isUseArk);
     void UpdateIsTimeoutCB(uint32_t sessionId, bool isTimeoutCb);
     void UpdateIsNoDdl(uint32_t sessionId, bool isNoDdl);

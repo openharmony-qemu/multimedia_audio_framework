@@ -85,8 +85,6 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
     if (!(appState.isBack && !appState.isSystem)) {
         streamCollector_.HandleStartStreamMuteState(startStreamInfo, false, false, silentControl);
         return true;
-    } else {
-        AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(sessionId, true);
     }
     bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
     if (appState.hasSession) {
@@ -106,6 +104,7 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
 void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32_t pid, AppIsBackState state)
 {
     bool isBack = (state != STATE_FOREGROUND);
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(pid, true);
     {
         std::lock_guard<std::mutex> lock(appStatesMapMutex_);
         if (state == STATE_END) {

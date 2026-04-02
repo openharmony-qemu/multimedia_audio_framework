@@ -45,4 +45,5 @@ interface IAudioProcess {
     void SetStaticRenderRate([in] unsigned int renderRate);
     void ResetStaticPlayPosition();
     void SetMuteHint([in] boolean mute);
+    void UpdateUnderrunInfo([in] unsigned int underrunInfoKey, [in] int underrunInfoVal);
 }

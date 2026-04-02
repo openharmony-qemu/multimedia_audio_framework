@@ -1173,17 +1173,17 @@ int32_t AudioStreamCollector::UpdateStreamState(int32_t clientUid,
     return SUCCESS;
 }
 
-void AudioStreamCollector::ReportExceptionForBackMute(uint32_t sessionId, uint32_t usage, int32_t uid)
+void AudioStreamCollector::ReportExceptionForBackgroundMute(uint32_t sessionId, uint32_t usage, int32_t uid)
 {
     std::string appName = AppBundleManager::GetBundleNameFromUid(uid);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
         Media::MediaMonitor::FAULT_EVENT);
     bean->Add("APP_NAME", appName);
-    bean->Add("STREAM_TYPE", GetStreamType(sessionId));
+    bean->Add("STREAM_TYPE", static_cast<int32_t>(usage));
     bean->Add("TYPE", TYPE_BACKGROUND_PLAYBACK);
     AUDIO_ERR_LOG("ReportExceptionForBackMute: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
-        appName.c_str(), GetStreamType(sessionId), TYPE_BACKGROUND_PLAYBACK);
+        appName.c_str(), static_cast<int32_t>(usage), TYPE_BACKGROUND_PLAYBACK);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1210,7 +1210,7 @@ void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool m
             setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
             setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
             if (mute && !changeInfo->backMute) {
-                ReportExceptionForBackMute(changeInfo->sessionId, setStateEvent.streamUsage, uid);
+                ReportExceptionForBackgroundMute(changeInfo->sessionId, setStateEvent.streamUsage, uid);
                 AUDIO_INFO_LOG("Mute the stream in uid=%{public}d", uid);
                 setStateEvent.streamSetState = StreamSetState::STREAM_MUTE;
                 callback->MuteStreamImpl(setStateEvent);

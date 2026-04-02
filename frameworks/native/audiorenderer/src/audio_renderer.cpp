@@ -3327,7 +3327,7 @@ int32_t AudioRendererPrivate::SetMainUseArk(bool isMainUseArk)
     if (!isFirstSetMainUseArk_) {
         return ERROR_ILLEGAL_STATE;
     }
-    AudioPerformanceMonitor::GetInstance().UpdateIsUseArk(sessionID_, isMainUseArk);
+    audioStream_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISUSEARK, isMainUseArk);
     isFirstSetMainUseArk_ = false;
     return SUCCESS;
 }
