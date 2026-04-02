@@ -821,8 +821,6 @@ private:
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
 
     int32_t SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage);
-
-    int32_t SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
 
     // Permission and privacy

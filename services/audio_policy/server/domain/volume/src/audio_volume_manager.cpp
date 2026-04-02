@@ -516,6 +516,33 @@ int32_t AudioVolumeManager::IsSystemAppVolumeMuted(int32_t appUid, bool &isMute)
     return audioPolicyManager_.IsSystemAppVolumeMuted(appUid, isMute);
 }
 
+int32_t AudioVolumeManager::SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted)
+{
+    bool appliedSystemAppMuteStatus = false;
+    IsSystemAppVolumeMuted(appUid, appliedSystemAppMuteStatus);
+    AUDIO_INFO_LOG("appUid: %{public}d, new mute: %{public}d, old mute: %{public}d",
+        appUid, muted, appliedSystemAppMuteStatus);
+    // Skip setting if mute status is already up-to-date
+    CHECK_AND_RETURN_RET(appliedSystemAppMuteStatus != muted, SUCCESS);
+
+    int32_t ret = SetSystemAppVolumeMuted(appUid, muted);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set systemAppVolume mute");
+
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
+    int32_t volumePercentage = 0;
+    GetSystemAppVolumePercentage(appUid, volumePercentage);
+    volumeEvent.volume = muted ? 0 : volumePercentage;
+    volumeEvent.updateUi = true;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    volumeEvent.appUid = appUid;
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
+    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
+    return ret;
+}
+
 int32_t AudioVolumeManager::SetAppRingMuted(int32_t appUid, bool muted)
 {
     AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppRingMuted");

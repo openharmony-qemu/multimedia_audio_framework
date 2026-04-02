@@ -1204,37 +1204,10 @@ int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(IPCSkeleton::GetCallingUid());
     if (bundleName == SCENE_BOARD_PACKAGE_NAME) {
-        return SetSystemAppVolumeMutedForUidInternal(appUid, muted);
+        return audioVolumeManager_.SetSystemAppVolumeMutedForUid(appUid, muted);
     }
     AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
     return audioVolumeManager_.SetAppVolumeMuted(appUid, muted);
-}
-
-int32_t AudioPolicyServer::SetSystemAppVolumeMutedForUidInternal(int32_t appUid, bool muted)
-{
-    bool appliedSystemAppMuteStatus = false;
-    audioVolumeManager_.IsSystemAppVolumeMuted(appUid, appliedSystemAppMuteStatus);
-    AUDIO_INFO_LOG("appUid: %{public}d, new mute: %{public}d, old mute: %{public}d",
-        appUid, muted, appliedSystemAppMuteStatus);
-    // Skip setting if mute status is already up-to-date
-    CHECK_AND_RETURN_RET(appliedSystemAppMuteStatus != muted, SUCCESS);
-
-    int32_t ret = audioVolumeManager_.SetSystemAppVolumeMuted(appUid, muted);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set systemAppVolume mute");
-
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
-    int32_t volumePercentage = 0;
-    audioVolumeManager_.GetSystemAppVolumePercentage(appUid, volumePercentage);
-    volumeEvent.volume = muted ? 0 : volumePercentage;
-    volumeEvent.updateUi = true;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    volumeEvent.appUid = appUid;
-    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
-    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
-    return ret;
 }
 
 int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, int32_t volumePercentage)
