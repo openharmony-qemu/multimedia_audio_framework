@@ -1587,7 +1587,6 @@ describe("AudioStreamManagerJsTest", function () {
       audioStreamManager = audio.getAudioManager().getStreamManager();
       let isActive = audioStreamManager.isActiveSync(invalidVolumeType);
       console.info(`The active status is obtained ${isActive}.`);
-      
       expect(false).assertTrue();
 
       done();
