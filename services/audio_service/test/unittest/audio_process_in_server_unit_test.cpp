@@ -2836,15 +2836,99 @@ HWTEST(AudioProcessInServerUnitTest, SetMuteHint_002, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_RECORD;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-
     auto &coreServiceHandler = CoreServiceHandler::GetInstance();
     auto originProvider = coreServiceHandler.iCoreServiceProvider_;
     coreServiceHandler.iCoreServiceProvider_ = nullptr;
-
     int32_t ret = audioProcessInServerRet.SetMuteHint(true);
     EXPECT_EQ(ret, ERROR);
-
     coreServiceHandler.iCoreServiceProvider_ = originProvider;
 }
+
+/**
+ * @tc.name  : Test StartInner API with loopback mode
+ * @tc.type  : FUNC
+ * @tc.number: StartInner_Loopback_001
+ * @tc.desc  : Test StartInner does not set needCheckBackground_ for loopback mode.
+ */
+HWTEST(AudioProcessInServerUnitTest, StartInner_Loopback_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.isLoopback = true;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.status_ = I_STATUS_STOPPED;
+    auto ret = audioProcessInServerRet.StartInner();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Resume API with loopback mode
+ * @tc.type  : FUNC
+ * @tc.number: Resume_Loopback_001
+ * @tc.desc  : Test Resume does not set needCheckBackground_ for loopback mode.
+ */
+HWTEST(AudioProcessInServerUnitTest, Resume_Loopback_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.isLoopback = true;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.status_ = I_STATUS_PAUSED;
+    auto ret = audioProcessInServerRet.Resume();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API with loopback mode
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_Loopback_001
+ * @tc.desc  : Test WriteToSpecialProcBuf returns SUCCESS for loopback mode.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_Loopback_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.isLoopback = true;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.status_ = I_STATUS_RUNNING;
+    AudioCaptureDataProcParams procParams = {
+        .streamId = DEFAULT_STREAM_ID,
+        .timestamp = 0,
+        .buffer = nullptr,
+        .bufferLen = 0
+    };
+    auto result = audioProcessInServerRet.WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test WriteToSpecialProcBuf API without loopback mode
+ * @tc.type  : FUNC
+ * @tc.number: WriteToSpecialProcBuf_NonLoopback_001
+ * @tc.desc  : Test WriteToSpecialProcBuf normal process for non-loopback mode.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_NonLoopback_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_RECORD;
+    configRet.capturerInfo.isLoopback = false;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    ASSERT_NE(audioProcessInServer, nullptr);
+    audioProcessInServer->status_ = I_STATUS_RUNNING;
+    uint8_t testBuffer[100] = {0};
+    AudioCaptureDataProcParams procParams = {
+        .streamId = DEFAULT_STREAM_ID,
+        .timestamp = 0,
+        .buffer = testBuffer,
+        .bufferLen = sizeof(testBuffer)
+    };
+    auto result = audioProcessInServer->WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, SUCCESS);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
