@@ -532,6 +532,11 @@ public:
         return sharedAudioRenderer_->GetKeepRunning(keepRunning);
     }
 
+    int32_t SetMainUseArk(bool isMainUseArk) override
+    {
+        return sharedAudioRenderer_->SetMainUseArk(isMainUseArk);
+    }
+
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override
     {
         return sharedAudioRenderer_->SetLoopTimes(bufferLoopTimes);

@@ -570,11 +570,14 @@ bool RendererInServer::ShouldEnableStandBy()
         maxStandByCounter = 400; // for 20ms, 50 * 400 = 8000ms
         timeLimit = 8 * AUDIO_NS_PER_SECOND; // for 20ms 8s
     }
-    if (offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING && standByCounter_ >= offloadStanby_) {
+    if (!isOffloadJankReport && offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING &&
+        standByCounter_ >= offloadStanby_) {
         ReportExceptionForOffload();
-    } else if (offloadState_ == OFFLOAD_INACTIVE_BACKGROUND_RUNNING && timeCost >=
-        OFFLOAD_COUNT * AUDIO_NS_PER_SECOND) {
+        isOffloadJankReport = true;
+    } else if (!isOffloadJankReport && offloadState_ == OFFLOAD_INACTIVE_BACKGROUND_RUNNING && timeCost >=
+        static_cast<int64_t>(OFFLOAD_COUNT * AUDIO_NS_PER_SECOND)) {
         ReportExceptionForOffload();
+        isOffloadJankReport = true;
         }
     if (standByCounter_ >= maxStandByCounter && timeCost >= timeLimit) {
         AUDIO_INFO_LOG("sessionId:%{public}u reach the limit of stand by: %{public}u time:%{public}" PRId64"ns",
@@ -876,6 +879,7 @@ int32_t RendererInServer::WriteData()
         int32_t ret = Write3DAModeData(currentReadFrame, currentWriteFrame);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "3DA: Write3DAModeData failed");
         standByCounter_ = 0;
+        isOffloadJankReport = false;
         lastWriteTime_ = ClockTime::GetCurNano();
         return SUCCESS;
     }
@@ -911,6 +915,7 @@ int32_t RendererInServer::WriteData()
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
 }
@@ -960,6 +965,7 @@ void RendererInServer::ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc,
 void RendererInServer::OnWriteDataFinish()
 {
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     lastWriteTime_ = ClockTime::GetCurNano();
 
     UpdateStreamInfo();
@@ -1263,6 +1269,7 @@ int32_t RendererInServer::StartInnerDuringStandby()
     AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
@@ -1404,6 +1411,7 @@ int32_t RendererInServer::Pause()
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     MarkStaticFadeOut();
 
     // remove eac3 param check
@@ -2998,6 +3006,22 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     WriteMuteDataSysEvent(bufferDesc);
 
     OnWriteDataFinish();
+    return SUCCESS;
+}
+
+int32_t RendererInServer::UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal)
+{
+    UnderrunInfoType infoType = static_cast<UnderrunInfoType>(underrunInfoKey);
+    switch (infoType) {
+        case UNDERRUN_TYPE_ISTIMEOUT:
+            AudioPerformanceMonitor::GetInstance().UpdateIsTimeoutCB(streamIndex_, static_cast<bool>(underrunInfoVal));
+            break;
+        case UNDERRUN_TYPE_ISUSEARK:
+            AudioPerformanceMonitor::GetInstance().UpdateIsUseArk(streamIndex_, static_cast<bool>(underrunInfoVal));
+            break;
+        default:
+            break;
+    }
     return SUCCESS;
 }
 

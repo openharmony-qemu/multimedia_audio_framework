@@ -383,6 +383,12 @@ enum AdjustStreamVolume {
     DUCK_VOLUME_INFO,
 };
 
+enum UnderrunInfoType : uint32_t {
+    UNDERRUN_TYPE_ISTIMEOUT = 1 << 0,
+    UNDERRUN_TYPE_ISUSEARK = 1 << 1,
+    UNDERRUN_TYPE_MAX = 1 << 2,
+};
+
 struct AdjustStreamVolumeInfo {
     float volume;
     uint32_t sessionId;

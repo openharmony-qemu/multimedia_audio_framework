@@ -172,6 +172,7 @@ public:
     int32_t SetTarget(RenderTarget target, int32_t &ret);
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
     int32_t SetLoopTimes(int64_t bufferLoopTimes);
+    int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     int32_t ResetStaticPlayPosition();
 
@@ -365,6 +366,7 @@ private:
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
     bool isWriteFirst_ = false;
+    bool isOffloadJankReport = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS
