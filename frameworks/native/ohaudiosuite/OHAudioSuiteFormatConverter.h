@@ -32,11 +32,11 @@ namespace OHOS {
 namespace AudioStandard {
 
 struct ProcessableBytesCalculationParams {
-    int32_t inputBytesPerFrame;
-    int32_t maxOutputFrames;
-    int32_t outputBytesPerFrame;
-    int32_t minBytesForIntMs;
-    int32_t alignedCachedSize;
+    uint32_t inputBytesPerFrame;
+    uint32_t maxOutputFrames;
+    uint32_t outputBytesPerFrame;
+    uint32_t minBytesForIntMs;
+    uint32_t alignedCachedSize;
 };
 
 struct OutputCopyParams {
@@ -48,10 +48,10 @@ struct OutputCopyParams {
 };
 
 struct InputProcessParams {
-    int32_t inputBytesPerFrame;
-    int32_t maxOutputFrames;
-    int32_t outputBytesPerFrame;
-    int32_t outputCapacity;
+    uint32_t inputBytesPerFrame;
+    uint32_t maxOutputFrames;
+    uint32_t outputBytesPerFrame;
+    uint32_t outputCapacity;
 };
 
 struct ProcessingContext {
@@ -73,8 +73,8 @@ public:
         OH_AudioConverter_RequestDataCallback callback, void* userData);
 
     OH_AudioConverter_Result Process(
-        void* audioData, int32_t outputCapacity,
-        int32_t* outputSize);
+        void* audioData, uint32_t outputCapacity,
+        uint32_t* outputSize);
 
 private:
     void Reset();
@@ -86,35 +86,34 @@ private:
                         uint32_t maxFrameSize, uint32_t* actualFrameSize);
     OH_AudioConverter_Result ConvertToPcmFormat(
         const OH_AudioConverter_Format *inputFormat, const OH_AudioConverter_Format *outputFormat);
-
-    OH_AudioConverter_Result ValidateProcessParams(void* audioData, int32_t* outputSize);
-    OH_AudioConverter_Result CalculateOutputFormatParams(int32_t outputCapacity,
-        int32_t& outputBytesPerFrame, int32_t& maxOutputFrames);
+    OH_AudioConverter_Result ValidateProcessParams(void* audioData, uint32_t* outputSize);
+    OH_AudioConverter_Result CalculateOutputFormatParams(uint32_t outputCapacity,
+        uint32_t& outputBytesPerFrame, uint32_t& maxOutputFrames);
     int32_t CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame);
     OH_AudioConverter_Result ReadAndCacheInputData(bool* shouldStopProcessing);
     OH_AudioConverter_Result CalculateMinBytesForIntMsInternal(uint32_t inputBytesPerFrame,
-        int32_t& minBytesForIntMs, int32_t& alignedCachedSize, bool& shouldStopProcessing, uint32_t outputCapacity);
+        uint32_t& minBytesForIntMs, uint32_t& alignedCachedSize, bool& shouldStopProcessing, uint32_t outputCapacity);
     OH_AudioConverter_Result CalculateProcessableBytesInternal(const ProcessableBytesCalculationParams& params,
         uint32_t& alignedProcessableBytes, bool& shouldStopProcessing);
     OH_AudioConverter_Result WrapAndConvertInputData(int32_t processableSize,
         AudioSuite::AudioSuitePcmBuffer* outConvertedBuffer);
-    OH_AudioConverter_Result ProcessConversion(void* audioData, int32_t outputCapacity,
-        int32_t* outputSize, int32_t outputBytesPerFrame, int32_t maxOutputFrames);
-    OH_AudioConverter_Result CheckAndProcessInputData(const InputProcessParams &params, int32_t &minBytesForIntMs,
-        int32_t &alignedCachedSize, uint32_t &alignedProcessableBytes, bool &shouldStopProcessing);
-    OH_AudioConverter_Result InitializeProcessingContext(void* audioData, int32_t outputCapacity,
-        int32_t inputBytesPerFrame, ProcessingContext& context, bool& shouldStopProcessing);
+    OH_AudioConverter_Result ProcessConversion(void* audioData, uint32_t outputCapacity,
+        uint32_t* outputSize, uint32_t outputBytesPerFrame, uint32_t maxOutputFrames);
+    OH_AudioConverter_Result CheckAndProcessInputData(const InputProcessParams &params, uint32_t &minBytesForIntMs,
+        uint32_t &alignedCachedSize, uint32_t &alignedProcessableBytes, bool &shouldStopProcessing);
+    OH_AudioConverter_Result InitializeProcessingContext(void* audioData, uint32_t outputCapacity,
+        uint32_t inputBytesPerFrame, ProcessingContext& context, bool& shouldStopProcessing);
     OH_AudioConverter_Result ValidateOutputCapacity(AudioSuite::AudioSuitePcmBuffer& convertedBuffer,
         uint32_t remainingCapacity, uint32_t* framesToWrite);
     void UpdateProcessingState(AudioSuite::AudioSuitePcmBuffer& convertedBuffer,
         uint32_t processableSize, ProcessingContext& context, uint32_t actualFramesWritten);
     OH_AudioConverter_Result ProcessSingleBlock(const InputProcessParams& params,
-        ProcessingContext& context, int32_t inputBytesPerFrame,
-        int32_t outputBytesPerFrame, bool& shouldStopProcessing);
-    OH_AudioConverter_Result ProcessCachedOutputData(void* audioData, int32_t outputCapacity,
-        int32_t outputBytesPerFrame, ProcessingContext& context);
-    OH_AudioConverter_Result ProcessDataBlocks(ProcessingContext& context, int32_t inputBytesPerFrame,
-        int32_t outputBytesPerFrame);
+        ProcessingContext& context, uint32_t inputBytesPerFrame,
+        uint32_t outputBytesPerFrame, bool& shouldStopProcessing);
+    OH_AudioConverter_Result ProcessCachedOutputData(void* audioData, uint32_t outputCapacity,
+        uint32_t outputBytesPerFrame, ProcessingContext& context);
+    OH_AudioConverter_Result ProcessDataBlocks(ProcessingContext& context, uint32_t inputBytesPerFrame,
+        uint32_t outputBytesPerFrame);
 
     std::unique_ptr<AudioSuite::AudioSuiteFormatConversion> formatConversion_;
 
