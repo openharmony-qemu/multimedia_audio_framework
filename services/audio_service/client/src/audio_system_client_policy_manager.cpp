@@ -336,6 +336,11 @@ int32_t AudioSystemClientPolicyManager::DisableSafeMediaVolume()
     return AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
 }
 
+int32_t AudioSystemClientPolicyManager::SetSplitModeReady()
+{
+    return AudioPolicyManager::GetInstance().SetSplitModeReady();
+}
+
 int32_t AudioSystemClientPolicyManager::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     return AudioPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);

@@ -483,5 +483,11 @@ int32_t AudioRouterCenter::GetSplitInfo(std::string &splitInfo)
 
     return audioDeviceRefinerCb_->GetSplitInfoRefined(splitInfo);
 }
+
+int32_t AudioRouterCenter::SetSplitModeReady()
+{
+    CHECK_AND_RETURN_RET_LOG(audioDeviceRefinerCb_ != nullptr, ERROR, "nullptr");
+    return audioDeviceRefinerCb_->SetSplitModeReadyRefined();
+}
 } // namespace AudioStandard
 } // namespace OHOS

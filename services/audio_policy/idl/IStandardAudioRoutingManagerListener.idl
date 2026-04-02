@@ -29,4 +29,5 @@ interface IStandardAudioRoutingManagerListener {
     void GetSplitInfoRefined([out] String splitInfo);
     void OnDistributedOutputChange([in] boolean isRemote);
     void OnDistributedServiceOnline();
+    void SetSplitModeReadyRefined();
 }
