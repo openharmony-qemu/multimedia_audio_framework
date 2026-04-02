@@ -424,6 +424,25 @@ int32_t AudioVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLeve
     return result;
 }
 
+int32_t AudioVolumeManager::SetSelfAppVolumeLevelWithCallback(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
+{
+    AUDIO_INFO_LOG("appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
+        appUid, volumeLevel, isUpdateUi);
+    int32_t ret = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
+
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_APP;
+    volumeEvent.volume = volumeLevel;
+    volumeEvent.updateUi = isUpdateUi;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
+    audioPolicyServerHandler_->SendSelfAppVolumeChangeCallback(appUid, volumeEvent);
+    return ret;
+}
+
 int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
 {
     AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeMuted");

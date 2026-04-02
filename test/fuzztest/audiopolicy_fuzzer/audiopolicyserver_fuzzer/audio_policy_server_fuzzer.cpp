@@ -539,7 +539,7 @@ void AudioPolicyServerSetSelfAppVolumeLevelInternalFuzztest()
     bool isUpdateUi = GetData<bool>();
     int32_t volumeLevel = GetData<int32_t>();
     int32_t appUid = GetData<int32_t>();
-    audioPolicyServer->SetSelfAppVolumeLevelInternal(appUid, volumeLevel, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.SetSelfAppVolumeLevelWithCallback(appUid, volumeLevel, isUpdateUi);
 }
 
 void AudioPolicyServerSetSystemVolumeLevelWithOptionFuzztest()

@@ -1688,26 +1688,8 @@ int32_t AudioPolicyServer::SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t vo
     }
     int32_t appUid = IPCSkeleton::GetCallingUid();
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    return SetSelfAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
-}
-
-int32_t AudioPolicyServer::SetSelfAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
-{
-    AUDIO_INFO_LOG("appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
-        appUid, volumeLevel, isUpdateUi);
-    int32_t ret = audioPolicyService_.SetAppVolumeLevel(appUid, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
-
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = STREAM_APP;
-    volumeEvent.volume = volumeLevel;
-    volumeEvent.updateUi = isUpdateUi;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
-    audioPolicyServerHandler_->SendSelfAppVolumeChangeCallback(appUid, volumeEvent);
-    return ret;
+    bool isUpdateUi = (volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
+    return audioVolumeManager_.SetSelfAppVolumeLevelWithCallback(appUid, volumeLevel, isUpdateUi);
 }
 
 // LCOV_EXCL_START

@@ -125,6 +125,7 @@ public:
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
     bool IsAppRingMuted(int32_t appUid);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+    int32_t SetSelfAppVolumeLevelWithCallback(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
     int32_t GetVolumeAdjustZoneId();
     int32_t DisableSafeMediaVolume();
