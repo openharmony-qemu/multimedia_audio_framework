@@ -632,15 +632,6 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
     }
 }
 
-void AudioCoreService::UpdateInputDeviceWhenStopping(int32_t uid)
-{
-    std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllCapturerSessionIDForUID(uid);
-    for (const auto &sessionID : sessionIDSet) {
-        audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
-        audioDeviceManager_.RemovePreferredInputDevice(sessionID);
-    }
-}
-
 void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -2294,7 +2285,6 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
     if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
         AUDIO_INFO_LOG("[ADeviceEvent] fetch device for capturer stream %{public}d released",
             streamChangeInfo.audioCapturerChangeInfo.sessionId);
-        audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
         FetchInputDeviceAndRoute("UpdateTracker");
     }
 }

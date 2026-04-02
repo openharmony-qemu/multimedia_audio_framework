@@ -36,6 +36,7 @@
 #include "audio_bluetooth_manager.h"
 #include "audio_scene_manager.h"
 #include "audio_router_follow_strategy.h"
+#include "hisysevent.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -528,9 +529,25 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(
     return SUCCESS;
 }
 
-int32_t AudioSelectInterfaceService::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const SourceType sourceType, bool isRunning)
+int32_t AudioSelectInterfaceService::SetInputDevice(
+    const DeviceType deviceType, const uint32_t sessionID, int32_t uid)
 {
+    auto connectedDevices_ = AudioDeviceManager::GetAudioDeviceManager().GetConnectedDevices();
+    shared_ptr<AudioDeviceDescriptor> target = nullptr;
+    for (const auto &desc : connectedDevices_) {
+        if (desc->deviceType_ == deviceType) {
+            AUDIO_WARNING_LOG("sessionid %{public}d has selected device", sessionID);
+            target = std::make_shared<AudioDeviceDescriptor>(*desc);
+            break;
+        }
+    }
+
+    AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(uid, sessionID, target);
+
+    auto coreService = AudioCoreService::GetCoreService();
+    CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
+    coreService->FetchInputDeviceAndRoute("SetInputDevice");
+    coreService->FetchOutputDeviceAndRoute("SetInputDevice");
     return SUCCESS;
 }
 
@@ -542,7 +559,21 @@ int32_t AudioSelectInterfaceService::PreferBluetoothAndNearlinkRecordByUid(int32
 
 void AudioSelectInterfaceService::SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
-    return;
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+    CHECK_AND_RETURN_LOG(
+        PermissionUtil::VerifySystemPermission(), "set preferred input device denied: no system permission");
+
+    AudioDeviceDescriptor preferredDevice = streamDesc->preferredInputDevice;
+    CHECK_AND_RETURN_LOG(preferredDevice.deviceType_ > DEVICE_TYPE_INVALID, "invalid deviceType");
+    AudioRouterSelectStrategy::GetInstance().SetMediaInputDevice(streamDesc->appInfo_.appUid,
+        streamDesc->sessionId_, std::make_shared<AudioDeviceDescriptor>(preferredDevice));
+
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION) {
+        WriteDesignateAudioCaptureDeviceEvent(streamDesc->capturerInfo_.sourceType, preferredDevice.deviceType_, true);
+    } else if (preferredDevice.deviceType_ == DEVICE_TYPE_BT_SPP) {
+        AUDIO_WARNING_LOG("BT SPP incorrectly selected as preferred input device in non-recognition session");
+        WriteDesignateAudioCaptureDeviceEvent(streamDesc->capturerInfo_.sourceType, preferredDevice.deviceType_, false);
+    }
 }
 
 void AudioSelectInterfaceService::OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress,
@@ -606,6 +637,19 @@ int32_t AudioSelectInterfaceService::SetA2dpDeviceOffloadManager(
         "audioA2dpOffloadManager is nullptr");
     audioA2dpOffloadManager_ = audioA2dpOffloadManager;
     return SUCCESS;
+}
+
+void AudioSelectInterfaceService::WriteDesignateAudioCaptureDeviceEvent(
+    SourceType sourceType, int32_t deviceType, bool isNormalSelection)
+{
+    std::string appName = AudioBundleManager::GetBundleName();
+    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO,
+        "DESIGNATE_AUDIO_CAPTURE_DEVICE", HiviewDFX::HiSysEvent::EventType::STATISTIC,
+        "APP_NAME", appName.c_str(),
+        "STREAM_TYPE", sourceType,
+        "DEVICE_TYPE", deviceType,
+        "ERROR_CODE", isNormalSelection ? 0 : 1);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "write event fail: DESIGNATE_AUDIO_CAPTURE_DEVICE, ret = %{public}d", ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS
