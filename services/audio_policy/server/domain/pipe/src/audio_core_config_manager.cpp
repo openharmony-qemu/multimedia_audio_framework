@@ -238,7 +238,7 @@ static void ConvertDeviceStreamInfoToStreamPropInfo(const DeviceStreamInfo &devi
             streamProp->format_ = deviceStreamInfo.format;
             streamProp->sampleRate_ = static_cast<uint32_t>(rate);
             streamProp->channelLayout_ = layout;
-            streamProp->channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(layout);
+            streamProp->channels_ = ConvertLayoutToAudioChannel(layout);
             streamProp->bufferSize_ = AudioDefinitionPolicyUtils::PcmFormatToBytes(streamProp->format_) *
                 streamProp->sampleRate_ * streamProp->channels_ / FRAMES_PER_SEC;
             streamPropInfos.push_back(streamProp);

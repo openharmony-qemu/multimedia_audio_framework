@@ -552,7 +552,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_003, TestSize.Level1)
     pipeInfo->name_ = "offload_distributed_output";
     pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
     pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
-    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+    pipeInfo->moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
     pipeInfo->moduleInfo_.networkId = "test_networkId";
@@ -607,7 +607,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_004, TestSize.Level1)
     pipeInfo->name_ = "remote";
     pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
     pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
-    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+    pipeInfo->moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
     pipeInfo->moduleInfo_.networkId = "test_networkId";
