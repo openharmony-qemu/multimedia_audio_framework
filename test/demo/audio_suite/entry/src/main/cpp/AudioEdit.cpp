@@ -55,7 +55,7 @@
 #include <multimedia/player_framework/native_avbuffer.h>
 #include <fcntl.h>
 #include "ohaudiosuite/native_audio_converter.h"
-#include "ohaudiosuite/native_audio_suite_base.h
+#include "ohaudiosuite/native_audio_suite_base.h"
 #include <cmath>
 
 const int GLOBAL_RESMGR = 0xFF00;
