@@ -120,6 +120,7 @@ public:
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage);
     int32_t GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage);
+    int32_t SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage);
     int32_t SetSystemAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsSystemAppVolumeMuted(int32_t appUid, bool &isMute);
     int32_t SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted);

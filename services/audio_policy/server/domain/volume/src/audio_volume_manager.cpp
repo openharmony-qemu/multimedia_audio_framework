@@ -73,6 +73,7 @@ static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 constexpr uint32_t SYSTEM_APP_VOLUME_PERSIST_DELAY_MS = 1000; // 1s
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
+constexpr int32_t VOLUME_PERCENTAGE_UNSET = -1;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -533,6 +534,31 @@ int32_t AudioVolumeManager::SetSystemAppVolumeMutedForUid(int32_t appUid, bool m
     int32_t volumePercentage = 0;
     GetSystemAppVolumePercentage(appUid, volumePercentage);
     volumeEvent.volume = muted ? 0 : volumePercentage;
+    volumeEvent.updateUi = true;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    volumeEvent.appUid = appUid;
+    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
+    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
+    return ret;
+}
+
+int32_t AudioVolumeManager::SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage)
+{
+    int32_t appliedVolumePercentage = VOLUME_PERCENTAGE_UNSET;
+    GetSystemAppVolumePercentage(appUid, appliedVolumePercentage);
+    AUDIO_INFO_LOG("appUid: %{public}d, new percentage: %{public}d, old percentage: %{public}d",
+        appUid, volumePercentage, appliedVolumePercentage);
+    // Skip setting if volume percentage is already up-to-date
+    CHECK_AND_RETURN_RET(appliedVolumePercentage != volumePercentage, SUCCESS);
+
+    int32_t ret = SetSystemAppVolumePercentage(appUid, volumePercentage);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system app volume percentage");
+
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
+    volumeEvent.volume = volumePercentage;
     volumeEvent.updateUi = true;
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;

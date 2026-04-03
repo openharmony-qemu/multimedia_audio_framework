@@ -138,7 +138,6 @@ const std::string NEARLINK_LIST = "audio_nearlink_list";
 constexpr const char* SCENE_BOARD_PACKAGE_NAME = "com.ohos.sceneboard";
 constexpr int32_t MIN_VOLUME_PERCENTAGE = 0;
 constexpr int32_t MAX_VOLUME_PERCENTAGE = 100;
-constexpr int32_t VOLUME_PERCENTAGE_UNSET = -1;
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
 
@@ -1217,32 +1216,7 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUid(int32_t appUid, in
     CHECK_AND_RETURN_RET_LOG(volumePercentage >= MIN_VOLUME_PERCENTAGE && volumePercentage <= MAX_VOLUME_PERCENTAGE,
         ERR_INVALID_PARAM, "volume percentage range error");
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    return SetSystemAppVolumePercentageForUidInternal(appUid, volumePercentage);
-}
-
-int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage)
-{
-    int32_t appliedVolumePercentage = VOLUME_PERCENTAGE_UNSET;
-    audioVolumeManager_.GetSystemAppVolumePercentage(appUid, appliedVolumePercentage);
-    AUDIO_INFO_LOG("appUid: %{public}d, new percentage: %{public}d, old percentage: %{public}d",
-        appUid, volumePercentage, appliedVolumePercentage);
-    // Skip setting if volume percentage is already up-to-date
-    CHECK_AND_RETURN_RET(appliedVolumePercentage != volumePercentage, SUCCESS);
-
-    int32_t ret = audioVolumeManager_.SetSystemAppVolumePercentage(appUid, volumePercentage);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system app volume percentage");
-
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
-    volumeEvent.volume = volumePercentage;
-    volumeEvent.updateUi = true;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    volumeEvent.appUid = appUid;
-    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
-    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
-    return ret;
+    return audioVolumeManager_.SetSystemAppVolumePercentageWithCallback(appUid, volumePercentage);
 }
 
 int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)

@@ -820,7 +820,6 @@ private:
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
         const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
 
-    int32_t SetSystemAppVolumePercentageForUidInternal(int32_t appUid, int32_t volumePercentage);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
 
     // Permission and privacy
