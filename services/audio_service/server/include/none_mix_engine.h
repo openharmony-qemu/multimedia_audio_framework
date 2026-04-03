@@ -64,6 +64,13 @@ private:
     void RegisterSinkLatencyFetcher(uint32_t renderId);
     void RegisterSinkLatencyFetcherToStreamIfNeeded();
 
+    enum class EngineState {
+        IDLE,
+        RUNNING,
+        PAUSING,
+        STOPPING
+    };
+
 private:
     bool isVoip_;
     bool isStart_;
@@ -81,6 +88,7 @@ private:
     std::condition_variable cvFading_;
     std::atomic<bool> startFadein_;
     std::atomic<bool> startFadeout_;
+    std::atomic<EngineState> engineState_;
     uint32_t uChannel_;
     int32_t uFormat_;
     uint32_t uSampleRate_;
