@@ -978,6 +978,50 @@ HWTEST(AudioProcessInClientUnitTest, SetRebuildFlag_001, TestSize.Level1)
 }
 
 /*
+ * @tc.name  : Test SetVoipNoPrivacyFlag API
+ * @tc.type  : FUNC
+ * @tc.number: SetVoipNoPrivacyFlag_001
+ * @tc.desc  : Test SetVoipNoPrivacyFlag with null processProxy
+ */
+HWTEST(AudioProcessInClientUnitTest, SetVoipNoPrivacyFlag_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    ptrAudioProcessInClientInner->processProxy_ = nullptr;
+    ptrAudioProcessInClientInner->SetVoipNoPrivacyFlag(true);
+}
+
+/*
+ * @tc.name  : Test SetVoipNoPrivacyFlag API
+ * @tc.type  : FUNC
+ * @tc.number: SetVoipNoPrivacyFlag_002
+ * @tc.desc  : Test SetVoipNoPrivacyFlag with valid processProxy
+ */
+HWTEST(AudioProcessInClientUnitTest, SetVoipNoPrivacyFlag_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.streamType = STREAM_VOICE_COMMUNICATION;
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap);
+
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    ptrAudioProcessInClientInner->processProxy_ = processStream;
+    ptrAudioProcessInClientInner->SetVoipNoPrivacyFlag(true);
+    EXPECT_TRUE(processStream->GetVoipNoPrivacyFlag());
+}
+
+/*
  * @tc.name  : Test GetKeepRunning API
  * @tc.type  : FUNC
  * @tc.number: GetKeepRunning_001

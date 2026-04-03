@@ -65,6 +65,7 @@ public:
     int32_t SetInMainThreadState(bool isInMainThread) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
+    void CheckInnerCapVoIP() override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,

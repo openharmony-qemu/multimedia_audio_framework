@@ -86,6 +86,7 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
     : processConfig_(processConfig)
 {
     streamListener_ = streamListener;
+    voipNoPrivacyFlag_.store(processConfig_.rendererInfo.voipNoPrivacyFlag);
     managerType_ = PLAYBACK;
     if (processConfig_.callerUid == MEDIA_UID) {
         isNeedFade_ = true;
@@ -1795,9 +1796,20 @@ int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
     return stream_->SetPrivacyType(privacyType);
 }
 
+int32_t RendererInServer::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
+{
+    voipNoPrivacyFlag_.store(voipNoPrivacyFlag);
+    return SUCCESS;
+}
+
 int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 {
     return stream_->GetPrivacyType(privacyType);
+}
+
+bool RendererInServer::GetVoipNoPrivacyFlag() const
+{
+    return voipNoPrivacyFlag_.load();
 }
 
 int32_t RendererInServer::EnableInnerCap(int32_t innerCapId)

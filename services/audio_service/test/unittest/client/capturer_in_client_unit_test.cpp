@@ -159,6 +159,8 @@ public:
 
     virtual int32_t SetPrivacyType(int32_t privacyType) override { return 0; } // renderer only
 
+    virtual int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) override { return 0; } // renderer only
+
     virtual int32_t GetPrivacyType(int32_t &privacyType) override { return 0; } // renderer only
 
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only

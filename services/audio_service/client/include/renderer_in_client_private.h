@@ -64,6 +64,7 @@ public:
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
+    void CheckInnerCapVoIP() override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj,

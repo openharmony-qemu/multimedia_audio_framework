@@ -16,6 +16,7 @@
 #ifndef RENDERER_IN_SERVER_H
 #define RENDERER_IN_SERVER_H
 
+#include <atomic>
 #include <mutex>
 #include <optional>
 #include "i_renderer_stream.h"
@@ -99,7 +100,9 @@ public:
     int32_t SetAudioEffectMode(int32_t effectMode);
     int32_t GetAudioEffectMode(int32_t &effectMode);
     int32_t SetPrivacyType(int32_t privacyType);
+    int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag);
     int32_t GetPrivacyType(int32_t &privacyType);
+    bool GetVoipNoPrivacyFlag() const;
 
     int32_t SetOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode();
@@ -260,6 +263,7 @@ private:
     std::string traceTag_;
     mutable int64_t volumeDataCount_ = 0;
     std::atomic<IStatus> status_ = I_STATUS_IDLE;
+    std::atomic<bool> voipNoPrivacyFlag_ = false;
     bool offloadEnable_ = false;
     std::atomic<bool> standByEnable_ = false;
     std::atomic<bool> muteFlag_ = false;

@@ -1980,6 +1980,58 @@ HWTEST(AudioServiceUnitTest, CheckShouldCap_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test CheckShouldCap API
+ * @tc.type  : FUNC
+ * @tc.number: CheckShouldCap_002
+ * @tc.desc  : Test modern inner-cap voip flag checks renderer and fast process branches.
+ */
+HWTEST(AudioServiceUnitTest, CheckShouldCap_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    ASSERT_NE(audioService, nullptr);
+
+    audioService->workingConfigs_.clear();
+    audioService->allRendererMap_.clear();
+    audioService->allProcessInServer_.clear();
+
+    AudioPlaybackCaptureConfig audioPlaybackCaptureConfig;
+    audioPlaybackCaptureConfig.isModernInnerCapturer = true;
+    audioPlaybackCaptureConfig.filterOptions.usages.push_back(STREAM_USAGE_VOICE_COMMUNICATION);
+    audioService->workingConfigs_.insert(std::make_pair(1, audioPlaybackCaptureConfig));
+
+    AudioProcessConfig rendererConfig;
+    rendererConfig.audioMode = AUDIO_MODE_PLAYBACK;
+    rendererConfig.streamType = STREAM_VOICE_COMMUNICATION;
+    rendererConfig.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    rendererConfig.originalSessionId = MIN_STREAMID;
+
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+
+    rendererConfig.rendererInfo.voipNoPrivacyFlag = false;
+    auto rendererFalse = std::make_shared<RendererInServer>(rendererConfig, streamListener);
+    audioService->allRendererMap_[rendererConfig.originalSessionId] = rendererFalse;
+    EXPECT_FALSE(audioService->CheckShouldCap(rendererConfig, 1));
+
+    rendererConfig.rendererInfo.voipNoPrivacyFlag = true;
+    auto rendererTrue = std::make_shared<RendererInServer>(rendererConfig, streamListener);
+    audioService->allRendererMap_[rendererConfig.originalSessionId] = rendererTrue;
+    EXPECT_TRUE(audioService->CheckShouldCap(rendererConfig, 1));
+
+    audioService->allRendererMap_.clear();
+    rendererConfig.originalSessionId = MIN_STREAMID + 1;
+    rendererConfig.rendererInfo.voipNoPrivacyFlag = true;
+    sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(rendererConfig, audioService);
+    ASSERT_NE(audioProcess, nullptr);
+    audioService->allProcessInServer_[rendererConfig.originalSessionId] = audioProcess;
+    EXPECT_TRUE(audioService->CheckShouldCap(rendererConfig, 1));
+
+    audioService->allProcessInServer_.clear();
+    audioService->workingConfigs_.clear();
+}
+
+/**
  * @tc.name  : Test FilterAllFastProcess API
  * @tc.type  : FUNC
  * @tc.number: FilterAllFastProcess_002

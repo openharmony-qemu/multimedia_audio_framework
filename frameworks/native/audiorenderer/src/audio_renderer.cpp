@@ -403,6 +403,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
 
     rendererInfo_.privacyType = rendererOptions.privacyType;
+    rendererInfo_.voipNoPrivacyFlag = rendererOptions.rendererInfo.voipNoPrivacyFlag;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
 }
@@ -3304,6 +3305,11 @@ int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
     if ((behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)) &&
         (audioInterrupt_.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION)) {
         audioInterrupt_.behaviorFlags_.voipNoPrivacyFlag = true;
+        rendererInfo_.voipNoPrivacyFlag = true;
+        if (audioStream_ != nullptr) {
+            audioStream_->SetRendererInfo(rendererInfo_);
+            audioStream_->CheckInnerCapVoIP();
+        }
         AUDIO_INFO_LOG("Renderer id: %{public}d activated VOIP_PRIVACY_TYPE_PUBLIC success", sessionID_);
     }
     if (behavior & static_cast<uint32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)) {

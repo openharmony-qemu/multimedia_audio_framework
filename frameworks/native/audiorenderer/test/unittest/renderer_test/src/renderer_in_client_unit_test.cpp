@@ -49,6 +49,9 @@ public:
     int32_t calculateCacheCountRet = SUCCESS;
     uint32_t calculatedCacheCount = 0;
     bool calculateCacheCountCalled = false;
+    bool setVoipNoPrivacyFlagCalled = false;
+    bool lastVoipNoPrivacyFlag = false;
+    int32_t setVoipNoPrivacyFlagRet = SUCCESS;
 
     virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return 0; }
 
@@ -110,6 +113,13 @@ public:
     virtual int32_t GetAudioEffectMode(int32_t &effectMode) override { return 0; } // renderer only
 
     virtual int32_t SetPrivacyType(int32_t privacyType) override { return 0; } // renderer only
+
+    virtual int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) override
+    {
+        setVoipNoPrivacyFlagCalled = true;
+        lastVoipNoPrivacyFlag = voipNoPrivacyFlag;
+        return setVoipNoPrivacyFlagRet;
+    }
 
     virtual int32_t GetPrivacyType(int32_t &privacyType) override { return 0; } // renderer only
 
@@ -3494,6 +3504,68 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_OnSpatializationStat
     ptrRendererInClientInner->OnSpatializationStateChange(state);
     // Verify function executed without error
     EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner_SetRendererInfo_001
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_SetRendererInfo_001
+ * @tc.desc  : Test SetRendererInfo with null ipcStream_.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_SetRendererInfo_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    ptrRendererInClientInner->ipcStream_ = nullptr;
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererInfo.voipNoPrivacyFlag = true;
+    ptrRendererInClientInner->SetRendererInfo(rendererInfo);
+    EXPECT_TRUE(ptrRendererInClientInner->rendererInfo_.voipNoPrivacyFlag);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner_SetRendererInfo_002
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_SetRendererInfo_002
+ * @tc.desc  : Test SetRendererInfo with valid ipcStream_.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_SetRendererInfo_002, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    sptr<IpcStreamTest> ipcStreamTest = new(std::nothrow) IpcStreamTest();
+    ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererInfo.voipNoPrivacyFlag = true;
+    ptrRendererInClientInner->SetRendererInfo(rendererInfo);
+    EXPECT_TRUE(ptrRendererInClientInner->rendererInfo_.voipNoPrivacyFlag);
+    EXPECT_TRUE(ipcStreamTest->setVoipNoPrivacyFlagCalled);
+    EXPECT_TRUE(ipcStreamTest->lastVoipNoPrivacyFlag);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner_SetRendererInfo_003
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_SetRendererInfo_003
+ * @tc.desc  : Test SetRendererInfo when ipcStream_ update returns error.
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_SetRendererInfo_003, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+    sptr<IpcStreamTest> ipcStreamTest = new(std::nothrow) IpcStreamTest();
+    ipcStreamTest->setVoipNoPrivacyFlagRet = ERROR;
+    ptrRendererInClientInner->ipcStream_ = ipcStreamTest;
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    rendererInfo.voipNoPrivacyFlag = true;
+    ptrRendererInClientInner->SetRendererInfo(rendererInfo);
+    EXPECT_TRUE(ipcStreamTest->setVoipNoPrivacyFlagCalled);
 }
 } // namespace AudioStandard
 } // namespace OHOS

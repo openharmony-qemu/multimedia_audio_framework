@@ -298,6 +298,7 @@ public:
         const std::string& condition, std::string& value) override;
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
+    int32_t CheckInnerCapVoIP(uint32_t sessionId) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

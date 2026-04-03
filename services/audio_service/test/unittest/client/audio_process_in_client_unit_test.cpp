@@ -64,6 +64,7 @@ public:
 
     MOCK_METHOD(sptr<IRemoteObject>, AsObject, (), (override));
     MOCK_METHOD(int32_t, SetRebuildFlag, (), (override));
+    MOCK_METHOD(int32_t, SetVoipNoPrivacyFlag, (bool voipNoPrivacyFlag), (override));
     MOCK_METHOD(int32_t, GetServerKeepRunning, (bool &keepRunning), (override));
 
     MOCK_METHOD(int32_t, SetLoopTimes, (int64_t bufferLoopTimes), (override));

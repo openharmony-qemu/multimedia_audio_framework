@@ -412,6 +412,32 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_015, TestSize.Level1)
 /**
  * @tc.name  : Test IpcStreamInServer API
  * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_SetVoipNoPrivacyFlag_001
+ * @tc.desc  : Test IpcStreamInServer::SetVoipNoPrivacyFlag interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_SetVoipNoPrivacyFlag_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    auto ret1 = ipcStreamInServerRet.SetVoipNoPrivacyFlag(true);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    auto ret2 = ipcStreamInServerRet.SetVoipNoPrivacyFlag(true);
+    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.ConfigRenderer();
+    ASSERT_NE(ipcStreamInServerRet.rendererInServer_, nullptr);
+    auto ret3 = ipcStreamInServerRet.SetVoipNoPrivacyFlag(true);
+    EXPECT_EQ(ret3, SUCCESS);
+    EXPECT_TRUE(ipcStreamInServerRet.rendererInServer_->GetVoipNoPrivacyFlag());
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
  * @tc.number: IpcStreamInServer_016
  * @tc.desc  : Test IpcStreamInServer interface.
  */
