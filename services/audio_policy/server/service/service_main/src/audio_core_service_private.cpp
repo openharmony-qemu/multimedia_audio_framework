@@ -1231,6 +1231,16 @@ void AudioCoreService::OnConnectFailed(AudioDeviceDescriptor &desc)
     audioDeviceStatus_.OnConnectFailed(desc);
 }
 
+void AudioCoreService::OnVehiclePriorityChanged(bool enable)
+{
+    AUDIO_INFO_LOG("OnVehiclePriorityChanged enable = %{public}d", enable);
+    bool changed = audioRouterCenter_.UpdateVehiclePriority(enable);
+    CHECK_AND_RETURN_LOG(changed, "vehiclePriority not changed");
+    AudioStreamDeviceChangeReasonExt reason{AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE};
+    FetchOutputDeviceAndRoute("OnVehiclePriorityChanged", reason);
+    FetchInputDeviceAndRoute("OnVehiclePriorityChanged", reason);
+}
+
 void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
 {
     CHECK_AND_RETURN(pipeInfo && pipeInfo->moduleInfo_.className == "remote_offload");
