@@ -55,6 +55,8 @@ public:
     int32_t NotifyDistributedOutputChange(bool isRemote);
 
     bool IsConfigRouterStrategy(SourceType sourceType);
+
+    int32_t SetSplitModeReady();
 private:
     AudioRouterCenter()
     {

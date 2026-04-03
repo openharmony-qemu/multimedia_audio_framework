@@ -49,6 +49,7 @@
 
 #include "media_monitor_manager.h"
 #include "parameters.h"
+#include "app_bundle_manager.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -69,6 +70,7 @@ static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
 const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
+static const int64_t MIN_INTERVAL_IN_NS = 150000000;
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -333,6 +335,7 @@ State RendererInClientInner::GetState()
 
 bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    CheckAndReportTimestamp();
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
     CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, false, "Now in injection mode.​​");
@@ -413,6 +416,7 @@ bool RendererInClientInner::GetHWDecodingTime(Timestamp &timestamp, Timestamp::T
 
 bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    CheckAndReportTimestamp();
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, false, "Renderer stream state is not RUNNING");
     CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,
         ERR_INVALID_PARAM, "Timestampbase is not allowed");
@@ -1184,6 +1188,20 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     return true;
 }
 
+void RendererInClientInner::ReportExceptionForInterval()
+{
+    std::string appName = AppBundleManager::GetSelfBundleName();
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", eStreamType_);
+    bean->Add("TYPE", TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
+    AUDIO_ERR_LOG("ReportExceptionForInterval: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
+        appName.c_str(), eStreamType_, TYPE_GET_TIMESTAMP_TOO_FREQUENTLY);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
@@ -1235,6 +1253,10 @@ bool RendererInClientInner::StopAudioStream()
     HILOG_COMM_INFO("[StopAudioStream]Stop SUCCESS, sessionId: %{public}d, uid: %{public}d, "
         "volume data counts: %{public}" PRId64, sessionId_, clientUid_, volumeDataCount_);
     UpdateTracker("STOPPED");
+    if (logStopCallCount_) {
+        ReportExceptionForInterval();
+        logStopCallCount_ = false;
+    }
     return true;
 }
 
@@ -1964,8 +1986,19 @@ DeviceType RendererInClientInner::GetDefaultOutputDevice()
     return defaultOutputDevice_;
 }
 
+void RendererInClientInner::CheckAndReportTimestamp()
+{
+    auto currentTime = ClockTime::GetCurNano();
+    auto duration = currentTime - lastTriggerTime_;
+    if (duration <= MIN_INTERVAL_IN_NS) {
+        logStopCallCount_ = true;
+    }
+    lastTriggerTime_ = currentTime;
+}
+
 int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
+    CheckAndReportTimestamp();
     CHECK_AND_RETURN_RET_LOG(renderTarget_ == NORMAL_PLAYBACK, ERR_ILLEGAL_STATE, "Now in injection mode.​​");
     CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "Renderer stream state is not RUNNING");
     CHECK_AND_RETURN_RET_LOG(base >= 0 && base < Timestamp::Timestampbase::BASESIZE,

@@ -2227,6 +2227,9 @@ int32_t HpaeManager::UpdateSpatializationState(AudioSpatializationState spatiali
         HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
         adaptiveSpatialRenderingEnabled_ = spatializationState.adaptiveSpatialRenderingEnabled;
         UpdateBypassSpatializationForStereo(bypassSpatializationForStereo_);
+        auto serviceCallback = serviceCallback_.lock();
+        CHECK_AND_RETURN_LOG(serviceCallback != nullptr, "serviceCallback is nullptr");
+        serviceCallback->OnUpdateSpatializationStateCb(SUCCESS);
     };
     SendRequest(request, __func__);
     return SUCCESS;

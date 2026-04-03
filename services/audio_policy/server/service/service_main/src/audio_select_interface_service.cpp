@@ -479,6 +479,8 @@ int32_t AudioSelectInterfaceService::UnexcludeOutputDevices(AudioDeviceUsage aud
     AUDIO_WARNING_LOG("audioDevUsage[%{public}d], Unexclude devices list size [%{public}zu], %{public}s",
         audioDevUsage, deviceDescs.size(),
         AudioPolicyUtils::GetInstance().GetDevicesStr(deviceDescs).c_str());
+    CHECK_AND_RETURN_RET_LOG(deviceDescs.size() > 0 && deviceDescs.front() != nullptr,
+        ERR_INVALID_PARAM, "No device to exclude");
     if (deviceDescs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
         deviceDescs.front()->macAddress_.empty()) {
         AudioRouterSelectStrategy::GetInstance().SetScoExcluded(false);

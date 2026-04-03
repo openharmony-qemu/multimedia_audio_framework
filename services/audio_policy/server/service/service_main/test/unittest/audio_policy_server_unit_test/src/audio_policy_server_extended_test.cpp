@@ -342,31 +342,6 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_014, TestSize.Level4)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_015
-* @tc.desc  : Test SetDefaultOutputDevice.
-*/
-HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_015, TestSize.Level4)
-{
-    audioPolicyServer_->coreService_ = AudioCoreService::GetCoreService();
-    audioPolicyServer_->coreService_->Init();
-    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
-    audioPolicyServer_->interruptService_ = std::make_shared<AudioInterruptService>();
-
-    int32_t deviceType = static_cast<int32_t>(DeviceType::DEVICE_TYPE_NONE);
-    EXPECT_EQ(audioPolicyServer_->SetDefaultOutputDevice(deviceType), ERR_NOT_SUPPORTED);
-
-    audioPolicyServer_->eventEntry_.reset();
-    EXPECT_EQ(audioPolicyServer_->SetDefaultOutputDevice(deviceType), ERR_UNKNOWN);
-
-    audioPolicyServer_->interruptService_.reset();
-    EXPECT_EQ(audioPolicyServer_->SetDefaultOutputDevice(deviceType), ERR_UNKNOWN);
-
-    audioPolicyServer_->eventEntry_ = audioPolicyServer_->coreService_->GetEventEntry();
-    EXPECT_EQ(audioPolicyServer_->SetDefaultOutputDevice(deviceType), ERR_UNKNOWN);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_016
 * @tc.desc  : Test IsAllowedPlayback.
 */

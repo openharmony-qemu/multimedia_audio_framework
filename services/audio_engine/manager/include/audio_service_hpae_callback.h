@@ -52,6 +52,8 @@ public:
 
     virtual void OnGetCollaborativeUpdateCb(int32_t result) = 0;
 
+    virtual void OnUpdateSpatializationStateCb(int32_t result) = 0;
+
     virtual ~AudioServiceHpaeCallback()
     {}
 };

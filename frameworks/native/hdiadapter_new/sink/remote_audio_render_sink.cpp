@@ -57,7 +57,7 @@ RemoteAudioRenderSink::~RemoteAudioRenderSink()
         DeInit();
     }
     AUDIO_DEBUG_LOG("destruction");
-    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_REMOTE);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_REMOTE_NM);
 }
 
 int32_t RemoteAudioRenderSink::Init(const IAudioSinkAttr &attr)
@@ -164,7 +164,7 @@ int32_t RemoteAudioRenderSink::Start(void)
         AUDIO_INFO_LOG("SubThread End");
     });
 
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE_NM, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -215,7 +215,7 @@ int32_t RemoteAudioRenderSink::Resume(void)
             it.first, ret);
     }
     paused_.store(false);
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE_NM, INIT_LASTWRITTEN_TIME);
     return SUCCESS;
 }
 
@@ -783,7 +783,7 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     Trace trace("RemoteAudioRenderSink::RenderFrame inner renderFrame");
     Trace::CountVolume("RemoteAudioRenderSink::RenderFrame", static_cast<uint8_t>(data));
     ret = audioRender->RenderFrame(bufferVec, writeLen);
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, ClockTime::GetCurNano());
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE_NM, ClockTime::GetCurNano());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     writeLen = len;
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {

@@ -366,6 +366,8 @@ public:
 
     virtual bool IsRestoreNeeded() { return false; }
 
+    virtual void UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal) {}
+
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 
     virtual void SetStaticBufferInfo(StaticBufferInfo staticBufferInfo) = 0;

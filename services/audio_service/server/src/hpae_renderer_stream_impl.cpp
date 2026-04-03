@@ -624,7 +624,8 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
     if (callBackStreamInfo.hdiFramePosition > 0) {
         lastHdiFramePosition_ +=
             // from time (us) to sample
-            callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S;
+            callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S +
+            callBackStreamInfo.rewindTime * usedSampleRate_ / AUDIO_US_PER_S;
     }
     bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[ON_DEVICE_CLASS_CHANGE],
         PRINT_TIMESTAMP_INTERVAL_NS);
@@ -915,6 +916,11 @@ int32_t HpaeRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "SetOffloadPolicy failed, errcode is %{public}d", ret);
     offloadStatePolicy_.store(statePolicy);
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+        if (statusCallback != nullptr) {
+            statusCallback->OnStatusUpdate(statePolicy == OFFLOAD_INACTIVE_BACKGROUND ?
+                OFFLOAD_INACTIVE_BACKGROUND_RUNNING : OFFLOAD_ACTIVE_FOREGROUND_RUNNING);
+        }
 #else
     AUDIO_INFO_LOG("not available, FEATURE_POWER_MANAGER no define");
 #endif

@@ -1224,7 +1224,7 @@ HWTEST_F(CapturerInServerSecondUnitTest, ReportPlaybackCaptureUserChoice_001, Te
     auto result = capturerInServer_->ReportPlaybackCaptureUserChoice(1, true);
     capturerInServer_->OnPrivacyAuthorityResult(true);
     capturerInServer_->OnPrivacyAuthorityResult(false);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

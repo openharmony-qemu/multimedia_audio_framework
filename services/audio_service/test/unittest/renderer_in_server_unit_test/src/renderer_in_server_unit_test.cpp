@@ -3633,7 +3633,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_001, TestSize
 
     // Set managerType_ to PLAYBACK (non-DIRECT_PLAYBACK)
     rendererInServer->managerType_ = PLAYBACK;
-    rendererInServer->spanSizeInByte_ = 100;
+    rendererInServer->spanSizeInFrame_ = 100;
 
     // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame -> return true
     uint64_t currentReadFrame = 100;
@@ -3661,7 +3661,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_002, TestSize
 
     // Set managerType_ to PLAYBACK (non-DIRECT_PLAYBACK)
     rendererInServer->managerType_ = PLAYBACK;
-    rendererInServer->spanSizeInByte_ = 100;
+    rendererInServer->spanSizeInFrame_ = 100;
 
     // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame < currentWriteFrame -> return false
     uint64_t currentReadFrame = 50;
@@ -3690,7 +3690,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_003, TestSize
 
     // Set managerType_ to DIRECT_PLAYBACK
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
-    rendererInServer->spanSizeInByte_ = 100;
+    rendererInServer->spanSizeInFrame_ = 100;
 
     // Test: managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame -> return true
     uint64_t currentReadFrame = 10;
@@ -3720,7 +3720,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_004, TestSize
 
     // Set managerType_ to DIRECT_PLAYBACK
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
-    rendererInServer->spanSizeInByte_ = 100;
+    rendererInServer->spanSizeInFrame_ = 100;
 
     uint64_t currentReadFrame = 10;
     uint64_t currentWriteFrame = 150;
@@ -3749,7 +3749,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_005, TestSize
 
     // Set managerType_ to DIRECT_PLAYBACK
     rendererInServer->managerType_ = DIRECT_PLAYBACK;
-    rendererInServer->spanSizeInByte_ = 100;
+    rendererInServer->spanSizeInFrame_ = 100;
 
     // Test: managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) == currentWriteFrame
     // Since condition is > (not >=), this should return false
@@ -3780,7 +3780,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_006, TestSize
 
     // Set managerType_ to PLAYBACK (non-DIRECT_PLAYBACK)
     rendererInServer->managerType_ = PLAYBACK;
-    rendererInServer->spanSizeInByte_ = 100;
+    rendererInServer->spanSizeInFrame_ = 100;
 
     // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame == currentWriteFrame -> return true
     uint64_t currentReadFrame = 100;
@@ -3808,11 +3808,41 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_007, TestSize
 
     // Set managerType_ to VOIP_PLAYBACK (non-DIRECT_PLAYBACK)
     rendererInServer->managerType_ = VOIP_PLAYBACK;
-    rendererInServer->spanSizeInByte_ = 100;
+    rendererInServer->spanSizeInFrame_ = 100;
 
-    // Test: managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame -> return true
+    // Test: currentReadFrame >= currentWriteFrame -> return true (applies to all manager types)
     uint64_t currentReadFrame = 100;
     uint64_t currentWriteFrame = 50;
+    bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test CheckIsUnderrun API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerCheckIsUnderrun_008
+ * @tc.desc  : Test CheckIsUnderrun when managerType_ is DIRECT_PLAYBACK and
+ *             currentReadFrame >= currentWriteFrame (basic underrun check).
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerCheckIsUnderrun_008, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_MONO);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    ASSERT_EQ(SUCCESS, ret);
+
+    // Set managerType_ to DIRECT_PLAYBACK
+    rendererInServer->managerType_ = DIRECT_PLAYBACK;
+    rendererInServer->spanSizeInFrame_ = 100;
+
+    // Test: currentReadFrame >= currentWriteFrame should return true for DIRECT_PLAYBACK too
+    // (basic underrun check applies to all manager types)
+    uint64_t currentReadFrame = 150;
+    uint64_t currentWriteFrame = 100;
     bool result = rendererInServer->CheckIsUnderrun(currentReadFrame, currentWriteFrame);
     EXPECT_TRUE(result);
 }

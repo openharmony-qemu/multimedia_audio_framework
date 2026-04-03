@@ -37,6 +37,7 @@
 #include "audio_stream_concurrency_detector.h"
 #include "format_converter.h"
 #include "volume_tools.h"
+#include "app_bundle_manager.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -51,9 +52,20 @@ namespace {
 // poraudio only support F32 resample
 static constexpr AudioSampleFormat RESAMPLE_FORMAT = SAMPLE_F32LE;
 static constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
+static constexpr int64_t REPORT_RUNNING_TIMEOUT_MS = 3 * 60 * 1000;
 #ifdef FEATURE_CALL_MANAGER
 static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 #endif
+
+std::set<AudioStreamType> FAST_STREAMTYPE_ABUSE_LIST = {
+    STREAM_MUSIC,
+    STREAM_SPEECH,
+    STREAM_MOVIE,
+    STREAM_NAVIGATION,
+    STREAM_RING,
+    STREAM_ALARM,
+};
+
 enum CallbackHandlerEvent : uint32_t {
     NOTIFY_VOIP_START = 0,
 };
@@ -413,6 +425,7 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
 
 int32_t AudioProcessInServer::Start()
 {
+    runningStamp_ = ClockTime::GetCurNano();
     int32_t ret = StartInner();
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
@@ -479,7 +492,8 @@ int32_t AudioProcessInServer::StartInner()
 
     RebuildCaptureInjector();
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
-    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_,
+        processConfig_.appInfo.appTokenId, processConfig_.appInfo.appPid);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
     return result;
 }
@@ -582,12 +596,31 @@ int32_t AudioProcessInServer::Resume()
     for (size_t i = 0; i < listenerList_.size(); i++) {
         result = listenerList_[i]->OnStart(this);
     }
-    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_,
+        processConfig_.appInfo.appTokenId, processConfig_.appInfo.appPid);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_START);
     streamStatusInServer_ = STREAM_RUNNING;
     return result;
+}
+
+void AudioProcessInServer::ReportExceptionForFast()
+{
+    AudioStreamType streamType = GetAudioStreamType();
+    CHECK_AND_RETURN(FAST_STREAMTYPE_ABUSE_LIST.find(streamType) != FAST_STREAMTYPE_ABUSE_LIST.end());
+    bool isTimeout = ((ClockTime::GetCurNano() - runningStamp_) / AUDIO_US_PER_SECOND >= REPORT_RUNNING_TIMEOUT_MS);
+    CHECK_AND_RETURN(isTimeout);
+    std::string appName = AppBundleManager::GetBundleNameFromUid(processConfig_.appInfo.appUid);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_PLAYBACK_ERROR,
+        Media::MediaMonitor::FAULT_EVENT);
+    bean->Add("APP_NAME", appName);
+    bean->Add("STREAM_TYPE", streamType);
+    bean->Add("TYPE", TYPE_FAST_ABUSE);
+    AUDIO_ERR_LOG("ReportExceptionForFast: APP_NAME:%{public}s, STREAM_TYPE:%{public}d, TYPE:%{public}d",
+        appName.c_str(), streamType, TYPE_FAST_ABUSE);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 int32_t AudioProcessInServer::Stop(int32_t stageIn)
@@ -635,6 +668,8 @@ int32_t AudioProcessInServer::Stop(int32_t stageIn)
     NotifyXperfOnPlayback(processConfig_.audioMode, XPERF_EVENT_STOP);
     HILOG_COMM_INFO("[Stop]Stop in server success!");
     streamStatusInServer_ = STREAM_STOPPED;
+    ReportExceptionForFast();
+    runningStamp_ = 0;
     RemoveStreamInfo();
     return SUCCESS;
 }
@@ -1416,6 +1451,15 @@ void AudioProcessInServer::DfxOperationAndCalcMuteFrame(BufferDesc &bufferDesc)
     AddNormalFrameSize();
     VolumeTools::CalcMuteFrame(bufferDesc, GetStreamInfo(), logUtilsTag_, volumeDataCount_, lastWriteMuteFrame_);
     AddMuteFrameSize(volumeDataCount_);
+}
+
+int32_t AudioProcessInServer::UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal)
+{
+    UnderrunInfoType infoType = static_cast<UnderrunInfoType>(underrunInfoKey);
+    if (infoType == UNDERRUN_TYPE_ISTIMEOUT) {
+        AudioPerformanceMonitor::GetInstance().UpdateIsTimeoutCB(sessionId_, static_cast<bool>(underrunInfoVal));
+    }
+    return SUCCESS;
 }
 
 int32_t AudioProcessInServer::SetLoopTimes(int64_t bufferLoopTimes)

@@ -339,6 +339,11 @@ public:
         return sharedAudioCapturer_->SetInMainThreadState(isInMainThread);
     }
 
+    int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior) override
+    {
+        return sharedAudioCapturer_->SetIndependentAudioSessionStrategy(strategy, behavior);
+    }
+
     void SetPlaybackCaptureStartStateCallback(
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override
     {

@@ -54,6 +54,7 @@
 #include "media_monitor_manager.h"
 #include "istandard_audio_service.h"
 #include "app_bundle_manager.h"
+#include "audio_performance_monitor.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -77,6 +78,7 @@ constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
 static const int32_t WECHAT_BUFFER_DURATION_IN_US = 120000;
+static const int64_t ONWRITEDATA_TIMEOUT_NS = 40000000;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -615,7 +617,13 @@ void RendererInClientInner::CallClientHandle()
         Trace traceCb("RendererInClientInner::OnWriteData");
         WatchTimeout guard("write interval too long"); // default time out 40ms
         size_t length = isHWDecodingType_ ? clientBuffer_->GetDataSize() : cbBufferSize_;
+        auto startRunning = ClockTime::GetCurNano();
         cb->OnWriteData(length);
+        auto endRunning = ClockTime::GetCurNano();
+        auto duration = endRunning - startRunning;
+        if (duration >= ONWRITEDATA_TIMEOUT_NS) {
+            ipcStream_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true);
+        }
         guard.CheckCurrTimeout();
     }
 }
@@ -1199,6 +1207,12 @@ int32_t RendererInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
     std::lock_guard<std::mutex> lock(staticBufferMutex_);
     sendStaticRecreateFunc_ = sendStaticRecreateFunc;
     return SUCCESS;
+}
+
+void RendererInClientInner::UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal)
+{
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream_ is nullptr");
+    ipcStream_->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
 }
 
 int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)

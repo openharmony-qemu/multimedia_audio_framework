@@ -235,8 +235,8 @@ HWTEST(AudioStreamMonitorTest, UpdateMonitorVolume_001, TestSize.Level1)
 HWTEST(AudioStreamMonitorTest, OnMuteStateChange_001, TestSize.Level1)
 {
     std::shared_ptr<AudioStreamMonitor> monitor = std::make_shared<AudioStreamMonitor>();
-    DataTransferStateChangeCallbackForMonitorTest *test =
-        new DataTransferStateChangeCallbackForMonitorTest();
+    std::shared_ptr<DataTransferStateChangeCallbackForMonitorTest> test =
+        std::make_shared<DataTransferStateChangeCallbackForMonitorTest>();
 
     int32_t pid = 1;
     int32_t callbackId = 1;
@@ -250,14 +250,13 @@ HWTEST(AudioStreamMonitorTest, OnMuteStateChange_001, TestSize.Level1)
     EXPECT_EQ(test->sessionId_, 0);
     EXPECT_EQ(test->isMuted_, false);
 
-    monitor->SetAudioServerPtr(test);
+    monitor->SetAudioServerPtr(test.get());
     monitor->OnMuteCallback(pid, callbackId, uid, sessionId, isMuted);
     EXPECT_EQ(test->pid_, pid);
     EXPECT_EQ(test->callbackId_, callbackId);
     EXPECT_EQ(test->uid_, uid);
     EXPECT_EQ(test->sessionId_, sessionId);
     EXPECT_EQ(test->isMuted_, isMuted);
-    delete test;
 }
 
 /**

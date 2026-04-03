@@ -123,7 +123,7 @@ std::string ProcessConfig::DumpProcessConfig(const AudioProcessConfig &config)
             config.rendererInfo.contentType << ") flag(" << config.rendererInfo.rendererFlags << ") ";
     } else {
         temp << "[capturerInfo]:sourceType(" << config.capturerInfo.sourceType << ") flag(" <<
-            config.capturerInfo.capturerFlags << ") ";
+            config.capturerInfo.capturerFlags << ") mixWithWakeUp (" << config.capturerInfo.mixWithWakeUp << ")";
     }
 
     temp << "streamType<" << config.streamType << "> ";

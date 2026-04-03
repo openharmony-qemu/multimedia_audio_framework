@@ -560,11 +560,12 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
     auto request = [this, sinkInfo, isReload]() {
         Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload offload");
-        StopOuputNode();
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
             DisConnectInputSession();
+            sinkOutputNode_->StopStream();
             DestroyOffloadNodes();
         }
+        StopOuputNode();
         sinkInfo_ = sinkInfo;
         InitSinkInner(isReload);
 

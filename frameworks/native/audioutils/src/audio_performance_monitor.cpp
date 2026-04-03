@@ -27,6 +27,7 @@
 #include "audio_utils.h"
 #include "audio_utils_c.h"
 #include "audio_bundle_manager.h"
+#include "audio_resource_service.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -61,7 +62,7 @@ void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSile
     JudgeNoise(sessionId, isSilence, uid);
 }
 
-void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId)
+void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId, int32_t appPid)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
@@ -71,6 +72,7 @@ void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t t
     silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
     silenceDetectMap_[sessionId].historyStateDeque.clear();
     silenceDetectMap_[sessionId].tokenId = tokenId; // record tokenId to get bundle name
+    silenceDetectMap_[sessionId].appPid = appPid;
     silenceDetectMap_[sessionId].isRunning = true;
 }
 
@@ -190,7 +192,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
             AudioPipeType pipeType = silenceDetectMap_[sessionId].pipeType;
             int32_t periodMs = static_cast<int32_t>(silenceDetectMap_[sessionId].silenceStateCount *
                 (pipeType == PIPE_TYPE_OUT_LOWLATENCY ? FAST_DURATION_MS : NORMAL_DURAION_MS));
-            ReportEvent(SILENCE_EVENT, periodMs, pipeType, ADAPTER_TYPE_UNKNOWN, uid);
+            ReportEvent(SILENCE_EVENT, periodMs, pipeType, ADAPTER_TYPE_UNKNOWN, uid, sessionId);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();
             return;
@@ -219,6 +221,30 @@ void AudioPerformanceMonitor::NotifyXperf(int32_t faultcode, uint32_t uid, uint3
     XperfAdapter::GetInstance().ReportFaultEvent(faultcode, uid, sessionId);
 }
 
+void AudioPerformanceMonitor::UpdateIsBackPlay(int32_t appPid, bool isBackPlay)
+{
+    for (auto it = silenceDetectMap_.begin(); it != silenceDetectMap_.end(); ++it) {
+        if (it->second.appPid == appPid) {
+            it->second.isBackPlay = isBackPlay;
+        }
+    }
+}
+
+void AudioPerformanceMonitor::UpdateIsUseArk(uint32_t sessionId, bool isUseArk)
+{
+    silenceDetectMap_[sessionId].isUseArk = isUseArk;
+}
+
+void AudioPerformanceMonitor::UpdateIsTimeoutCB(uint32_t sessionId, bool isTimeoutCb)
+{
+    silenceDetectMap_[sessionId].isTimeoutCb = isTimeoutCb;
+}
+
+void AudioPerformanceMonitor::UpdateIsNoDdl(uint32_t sessionId, bool isNoDdl)
+{
+    silenceDetectMap_[sessionId].isNoDdl = isNoDdl;
+}
+
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
     AdapterType adapterType, uint32_t uid, uint32_t sessionId)
 {
@@ -242,7 +268,12 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
             return;
     }
 #ifndef AUDIO_BUILD_VARIANT_ROOT
-    AUDIO_WARNING_LOG("report reasonCode %{public}d for uid:%{public}d", reasonCode, uid);
+    int32_t reason = (silenceDetectMap_[sessionId].isBackPlay ? REASON_PLAYING_ISBACK : 0) |
+        (silenceDetectMap_[sessionId].isUseArk ? REASON_PLAYING_ISARK : 0) |
+        (silenceDetectMap_[sessionId].isTimeoutCb ? REASON_PLAYING_IS_SLOW_CB : 0) |
+        (silenceDetectMap_[sessionId].isNoDdl ? REASON_PLAYING_ISNODDL : 0);
+
+    AUDIO_WARNING_LOG("report reasonCode %{public}d for uid:%{public}d, reason: %{public}d", reasonCode, uid, reason);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::EventId::JANK_PLAYBACK,
         Media::MediaMonitor::EventType::FAULT_EVENT);
@@ -252,6 +283,7 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
     bean->Add("HDI_ADAPTER", adapterType);
     bean->Add("POSITION", JANK_POSITON_CODE);
     bean->Add("UID", static_cast<int32_t>(uid));
+    bean->Add("EXTRAINFO", reason);
     if (reasonCode == OVERTIME_EVENT) {
         bean->Add("APP_NAMES", hapNames);
     }

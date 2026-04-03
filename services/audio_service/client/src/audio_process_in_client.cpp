@@ -61,6 +61,7 @@ static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 static constexpr int32_t LOG_COUNT_LIMIT = 200;
 static const int64_t STATIC_HEARTBEAT_INTERVAL_IN_MS = 1000; // 1s
 static const int64_t DUCK_UNDUCK_DURATION_MS = 500; // 500ms
+static const int32_t LIMIT_FAST_COUNT = 2;
 }
 
 class ProcessCbImpl;
@@ -1418,6 +1419,9 @@ void AudioProcessInClientInner::CallClientHandleCurrent()
 
     int64_t limit = isVoipMmap_ ? VOIP_MILLISECOND_DURATION : MAX_WRITE_COST_DURATION_NANO;
     if (stamp + ONE_MILLISECOND_DURATION > limit) {
+        if (stamp + ONE_MILLISECOND_DURATION > LIMIT_FAST_COUNT * limit) {
+            processProxy_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true);
+        }
         AUDIO_WARNING_LOG("Client handle cb too slow, cost %{public}" PRId64"us", stamp / AUDIO_MS_PER_SECOND);
     }
 }

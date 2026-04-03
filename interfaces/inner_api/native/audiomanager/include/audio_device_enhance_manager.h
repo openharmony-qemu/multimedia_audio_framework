@@ -24,6 +24,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+class AudioCapturer;
+class AudioRenderer;
+
 class AudioDeviceEnhanceManager {
 public:
     static AudioDeviceEnhanceManager &GetInstance();
@@ -31,6 +34,10 @@ public:
     int32_t IsEnhancedRoutingSupported(bool &supported);
     int32_t SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     int32_t SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    int32_t SelectInputDeviceForAudioCapturer(std::shared_ptr<AudioCapturer> &capturer,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) const;
+    int32_t SelectOutputDeviceForAudioRenderer(std::shared_ptr<AudioRenderer> &renderer,
+        const std::shared_ptr<AudioDeviceDescriptor> &desc) const;
 private:
     AudioDeviceEnhanceManager() = default;
     ~AudioDeviceEnhanceManager() = default;

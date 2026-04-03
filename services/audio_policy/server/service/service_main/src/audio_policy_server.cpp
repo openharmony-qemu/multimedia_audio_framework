@@ -1233,6 +1233,7 @@ int32_t AudioPolicyServer::SetSystemAppVolumeMutedForUidInternal(int32_t appUid,
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    volumeEvent.appUid = appUid;
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
     audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
     return ret;
@@ -1267,6 +1268,7 @@ int32_t AudioPolicyServer::SetSystemAppVolumePercentageForUidInternal(int32_t ap
     volumeEvent.volumeGroupId = 0;
     volumeEvent.networkId = LOCAL_NETWORK_ID;
     volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
+    volumeEvent.appUid = appUid;
     CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
     audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
     return ret;
@@ -5264,6 +5266,15 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(int32_t deviceType)
     }
 
     return ret;
+}
+
+int32_t AudioPolicyServer::SetSplitModeReady()
+{
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_UNKNOWN, "eventEntry_ is nullptr!");
+    CHECK_AND_RETURN_RET_LOG(callerUid == UID_CAR_DISTRIBUTED_ENGINE_SA, ERR_PERMISSION_DENIED,
+        "callerUid %{public}d is not allow SetSplitModeReady", callerUid);
+    return eventEntry_->SetSplitModeReady();
 }
 
 int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)

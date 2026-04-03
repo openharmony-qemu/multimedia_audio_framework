@@ -129,6 +129,7 @@ public:
     bool abortRestore_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };
     mutable std::shared_ptr<AudioDeviceDescriptor> selectedDevice_ = nullptr;
+    bool mixWithWakeUp_ = false;
 
     AudioCapturerPrivate(AudioStreamType audioStreamType, const AppInfo &appInfo, bool createStream = true);
     virtual ~AudioCapturerPrivate();

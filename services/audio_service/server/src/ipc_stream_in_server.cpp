@@ -620,6 +620,16 @@ int32_t IpcStreamInServer::SetLoopTimes(int64_t bufferLoopTimes)
     return rendererInServer_->SetLoopTimes(bufferLoopTimes);
 }
 
+int32_t IpcStreamInServer::UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
+}
+
 int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)
 {
     CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,

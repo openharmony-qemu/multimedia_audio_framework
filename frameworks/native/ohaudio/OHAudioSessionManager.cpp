@@ -881,10 +881,10 @@ OH_AudioCommon_Result OHAudioSessionManager::SetCapturerMuteHint(bool mute)
     int32_t ret = audioSessionManager_->SetCapturerMuteHint(mute);
     if (ret != AUDIOCOMMON_RESULT_SUCCESS) {
         AUDIO_ERR_LOG("failed to SetCapturerMuteHint.");
-        if (ret == ERROR_ILLEGAL_STATE) {
+        if (ret == ERROR_ILLEGAL_STATE || ret == ERR_ILLEGAL_STATE) {
             return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
         }
-        if (ret == ERROR_INVALID_PARAM) {
+        if (ret == ERROR_INVALID_PARAM || ret == ERR_INVALID_PARAM) {
             return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
         }
         return AUDIOCOMMON_RESULT_ERROR_SYSTEM;

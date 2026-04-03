@@ -21,7 +21,6 @@
 
 #include "native_audio_device_enhance_manager.h"
 #include "OHAudioDeviceDescriptor.h"
-#include "OHAudioRenderer.h"
 
 namespace OHOS {
 namespace AudioStandard {

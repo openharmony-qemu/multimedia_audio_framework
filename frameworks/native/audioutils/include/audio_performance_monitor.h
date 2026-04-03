@@ -48,16 +48,23 @@ enum DetectEvent : uint8_t {
 
 enum AdapterType : uint8_t {
     ADAPTER_TYPE_UNKNOWN = 0,
-    ADAPTER_TYPE_PRIMARY = 1,
+    ADAPTER_TYPE_PRIMARY_NM = 1,
     ADAPTER_TYPE_DIRECT = 2,
     ADAPTER_TYPE_MULTICHANNEL = 3,
     ADAPTER_TYPE_FAST = 4,
-    ADAPTER_TYPE_REMOTE = 5,
+    ADAPTER_TYPE_REMOTE_NM = 5,
     ADAPTER_TYPE_BLUETOOTH = 6,
     ADAPTER_TYPE_VOIP_FAST = 7,
-    ADAPTER_TYPE_HEARING_AID = 8,
+    ADAPTER_TYPE_HEARING_AID_NM = 8,
     ADAPTER_TYPE_ULTRA_FAST = 9,
     ADAPTER_TYPE_MAX = 10,
+};
+
+enum AudioReasonInfo : uint8_t {
+    REASON_PLAYING_ISBACK = 1 << 0,
+    REASON_PLAYING_ISNODDL = 1 << 1,
+    REASON_PLAYING_ISARK = 1 << 2,
+    REASON_PLAYING_IS_SLOW_CB = 1 << 3,
 };
 
 struct FrameRecordInfo {
@@ -66,6 +73,11 @@ struct FrameRecordInfo {
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     uint32_t tokenId = 0;
     bool isRunning = false;
+    bool isBackPlay = false;
+    bool isUseArk = false;
+    bool isTimeoutCb = false;
+    bool isNoDdl = false;
+    int32_t appPid = 0;
 };
 
 class AudioPerformanceMonitor {
@@ -74,7 +86,7 @@ public:
 
     // silence Monitor records if server gets valid data from client
     void RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType, uint32_t uid);
-    void StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId);
+    void StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId, int32_t appPid);
     void PauseSilenceMonitor(uint32_t sessionId);
     void DeleteSilenceMonitor(uint32_t sessionId);
 
@@ -84,6 +96,10 @@ public:
     void DeleteOvertimeMonitor(AdapterType adapterType);
 
     void DumpMonitorInfo(std::string &dumpString);
+    void UpdateIsBackPlay(int32_t appPid, bool isBackPlay);
+    void UpdateIsUseArk(uint32_t sessionId, bool isUseArk);
+    void UpdateIsTimeoutCB(uint32_t sessionId, bool isTimeoutCb);
+    void UpdateIsNoDdl(uint32_t sessionId, bool isNoDdl);
 
 private:
     // all public funcs should hold this mutex
@@ -100,10 +116,10 @@ private:
     int64_t overTimeLastReportTime_ = -1;
 
     std::map<AdapterType, int64_t> MAX_WRITTEN_INTERVAL {
-        {ADAPTER_TYPE_PRIMARY, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},      // 100ms
+        {ADAPTER_TYPE_PRIMARY_NM, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},      // 100ms
         {ADAPTER_TYPE_DIRECT, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},       // 100ms
         {ADAPTER_TYPE_MULTICHANNEL, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS}, // 100ms
-        {ADAPTER_TYPE_REMOTE, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},       // 100ms
+        {ADAPTER_TYPE_REMOTE_NM, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},       // 100ms
         {ADAPTER_TYPE_BLUETOOTH, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},    // 100ms
         {ADAPTER_TYPE_FAST, FAST_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},           // 8ms
         {ADAPTER_TYPE_VOIP_FAST, VOIP_FAST_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS}, // 30ms
@@ -112,10 +128,10 @@ private:
 
     std::map<AdapterType, AudioPipeType> PIPE_TYPE_MAP {
         {ADAPTER_TYPE_UNKNOWN, PIPE_TYPE_UNKNOWN},
-        {ADAPTER_TYPE_PRIMARY, PIPE_TYPE_OUT_NORMAL},
+        {ADAPTER_TYPE_PRIMARY_NM, PIPE_TYPE_OUT_NORMAL},
         {ADAPTER_TYPE_DIRECT, PIPE_TYPE_OUT_DIRECT_NORMAL},
         {ADAPTER_TYPE_MULTICHANNEL, PIPE_TYPE_OUT_MULTICHANNEL},
-        {ADAPTER_TYPE_REMOTE, PIPE_TYPE_OUT_NORMAL},
+        {ADAPTER_TYPE_REMOTE_NM, PIPE_TYPE_OUT_NORMAL},
         {ADAPTER_TYPE_BLUETOOTH, PIPE_TYPE_OUT_NORMAL},
         {ADAPTER_TYPE_FAST, PIPE_TYPE_OUT_LOWLATENCY},
         {ADAPTER_TYPE_VOIP_FAST, PIPE_TYPE_OUT_VOIP},

@@ -199,6 +199,13 @@ int32_t AudioCoreService::EventEntry::SetOffloadAllowedForUid(uint32_t uid, bool
     return coreService_->SetOffloadAllowedForUid(uid, allowed);
 }
 
+int32_t AudioCoreService::EventEntry::SetSplitModeReady()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_UNKNOWN, "coreService_ is nullptr");
+    return coreService_->SetSplitModeReady();
+}
+
 int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

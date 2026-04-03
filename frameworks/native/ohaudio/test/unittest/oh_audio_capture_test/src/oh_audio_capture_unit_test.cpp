@@ -20,6 +20,21 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+class MuteHintReturnCapturer : public AudioCapturerPrivate {
+public:
+    explicit MuteHintReturnCapturer(int32_t ret)
+        : AudioCapturerPrivate(STREAM_MUSIC, AppInfo(), false), ret_(ret) {}
+
+    int32_t SetMuteHint(bool mute) override
+    {
+        (void)mute;
+        return ret_;
+    }
+
+private:
+    int32_t ret_;
+};
+
 FILE* g_file = nullptr;
 
 void OHAudioCaptureUnitTest::TearDownTestCase(void) { }
@@ -1596,6 +1611,40 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetMuteHint_002, TestSize.Level0
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetMuteHint API via ERR_ILLEGAL_STATE.
+* @tc.number: OH_AudioCapturer_SetMuteHint_003
+* @tc.desc  : Test OH_AudioCapturer_SetMuteHint interface.Returns illegal state for ERR_ILLEGAL_STATE.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetMuteHint_003, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<MuteHintReturnCapturer>(ERR_ILLEGAL_STATE);
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetMuteHint(audioCapturer, true);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetMuteHint API via ERR_INVALID_PARAM.
+* @tc.number: OH_AudioCapturer_SetMuteHint_004
+* @tc.desc  : Test OH_AudioCapturer_SetMuteHint interface.Returns invalid param for ERR_INVALID_PARAM.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetMuteHint_004, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    std::shared_ptr<AudioCapturer> audioCapturerImpl = std::make_shared<MuteHintReturnCapturer>(ERR_INVALID_PARAM);
+    ASSERT_NE(audioCapturerImpl, nullptr);
+    oHAudioCapturer.audioCapturer_ = audioCapturerImpl;
+
+    OH_AudioCapturer *audioCapturer = reinterpret_cast<OH_AudioCapturer *>(&oHAudioCapturer);
+    OH_AudioStream_Result result = OH_AudioCapturer_SetMuteHint(audioCapturer, false);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
 }
 
 #ifdef SUPPOR_PERMISSION

@@ -175,16 +175,19 @@ public:
     int32_t SetTarget(RenderTarget target, int32_t &ret);
     int32_t WriteDataInStaticMode(int8_t *inputData, size_t requestDataLen);
     int32_t SetLoopTimes(int64_t bufferLoopTimes);
+    int32_t UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal);
     int32_t GetStaticBufferInfo(StaticBufferInfo &staticBufferInfo);
     int32_t ResetStaticPlayPosition();
 
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag);
     bool IsWriteFirst() const noexcept;
     int32_t CalculateCacheCount(uint32_t cacheSizeInFrame, uint32_t &cacheCount);
+    void ReportExceptionForOffload();
 public:
     const AudioProcessConfig processConfig_;
 private:
     void OnStatusUpdateSub(IOperation operation);
+    void OnStatusUpdateSubs(IOperation operation);
     bool IsHighResolution() const noexcept;
     void WriteMuteDataSysEvent(BufferDesc &bufferDesc);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
@@ -327,6 +330,7 @@ private:
     int32_t fadeoutFlag_ = 0;
     int32_t effectModeWhenDual_ = EFFECT_DEFAULT;
     std::map<int32_t, int32_t> renderEmptyCountForInnerCapToInnerCapIdMap_;
+    IOperation offloadState_;
 
     // only read & write in CheckAndWriterRenderStreamStandbySysEvent
     bool lastWriteStandbyEnableStatus_ = false;
@@ -366,6 +370,7 @@ private:
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     std::unordered_map<int32_t, std::atomic<size_t>> innerCapFirstWriteMap_;
     bool isWriteFirst_ = false;
+    bool isOffloadJankReport = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

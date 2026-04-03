@@ -34,6 +34,7 @@
 #include "volume_tools.h"
 #include "app_bundle_manager.h"
 #include "audio_stream_types.h"
+#include "audio_performance_monitor.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -2118,6 +2119,10 @@ int32_t AudioRendererPrivate::SelectOutputDeviceInner(const std::shared_ptr<Audi
 
 int32_t AudioRendererPrivate::SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
 {
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
     selectedDevice_ = desc;
     return SelectOutputDeviceInner(selectedDevice_);
 }
@@ -3319,6 +3324,17 @@ int32_t AudioRendererPrivate::SetIndependentAudioSessionStrategy(
     audioInterrupt_.independentStrategy = strategy;
     AUDIO_INFO_LOG("Renderer id: %{public}d set independentStrategy: %{public}d",
         sessionID_, static_cast<int32_t>(strategy.concurrencyMode));
+    return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::SetMainUseArk(bool isMainUseArk)
+{
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audio stream is null");
+    if (!isFirstSetMainUseArk_) {
+        return ERROR_ILLEGAL_STATE;
+    }
+    audioStream_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISUSEARK, isMainUseArk);
+    isFirstSetMainUseArk_ = false;
     return SUCCESS;
 }
 }  // namespace AudioStandard

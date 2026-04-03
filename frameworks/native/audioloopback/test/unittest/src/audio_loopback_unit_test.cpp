@@ -15,6 +15,7 @@
 
 #include "audio_loopback_unit_test.h"
 #include "audio_loopback_private.h"
+#include "audio_device_enhance_manager.h"
 #include "audio_errors.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
@@ -116,6 +117,84 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_004, TestSize
     audioLoopback->UpdateStatus();
     EXPECT_EQ(audioLoopback->GetStatus(), LOOPBACK_UNAVAILABLE_DEVICE);
     audioLoopback->DestroyAudioLoopback();
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectOutputDeviceForAudioRenderer_001, TestSize.Level0)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioRenderer> audioRenderer = nullptr;
+    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectOutputDeviceForAudioRenderer(audioRenderer, desc);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectOutputDeviceForAudioRenderer_002, TestSize.Level0)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    auto renderer = std::make_shared<NiceMock<MockAudioRenderer>>();
+    std::shared_ptr<AudioRenderer> audioRenderer = renderer;
+    EXPECT_CALL(*renderer, SelectOutputDevice(desc)).WillOnce(Return(SUCCESS));
+
+    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectOutputDeviceForAudioRenderer(audioRenderer, desc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectOutputDeviceForAudioRenderer_003, TestSize.Level0)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    auto renderer = std::make_shared<NiceMock<MockAudioRenderer>>();
+    std::shared_ptr<AudioRenderer> audioRenderer = renderer;
+    EXPECT_CALL(*renderer, SelectOutputDevice(desc)).WillOnce(Return(ERR_INVALID_PARAM));
+
+    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectOutputDeviceForAudioRenderer(audioRenderer, desc);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectInputDeviceForAudioCapturer_001, TestSize.Level0)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioCapturer> audioCapturer = nullptr;
+    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectInputDeviceForAudioCapturer(audioCapturer, desc);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectInputDeviceForAudioCapturer_002, TestSize.Level0)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    auto capturer = std::make_shared<NiceMock<MockAudioCapturer>>();
+    std::shared_ptr<AudioCapturer> audioCapturer = capturer;
+    EXPECT_CALL(*capturer, SelectInputDevice(desc)).WillOnce(Return(SUCCESS));
+
+    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectInputDeviceForAudioCapturer(audioCapturer, desc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_SelectInputDeviceForAudioCapturer_003, TestSize.Level0)
+{
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    auto capturer = std::make_shared<NiceMock<MockAudioCapturer>>();
+    std::shared_ptr<AudioCapturer> audioCapturer = capturer;
+    EXPECT_CALL(*capturer, SelectInputDevice(desc)).WillOnce(Return(ERR_INVALID_PARAM));
+
+    auto ret = AudioDeviceEnhanceManager::GetInstance().SelectInputDeviceForAudioCapturer(audioCapturer, desc);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_RendererBaseSelectOutputDevice_001, TestSize.Level0)
+{
+    MockAudioRenderer renderer;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    
+    auto ret = renderer.AudioRenderer::SelectOutputDevice(desc);
+    EXPECT_EQ(ret, -1);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Device_Enhance_Manager_CapturerBaseSelectInputDevice_001, TestSize.Level0)
+{
+    MockAudioCapturer capturer;
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+
+    auto ret = capturer.AudioCapturer::SelectInputDevice(desc);
+    EXPECT_EQ(ret, -1);
 }
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_005, TestSize.Level1)

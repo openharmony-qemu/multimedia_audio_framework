@@ -156,7 +156,8 @@ void StartSilenceMonitorFuzzTest()
 {
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t tokenId = GetData<uint32_t>();
-    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, tokenId);
+    uint32_t appPid = GetData<uint32_t>();
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, tokenId, appPid);
 }
 
 vector<TestFuncs> g_testFuncs = {

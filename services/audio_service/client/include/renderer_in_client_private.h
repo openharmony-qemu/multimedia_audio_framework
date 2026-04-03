@@ -237,11 +237,14 @@ public:
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    void UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal) override;
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
 
     bool ResetStaticPlayPosition() override;
+    void ReportExceptionForInterval();
+    void CheckAndReportTimestamp();
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -350,6 +353,8 @@ private:
     int32_t clientUid_ = -1;
     uint32_t appTokenId_ = 0;
     uint64_t fullTokenId_ = 0;
+    int64_t lastTriggerTime_ = 0;
+    bool logStopCallCount_ = false;
 
     std::unique_ptr<AudioStreamTracker> audioStreamTracker_;
 

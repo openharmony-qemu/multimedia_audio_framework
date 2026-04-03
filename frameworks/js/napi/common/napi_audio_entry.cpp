@@ -27,6 +27,7 @@
 #include "napi_audio_interrupt_manager.h"
 #include "napi_audio_spatialization_manager.h"
 #include "napi_audio_collaborative_manager.h"
+#include "napi_audio_device_enhance_manager.h"
 #include "napi_asr_processing_controller.h"
 #include "napi_audio_session_manager.h"
 #include "napi_audio_loopback.h"
@@ -53,6 +54,7 @@ static napi_value Init(napi_env env, napi_value exports)
     NapiAsrProcessingController::Init(env, exports);
     NapiAudioSessionMgr::Init(env, exports);
     NapiAudioCollaborativeManager::Init(env, exports);
+    NapiAudioDeviceEnhanceManager::Init(env, exports);
     NapiAudioLoopback::Init(env, exports);
     return exports;
 }

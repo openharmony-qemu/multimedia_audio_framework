@@ -532,6 +532,11 @@ public:
         return sharedAudioRenderer_->GetKeepRunning(keepRunning);
     }
 
+    int32_t SetMainUseArk(bool isMainUseArk) override
+    {
+        return sharedAudioRenderer_->SetMainUseArk(isMainUseArk);
+    }
+
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override
     {
         return sharedAudioRenderer_->SetLoopTimes(bufferLoopTimes);
@@ -540,6 +545,11 @@ public:
     int32_t SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const override
     {
         return sharedAudioRenderer_->SelectOutputDevice(desc);
+    }
+
+    int32_t SetIndependentAudioSessionStrategy(const AudioSessionStrategy &strategy, const uint32_t behavior) override
+    {
+        return sharedAudioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
     }
 
     explicit SharedAudioRendererWrapper(std::shared_ptr<AudioRenderer> renderer) : sharedAudioRenderer_(renderer)

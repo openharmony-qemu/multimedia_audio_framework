@@ -162,7 +162,6 @@ private:
     static constexpr int32_t ZONEID_INVALID = -1;
     static constexpr float DUCK_FACTOR = 0.2f;
     static constexpr int32_t DEFAULT_APP_PID = -1;
-    static constexpr int32_t STREAM_DEFAULT_PRIORITY = 100;
     static constexpr int32_t RSS_UID = 1096;
 
     using InterruptIterator = std::list<std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator>;

@@ -325,6 +325,7 @@ public:
 
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
+    int32_t UpdateSpatializationState(AudioSpatializationState spatializationState);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
     void RegisterMdmMuteSwitchCallback();
@@ -533,6 +534,7 @@ private:
     void SaveSystemAppVolumeMuteStatusToDb(bool isAsync);
     int32_t RestoreSystemAppVolumeLevel();
     int32_t RestoreSystemAppVolumeMuteStatus();
+    bool IsStreamTypeInUse(AudioStreamType streamType, std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)

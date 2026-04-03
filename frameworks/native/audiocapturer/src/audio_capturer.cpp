@@ -153,6 +153,8 @@ void AudioCapturerPrivate::SetCapturerInfoByOptions(const AudioCapturerOptions &
     // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
     filterConfig_ = capturerOptions.playbackCaptureConfig;
     strategy_ = capturerOptions.strategy;
+    mixWithWakeUp_ = capturerOptions.mixWithWakeUp;
+    capturerInfo_.mixWithWakeUp = mixWithWakeUp_;
 }
 
 // LCOV_EXCL_START
@@ -663,6 +665,10 @@ int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<Audio
 
 int32_t AudioCapturerPrivate::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
 {
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
     selectedDevice_ = desc;
     return SelectInputDeviceInner(selectedDevice_);
 }
@@ -765,6 +771,7 @@ int32_t AudioCapturerPrivate::InitAudioInterruptCallback()
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.audioFocusType.sourceType = capturerInfo_.sourceType;
     audioInterrupt_.sessionStrategy = strategy_;
+    audioInterrupt_.mixWithWakeUp = mixWithWakeUp_;
     audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
     if (audioInterrupt_.bundleName.empty()) {
         audioInterrupt_.bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName();

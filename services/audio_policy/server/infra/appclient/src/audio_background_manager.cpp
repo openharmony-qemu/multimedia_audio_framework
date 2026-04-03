@@ -29,6 +29,7 @@
 #include "background_task_subscriber.h"
 #include "background_task_mgr_helper.h"
 #include "media_monitor_manager.h"
+#include "audio_performance_monitor.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -103,6 +104,7 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
 void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32_t pid, AppIsBackState state)
 {
     bool isBack = (state != STATE_FOREGROUND);
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(pid, true);
     {
         std::lock_guard<std::mutex> lock(appStatesMapMutex_);
         if (state == STATE_END) {

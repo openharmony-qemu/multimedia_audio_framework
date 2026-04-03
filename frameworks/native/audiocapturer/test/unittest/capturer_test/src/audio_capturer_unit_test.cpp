@@ -15,6 +15,7 @@
 
 #include "audio_capturer_unit_test.h"
 
+#include <future>
 #include <thread>
 
 #include "audio_capturer.h"
@@ -2201,6 +2202,56 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RestoreAudioInLoop_001, TestSize.Le
     audioCapturer->RestoreAudioInLoop(restoreResult, tryCounter);
     EXPECT_EQ(true, restoreResult);
 
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test SelectInputDevice will wait for capturer mutex
+ * @tc.number: Audio_Capturer_SelectInputDevice_001
+ * @tc.desc  : Test SelectInputDevice is synchronized with capturer mutex.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SelectInputDevice_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    std::unique_lock<std::shared_mutex> lock(audioCapturer->capturerMutex_);
+    auto future = std::async(std::launch::async, [audioCapturer, desc]() {
+        return audioCapturer->SelectInputDevice(desc);
+    });
+
+    EXPECT_EQ(future.wait_for(std::chrono::milliseconds(50)), std::future_status::timeout);
+    lock.unlock();
+    EXPECT_NE(future.wait_for(std::chrono::seconds(3)), std::future_status::timeout);
+    (void)future.get();
+    EXPECT_EQ(audioCapturer->selectedDevice_, desc);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test SelectInputDevice no need wait for capturer mutex
+ * @tc.number: Audio_Capturer_SelectInputDevice_002
+ * @tc.desc  : Test SelectInputDevice is synchronized with capturer mutex.
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_SelectInputDevice_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    ASSERT_NE(nullptr, audioCapturer);
+
+    auto desc = std::make_shared<AudioDeviceDescriptor>();
+    auto id = audioCapturer->callbackLoopTid_;
+    audioCapturer->callbackLoopTid_ = gettid();
+    audioCapturer->SelectInputDevice(desc);
+    EXPECT_EQ(audioCapturer->selectedDevice_, desc);
+    audioCapturer->callbackLoopTid_ = id;
     bool isReleased = audioCapturer->Release();
     EXPECT_EQ(true, isReleased);
 }

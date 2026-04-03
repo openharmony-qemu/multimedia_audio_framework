@@ -23,6 +23,7 @@ ohos_unittest("audio_loopback_unit_test") {
     "./include",
     "../../include",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../audiostream/include",
   ]
 

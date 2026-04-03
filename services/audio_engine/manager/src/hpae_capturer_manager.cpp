@@ -100,6 +100,7 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     sourceOutputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     sessionNodeMap_[streamInfo.sessionId].sceneType = sceneType;
+    sessionNodeMap_[streamInfo.sessionId].mixWithWakeUp = streamInfo.mixWithWakeUp;
 
     CreateSceneCluster(sceneType, enhanceScene);
 
@@ -553,15 +554,18 @@ void HpaeCapturerManager::UpdateAppsUidAndSessionId()
     }
 }
 void HpaeCapturerManager::NotifyStreamChangeToSource(
-    StreamChangeType change, uint32_t sessionId, CapturerState state, uint32_t appUid, bool mute)
+    StreamChangeType change, uint32_t sessionId, CapturerState state, uint32_t appUid, bool mute, bool mixWithWakeUp)
 {
     SourceType source = SOURCE_TYPE_INVALID;
     if (sourceOutputNodeMap_.find(sessionId) != sourceOutputNodeMap_.end()) {
         source = sourceOutputNodeMap_[sessionId]->GetSourceType();
     }
+    if (sessionNodeMap_.find(sessionId) != sessionNodeMap_.end()) {
+        mixWithWakeUp = sessionNodeMap_[sessionId].mixWithWakeUp;
+    }
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) && sourceInputClusterMap_[mainMicType_]) {
         sourceInputClusterMap_[mainMicType_]->NotifyStreamChangeToSource(change, sessionId, source, state,
-            appUid, mute);
+            appUid, mute, mixWithWakeUp);
     }
 }
 

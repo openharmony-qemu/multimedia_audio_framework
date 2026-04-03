@@ -535,8 +535,6 @@ void AudioCapturerImpl::SetMuteHintSync(bool mute)
     int32_t ret = audioCapturer_->SetMuteHint(mute);
     if (ret == OHOS::AudioStandard::ERROR_ILLEGAL_STATE || ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "SetMuteHint failed");
-    } else if (ret == OHOS::AudioStandard::ERROR_INVALID_PARAM || ret == OHOS::AudioStandard::ERR_INVALID_PARAM) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "SetMuteHint failed");
     } else if (ret != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetMuteHint failed");
     }
