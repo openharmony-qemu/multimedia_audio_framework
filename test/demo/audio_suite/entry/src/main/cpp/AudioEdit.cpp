@@ -122,6 +122,15 @@ struct FileInfo {
     off_t fileSize;
 };
 
+// Process state structure
+struct ProcessState {
+    int32_t bufferSize;
+    int32_t processCount;
+    int32_t zeroOutputCount;
+    bool hasError;
+    bool retryWithSmallerBuffer;
+};
+
 const int32_t SAMPLE_RATE_THRESHOLD_HIGH = 192000;
 const int32_t SAMPLE_RATE_THRESHOLD_MID = 96000;
 const int32_t SAMPLE_RATE_THRESHOLD_LOW = 44100;
@@ -1517,45 +1526,43 @@ static void ResetProcessState()
 }
 
 // Handle process error
-static bool HandleProcessError(OH_AudioConverter_Result result, int32_t processCount,
-                                bool &retryWithSmallerBuffer, bool &hasError, void *outputData)
+static bool HandleProcessError(OH_AudioConverter_Result result, ProcessState &state, void *outputData)
 {
-    if (result == AUDIOCONVERTER_ERROR_UNKNOWN_CODE && !retryWithSmallerBuffer &&
-        processCount == FIRST_PROCESS_ATTEMPT) {
-        retryWithSmallerBuffer = true;
+    if (result == AUDIOCONVERTER_ERROR_UNKNOWN_CODE && !state.retryWithSmallerBuffer &&
+        state.processCount == FIRST_PROCESS_ATTEMPT) {
+        state.retryWithSmallerBuffer = true;
         delete[] static_cast<uint8_t *>(outputData);
         ResetProcessState();
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "HandleProcessError: Retrying with smaller buffer");
         return true; // Continue retry
     }
 
-    hasError = true;
+    state.hasError = true;
     OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
                  "HandleProcessError: Error occurred, result=%{public}d, hasError=true",
                  static_cast<int>(result));
     delete[] static_cast<uint8_t*>(outputData);
     return false; // Stop processing
 }
-
 // Handle process output data
-static bool HandleProcessOutput(void *outputData, int32_t outputSize, int32_t &zeroOutputCount, bool &hasError)
+static bool HandleProcessOutput(void *outputData, int32_t outputSize, ProcessState &state)
 {
     if (outputSize > 0) {
         if (!AccumulateOutputData(outputData, outputSize)) {
             OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
                          "HandleProcessOutput: AccumulateOutputData failed");
             delete[] static_cast<uint8_t*>(outputData);
-            hasError = true;
+            state.hasError = true;
             return false; // Stop processing
         }
-        zeroOutputCount = 0;
+        state.zeroOutputCount = 0;
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                      "HandleProcessOutput: Data accumulated, g_outputDataLen=%{public}u", g_outputDataLen);
     } else {
-        zeroOutputCount++;
+        state.zeroOutputCount++;
         OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                     "HandleProcessOutput: Zero output, zeroOutputCount=%{public}d", zeroOutputCount);
-        if (zeroOutputCount >= ZERO_OUTPUT_THRESHOLD) {
+                     "HandleProcessOutput: Zero output, zeroOutputCount=%{public}d", state.zeroOutputCount);
+        if (state.zeroOutputCount >= ZERO_OUTPUT_THRESHOLD) {
             OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                          "HandleProcessOutput: Reached zero output threshold, processing complete");
             delete[] static_cast<uint8_t*>(outputData);
@@ -1612,35 +1619,33 @@ static bool ValidateInputData()
 }
 
 // Initialize process parameters
-static void InitializeProcessParameters(int32_t &bufferSize, int32_t &processCount, int32_t &zeroOutputCount,
-                                        bool &hasError, bool &retryWithSmallerBuffer)
+static void InitializeProcessParameters(ProcessState &state)
 {
-    bufferSize = CalculateBufferSize();
-    processCount = 0;
-    zeroOutputCount = 0;
-    hasError = false;
-    retryWithSmallerBuffer = false;
+    state.bufferSize = CalculateBufferSize();
+    state.processCount = 0;
+    state.zeroOutputCount = 0;
+    state.hasError = false;
+    state.retryWithSmallerBuffer = false;
 }
 
 // Process single iteration
-static bool ProcessIteration(OH_AudioConverter *converter, int32_t bufferSize, int32_t &processCount,
-                             int32_t &zeroOutputCount, bool &hasError, bool &retryWithSmallerBuffer)
+static bool ProcessIteration(OH_AudioConverter *converter, ProcessState &state)
 {
-    int32_t currentBufferSize = retryWithSmallerBuffer ? RETRY_BUFFER_SIZE : bufferSize;
+    int32_t currentBufferSize = state.retryWithSmallerBuffer ? RETRY_BUFFER_SIZE : state.bufferSize;
     void *outputData = new uint8_t[currentBufferSize];
     int32_t outputSize = 0;
     OH_AudioConverter_Result result = OH_AudioConverter_Process(converter, outputData, currentBufferSize, &outputSize);
-    processCount++;
+    state.processCount++;
     OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
                  "ProcessIteration: processCount=%{public}d, result=%{public}d, outputSize=%{public}d, "
                  "zeroOutputCount=%{public}d, g_outputDataLen=%{public}u",
-                 processCount, static_cast<int>(result), outputSize, zeroOutputCount, g_outputDataLen);
+                 state.processCount, static_cast<int>(result), outputSize, state.zeroOutputCount, g_outputDataLen);
 
     if (result != AUDIOCONVERTER_SUCCESS) {
-        return HandleProcessError(result, processCount, retryWithSmallerBuffer, hasError, outputData);
+        return HandleProcessError(result, state, outputData);
     }
 
-    if (!HandleProcessOutput(outputData, outputSize, zeroOutputCount, hasError)) {
+    if (!HandleProcessOutput(outputData, outputSize, state)) {
         return false;
     }
 
@@ -1688,22 +1693,17 @@ static napi_value AudioConverterProcess(napi_env env, napi_callback_info info)
 
     // Reset output data
     ResetOutputData();
-    int32_t bufferSize;
-    int32_t processCount;
-    int32_t zeroOutputCount;
-    bool hasError;
-    bool retryWithSmallerBuffer;
-    InitializeProcessParameters(bufferSize, processCount, zeroOutputCount, hasError, retryWithSmallerBuffer);
+    ProcessState state;
+    InitializeProcessParameters(state);
 
-    while (processCount < MAX_PROCESS_ATTEMPTS) {
-        bool shouldContinue =
-            ProcessIteration(converter, bufferSize, processCount, zeroOutputCount, hasError, retryWithSmallerBuffer);
+    while (state.processCount < MAX_PROCESS_ATTEMPTS) {
+        bool shouldContinue = ProcessIteration(converter, state);
         if (!shouldContinue) {
             break;
         }
     }
 
-    napi_value napiValue = CreateFinalResult(env, hasError);
+    napi_value napiValue = CreateFinalResult(env, state.hasError);
     delete[] argv;
     return napiValue;
 }
