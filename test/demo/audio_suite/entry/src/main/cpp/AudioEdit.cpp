@@ -30,9 +30,11 @@
 #include "audioSuiteError/AudioSuiteError.h"
 #include "audioEffectNode/Input.h"
 #include "audioEffectNode/Output.h"
+#include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/ParseNapiParam.h"
 #include "audioEffectNode/Equalizer.h"
 #include "audioEffectNode/SoundField.h"
+#include "callback/RegisterCallback.h"
 #include "audioEffectNode/NoiseReduction.h"
 #include "audioEffectNode/EnvEffect.h"
 #include "audioEffectNode/SpaceRender.h"
@@ -42,6 +44,7 @@
 #include "callback/RegisterCallbackNapi.h"
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
+#include "audioSuiteError/AudioSuiteError.h"
 #include "multiPipelineEdit/MultiPipelineEdit.h"
 #include "audioRecord/AudioRecord.h"
 #include "timeline/Timeline_napi.h"
@@ -52,6 +55,7 @@
 #include <multimedia/player_framework/native_avbuffer.h>
 #include <fcntl.h>
 #include "ohaudiosuite/native_audio_converter.h"
+#include "ohaudiosuite/native_audio_suite_base.h
 #include <cmath>
 
 const int GLOBAL_RESMGR = 0xFF00;
