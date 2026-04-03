@@ -1534,6 +1534,8 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
         !VolumeUtils::IsPCVolumeEnable()) {
         UpdateRingerOrAlarmerDualDeviceOutputRouter(streamDesc);
     } else {
+        CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID,
+            "remote device no need to update route");
         if (isRingDualToneOnPrimarySpeaker_ && streamUsage != STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
             std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
             activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
