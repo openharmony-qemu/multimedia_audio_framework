@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.asdasd
+ * Copyright (c) 2025 Huawei Device Co., Ltd. 2025-2025. ALL rights reserved.
  */
 
 export * from "./multiPipelineIndex";
@@ -28,7 +28,7 @@ export const startFieldEffect: (inputId: string, mode: number, fieldEffectId: st
 export const resetFieldEffect: (inputId: string, mode: number, fieldEffectId: string) => number;
 export const startEnvEffect: (inputId: string, envEffectId: string, mode: number, selectedNodeId?: string) => number;
 export const resetEnvEffect: (inputId: string, envEffectId: string, mode: number) => number;
-export const addAudioSeparation: (mode: number, uuid: string, inputId?:string, selectedNodeId?: string, is_AllSep?: boolean) => number;
+export const addAudioSeparation: (mode: number, uuid: string, inputId:string, selectedNodeId?: string, is_AllSep?: boolean) => number;
 export const deleteAudioSeparation: (uuid: string) => number;
 export const getAudioOfTap:() => ArrayBuffer;
 export const addNoiseReduction: (uuid: string, inputId:string, selectedNode?: string) => number;
@@ -66,7 +66,7 @@ export const registerAudioCacheCallback: (callBackFull: Function) => boolean;
 export const unregisterAudioCacheCallback: () => void;
 export const ModifyRender: (notRenderTrackIds: string[], renderTrackIds: string[]) => void;
 export const setCurrentTime: (currentTime: number) => void;
-export const setEffectNodeBypass: (inputId: string, effectId: string, isBypass: boolean) => boolean;
+export const setEffectNodeBypass: (inputId: string, effectId: string, is: boolean) => boolean;
 export const audioConverterCreate: (inputFormat: {
   encodingType: number;
   samplingRate: number;
@@ -81,3 +81,13 @@ export const audioConverterCreate: (inputFormat: {
 export const audioConverterSetInputCallback: (converter: number) => number;
 export const audioConverterProcess: (converter: number) => ArrayBuffer;
 export const audioConverterDestroy: (converter: number) => void;
+export const saveConverterFile: () => ArrayBuffer;
+export interface AudioFileInfo {
+  samplingRate: number;
+  channelLayout: number;
+  numChannels: number;
+  sampleFormat: number;
+  encodingType: number;
+  fileSize: number;
+}
+export const audioConverterGetFileInfo: (fd: number) => AudioFileInfo;
