@@ -126,6 +126,7 @@ public:
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
+        int32_t SetSplitModeReady();
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
@@ -322,6 +323,7 @@ public:
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast);
     uint32_t GenerateSessionId();
+    int32_t SetSplitModeReady();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnCheckActiveMusicTime(const std::string &reason);
 

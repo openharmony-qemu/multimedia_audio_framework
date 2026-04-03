@@ -145,8 +145,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(
         sptr<AudioRendererFilter> audioRendererFilter);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
-        sptr<AudioCapturerFilter> audioCapturerFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
 
@@ -680,6 +679,8 @@ public:
 
     int32_t UnsetAudioSceneChangeCallback(
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+
+    int32_t SetSplitModeReady();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 

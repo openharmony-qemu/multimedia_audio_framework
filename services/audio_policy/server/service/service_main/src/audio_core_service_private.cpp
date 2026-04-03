@@ -657,6 +657,16 @@ void AudioCoreService::ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pi
     ProcessOutputPipeUpdate(pipeInfo, flag, reason);
 }
 
+// This API is called by non-split-car to ensure that device can be selected.
+int32_t AudioCoreService::SetSplitModeReady()
+{
+    AUDIO_INFO_LOG("SetSplitModeReady");
+    int32_t setRet = AudioRouterCenter::GetAudioRouterCenter().SetSplitModeReady();
+    CHECK_AND_RETURN_RET_LOG(setRet != 0, setRet, "SetSplitModeReady failed");
+    FetchOutputDeviceAndRoute("SetSplitModeReady");
+    return SUCCESS;
+}
+
 int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     AUDIO_INFO_LOG("[ADeviceEvent] Start split args: %{public}s", splitArgs.c_str());
@@ -686,6 +696,9 @@ int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const st
     if (openRet != 0) {
         AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
     }
+    // Notify router split mode is ready to ensure device can be selected.
+    int32_t setRet = AudioRouterCenter::GetAudioRouterCenter().SetSplitModeReady();
+    JUDGE_AND_ERR_LOG(setRet != 0, "set failed, SetSplitModeReady ret: %{public}d", setRet);
     AudioIOHandle newModuleId;
     audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
     pipeManager_->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);

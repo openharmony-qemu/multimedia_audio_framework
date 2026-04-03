@@ -221,6 +221,7 @@ public:
     MOCK_METHOD(int32_t, OnDistributedRoutingRoleChange,
         (const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type), (override));
     MOCK_METHOD(int32_t, OnDistributedServiceOnline, (), (override));
+    MOCK_METHOD(int32_t, SetSplitModeReadyRefined, (), (override));
 };
 
 /**

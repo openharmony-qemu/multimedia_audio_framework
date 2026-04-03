@@ -229,6 +229,7 @@ interface IAudioPolicy {
     void DeactivateAudioSession();
     void IsAudioSessionActivated([out] boolean retIsActivated);
     void SetInputDevice([in] int deviceType, [in] unsigned int session_ID, [in] int sourceType, [in] boolean isRunning);
+    void SetSplitModeReady();
     void LoadSplitModule([in] String splitArgs, [in] String networkId);
     void GetSystemActiveVolumeType([in] int clientUid, [out] int audioStreamType); //  AudioStreamType audioStreamType
     void GetOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
