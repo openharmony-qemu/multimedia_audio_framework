@@ -420,7 +420,7 @@ OH_AudioConverter_Result OHAudioConverter::CalculateProcessableBytesInternal(
 {
     double sampleRateRatio =
         static_cast<double>(inputFormat_.sampleRate) / static_cast<double>(outputFormat_.sampleRate);
-    uint32_t estimatedInputFrames = static_cast<int32_t>(params.maxOutputFrames * sampleRateRatio);
+    uint32_t estimatedInputFrames = static_cast<uint32_t>(params.maxOutputFrames * sampleRateRatio);
     uint32_t maxProcessableBytes = std::min(params.alignedCachedSize,
         static_cast<uint32_t>(estimatedInputFrames * params.inputBytesPerFrame));
     bool is11025SampleRate =
@@ -453,7 +453,7 @@ OH_AudioConverter_Result OHAudioConverter::CalculateProcessableBytesInternal(
 }
 
 OH_AudioConverter_Result OHAudioConverter::WrapAndConvertInputData(
-    int32_t processableSize, AudioSuite::AudioSuitePcmBuffer* outConvertedBuffer)
+    uint32_t processableSize, AudioSuite::AudioSuitePcmBuffer* outConvertedBuffer)
 {
     AudioSuite::AudioSuitePcmBuffer wrappedInput;
     OH_AudioConverter_Result wrapResult = WrapInputData(
@@ -569,7 +569,7 @@ OH_AudioConverter_Result OHAudioConverter::ProcessSingleBlock(
     uint32_t alignedProcessableBytes = 0;
     CHECK_AND_RETURN_RET_LOG(
         outputBytesPerFrame != 0, AUDIOCONVERTER_ERROR_INVALID_PARAM, "The output format frame length cannot be 0.");
-    int32_t currentMaxOutputFrames = context.remainingCapacity / outputBytesPerFrame;
+    uint32_t currentMaxOutputFrames = context.remainingCapacity / outputBytesPerFrame;
 
     InputProcessParams inputParams = {
         inputBytesPerFrame, currentMaxOutputFrames, outputBytesPerFrame, context.remainingCapacity};
