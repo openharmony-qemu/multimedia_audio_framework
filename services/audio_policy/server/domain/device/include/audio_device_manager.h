@@ -120,6 +120,7 @@ public:
     AudioDevicePrivacyType GetDevicePrivacyType(const shared_ptr<AudioDeviceDescriptor> &devDesc);
     int32_t GetDevicePriority(const std::shared_ptr<AudioDeviceDescriptor> &desc);
     bool IsDeviceAvailable(AudioDeviceUsage audioDevUsage, const std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void UpdateDeviceDescriptorByCapability(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
 
 private:
     AudioDeviceManager();
