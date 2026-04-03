@@ -27,6 +27,9 @@
 #include "taihe_audio_enum.h"
 
 namespace ANI::Audio {
+
+constexpr int32_t ALL_APPS_UID = -1;
+
 TaiheAudioManagerAppVolumeChangeCallback::TaiheAudioManagerAppVolumeChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioManagerAppVolumeChangeCallback: instance create");
@@ -111,7 +114,7 @@ void TaiheAudioManagerAppVolumeChangeCallback::OnAppVolumeChangedForUid(int32_t 
     }
     AUDIO_DEBUG_LOG("OnAppVolumeChangedForUid: appUid[%{public}d]", appUid);
     for (auto iter : appVolumeChangeForUidList_) {
-        if (appUid != iter.second) {
+        if (appUid != iter.second && iter.second != ALL_APPS_UID) {
             continue;
         }
         std::unique_ptr<AudioManagerAppVolumeChangeJsCallback> cb =

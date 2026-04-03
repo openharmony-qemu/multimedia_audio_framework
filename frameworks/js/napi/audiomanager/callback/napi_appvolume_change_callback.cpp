@@ -27,6 +27,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+constexpr int32_t ALL_APPS_UID = -1;
+
 NapiAudioManagerAppVolumeChangeCallback::NapiAudioManagerAppVolumeChangeCallback(napi_env env)
     : env_(env)
 {
@@ -140,7 +143,7 @@ void NapiAudioManagerAppVolumeChangeCallback::OnAppVolumeChangedForUid(int32_t a
     }
     AUDIO_DEBUG_LOG("OnAppVolumeChangedForUid: appUid[%{public}d]", appUid);
     for (auto iter : appVolumeChangeForUidList_) {
-        if (appUid != iter.second) {
+        if (appUid != iter.second && iter.second != ALL_APPS_UID) {
             continue;
         }
         std::unique_ptr<AudioManagerAppVolumeChangeJsCallback> cb =
