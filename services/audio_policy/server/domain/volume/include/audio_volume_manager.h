@@ -153,6 +153,8 @@ public:
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0, std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr, int32_t previousVolume = -1);
+    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
+        int32_t zoneId = 0, int32_t previousVolume = -1);
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::shared_ptr<LoudVolumeManager> GetLoudVolumeManager();
 #endif
@@ -214,6 +216,7 @@ public:
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
     bool IsRingerModeValid(AudioRingerMode ringMode);
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
+    void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),

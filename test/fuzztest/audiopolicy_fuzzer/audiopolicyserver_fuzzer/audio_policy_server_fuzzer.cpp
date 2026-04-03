@@ -481,7 +481,7 @@ void AudioPolicyServerUpdateSystemMuteStateAccordingMusicStateFuzzTest()
     bool mute = true;
     bool isUpdateUi = true;
     AudioStreamType streamType = AudioStreamType::STREAM_ALL;
-    audioPolicyServer->UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
+    audioPolicyServer->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi);
 }
 
 void AudioPolicyServerSendMuteKeyEventCbWithUpdateUiOrNotFuzzTest()
@@ -491,7 +491,7 @@ void AudioPolicyServerSendMuteKeyEventCbWithUpdateUiOrNotFuzzTest()
     int32_t zoneId = GetData<int32_t>();
     bool isUpdateUi = true;
     AudioStreamType streamType = AudioStreamType::STREAM_ALL;
-    audioPolicyServer->SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId);
+    audioPolicyServer->audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId);
 }
 
 void AudioPolicyServerSetSingleStreamMuteFuzzTest()

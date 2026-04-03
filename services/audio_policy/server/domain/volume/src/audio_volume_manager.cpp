@@ -2249,6 +2249,24 @@ void AudioVolumeManager::SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType s
     }
 }
 
+void AudioVolumeManager::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType,
+    const bool& isUpdateUi, int32_t zoneId, int32_t previousVolume)
+{
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = streamType;
+    volumeEvent.volume = GetSystemVolumeLevelInterface(streamType, zoneId);
+    volumeEvent.volumeDegree = GetSystemVolumeDegreeInterface(streamType, zoneId);
+    volumeEvent.updateUi = isUpdateUi;
+    volumeEvent.volumeGroupId = 0;
+    volumeEvent.networkId = LOCAL_NETWORK_ID;
+    volumeEvent.previousVolume = previousVolume;
+    volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+        audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
+    }
+}
+
 int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteStateInterface(AudioStreamType streamType)
 {
     if (streamType == STREAM_ALL) {
@@ -2473,6 +2491,30 @@ int32_t AudioVolumeManager::SetSingleStreamVolumeWithDevice(AudioStreamType stre
         ret = SetSingleStreamVolume(streamType, volumeLevel, option);
     }
     return ret;
+}
+
+void AudioVolumeManager::UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute,
+    bool isUpdateUi)
+{
+    // This function only applies to mute/unmute scenarios where the input type is music on the PC platform
+    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    if (volumeType != AudioStreamType::STREAM_MUSIC || !VolumeUtils::IsPCVolumeEnable()) {
+        return;
+    }
+    if (mute && !GetStreamMuteInterface(STREAM_SYSTEM)) {
+        // If the STREAM_MUSIC wants mute, synchronize the mute STREAM_SYSTEM
+        SetStreamMute(STREAM_SYSTEM, mute);
+        SendMuteKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, isUpdateUi);
+        AUDIO_WARNING_LOG("music is mute or volume change to 0 and need mute system stream");
+    } else if (!mute && GetStreamMuteInterface(STREAM_SYSTEM)) {
+        // If you STREAM_MUSIC unmute, you need to determine whether the volume is 0
+        // if it is 0, the prompt sound will continue to be mute, and if it is not 0
+        // you need to synchronize the unmute prompt sound
+        bool isMute = (GetSystemVolumeLevelInterface(STREAM_MUSIC) == 0) ? true : false;
+        SetStreamMute(STREAM_SYSTEM, isMute);
+        SendMuteKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, isUpdateUi);
+        AUDIO_WARNING_LOG("music is unmute and volume is 0 and need %{public}d system stream", isMute);
+    }
 }
 }
 }

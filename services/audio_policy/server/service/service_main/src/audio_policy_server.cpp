@@ -1540,47 +1540,6 @@ int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, boo
     return SetSingleStreamMute(streamType, mute, isUpdateUi, deviceType, zoneId);
 }
 
-void AudioPolicyServer::UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi)
-{
-    // This function only applies to mute/unmute scenarios where the input type is music on the PC platform
-    AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (volumeType != AudioStreamType::STREAM_MUSIC || !VolumeUtils::IsPCVolumeEnable()) {
-        return;
-    }
-    if (mute && !audioVolumeManager_.GetStreamMuteInterface(STREAM_SYSTEM)) {
-        // If the STREAM_MUSIC wants mute, synchronize the mute STREAM_SYSTEM
-        audioVolumeManager_.SetStreamMute(STREAM_SYSTEM, mute);
-        SendMuteKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, isUpdateUi);
-        AUDIO_WARNING_LOG("music is mute or volume change to 0 and need mute system stream");
-    } else if (!mute && audioVolumeManager_.GetStreamMuteInterface(STREAM_SYSTEM)) {
-        // If you STREAM_MUSIC unmute, you need to determine whether the volume is 0
-        // if it is 0, the prompt sound will continue to be mute, and if it is not 0
-        // you need to synchronize the unmute prompt sound
-        bool isMute = (audioVolumeManager_.GetSystemVolumeLevelInterface(STREAM_MUSIC) == 0) ? true : false;
-        audioVolumeManager_.SetStreamMute(STREAM_SYSTEM, isMute);
-        SendMuteKeyEventCbWithUpdateUiOrNot(STREAM_SYSTEM, isUpdateUi);
-        AUDIO_WARNING_LOG("music is unmute and volume is 0 and need %{public}d system stream", isMute);
-    }
-}
-
-void AudioPolicyServer::SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType,
-    const bool& isUpdateUi, int32_t zoneId, int32_t previousVolume)
-{
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = streamType;
-    volumeEvent.volume = audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId);
-    volumeEvent.volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(streamType, zoneId);
-    volumeEvent.updateUi = isUpdateUi;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.previousVolume = previousVolume;
-    volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
-        audioPolicyServerHandler_->SendVolumeDegreeEventCallback(volumeEvent);
-    }
-}
-
 int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
     const DeviceType &deviceType, int32_t zoneId)
 {
@@ -1621,8 +1580,8 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         audioVolumeManager_.SetSystemVolumeLevel(streamType, 1, deviceDesc, zoneId);
     }
     audioVolumeManager_.ProcUpdateRingerModeForMute(updateRingerMode, mute);
-    SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId, previousVolume);
-    UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi); // for PC
+    audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(streamType, isUpdateUi, zoneId, previousVolume);
+    audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(streamType, mute, isUpdateUi); // for PC
     return SUCCESS;
 }
 

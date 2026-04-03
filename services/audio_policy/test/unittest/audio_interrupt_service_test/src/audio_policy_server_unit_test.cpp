@@ -2619,7 +2619,8 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_127, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    server->UpdateSystemMuteStateAccordingMusicState(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, false, true);
+    server->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, false, true);
 }
 
 /**
@@ -2634,10 +2635,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_128, TestSize.Level1)
 
     bool isUpdateUi = true;
     server->audioPolicyServerHandler_ = nullptr;
-    server->SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 
     server->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    server->SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 }
 
 /**
