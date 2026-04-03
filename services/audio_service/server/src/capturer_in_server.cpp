@@ -17,6 +17,7 @@
 #endif
 
 #include "capturer_in_server.h"
+#include <algorithm>
 #include <cinttypes>
 #include "securec.h"
 #include "audio_errors.h"
@@ -61,6 +62,13 @@ static const int32_t TELEPHONY_CALL_MANAGER_SYS_ABILITY_ID = 4005;
 enum CallbackHandlerEvent : uint32_t {
     NOTIFY_VOIP_START = 0,
 };
+
+void AppendUsageIfMissing(std::vector<StreamUsage> &usages, StreamUsage usage)
+{
+    if (std::find(usages.begin(), usages.end(), usage) == usages.end()) {
+        usages.push_back(usage);
+    }
+}
 }
 
 CapturerInServer::CapturerInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -924,6 +932,10 @@ int32_t CapturerInServer::UpdatePlaybackCaptureConfig(const AudioPlaybackCapture
         }
     }
     filterConfig_ = config;
+    if (filterConfig_.isModernInnerCapturer) {
+        AppendUsageIfMissing(filterConfig_.filterOptions.usages, STREAM_USAGE_VOICE_COMMUNICATION);
+        AppendUsageIfMissing(filterConfig_.filterOptions.usages, STREAM_USAGE_VIDEO_COMMUNICATION);
+    }
 
     if (filterConfig_.filterOptions.usages.size() == 0) {
         std::vector<StreamUsage> defalutUsages = PlaybackCapturerManager::GetInstance()->GetDefaultUsages();

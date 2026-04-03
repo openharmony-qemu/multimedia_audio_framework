@@ -93,7 +93,9 @@ public:
     MOCK_METHOD(void, SetAudioHapticsSyncId, (const int32_t &audioHapticsSyncId), (override));
     MOCK_METHOD(bool, IsRestoreNeeded, (), (override));
     MOCK_METHOD(void, SetRebuildFlag, (), (override));
+    MOCK_METHOD(void, SetVoipNoPrivacyFlag, (bool voipNoPrivacyFlag), (override));
     MOCK_METHOD(void, GetKeepRunning, (bool &keepRunning), (override));
+    MOCK_METHOD(void, CheckInnerCapVoIP, (), (override));
 
     MOCK_METHOD(int32_t, GetStaticPlayPosition, (StaticBufferInfo &staticBufferInfo), (override));
     MOCK_METHOD(int32_t, SetStaticBufferEventCallback, (std::shared_ptr<StaticBufferEventCallback>), (override));
@@ -378,6 +380,55 @@ HWTEST_F(FastSystemStreamUnitTest, UpdatePlaybackCaptureConfig_001, TestSize.Lev
     int32_t res = 0;
     res = fastAudioStream->UpdatePlaybackCaptureConfig(config);
     EXPECT_EQ(res, ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test SetRendererInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererInfo_001
+ * @tc.desc  : Test FastAudioStream syncs voipNoPrivacyFlag to process client.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetRendererInfo_001, TestSize.Level1)
+{
+    AudioRendererInfo rendererInfo;
+    rendererInfo.voipNoPrivacyFlag = true;
+    EXPECT_CALL(*mockProcessClient_, SetVoipNoPrivacyFlag(true)).Times(1);
+    stream_->SetRendererInfo(rendererInfo);
+    EXPECT_TRUE(stream_->rendererInfo_.voipNoPrivacyFlag);
+}
+
+/**
+ * @tc.name  : Test SetRendererInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererInfo_002
+ * @tc.desc  : Test FastAudioStream skips sync when processClient_ is null.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetRendererInfo_002, TestSize.Level1)
+{
+    stream_->processClient_ = nullptr;
+    AudioRendererInfo rendererInfo;
+    rendererInfo.voipNoPrivacyFlag = true;
+    stream_->SetRendererInfo(rendererInfo);
+    EXPECT_TRUE(stream_->rendererInfo_.voipNoPrivacyFlag);
+}
+
+/**
+ * @tc.name  : Test SetRendererInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetRendererInfo_003
+ * @tc.desc  : Test FastAudioStream skips sync when mode is not playback.
+ */
+HWTEST_F(FastSystemStreamUnitTest, SetRendererInfo_003, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    auto recordStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_RECORD, appUid);
+    auto mockProcessClient = std::make_shared<MockAudioProcessInClient>();
+    recordStream->processClient_ = mockProcessClient;
+    AudioRendererInfo rendererInfo;
+    rendererInfo.voipNoPrivacyFlag = true;
+    EXPECT_CALL(*mockProcessClient, SetVoipNoPrivacyFlag(_)).Times(0);
+    recordStream->SetRendererInfo(rendererInfo);
+    EXPECT_TRUE(recordStream->rendererInfo_.voipNoPrivacyFlag);
 }
 
 /**

@@ -111,6 +111,28 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_001, TestSize.Level1)
 /**
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_SetVoipNoPrivacyFlag_001
+ * @tc.desc  : Test process-side voip no privacy flag sync interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_SetVoipNoPrivacyFlag_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.audioMode = AUDIO_MODE_PLAYBACK;
+    configRet.streamType = STREAM_VOICE_COMMUNICATION;
+    configRet.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    configRet.rendererInfo.voipNoPrivacyFlag = false;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    ASSERT_NE(audioProcessInServer, nullptr);
+
+    EXPECT_FALSE(audioProcessInServer->GetVoipNoPrivacyFlag());
+    EXPECT_EQ(audioProcessInServer->SetVoipNoPrivacyFlag(true), SUCCESS);
+    EXPECT_TRUE(audioProcessInServer->GetVoipNoPrivacyFlag());
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
  * @tc.number: AudioProcessInServer_002
  * @tc.desc  : Test AudioProcessInServer interface.
  */

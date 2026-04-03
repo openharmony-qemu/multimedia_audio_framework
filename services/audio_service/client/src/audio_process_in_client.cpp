@@ -165,6 +165,8 @@ public:
 
     void SetRebuildFlag() override;
 
+    void SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) override;
+
     void GetKeepRunning(bool &keepRunning) override;
 
     bool IsRestoreNeeded() override;
@@ -185,6 +187,8 @@ public:
     void SetIsFirstFrame(bool value) override;
 
     int32_t ResetStaticPlayPosition() override;
+
+    void CheckInnerCapVoIP() override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
@@ -1847,6 +1851,20 @@ void AudioProcessInClientInner::SetRebuildFlag()
 {
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetRebuildFlag processProxy_ is nullptr");
     processProxy_->SetRebuildFlag();
+}
+
+void AudioProcessInClientInner::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
+{
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetVoipNoPrivacyFlag processProxy_ is nullptr");
+    processProxy_->SetVoipNoPrivacyFlag(voipNoPrivacyFlag);
+}
+
+void AudioProcessInClientInner::CheckInnerCapVoIP()
+{
+    sptr<IStandardAudioService> gasp = AudioProcessInClientInner::GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gasp != nullptr,
+        "[CheckInnerCapVoIP]failed, can not get service.");
+    gasp->CheckInnerCapVoIP(sessionId_);
 }
 
 void AudioProcessInClientInner::GetKeepRunning(bool &keepRunning)

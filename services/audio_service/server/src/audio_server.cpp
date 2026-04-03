@@ -3547,6 +3547,13 @@ int32_t AudioServer::ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool ch
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ReportPlaybackCaptureUserChoice(sessionId, choice);
 }
+
+int32_t AudioServer::CheckInnerCapVoIP(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    AudioService::GetInstance()->CheckInnerCapVoIP(sessionId);
+    return SUCCESS;
+}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

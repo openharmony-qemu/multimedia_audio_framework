@@ -16,6 +16,7 @@
 #ifndef AUDIO_PROCESS_IN_SERVER_H
 #define AUDIO_PROCESS_IN_SERVER_H
 
+#include <atomic>
 #include <mutex>
 #include <sstream>
 
@@ -111,6 +112,7 @@ public:
         uint32_t method, uint32_t threadPriority) override;
 
     int32_t SetRebuildFlag() override;
+    int32_t SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) override;
 
     int32_t GetServerKeepRunning(bool &keepRunning) override;
     
@@ -126,6 +128,7 @@ public:
     SourceType GetSource() override;
     AudioProcessConfig GetAudioProcessConfig() override;
     void EnableStandby() override;
+    bool GetVoipNoPrivacyFlag() const;
 
     int Dump(int fd, const std::vector<std::u16string> &args) override;
     void Dump(std::string &dumpString);
@@ -199,6 +202,7 @@ public:
     const AudioProcessConfig processConfig_;
 
 private:
+    std::atomic<bool> voipNoPrivacyFlag_ = false;
     int32_t StartInner();
     int64_t GetLastAudioDuration();
     void PrepareStreamDataBufferInner(size_t spanSizeInByte, RingBufferWrapper &ringBuffer, BufferDesc &dstBufferDesc);

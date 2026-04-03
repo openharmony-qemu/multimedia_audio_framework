@@ -695,6 +695,7 @@ struct AudioRendererInfo : public Parcelable {
     uint32_t audioFlag = 0x0;
     bool forceToNormal = false;
     AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    bool voipNoPrivacyFlag = false;
     bool toneFlag = false;
     bool keepRunning = false;
     bool isStatic = false;
@@ -735,6 +736,7 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteUint32(audioFlag)
             && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(privacyType)
+            && parcel.WriteBool(voipNoPrivacyFlag)
             && parcel.WriteBool(toneFlag)
             && parcel.WriteBool(keepRunning)
             && parcel.WriteBool(isStatic);
@@ -764,6 +766,7 @@ struct AudioRendererInfo : public Parcelable {
         audioFlag = parcel.ReadUint32();
         forceToNormal = parcel.ReadBool();
         privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+        voipNoPrivacyFlag = parcel.ReadBool();
         toneFlag = parcel.ReadBool();
         keepRunning = parcel.ReadBool();
         isStatic = parcel.ReadBool();
@@ -1600,6 +1603,7 @@ struct AudioProcessConfig : public Parcelable {
         parcel.WriteInt32(static_cast<int32_t>(rendererInfo.loopbackMode));
         parcel.WriteBool(rendererInfo.isVirtualKeyboard);
         parcel.WriteBool(rendererInfo.keepRunning);
+        parcel.WriteBool(rendererInfo.voipNoPrivacyFlag);
         parcel.WriteBool(rendererInfo.isStatic);
     }
 
@@ -1622,6 +1626,7 @@ struct AudioProcessConfig : public Parcelable {
         config->rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         config->rendererInfo.isVirtualKeyboard = parcel.ReadBool();
         config->rendererInfo.keepRunning = parcel.ReadBool();
+        config->rendererInfo.voipNoPrivacyFlag = parcel.ReadBool();
         config->rendererInfo.isStatic = parcel.ReadBool();
     }
 };

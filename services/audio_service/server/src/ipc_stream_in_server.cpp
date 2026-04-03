@@ -416,6 +416,15 @@ int32_t IpcStreamInServer::SetPrivacyType(int32_t privacyType)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetVoipNoPrivacyFlag(voipNoPrivacyFlag);
+    }
+    AUDIO_ERR_LOG("SetVoipNoPrivacyFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::GetPrivacyType(int32_t &privacyType)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {

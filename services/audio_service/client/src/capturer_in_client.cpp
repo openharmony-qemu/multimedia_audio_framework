@@ -166,6 +166,11 @@ void CapturerInClientInner::GetRendererInfo(AudioRendererInfo &rendererInfo)
     AUDIO_WARNING_LOG("GetRendererInfo is not supported");
 }
 
+void CapturerInClientInner::CheckInnerCapVoIP()
+{
+    AUDIO_WARNING_LOG("CheckInnerCapVoIP is not supported");
+}
+
 void CapturerInClientInner::SetCapturerInfo(const AudioCapturerInfo &capturerInfo)
 {
     capturerInfo_ = capturerInfo;
@@ -1207,7 +1212,7 @@ int32_t CapturerInClientInner::RequestUserPrivacyAuthority(uint32_t sessionId)
     gasp->RequestUserPrivacyAuthority(sessionId);
  
     std::unique_lock<std::mutex> waitLock(callServerMutex_);
-    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+    bool stopWaiting = callServerCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS * 5), [this] {
         return notifiedOperation_ == USER_PRIVACY_AUTHORITY; // will be false when got notified.
     });
     Operation operation = notifiedOperation_;

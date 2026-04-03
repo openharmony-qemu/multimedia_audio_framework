@@ -47,6 +47,7 @@ interface IIpcStream {
     void SetAudioEffectMode([in] int effectMode); // renderer only
     void GetAudioEffectMode([out] int effectMode); // renderer only
     void SetPrivacyType([in] int privacyType); // renderer only
+    void SetVoipNoPrivacyFlag([in] boolean voipNoPrivacyFlag); // renderer only
     void GetPrivacyType([out] int privacyType); // renderer only
     void SetOffloadMode([in] int state, [in] boolean isAppBack); // renderer only
     void UnsetOffloadMode(); // renderer only

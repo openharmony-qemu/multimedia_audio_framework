@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <algorithm>
+
 #include "gtest/gtest.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -440,8 +442,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_011, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_012, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t TIME_OUT_SECONDS = 10;
-    processConfig.callerUid = TIME_OUT_SECONDS;
+    int32_t timeOutSeconds = 10;
+    processConfig.callerUid = timeOutSeconds;
     processConfig.capturerInfo.sourceType = SOURCE_TYPE_EC;
     std::weak_ptr<IStreamListener> streamListener;
 
@@ -498,8 +500,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_013, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_014, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t TIME_OUT_SECONDS = 10;
-    processConfig.callerUid = TIME_OUT_SECONDS;
+    int32_t timeOutSeconds = 10;
+    processConfig.callerUid = timeOutSeconds;
     processConfig.capturerInfo.sourceType = SOURCE_TYPE_EC;
     std::weak_ptr<IStreamListener> streamListener;
 
@@ -783,6 +785,56 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024, TestSize.Level1
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
     int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
     EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_024A.
+ * @tc.desc  : Test UpdatePlaybackCaptureConfig auto appends voip usages in modern mode.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024A, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    AudioPlaybackCaptureConfig config;
+    config.isModernInnerCapturer = true;
+    processConfig.innerCapMode = MODERN_INNER_CAP;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VOICE_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
+    EXPECT_NE(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VIDEO_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_024B.
+ * @tc.desc  : Test UpdatePlaybackCaptureConfig keeps usages untouched when modern flag is false.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024B, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    AudioPlaybackCaptureConfig config;
+    config.isModernInnerCapturer = false;
+    processConfig.innerCapMode = MODERN_INNER_CAP;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfig(config);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VOICE_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
+    EXPECT_EQ(std::find(capturerInServer_->filterConfig_.filterOptions.usages.begin(),
+        capturerInServer_->filterConfig_.filterOptions.usages.end(), STREAM_USAGE_VIDEO_COMMUNICATION),
+        capturerInServer_->filterConfig_.filterOptions.usages.end());
 }
 #endif
 

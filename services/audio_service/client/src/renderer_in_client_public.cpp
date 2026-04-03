@@ -190,6 +190,14 @@ int32_t RendererInClientInner::SetInMainThreadState(bool isInMainThread)
     return ERR_NOT_SUPPORTED;
 }
 
+void RendererInClientInner::CheckInnerCapVoIP()
+{
+    sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
+    CHECK_AND_RETURN_LOG(gasp != nullptr,
+        "[CheckInnerCapVoIP]failed, can not get service.");
+    gasp->CheckInnerCapVoIP(sessionId_);
+}
+
 void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
@@ -211,6 +219,10 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
     rendererInfo_.headTrackingEnabled = spatializationState.headTrackingEnabled;
     rendererInfo_.encodingType = curStreamParams_.encoding;
     rendererInfo_.channelLayout = curStreamParams_.channelLayout;
+    if (ipcStream_ != nullptr) {
+        int32_t ret = ipcStream_->SetVoipNoPrivacyFlag(rendererInfo_.voipNoPrivacyFlag);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "SetVoipNoPrivacyFlag failed");
+    }
     UpdateTracker("UPDATE");
 }
 
