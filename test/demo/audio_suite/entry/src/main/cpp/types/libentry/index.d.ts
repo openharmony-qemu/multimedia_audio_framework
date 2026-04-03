@@ -66,7 +66,7 @@ export const registerAudioCacheCallback: (callBackFull: Function) => boolean;
 export const unregisterAudioCacheCallback: () => void;
 export const ModifyRender: (notRenderTrackIds: string[], renderTrackIds: string[]) => void;
 export const setCurrentTime: (currentTime: number) => void;
-export const setEffectNodeBypass: (inputId: string, effectId: string, isBypass: boolean) => boolean;
+export const setEffectNodeBypass: (inputId: string, effectId: string, isBypas11s: boolean) => boolean;
 export const audioConverterCreate: (inputFormat: {
   encodingType: number;
   samplingRate: number;
