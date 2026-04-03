@@ -1181,17 +1181,13 @@ void AudioPolicyServerHandler::HandleSystemAppVolumeChangeEvent(const AppExecFwk
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        std::shared_ptr<AudioPolicyClientHolder> appVolumeChangeListenerCb = it->second;
-        if (appVolumeChangeListenerCb == nullptr) {
-            AUDIO_ERR_LOG("nullptr for client %{public}d", it->first);
-            continue;
-        }
+        CHECK_AND_CONTINUE_LOG(it->second != nullptr, "nullptr for client %{public}d", it->first);
 
-        AUDIO_INFO_LOG("client:%{public}d, appUid:%{public}d", it->first, eventContextObj->appUid);
         if (clientCallbacksMap_.count(it->first) > 0 &&
             clientCallbacksMap_[it->first].count(CALLBACK_APP_VOLUME_CHANGE) > 0 &&
             clientCallbacksMap_[it->first][CALLBACK_APP_VOLUME_CHANGE]) {
-            appVolumeChangeListenerCb->OnSystemAppVolumeChanged(eventContextObj->appUid, eventContextObj->volumeEvent);
+            AUDIO_INFO_LOG("client:%{public}d, appUid:%{public}d", it->first, eventContextObj->appUid);
+            it->second->OnSystemAppVolumeChanged(eventContextObj->appUid, eventContextObj->volumeEvent);
         }
     }
 }
