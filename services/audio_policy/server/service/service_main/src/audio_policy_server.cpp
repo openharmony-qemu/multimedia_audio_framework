@@ -2313,8 +2313,10 @@ int32_t AudioPolicyServer::SetInputDevice(int32_t deviceType, uint32_t sessionID
         AUDIO_ERR_LOG("SetInputDevice: No system permission");
         return ERR_PERMISSION_DENIED;
     }
-    return eventEntry_->SetInputDevice(static_cast<DeviceType>(deviceType), sessionID,
-        static_cast<SourceType>(sourceType), isRunning);
+    AUDIO_INFO_LOG("stream %{public}u run %{public}d with usage %{public}d selects input device %{public}d",
+        sessionID, isRunning, sourceType, deviceType);
+    int32_t callerUid = static_cast<int32_t>(IPCSkeleton::GetCallingUid());
+    return eventEntry_->SetInputDevice(static_cast<DeviceType>(deviceType), sessionID, callerUid);
 }
 // LCOV_EXCL_STOP
 

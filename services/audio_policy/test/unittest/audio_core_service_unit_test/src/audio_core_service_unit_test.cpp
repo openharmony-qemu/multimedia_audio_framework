@@ -22,6 +22,8 @@
 #include "audio_info.h"
 #include "audio_device_status.h"
 #include "audio_core_config_manager.h"
+#include "audio_select_interface_service.h"
+#include "audio_router_infra.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
 using namespace testing::ext;
@@ -30,6 +32,8 @@ namespace OHOS {
 namespace AudioStandard {
 bool g_hasPermission = false;
 const uint32_t TEST_SESSION_ID = 100001;
+const int32_t TEST_AUDIO_SELECT_UID = 10001;
+const uint32_t TEST_AUDIO_SELECT_STREAM_ID = 100101;
 static AudioPolicyServer* GetServerPtr()
 {
     return GetServerUtil::GetServerPtr();
@@ -556,6 +560,57 @@ HWTEST_F(AudioCoreServiceUnitTest, SetPreferredInputDeviceIfValid_005, TestSize.
     AudioCoreService audioCoreService;
 
     EXPECT_NO_THROW(audioCoreService.SetPreferredInputDeviceIfValid(streamDesc));
+}
+
+/**
+* @tc.name  : Test AudioSelectInterfaceService.
+* @tc.number: AudioSelectInterfaceService_SetInputDevice_001
+* @tc.desc  : Test SetInputDevice updates selected input device for stream.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetInputDevice_001, TestSize.Level1)
+{
+    uint32_t sessionId = TEST_AUDIO_SELECT_STREAM_ID;
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId, nullptr);
+
+    int32_t ret = AudioSelectInterfaceService::GetInstance().SetInputDevice(DEVICE_TYPE_MIC, sessionId,
+        TEST_AUDIO_SELECT_UID);
+    EXPECT_EQ(ret, SUCCESS);
+
+    auto selectedDevice = routerInfra.GetStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId);
+    ASSERT_NE(selectedDevice, nullptr);
+    EXPECT_EQ(selectedDevice->deviceType_, DEVICE_TYPE_MIC);
+
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioSelectInterfaceService.
+* @tc.number: AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_001
+* @tc.desc  : Test SetPreferredInputDeviceIfValid updates selected input device for stream.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_001, TestSize.Level1)
+{
+    GetPermission();
+    uint32_t sessionId = TEST_AUDIO_SELECT_STREAM_ID + 1;
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = sessionId;
+    streamDesc->appInfo_.appUid = TEST_AUDIO_SELECT_UID;
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->preferredInputDevice.deviceRole_ = INPUT_DEVICE;
+    streamDesc->preferredInputDevice.networkId_ = LOCAL_NETWORK_ID;
+
+    AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(streamDesc);
+
+    auto selectedDevice = routerInfra.GetStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId);
+    ASSERT_NE(selectedDevice, nullptr);
+    EXPECT_EQ(selectedDevice->deviceType_, DEVICE_TYPE_MIC);
+
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId, nullptr);
 }
 
 /**

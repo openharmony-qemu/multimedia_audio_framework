@@ -99,14 +99,6 @@ public:
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     VolumeBehavior GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType);
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const SourceType sourceType, bool isRunning);
-    int32_t RemoveSelectedInputDevice(const uint32_t sessionID);
-    shared_ptr<AudioDeviceDescriptor> GetSelectedCaptureDevice(const uint32_t sessionID);
-    int32_t SetPreferredInputDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &devDesc, const uint32_t sessionID, const SourceType sourceType);
-    shared_ptr<AudioDeviceDescriptor> GetOnlinePreferredInputDevice(const uint32_t sessionID);
-    int32_t RemovePreferredInputDevice(const uint32_t sessionID);
     void Dump(std::string &dumpString);
     void UpdateVirtualDevices(const std::shared_ptr<AudioDeviceDescriptor> &devDesc, bool isConnected);
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
@@ -220,14 +212,10 @@ private:
     DeviceType selectedCallDefaultOutputDevice_ = DEVICE_TYPE_DEFAULT;
     std::mutex selectDefaultOutputDeviceMutex_;
     std::mutex currentActiveDevicesMutex_;
-    unordered_map<uint32_t, std::pair<DeviceType, SourceType>> selectedInputDeviceInfo_;
-    std::mutex selectInputDeviceMutex_;
     std::string remoteInfoNetworkId_ = "";
     DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
     std::mutex virtualDevicesMutex_;
     std::mutex descArrayMutex_;
-    unordered_map<uint32_t, std::pair<std::shared_ptr<AudioDeviceDescriptor>, SourceType>> preferredInputDeviceInfo_;
-    std::mutex preferredInputDeviceMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

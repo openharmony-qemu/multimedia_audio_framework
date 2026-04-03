@@ -155,8 +155,7 @@ public:
         int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
         int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
-        int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-            const SourceType sourceType, bool isRunning);
+        int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID, int32_t uid);
         int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
             const int32_t uid = INVALID_UID);
         int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -305,7 +304,6 @@ public:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &audioFlag, uint32_t &sessionId,
         std::string &networkId);
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void WriteDesignateAudioCaptureDeviceEvent(SourceType sourceType, int32_t deviceType, bool isNormalSelection);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     int32_t StartClient(uint32_t sessionId);
@@ -351,8 +349,7 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
     bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-            const SourceType sourceType, bool isRunning);
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID, int32_t uid);
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
         const int32_t uid = INVALID_UID);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -513,7 +510,6 @@ private:
     void SetUpdateModemRouteFinished(bool flag);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
-    void UpdateInputDeviceWhenStopping(int32_t uid);
     void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
         const AudioStreamDeviceChangeReasonExt reason);
     void RecordSelectDevice(const std::string &history);
