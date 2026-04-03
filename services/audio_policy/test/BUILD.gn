@@ -5262,6 +5262,7 @@ ohos_unittest("audio_background_manager_unit_test") {
     "../../audio_policy/server/domain/device/src/a2dp",
     "../../audio_policy/server/include",
     "../../audio_policy/server/include/service/listener",
+    "../../audio_service/test/unittest/include"
   ]
 
   use_exceptions = true

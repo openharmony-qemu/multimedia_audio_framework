@@ -284,7 +284,9 @@ void AudioBackgroundManager::InsertIntoAppStatesMapWithoutUid(int32_t pid, AppSt
     int32_t uid = 0;
     std::string appBundleName = "";
     appMgrClient_->GetBundleNameByPid(pid, appBundleName, uid);
-    appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    if (!appBundleName.empty()) {
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    }
     appStatesMap_.insert(std::make_pair(pid, appState));
     AUDIO_INFO_LOG("appStatesMap_ add pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
