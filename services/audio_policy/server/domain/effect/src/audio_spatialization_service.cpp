@@ -518,6 +518,10 @@ void AudioSpatializationService::UpdateCurrentDevice(const std::string macAddres
     std::string preDeviceAddress = currentDeviceAddress_;
     currentDeviceAddress_ = macAddress;
     std::string currEncryptedAddress_ = GetSha256EncryptAddress(macAddress);
+    bool spatializationEnabledForCurrentDevice =
+        (addressToSpatialEnabledMap_.find(currEncryptedAddress_) != addressToSpatialEnabledMap_.end()) ?
+        addressToSpatialEnabledMap_[currEncryptedAddress_].spatializationEnabled : false;
+    HandleSpatializationEnabledChangeForCurrentDevice(spatializationEnabledForCurrentDevice);
     if (addressToSpatialDeviceStateMap_.find(currEncryptedAddress_) != addressToSpatialDeviceStateMap_.end()) {
         auto nextSpatialDeviceType{ addressToSpatialDeviceStateMap_[currEncryptedAddress_].spatialDeviceType };
         AUDIO_INFO_LOG("currSpatialDeviceType_ = %{public}d,  nextSpatialDeviceType_ = %{public}d",
