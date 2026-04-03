@@ -1403,7 +1403,10 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
     uint64_t curWritePos = processBuffer_->GetCurWriteFrame();
+
+    // Loopback shoule not copy data to the buffer!
     CHECK_AND_RETURN_RET(!processConfig_.capturerInfo.isLoopback, SUCCESS);
+
     Trace trace("WriteProcessData-<" + std::to_string(curWritePos));
 
     int32_t writeAbleSize = processBuffer_->GetWritableDataFrames();

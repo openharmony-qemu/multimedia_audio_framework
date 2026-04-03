@@ -305,6 +305,7 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     if (isGlobal_) {
+        // Other currently playing music will not be interrupted in global mode.
         audioRenderer_->SetSilentModeAndMixWithOthers(true);
     }
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
@@ -408,7 +409,7 @@ AudioCapturerOptions AudioLoopbackPrivate::GenerateCapturerConfig()
     capturerOptions.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
     capturerOptions.capturerInfo.isLoopback = true;
     capturerOptions.capturerInfo.loopbackMode = mode_;
-    // use silent for global
+    // Other currently playing stream will not be interrupted in global mode.
     capturerOptions.strategy.concurrencyMode = isGlobal_ ? AudioConcurrencyMode::SILENT :
         AudioConcurrencyMode::INVALID;
     return capturerOptions;
@@ -428,6 +429,8 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
     AUDIO_INFO_LOG("activeOutputDevice is %{public}d, activeInputDevice is %{public}d", activeOutputDevice_,
         activeInputDevice_);
     if (activeOutputDevice_ == DEVICE_TYPE_NEARLINK && activeInputDevice_ == DEVICE_TYPE_MIC) {
+        bool ret = AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_, activeOutputDevice_);
+        CHECK_AND_RETURN_RET_LOG(ret, ERROR_DEVICE_NOT_SUPPORT, "Not supported nearlink device!");
         isRendererUsb_ = true;
         isCapturerUsb_ = true;
         AUDIO_INFO_LOG("nearlink case!");
@@ -489,11 +492,7 @@ void AudioLoopbackPrivate::RendererCallbackImpl::OnStateChange(
 void AudioLoopbackPrivate::RendererCallbackImpl::OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
     const AudioStreamDeviceChangeReason __attribute__((unused)) reason)
 {
-    auto deviceType = AudioPolicyManager::GetInstance().GetActiveOutputDevice();
-    parent_.isRendererUsb_ = parent_.activeOutputDevice_ == deviceType;
-    if (deviceType == DEVICE_TYPE_NEARLINK) {
-        parent_.isRendererUsb_ = true;
-    }
+    parent_.isRendererUsb_ = parent_.activeOutputDevice_ == deviceInfo.deviceType_;
     parent_.UpdateStatus();
 }
 

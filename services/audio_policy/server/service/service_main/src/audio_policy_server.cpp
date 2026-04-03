@@ -5599,7 +5599,16 @@ int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::s
 int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, int32_t deviceType, bool &ret)
 {
     AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(modeIn);
-    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode, static_cast<DeviceType>(deviceType));
+    DeviceType type = static_cast<DeviceType>(deviceType);
+    ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode, type);
+    if (ret && type == DEVICE_TYPE_NEARLINK) {
+        if (type != audioActiveDevice_.GetCurrentOutputDeviceType()) {
+            ret = false;
+            return SUCCESS;
+        }
+        std::string remoteAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
+        ret = SleAudioDeviceManager::GetInstance().IsAudioLoopbackSupported(remoteAddr);
+    }
     return SUCCESS;
 }
 

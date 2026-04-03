@@ -504,6 +504,7 @@ int32_t AudioServer::SetKaraokeParameters(int32_t deviceType, const std::string 
     if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_USB_ARM_HEADSET) {
         deviceManager->SetAudioParameter("usb", AudioParamKey::NONE, "", parameters);
     } else {
+        // nearlink also use primary adapter.
         deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", parameters);
     }
     ret = true;
