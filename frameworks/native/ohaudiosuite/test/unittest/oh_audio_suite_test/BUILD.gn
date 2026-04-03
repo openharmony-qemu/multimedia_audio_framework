@@ -24,6 +24,8 @@ if (audio_framework_feature_audiosuite_support) {
       "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
       "${audio_framework_root}/interfaces/inner_api/native/audiostream/include",
       "${audio_framework_root}/interfaces/inner_api/native/audiosuite/include",
+      "${audio_framework_root}/services/audio_suite/client/utils/include",
+      "${audio_framework_root}/services/audio_engine/plugin/resample/include",
     ]
 
     cflags = [
@@ -52,12 +54,16 @@ if (audio_framework_feature_audiosuite_support) {
     sources = [
       "src/oh_audio_suite_engine_test.cpp",
       "src/oh_audio_suite_node_builder_test.cpp",
+      "src/oh_audio_converter_test.cpp",
       "src/oh_audio_suite_tool_test.cpp",
     ]
 
     deps = [
       "${audio_framework_root}/frameworks/native/ohaudiosuite:ohaudiosuite",
-      "${audio_framework_root}/frameworks/native/audioutils:audio_utils"
+      "${audio_framework_root}/frameworks/native/audioutils:audio_utils",
+      "${audio_framework_root}/services/audio_suite:audio_suite",
+      "${audio_framework_root}/services/audio_engine:audio_engine_plugins",
+      "${audio_framework_root}/services/audio_engine:audio_engine_utils",
     ]
 
     external_deps = [

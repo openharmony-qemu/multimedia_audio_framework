@@ -45,7 +45,7 @@ extern "C" {
 /**
  * @brief Request to create the audio engine.
  *
- * @param audioSuiteEngine Pointer to a viriable to receive audioSuiteEngine.
+ * @param audioSuiteEngine Pointer to a variable to receive audioSuiteEngine.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if audioSuiteEngine is nullptr,
  * or {@link #AUDIOSUITE_ERROR_INVALID_STATE} if the engine is already created.
@@ -77,7 +77,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_Destroy(OH_AudioSuiteEngine* audioSuite
  * it only supports the {@link EFFECT_NODE_TYPE_EQUALIZER} effect node.
  *
  * @param audioSuiteEngine Reference created by OH_AudioSuiteEngine_Create.
- * @param audioSuitePipeline Pointer to a viriable to receive the pipeline.
+ * @param audioSuitePipeline Pointer to a variable to receive the pipeline.
  * @param workMode It indicates whether the pipeline is operating in Edit mode or real-time rendering mode.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr
@@ -175,7 +175,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_GetPipelineState(
  * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline
  * @param audioData Audio data pointer, where user should read.
  * @param requestFrameSize Size of audio data user specified.
- * @param responseSize Size of audio data the system realy write.
+ * @param responseSize Size of audio data the system really write.
  * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr or not valid value.
@@ -205,7 +205,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_RenderFrame(OH_AudioSuitePipeline* audi
  * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
  * @param audioDataArray Audio data array pointer, where user should read,
  * The size of each one-dimensional array should be consistent.
- * @param responseSize Size of audio data the system realy write,
+ * @param responseSize Size of audio data the system really write,
  * The system ensures that the data size filled for each one-dimensional array is consistent.
  * @param finishedFlag This flag is used to indicate user whether all data processing has been completed.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds
@@ -348,7 +348,7 @@ OH_AudioSuite_Result OH_AudioSuiteNodeBuilder_SetRequestDataCallback(
  *
  * @param audioSuitePipeline Reference created by OH_AudioSuiteEngine_CreatePipeline.
  * @param builder Audio node builder created by OH_AudioSuiteNodeBuilder_Create.
- * @param audioNode Pointer to a viriable to receive the audio node.
+ * @param audioNode Pointer to a variable to receive the audio node.
  * @return {@link #AUDIOSUITE_SUCCESS} if execution succeeds,
  * or {@link #AUDIOSUITE_ERROR_INVALID_PARAM} if parameter is nullptr or not valid value.
  * or {@link #AUDIOSUITE_ERROR_CREATED_EXCEED_SYSTEM_LIMITS} the number of nodes
@@ -367,7 +367,7 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_CreateNode(
     OH_AudioSuitePipeline* audioSuitePipeline, OH_AudioNodeBuilder* builder, OH_AudioNode** audioNode);
 
 /**
- * @brief Destory an audio node.
+ * @brief Destroy an audio node.
  *
  * Whether the node can be deleted depends on the state of the pipeline it belongs to.
  * If the pipeline is not in the stopped state and the node is in an active processing path,
@@ -815,7 +815,6 @@ OH_AudioSuite_Result OH_AudioSuiteEngine_SetGeneralVoiceChangeType(
  */
 OH_AudioSuite_Result OH_AudioSuiteEngine_GetGeneralVoiceChangeType(
     OH_AudioNode* audioNode, OH_AudioSuite_GeneralVoiceChangeType* type);
-
 
 #ifdef __cplusplus
 }
