@@ -113,6 +113,15 @@ const int32_t BITS_PER_SAMPLE_32 = 32;
 const int32_t SAMPLE_FORMAT_MULTIPLIER_1 = 1;
 const int32_t SAMPLE_FORMAT_MULTIPLIER_2 = 2;
 
+// File info structure
+struct FileInfo {
+    uint32_t samplingRate;
+    uint16_t numChannels;
+    int64_t channelLayout;
+    int32_t sampleFormat;
+    off_t fileSize;
+};
+
 const int32_t SAMPLE_RATE_THRESHOLD_HIGH = 192000;
 const int32_t SAMPLE_RATE_THRESHOLD_MID = 96000;
 const int32_t SAMPLE_RATE_THRESHOLD_LOW = 44100;
@@ -1476,8 +1485,9 @@ static bool AccumulateOutputData(const void *outputData, int32_t outputSize)
     std::copy(static_cast<const uint8_t *>(outputData), static_cast<const uint8_t *>(outputData) + outputSize,
               newBuffer + g_outputDataLen);
     g_outputDataLen += outputSize;
-    if (g_outputData != nullptr)
+    if (g_outputData != nullptr) {
         delete[] g_outputData;
+    }
     g_outputData = newBuffer;
     return true;
 }
@@ -1504,6 +1514,55 @@ static void ResetProcessState()
     }
     g_outputDataLen = 0;
     // Note: Don't reset g_inputDataLen here as input data is still needed for retry
+}
+
+// Handle process error
+static bool HandleProcessError(OH_AudioConverter_Result result, int32_t processCount,
+                                bool &retryWithSmallerBuffer, bool &hasError, void *outputData)
+{
+    if (result == AUDIOCONVERTER_ERROR_UNKNOWN_CODE && !retryWithSmallerBuffer &&
+        processCount == FIRST_PROCESS_ATTEMPT) {
+        retryWithSmallerBuffer = true;
+        delete[] static_cast<uint8_t *>(outputData);
+        ResetProcessState();
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "HandleProcessError: Retrying with smaller buffer");
+        return true; // Continue retry
+    }
+
+    hasError = true;
+    OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                 "HandleProcessError: Error occurred, result=%{public}d, hasError=true",
+                 static_cast<int>(result));
+    delete[] static_cast<uint8_t*>(outputData);
+    return false; // Stop processing
+}
+
+// Handle process output data
+static bool HandleProcessOutput(void *outputData, int32_t outputSize, int32_t &zeroOutputCount, bool &hasError)
+{
+    if (outputSize > 0) {
+        if (!AccumulateOutputData(outputData, outputSize)) {
+            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
+                         "HandleProcessOutput: AccumulateOutputData failed");
+            delete[] static_cast<uint8_t*>(outputData);
+            hasError = true;
+            return false; // Stop processing
+        }
+        zeroOutputCount = 0;
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                     "HandleProcessOutput: Data accumulated, g_outputDataLen=%{public}u", g_outputDataLen);
+    } else {
+        zeroOutputCount++;
+        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                     "HandleProcessOutput: Zero output, zeroOutputCount=%{public}d", zeroOutputCount);
+        if (zeroOutputCount >= ZERO_OUTPUT_THRESHOLD) {
+            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
+                         "HandleProcessOutput: Reached zero output threshold, processing complete");
+            delete[] static_cast<uint8_t*>(outputData);
+            return false; // Processing complete
+        }
+    }
+    return true; // Continue processing
 }
 
 // Create output ArrayBuffer
@@ -1578,44 +1637,11 @@ static bool ProcessIteration(OH_AudioConverter *converter, int32_t bufferSize, i
                  processCount, static_cast<int>(result), outputSize, zeroOutputCount, g_outputDataLen);
 
     if (result != AUDIOCONVERTER_SUCCESS) {
-        if (result == AUDIOCONVERTER_ERROR_UNKNOWN_CODE && !retryWithSmallerBuffer &&
-            processCount == FIRST_PROCESS_ATTEMPT) {
-            retryWithSmallerBuffer = true;
-            delete[] static_cast<uint8_t *>(outputData);
-            ResetProcessState();
-            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG, "ProcessIteration: Retrying with smaller buffer");
-            return true; // Continue retry
-        }
-
-        hasError = true;
-        OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                     "ProcessIteration: Error occurred, result=%{public}d, hasError=true",
-                     static_cast<int>(result));
-        delete[] static_cast<uint8_t*>(outputData);
-        return false; // Stop processing
+        return HandleProcessError(result, processCount, retryWithSmallerBuffer, hasError, outputData);
     }
-    
-    if (outputSize > 0) {
-        if (!AccumulateOutputData(outputData, outputSize)) {
-            OH_LOG_Print(LOG_APP, LOG_ERROR, GLOBAL_RESMGR, TAG,
-                         "ProcessIteration: AccumulateOutputData failed");
-            delete[] static_cast<uint8_t*>(outputData);
-            hasError = true;
-            return false; // Stop processing
-        }
-        zeroOutputCount = 0;
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                     "ProcessIteration: Data accumulated, g_outputDataLen=%{public}u", g_outputDataLen);
-    } else {
-        zeroOutputCount++;
-        OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                     "ProcessIteration: Zero output, zeroOutputCount=%{public}d", zeroOutputCount);
-        if (zeroOutputCount >= ZERO_OUTPUT_THRESHOLD) {
-            OH_LOG_Print(LOG_APP, LOG_INFO, GLOBAL_RESMGR, TAG,
-                         "ProcessIteration: Reached zero output threshold, processing complete");
-            delete[] static_cast<uint8_t*>(outputData);
-            return false; // Processing complete
-        }
+
+    if (!HandleProcessOutput(outputData, outputSize, zeroOutputCount, hasError)) {
+        return false;
     }
 
     delete[] static_cast<uint8_t*>(outputData);
@@ -1799,26 +1825,25 @@ static bool ReadWavHeader(int fd, uint8_t* header, int size)
     return true;
 }
 
-static napi_value CreateFileInfoObject(napi_env env, uint32_t samplingRate, uint16_t numChannels, int64_t channelLayout,
-                                       int32_t sampleFormat, off_t fileSize)
+static napi_value CreateFileInfoObject(napi_env env, const FileInfo &fileInfo)
 {
     napi_value resultObj;
     napi_create_object(env, &resultObj);
 
     napi_value samplingRateValue;
-    napi_create_int32(env, static_cast<int32_t>(samplingRate), &samplingRateValue);
+    napi_create_int32(env, static_cast<int32_t>(fileInfo.samplingRate), &samplingRateValue);
     napi_set_named_property(env, resultObj, "samplingRate", samplingRateValue);
 
     napi_value channelLayoutValue;
-    napi_create_int64(env, channelLayout, &channelLayoutValue);
+    napi_create_int64(env, fileInfo.channelLayout, &channelLayoutValue);
     napi_set_named_property(env, resultObj, "channelLayout", channelLayoutValue);
 
     napi_value numChannelsValue;
-    napi_create_int32(env, static_cast<int32_t>(numChannels), &numChannelsValue);
+    napi_create_int32(env, static_cast<int32_t>(fileInfo.numChannels), &numChannelsValue);
     napi_set_named_property(env, resultObj, "numChannels", numChannelsValue);
 
     napi_value sampleFormatValue;
-    napi_create_int32(env, sampleFormat, &sampleFormatValue);
+    napi_create_int32(env, fileInfo.sampleFormat, &sampleFormatValue);
     napi_set_named_property(env, resultObj, "sampleFormat", sampleFormatValue);
 
     napi_value encodingTypeValue;
@@ -1827,7 +1852,7 @@ static napi_value CreateFileInfoObject(napi_env env, uint32_t samplingRate, uint
     napi_set_named_property(env, resultObj, "encodingType", encodingTypeValue);
 
     napi_value fileSizeValue;
-    napi_create_int64(env, static_cast<int64_t>(fileSize), &fileSizeValue);
+    napi_create_int64(env, static_cast<int64_t>(fileInfo.fileSize), &fileSizeValue);
     napi_set_named_property(env, resultObj, "fileSize", fileSizeValue);
 
     return resultObj;
@@ -1896,7 +1921,14 @@ static napi_value AudioConverterGetFileInfo(napi_env env, napi_callback_info inf
                  "Audio file info: samplingRate=%{public}u, channels=%{public}u, "
                  "bitsPerSample=%{public}u", samplingRate, numChannels, bitsPerSample);
 
-    napi_value resultObj = CreateFileInfoObject(env, samplingRate, numChannels, channelLayout, sampleFormat, fileSize);
+    FileInfo fileInfo;
+    fileInfo.samplingRate = samplingRate;
+    fileInfo.numChannels = numChannels;
+    fileInfo.channelLayout = channelLayout;
+    fileInfo.sampleFormat = sampleFormat;
+    fileInfo.fileSize = fileSize;
+
+    napi_value resultObj = CreateFileInfoObject(env, fileInfo);
     return resultObj;
 }
 
