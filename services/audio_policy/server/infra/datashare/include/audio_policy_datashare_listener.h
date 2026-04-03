@@ -23,6 +23,7 @@ public:
     static void RegisterAccessiblilityBalance();
     static void RegisterAccessiblilityMono();
     static void RegisterBroadcast();
+    static void RegisterVehiclePriority();
 };
 
 } // namespace AudioStandard

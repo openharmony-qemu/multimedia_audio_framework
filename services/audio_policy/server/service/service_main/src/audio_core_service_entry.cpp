@@ -312,6 +312,12 @@ void AudioCoreService::EventEntry::OnConnectFailed(AudioDeviceDescriptor &desc)
     coreService_->OnConnectFailed(desc);
 }
 
+void AudioCoreService::EventEntry::OnVehiclePriorityChanged(bool enable)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->OnVehiclePriorityChanged(enable);
+}
+
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

@@ -359,6 +359,7 @@ void AudioPolicyService::RegisterAccessibilityMonitorHelper()
     AudioPolicyDataShareListener::RegisterAccessiblilityBalance();
     AudioPolicyDataShareListener::RegisterAccessiblilityMono();
     AudioPolicyDataShareListener::RegisterBroadcast();
+    AudioPolicyDataShareListener::RegisterVehiclePriority();
 }
 
 void AudioPolicyService::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
@@ -391,6 +392,11 @@ void AudioPolicyService::OnPrivacyDeviceSelected(DeviceType devType, const std::
 void AudioPolicyService::OnConnectFailed(AudioDeviceDescriptor &desc)
 {
     audioDeviceLock_.OnConnectFailed(desc);
+}
+
+void AudioPolicyService::OnVehiclePriorityChanged(bool enable)
+{
+    AudioCoreService::GetCoreService()->GetEventEntry()->OnVehiclePriorityChanged(enable);
 }
 
 void AudioPolicyService::LoadEffectLibrary()

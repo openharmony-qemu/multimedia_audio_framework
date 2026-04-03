@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_policy_datashare_listener.h"
+#include "audio_policy_service.h"
 #include "audio_setting_provider.h"
 #include "system_ability_definition.h"
 #include "audio_server_proxy.h"
@@ -31,6 +32,7 @@ static const char *CONFIG_AUDIO_BROADCAST_KEY = "linkedage_state_clearBroadcasti
 static const char *BROADCAST_ORIGINAL = "0";
 static const char *BROADCAST_OPEN = "1";
 static const char *BROADCAST_CLOSE = "2";
+static const char *CONFIG_VEHICLE_PRIORITY_KEY = "preferred_car_device";
 
 void AudioPolicyDataShareListener::RegisterAccessiblilityBalance()
 {
@@ -99,6 +101,26 @@ void AudioPolicyDataShareListener::RegisterBroadcast()
         AUDIO_INFO_LOG("RegisterObserver broadcast successfully");
     }
     updateFuncBroadcast(CONFIG_AUDIO_BROADCAST_KEY);
+}
+
+void AudioPolicyDataShareListener::RegisterVehiclePriority()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncPriority = [&](const std::string &key) {
+        bool value = false;
+        ErrCode ret = settingProvider.GetBoolValue(CONFIG_VEHICLE_PRIORITY_KEY, value, "system");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get preferred_car_device value failed");
+        AUDIO_INFO_LOG("preferred_car_device = %{public}s", value ? "true" : "false");
+        AudioPolicyService::GetAudioPolicyService().OnVehiclePriorityChanged(value);
+    };
+    sptr observer = settingProvider.CreateObserver(CONFIG_VEHICLE_PRIORITY_KEY, updateFuncPriority);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver vehiclePriority failed");
+    } else {
+        AUDIO_INFO_LOG("RegisterObserver vehiclePriority successfully");
+    }
+    updateFuncPriority(CONFIG_VEHICLE_PRIORITY_KEY);
 }
 
 } // namespace AudioStandard

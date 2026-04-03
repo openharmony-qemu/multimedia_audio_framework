@@ -142,6 +142,8 @@ public:
 
     void OnConnectFailed(AudioDeviceDescriptor &desc);
 
+    void OnVehiclePriorityChanged(bool enable);
+
     void LoadEffectLibrary();
 
     int32_t RegisterAudioRendererEventListener(int32_t clientPid, const sptr<IRemoteObject> &object,

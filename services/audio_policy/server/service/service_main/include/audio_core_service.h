@@ -225,6 +225,7 @@ public:
             AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray);
         void ReloadSourceForEffectV3(
             AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
+        void OnVehiclePriorityChanged(bool enable);
     private:
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
@@ -747,6 +748,7 @@ private:
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
 
     void CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void OnVehiclePriorityChanged(bool enable);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
