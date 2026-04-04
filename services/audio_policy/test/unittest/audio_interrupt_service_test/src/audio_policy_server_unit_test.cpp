@@ -5926,5 +5926,59 @@ HWTEST(AudioPolicyUnitTest, TriggerAudioZoneVolumeSync_001, TestSize.Level1)
     int32_t ret = server->TriggerAudioZoneVolumeSync();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported.
+ * @tc.number: IsAudioLoopbackSupported_001
+ * @tc.desc  : Test AudioPolicyServer::IsAudioLoopbackSupported with normal device type
+ */
+HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t modeIn = 0;
+    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
+    bool ret = false;
+    int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported.
+ * @tc.number: IsAudioLoopbackSupported_002
+ * @tc.desc  : Test AudioPolicyServer::IsAudioLoopbackSupported with NEARLINK device type
+ */
+HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t modeIn = 0;
+    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_NEARLINK);
+    bool ret = false;
+    int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported.
+ * @tc.number: IsAudioLoopbackSupported_003
+ * @tc.desc  : Test AudioPolicyServer::IsAudioLoopbackSupported with different loopback modes
+ */
+HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t modeIn = 1;
+    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
+    bool ret = false;
+    int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // AudioStandard
 } // OHOS
