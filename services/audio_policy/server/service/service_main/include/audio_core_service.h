@@ -739,6 +739,7 @@ private:
     bool HasNormalTypeSession(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList);
     bool IsSourceTypeValidForEc(SourceType sourceType);
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
+    bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
     int32_t ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);

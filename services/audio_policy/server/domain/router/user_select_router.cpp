@@ -25,7 +25,8 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
     if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
         AUDIO_INFO_LOG("Ringtone skip user select");
@@ -50,7 +51,8 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     }
 }
 
-shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);

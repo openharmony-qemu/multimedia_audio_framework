@@ -382,12 +382,12 @@ public:
           recordCaptureRet_(std::move(recordCaptureRet)),
           ringRenderRet_(std::move(ringRenderRet)) {}
 
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t, const uint32_t) override
     {
         return mediaRenderRet_;
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t, const uint32_t) override
     {
         return callRenderRet_;
     }

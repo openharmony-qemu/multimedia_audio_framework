@@ -24,6 +24,7 @@
 #include "audio_core_config_manager.h"
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
+#include "audio_router_select_strategy.h"
 #include "i_hpae_manager.h"
 #include "audio_volume.h"
 using namespace testing::ext;
@@ -587,30 +588,98 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetInputDevice_00
 /**
 * @tc.name  : Test AudioSelectInterfaceService.
 * @tc.number: AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_001
-* @tc.desc  : Test SetPreferredInputDeviceIfValid updates selected input device for stream.
+* @tc.desc  : Test SetPreferredInputDeviceIfValid handles nullptr and invalid preferred device.
 */
 HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_001, TestSize.Level1)
 {
     GetPermission();
-    uint32_t sessionId = TEST_AUDIO_SELECT_STREAM_ID + 1;
     auto &routerInfra = AudioRouterInfra::GetInstance();
-    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId, nullptr);
 
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = sessionId;
-    streamDesc->appInfo_.appUid = TEST_AUDIO_SELECT_UID;
-    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
-    streamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_MIC;
-    streamDesc->preferredInputDevice.deviceRole_ = INPUT_DEVICE;
-    streamDesc->preferredInputDevice.networkId_ = LOCAL_NETWORK_ID;
+    uint32_t invalidSessionId = TEST_AUDIO_SELECT_STREAM_ID + 1;
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, invalidSessionId, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> invalidStreamDesc = std::make_shared<AudioStreamDescriptor>();
+    invalidStreamDesc->sessionId_ = invalidSessionId;
+    invalidStreamDesc->appInfo_.appUid = TEST_AUDIO_SELECT_UID;
+    invalidStreamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_INVALID;
+    EXPECT_NO_THROW(AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(nullptr));
+    EXPECT_NO_THROW(AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(invalidStreamDesc));
+    EXPECT_EQ(routerInfra.GetStreamSelectDevice(TEST_AUDIO_SELECT_UID, invalidSessionId), nullptr);
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, invalidSessionId, nullptr);
+}
 
-    AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(streamDesc);
+/**
+* @tc.name  : Test AudioSelectInterfaceService.
+* @tc.number: AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_002
+* @tc.desc  : Test SetPreferredInputDeviceIfValid updates selected input device for recognition stream.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_002, TestSize.Level1)
+{
+    GetPermission();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    uint32_t recognitionSessionId = TEST_AUDIO_SELECT_STREAM_ID + 2;
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, recognitionSessionId, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> recognitionStreamDesc = std::make_shared<AudioStreamDescriptor>();
+    recognitionStreamDesc->sessionId_ = recognitionSessionId;
+    recognitionStreamDesc->appInfo_.appUid = TEST_AUDIO_SELECT_UID;
+    recognitionStreamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    recognitionStreamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_MIC;
+    recognitionStreamDesc->preferredInputDevice.deviceRole_ = INPUT_DEVICE;
+    recognitionStreamDesc->preferredInputDevice.networkId_ = LOCAL_NETWORK_ID;
+    AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(recognitionStreamDesc);
+    auto selectedRecognitionDevice = routerInfra.GetStreamSelectDevice(TEST_AUDIO_SELECT_UID, recognitionSessionId);
+    ASSERT_NE(selectedRecognitionDevice, nullptr);
+    EXPECT_EQ(selectedRecognitionDevice->deviceType_, DEVICE_TYPE_MIC);
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, recognitionSessionId, nullptr);
+}
 
-    auto selectedDevice = routerInfra.GetStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId);
-    ASSERT_NE(selectedDevice, nullptr);
-    EXPECT_EQ(selectedDevice->deviceType_, DEVICE_TYPE_MIC);
+/**
+* @tc.name  : Test AudioSelectInterfaceService.
+* @tc.number: AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_003
+* @tc.desc  : Test SetPreferredInputDeviceIfValid accepts BT_SPP for non-recognition stream.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_003, TestSize.Level1)
+{
+    GetPermission();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    uint32_t btSppSessionId = TEST_AUDIO_SELECT_STREAM_ID + 3;
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, btSppSessionId, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> btSppStreamDesc = std::make_shared<AudioStreamDescriptor>();
+    btSppStreamDesc->sessionId_ = btSppSessionId;
+    btSppStreamDesc->appInfo_.appUid = TEST_AUDIO_SELECT_UID;
+    btSppStreamDesc->capturerInfo_.sourceType = SOURCE_TYPE_INVALID;
+    btSppStreamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_BT_SPP;
+    btSppStreamDesc->preferredInputDevice.deviceRole_ = INPUT_DEVICE;
+    btSppStreamDesc->preferredInputDevice.networkId_ = LOCAL_NETWORK_ID;
+    AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(btSppStreamDesc);
+    auto selectedBtSppDevice = routerInfra.GetStreamSelectDevice(TEST_AUDIO_SELECT_UID, btSppSessionId);
+    ASSERT_NE(selectedBtSppDevice, nullptr);
+    EXPECT_EQ(selectedBtSppDevice->deviceType_, DEVICE_TYPE_BT_SPP);
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, btSppSessionId, nullptr);
+}
 
-    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, sessionId, nullptr);
+/**
+* @tc.name  : Test AudioSelectInterfaceService.
+* @tc.number: AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_004
+* @tc.desc  : Test SetPreferredInputDeviceIfValid updates selected input device for normal stream.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetPreferredInputDeviceIfValid_004, TestSize.Level1)
+{
+    GetPermission();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    uint32_t normalSessionId = TEST_AUDIO_SELECT_STREAM_ID + 4;
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, normalSessionId, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> normalStreamDesc = std::make_shared<AudioStreamDescriptor>();
+    normalStreamDesc->sessionId_ = normalSessionId;
+    normalStreamDesc->appInfo_.appUid = TEST_AUDIO_SELECT_UID;
+    normalStreamDesc->capturerInfo_.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    normalStreamDesc->preferredInputDevice.deviceType_ = DEVICE_TYPE_MIC;
+    normalStreamDesc->preferredInputDevice.deviceRole_ = INPUT_DEVICE;
+    normalStreamDesc->preferredInputDevice.networkId_ = LOCAL_NETWORK_ID;
+    AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(normalStreamDesc);
+    auto selectedNormalDevice = routerInfra.GetStreamSelectDevice(TEST_AUDIO_SELECT_UID, normalSessionId);
+    ASSERT_NE(selectedNormalDevice, nullptr);
+    EXPECT_EQ(selectedNormalDevice->deviceType_, DEVICE_TYPE_MIC);
+    routerInfra.UpdateStreamSelectDevice(TEST_AUDIO_SELECT_UID, normalSessionId, nullptr);
 }
 
 /**
@@ -6100,7 +6169,6 @@ HWTEST_F(AudioCoreServiceUnitTest, PipeManagerPassThrough_001, TestSize.Level1)
     EXPECT_EQ(audioCoreService->GetFastFormat(), pipeManager->GetFastFormat());
     EXPECT_EQ(audioCoreService->IsSupportInnerCaptureOffload(), pipeManager->IsSupportInnerCaptureOffload());
     EXPECT_EQ(audioCoreService->GetMaxRendererInstances(), pipeManager->GetMaxRendererInstances());
-    EXPECT_EQ(audioCoreService->GetEnhancedRoutingSupported(), pipeManager->GetEnhancedRoutingSupported());
 
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> coreDeviceClassInfo = {};
     std::unordered_map<ClassType, std::list<AudioModuleInfo>> pipeDeviceClassInfo = {};
@@ -6984,6 +7052,18 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
 
     pipeManager->RemoveSwitchStream(originalSessionId);
+}
+
+/**
+ * @tc.name  : GetEnhancedRoutingSupported_001
+ * @tc.number: GetEnhancedRoutingSupported_001
+ * @tc.desc  : Verify AudioSelectInterfaceService forwards enhanced routing support from strategy layer.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, GetEnhancedRoutingSupported_001, TestSize.Level1)
+{
+    bool supported = AudioSelectInterfaceService::GetInstance().GetEnhancedRoutingSupported();
+    EXPECT_EQ(supported, AudioRouterSelectStrategy::GetInstance().GetEnhancedRoutingSupported());
+    EXPECT_EQ(GetServerPtr()->coreService_->GetEnhancedRoutingSupported(), supported);
 }
 } // namespace AudioStandard
 } // namespace OHOS

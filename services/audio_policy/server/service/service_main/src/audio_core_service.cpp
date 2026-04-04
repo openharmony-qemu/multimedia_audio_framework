@@ -406,7 +406,7 @@ bool AudioCoreService::IsSupportInnerCaptureOffload()
 
 bool AudioCoreService::GetEnhancedRoutingSupported()
 {
-    return pipeManager_->GetEnhancedRoutingSupported();
+    return AudioSelectInterfaceService::GetInstance().GetEnhancedRoutingSupported();
 }
 
 int32_t AudioCoreService::GetMaxRendererInstances()
@@ -609,6 +609,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetCaptureClientDevice(
 void AudioCoreService::SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     RecordSelectDevice(ParsePreferredInputDeviceHistory(streamDesc));
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifySystemPermission(),
+        "set preferred input device denied: no system permission");
     AudioSelectInterfaceService::GetInstance().SetPreferredInputDeviceIfValid(streamDesc);
 }
 
@@ -1748,8 +1750,7 @@ int32_t AudioCoreService::SelectInputDevice(sptr<AudioCapturerFilter> audioCaptu
             " type:" + std::to_string(selectedDesc[0]->deviceType_);
         RecordSelectDevice(selectHistory);
     }
-
-    return audioRecoveryDevice_.SelectInputDevice(audioCapturerFilter, selectedDesc);
+    return AudioSelectInterfaceService::GetInstance().SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 
 int32_t AudioCoreService::SelectInputDeviceByUid(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc,

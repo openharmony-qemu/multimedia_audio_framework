@@ -44,7 +44,6 @@ static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 static constexpr int32_t UID_MEDIA_SA = 1013;
 static constexpr uint8_t AUDIO_MAX_CAPTURE_CHANNELS = 16;
-static constexpr int32_t APP_SELECT_INDEPENDENT = 1;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -658,7 +657,7 @@ int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<Audio
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED, "create capturer filter failed");
     audioCapturerFilter->uid = static_cast<int32_t>(getuid());
     audioCapturerFilter->capturerInfo = capturerInfo_;
-    audioCapturerFilter->audioDeviceSelectMode = APP_SELECT_INDEPENDENT;
+    audioCapturerFilter->audioDeviceSelectMode = SELECT_STRATEGY_STREAM;
     audioCapturerFilter->streamId = static_cast<int32_t>(sessionID_);
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }

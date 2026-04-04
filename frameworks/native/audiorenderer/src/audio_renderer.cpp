@@ -35,6 +35,7 @@
 #include "app_bundle_manager.h"
 #include "audio_stream_types.h"
 #include "audio_performance_monitor.h"
+#include "audio_device_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -66,7 +67,6 @@ static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static constexpr int32_t UID_MEDIA = 1013;
 static constexpr int32_t SWITCH_WAIT_TIME_MS = 20; //20ms
-static constexpr int32_t APP_SELECT_INDEPENDENT = 1;
 
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
@@ -2114,7 +2114,7 @@ int32_t AudioRendererPrivate::SelectOutputDeviceInner(const std::shared_ptr<Audi
     audioRendererFilter->streamId = static_cast<int32_t>(sessionID_);
     audioRendererFilter->rendererInfo = rendererInfo_;
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
-        APP_SELECT_INDEPENDENT);
+        SELECT_STRATEGY_STREAM);
 }
 
 int32_t AudioRendererPrivate::SelectOutputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc) const
