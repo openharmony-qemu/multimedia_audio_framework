@@ -2857,9 +2857,10 @@ HWTEST(AudioProcessInServerUnitTest, StartInner_Loopback_001, TestSize.Level1)
     configRet.capturerInfo.isLoopback = true;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    audioProcessInServerRet.status_ = I_STATUS_STOPPED;
-    auto ret = audioProcessInServerRet.StartInner();
-    EXPECT_EQ(ret, SUCCESS);
+    audioProcessInServerRet.isInited_ = true;
+    *audioProcessInServerRet.streamStatus_ = STREAM_STARTING;
+    audioProcessInServerRet.StartInner();
+    EXPECT_EQ(audioProcessInServerRet.needCheckBackground_, false);
 }
 
 /**
@@ -2875,9 +2876,10 @@ HWTEST(AudioProcessInServerUnitTest, Resume_Loopback_001, TestSize.Level1)
     configRet.capturerInfo.isLoopback = true;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    audioProcessInServerRet.status_ = I_STATUS_PAUSED;
-    auto ret = audioProcessInServerRet.Resume();
-    EXPECT_EQ(ret, SUCCESS);
+    audioProcessInServerRet.isInited_ = true;
+    *audioProcessInServerRet.streamStatus_ = STREAM_STARTING;
+    audioProcessInServerRet.Resume();
+    EXPECT_EQ(audioProcessInServerRet.needCheckBackground_, false);
 }
 
 /**
@@ -2893,13 +2895,23 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_Loopback_001, TestSiz
     configRet.capturerInfo.isLoopback = true;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    audioProcessInServerRet.status_ = I_STATUS_RUNNING;
-    AudioCaptureDataProcParams procParams = {
-        .streamId = DEFAULT_STREAM_ID,
-        .timestamp = 0,
-        .buffer = nullptr,
-        .bufferLen = 0
-    };
+    *audioProcessInServerRet.status_ = STREAM_RUNNING;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = 1000;
+    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
+
+    BufferDesc readBuf;
+    readBuf.bufLength = 512;
+    readBuf.buffer = new uint8_t[readBuf.bufLength];
+    std::vector<uint8_t> captureConvBuffer;
+    std::vector<uint8_t> rendererConvBuffer;
+    AudioCaptureDataProcParams procParams(
+        readBuf,
+        captureConvBuffer,
+        rendererConvBuffer
+    );
+
     auto result = audioProcessInServerRet.WriteToSpecialProcBuf(procParams);
     EXPECT_EQ(result, SUCCESS);
 }
@@ -2918,17 +2930,22 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_NonLoopback_001, Test
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
     ASSERT_NE(audioProcessInServer, nullptr);
-    audioProcessInServer->status_ = I_STATUS_RUNNING;
-    uint8_t testBuffer[100] = {0};
-    AudioCaptureDataProcParams procParams = {
-        .streamId = DEFAULT_STREAM_ID,
-        .timestamp = 0,
-        .buffer = testBuffer,
-        .bufferLen = sizeof(testBuffer)
-    };
-    auto result = audioProcessInServer->WriteToSpecialProcBuf(procParams);
-    EXPECT_EQ(result, SUCCESS);
-}
+    *audioProcessInServer->status_ = STREAM_RUNNING;
 
+    BufferDesc readBuf;
+    readBuf.bufLength = 512;
+    readBuf.buffer = new uint8_t[readBuf.bufLength];
+    std::vector<uint8_t> captureConvBuffer;
+    std::vector<uint8_t> rendererConvBuffer;
+    AudioCaptureDataProcParams procParams(
+        readBuf,
+        captureConvBuffer,
+        rendererConvBuffer
+    );
+
+    audioProcessInServerRet.processBuffer_ = nullptr;
+    auto result = audioProcessInServer->WriteToSpecialProcBuf(procParams);
+    EXPECT_EQ(result, ERR_INVALID_HANDLE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

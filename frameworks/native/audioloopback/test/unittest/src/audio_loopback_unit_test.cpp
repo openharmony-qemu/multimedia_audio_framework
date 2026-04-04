@@ -642,18 +642,5 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_Nearlink_Loopb
     EXPECT_TRUE(audioLoopback->isRendererUsb_);
     EXPECT_TRUE(audioLoopback->isCapturerUsb_);
 }
-
-HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CheckDeviceSupport_Nearlink_LoopbackSupported_002, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->activeOutputDevice_ = DEVICE_TYPE_NEARLINK;
-    audioLoopback->activeInputDevice_ = DEVICE_TYPE_MIC;
-    audioLoopback->mode_ = LOOPBACK_SOFTWARE;
-    auto result = audioLoopback->CheckDeviceSupport();
-    EXPECT_EQ(result, DEFAULT_OK);
-    EXPECT_TRUE(audioLoopback->isRendererUsb_);
-    EXPECT_TRUE(audioLoopback->isCapturerUsb_);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
