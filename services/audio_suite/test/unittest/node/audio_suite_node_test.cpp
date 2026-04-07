@@ -23,6 +23,7 @@
 #include "audio_suite_node.h"
 #include "audio_suite_pcm_buffer.h"
 #include "audio_suite_format_conversion.h"
+#include "audio_suite_unittest_tools.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -86,6 +87,10 @@ class AudioSuiteNodeTest : public ::testing::Test {
 public:
     void SetUp() override
     {
+        if (!AllNodeTypesSupported()) {
+            GTEST_SKIP() << "not support all node types, skip this test";
+        }
+
         node_ = std::make_shared<TestAudioNode>();
         node_->Init();
     }
