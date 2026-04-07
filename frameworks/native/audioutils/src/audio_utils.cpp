@@ -220,7 +220,9 @@ bool Util::IsDualToneStreamType(const AudioStreamType streamType)
     if (VolumeUtils::IsPCVolumeEnable()) {
         return false;
     }
-    return streamType == STREAM_RING || streamType == STREAM_VOICE_RING || streamType == STREAM_ALARM;
+    // The notification is not dual tone type. But it always uses the volume of the speaker.
+    return streamType == STREAM_RING || streamType == STREAM_VOICE_RING ||
+        streamType == STREAM_ALARM || streamType == STREAM_NOTIFICATION;
 }
 
 bool Util::IsRingerOrAlarmerStreamUsage(const StreamUsage &usage)
