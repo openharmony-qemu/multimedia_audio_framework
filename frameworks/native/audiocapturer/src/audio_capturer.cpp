@@ -427,8 +427,29 @@ static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerI
         return;
     }
 
-    AUDIO_WARNING_LOG("voice recognition micIn/ec degrade flag update skipped, sessionId:%{public}u not found",
-        audioStreamParams.originalSessionId);
+    AudioCapturerInfo queryInfo = capturerInfo;
+    queryInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    queryInfo.encodingType = audioStreamParams.encoding;
+    queryInfo.channelLayout = audioStreamParams.channelLayout;
+    auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
+    for (const auto &deviceDesc : preferredInputDevices) {
+        if (deviceDesc == nullptr) {
+            continue;
+        }
+        audioStreamParams.isVoiceRecognitionMicInEcDegrade = !IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(deviceDesc);
+        AUDIO_WARNING_LOG("voice recognition micIn/ec degrade flag fallback to preferred input device, "
+            "sessionId:%{public}u, degrade:%{public}d, deviceType:%{public}d, networkId:%{public}s",
+            audioStreamParams.originalSessionId, audioStreamParams.isVoiceRecognitionMicInEcDegrade,
+            deviceDesc->deviceType_, deviceDesc->networkId_.c_str());
+        return;
+    }
+
+    DeviceType activeInputDevice = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    audioStreamParams.isVoiceRecognitionMicInEcDegrade =
+        !IsVoiceRecognitionMicInEcSupportedInputDeviceType(activeInputDevice);
+    AUDIO_WARNING_LOG("voice recognition micIn/ec degrade flag fallback to active input device, "
+        "sessionId:%{public}u, degrade:%{public}d, activeInputDevice:%{public}d",
+        audioStreamParams.originalSessionId, audioStreamParams.isVoiceRecognitionMicInEcDegrade, activeInputDevice);
 }
 
 static inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
