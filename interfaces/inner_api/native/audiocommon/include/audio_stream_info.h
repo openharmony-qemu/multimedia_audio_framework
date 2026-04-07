@@ -137,6 +137,7 @@ struct AudioStreamParams {
     uint8_t micInFormat = 0;
     uint8_t micInChannels = 0;
     uint64_t micInChannelLayout = 0ULL;
+    bool isVoiceRecognitionMicInEcDegrade = false;
     uint8_t ultraFastFlag = 0;
 };
 

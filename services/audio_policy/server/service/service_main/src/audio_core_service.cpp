@@ -28,6 +28,8 @@
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
 #include "audio_bundle_manager.h"
+
+#include <algorithm>
 #include "hisysevent.h"
 #include "media_monitor_manager.h"
 #include "audio_volume.h"
@@ -230,24 +232,39 @@ static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t 
     return true;
 }
 
+static bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_MIC:
+        case DEVICE_TYPE_WAKEUP:
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool IsVoiceRecognitionMicInEcSupportedInputDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr && deviceDesc->networkId_ == LOCAL_NETWORK_ID &&
+        IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceDesc->deviceType_);
+}
+
+static bool HasDegradeInputDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    return std::any_of(deviceDescs.begin(), deviceDescs.end(), [](const auto &deviceDesc) {
+        return deviceDesc != nullptr && !IsVoiceRecognitionMicInEcSupportedInputDevice(deviceDesc);
+    });
+}
+
 static bool IsDegradeInputStream(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
-    for (const auto &deviceDesc : streamDesc->newDeviceDescs_) {
-        if (deviceDesc != nullptr &&
-            (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET ||
-            deviceDesc->networkId_ != LOCAL_NETWORK_ID)) {
-            return true;
-        }
-    }
-    for (const auto &deviceDesc : streamDesc->oldDeviceDescs_) {
-        if (deviceDesc != nullptr &&
-            (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET ||
-            deviceDesc->networkId_ != LOCAL_NETWORK_ID)) {
-            return true;
-        }
-    }
-    return false;
+    return HasDegradeInputDevice(streamDesc->newDeviceDescs_) || HasDegradeInputDevice(streamDesc->oldDeviceDescs_);
 }
 
 static bool IsVoiceRecognitionMicInEcRequested(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
@@ -579,7 +596,8 @@ int32_t AudioCoreService::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "streamDesc is nullptr");
-    if (IsVoiceRecognitionMicInEcRequested(streamDesc)) {
+    bool hasInputDeviceSnapshot = !streamDesc->newDeviceDescs_.empty() || !streamDesc->oldDeviceDescs_.empty();
+    if (hasInputDeviceSnapshot && IsVoiceRecognitionMicInEcRequested(streamDesc)) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
             "micin/ec capture denied: no system permission");
         CHECK_AND_RETURN_RET_LOG(IsVoiceRecognitionIndependentRouteSupported(), ERR_NOT_SUPPORTED,
@@ -599,6 +617,12 @@ int32_t AudioCoreService::CreateCapturerClient(
     pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
+    if (!hasInputDeviceSnapshot && IsVoiceRecognitionMicInEcRequested(streamDesc)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+            "micin/ec capture denied: no system permission");
+        CHECK_AND_RETURN_RET_LOG(IsVoiceRecognitionIndependentRouteSupported(), ERR_NOT_SUPPORTED,
+            "micin/ec capture denied: voice recognition independent route not supported");
+    }
 
     UpdateRecordStreamInfo(streamDesc);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",

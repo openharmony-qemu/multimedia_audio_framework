@@ -19,6 +19,7 @@
 #include "audio_capturer.h"
 #include "shared_audio_capturer_wrapper.h"
 
+#include <algorithm>
 #include <cinttypes>
 #include <cstring>
 
@@ -366,62 +367,53 @@ static inline uint32_t GetClientDumpChannels(const AudioCapturerInfo &capturerIn
     return appChannels;
 }
 
-static inline bool IsUsbArmInputDeviceType(DeviceType deviceType)
+static inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &audioStreamParams)
 {
-    return deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
-}
-
-static inline bool IsPotentialDistributedInputDeviceType(DeviceType deviceType)
-{
-    return deviceType == DEVICE_TYPE_REMOTE_DAUDIO || deviceType == DEVICE_TYPE_REMOTE_CAST;
-}
-
-static inline bool IsDegradeInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
-{
-    return deviceDesc != nullptr &&
-        (IsUsbArmInputDeviceType(deviceDesc->deviceType_) || deviceDesc->networkId_ != LOCAL_NETWORK_ID);
-}
-
-static inline bool IsVoiceRecognitionMicInEcDegradeFallback(const AudioCapturerInfo &capturerInfo,
-    const AudioStreamParams &audioStreamParams, bool checkPreferredInput = false)
-{
-    bool isVoiceRecognitionMicInEcRequest = capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+    return capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
         (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW);
-    CHECK_AND_RETURN_RET(isVoiceRecognitionMicInEcRequest, false);
-    DeviceType activeInputDevice = AudioPolicyManager::GetInstance().GetActiveInputDevice();
-    if (IsUsbArmInputDeviceType(activeInputDevice)) {
-        return true;
-    }
-    if (!checkPreferredInput && !IsPotentialDistributedInputDeviceType(activeInputDevice)) {
-        return false;
-    }
-
-    AudioCapturerInfo queryInfo = capturerInfo;
-    queryInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
-    queryInfo.encodingType = audioStreamParams.encoding;
-    queryInfo.channelLayout = audioStreamParams.channelLayout;
-    auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
-    for (const auto &deviceDesc : preferredInputDevices) {
-        if (IsDegradeInputDeviceDesc(deviceDesc)) {
-            return true;
-        }
-    }
-    return false;
 }
 
-static inline void ClearMicInEcStreamInfo(AudioStreamInfo &micInStreamInfo, AudioStreamInfo &ecStreamInfo)
+static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType deviceType)
 {
-    micInStreamInfo.samplingRate = static_cast<AudioSamplingRate>(0);
-    micInStreamInfo.encoding = AudioEncodingType::ENCODING_INVALID;
-    micInStreamInfo.format = AudioSampleFormat::INVALID_WIDTH;
-    micInStreamInfo.channels = AudioChannel::CHANNEL_UNKNOW;
-    micInStreamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+    switch (deviceType) {
+        case DEVICE_TYPE_MIC:
+        case DEVICE_TYPE_WAKEUP:
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            return true;
+        default:
+            return false;
+    }
+}
 
-    ecStreamInfo.samplingRate = static_cast<AudioSamplingRate>(0);
-    ecStreamInfo.encoding = AudioEncodingType::ENCODING_INVALID;
-    ecStreamInfo.format = AudioSampleFormat::INVALID_WIDTH;
-    ecStreamInfo.channels = AudioChannel::CHANNEL_UNKNOW;
-    ecStreamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
+static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr && deviceDesc->networkId_ == LOCAL_NETWORK_ID &&
+        IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceDesc->deviceType_);
+}
+
+static inline bool HasDegradeInputDevice(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
+{
+    return std::any_of(deviceDescs.begin(), deviceDescs.end(), [](const auto &deviceDesc) {
+        return deviceDesc != nullptr && !IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(deviceDesc);
+    });
+}
+
+static inline bool IsVoiceRecognitionMicInEcDegradeFallback(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    CHECK_AND_RETURN_RET(streamDesc != nullptr, false);
+    return HasDegradeInputDevice(streamDesc->newDeviceDescs_) || HasDegradeInputDevice(streamDesc->oldDeviceDescs_);
+}
+
+static inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &audioStreamParams)
+{
+    return IsVoiceRecognitionMicInEcRequest(capturerInfo, audioStreamParams) &&
+        audioStreamParams.isVoiceRecognitionMicInEcDegrade;
 }
 
 static inline void FillCreateCapturerParams(AudioCapturerParams &params, const AudioCapturerOptions &capturerOptions)
@@ -580,6 +572,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
+    audioStreamParams.isVoiceRecognitionMicInEcDegrade = IsVoiceRecognitionMicInEcDegradeFallback(streamDesc);
     HILOG_COMM_INFO("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
@@ -690,10 +683,6 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(audioStreamParams.ecChannels);
     streamDesc->ecStreamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.ecEncoding);
     streamDesc->ecStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.ecChannelLayout);
-    if (IsVoiceRecognitionMicInEcDegradeFallback(capturerInfo_, audioStreamParams, true)) {
-        ClearMicInEcStreamInfo(streamDesc->micInStreamInfo_, streamDesc->ecStreamInfo_);
-        AUDIO_INFO_LOG("degrade input voice recognition: clear micIn/ec stream info for policy");
-    }
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->capturerInfo_ = capturerInfo_;
@@ -1589,7 +1578,7 @@ int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &pr
     const size_t processFrameSize =
         static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
     CHECK_AND_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM, "invalid process frame size");
-    bool degradeFallback = IsVoiceRecognitionMicInEcDegradeFallback(capturerInfo_, audioStreamParams);
+    bool degradeFallback = IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams);
 
     size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
         bufDesc.dataLength : bufDesc.bufLength;
@@ -1639,7 +1628,7 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     ret = ValidateDeinterleaveOutputBuffer(targetBuffers, bufferSizes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "output buffer is invalid");
 
-    if (IsVoiceRecognitionMicInEcDegradeFallback(capturerInfo_, audioStreamParams)) {
+    if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams)) {
         ret = FillDegradeFallbackSilentBuffers(bufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FillDegradeFallbackSilentBuffers failed");
         UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
@@ -1993,6 +1982,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
         streamDesc, flag, switchInfo.params.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateCapturerClient failed");
+    switchInfo.params.isVoiceRecognitionMicInEcDegrade = IsVoiceRecognitionMicInEcDegradeFallback(streamDesc);
 
     targetClass = DecideStreamClassAndUpdateCapturerInfo(flag);
     if (targetClass == IAudioStream::VOIP_STREAM) {
@@ -2016,6 +2006,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             streamDesc, flag, switchInfo.params.originalSessionId);
         CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
             HILOG_COMM_ERROR("[GenerateNewStream]CreateRendererClient failed"));
+        switchInfo.params.isVoiceRecognitionMicInEcDegrade = IsVoiceRecognitionMicInEcDegradeFallback(streamDesc);
 
         newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
             switchInfo.eStreamType, appInfo_.appUid);
@@ -2446,10 +2437,6 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GenerateStreamDesc(
     streamDesc->ecStreamInfo_.channels = static_cast<AudioChannel>(switchInfo.params.ecChannels);
     streamDesc->ecStreamInfo_.encoding = static_cast<AudioEncodingType>(switchInfo.params.ecEncoding);
     streamDesc->ecStreamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.ecChannelLayout);
-    if (IsVoiceRecognitionMicInEcDegradeFallback(switchInfo.capturerInfo, switchInfo.params, true)) {
-        ClearMicInEcStreamInfo(streamDesc->micInStreamInfo_, streamDesc->ecStreamInfo_);
-        AUDIO_INFO_LOG("degrade input voice recognition: clear micIn/ec stream info for policy on switch");
-    }
     streamDesc->capturerInfo_= switchInfo.capturerInfo;
     streamDesc->sessionId_ = switchInfo.sessionId;
 
@@ -2479,6 +2466,7 @@ int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag,
         audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
+    audioStreamParams.isVoiceRecognitionMicInEcDegrade = IsVoiceRecognitionMicInEcDegradeFallback(streamDesc);
     AUDIO_INFO_LOG("Create normal capturer, id: %{public}u", audioStreamParams.originalSessionId);
 
     audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);

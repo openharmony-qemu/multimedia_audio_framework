@@ -79,40 +79,10 @@ inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerIn
         (params.micInChannels > CHANNEL_UNKNOW || params.ecChannels > CHANNEL_UNKNOW);
 }
 
-inline bool IsUsbArmInputDeviceType(DeviceType deviceType)
-{
-    return deviceType == DEVICE_TYPE_USB_ARM_HEADSET;
-}
-
-inline bool IsDegradeInputDeviceDesc(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
-{
-    return deviceDesc != nullptr &&
-        (IsUsbArmInputDeviceType(deviceDesc->deviceType_) || deviceDesc->networkId_ != LOCAL_NETWORK_ID);
-}
-
-inline bool IsDegradeInputForCapturer(const AudioCapturerInfo &capturerInfo, const AudioStreamParams &params)
-{
-    if (IsUsbArmInputDeviceType(AudioPolicyManager::GetInstance().GetActiveInputDevice())) {
-        return true;
-    }
-
-    AudioCapturerInfo queryInfo = capturerInfo;
-    queryInfo.samplingRate = static_cast<AudioSamplingRate>(params.samplingRate);
-    queryInfo.encodingType = params.encoding;
-    queryInfo.channelLayout = params.channelLayout;
-    auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
-    for (const auto &deviceDesc : preferredInputDevices) {
-        if (IsDegradeInputDeviceDesc(deviceDesc)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
     const AudioStreamParams &params)
 {
-    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && IsDegradeInputForCapturer(capturerInfo, params);
+    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && params.isVoiceRecognitionMicInEcDegrade;
 }
 }
 
