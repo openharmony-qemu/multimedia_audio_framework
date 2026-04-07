@@ -675,8 +675,10 @@ int32_t CapturerInServer::StartInner()
         CHECK_AND_RETURN_RET_LOG(CheckBgRecordPermission(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
             "Check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
-    if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid)) {
-        TurnOnMicIndicator();
+    if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
+        processConfig_.capturerInfo.sourceType)) {
+        CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
+            "Turn on micIndicator failed for stream:%{public}d!", streamIndex_);
     }
     TurnOnRemoteMicIndicator();
     NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
@@ -723,7 +725,7 @@ int32_t CapturerInServer::Pause()
         AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
-    if (needCheckBackground_) {
+    if (isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
     TurnOffRemoteMicIndicator();
@@ -820,7 +822,7 @@ int32_t CapturerInServer::Stop()
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
     }
-    if (needCheckBackground_) {
+    if (isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
     TurnOffRemoteMicIndicator();
@@ -890,7 +892,7 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
         innerCapId_ = 0;
     }
 #endif
-    if (needCheckBackground_) {
+    if (isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     TurnOffRemoteMicIndicator();

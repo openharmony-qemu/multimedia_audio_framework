@@ -18,8 +18,10 @@
 #include "audio_errors.h"
 #include "audio_service.h"
 #include "audio_device_info.h"
+#include "audio_utils.h"
 #include "oh_audio_buffer.h"
 #include "core_service_handler.h"
+#include "record_privacy_manager.h"
 #include <gmock/gmock.h>
 
 using namespace testing::ext;
@@ -1165,11 +1167,10 @@ HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_001, TestSize.Level2)
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
     audioProcessInServerRet.isMicIndicatorOn_ = true;
 
-    bool ret = audioProcessInServerRet.TurnOnMicIndicator(capturerState);
-    EXPECT_FALSE(ret);
+    bool ret = audioProcessInServerRet.TurnOnMicIndicator();
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -1183,10 +1184,9 @@ HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_002, TestSize.Level2)
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
     audioProcessInServerRet.isMicIndicatorOn_ = false;
 
-    bool ret = audioProcessInServerRet.TurnOnMicIndicator(capturerState);
+    bool ret = audioProcessInServerRet.TurnOnMicIndicator();
     EXPECT_FALSE(ret);
 }
 
@@ -2773,7 +2773,7 @@ HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
  * @tc.number: TurnOnMicIndicator_003
  * @tc.desc  : Test TurnOnMicIndicator interface with CAPTURER_RUNNING state.
  */
-HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_003, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, CheckBgRecordPermission_001, TestSize.Level1)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -2781,8 +2781,53 @@ HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_003, TestSize.Level1)
     ASSERT_NE(audioProcessInServer, nullptr);
 
     CapturerState capturerState = CAPTURER_RUNNING;
-    bool result = audioProcessInServer->TurnOnMicIndicator(capturerState);
+    bool result = audioProcessInServer->CheckBgRecordPermission(capturerState);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test CheckBgRecordPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckBgRecordPermission_002
+ * @tc.desc  : Test CheckBgRecordPermission interface with switch stream record.
+ */
+HWTEST(AudioProcessInServerUnitTest, CheckBgRecordPermission_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.callerUid = DEFAULT_STREAM_ID;
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    SwitchStreamInfo info = {
+        audioProcessInServerRet.GetSessionId(),
+        configRet.callerUid,
+        configRet.appInfo.appUid,
+        configRet.appInfo.appPid,
+        configRet.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_TRUE(audioProcessInServerRet.CheckBgRecordPermission(CAPTURER_RUNNING));
+    EXPECT_TRUE(audioProcessInServerRet.TurnOffMicIndicator(CAPTURER_RELEASED));
+}
+
+/**
+ * @tc.name  : Test NeedTurnOnMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: NeedTurnOnMicIndicator_001
+ * @tc.desc  : Test NeedTurnOnMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, NeedTurnOnMicIndicator_001, TestSize.Level1)
+{
+    EXPECT_TRUE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(DEFAULT_STREAM_ID, SOURCE_TYPE_MIC));
+    EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        INTELL_VOICE_SERVICR_UID, SOURCE_TYPE_MIC));
+    EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        DEFAULT_STREAM_ID, SOURCE_TYPE_PLAYBACK_CAPTURE));
+    EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        DEFAULT_STREAM_ID, SOURCE_TYPE_REMOTE_CAST));
 }
 
 /**

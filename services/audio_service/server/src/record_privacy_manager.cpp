@@ -34,7 +34,7 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_DMSDP_SA = 7071;
  
-std::set<int32_t> RECORD_PRIVACY_BLACK_LIST = {
+const std::set<int32_t> RECORD_PRIVACY_SKIP_UIDS = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     0, // UID_ROOT
 #endif
@@ -46,7 +46,7 @@ std::set<int32_t> RECORD_PRIVACY_BLACK_LIST = {
     UID_TELEPHONY_SA, // used in distributed communication call
     UID_DMSDP_SA
 };
-}// namespace
+} // namespace
  
 RecordPrivacyManager &RecordPrivacyManager::GetInstance()
 {
@@ -103,9 +103,13 @@ bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t se
     return true;
 }
  
-bool RecordPrivacyManager::NeedTurnOnMicIndicator(int32_t callingUid) const
+bool RecordPrivacyManager::NeedTurnOnMicIndicator(int32_t callingUid, SourceType sourceType) const
 {
-    if (RECORD_PRIVACY_BLACK_LIST.count(callingUid)) {
+    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || sourceType == SOURCE_TYPE_REMOTE_CAST) {
+        AUDIO_INFO_LOG("sourceType(%{public}d) need not turn on mic indicator", sourceType);
+        return false;
+    }
+    if (RECORD_PRIVACY_SKIP_UIDS.count(callingUid)) {
         AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", callingUid);
         return false;
     }

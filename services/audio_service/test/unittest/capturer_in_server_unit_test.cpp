@@ -20,6 +20,7 @@
 #include "pa_adapter_manager.h"
 #include "capturer_in_server.h"
 #include "core_service_handler.h"
+#include "record_privacy_manager.h"
 
 using namespace testing::ext;
 
@@ -1197,11 +1198,11 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_037, TestSize.Level1
 
     CapturerState capturerState = CAPTURER_NEW;
     capturerInServer_->processConfig_.appInfo.appFullTokenId = (static_cast<uint64_t>(1) << 32);
-    auto ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    auto ret = capturerInServer_->CheckBgRecordPermission(capturerState);
     EXPECT_EQ(ret, false);
 
     capturerInServer_->isMicIndicatorOn_ = true;
-    ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    ret = capturerInServer_->TurnOnMicIndicator();
     EXPECT_EQ(true, ret);
 }
 
@@ -1224,7 +1225,37 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1
 
     capturerInServer_->isMicIndicatorOn_ = true;
     ret = capturerInServer_->TurnOffMicIndicator(capturerState);
-    EXPECT_EQ(false, ret);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038A.
+ * @tc.desc  : Test CheckBgRecordPermission success path.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038A, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.callerUid = CAPTURER_FLAG;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->streamIndex_ = 123;
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_TRUE(capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING));
+    EXPECT_TRUE(capturerInServer_->TurnOffMicIndicator(CAPTURER_RELEASED));
 }
 
 /**

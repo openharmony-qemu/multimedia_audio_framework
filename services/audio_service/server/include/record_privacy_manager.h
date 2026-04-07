@@ -21,6 +21,8 @@
 #include <mutex>
 #include <set>
 
+#include "audio_info.h"
+
 namespace OHOS {
 namespace AudioStandard {
 class RecordPrivacyManager {
@@ -29,7 +31,7 @@ public:
 
     bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
     bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
-    bool NeedTurnOnMicIndicator(int32_t callingUid) const;
+    bool NeedTurnOnMicIndicator(int32_t callingUid, SourceType sourceType) const;
 
 private:
     RecordPrivacyManager() = default;

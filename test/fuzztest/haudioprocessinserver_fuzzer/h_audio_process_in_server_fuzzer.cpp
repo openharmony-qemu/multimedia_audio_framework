@@ -22,11 +22,14 @@
 
 #include "audio_service.h"
 #include "audio_process_in_server.h"
+#include "audio_utils.h"
+#include "record_privacy_manager.h"
 using namespace std;
 static int32_t NUM_32 = 32;
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DEFAULT_STREAM_ID = 10;
+constexpr int32_t INTELLIGENT_VOICE_UID = 1042;
 
 
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
@@ -98,10 +101,53 @@ void AudioProcessInServerExecute(FuzzedDataProvider &provider)
     audioProcessInServer->Release(isSwitchStream);
 }
 
+void AudioProcessInServerMicIndicatorExecute(FuzzedDataProvider &provider)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.callerUid = provider.ConsumeIntegral<int32_t>();
+    constexpr SourceType sourceTypeList[] = {
+        SOURCE_TYPE_MIC,
+        SOURCE_TYPE_VOICE_COMMUNICATION,
+        SOURCE_TYPE_PLAYBACK_CAPTURE,
+        SOURCE_TYPE_REMOTE_CAST,
+    };
+    configRet.capturerInfo.sourceType = provider.PickValueInArray(sourceTypeList);
+    configRet.appInfo.appTokenId = provider.ConsumeIntegral<uint32_t>();
+    configRet.appInfo.appFullTokenId = provider.ConsumeIntegral<uint64_t>();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
+    if (audioProcessInServer == nullptr) {
+        return;
+    }
+
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, SOURCE_TYPE_MIC);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(INTELLIGENT_VOICE_UID, SOURCE_TYPE_MIC);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, SOURCE_TYPE_PLAYBACK_CAPTURE);
+
+    (void)audioProcessInServer->CheckBgRecordPermission(CAPTURER_RUNNING);
+
+    SwitchStreamInfo info = {
+        audioProcessInServer->GetSessionId(),
+        configRet.callerUid,
+        configRet.appInfo.appUid,
+        configRet.appInfo.appPid,
+        configRet.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+    (void)SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+    (void)SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
+    (void)audioProcessInServer->CheckBgRecordPermission(CAPTURER_RUNNING);
+
+    audioProcessInServer->isMicIndicatorOn_ = provider.ConsumeBool();
+    (void)audioProcessInServer->TurnOnMicIndicator();
+    (void)audioProcessInServer->TurnOffMicIndicator(CAPTURER_RELEASED);
+}
+
 void FuzzTest(FuzzedDataProvider &provider)
 {
     auto func = provider.PickValueInArray({
         AudioProcessInServerExecute,
+        AudioProcessInServerMicIndicatorExecute,
     });
     func(provider);
 }

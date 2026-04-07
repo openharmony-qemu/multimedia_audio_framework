@@ -457,8 +457,11 @@ int32_t AudioProcessInServer::StartInner()
             HILOG_COMM_ERROR("[StartInner]Check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
     }
-    if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid)) {
-        TurnOnMicIndicator();
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
+            processConfig_.capturerInfo.sourceType)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[StartInner]Turn on micIndicator failed for stream:%{public}d!", sessionId_));
     }
     TurnOnRemoteMicIndicator();
     MarkStaticFadeIn(true);
@@ -537,7 +540,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     CHECK_AND_CALL_FUNC_RETURN_RET(streamStatus_->load() == STREAM_PAUSING, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Pause]Pause failed, invalid status."));
         
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
     TurnOffRemoteMicIndicator();
@@ -582,8 +585,11 @@ int32_t AudioProcessInServer::Resume()
             HILOG_COMM_ERROR("[Resume]Check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
     }
-    if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid)) {
-        TurnOnMicIndicator();
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
+        RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
+            processConfig_.capturerInfo.sourceType)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[Resume]Turn on micIndicator failed for stream:%{public}d!", sessionId_));
     }
     TurnOnRemoteMicIndicator();
     MarkStaticFadeIn(false);
@@ -613,7 +619,7 @@ int32_t AudioProcessInServer::Stop(int32_t stageIn)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_CALL_FUNC_RETURN_RET(streamStatus_->load() == STREAM_STOPPING, ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Stop]Stop failed, invalid status."));
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
     TurnOffRemoteMicIndicator();
@@ -664,7 +670,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     std::lock_guard<std::mutex> lock(statusLock_);
     CHECK_AND_RETURN_RET_LOG(releaseCallback_ != nullptr, ERR_OPERATION_FAILED, "Failed: no service to notify.");
 
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
+    if (processConfig_.audioMode == AUDIO_MODE_RECORD && isMicIndicatorOn_) {
         TurnOffMicIndicator(CAPTURER_RELEASED);
     }
     TurnOffRemoteMicIndicator();

@@ -16,8 +16,10 @@
 #include <securec.h>
 
 #include "audio_log.h"
+#include "audio_utils.h"
 #include "capturer_in_server.h"
 #include "ipc_stream_in_server.h"
+#include "record_privacy_manager.h"
 #include "../fuzz_utils.h"
 
 namespace OHOS {
@@ -29,6 +31,7 @@ const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 const uint32_t APPID_LENGTH = 10;
 const int64_t STOP_TIME = 100;
 const uint32_t NUM_10 = 10;
+const int32_t INTELLIGENT_VOICE_UID = 1042;
 
 typedef void (*TestFuncs)();
 
@@ -683,6 +686,46 @@ void Start()
     capturerInServer_->StartInner();
 }
 
+void MicIndicatorFuzzTest()
+{
+    std::shared_ptr<CapturerInServer> capturerInServer_ = GetCapturerInServer();
+    if (capturerInServer_ == nullptr) {
+        return;
+    }
+
+    capturerInServer_->processConfig_.callerUid = g_fuzzUtils.GetData<int32_t>();
+    capturerInServer_->processConfig_.capturerInfo.sourceType =
+        SourceTypeVec[g_fuzzUtils.GetData<uint32_t>() % SourceTypeVec.size()];
+    capturerInServer_->processConfig_.appInfo.appTokenId = g_fuzzUtils.GetData<uint32_t>();
+    capturerInServer_->processConfig_.appInfo.appFullTokenId = g_fuzzUtils.GetData<uint64_t>();
+    capturerInServer_->streamIndex_ = g_fuzzUtils.GetData<uint32_t>();
+
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        capturerInServer_->processConfig_.callerUid, SOURCE_TYPE_MIC);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        INTELLIGENT_VOICE_UID, SOURCE_TYPE_MIC);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        capturerInServer_->processConfig_.callerUid, SOURCE_TYPE_PLAYBACK_CAPTURE);
+
+    (void)capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING);
+
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        capturerInServer_->processConfig_.callerUid,
+        capturerInServer_->processConfig_.appInfo.appUid,
+        capturerInServer_->processConfig_.appInfo.appPid,
+        capturerInServer_->processConfig_.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+    (void)SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+    (void)SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
+    (void)capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING);
+
+    capturerInServer_->isMicIndicatorOn_ = g_fuzzUtils.GetData<bool>();
+    (void)capturerInServer_->TurnOnMicIndicator();
+    (void)capturerInServer_->TurnOffMicIndicator(CAPTURER_STOPPED);
+}
+
 vector<TestFuncs> g_testFuncs = {
     OnStatusUpdateFuzzTest,
     HandleOperationFlushedFuzzTest,
@@ -709,6 +752,7 @@ vector<TestFuncs> g_testFuncs = {
     SetRebuildFlagTest,
     GetLastAudioDurationTest,
     Start,
+    MicIndicatorFuzzTest,
 };
 
 } // namespace AudioStandard
