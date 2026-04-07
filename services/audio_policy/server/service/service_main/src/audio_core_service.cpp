@@ -617,14 +617,6 @@ int32_t AudioCoreService::CreateCapturerClient(
     pipeManager_->UpdateNewDeviceDesc(streamDesc, {inputDeviceDesc});
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
-    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
-        (streamDesc->micInStreamInfo_.channels > CHANNEL_UNKNOW ||
-        streamDesc->ecStreamInfo_.channels > CHANNEL_UNKNOW)) {
-        AUDIO_INFO_LOG("voice recognition micIn/ec capture device fetched, sessionId:%{public}u, "
-            "deviceType:%{public}d, deviceRole:%{public}d, networkId:%{public}s, newDevices:%{public}s",
-            sessionId, inputDeviceDesc->deviceType_, inputDeviceDesc->deviceRole_,
-            inputDeviceDesc->networkId_.c_str(), streamDesc->GetNewDevicesTypeString().c_str());
-    }
     if (!hasInputDeviceSnapshot && IsVoiceRecognitionMicInEcRequested(streamDesc)) {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
             "micin/ec capture denied: no system permission");
