@@ -174,7 +174,8 @@ public:
     int32_t StopSession();
     StreamStatus GetStreamInServerStatus() override;
 
-    bool TurnOnMicIndicator(CapturerState capturerState);
+    bool CheckBgRecordPermission(CapturerState capturerState);
+    bool TurnOnMicIndicator();
     void ReportNoBgPermissionEvent();
     bool TurnOffMicIndicator(CapturerState capturerState);
     void TurnOnRemoteMicIndicator();

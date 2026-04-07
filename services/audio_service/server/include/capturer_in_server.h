@@ -73,7 +73,8 @@ public:
     int32_t StopSession();
     void SetRebuildFlag();
 
-    bool TurnOnMicIndicator(CapturerState capturerState);
+    bool CheckBgRecordPermission(CapturerState capturerState);
+    bool TurnOnMicIndicator();
     bool TurnOffMicIndicator(CapturerState capturerState);
     void TurnOnRemoteMicIndicator();
     void TurnOffRemoteMicIndicator();
