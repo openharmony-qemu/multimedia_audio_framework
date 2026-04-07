@@ -237,7 +237,7 @@ void OnPnpDeviceStatusUpdatedFuzzTest(FuzzedDataProvider& fdp)
 
 void AudioCoreServiceEventEntryLoadSplitModuleFuzzTest(FuzzedDataProvider& fdp)
 {
-    std::string splitArgs = "splitArgs";
+    std::string splitArgs = "";
     std::string networkId = "networkId";
     eventEntry->LoadSplitModule(splitArgs, networkId);
 }
