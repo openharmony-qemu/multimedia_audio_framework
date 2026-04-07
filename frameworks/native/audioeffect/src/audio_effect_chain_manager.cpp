@@ -2168,6 +2168,7 @@ bool AudioEffectChainManager::IsDownSamplingForSpatialization(const std::string 
 
 void AudioEffectChainManager::SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     isNeedInitEffectBuffer_ = isNeedInitEffectBuffer;
 }
 } // namespace AudioStandard
