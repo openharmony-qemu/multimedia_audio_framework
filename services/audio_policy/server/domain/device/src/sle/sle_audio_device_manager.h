@@ -80,15 +80,15 @@ public:
 
     // Parameter Conversion Interface
     int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
-        int32_t uid = INVALID_UID);
+        int32_t uid = INVALID_UID, bool isLoopback = false);
     int32_t SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
-        int32_t uid = INVALID_UID);
+        int32_t uid = INVALID_UID, bool isLoopback = false);
     int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
-        int32_t uid = INVALID_UID);
+        int32_t uid = INVALID_UID, bool isLoopback = false);
     int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
         int32_t uid = INVALID_UID);
     int32_t StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
-        int32_t uid = INVALID_UID);
+        int32_t uid = INVALID_UID, bool isLoopback = false);
     int32_t StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
         int32_t uid = INVALID_UID);
     int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc,
@@ -96,6 +96,7 @@ public:
     int32_t SendUserSelection(const AudioDeviceDescriptor &deviceDesc,
         SourceType sourceType, SleSelectState eventType = USER_SELECT_SLE);
     int32_t SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume);
+    bool IsAudioLoopbackSupported(const std::string &remoteAddr);
 
     // Core Device Management Methods
     int32_t AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc);
@@ -114,7 +115,7 @@ public:
     bool GetMuteStatusByVolumeType(AudioVolumeType volumeType, const std::string &nearLinkDevice);
     std::string GetActivatedDevice();
 
-    uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid = INVALID_UID);
+    uint32_t GetSleStreamTypeByStreamUsage(StreamUsage streamUsage, int32_t uid = INVALID_UID, bool isLoopback = false);
     uint32_t GetSleStreamTypeBySourceType(SourceType sourceType) const;
     std::set<StreamUsage> GetStreamUsagesBySleStreamType(uint32_t streamType) const;
     std::set<SourceType> GetSourceTypesBySleStreamType(uint32_t streamType) const;

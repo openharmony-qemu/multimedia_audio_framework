@@ -2519,11 +2519,6 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     SourceType sourceType = config.capturerInfo.sourceType;
     CHECK_AND_RETURN_RET_LOG(VALID_SOURCE_TYPE.count(sourceType), false, "invalid source type:%{public}d", sourceType);
 
-#ifdef AUDIO_BUILD_VARIANT_ROOT
-    int32_t appUid = config.appInfo.appUid;
-    CHECK_AND_RETURN_RET(appUid != ROOT_UID, true);
-#endif
-
     AUDIO_INFO_LOG("check for uid:%{public}d source type:%{public}d", config.callerUid, sourceType);
     if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
@@ -2545,6 +2540,12 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         return true;
     } else if (permission == PERMISSION_DENIED) {
         return false;
+    }
+
+    if (sourceType == SOURCE_TYPE_MIC && config.capturerInfo.capturerFlags == STREAM_FLAG_FAST &&
+        config.capturerInfo.isLoopback) {
+        AUDIO_INFO_LOG("mic data is by passed,no need check permission");
+        return true;
     }
 
     // All record streams should be checked for MICROPHONE_PERMISSION

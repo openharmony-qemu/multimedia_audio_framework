@@ -455,6 +455,7 @@ int32_t AudioProcessInServer::StartInner()
         HILOG_COMM_ERROR("[StartInner]Start failed, invalid status."));
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
+        !processConfig_.capturerInfo.isLoopback &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
@@ -579,6 +580,7 @@ int32_t AudioProcessInServer::Resume()
         ERR_ILLEGAL_STATE,
         HILOG_COMM_ERROR("[Resume]Resume failed, invalid status."));
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && !needCheckBackground_ &&
+        !processConfig_.capturerInfo.isLoopback &&
         PermissionUtil::NeedVerifyBackgroundCapture(processConfig_.callerUid, processConfig_.capturerInfo.sourceType)) {
         AUDIO_INFO_LOG("set needCheckBackground_: true");
         needCheckBackground_ = true;
@@ -1401,6 +1403,10 @@ int32_t AudioProcessInServer::WriteToSpecialProcBuf(AudioCaptureDataProcParams &
 {
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_HANDLE, "process buffer is null.");
     uint64_t curWritePos = processBuffer_->GetCurWriteFrame();
+
+    // Loopback shoule not copy data to the buffer!
+    CHECK_AND_RETURN_RET(!processConfig_.capturerInfo.isLoopback, SUCCESS);
+
     Trace trace("WriteProcessData-<" + std::to_string(curWritePos));
 
     int32_t writeAbleSize = processBuffer_->GetWritableDataFrames();
