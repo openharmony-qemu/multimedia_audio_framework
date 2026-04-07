@@ -2858,7 +2858,12 @@ HWTEST(AudioProcessInServerUnitTest, StartInner_Loopback_001, TestSize.Level1)
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    *audioProcessInServerRet.streamStatus_ = STREAM_STARTING;
+    std::atomic<StreamStatus> temp = STREAM_STARTING;
+    audioProcessInServerRet.streamStatus_ = &temp;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = 1000;
+    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     audioProcessInServerRet.StartInner();
     EXPECT_EQ(audioProcessInServerRet.needCheckBackground_, false);
 }
@@ -2877,7 +2882,12 @@ HWTEST(AudioProcessInServerUnitTest, Resume_Loopback_001, TestSize.Level1)
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    *audioProcessInServerRet.streamStatus_ = STREAM_STARTING;
+    std::atomic<StreamStatus> temp = STREAM_STARTING;
+    audioProcessInServerRet.streamStatus_ = &temp;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = 1000;
+    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     audioProcessInServerRet.Resume();
     EXPECT_EQ(audioProcessInServerRet.needCheckBackground_, false);
 }
@@ -2895,7 +2905,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_Loopback_001, TestSiz
     configRet.capturerInfo.isLoopback = true;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    *audioProcessInServerRet.status_ = STREAM_RUNNING;
+    std::atomic<StreamStatus> temp = STREAM_RUNNING;
+    audioProcessInServerRet.streamStatus_ = &temp;
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t byteSizePerFrame = 1000;
     audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
@@ -2930,7 +2941,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_NonLoopback_001, Test
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     sptr<AudioProcessInServer> audioProcessInServer = AudioProcessInServer::Create(configRet, releaseCallbackRet);
     ASSERT_NE(audioProcessInServer, nullptr);
-    *audioProcessInServer->status_ = STREAM_RUNNING;
+    std::atomic<StreamStatus> temp = STREAM_RUNNING;
+    audioProcessInServer->streamStatus_ = &temp;
 
     BufferDesc readBuf;
     readBuf.bufLength = 512;
@@ -2943,7 +2955,7 @@ HWTEST(AudioProcessInServerUnitTest, WriteToSpecialProcBuf_NonLoopback_001, Test
         rendererConvBuffer
     );
 
-    audioProcessInServerRet.processBuffer_ = nullptr;
+    audioProcessInServer->processBuffer_ = nullptr;
     auto result = audioProcessInServer->WriteToSpecialProcBuf(procParams);
     EXPECT_EQ(result, ERR_INVALID_HANDLE);
 }
