@@ -409,19 +409,44 @@ napi_status NapiParamUtils::SetRendererInfo(const napi_env &env, const AudioRend
     return napi_ok;
 }
 
-napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in)
+napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in)
 {
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
-    if (status == napi_ok) {
-        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_192000) {
-            streamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
-        } else {
-            AUDIO_ERR_LOG("invaild samplingRate");
-            return napi_generic_failure;
+    CHECK_AND_RETURN_RET_LOG(status != napi_ok, napi_ok, "samplingRate field not present");
+    // Validate sample rate: 8000-384000, divisible by 10, or 11025
+    constexpr int32_t SAMPLE_RATE_RESOLUTION_10 = 10;
+    bool isValidRate = (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000 &&
+        intValue % SAMPLE_RATE_RESOLUTION_10 == 0) || intValue == SAMPLE_RATE_11025;
+    if (!isValidRate) {
+        AUDIO_ERR_LOG("invalid samplingRate: %{public}d", intValue);
+        return napi_generic_failure;
+    }
+    // Check if it's a standard enum value
+    bool isStandardEnum = false;
+    for (const auto &rate : AUDIO_SUPPORTED_SAMPLING_RATES) {
+        if (static_cast<int32_t>(rate) == intValue) {
+            isStandardEnum = true;
+            streamInfo->samplingRate = rate;
+            break;
         }
     }
 
+    // If not a standard enum value, treat as custom sample rate
+    if (!isStandardEnum) {
+        streamInfo->samplingRate = SAMPLE_RATE_48000; // default fallback
+        streamInfo->customSampleRate = static_cast<uint32_t>(intValue);
+        AUDIO_INFO_LOG("custom sample rate: %{public}d", intValue);
+    }
+    return napi_ok;
+}
+
+napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *streamInfo, napi_value in)
+{
+    napi_status status = ParseSamplingRate(env, streamInfo, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetStreamInfo ParseSamplingRate failed");
+
+    int32_t intValue = {0};
     status = GetValueInt32(env, "channels", intValue, in);
     if (status == napi_ok) {
         streamInfo->channels = static_cast<AudioChannel>(intValue);
@@ -448,17 +473,10 @@ napi_status NapiParamUtils::GetStreamInfo(const napi_env &env, AudioStreamInfo *
 
 napi_status NapiParamUtils::GetEcStreamInfo(const napi_env &env, AudioStreamInfo *ecStreamInfo, napi_value in)
 {
-    int32_t intValue = {0};
-    napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
-    if (status == napi_ok) {
-        if (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_192000) {
-            ecStreamInfo->samplingRate = static_cast<AudioSamplingRate>(intValue);
-        } else {
-            AUDIO_ERR_LOG("invaild samplingRate");
-            return napi_generic_failure;
-        }
-    }
+    napi_status status = ParseSamplingRate(env, ecStreamInfo, in);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "GetEcStreamInfo ParseSamplingRate failed");
 
+    int32_t intValue = {0};
     status = GetValueInt32(env, "channels", intValue, in);
     if (status == napi_ok) {
         ecStreamInfo->channels = static_cast<AudioChannel>(intValue);
@@ -492,7 +510,9 @@ napi_status NapiParamUtils::SetStreamInfo(const napi_env &env, const AudioStream
 {
     napi_status status = napi_create_object(env, &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetStreamInfo napi_create_object failed");
-    SetValueInt32(env, "samplingRate", static_cast<int32_t>(streamInfo.samplingRate), result);
+    int32_t samplingRateValue = streamInfo.customSampleRate != 0 ?
+        static_cast<int32_t>(streamInfo.customSampleRate) : static_cast<int32_t>(streamInfo.samplingRate);
+    SetValueInt32(env, "samplingRate", samplingRateValue, result);
     SetValueInt32(env, "channels", static_cast<int32_t>(streamInfo.channels), result);
     SetValueInt32(env, "sampleFormat", static_cast<int32_t>(streamInfo.format), result);
     SetValueInt32(env, "encodingType", static_cast<int32_t>(streamInfo.encoding), result);
@@ -542,8 +562,10 @@ napi_status NapiParamUtils::ToJsAudioStreamInfo(const napi_env &env,
 
     napi_value value = nullptr;
 
-    // samplingRate
-    status = napi_create_int32(env, static_cast<int32_t>(info.samplingRate), &value);
+    // samplingRate: return customSampleRate if set, otherwise return samplingRate enum value
+    int32_t samplingRateValue = info.customSampleRate != 0 ?
+        static_cast<int32_t>(info.customSampleRate) : static_cast<int32_t>(info.samplingRate);
+    status = napi_create_int32(env, samplingRateValue, &value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Create samplingRate failed");
     status = napi_set_named_property(env, result, "samplingRate", value);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Set samplingRate failed");

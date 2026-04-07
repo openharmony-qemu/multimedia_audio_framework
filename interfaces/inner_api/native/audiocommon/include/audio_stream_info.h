@@ -417,7 +417,8 @@ inline const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_88200,
     SAMPLE_RATE_96000,
     SAMPLE_RATE_176400,
-    SAMPLE_RATE_192000
+    SAMPLE_RATE_192000,
+    SAMPLE_RATE_384000
 };
 
 inline const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
