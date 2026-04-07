@@ -32,7 +32,7 @@ static const char *CONFIG_AUDIO_BROADCAST_KEY = "linkedage_state_clearBroadcasti
 static const char *BROADCAST_ORIGINAL = "0";
 static const char *BROADCAST_OPEN = "1";
 static const char *BROADCAST_CLOSE = "2";
-static const char *CONFIG_VEHICLE_PRIORITY_KEY = "preferred_car_device";
+static const char *CONFIG_VEHICLE_PRIORITY_KEY = "hicar.audio.preferred_car_device";
 
 void AudioPolicyDataShareListener::RegisterAccessiblilityBalance()
 {
@@ -109,8 +109,8 @@ void AudioPolicyDataShareListener::RegisterVehiclePriority()
     AudioSettingObserver::UpdateFunc updateFuncPriority = [&](const std::string &key) {
         bool value = false;
         ErrCode ret = settingProvider.GetBoolValue(CONFIG_VEHICLE_PRIORITY_KEY, value, "system");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get preferred_car_device value failed");
-        AUDIO_INFO_LOG("preferred_car_device = %{public}s", value ? "true" : "false");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get hicar.audio.preferred_car_device value failed");
+        AUDIO_INFO_LOG("hicar.audio.preferred_car_device = %{public}s", value ? "true" : "false");
         AudioPolicyService::GetAudioPolicyService().OnVehiclePriorityChanged(value);
     };
     sptr observer = settingProvider.CreateObserver(CONFIG_VEHICLE_PRIORITY_KEY, updateFuncPriority);
