@@ -19,7 +19,6 @@
 #include "audio_capturer.h"
 #include "shared_audio_capturer_wrapper.h"
 
-#include <algorithm>
 #include <cinttypes>
 #include <cstring>
 
@@ -396,12 +395,6 @@ static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(
         IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceDesc->deviceType_);
 }
 
-static inline bool IsVoiceRecognitionMicInEcDegradeInputDevice(const AudioDeviceDescriptor &deviceInfo)
-{
-    return deviceInfo.networkId_ != LOCAL_NETWORK_ID ||
-        !IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceInfo.deviceType_);
-}
-
 static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerInfo &capturerInfo,
     AudioStreamParams &audioStreamParams)
 {
@@ -409,22 +402,16 @@ static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerI
         return;
     }
 
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    int32_t ret = AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "GetCurrentCapturerChangeInfos failed, sessionId:%{public}u ret:%{public}d",
-        audioStreamParams.originalSessionId, ret);
-
-    for (const auto &changeInfo : audioCapturerChangeInfos) {
-        if (changeInfo == nullptr || changeInfo->sessionId != static_cast<int32_t>(audioStreamParams.originalSessionId)) {
-            continue;
-        }
+    DeviceType activeInputDevice = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    if (activeInputDevice != DEVICE_TYPE_INVALID && activeInputDevice != DEVICE_TYPE_NONE) {
         audioStreamParams.isVoiceRecognitionMicInEcDegrade =
-            IsVoiceRecognitionMicInEcDegradeInputDevice(changeInfo->inputDeviceInfo);
-        AUDIO_INFO_LOG("voice recognition micIn/ec degrade flag updated by capturer change info, sessionId:%{public}u, "
-            "degrade:%{public}d, deviceType:%{public}d, networkId:%{public}s",
-            audioStreamParams.originalSessionId, audioStreamParams.isVoiceRecognitionMicInEcDegrade,
-            changeInfo->inputDeviceInfo.deviceType_, changeInfo->inputDeviceInfo.networkId_.c_str());
-        return;
+            !IsVoiceRecognitionMicInEcSupportedInputDeviceType(activeInputDevice);
+        AUDIO_WARNING_LOG("voice recognition micIn/ec degrade flag calc by active input device, "
+            "sessionId:%{public}u, degrade:%{public}d, activeInputDevice:%{public}d",
+            audioStreamParams.originalSessionId, audioStreamParams.isVoiceRecognitionMicInEcDegrade, activeInputDevice);
+        if (audioStreamParams.isVoiceRecognitionMicInEcDegrade) {
+            return;
+        }
     }
 
     AudioCapturerInfo queryInfo = capturerInfo;
@@ -444,10 +431,7 @@ static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerI
         return;
     }
 
-    DeviceType activeInputDevice = AudioPolicyManager::GetInstance().GetActiveInputDevice();
-    audioStreamParams.isVoiceRecognitionMicInEcDegrade =
-        !IsVoiceRecognitionMicInEcSupportedInputDeviceType(activeInputDevice);
-    AUDIO_WARNING_LOG("voice recognition micIn/ec degrade flag fallback to active input device, "
+    AUDIO_WARNING_LOG("voice recognition micIn/ec degrade flag keep active input result, "
         "sessionId:%{public}u, degrade:%{public}d, activeInputDevice:%{public}d",
         audioStreamParams.originalSessionId, audioStreamParams.isVoiceRecognitionMicInEcDegrade, activeInputDevice);
 }
