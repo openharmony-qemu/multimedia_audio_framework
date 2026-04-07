@@ -573,7 +573,7 @@ void CapturerInServer::ReportNoBgPermissionEvent()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
+bool CapturerInServer::CheckBgRecordPermission(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
@@ -590,8 +590,14 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         ReportNoBgPermissionEvent();
         return false;
     }
+ 
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
-
+    return true;
+}
+ 
+bool CapturerInServer::TurnOnMicIndicator()
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", streamIndex_);
     } else {
@@ -666,8 +672,11 @@ int32_t CapturerInServer::StartInner()
         needCheckBackground_ = true;
     }
     if (needCheckBackground_) {
-        CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
-            "Turn on micIndicator failed or check backgroud capture failed for stream:%{public}d!", streamIndex_);
+        CHECK_AND_RETURN_RET_LOG(CheckBgRecordPermission(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            "Check backgroud capture failed for stream:%{public}d!", streamIndex_);
+    }
+    if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid)) {
+        TurnOnMicIndicator();
     }
     TurnOnRemoteMicIndicator();
     NotifyVoIPStart(processConfig_.capturerInfo.sourceType, processConfig_.appInfo.appUid);
