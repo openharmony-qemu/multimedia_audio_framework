@@ -706,6 +706,10 @@ void MicIndicatorFuzzTest()
         INTELLIGENT_VOICE_UID, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
         capturerInServer_->processConfig_.callerUid, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    (void)RecordPrivacyManager::GetInstance().StartUsingMicrophone(
+        capturerInServer_->processConfig_.appInfo.appTokenId);
+    (void)RecordPrivacyManager::GetInstance().StopUsingMicrophone(
+        capturerInServer_->processConfig_.appInfo.appTokenId);
 
     (void)capturerInServer_->CheckBgRecordPermission(CAPTURER_RUNNING);
 

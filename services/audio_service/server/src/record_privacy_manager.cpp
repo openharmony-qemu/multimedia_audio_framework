@@ -54,6 +54,16 @@ RecordPrivacyManager &RecordPrivacyManager::GetInstance()
     return instance;
 }
  
+bool RecordPrivacyManager::StartUsingMicrophone(uint32_t targetTokenId) const
+{
+    return AudioPrivacyManagerClient::GetInstance().StartUsingMicrophone(targetTokenId);
+}
+
+bool RecordPrivacyManager::StopUsingMicrophone(uint32_t targetTokenId) const
+{
+    return AudioPrivacyManagerClient::GetInstance().StopUsingMicrophone(targetTokenId);
+}
+
 bool RecordPrivacyManager::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("RecordPrivacyManager::NotifyPrivacyStart", TIME_OUT_SECONDS,
@@ -70,7 +80,7 @@ bool RecordPrivacyManager::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t s
  
     AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
         "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
-    CHECK_AND_RETURN_RET_LOG(AudioPrivacyManagerClient::GetInstance().StartUsingMicrophone(targetTokenId), false,
+    CHECK_AND_RETURN_RET_LOG(StartUsingMicrophone(targetTokenId), false,
         "StartUsingMicrophone failed for tokenId:%{public}u sessionId:%{public}u", targetTokenId, sessionId);
     tokenIdRecordMap_[targetTokenId] = {sessionId};
     return true;
@@ -81,25 +91,28 @@ bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t se
     AudioXCollie audioXCollie("RecordPrivacyManager::NotifyPrivacyStop", TIME_OUT_SECONDS,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
     std::unique_lock<std::mutex> lock(recordMapMutex_);
-    if (!tokenIdRecordMap_.count(targetTokenId)) {
+    auto tokenIter = tokenIdRecordMap_.find(targetTokenId);
+    if (tokenIter == tokenIdRecordMap_.end()) {
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
         return true;
     }
- 
-    if (tokenIdRecordMap_[targetTokenId].count(sessionId)) {
-        tokenIdRecordMap_[targetTokenId].erase(sessionId);
+
+    std::set<uint32_t> remainedSessions = tokenIter->second;
+    if (remainedSessions.count(sessionId)) {
+        remainedSessions.erase(sessionId);
     }
     AUDIO_DEBUG_LOG("this TokenId %{public}u set size is %{public}zu!", targetTokenId,
-        tokenIdRecordMap_[targetTokenId].size());
-    if (!tokenIdRecordMap_[targetTokenId].empty()) {
+        remainedSessions.size());
+    if (!remainedSessions.empty()) {
+        tokenIter->second = std::move(remainedSessions);
         return true;
     }
- 
-    tokenIdRecordMap_.erase(targetTokenId);
+
     AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
         "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
-    CHECK_AND_RETURN_RET_LOG(AudioPrivacyManagerClient::GetInstance().StopUsingMicrophone(targetTokenId), false,
+    CHECK_AND_RETURN_RET_LOG(StopUsingMicrophone(targetTokenId), false,
         "StopUsingMicrophone failed for tokenId:%{public}u sessionId:%{public}u", targetTokenId, sessionId);
+    tokenIdRecordMap_.erase(tokenIter);
     return true;
 }
  

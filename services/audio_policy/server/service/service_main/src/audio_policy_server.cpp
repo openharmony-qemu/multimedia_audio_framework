@@ -34,6 +34,7 @@
 #include "dfx_msg_manager.h"
 #include "config_policy_utils.h"
 #include "audio_utils.h"
+#include "record_privacy_manager.h"
 #ifdef USB_ENABLE
 #include "audio_usb_manager.h"
 #endif
@@ -3646,14 +3647,14 @@ void AudioPolicyServer::PerStateChangeCbCustomizeCallback::UpdateMicPrivacyByCap
         if (info->appTokenId == targetTokenId && info->capturerState == CAPTURER_RUNNING) {
             AUDIO_INFO_LOG("update using mic %{public}d for uid: %{public}d because permission changed",
                 targetMuteState, appUid);
-            int32_t res = SUCCESS;
+            bool res = true;
             if (targetMuteState) {
-                res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = RecordPrivacyManager::GetInstance().StopUsingMicrophone(targetTokenId);
             } else {
-                res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
+                res = RecordPrivacyManager::GetInstance().StartUsingMicrophone(targetTokenId);
             }
-            if (res != SUCCESS) {
-                AUDIO_ERR_LOG("update using permission failed, error code %{public}d", res);
+            if (!res) {
+                AUDIO_ERR_LOG("update using permission failed for tokenId %{public}u", targetTokenId);
             }
         }
     }

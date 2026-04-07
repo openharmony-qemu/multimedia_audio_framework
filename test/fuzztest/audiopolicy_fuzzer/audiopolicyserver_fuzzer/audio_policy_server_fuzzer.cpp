@@ -2026,6 +2026,7 @@ void AudioPolicyServerUpdateMicPrivacyByCapturerStateFuzzTest()
     int32_t appUid = GetData<int32_t>();
     CHECK_AND_RETURN(callback != nullptr);
     callback->UpdateMicPrivacyByCapturerState(targetMuteState, targetTokenId, appUid);
+    callback->UpdateMicPrivacyByCapturerState(!targetMuteState, targetTokenId, appUid);
 }
 
 void AudioPolicyServerAddRemoveUidUsagesToAudioZoneFuzzTest()

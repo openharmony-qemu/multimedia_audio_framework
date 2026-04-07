@@ -827,28 +827,6 @@ bool SwitchStreamUtil::HandleStartedSwitchInfoInRecord(SwitchStreamInfo &info, S
     return true;
 }
 
-int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char* permission)
-{
-    Trace trace("PrivacyKit::StartUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}u permission:%{public}s",
-        targetTokenId, permission);
-    WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
-    int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
-    guard.CheckCurrTimeout();
-    return res;
-}
-
-int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* permission)
-{
-    Trace trace("PrivacyKit::StopUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}u permission:%{public}s",
-        targetTokenId, permission);
-    WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
-    int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
-    guard.CheckCurrTimeout();
-    return res;
-}
-
 int32_t PermissionUtil::StartRemoteUsingPermission(const std::string &deviceId, const std::string &deviceName,
     const char* permission)
 {

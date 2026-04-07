@@ -123,6 +123,8 @@ void AudioProcessInServerMicIndicatorExecute(FuzzedDataProvider &provider)
     (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(INTELLIGENT_VOICE_UID, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    (void)RecordPrivacyManager::GetInstance().StartUsingMicrophone(configRet.appInfo.appTokenId);
+    (void)RecordPrivacyManager::GetInstance().StopUsingMicrophone(configRet.appInfo.appTokenId);
 
     (void)audioProcessInServer->CheckBgRecordPermission(CAPTURER_RUNNING);
 
