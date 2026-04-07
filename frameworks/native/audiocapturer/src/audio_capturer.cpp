@@ -2011,24 +2011,8 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     // set new stream info
     int32_t initResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (initResult != SUCCESS && switchInfo.capturerInfo.originalFlag != AUDIO_FLAG_NORMAL) {
-        AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
-        if (restoreInfo.restoreReason == SERVER_DIED) {
-            switchInfo.sessionId = switchInfo.params.originalSessionId;
-            streamDesc->sessionId_ = switchInfo.params.originalSessionId;
-        }
-        streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
-        streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
-        int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
-            streamDesc, flag, switchInfo.params.originalSessionId);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
-            HILOG_COMM_ERROR("[GenerateNewStream]CreateRendererClient failed"));
-        UpdateVoiceRecognitionMicInEcDegradeFlag(switchInfo.capturerInfo, switchInfo.params);
-
-        newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
-            switchInfo.eStreamType, appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
-        initResult = SetSwitchInfo(switchInfo, newAudioStream);
-        CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+        CHECK_AND_RETURN_RET_LOG(FallbackToNormalStreamForGenerateNewStream(restoreInfo, streamDesc, flag,
+            switchInfo, newAudioStream), false, "FallbackToNormalStreamForGenerateNewStream failed");
     }
 
     std::shared_ptr<IAudioStream> oldAudioStream = audioStream_;
@@ -2048,6 +2032,31 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     bool restartResult = RestartAudioStream(newAudioStream, previousState);
     CHECK_AND_RETURN_RET_LOG(restartResult, false, "start new stream failed.");
+    return true;
+}
+
+bool AudioCapturerPrivate::FallbackToNormalStreamForGenerateNewStream(const RestoreInfo &restoreInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, IAudioStream::SwitchInfo &switchInfo,
+    std::shared_ptr<IAudioStream> &newAudioStream)
+{
+    AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+    if (restoreInfo.restoreReason == SERVER_DIED) {
+        switchInfo.sessionId = switchInfo.params.originalSessionId;
+        streamDesc->sessionId_ = switchInfo.params.originalSessionId;
+    }
+    streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+    streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
+        streamDesc, flag, switchInfo.params.originalSessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
+        HILOG_COMM_ERROR("[FallbackToNormalStreamForGenerateNewStream]CreateRendererClient failed"));
+    UpdateVoiceRecognitionMicInEcDegradeFlag(switchInfo.capturerInfo, switchInfo.params);
+
+    newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
+        switchInfo.eStreamType, appInfo_.appUid);
+    CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+    ret = SetSwitchInfo(switchInfo, newAudioStream);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Init ipc strean failed");
     return true;
 }
 
