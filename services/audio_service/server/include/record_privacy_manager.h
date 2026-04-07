@@ -29,6 +29,7 @@ public:
 
     bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
     bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
+    bool NeedTurnOnMicIndicator(int32_t callingUid) const;
 
 private:
     RecordPrivacyManager() = default;
