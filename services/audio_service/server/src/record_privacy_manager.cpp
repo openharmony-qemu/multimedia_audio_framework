@@ -15,25 +15,45 @@
 #ifndef LOG_TAG
 #define LOG_TAG "RecordPrivacyManager"
 #endif
-
+ 
 #include "record_privacy_manager.h"
-
+ 
 #include "audio_service_log.h"
 #include "audio_utils.h"
 #include "audio_privacy_manager_client.h"
-
+ 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t TIME_OUT_SECONDS = 10;
-}
-
+constexpr int32_t UID_AUDIO = 1041;
+constexpr int32_t UID_MSDP_SA = 6699;
+constexpr int32_t UID_INTELLIGENT_VOICE_SA = 1042;
+constexpr int32_t UID_CAAS_SA = 5527;
+constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
+constexpr int32_t UID_TELEPHONY_SA = 1001;
+constexpr int32_t UID_DMSDP_SA = 7071;
+ 
+std::set<int32_t> RECORD_PRIVACY_BLACK_LIST = {
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    0, // UID_ROOT
+#endif
+    UID_MSDP_SA,
+    UID_INTELLIGENT_VOICE_SA,
+    UID_CAAS_SA,
+    UID_DISTRIBUTED_AUDIO_SA,
+    UID_AUDIO,
+    UID_TELEPHONY_SA, // used in distributed communication call
+    UID_DMSDP_SA
+};
+}// namespace
+ 
 RecordPrivacyManager &RecordPrivacyManager::GetInstance()
 {
     static RecordPrivacyManager instance;
     return instance;
 }
-
+ 
 bool RecordPrivacyManager::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("RecordPrivacyManager::NotifyPrivacyStart", TIME_OUT_SECONDS,
@@ -47,7 +67,7 @@ bool RecordPrivacyManager::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t s
         }
         return true;
     }
-
+ 
     AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
         "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
     CHECK_AND_RETURN_RET_LOG(AudioPrivacyManagerClient::GetInstance().StartUsingMicrophone(targetTokenId), false,
@@ -55,7 +75,7 @@ bool RecordPrivacyManager::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t s
     tokenIdRecordMap_[targetTokenId] = {sessionId};
     return true;
 }
-
+ 
 bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId)
 {
     AudioXCollie audioXCollie("RecordPrivacyManager::NotifyPrivacyStop", TIME_OUT_SECONDS,
@@ -65,7 +85,7 @@ bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t se
         AUDIO_INFO_LOG("this TokenId %{public}u is already not in using", targetTokenId);
         return true;
     }
-
+ 
     if (tokenIdRecordMap_[targetTokenId].count(sessionId)) {
         tokenIdRecordMap_[targetTokenId].erase(sessionId);
     }
@@ -74,12 +94,21 @@ bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t se
     if (!tokenIdRecordMap_[targetTokenId].empty()) {
         return true;
     }
-
+ 
     tokenIdRecordMap_.erase(targetTokenId);
     AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
         "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
     CHECK_AND_RETURN_RET_LOG(AudioPrivacyManagerClient::GetInstance().StopUsingMicrophone(targetTokenId), false,
         "StopUsingMicrophone failed for tokenId:%{public}u sessionId:%{public}u", targetTokenId, sessionId);
+    return true;
+}
+ 
+bool RecordPrivacyManager::NeedTurnOnMicIndicator(int32_t callingUid) const
+{
+    if (RECORD_PRIVACY_BLACK_LIST.count(callingUid)) {
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", callingUid);
+        return false;
+    }
     return true;
 }
 } // namespace AudioStandard
