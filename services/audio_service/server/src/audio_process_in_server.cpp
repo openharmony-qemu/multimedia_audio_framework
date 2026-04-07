@@ -359,7 +359,7 @@ void AudioProcessInServer::ReportNoBgPermissionEvent()
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
+bool AudioProcessInServer::CheckBgRecordPermission(CapturerState capturerState)
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
@@ -377,7 +377,12 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         return false;
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
-
+    return true;
+}
+ 
+bool AudioProcessInServer::TurnOnMicIndicator()
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
     if (isMicIndicatorOn_) {
         AUDIO_WARNING_LOG("MicIndicator:already on, Stream:%{public}u.", sessionId_);
     } else {
@@ -448,9 +453,12 @@ int32_t AudioProcessInServer::StartInner()
     }
 
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
-            HILOG_COMM_ERROR("[StartInner]Turn on micIndicator failed or check backgroud capture failed for "
+        CHECK_AND_CALL_FUNC_RETURN_RET(CheckBgRecordPermission(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[StartInner]Check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
+    }
+    if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid)) {
+        TurnOnMicIndicator();
     }
     TurnOnRemoteMicIndicator();
     MarkStaticFadeIn(true);
@@ -570,9 +578,12 @@ int32_t AudioProcessInServer::Resume()
         needCheckBackground_ = true;
     }
     if (processConfig_.audioMode == AUDIO_MODE_RECORD && needCheckBackground_) {
-        CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
-            HILOG_COMM_ERROR("[Resume]Turn on micIndicator failed or check backgroud capture failed for "
+        CHECK_AND_CALL_FUNC_RETURN_RET(CheckBgRecordPermission(CAPTURER_RUNNING), ERR_PERMISSION_DENIED,
+            HILOG_COMM_ERROR("[Resume]Check backgroud capture failed for "
                 "stream:%{public}d!", sessionId_));
+    }
+    if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid)) {
+        TurnOnMicIndicator();
     }
     TurnOnRemoteMicIndicator();
     MarkStaticFadeIn(false);
