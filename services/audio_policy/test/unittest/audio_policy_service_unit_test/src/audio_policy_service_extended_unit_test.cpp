@@ -334,7 +334,7 @@ HWTEST_F(AudioPolicyServiceExtendedUnitTest, UpdateSpatializationSupported, Test
 HWTEST_F(AudioPolicyServiceExtendedUnitTest, SubscribeSafeVolumeEvent, TestSize.Level1)
 {
     EXPECT_NO_THROW(
-        SafeVolumeEventSubscriber::SubscribeSafeVolumeEvent();
+        SafeVolumeEventSubscriber::GetInstance().SubscribeSafeVolumeEvent();
     );
 }
 
