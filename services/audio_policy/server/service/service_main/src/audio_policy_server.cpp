@@ -1170,7 +1170,7 @@ void AudioPolicyServer::LoadEffectLibrary()
 
 int32_t AudioPolicyServer::GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType)
 {
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     volumeLevel = audioVolumeManager_.GetMaxVolumeLevel(static_cast<AudioVolumeType>(volumeType),
                                                         static_cast<DeviceType>(deviceType), zoneId);
     return SUCCESS;
@@ -1178,7 +1178,7 @@ int32_t AudioPolicyServer::GetMaxVolumeLevel(int32_t volumeType, int32_t &volume
 
 int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType)
 {
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     volumeLevel = audioVolumeManager_.GetMinVolumeLevel(static_cast<AudioVolumeType>(volumeType),
                                                         static_cast<DeviceType>(deviceType), zoneId);
     return SUCCESS;
@@ -1200,7 +1200,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int3
         return ERR_NOT_SUPPORTED;
     }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     VolumeUpdateOption info = { false };
     return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
 }
@@ -1275,12 +1275,12 @@ int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t vo
     int32_t zoneId = 0;
 #ifndef FEATURE_AUDIO_ZONE
     if (uid != 0) {
-        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
         VolumeUpdateOption info = { flag };
         return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
     }
 #endif
-    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     VolumeUpdateOption info = { flag };
     return audioVolumeManager_.SetSystemVolumeLevelWithOption(streamType, volumeLevel, zoneId, info);
 }
@@ -1353,13 +1353,13 @@ int32_t AudioPolicyServer::GetSystemVolumeLevel(int32_t streamType, int32_t uid,
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
 #ifdef FEATURE_AUDIO_ZONE
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(
-        uid != 0 ? uid : IPCSkeleton::GetCallingUid());
+        uid != 0 ? uid : IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
 #else
     int32_t zoneId = 0;
     if (uid != 0) {
-        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
+        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid, OUTPUT_DEVICE);
     } else {
-        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     }
 #endif
     volumeLevel = audioVolumeManager_.GetSystemVolumeLevelInterface(newStreamType, zoneId);
@@ -1520,7 +1520,7 @@ int32_t AudioPolicyServer::SetStreamMuteLegacy(int32_t streamTypeIn, bool mute, 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     return SetStreamMuteInternal(streamType, mute, false, deviceType, zoneId);
 }
 
@@ -1535,7 +1535,7 @@ int32_t AudioPolicyServer::SetStreamMute(int32_t streamTypeIn, bool mute, int32_
     AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
     DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     return SetStreamMuteInternal(streamType, mute, false, deviceType, zoneId);
 }
 // LCOV_EXCL_STOP
@@ -1665,7 +1665,7 @@ int32_t AudioPolicyServer::GetStreamMute(int32_t streamTypeIn, bool &mute)
             "GetStreamMute permission denied for stream type : %{public}d", streamType);
     }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), OUTPUT_DEVICE);
     mute = audioVolumeManager_.GetStreamMuteInterface(streamType, zoneId);
     return SUCCESS;
 }
@@ -2740,7 +2740,9 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(audioInterrupt.pid);
     streamUsage = ((streamUsage != StreamUsage::STREAM_USAGE_INVALID) &&
         interruptService_->IsAudioSessionActivated(audioInterrupt.pid)) ? streamUsage : audioInterrupt.streamUsage;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage);
+    DeviceRole deviceRole = interruptService_->IsAudioSessionActivated(audioInterrupt.pid) ? OUTPUT_DEVICE :
+        audioInterrupt.audioFocusType.isPlay ? OUTPUT_DEVICE : INPUT_DEVICE;
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage, deviceRole);
     int32_t ret = -1;
     if (StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(audioInterrupt.uid,
         false, audioInterrupt.streamId)) {
@@ -3234,7 +3236,7 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
     for (const auto &info : allRendererChangeInfos) {
         CHECK_AND_CONTINUE(info != nullptr);
         int32_t rendererZoneId = AudioZoneService::GetInstance().FindAudioZone(
-            info->clientUID, info->rendererInfo.streamUsage);
+            info->clientUID, info->rendererInfo.streamUsage, OUTPUT_DEVICE);
         if (rendererZoneId == zoneId) {
             audioRendererChangeInfos.push_back(info);
         }
@@ -3339,7 +3341,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     }
     if (interruptService_ != nullptr) {
         StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(pid);
-        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(uid, streamUsage);
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(uid, streamUsage, OUTPUT_DEVICE);
         AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", pid, zoneId);
         AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, pid);
     }
@@ -5037,7 +5039,7 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn, const bool s
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage, OUTPUT_DEVICE);
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d, "
         "streamUsage:%{public}d", static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId, streamUsage);
 
@@ -5080,7 +5082,7 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(callerUid, streamUsage, OUTPUT_DEVICE);
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d, streamUsage:%{public}d",
         callerPid, zoneId, streamUsage);
     return AudioZoneService::GetInstance().DeactivateAudioSession(zoneId, callerPid);
@@ -5475,7 +5477,7 @@ int32_t AudioPolicyServer::ForceStopAudioStream(int32_t audioTypeIn)
 int32_t AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo, bool &ret)
 {
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid(), INPUT_DEVICE);
     ret = interruptService_->IsCapturerFocusAvailable(zoneId, capturerInfo);
     return SUCCESS;
 }
@@ -5805,7 +5807,7 @@ int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t v
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid, OUTPUT_DEVICE);
     bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
     int32_t volumeLevelMax = -1;
     GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
@@ -5820,7 +5822,7 @@ int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
     int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid, OUTPUT_DEVICE);
 
     volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(newStreamType, zoneId);
     return SUCCESS;
