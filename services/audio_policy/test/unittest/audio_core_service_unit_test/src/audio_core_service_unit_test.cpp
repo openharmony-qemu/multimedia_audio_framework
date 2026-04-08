@@ -6895,7 +6895,7 @@ HWTEST_F(AudioCoreServiceUnitTest, ReloadNormalSource_007, TestSize.Level4)
 /**
 * @tc.name  : Test ReleaseClient.
 * @tc.number: ReleaseClient_001
-* @tc.desc  : Test ReleaseClient - When needRemoveFromMap is true, RemoveSwitchStream should be called.
+* @tc.desc  : Test ReleaseClient - Verify switch stream behavior for both true/false needRemoveFromMap.
 */
 HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 {
@@ -6909,14 +6909,8 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
     streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
     streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
-
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
-
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t originalSessionId = 0;
-    std::string networkId = LOCAL_NETWORK_ID;
 
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -6926,63 +6920,28 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
     streamDesc->newDeviceDescs_.clear();
     streamDesc->newDeviceDescs_.push_back(deviceDesc);
 
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
+
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
-
     pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
-
     result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, true);
-
     EXPECT_EQ(result, SUCCESS);
     EXPECT_FALSE(pipeManager->IsSwitchStreamExist(originalSessionId));
-}
 
-/**
-* @tc.name  : Test ReleaseClient.
-* @tc.number: ReleaseClient_002
-* @tc.desc  : Test ReleaseClient - When needRemoveFromMap is false, RemoveSwitchStream should not be called.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_002, TestSize.Level1)
-{
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    pipeManager->curPipeList_.clear();
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamDesc->streamInfo_.channels = AudioChannel::MONO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MEDIA;
-
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    originalSessionId = 0;
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->callerUid_ = getuid();
-
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    uint32_t originalSessionId = 0;
-    std::string networkId = LOCAL_NETWORK_ID;
-
-    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    deviceDesc->networkId_ = LOCAL_NETWORK_ID;
-    deviceDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    deviceDesc->macAddress_ = "00:00:00:00:00:00";
-    streamDesc->newDeviceDescs_.clear();
-    streamDesc->newDeviceDescs_.push_back(deviceDesc);
-
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
-
     pipeManager->AddSingleSwitchStream(originalSessionId, streamDesc);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
-
     result = GetServerPtr()->coreService_->ReleaseClient(originalSessionId, SESSION_OP_MSG_DEFAULT, false);
-
     EXPECT_EQ(result, SUCCESS);
     EXPECT_TRUE(pipeManager->IsSwitchStreamExist(originalSessionId));
-
     pipeManager->RemoveSwitchStream(originalSessionId);
 }
 } // namespace AudioStandard
