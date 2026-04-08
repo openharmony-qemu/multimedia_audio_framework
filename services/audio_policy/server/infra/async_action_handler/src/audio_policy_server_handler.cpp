@@ -527,10 +527,11 @@ bool AudioPolicyServerHandler::SendCapturerInfoEvent(
 }
 
 bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-    const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+    const AudioDeviceDescriptor &preOutputDeviceInfo)
 {
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = std::make_shared<RendererDeviceChangeEvent>(
-        clientPid, sessionId, outputDeviceInfo, reason);
+        clientPid, sessionId, outputDeviceInfo, reason, preOutputDeviceInfo);
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
 
     lock_guard<mutex> runnerlock(runnerMutex_);
@@ -1590,7 +1591,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     CHECK_AND_RETURN_LOG(event != nullptr, "event get nullptr");
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    const auto &[pid, sessionId, outputDeviceInfo, reason, preOutputDeviceInfo] = *eventContextObj;
     bool cbFlag = false;
     Trace trace("AudioPolicyServerHandler::HandleRendererDeviceChangeEvent pid:" + std::to_string(pid));
     std::lock_guard<std::mutex> lock(handleMapMutex_);
@@ -1607,7 +1608,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
         cbFlag = true;
-        capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
+        capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason, preOutputDeviceInfo);
     }
     AUDIO_INFO_LOG("deviceType:%{public}d pid:%{public}d cbFlag:%{public}d", outputDeviceInfo.deviceType_, pid, cbFlag);
 }

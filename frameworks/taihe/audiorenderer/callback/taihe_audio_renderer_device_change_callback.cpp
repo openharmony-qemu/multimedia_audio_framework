@@ -231,9 +231,10 @@ int32_t TaiheAudioRendererOutputDeviceChangeWithInfoCallback::GetCallbackListSiz
     return callbacks_.size();
 }
 
-void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(
+void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChangeWithPreDevice(
     const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo,
-    const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason)
+    const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason,
+    const OHOS::AudioStandard::AudioDeviceDescriptor &preDeviceInfo)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> sptr =
@@ -241,6 +242,11 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(
     AudioDeviceDescriptor outputAudioDevice = TaiheParamUtils::SetDeviceDescriptor(sptr);
     std::vector<AudioDeviceDescriptor> res;
     res.push_back(outputAudioDevice);
+    std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> preSptr =
+        std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>(preDeviceInfo);
+    AudioDeviceDescriptor preOutputAudioDevice = TaiheParamUtils::SetDeviceDescriptor(preSptr);
+    std::vector<AudioDeviceDescriptor> preRes;
+    preRes.push_back(preOutputAudioDevice);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
         std::unique_ptr<AudioRendererOutputDeviceChangeWithInfoJsCallback> cb =
             std::make_unique<AudioRendererOutputDeviceChangeWithInfoJsCallback>();
@@ -249,6 +255,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(
         cb->callbackName = DEVICECHANGE_CALLBACK_NAME;
         cb->deviceInfo_ = taihe::array<AudioDeviceDescriptor>(res);
         cb->reason_ = reason;
+        cb->preDeviceInfo_ = taihe::array<AudioDeviceDescriptor>(preRes);
         OnJsCallbackOutputDeviceInfo(cb);
     }
 }
@@ -295,6 +302,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputD
         AudioStreamDeviceChangeInfo audioStreamDeviceChangeInfo {
             .devices = event->deviceInfo_,
             .changeReason = TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(event->reason_),
+            .preDevices = event->preDeviceInfo_,
         };
         (*cacheCallback)(audioStreamDeviceChangeInfo);
     } while (0);

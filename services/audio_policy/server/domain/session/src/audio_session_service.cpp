@@ -574,7 +574,8 @@ int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
         return ERROR;
     }
 
-    CHECK_AND_RETURN_RET((session->second->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
+    CHECK_AND_RETURN_RET((session->second->IsSessionOutputDeviceChanged(
+        deviceChangedEvent.devices[0], deviceChangedEvent.preDevices) ||
         (changeReason == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)), ERROR,
         "device of session %{public}d is not changed", callerPid);
 

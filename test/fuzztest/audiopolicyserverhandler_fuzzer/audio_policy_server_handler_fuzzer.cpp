@@ -293,8 +293,10 @@ void SendRendererDeviceChangeEventFuzzTest()
     int32_t clientPid = 1;
     uint64_t sessionId = 0;
     AudioDeviceDescriptor outputDeviceInfo;
+    AudioDeviceDescriptor preOutputDeviceInfo;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
-    audioPolicyServerHandler_->SendRendererDeviceChangeEvent(clientPid, sessionId, outputDeviceInfo, reason);
+    audioPolicyServerHandler_->SendRendererDeviceChangeEvent(
+        clientPid, sessionId, outputDeviceInfo, reason, preOutputDeviceInfo);
 }
 
 void SendCapturerCreateEventFuzzTest()

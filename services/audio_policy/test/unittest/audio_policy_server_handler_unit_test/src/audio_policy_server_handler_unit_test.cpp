@@ -1280,9 +1280,10 @@ HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_003, T
     int32_t clientPid = 1;
     uint64_t sessionId = 0;
     AudioDeviceDescriptor outputDeviceInfo;
+    AudioDeviceDescriptor preOutputDeviceInfo;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
     bool ret = audioPolicyServerHandler_->SendRendererDeviceChangeEvent(clientPid,
-        sessionId, outputDeviceInfo, reason);
+        sessionId, outputDeviceInfo, reason, preOutputDeviceInfo);
     EXPECT_NE(ret, false);
 }
 /**

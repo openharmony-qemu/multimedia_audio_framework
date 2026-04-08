@@ -193,8 +193,8 @@ public:
         const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     int32_t OnCapturerStateChange(
         const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
-    int32_t OnRendererDeviceChange(uint32_t sessionId,
-        const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason) override;
+    int32_t OnRendererDeviceChange(uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReasonExt &reason, const AudioDeviceDescriptor &preDeviceInfo) override;
     int32_t OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
     int32_t OnSpatializationEnabledChange(bool enabled) override;
     int32_t OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,

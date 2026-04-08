@@ -370,12 +370,13 @@ void AudioPolicyClientProxyOnRendererDeviceChangeFuzzTest(FuzzedDataProvider& fd
     uint32_t sessionId = GetData<uint32_t>();
     AudioStreamDeviceChangeReasonExt reason = g_testReasons[GetData<uint32_t>() % g_testReasons.size()];
     AudioDeviceDescriptor deviceInfo;
+    AudioDeviceDescriptor preDeviceInfo;
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
     if (audioPolicyClientProxy == nullptr) {
         return;
     }
-    audioPolicyClientProxy->OnRendererDeviceChange(sessionId, deviceInfo, reason);
+    audioPolicyClientProxy->OnRendererDeviceChange(sessionId, deviceInfo, reason, preDeviceInfo);
 }
 
 void AudioPolicyClientProxyOnRecreateRendererStreamEventFuzzTest(FuzzedDataProvider& fdp)
