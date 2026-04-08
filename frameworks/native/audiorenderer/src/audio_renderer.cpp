@@ -2616,7 +2616,8 @@ void AudioRendererPrivate::WriteSwitchStreamLogMsg()
 }
 
 void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     AUDIO_INFO_LOG("OnRendererStateChange");
     std::vector<std::shared_ptr<AudioRendererOutputDeviceChangeCallback>> callbacks;
@@ -2629,11 +2630,14 @@ void OutputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
     for (auto &cb : callbacks) {
         if (cb != nullptr) {
             cb->OnOutputDeviceChange(deviceInfo, reason);
+            CHECK_AND_CONTINUE_LOG(cb != nullptr, "cb is nullptr");
+            cb->OnOutputDeviceChangeWithPreDevice(deviceInfo, reason, preDeviceInfo);
         }
     }
 
-    AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d size: %{public}zu",
-        sessionId, static_cast<int>(deviceInfo.deviceType_), static_cast<int>(reason), callbacks.size());
+    AUDIO_INFO_LOG("sessionId: %{public}u, deviceType: %{public}d reason: %{public}d size: %{public}zu\
+        preDeviceType: %{public}d", sessionId, static_cast<int>(deviceInfo.deviceType_), static_cast<int>(reason),
+        callbacks.size(), static_cast<int>(preDeviceInfo.deviceType_));
 }
 
 // NOTIFY: Possible audioRendererPrivate destruction here.

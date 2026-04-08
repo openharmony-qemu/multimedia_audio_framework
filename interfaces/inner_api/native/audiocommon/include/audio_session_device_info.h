@@ -56,6 +56,11 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
      * @since 20
      */
     OutputDeviceChangeRecommendedAction recommendedAction;
+    /**
+     * Audio device descriptors before change.
+     * @since 26.0.0 dynamic&static
+     */
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preDevices;
     static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 
     bool Marshalling(Parcel &parcel) const override
@@ -67,6 +72,13 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
         for (int i = 0; i < size; i++) {
             if (devices[i] != nullptr) {
                 devices[i]->Marshalling(parcel);
+            }
+        }
+        int32_t preSize = static_cast<int32_t>(preDevices.size());
+        parcel.WriteInt32(preSize);
+        for (int i = 0; i < preSize; i++) {
+            if (preDevices[i] != nullptr) {
+                preDevices[i]->Marshalling(parcel);
             }
         }
         return true;
@@ -90,6 +102,17 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
             auto device = AudioDeviceDescriptor::Unmarshalling(parcel);
             if (device != nullptr) {
                 event->devices.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(device));
+            }
+        }
+        int32_t preSize = parcel.ReadInt32();
+        if (preSize < 0 || preSize >= DEVICE_CHANGE_VALID_SIZE) {
+            delete event;
+            return nullptr;
+        }
+        for (int32_t i = 0; i < preSize; i++) {
+            auto preDevice = AudioDeviceDescriptor::Unmarshalling(parcel);
+            if (preDevice != nullptr) {
+                event->preDevices.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(preDevice));
             }
         }
         return event;

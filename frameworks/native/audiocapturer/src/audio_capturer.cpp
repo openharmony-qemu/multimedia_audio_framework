@@ -2153,7 +2153,8 @@ void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()
 }
 
 void InputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     AUDIO_INFO_LOG("For capturer, OnDeviceChangeWithInfo callback is not support");
 }

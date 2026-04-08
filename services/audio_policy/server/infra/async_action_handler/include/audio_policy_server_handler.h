@@ -138,14 +138,17 @@ public:
     struct RendererDeviceChangeEvent {
         RendererDeviceChangeEvent() = delete;
         RendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-            const AudioDeviceDescriptor outputDeviceInfo, const AudioStreamDeviceChangeReason &reason)
-            : clientPid_(clientPid), sessionId_(sessionId), outputDeviceInfo_(outputDeviceInfo), reason_(reason)
+            const AudioDeviceDescriptor outputDeviceInfo, const AudioStreamDeviceChangeReason &reason,
+            const AudioDeviceDescriptor preOutputDeviceInfo)
+            : clientPid_(clientPid), sessionId_(sessionId), outputDeviceInfo_(outputDeviceInfo), reason_(reason),
+              preOutputDeviceInfo_(preOutputDeviceInfo)
         {}
 
         const int32_t clientPid_;
         const uint32_t sessionId_;
         const AudioDeviceDescriptor outputDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
         AudioStreamDeviceChangeReasonExt reason_ = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+        const AudioDeviceDescriptor preOutputDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     };
 
     struct CapturerCreateEvent {
@@ -202,7 +205,8 @@ public:
     bool SendRendererInfoEvent(const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos);
     bool SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-        const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason);
+        const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+        const AudioDeviceDescriptor &preOutputDeviceInfo);
     bool SendCapturerCreateEvent(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint64_t sessionId, bool isSync, int32_t &error);
     bool SendCapturerRemovedEvent(uint64_t sessionId, bool isSync);

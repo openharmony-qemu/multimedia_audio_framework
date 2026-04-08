@@ -1154,9 +1154,15 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     if (isNeedTriggerCallback && audioPolicyServerHandler_) {
         std::shared_ptr<AudioDeviceDescriptor> callbackDesc = std::make_shared<AudioDeviceDescriptor>(*newDeviceDesc);
         callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
+        std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc =
+            (streamDesc->oldDeviceDescs_.size() > 0 && streamDesc->oldDeviceDescs_.front() != nullptr) ?
+            streamDesc->oldDeviceDescs_.front() : streamDesc->newDeviceDescs_.front();
+        std::shared_ptr<AudioDeviceDescriptor> preCallbackDesc =
+            std::make_shared<AudioDeviceDescriptor>(*oldDeviceDesc);
+        preCallbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
         AudioStreamDeviceChangeReasonExt newReason = UpdateRemoteDeviceChangeReason(streamDesc, reason);
         audioPolicyServerHandler_->SendRendererDeviceChangeEvent(streamDesc->callerPid_,
-            streamDesc->sessionId_, callbackDesc, newReason);
+            streamDesc->sessionId_, callbackDesc, newReason, preCallbackDesc);
     }
 
     SleepForSwitchDevice(streamDesc, reason);
@@ -1803,7 +1809,10 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStr
     if (!oldDeviceDesc->IsSameDeviceDesc(newDeviceDesc)) {
         std::shared_ptr<AudioDeviceDescriptor> callbackDesc = std::make_shared<AudioDeviceDescriptor>(newDeviceDesc);
         callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
-        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(callerPid, sessionId, callbackDesc, reason);
+        std::shared_ptr<AudioDeviceDescriptor> preCallbackDesc = std::make_shared<AudioDeviceDescriptor>(oldDeviceDesc);
+        preCallbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(
+            callerPid, sessionId, callbackDesc, reason, preCallbackDesc);
     }
 
     SleepForSwitchDevice(streamDesc, reason);

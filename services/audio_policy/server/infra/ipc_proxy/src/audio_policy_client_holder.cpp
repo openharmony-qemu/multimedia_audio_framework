@@ -167,13 +167,16 @@ void AudioPolicyClientHolder::OnCapturerStateChange(
 }
 
 void AudioPolicyClientHolder::OnRendererDeviceChange(const uint32_t sessionId,
-    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
     AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion_ };
     clientInfo.isSupportedDevice_ = CheckDeviceSupported(deviceInfo.deviceType_);
     deviceInfo.SetClientInfo(clientInfo);
-    audioPolicyClient_->OnRendererDeviceChange(sessionId, deviceInfo, reason);
+    clientInfo.isSupportedDevice_ = CheckDeviceSupported(preDeviceInfo.deviceType_);
+    preDeviceInfo.SetClientInfo(clientInfo);
+    audioPolicyClient_->OnRendererDeviceChange(sessionId, deviceInfo, reason, preDeviceInfo);
 }
 
 void AudioPolicyClientHolder::OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
