@@ -332,10 +332,6 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
 
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
 
-    // Make sure that the muteState of notification and RingerMode are consistent on the new device.
-    AudioRingerMode currentRingerMode = audioPolicyManager_.GetRingerMode();
-    SetStreamMute(STREAM_NOTIFICATION, currentRingerMode == RINGER_MODE_NORMAL ? false : true);
-
     audioPolicyManager_.UpdateVolumeForStreams();
 
     // The volume of voice_call needs to be adjusted separately
