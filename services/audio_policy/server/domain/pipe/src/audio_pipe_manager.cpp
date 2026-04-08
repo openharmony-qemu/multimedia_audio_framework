@@ -23,16 +23,18 @@
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B84
-namespace {
-constexpr int32_t DECIMAL = 10;
-}
+
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int32_t DECIMAL = 10;
 const uint32_t FIRST_SESSIONID = 100000;
 const uint32_t RING_SESSIONID = 1;
 const uint32_t VOIP_SESSIONID = 2;
 const int32_t MEDIA_SERVICE_UID = 1013;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
+const uint32_t DEFAULT_PIPE_ID = 0;
+}
 AudioPipeManager::AudioPipeManager()
     : audioConfigManager_(AudioCoreConfigManager::GetInstance()),
       audioConcurrencyManager_(AudioConcurrencyManager::GetInstance())
@@ -574,6 +576,21 @@ uint32_t AudioPipeManager::GetPaIndexByIoHandle(AudioIOHandle id)
         }
     }
     return HDI_INVALID_ID;
+}
+
+uint32_t AudioPipeManager::QueryPipeIdBySessionId(uint32_t sessionId)
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    for (auto &it : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(it != nullptr, "pipeInfo is nullptr");
+        for (const auto &streamDesc : it->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
+            if (streamDesc->sessionId_ == sessionId) {
+                return it->id_;
+            }
+        }
+    }
+    return DEFAULT_PIPE_ID;
 }
 
 void AudioPipeManager::UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos)

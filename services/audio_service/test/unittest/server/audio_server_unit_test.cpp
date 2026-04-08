@@ -65,13 +65,11 @@ HWTEST(AudioServerUnitTest, SetIORoutes_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioServerUnitTest SetIORoutes_001 start");
     int32_t systemAbilityId = 100;
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
-    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DEVICES_FLAG;
     std::vector<DeviceType> deviceTypes;
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     deviceTypes.push_back(deviceType);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_OFFLOAD;
-    bool ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag);
+    bool ret = audioServer->SetIORoutes(flag, deviceTypes);
     EXPECT_EQ(false, ret);
 }
 

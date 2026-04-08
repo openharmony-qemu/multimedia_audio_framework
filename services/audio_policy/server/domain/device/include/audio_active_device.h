@@ -78,10 +78,11 @@ public:
     DeviceCategory GetCurrentOutputDeviceCategory();
     std::string GetCurrentOutputDeviceNetworkId();
     std::string GetCurrentOutputDeviceMacAddr();
-    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
-        const std::string &deviceName = "", std::string networkId = LOCAL_NETWORK_ID);
+    // pipeId == renderId == ioHandle
+    void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag, const uint32_t pipeId,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
-        const std::string &deviceName = "", const std::string &networkId = LOCAL_NETWORK_ID);
+        const uint32_t pipeId, const std::string &networkId = LOCAL_NETWORK_ID);
     void ReleaseActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag, const std::string &networkId);
     bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);

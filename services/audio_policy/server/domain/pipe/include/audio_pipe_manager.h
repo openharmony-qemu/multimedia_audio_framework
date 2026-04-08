@@ -99,6 +99,7 @@ public:
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
     int32_t GetStreamCount(const std::string adapterName, const uint32_t routeFlag);
     uint32_t GetPaIndexByIoHandle(AudioIOHandle id);
+    uint32_t QueryPipeIdBySessionId(uint32_t sessionId);
     void UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     void UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     uint32_t PcmOffloadSessionCount();

@@ -105,10 +105,8 @@ public:
     int32_t GetAudioParameter(const std::string &key, std::string& value) override;
     int32_t GetAudioParameter(const std::string& networkId, int32_t key,
         const std::string& condition, std::string& value) override;
-    int32_t UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
-        int32_t a2dpOffloadFlag, const std::string &deviceName,
-        const std::string &networkId = LOCAL_NETWORK_ID) override;
+        int32_t a2dpOffloadFlag, const uint32_t pipeId, const std::string &networkId = LOCAL_NETWORK_ID) override;
     int32_t ReleaseActiveDeviceRoute(int32_t deviceType, int32_t deviceFlag, const std::string &networkId) override;
     int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId, const std::string &dupSinkName) override;
@@ -409,12 +407,12 @@ private:
         std::shared_ptr<AudioInputPipeInfo> &changedPipeInfo);
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "",
-        const std::string &networkId = LOCAL_NETWORK_ID);
-    int32_t SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
-        BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
-    int32_t SetIORoutesForRemote(DeviceType type, DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
+        BluetoothOffloadState a2dpOffloadFlag, const uint32_t pipeId, const std::string &networkId = LOCAL_NETWORK_ID);
+    int32_t SetIORoutes(const DeviceFlag flag, std::vector<DeviceType> deviceTypes);
+    int32_t SetIORoutesForRemote(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
         const std::string &networkId);
+    int32_t SetIORoutesForSpecificPipe(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
+        const uint32_t pipeId, const std::string &networkId);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
