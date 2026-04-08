@@ -333,7 +333,7 @@ OH_AudioConverter_Result OHAudioConverter::CalculateOutputFormatParams(
     return AUDIOCONVERTER_SUCCESS;
 }
 
-int32_t OHAudioConverter::CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame)
+uint32_t OHAudioConverter::CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame)
 {
     uint64_t inputBytesPerSec = static_cast<uint64_t>(inputFormat_.sampleRate) * inputBytesPerFrame;
 

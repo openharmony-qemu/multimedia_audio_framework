@@ -89,7 +89,7 @@ private:
     OH_AudioConverter_Result ValidateProcessParams(void* audioData, uint32_t* outputSize);
     OH_AudioConverter_Result CalculateOutputFormatParams(uint32_t outputCapacity,
         uint32_t& outputBytesPerFrame, uint32_t& maxOutputFrames);
-    int32_t CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame);
+    uint32_t CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame);
     OH_AudioConverter_Result ReadAndCacheInputData(bool* shouldStopProcessing);
     OH_AudioConverter_Result CalculateMinBytesForIntMsInternal(uint32_t inputBytesPerFrame,
         uint32_t& minBytesForIntMs, uint32_t& alignedCachedSize, bool& shouldStopProcessing, uint32_t outputCapacity);
