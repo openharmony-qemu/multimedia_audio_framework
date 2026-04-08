@@ -286,7 +286,7 @@ static inline void UpdateDeinterleaveDataLength(BufferDesc &processBufDesc, Buff
     ecBufferDesc.dataLength = bufferSizes.ecBufSize;
 }
 
-static inline void DumpDeinterleaveBuffers(const DeinterleaveDumpFiles &dumpFiles,
+static void DumpDeinterleaveBuffersImpl(const DeinterleaveDumpFiles &dumpFiles,
     const DeinterleaveTargetBuffers &targetBuffers, const MicInEcBufferSizes &bufferSizes)
 {
     if (bufferSizes.processBufSize > 0) {
@@ -305,7 +305,13 @@ static inline void DumpDeinterleaveBuffers(const DeinterleaveDumpFiles &dumpFile
     }
 }
 
-static inline int32_t FillDegradeFallbackSilentBuffers(const BufferDesc &srcBufDesc,
+static inline void DumpDeinterleaveBuffers(const DeinterleaveDumpFiles &dumpFiles,
+    const DeinterleaveTargetBuffers &targetBuffers, const MicInEcBufferSizes &bufferSizes)
+{
+    DumpDeinterleaveBuffersImpl(dumpFiles, targetBuffers, bufferSizes);
+}
+
+static int32_t FillDegradeFallbackSilentBuffersImpl(const BufferDesc &srcBufDesc,
     BufferDesc &processBufDesc, BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc,
     const MicInEcBufferSizes &bufferSizes)
 {
@@ -323,6 +329,13 @@ static inline int32_t FillDegradeFallbackSilentBuffers(const BufferDesc &srcBufD
             bufferSizes.ecBufSize) == EOK, ERR_OPERATION_FAILED, "clear ec buffer failed");
     }
     return SUCCESS;
+}
+
+static inline int32_t FillDegradeFallbackSilentBuffers(const BufferDesc &srcBufDesc,
+    BufferDesc &processBufDesc, BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc,
+    const MicInEcBufferSizes &bufferSizes)
+{
+    return FillDegradeFallbackSilentBuffersImpl(srcBufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
 }
 
 static int32_t DeinterleaveMicInEcFrames(const BufferDesc &srcBufDesc, const MicInEcBufferLayout &layout,
@@ -373,7 +386,7 @@ static inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &cap
         (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW);
 }
 
-static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType deviceType)
+static bool IsVoiceRecognitionMicInEcSupportedInputDeviceTypeImpl(DeviceType deviceType)
 {
     switch (deviceType) {
         case DEVICE_TYPE_MIC:
@@ -388,6 +401,11 @@ static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType 
     }
 }
 
+static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType deviceType)
+{
+    return IsVoiceRecognitionMicInEcSupportedInputDeviceTypeImpl(deviceType);
+}
+
 static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(
     const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
 {
@@ -395,7 +413,7 @@ static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(
         IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceDesc->deviceType_);
 }
 
-static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerInfo &capturerInfo,
+static void UpdateVoiceRecognitionMicInEcDegradeFlagImpl(const AudioCapturerInfo &capturerInfo,
     AudioStreamParams &audioStreamParams)
 {
     if (!IsVoiceRecognitionMicInEcRequest(capturerInfo, audioStreamParams)) {
@@ -420,9 +438,16 @@ static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerI
         if (deviceDesc == nullptr) {
             continue;
         }
-        audioStreamParams.isVoiceRecognitionMicInEcDegrade = !IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(deviceDesc);
+        audioStreamParams.isVoiceRecognitionMicInEcDegrade =
+            !IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(deviceDesc);
         return;
     }
+}
+
+static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerInfo &capturerInfo,
+    AudioStreamParams &audioStreamParams)
+{
+    UpdateVoiceRecognitionMicInEcDegradeFlagImpl(capturerInfo, audioStreamParams);
 }
 
 static inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
