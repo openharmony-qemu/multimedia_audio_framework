@@ -84,6 +84,7 @@ static std::unordered_map<HpaeProcessorType, AudioEnhanceScene> g_processorTypeT
     {HPAE_SCENE_PRE_ENHANCE, SCENE_PRE_ENHANCE},
     {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE},
     {HPAE_SCENE_RECOGNITION, SCENE_RECOGNITION},
+    {HPAE_SCENE_COLLABORATIVE, SCENE_COLLABORATIVE_RECORD},
 };
 
 static std::unordered_map<HpaeSessionState, std::string> g_sessionStateToStrMap = {

@@ -78,6 +78,35 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     EnhanceTransBuffer transBuf = {};
     uint32_t processLength = 0;
+
+    // Collaborative recording: float data pass-through, no format conversion
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        for (uint32_t i = 0; i < inputs.size(); i++) {
+            if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MIC) {
+                memcpy_s(micCache_.data(), micCache_.size(),
+                    inputs[i]->GetPcmDataBuffer(), micBufferLength_);
+                transBuf.micData = static_cast<void *>(micCache_.data());
+                transBuf.micDataLen = micCache_.size();
+                processLength = micBufferLength_;
+                AUDIO_DEBUG_LOG("collaborative mic size:%{public}u", processLength);
+            } else if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_DEFAULT) {
+                memcpy_s(micRefCache_.data(), micRefCache_.size(),
+                    inputs[i]->GetPcmDataBuffer(), micrefBufferLength_);
+                transBuf.micRefData = static_cast<void *>(micRefCache_.data());
+                transBuf.micRefDataLen = micRefCache_.size();
+                AUDIO_DEBUG_LOG("collaborative ref size:%{public}u", micrefBufferLength_);
+            }
+        }
+        outPcmBuffer_->SetBufferValid(processLength != 0);
+        CHECK_AND_RETURN_RET_LOG(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
+        int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
+        audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
+            static_cast<size_t>(processLength));
+        memcpy_s(outPcmBuffer_->GetPcmDataBuffer(), processLength, cacheDataOut_.data(), processLength);
+        return outPcmBuffer_.get();
+    }
+
     for (uint32_t i = 0; i < inputs.size(); i++) {
         if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MIC) {
             ConvertFromFloat(SAMPLE_S16LE, micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),

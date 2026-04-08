@@ -55,6 +55,7 @@ const std::vector<std::string> NEED_EC_SCENE = {
 const std::vector<std::string> NEED_MICREF_SCENE = {
     "SCENE_VOIP_UP",
     "SCENE_RECORD",
+    "SCENE_COLLABORATIVE_RECORD",
 };
 
 const std::map<uint32_t, AudioSampleFormat> FORMAT_CONVERT_MAP = {
@@ -98,6 +99,40 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
 
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
     algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
+
+    // Collaborative recording: 48k, 1ch, 32f with 1ch ref
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        deviceAttr_.micChannels = 1;
+        deviceAttr_.micRefChannels = 1;
+        needMicRefFlag_ = true;
+
+        const uint32_t COLLAB_BITDEPTH = sizeof(float); // 4 bytes per sample
+        uint32_t byteLenPerFrameF32 = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * COLLAB_BITDEPTH;
+        algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, COLLAB_BITDEPTH * BITLENGTH,
+            1, DEFAULT_ECOFF_CH, 1, 1}; // micNum=1, ecNum=0, micRefNum=1, outNum=1
+        algoAttr_ = {COLLAB_BITDEPTH, 2, byteLenPerFrameF32}; // bitDepth=4, batchLen=mic+ref=2
+
+        enhanceBuf_.micBuffer.resize(byteLenPerFrameF32);
+        enhanceBuf_.micRefBuffer.resize(byteLenPerFrameF32);
+        outputCache_.resize(byteLenPerFrameF32);
+        algoCache_.input.resize(byteLenPerFrameF32 * algoAttr_.batchLen);
+        algoCache_.output.resize(byteLenPerFrameF32);
+
+        AUDIO_INFO_LOG("collaborative record: micNum:1 ecNum:0 micRefNum:1 outNum:1 format:F32"
+            " byteLenPerFrame:%{public}u inputsize:%{public}zu outputsize:%{public}zu",
+            byteLenPerFrameF32, algoCache_.input.size(), algoCache_.output.size());
+
+        traceTagIn_ = sceneType_ + "_IN";
+        traceTagOut_ = sceneType_ + "_OUT";
+        dfxStreamInfo_ = { static_cast<AudioSamplingRate>(DEFAULT_SAMPLE_RATE), AudioEncodingType::ENCODING_PCM,
+            SAMPLE_F32LE, static_cast<AudioChannel>(1) };
+        std::string dumpFileInName = "Enhance_" + sceneType_ + "_" + GetTime() + "_In_" +
+            "0Ec_1Mic_1MicRef.pcm";
+        std::string dumpFileOutName = "Enhance_" + sceneType_ + "_" + GetTime() + "_Out.pcm";
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
+        DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
+        return;
+    }
 
     if (count(NEED_EC_SCENE.begin(), NEED_EC_SCENE.end(), sceneType_)) {
         needEcFlag_ = true;
@@ -322,6 +357,30 @@ int32_t AudioEnhanceChain::InitSingleEnhanceModule(AudioEffectHandle enhanceHand
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get algo maxSampleRate failed!");
     }
+    // Collaborative recording: float format, use algoAttr_.bitDepth
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        if (algoSupportedConfig_.sampleRate != maxSampleRate) {
+            algoSupportedConfig_.sampleRate = maxSampleRate;
+            uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (maxSampleRate / MILLISECOND) * algoAttr_.bitDepth;
+            algoAttr_.byteLenPerFrame = byteLenPerFrame;
+            algoCache_.input.resize(algoAttr_.byteLenPerFrame * algoAttr_.batchLen);
+            algoCache_.output.resize(algoAttr_.byteLenPerFrame * algoSupportedConfig_.outNum);
+            AUDIO_INFO_LOG("collaborative algorate: %{public}u byteLenPerFrame:%{public}u inputsize:%{public}zu outputsize:%{public}zu",
+                maxSampleRate, byteLenPerFrame, algoCache_.input.size(), algoCache_.output.size());
+        }
+        cmdInfo.data = static_cast<void *>(&algoSupportedConfig_);
+        cmdInfo.size = sizeof(algoSupportedConfig_);
+        ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s] EFFECT_CMD_SET_CONFIG fail", sceneType_.c_str());
+        CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(enhanceHandle) == SUCCESS, ERROR,
+            "[%{public}s] EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
+        CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(enhanceHandle, enhanceProp) == SUCCESS, ERROR,
+            "[%{public}s] EFFECT_CMD_SET_PROPERTY fail", sceneType_.c_str());
+        ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s] EFFECT_CMD_INIT fail", sceneType_.c_str());
+        return SUCCESS;
+    }
+
     if (algoSupportedConfig_.sampleRate != maxSampleRate) {
         algoSupportedConfig_.sampleRate = maxSampleRate;
         uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (maxSampleRate / MILLISECOND) *

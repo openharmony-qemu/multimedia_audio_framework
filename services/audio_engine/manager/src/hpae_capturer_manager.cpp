@@ -78,6 +78,14 @@ int32_t HpaeCapturerManager::CaptureEffectCreate(const HpaeProcessorType &proces
     return SUCCESS;
 }
 
+HpaeProcessorType HpaeCapturerManager::GetEffectiveSceneType(uint32_t sessionId)
+{
+    auto it = sessionNodeMap_.find(sessionId);
+    CHECK_AND_RETURN_RET(it != sessionNodeMap_.end(), HPAE_SCENE_EFFECT_NONE);
+    CHECK_AND_RETURN_RET(collabSceneTypes_.count(it->second.sceneType) == 0, HPAE_SCENE_COLLABORATIVE);
+    return it->second.sceneType;
+}
+
 int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("CreateStream sessionId %{public}u deviceName %{public}s,channel:%{public}u,rate:%{public}u",
@@ -94,15 +102,18 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
     
     nodeInfo.statusCallback = weak_from_this();
 
-    // todo: sourceType->processorType->sceneType => sourceType->sceneType
-    AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
+    sessionNodeMap_[streamInfo.sessionId].sceneType = sceneType;
+    sessionNodeMap_[streamInfo.sessionId].sourceType = streamInfo.sourceType;
+
+    HpaeProcessorType effectiveSceneType = GetEffectiveSceneType(streamInfo.sessionId);
+    AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(effectiveSceneType);
     nodeInfo.effectInfo.enhanceScene = enhanceScene;
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     sourceOutputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     sessionNodeMap_[streamInfo.sessionId].sceneType = sceneType;
     sessionNodeMap_[streamInfo.sessionId].mixWithWakeUp = streamInfo.mixWithWakeUp;
 
-    CreateSceneCluster(sceneType, enhanceScene);
+    CreateSceneCluster(effectiveSceneType, enhanceScene);
 
     return SUCCESS;
 }
@@ -170,6 +181,15 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
         }
     }
 
+    if (sceneType == HPAE_SCENE_COLLABORATIVE) {
+        HpaeNodeInfo collabNodeInfo;
+        auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
+        if (collabInputCluster && sceneCluster->GetCapturerEffectConfig(collabNodeInfo,
+            HPAE_SOURCE_BUFFER_TYPE_DEFAULT)) {
+            sceneCluster->DisConnectWithInfo(collabInputCluster, collabNodeInfo);
+        }
+    }
+
     HpaeNodeInfo micNodeInfo;
     if (SafeGetMap(sourceInputClusterMap_, mainMicType_) &&
         sceneCluster->GetCapturerEffectConfig(micNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC)) {
@@ -195,7 +215,7 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId, bool keepSe
     OnNotifyDfxNodeAdmin(false, sourceOutputNode->GetNodeInfo());
 #endif
 
-    HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
+    HpaeProcessorType sceneType = GetEffectiveSceneType(sessionId);
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(
             sceneClusterMap_[sceneType], sourceOutputNodeMap_[sessionId]->GetNodeInfo());
@@ -310,13 +330,23 @@ int32_t HpaeCapturerManager::ConnectOutputSession(uint32_t sessionId)
     CHECK_AND_RETURN_RET_LOG(sourceOutputNode, ERR_INVALID_PARAM,
         "ConnectOutputSession error, sessionId %{public}u can not find in sourceOutputNodeMap.\n", sessionId);
     
-    HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
+    HpaeProcessorType sceneType = GetEffectiveSceneType(sessionId);
     auto scnenCluster = SafeGetMap(sceneClusterMap_, sceneType);
     if (sceneType != HPAE_SCENE_EFFECT_NONE && scnenCluster != nullptr) {
         HpaeNodeInfo micNodeInfo;
         if (scnenCluster->GetCapturerEffectConfig(micNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MIC)) {
             scnenCluster->ConnectWithInfo(sourceInputClusterMap_[mainMicType_], micNodeInfo); // mic
         }
+
+        if (sceneType == HPAE_SCENE_COLLABORATIVE) {
+            HpaeNodeInfo collabNodeInfo;
+            auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
+            if (collabInputCluster && scnenCluster->GetCapturerEffectConfig(collabNodeInfo,
+                HPAE_SOURCE_BUFFER_TYPE_DEFAULT)) {
+                scnenCluster->ConnectWithInfo(collabInputCluster, collabNodeInfo);
+            }
+        }
+        
         if (scnenCluster->IsEffectNodeValid()) {
             ConnectProcessClusterWithEc(sceneType);
             ConnectProcessClusterWithMicRef(sceneType);
@@ -354,6 +384,14 @@ int32_t HpaeCapturerManager::CapturerSourceStart()
         ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStart();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "micref capturer source start error, ret = %{public}d.", ret);
     }
+    if (!collabSceneTypes_.empty()) {
+        auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
+        CHECK_AND_RETURN_RET_LOG(collabInputCluster, ERR_ILLEGAL_STATE,
+            "sourceInputCLusterMap_[%{public}d] is nullptr", HPAE_SOURCE_DEFAULT);
+        ret = collabInputCluster->CapturerSourceStart();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+            "collaborative capturer source start error, ret = %{public}d.", ret);
+    }
     return SUCCESS;
 }
 
@@ -373,7 +411,7 @@ int32_t HpaeCapturerManager::Start(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::DisConnectOutputSession(uint32_t sessionId)
 {
-    HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
+    HpaeProcessorType sceneType = GetEffectiveSceneType(sessionId);
     if (sceneType != HPAE_SCENE_EFFECT_NONE && SafeGetMap(sceneClusterMap_, sceneType)) {
         // 1. Disconnect SourceOutputNode and ResampleNode
         // 2. Disconnect the ResampleNode and UpEffectNode
@@ -472,6 +510,11 @@ int32_t HpaeCapturerManager::CapturerSourceStop()
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
     }
+
+    if(auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT)) {
+        collabInputCluster->CapturerSourceStop();
+    }
+
     HpaePolicyManager::GetInstance().NotifyAlgoToStopStream();
     return SUCCESS;
 }
@@ -705,6 +748,9 @@ void HpaeCapturerManager::StopOuputNode()
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
     }
+    if (auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT)) {
+        collabInputCluster->CapturerSourceDeInit();
+    }
     sourceInputClusterMap_.clear();
 }
 
@@ -739,6 +785,14 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         }
         AUDIO_INFO_LOG("re-Init success");
         HpaePolicyManager::GetInstance().SetInputDevice(captureId_, static_cast<DeviceType>(sourceInfo_.deviceType));
+        // rebuild collaborative source if needed
+        if (!collabSceneTypes_.empty()) {
+            int32_t ret = OpenCollaborativePrimary();
+            if (ret != SUCCESS) {
+                AUDIO_ERR_LOG("rebuild collaborative source failed");
+                collabSceneTypes_.clear();
+            }
+        }
         // connect
         for (const auto &moveInfo : moveInfos) {
             AddSingleNodeToSource(moveInfo, true);
@@ -857,6 +911,10 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
     }
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
+    }
+
+    if(auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT)) {
+        collabInputCluster->CapturerSourceDeInit();
     }
     isInit_.store(false);
     
@@ -984,10 +1042,11 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
+    sessionNodeMap_[sessionId].sourceType = nodeInfo.sourceType;
 #ifdef ENABLE_HIDUMP_DFX
     OnNotifyDfxNodeAdmin(true, nodeInfo);
 #endif
-    HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
+    HpaeProcessorType sceneType = GetEffectiveSceneType(sessionId);
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     CreateSceneCluster(sceneType, enhanceScene);
 
@@ -1203,13 +1262,141 @@ int32_t HpaeCapturerManager::SetAppsEnhanceMuteState(const uint32_t &sessionId, 
             "can not find sessionId %{public}u", sessionId);
         CHECK_AND_RETURN_LOG(sessionNodeMap_.find(sessionId) != sessionNodeMap_.end(),
             "can not find session [%{public}u] info", sessionId);
-        HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
+        HpaeProcessorType sceneType = GetEffectiveSceneType(sessionId);
         auto sceneCluster = SafeGetMap(sceneClusterMap_, sceneType);
         CHECK_AND_RETURN_LOG(sceneCluster != nullptr, "cluster is nullptr");
         sceneCluster->SetAppsEnhanceMuteState(isMute);
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeCapturerManager::EnableCaptureCollaboration(SourceType sourceType)
+{
+    auto request = [this, sourceType] () {
+        CHECK_AND_RETURN_LOG(sourceInfo_.deviceClass != DEFAULT_DEVICE_CLASS, "Collaboration is not support");
+        HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
+        CHECK_AND_RETURN_LOG(collabSceneTypes_.count(sceneType) == 0,
+            "Collaboration sceneType[%{public}d] already enabled", sceneType);
+        if (collabSceneTypes_.empty()) {
+            int32_t ret = OpenCollaborativePrimary();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "OpenCollaborativePrimary fail, abort collaboration");
+        }
+        collabSceneTypes_.insert(sceneType);
+        FakeReload(sourceType);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeCapturerManager::DisableCaptureCollaboration(SourceType sourceType)
+{
+    auto request = [this, sourceType] () {
+        CHECK_AND_RETURN_LOG(sourceInfo_.deviceClass != DEFAULT_DEVICE_CLASS, "Collaboration is not support");
+        HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
+        CHECK_AND_RETURN_LOG(collabSceneTypes_.count(sceneType) > 0,
+            "Collaboration sceneType[%{public}d] not enabled", sceneType);
+        collabSceneTypes_.erase(sceneType);
+        FakeReload(sourceType);
+        if (collabSceneTypes_.empty()) {
+            CloseCollaborativePrimary();
+        }
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeCapturerManager::GetCollaborativeSourceInfo(IAudioSourceAttr &attr, HpaeNodeInfo &nodeInfo)
+{
+    attr.adapterName = DEFAULT_DEVICE_CLASS;
+    attr.sampleRate = SAMPLE_RATE_48000;
+    attr.channel = STEREO;
+    attr.format = SAMPLE_S16LE;
+    attr.channelLayout = 4lu;
+    attr.deviceType = DEVICE_TYPE_MIC;
+    attr.volume = 1.f;
+    attr.deviceNetworkId = "LocalDevice";
+    attr.filePath = "";
+    attr.isBigEndian = false;
+    attr.sourceType = SOURCE_TYPE_UNPROCESSED;
+    attr.hasEcConfig = false;
+    attr.openMicSpeaker = 1;
+    attr.macAddress = "";
+
+    nodeInfo.deviceClass = DEFAULT_DEVICE_CLASS;
+    nodeInfo.channels = static_cast<AudioChannel>(attr.channel);
+    nodeInfo.format = attr.format;
+    nodeInfo.samplingRate = static_cast<AudioSamplingRate>(attr.sampleRate);
+    nodeInfo.frameLen = CalculateFrameLenBySampleRate(nodeInfo.samplingRate);
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
+    nodeInfo.statusCallback = weak_from_this();
+    nodeInfo.sourceType = static_cast<SourceType>(attr.sourceType);
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_DEFAULT;
+}
+
+int32_t HpaeCapturerManager::OpenCollaborativePrimary()
+{
+    CHECK_AND_RETURN_RET_LOG(IsRunning(), ERROR, "source not running");
+    IAudioSourceAttr primaryAttr;
+    HpaeNodeInfo primaryNodeInfo;
+    std::string primarySourceName = PRIMARY_MIC;
+    GetCollaborativeSourceInfo(primaryAttr, primaryNodeInfo);
+    std::shared_ptr<HpaeSourceInputCluster> collabInput = std::make_shared<HpaeSourceInputCluster>(primaryNodeInfo);
+
+    int32_t ret = collabInput->GetCapturerSourceInstance(primaryNodeInfo.deviceClass, primaryAttr.deviceNetworkId,
+        static_cast<SourceType>(primaryAttr.sourceType), primarySourceName);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get collaborative source instance fail");
+    ret = collabInput->CapturerSourceInit(primaryAttr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "collaborative source init fail");
+    sourceInputClusterMap_[primaryNodeInfo.sourceInputNodeType] = collabInput;
+    AUDIO_INFO_LOG("collaborative source init success");
+    return SUCCESS;
+}
+
+void HpaeCapturerManager::CloseCollaborativePrimary()
+{
+    // 什么时候关闭 ？stop的时候关闭， 流运行中关闭
+    // 统一期间，先执行disconnect，再deinit
+    // 怎么知道这个这个节点连接了哪些呢？ -> 提供给HpaeSourceProcessCluster 一个 reload接口 ？让他内部自己重构？ -> 不行，连接会烂掉
+    auto collabInput = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
+    CHECK_AND_RETURN_LOG(collabInput != nullptr, "collaborative sourceInput is nullptr");
+    collabInput->CapturerSourceDeInit();
+    sourceInputClusterMap_.erase(HPAE_SOURCE_DEFAULT);
+}
+
+void HpaeCapturerManager::FakeReload(SourceType sourceType)
+{
+    for (auto session : sourceOutputNodeMap_) {
+        DisConnectOutputSession(session.first);
+    }
+
+    HpaeProcessorType normalSceneType = TransSourceTypeToSceneType(sourceType);
+
+    // 释放正常 cluster（开协同时不再需要）
+    if (SafeGetMap(sceneClusterMap_, normalSceneType)) {
+        CaptureEffectRelease(normalSceneType);
+        sceneClusterMap_.erase(normalSceneType);
+    }
+
+    // 确保 COLLABORATIVE cluster 存在（幂等）
+    if (!collabSceneTypes_.empty()) {
+        CreateSceneCluster(HPAE_SCENE_COLLABORATIVE,
+            TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE));
+    }
+
+    // 全部关闭时释放 COLLABORATIVE
+    if (collabSceneTypes_.empty() && SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE)) {
+        CaptureEffectRelease(HPAE_SCENE_COLLABORATIVE);
+        sceneClusterMap_.erase(HPAE_SCENE_COLLABORATIVE);
+    }
+
+    // 关协同时重建正常 cluster
+    if (collabSceneTypes_.count(normalSceneType) == 0) {
+        CreateSceneCluster(normalSceneType, TransProcessType2EnhanceScene(normalSceneType));
+    }
+
+    AUDIO_INFO_LOG("sourceType[%{public}d] %{public}s collaboration",
+        sourceType, !collabSceneTypes_.empty() ? "open" : "close");
+
+    CheckIfAnyStreamRunning();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

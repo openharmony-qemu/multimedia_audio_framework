@@ -55,6 +55,7 @@ const std::map<AudioEnhanceScene, uint32_t> SCENE_THREAD_ID_MAP = {
     { SCENE_PRE_ENHANCE, 3 },
     { SCENE_ASR, 4 },
     { SCENE_VOICE_MESSAGE, 4 },
+    { SCENE_COLLABORATIVE_RECORD, 4 },
     { SCENE_NONE, 4 },
 };
 
