@@ -33,7 +33,7 @@ public:
     bool StopUsingMicrophone(uint32_t targetTokenId) const;
     bool NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId);
     bool NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionId);
-    bool NeedTurnOnMicIndicator(int32_t callingUid, SourceType sourceType) const;
+    bool NeedTurnOnMicIndicator(int32_t callingUid, bool isLoopback, SourceType sourceType) const;
 
 private:
     RecordPrivacyManager() = default;

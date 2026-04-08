@@ -460,7 +460,7 @@ int32_t AudioProcessInServer::StartInner()
     }
     if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
         RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
-            processConfig_.capturerInfo.sourceType)) {
+            processConfig_.capturerInfo.isLoopback, processConfig_.capturerInfo.sourceType)) {
         CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
             HILOG_COMM_ERROR("[StartInner]Turn on micIndicator failed for stream:%{public}d!", sessionId_));
     }
@@ -588,7 +588,7 @@ int32_t AudioProcessInServer::Resume()
     }
     if (processConfig_.audioMode == AUDIO_MODE_RECORD &&
         RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
-            processConfig_.capturerInfo.sourceType)) {
+            processConfig_.capturerInfo.isLoopback, processConfig_.capturerInfo.sourceType)) {
         CHECK_AND_CALL_FUNC_RETURN_RET(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
             HILOG_COMM_ERROR("[Resume]Turn on micIndicator failed for stream:%{public}d!", sessionId_));
     }

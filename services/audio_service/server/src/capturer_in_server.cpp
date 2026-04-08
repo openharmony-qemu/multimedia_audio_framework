@@ -677,7 +677,7 @@ int32_t CapturerInServer::StartInner()
             "Check backgroud capture failed for stream:%{public}d!", streamIndex_);
     }
     if (RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(processConfig_.callerUid,
-        processConfig_.capturerInfo.sourceType)) {
+        processConfig_.capturerInfo.isLoopback, processConfig_.capturerInfo.sourceType)) {
         CHECK_AND_RETURN_RET_LOG(TurnOnMicIndicator(), ERR_PERMISSION_DENIED,
             "Turn on micIndicator failed for stream:%{public}d!", streamIndex_);
     }

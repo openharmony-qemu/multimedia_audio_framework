@@ -13,27 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_PRIVACY_MANAGER_CLIENT_H
-#define AUDIO_PRIVACY_MANAGER_CLIENT_H
+#ifndef AUDIO_PRIVACY_MANAGER_IN_SERVER_H
+#define AUDIO_PRIVACY_MANAGER_IN_SERVER_H
 
 #include <cstdint>
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPrivacyManagerClient {
+class AudioPrivacyManagerInServer {
 public:
-    static AudioPrivacyManagerClient &GetInstance();
+    static AudioPrivacyManagerInServer &GetInstance();
 
     bool StartUsingMicrophone(uint32_t targetTokenId);
     bool StopUsingMicrophone(uint32_t targetTokenId);
 
 private:
-    AudioPrivacyManagerClient() = default;
-    ~AudioPrivacyManagerClient() = default;
-    AudioPrivacyManagerClient(const AudioPrivacyManagerClient &) = delete;
-    AudioPrivacyManagerClient &operator=(const AudioPrivacyManagerClient &) = delete;
+    AudioPrivacyManagerInServer() = default;
+    ~AudioPrivacyManagerInServer() = default;
+    AudioPrivacyManagerInServer(const AudioPrivacyManagerInServer &) = delete;
+    AudioPrivacyManagerInServer &operator=(const AudioPrivacyManagerInServer &) = delete;
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // AUDIO_PRIVACY_MANAGER_CLIENT_H
+#endif // AUDIO_PRIVACY_MANAGER_IN_SERVER_H

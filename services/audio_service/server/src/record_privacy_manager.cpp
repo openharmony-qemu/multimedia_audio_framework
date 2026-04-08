@@ -20,7 +20,7 @@
  
 #include "audio_service_log.h"
 #include "audio_utils.h"
-#include "audio_privacy_manager_client.h"
+#include "audio_privacy_manager_in_server.h"
  
 namespace OHOS {
 namespace AudioStandard {
@@ -35,9 +35,6 @@ constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_DMSDP_SA = 7071;
  
 const std::set<int32_t> RECORD_PRIVACY_SKIP_UIDS = {
-#ifdef AUDIO_BUILD_VARIANT_ROOT
-    0, // UID_ROOT
-#endif
     UID_MSDP_SA,
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
@@ -56,12 +53,12 @@ RecordPrivacyManager &RecordPrivacyManager::GetInstance()
  
 bool RecordPrivacyManager::StartUsingMicrophone(uint32_t targetTokenId) const
 {
-    return AudioPrivacyManagerClient::GetInstance().StartUsingMicrophone(targetTokenId);
+    return AudioPrivacyManagerInServer::GetInstance().StartUsingMicrophone(targetTokenId);
 }
 
 bool RecordPrivacyManager::StopUsingMicrophone(uint32_t targetTokenId) const
 {
-    return AudioPrivacyManagerClient::GetInstance().StopUsingMicrophone(targetTokenId);
+    return AudioPrivacyManagerInServer::GetInstance().StopUsingMicrophone(targetTokenId);
 }
 
 bool RecordPrivacyManager::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t sessionId)
@@ -116,9 +113,10 @@ bool RecordPrivacyManager::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t se
     return true;
 }
  
-bool RecordPrivacyManager::NeedTurnOnMicIndicator(int32_t callingUid, SourceType sourceType) const
+bool RecordPrivacyManager::NeedTurnOnMicIndicator(int32_t callingUid, bool isLoopback, SourceType sourceType) const
 {
-    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || sourceType == SOURCE_TYPE_REMOTE_CAST) {
+    if (sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE || sourceType == SOURCE_TYPE_REMOTE_CAST ||
+        sourceType == SOURCE_TYPE_VOICE_CALL || isLoopback) {
         AUDIO_INFO_LOG("sourceType(%{public}d) need not turn on mic indicator", sourceType);
         return false;
     }
