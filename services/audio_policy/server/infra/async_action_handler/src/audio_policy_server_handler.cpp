@@ -2268,8 +2268,11 @@ void AudioPolicyServerHandler::HandlePreferredDeviceSetEvent(const AppExecFwk::I
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        std::shared_ptr<AudioPolicyClientHolder> preferredDeviceSetCb = it->second;
-        if (preferredDeviceSetCb != nullptr) {
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_PREFERRED_DEVICE_SET) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_PREFERRED_DEVICE_SET]) {
+            std::shared_ptr<AudioPolicyClientHolder> preferredDeviceSetCb = it->second;
+            CHECK_AND_CONTINUE(preferredDeviceSetCb != nullptr && preferredDeviceSetCb->hasSystemPermission_);
             PreferredType preferredType = eventContextObj->preferredType_;
             std::shared_ptr<AudioDeviceDescriptor> deviceDesc = eventContextObj->descriptor;
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
@@ -2279,13 +2282,9 @@ void AudioPolicyServerHandler::HandlePreferredDeviceSetEvent(const AppExecFwk::I
             if (!(preferredDeviceSetCb->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
             }
-            if (clientCallbacksMap_.count(it->first) > 0 &&
-                clientCallbacksMap_[it->first].count(CALLBACK_PREFERRED_DEVICE_SET) > 0 &&
-                clientCallbacksMap_[it->first][CALLBACK_PREFERRED_DEVICE_SET]) {
-                AUDIO_INFO_LOG("preferredType[%{public}d] deviceType[%{public}d] to clientPid[%{public}d]",
-                    preferredType, deviceDescs[0]->deviceType_, it->first);
-                preferredDeviceSetCb->OnPreferredDeviceSet(preferredType, deviceDescs[0], uid, caller);
-            }
+            AUDIO_INFO_LOG("preferredType[%{public}d] deviceType[%{public}d] to clientPid[%{public}d]",
+                preferredType, deviceDescs[0]->deviceType_, it->first);
+            preferredDeviceSetCb->OnPreferredDeviceSet(preferredType, deviceDescs[0], uid, caller);
         }
     }
 }
