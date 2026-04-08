@@ -1479,7 +1479,6 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
             streamDesc->newDeviceDescs_.front()->deviceName_, streamDesc->newDeviceDescs_.front()->networkId_);
     }
     if (streamUsage == STREAM_USAGE_ALARM) {
-        audioVolumeManager_.SetRingerModeMute(true);
         shouldUpdateDeviceDueToDualTone_ = true;
         return;
     }
@@ -1495,6 +1494,7 @@ void AudioCoreService::UpdateRingerOrAlarmerDualDeviceOutputRouter(
                 audioPolicyManager_.GetMaxVolumeLevel(STREAM_RING) / VOLUME_LEVEL_DEFAULT_SIZE);
         }
     } else {
+        audioPolicyManager_.ClearDeviceNoMuteForRinger();
         audioVolumeManager_.SetRingerModeMute(true);
     }
     shouldUpdateDeviceDueToDualTone_ = true;
