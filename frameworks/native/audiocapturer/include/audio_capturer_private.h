@@ -181,6 +181,9 @@ private:
         IAudioStream::SwitchInfo &info);
     bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, CapturerState previousState,
         IAudioStream::SwitchInfo &info);
+    bool FallbackToNormalStreamForGenerateNewStream(const RestoreInfo &restoreInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, IAudioStream::SwitchInfo &switchInfo,
+        std::shared_ptr<IAudioStream> &newAudioStream);
     void HandleAudioInterruptWhenServerDied();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);

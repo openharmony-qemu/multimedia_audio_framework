@@ -41,6 +41,7 @@
 #include "audio_ring_cache.h"
 #include "audio_utils.h"
 #include "audio_policy_manager.h"
+#include "audio_device_info.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
 #include "audio_process_config.h"
@@ -76,6 +77,12 @@ inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerIn
 {
     return capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
         (params.micInChannels > CHANNEL_UNKNOW || params.ecChannels > CHANNEL_UNKNOW);
+}
+
+inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &params)
+{
+    return IsVoiceRecognitionMicInEcRequest(capturerInfo, params) && params.isVoiceRecognitionMicInEcDegrade;
 }
 }
 
@@ -224,6 +231,10 @@ int32_t CapturerInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
         CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithEc(info, sizePerFrameInByte_) == SUCCESS,
             ERROR_INVALID_PARAM,
             HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrameWithEc failed with invalid params"));
+    } else if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
+        CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrame(info, sizePerFrameInByte_) == SUCCESS,
+            ERROR_INVALID_PARAM,
+            HILOG_COMM_ERROR("[SetAudioStreamInfo]GetByteSizePerFrame failed with invalid params"));
     } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, info)) {
         CHECK_AND_CALL_FUNC_RETURN_RET(IAudioStream::GetByteSizePerFrameWithMicInEc(info, sizePerFrameInByte_) ==
             SUCCESS, ERROR_INVALID_PARAM,
@@ -457,6 +468,10 @@ const AudioProcessConfig CapturerInClientInner::ConstructConfig()
 
     if (capturerInfo_.sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.ecChannels);
+    } else if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
+        config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels);
+        AUDIO_INFO_LOG("voice recognition use process channels only for degrade input, channels:%{public}d",
+            config.streamInfo.channels);
     } else if (IsVoiceRecognitionMicInEcRequest(capturerInfo_, streamParams_)) {
         config.streamInfo.channels = static_cast<AudioChannel>(streamParams_.channels + streamParams_.micInChannels +
             streamParams_.ecChannels);
