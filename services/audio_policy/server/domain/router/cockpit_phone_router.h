@@ -35,14 +35,16 @@ public:
         return ROUTER_TYPE_COCKPIT_PHONE;
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
-    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
     std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0) override;
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage streamUsage,
         int32_t clientUID) override;
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType sourceType, int32_t clientUID,
-        const uint32_t sessionID = 0) override;
+        const uint32_t sessionID = INVALID_STREAM_ID) override;
     std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage streamUsage, int32_t clientUID) override;
 };
 } // namespace AudioStandard

@@ -157,11 +157,6 @@ bool AudioPipeManager::IsSupportInnerCaptureOffload()
     return audioConfigManager_.IsSupportInnerCaptureOffload();
 }
 
-bool AudioPipeManager::GetEnhancedRoutingSupported()
-{
-    return audioConfigManager_.GetEnhancedRoutingSupported();
-}
-
 int32_t AudioPipeManager::GetMaxRendererInstances()
 {
     return audioConfigManager_.GetMaxRendererInstances();

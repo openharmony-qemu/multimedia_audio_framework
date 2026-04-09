@@ -250,6 +250,7 @@ inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_
 enum AudioDeviceSelectMode {
     SELECT_STRATEGY_DEFAULT = 0,
     SELECT_STRATEGY_INDEPENDENT = 1,
+    SELECT_STRATEGY_STREAM = 2,
 };
 
 enum DmDeviceType {

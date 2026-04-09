@@ -29,18 +29,16 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> device =
-        AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
-    return device;
+    return AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(clientUID, sessionID);
 }
 
-shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
-    shared_ptr<AudioDeviceDescriptor> device =
-        AudioAffinityManager::GetAudioAffinityManager().GetRendererDevice(clientUID);
-    return device;
+    return AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(clientUID, sessionID);
 }
 
 shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetCallCaptureDevice(SourceType sourceType, int32_t clientUID,

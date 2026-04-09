@@ -53,6 +53,8 @@
 #include "audio_volume_utils.h"
 #include "audio_select_interface_service.h"
 #include "audio_router_infra.h"
+#include "audio_device_info.h"
+
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B87
@@ -1877,6 +1879,10 @@ int32_t AudioPolicyServer::SelectOutputDevice(const sptr<AudioRendererFilter> &a
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors,
     const int32_t audioDeviceSelectMode)
 {
+    if (!IsEnhancedRoutingAvailableForSelectMode(audioDeviceSelectMode)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+            "SelectInputDevice: No system permission");
+    }
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "SelectOutputDevice: No system permission");
     CHECK_AND_RETURN_RET_LOG(audioRendererFilter != nullptr && !audioDeviceDescriptors.empty() &&
@@ -1918,12 +1924,23 @@ int32_t AudioPolicyServer::SetMediaOutputDevice(int32_t deviceTypeIn)
     return eventEntry_->SetMediaOutputDeviceByUid(static_cast<DeviceType>(deviceTypeIn), callerUid);
 }
 
+bool AudioPolicyServer::IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode)
+{
+    bool isAppMode = audioDeviceSelectMode == SELECT_STRATEGY_STREAM ||
+        audioDeviceSelectMode == SELECT_STRATEGY_INDEPENDENT;
+    return audioPolicyService_.IsEnhancedRoutingSupported() && isAppMode;
+}
+
 int32_t AudioPolicyServer::SelectInputDevice(const sptr<AudioCapturerFilter> &audioCapturerFilter,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
-        "SelectInputDevice: No system permission");
-    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr && !audioDeviceDescriptors.empty() &&
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERROR, "SelectInputDevice: ptr exception");
+    if (!IsEnhancedRoutingAvailableForSelectMode(audioCapturerFilter->audioDeviceSelectMode)) {
+        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
+            "SelectInputDevice: No system permission");
+    }
+
+    CHECK_AND_RETURN_RET_LOG(!audioDeviceDescriptors.empty() &&
         audioDeviceDescriptors[0] != nullptr, ERROR, "SelectInputDevice: ptr exception");
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> targetInputDevice;
