@@ -82,6 +82,39 @@ enum AudioChannelLayout {
   CH_LAYOUT_7POINT1_WIDE_BACK = 255
 }
 
+// Bits per sample constants
+const BITS_PER_SAMPLE_U8 = 8;
+const BITS_PER_SAMPLE_S16LE = 16;
+const BITS_PER_SAMPLE_S24LE = 24;
+const BITS_PER_SAMPLE_S32LE = 32;
+
+// WAV file format constants
+const WAV_HEADER_SIZE = 44;
+const WAV_DATA_OFFSET = 36;
+const WAV_FORMAT_CHUNK_SIZE = 16;
+
+// WAV header offset constants
+const WAV_OFFSET_FILE_SIZE = 4;
+const WAV_OFFSET_FORMAT_ID = 8;
+const WAV_OFFSET_FORMAT_CHUNK_ID = 12;
+const WAV_OFFSET_FORMAT_CHUNK_SIZE = 16;
+const WAV_OFFSET_AUDIO_FORMAT = 20;
+const WAV_OFFSET_NUM_CHANNELS = 22;
+const WAV_OFFSET_SAMPLE_RATE = 24;
+const WAV_OFFSET_BYTE_RATE = 28;
+const WAV_OFFSET_BLOCK_ALIGN = 32;
+const WAV_OFFSET_BITS_PER_SAMPLE = 34;
+const WAV_OFFSET_DATA_CHUNK_ID = 36;
+const WAV_OFFSET_DATA_SIZE = 40;
+
+// WAV audio format constants
+const WAV_AUDIO_FORMAT_PCM = 1;
+const WAV_AUDIO_FORMAT_IEEE_FLOAT = 3;
+
+// Channel count limits
+const MIN_CHANNELS = 1;
+const MAX_CHANNELS = 8;
+
 // Audio converter format
 interface AudioConverterFormat {
   encodingType: number;
@@ -114,6 +147,7 @@ export struct AudioConversion {
   @State selectedFileName: string = '';
   @State fileInfo: audioNapi.AudioFileInfo | null = null;
   @State fileFd: number = -1;
+  @State outputFileName: string = '';
   @State inputFormat: AudioConverterFormat = {
     encodingType: AudioEncodingType.AUDIO_ENCODING_TYPE_RAW,
     samplingRate: AudioSampleRate.AUDIO_SAMPLE_RATE_44100,
@@ -205,8 +239,6 @@ export struct AudioConversion {
     .width('90%')
     .margin({ top: 5, bottom: 10 })
   }
-
-  
 
   @Builder
   buildConversionControls() {
@@ -739,6 +771,7 @@ export struct AudioConversion {
             Logger.info(TAG, `Save file success: ${writeLen} bytes to ${outputPath}`);
 
             // 显示完整保存路径
+            this.outputFileName = fileName;
             this.processResult = `转换成功！\n文件已保存到:\n${outputPath}`;
           } catch (error) {
             Logger.error(TAG, `Save file failed: ${JSON.stringify(error)}`);
@@ -805,22 +838,22 @@ export struct AudioConversion {
   private getBitsPerSample(sampleFormat: number): number {
     switch (sampleFormat) {
       case AudioSampleFormat.AUDIO_SAMPLE_U8:
-        return 8;
+        return BITS_PER_SAMPLE_U8;
       case AudioSampleFormat.AUDIO_SAMPLE_S16LE:
-        return 16;
+        return BITS_PER_SAMPLE_S16LE;
       case AudioSampleFormat.AUDIO_SAMPLE_S24LE:
-        return 24;
+        return BITS_PER_SAMPLE_S24LE;
       case AudioSampleFormat.AUDIO_SAMPLE_S32LE:
       case AudioSampleFormat.AUDIO_SAMPLE_F32LE:
-        return 32;
+        return BITS_PER_SAMPLE_S32LE;
       default:
-        return 16;
+        return BITS_PER_SAMPLE_S16LE;
     }
   }
 
   private validateWavParameters(channels: number, sampleRate: number, bitsPerSample: number): void {
-    if (channels <= 0 || channels > 8) {
-      Logger.error(TAG, `unknown channel: ${channels}, WAV Supports 1~8 channels.`);
+    if (channels < MIN_CHANNELS || channels > MAX_CHANNELS) {
+      Logger.error(TAG, `unknown channel: ${channels}, WAV Supports ${MIN_CHANNELS}~${MAX_CHANNELS} channels.`);
       throw new Error(`Invalid channel count: ${channels}`);
     }
 
@@ -829,7 +862,8 @@ export struct AudioConversion {
       throw new Error(`Invalid sample rate: ${sampleRate}`);
     }
 
-    if (bitsPerSample !== 8 && bitsPerSample !== 16 && bitsPerSample !== 24 && bitsPerSample !== 32) {
+    if (bitsPerSample !== BITS_PER_SAMPLE_U8 && bitsPerSample !== BITS_PER_SAMPLE_S16LE &&
+        bitsPerSample !== BITS_PER_SAMPLE_S24LE && bitsPerSample !== BITS_PER_SAMPLE_S32LE) {
       Logger.error(TAG, `unknown bitsPerSample: ${bitsPerSample}, Supports 8,16,24,32-bit.`);
       throw new Error(`Unsupported bits per sample: ${bitsPerSample}`);
     }
@@ -837,7 +871,7 @@ export struct AudioConversion {
 
   private createWavHeader(pcmBuffer: ArrayBuffer, sampleRate: number, channels: number,
     bitsPerSample: number, sampleFormat: number): ArrayBuffer {
-    const header = new ArrayBuffer(44);
+    const header = new ArrayBuffer(WAV_HEADER_SIZE);
     const dv = new DataView(header);
 
     const writeString = (dv: DataView, offset: number, string: string) => {
@@ -847,31 +881,31 @@ export struct AudioConversion {
     };
 
     writeString(dv, 0, 'RIFF');
-    const totalDataLen = pcmBuffer.byteLength + 36;
-    dv.setUint32(4, totalDataLen, true);
-    writeString(dv, 8, 'WAVE');
+    const totalDataLen = pcmBuffer.byteLength + WAV_DATA_OFFSET;
+    dv.setUint32(WAV_OFFSET_FILE_SIZE, totalDataLen, true);
+    writeString(dv, WAV_OFFSET_FORMAT_ID, 'WAVE');
 
-    writeString(dv, 12, 'fmt ');
-    dv.setUint32(16, 16, true);
+    writeString(dv, WAV_OFFSET_FORMAT_CHUNK_ID, 'fmt ');
+    dv.setUint32(WAV_OFFSET_FORMAT_CHUNK_SIZE, WAV_FORMAT_CHUNK_SIZE, true);
 
-    if (bitsPerSample === 32 && sampleFormat === AudioSampleFormat.AUDIO_SAMPLE_F32LE) {
-      dv.setUint16(20, 3, true);
+    if (bitsPerSample === BITS_PER_SAMPLE_S32LE && sampleFormat === AudioSampleFormat.AUDIO_SAMPLE_F32LE) {
+      dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_IEEE_FLOAT, true);
     } else {
-      dv.setUint16(20, 1, true);
+      dv.setUint16(WAV_OFFSET_AUDIO_FORMAT, WAV_AUDIO_FORMAT_PCM, true);
     }
 
-    dv.setUint16(22, channels, true);
-    dv.setUint32(24, sampleRate, true);
+    dv.setUint16(WAV_OFFSET_NUM_CHANNELS, channels, true);
+    dv.setUint32(WAV_OFFSET_SAMPLE_RATE, sampleRate, true);
 
-    const byteRate = sampleRate * channels * (bitsPerSample / 8);
-    dv.setUint32(28, byteRate, true);
+    const byteRate = sampleRate * channels * (bitsPerSample / BITS_PER_SAMPLE_S16LE);
+    dv.setUint32(WAV_OFFSET_BYTE_RATE, byteRate, true);
 
-    const blockAlign = channels * (bitsPerSample / 8);
-    dv.setUint16(32, blockAlign, true);
-    dv.setUint16(34, bitsPerSample, true);
+    const blockAlign = channels * (bitsPerSample / BITS_PER_SAMPLE_S16LE);
+    dv.setUint16(WAV_OFFSET_BLOCK_ALIGN, blockAlign, true);
+    dv.setUint16(WAV_OFFSET_BITS_PER_SAMPLE, bitsPerSample, true);
 
-    writeString(dv, 36, 'data');
-    dv.setUint32(40, pcmBuffer.byteLength, true);
+    writeString(dv, WAV_OFFSET_DATA_CHUNK_ID, 'data');
+    dv.setUint32(WAV_OFFSET_DATA_SIZE, pcmBuffer.byteLength, true);
 
     return header;
   }
