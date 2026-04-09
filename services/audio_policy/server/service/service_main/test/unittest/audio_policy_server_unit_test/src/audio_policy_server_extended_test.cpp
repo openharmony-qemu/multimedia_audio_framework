@@ -270,13 +270,33 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_010, TestSize.Level4)
     Security::AccessToken::PermStateChangeInfo result;
     EXPECT_NO_THROW(callback->PermStateChangeCallback(result));
 
+    auto &capturerInfos = server->audioPolicyService_.streamCollector_.audioCapturerChangeInfos_;
+    capturerInfos.clear();
+
     bool targetMuteState = true;
     uint32_t targetTokenId = 1;
     int32_t appUid = 1;
     EXPECT_NO_THROW(callback->UpdateMicPrivacyByCapturerState(targetMuteState, targetTokenId, appUid));
 
-    targetMuteState = false;
+    auto mismatchInfo = std::make_shared<AudioCapturerChangeInfo>();
+    mismatchInfo->appTokenId = targetTokenId + 1;
+    mismatchInfo->capturerState = CAPTURER_RUNNING;
+    capturerInfos.push_back(mismatchInfo);
+
+    auto invalidStateInfo = std::make_shared<AudioCapturerChangeInfo>();
+    invalidStateInfo->appTokenId = targetTokenId;
+    invalidStateInfo->capturerState = CAPTURER_PAUSED;
+    capturerInfos.push_back(invalidStateInfo);
     EXPECT_NO_THROW(callback->UpdateMicPrivacyByCapturerState(targetMuteState, targetTokenId, appUid));
+
+    capturerInfos.clear();
+    auto matchInfo = std::make_shared<AudioCapturerChangeInfo>();
+    matchInfo->appTokenId = 0;
+    matchInfo->capturerState = CAPTURER_RUNNING;
+    capturerInfos.push_back(matchInfo);
+    EXPECT_NO_THROW(callback->UpdateMicPrivacyByCapturerState(true, 0, appUid));
+    EXPECT_NO_THROW(callback->UpdateMicPrivacyByCapturerState(false, 0, appUid));
+    capturerInfos.clear();
 }
 
 /**

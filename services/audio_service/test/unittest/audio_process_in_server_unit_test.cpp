@@ -22,6 +22,7 @@
 #include "oh_audio_buffer.h"
 #include "core_service_handler.h"
 #include "record_privacy_manager.h"
+#include "audio_privacy_manager_in_server.h"
 #include <gmock/gmock.h>
 
 using namespace testing::ext;
@@ -2833,6 +2834,48 @@ HWTEST(AudioProcessInServerUnitTest, NeedTurnOnMicIndicator_001, TestSize.Level1
         DEFAULT_STREAM_ID, false, SOURCE_TYPE_VOICE_CALL));
     EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
         DEFAULT_STREAM_ID, true, SOURCE_TYPE_MIC));
+}
+
+/**
+ * @tc.name  : Test RecordPrivacyManager API
+ * @tc.type  : FUNC
+ * @tc.number: RecordPrivacyManager_001
+ * @tc.desc  : Test NotifyPrivacyStart/Stop interfaces with local record map branches.
+ */
+HWTEST(AudioProcessInServerUnitTest, RecordPrivacyManager_001, TestSize.Level1)
+{
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+
+    constexpr uint32_t tokenId = 100;
+    constexpr uint32_t sessionIdA = 1;
+    constexpr uint32_t sessionIdB = 2;
+
+    manager.tokenIdRecordMap_[tokenId] = {sessionIdA};
+    EXPECT_TRUE(manager.NotifyPrivacyStart(tokenId, sessionIdA));
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 1);
+
+    EXPECT_TRUE(manager.NotifyPrivacyStart(tokenId, sessionIdB));
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 2);
+
+    EXPECT_TRUE(manager.NotifyPrivacyStop(tokenId, sessionIdA));
+    EXPECT_EQ(manager.tokenIdRecordMap_[tokenId].size(), 1);
+
+    manager.tokenIdRecordMap_.clear();
+    EXPECT_TRUE(manager.NotifyPrivacyStop(tokenId, sessionIdA));
+}
+
+/**
+ * @tc.name  : Test AudioPrivacyManagerInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioPrivacyManagerInServer_001
+ * @tc.desc  : Test StartUsingMicrophone/StopUsingMicrophone interfaces.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioPrivacyManagerInServer_001, TestSize.Level1)
+{
+    auto &privacyManager = AudioPrivacyManagerInServer::GetInstance();
+    EXPECT_FALSE(privacyManager.StartUsingMicrophone(0));
+    EXPECT_FALSE(privacyManager.StopUsingMicrophone(0));
 }
 
 /**
