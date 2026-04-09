@@ -112,7 +112,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaInputD
     }
 
     AudioRouterInfra::GetInstance().Unlock();
-    return result;
+    return result == nullptr ? std::make_shared<AudioDeviceDescriptor>() : result;
 }
 
 void AudioRouterFollowStrategy::SetMediaInputDevice(int32_t uid, uint32_t streamId,

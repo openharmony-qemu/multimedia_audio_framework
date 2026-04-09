@@ -30,7 +30,6 @@
 #include "audio_stream_change_info.h"
 #include "audio_active_device.h"
 #include "audio_scene_manager.h"
-#include "audio_usr_select_manager.h"
 #include "audio_volume_manager.h"
 #include "audio_device_manager.h"
 #include "audio_connected_device.h"
@@ -771,7 +770,6 @@ private:
     AudioA2dpDevice& audioA2dpDevice_;
     AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
-    AudioUsrSelectManager &audioUsrSelectManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
     AudioSessionService &audioSessionService_;
 

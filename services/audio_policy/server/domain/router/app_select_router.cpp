@@ -71,9 +71,6 @@ shared_ptr<AudioDeviceDescriptor> AppSelectRouter::GetRecordCaptureDevice(Source
     }
     CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
         RouterBase::GetPairDevice(device, allDevices, MEDIA_INPUT_DEVICES));
-    device = AudioUsrSelectManager::GetAudioUsrSelectManager().GetCapturerDevice(clientUID, sourceType);
-    CHECK_AND_RETURN_RET(device == nullptr || device->deviceType_ == DEVICE_TYPE_NONE,
-        RouterBase::GetPairDevice(device, allDevices, MEDIA_INPUT_DEVICES));
     device = AudioAffinityManager::GetAudioAffinityManager().GetCapturerDevice(clientUID);
     return RouterBase::GetPairDevice(device, allDevices, MEDIA_INPUT_DEVICES);
 }
