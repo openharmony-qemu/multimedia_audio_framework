@@ -3441,7 +3441,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
 
     if (isAbsVolumeScene) {
-        SaveVolumeData(desc, STREAM_MUSIC, volume, false, true);
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
     }
