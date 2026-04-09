@@ -2821,13 +2821,18 @@ HWTEST(AudioProcessInServerUnitTest, CheckBgRecordPermission_002, TestSize.Level
  */
 HWTEST(AudioProcessInServerUnitTest, NeedTurnOnMicIndicator_001, TestSize.Level1)
 {
-    EXPECT_TRUE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(DEFAULT_STREAM_ID, SOURCE_TYPE_MIC));
+    EXPECT_TRUE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        DEFAULT_STREAM_ID, false, SOURCE_TYPE_MIC));
     EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
-        INTELL_VOICE_SERVICR_UID, SOURCE_TYPE_MIC));
+        INTELL_VOICE_SERVICR_UID, false, SOURCE_TYPE_MIC));
     EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
-        DEFAULT_STREAM_ID, SOURCE_TYPE_PLAYBACK_CAPTURE));
+        DEFAULT_STREAM_ID, false, SOURCE_TYPE_PLAYBACK_CAPTURE));
     EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
-        DEFAULT_STREAM_ID, SOURCE_TYPE_REMOTE_CAST));
+        DEFAULT_STREAM_ID, false, SOURCE_TYPE_REMOTE_CAST));
+    EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        DEFAULT_STREAM_ID, false, SOURCE_TYPE_VOICE_CALL));
+    EXPECT_FALSE(RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        DEFAULT_STREAM_ID, true, SOURCE_TYPE_MIC));
 }
 
 /**

@@ -120,9 +120,14 @@ void AudioProcessInServerMicIndicatorExecute(FuzzedDataProvider &provider)
         return;
     }
 
-    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, SOURCE_TYPE_MIC);
-    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(INTELLIGENT_VOICE_UID, SOURCE_TYPE_MIC);
-    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, false, SOURCE_TYPE_MIC);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(INTELLIGENT_VOICE_UID, false,
+        SOURCE_TYPE_MIC);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, false,
+        SOURCE_TYPE_PLAYBACK_CAPTURE);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, false,
+        SOURCE_TYPE_VOICE_CALL);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(configRet.callerUid, true, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().StartUsingMicrophone(configRet.appInfo.appTokenId);
     (void)RecordPrivacyManager::GetInstance().StopUsingMicrophone(configRet.appInfo.appTokenId);
 

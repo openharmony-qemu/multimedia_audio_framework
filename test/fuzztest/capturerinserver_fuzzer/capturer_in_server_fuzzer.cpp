@@ -701,11 +701,15 @@ void MicIndicatorFuzzTest()
     capturerInServer_->streamIndex_ = g_fuzzUtils.GetData<uint32_t>();
 
     (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
-        capturerInServer_->processConfig_.callerUid, SOURCE_TYPE_MIC);
+        capturerInServer_->processConfig_.callerUid, false, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
-        INTELLIGENT_VOICE_UID, SOURCE_TYPE_MIC);
+        INTELLIGENT_VOICE_UID, false, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
-        capturerInServer_->processConfig_.callerUid, SOURCE_TYPE_PLAYBACK_CAPTURE);
+        capturerInServer_->processConfig_.callerUid, false, SOURCE_TYPE_PLAYBACK_CAPTURE);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        capturerInServer_->processConfig_.callerUid, false, SOURCE_TYPE_VOICE_CALL);
+    (void)RecordPrivacyManager::GetInstance().NeedTurnOnMicIndicator(
+        capturerInServer_->processConfig_.callerUid, true, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().StartUsingMicrophone(
         capturerInServer_->processConfig_.appInfo.appTokenId);
     (void)RecordPrivacyManager::GetInstance().StopUsingMicrophone(
