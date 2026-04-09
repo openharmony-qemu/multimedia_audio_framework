@@ -95,7 +95,7 @@ public:
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
     
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevices(int32_t zoneId,
-        StreamUsage streamUsage, int32_t clientUid, const RouterType &bypassType);
+        StreamUsage streamUsage, int32_t clientUid, RouterType bypassType);
     std::shared_ptr<AudioDeviceDescriptor> FetchInputDevice(int32_t zoneId,
        SourceType sourceType, int32_t clientUid);
 

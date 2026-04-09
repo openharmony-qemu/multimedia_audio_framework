@@ -76,7 +76,8 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_003, TestSize.Level1)
 {
     AudioRouterCenter audioRouterCenter;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 0, "", ROUTER_TYPE_NONE);
+    FetchDeviceInfo info = { STREAM_USAGE_ALARM, 0, ""};
+    descs = audioRouterCenter.FetchOutputDevices(info);
     EXPECT_EQ(descs.size(), 1);
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
@@ -84,7 +85,8 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_003, TestSize.Level1)
     AudioZoneContext context;
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("1", context, 0);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 1);
-    descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 1, "", ROUTER_TYPE_NONE);
+    info = { STREAM_USAGE_ALARM, 1, ""};
+    descs = audioRouterCenter.FetchOutputDevices(info);
     EXPECT_EQ(descs.size(), 1);
 }
 
@@ -741,10 +743,8 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_011, TestSize.Level1)
     info.caller = "test_caller";
     info.privacyType = PRIVACY_TYPE_PUBLIC;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
-        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+        audioRouterCenter.FetchOutputDevicesInner(info);
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
@@ -788,10 +788,8 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_012, TestSize.Level1)
     info.caller = "test_caller";
     info.privacyType = PRIVACY_TYPE_PUBLIC;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
-        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+        audioRouterCenter.FetchOutputDevicesInner(info);
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
@@ -835,10 +833,8 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_013, TestSize.Level1)
     info.caller = "test_caller";
     info.privacyType = PRIVACY_TYPE_PUBLIC;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
-        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+        audioRouterCenter.FetchOutputDevicesInner(info);
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);
@@ -882,10 +878,8 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_014, TestSize.Level1)
     info.caller = "test_caller";
     info.privacyType = PRIVACY_TYPE_PUBLIC;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyExcludedDevices;
-
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> result =
-        audioRouterCenter.FetchOutputDevicesInner(info, info.routerType, ROUTER_TYPE_NONE, emptyExcludedDevices);
+        audioRouterCenter.FetchOutputDevicesInner(info);
     EXPECT_EQ(result.size(), 1);
     ASSERT_NE(result[0], nullptr);
     EXPECT_EQ(result[0]->deviceType_, DEVICE_TYPE_SPEAKER);

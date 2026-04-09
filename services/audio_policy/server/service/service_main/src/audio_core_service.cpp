@@ -1282,8 +1282,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
         return deviceList;
     }
     if (networkId == LOCAL_NETWORK_ID) {
+        FetchDeviceInfo info = { rendererInfo.streamUsage, "GetPreferredOutputDeviceDescInner" };
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-            audioRouterCenter_.FetchOutputDevices(rendererInfo.streamUsage, -1, "GetPreferredOutputDeviceDescInner");
+            audioRouterCenter_.FetchOutputDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
@@ -2093,8 +2094,8 @@ void AudioCoreService::SetAudioServerProxy()
 DirectPlaybackMode AudioCoreService::GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
     const StreamUsage &streamUsage)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(
-        streamUsage, getuid(), "GetDirectPlaybackSupport");
+    FetchDeviceInfo info = { streamUsage, getuid(), "GetDirectPlaybackSupport" };
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), DIRECT_PLAYBACK_NOT_SUPPORTED, "find output device failed");
     return pipeManager_->GetDirectPlaybackSupport(descs.front(), streamInfo);
 }
@@ -3023,8 +3024,9 @@ bool AudioCoreService::IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDev
     if (inputDesc != nullptr) {
         realInputDevice = *inputDesc;
     }
+    FetchDeviceInfo info = { STREAM_USAGE_VOICE_COMMUNICATION, "IsVoipDeviceChanged" };
     vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "IsVoipDeviceChanged");
+        audioRouterCenter_.FetchOutputDevices(info);
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
         realOutputDevice = *outputDesc.front();
     }
@@ -3543,8 +3545,9 @@ void AudioCoreService::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceTyp
         return;
     }
 
+    FetchDeviceInfo info = { STREAM_USAGE_VOICE_COMMUNICATION, "UpdateStreamEcInfo" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "UpdateStreamEcInfo");
+        audioRouterCenter_.FetchOutputDevices(info);
     std::shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
 
