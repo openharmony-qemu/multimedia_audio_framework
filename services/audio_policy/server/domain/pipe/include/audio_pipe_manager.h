@@ -87,6 +87,7 @@ public:
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
+    void StandbyClient(uint32_t sessionId);
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
 
