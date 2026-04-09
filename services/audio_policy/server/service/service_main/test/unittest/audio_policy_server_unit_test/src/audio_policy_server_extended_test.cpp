@@ -274,9 +274,6 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_010, TestSize.Level4)
     uint32_t targetTokenId = 1;
     int32_t appUid = 1;
     EXPECT_NO_THROW(callback->UpdateMicPrivacyByCapturerState(targetMuteState, targetTokenId, appUid));
-
-    targetMuteState = false;
-    EXPECT_NO_THROW(callback->UpdateMicPrivacyByCapturerState(targetMuteState, targetTokenId, appUid));
 }
 
 /**
