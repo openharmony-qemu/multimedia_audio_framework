@@ -1757,7 +1757,7 @@ int32_t AudioCoreService::SelectInputDeviceByUid(const std::shared_ptr<AudioDevi
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetSelectedInputDeviceByUid(int32_t uid)
 {
-    return AudioSelectInterfaceService::GetInstance().GetSelectedInputDeviceByUid(
+    return AudioSelectInterfaceService::GetInstance().GetMediaInputDevice(
         uid, INVALID_STREAM_ID, SOURCE_TYPE_INVALID);
 }
 
@@ -1776,7 +1776,7 @@ int32_t AudioCoreService::PreferBluetoothAndNearlinkRecordByUid(int32_t uid,
 
 BluetoothAndNearlinkPreferredRecordCategory AudioCoreService::GetPreferBluetoothAndNearlinkRecordByUid(int32_t uid)
 {
-    return AudioRouterInfra::GetInstance().GetPreferBluetoothAndNearlinkRecordByUid(uid);
+    return AudioRouterInfra::GetInstance().GetPreferredInputCategory(uid);
 }
 
 void AudioCoreService::NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value)
