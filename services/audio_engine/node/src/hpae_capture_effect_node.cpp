@@ -48,6 +48,16 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
         callback->OnNotifyDfxNodeAdmin(true, GetNodeInfo());
     }
 #endif
+#ifdef ENABLE_HOOK_PCM
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        inputMicDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeCaptureEffectNode_id_" + std::to_string(GetNodeId()) + "_mic.pcm");
+        inputRefDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeCaptureEffectNode_id_" + std::to_string(GetNodeId()) + "_collabMic.pcm");
+        outputDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeCaptureEffectNode_id_" + std::to_string(GetNodeId()) + "_out.pcm");
+    }
+#endif
 }
 
 HpaeCaptureEffectNode::~HpaeCaptureEffectNode()
@@ -66,6 +76,42 @@ bool HpaeCaptureEffectNode::Reset()
     return HpaePluginNode::Reset();
 }
 
+HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vector<HpaePcmBuffer*> &inputs)
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    EnhanceTransBuffer transBuf = {};
+    uint32_t processLength = 0;
+
+    // Collaborative recording: float data pass-through, no format conversion
+    for (uint32_t i = 0; i < inputs.size(); i++) {
+        if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MIC) {
+            inputMicDumper_->Dump((int8_t *)inputs[i]->GetPcmDataBuffer(), micBufferLength_);
+            memcpy_s(micCache_.data(), micCache_.size(),
+                inputs[i]->GetPcmDataBuffer(), micBufferLength_);
+            transBuf.micData = static_cast<void *>(micCache_.data());
+            transBuf.micDataLen = micCache_.size();
+            processLength = micBufferLength_;
+            AUDIO_DEBUG_LOG("collaborative mic size:%{public}u", processLength);
+        } else if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_DEFAULT) {
+            inputRefDumper_->Dump((int8_t *)inputs[i]->GetPcmDataBuffer(), micBufferLength_);
+            memcpy_s(micRefCache_.data(), micRefCache_.size(),
+                inputs[i]->GetPcmDataBuffer(), micrefBufferLength_);
+            transBuf.micRefData = static_cast<void *>(micRefCache_.data());
+            transBuf.micRefDataLen = micRefCache_.size();
+            AUDIO_DEBUG_LOG("collaborative ref size:%{public}u", micrefBufferLength_);
+        }
+    }
+    outPcmBuffer_->SetBufferValid(processLength != 0);
+    CHECK_AND_RETURN_RET_LOG(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
+    int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
+    audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
+        static_cast<size_t>(processLength));
+    memcpy_s(outPcmBuffer_->GetPcmDataBuffer(), processLength, cacheDataOut_.data(), processLength);
+    outputDumper_->Dump((int8_t *)cacheDataOut_.data(), micBufferLength_);
+    return outPcmBuffer_.get();
+}
+
 HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     Trace trace("[" + sceneType_ + "]HpaeCaptureEffectNode::SignalProcess inputs num[" +
@@ -75,38 +121,13 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
         return nullptr;
     }
 
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        return SignalProcessCollaboration(inputs);
+    }
+
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     EnhanceTransBuffer transBuf = {};
     uint32_t processLength = 0;
-
-    // Collaborative recording: float data pass-through, no format conversion
-    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
-        for (uint32_t i = 0; i < inputs.size(); i++) {
-            if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MIC) {
-                memcpy_s(micCache_.data(), micCache_.size(),
-                    inputs[i]->GetPcmDataBuffer(), micBufferLength_);
-                transBuf.micData = static_cast<void *>(micCache_.data());
-                transBuf.micDataLen = micCache_.size();
-                processLength = micBufferLength_;
-                AUDIO_DEBUG_LOG("collaborative mic size:%{public}u", processLength);
-            } else if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_DEFAULT) {
-                memcpy_s(micRefCache_.data(), micRefCache_.size(),
-                    inputs[i]->GetPcmDataBuffer(), micrefBufferLength_);
-                transBuf.micRefData = static_cast<void *>(micRefCache_.data());
-                transBuf.micRefDataLen = micRefCache_.size();
-                AUDIO_DEBUG_LOG("collaborative ref size:%{public}u", micrefBufferLength_);
-            }
-        }
-        outPcmBuffer_->SetBufferValid(processLength != 0);
-        CHECK_AND_RETURN_RET_LOG(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
-        int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
-        audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
-            static_cast<size_t>(processLength));
-        memcpy_s(outPcmBuffer_->GetPcmDataBuffer(), processLength, cacheDataOut_.data(), processLength);
-        return outPcmBuffer_.get();
-    }
-
     for (uint32_t i = 0; i < inputs.size(); i++) {
         if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MIC) {
             ConvertFromFloat(SAMPLE_S16LE, micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
