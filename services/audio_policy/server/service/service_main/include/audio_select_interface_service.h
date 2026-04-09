@@ -64,8 +64,6 @@ public:
 
     // AudioCapturer#setInputDeviceToAccessory
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID, int32_t uid);
-    // AudioSessionManager#setBluetoothAndNearlinkPreferredRecordCategory
-    int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     // AudioCapturer#AudioCapturerOptions#preferredInputDevice
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
@@ -107,6 +105,7 @@ private:
     void HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason, const std::string &caller);
     static void WriteDesignateAudioCaptureDeviceEvent(SourceType sourceType, int32_t deviceType,
         bool isNormalSelection);
+    int32_t RefreshVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;
