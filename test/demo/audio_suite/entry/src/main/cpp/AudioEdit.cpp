@@ -30,11 +30,9 @@
 #include "audioSuiteError/AudioSuiteError.h"
 #include "audioEffectNode/Input.h"
 #include "audioEffectNode/Output.h"
-#include "audioEffectNode/EffectNode.h"
 #include "audioEffectNode/ParseNapiParam.h"
 #include "audioEffectNode/Equalizer.h"
 #include "audioEffectNode/SoundField.h"
-#include "callback/RegisterCallback.h"
 #include "audioEffectNode/NoiseReduction.h"
 #include "audioEffectNode/EnvEffect.h"
 #include "audioEffectNode/SpaceRender.h"
@@ -44,7 +42,6 @@
 #include "callback/RegisterCallbackNapi.h"
 #include "./utils/Utils.h"
 #include "realTimePlay/RealTimePlaying.h"
-#include "audioSuiteError/AudioSuiteError.h"
 #include "multiPipelineEdit/MultiPipelineEdit.h"
 #include "audioRecord/AudioRecord.h"
 #include "timeline/Timeline_napi.h"
@@ -55,7 +52,6 @@
 #include <multimedia/player_framework/native_avbuffer.h>
 #include <fcntl.h>
 #include "ohaudiosuite/native_audio_converter.h"
-#include "ohaudiosuite/native_audio_suite_base.h"
 #include <cmath>
 
 const int GLOBAL_RESMGR = 0xFF00;
@@ -1145,39 +1141,48 @@ static bool ParseAudioFormat(napi_env env, napi_value formatObj, OH_AudioConvert
 static int32_t CalculateOutputChannelCount(OH_AudioChannelLayout channelLayout)
 {
     switch (channelLayout) {
-        case CH_LAYOUT_MONO: return CHANNEL_COUNT_MONO;
+        case CH_LAYOUT_MONO:
+            return CHANNEL_COUNT_MONO;
         case CH_LAYOUT_STEREO:
-        case CH_LAYOUT_STEREO_DOWNMIX: return CHANNEL_COUNT_STEREO;
+        case CH_LAYOUT_STEREO_DOWNMIX:
+            return CHANNEL_COUNT_STEREO;
         case CH_LAYOUT_2POINT1:
         case CH_LAYOUT_3POINT0:
-        case CH_LAYOUT_SURROUND: return CHANNEL_COUNT_2POINT1;
+        case CH_LAYOUT_SURROUND:
+            return CHANNEL_COUNT_2POINT1;
         case CH_LAYOUT_3POINT1:
         case CH_LAYOUT_4POINT0:
         case CH_LAYOUT_QUAD:
         case CH_LAYOUT_QUAD_SIDE:
-        case CH_LAYOUT_2POINT0POINT2: return CHANNEL_COUNT_QUAD;
+        case CH_LAYOUT_2POINT0POINT2:
+            return CHANNEL_COUNT_QUAD;
         case CH_LAYOUT_4POINT1:
         case CH_LAYOUT_5POINT0:
         case CH_LAYOUT_5POINT0_BACK:
         case CH_LAYOUT_2POINT1POINT2:
-        case CH_LAYOUT_3POINT0POINT2: return CHANNEL_COUNT_5POINT0;
+        case CH_LAYOUT_3POINT0POINT2:
+            return CHANNEL_COUNT_5POINT0;
         case CH_LAYOUT_5POINT1:
         case CH_LAYOUT_5POINT1_BACK:
         case CH_LAYOUT_6POINT0:
         case CH_LAYOUT_3POINT1POINT2:
-        case CH_LAYOUT_6POINT0_FRONT: return CHANNEL_COUNT_5POINT1;
+        case CH_LAYOUT_6POINT0_FRONT:
+            return CHANNEL_COUNT_5POINT1;
         case CH_LAYOUT_HEXAGONAL:
         case CH_LAYOUT_6POINT1:
         case CH_LAYOUT_6POINT1_BACK:
         case CH_LAYOUT_6POINT1_FRONT:
         case CH_LAYOUT_7POINT0:
-        case CH_LAYOUT_7POINT0_FRONT: return CHANNEL_COUNT_7POINT0;
+        case CH_LAYOUT_7POINT0_FRONT:
+            return CHANNEL_COUNT_7POINT0;
         case CH_LAYOUT_5POINT1POINT2:
         case CH_LAYOUT_7POINT1:
         case CH_LAYOUT_OCTAGONAL:
         case CH_LAYOUT_7POINT1_WIDE:
-        case CH_LAYOUT_7POINT1_WIDE_BACK: return CHANNEL_COUNT_7POINT1;
-        default: return CHANNEL_COUNT_STEREO;
+        case CH_LAYOUT_7POINT1_WIDE_BACK:
+            return CHANNEL_COUNT_7POINT1;
+        default:
+            return CHANNEL_COUNT_STEREO;
     }
 }
 
