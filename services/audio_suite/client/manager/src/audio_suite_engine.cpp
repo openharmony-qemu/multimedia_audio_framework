@@ -182,7 +182,9 @@ int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
         }
 
         std::shared_ptr<IAudioSuitePipeline> pipeline = pipelineMap_[pipelineId];
+        PipelineWorkMode workMode = PIPELINE_EDIT_MODE;
         if (pipeline != nullptr) {
+            workMode = pipeline->GetWorkMode();
             auto ret = pipeline->DeInit();
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("engine Destroy pipeline failed, pipeline deinit failed, ret = %{public}d.", ret);
@@ -192,6 +194,7 @@ int32_t AudioSuiteEngine::DestroyPipeline(uint32_t pipelineId)
         }
 
         pipelineMap_.erase(pipelineId);
+        isExistRealtime_ = (workMode == PIPELINE_REALTIME_MODE) ? false : isExistRealtime_;
         managerCallback_.OnDestroyPipeline(SUCCESS);
     };
 
