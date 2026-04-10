@@ -277,6 +277,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/volume/src/app_volume_manager.cpp",
     "server/domain/volume/src/audio_loud_volume_manager.cpp",
     "server/domain/volume/src/audio_safe_volume_event_subscriber.cpp",
+    "server/domain/volume/src/safe_volume_notification_loader.cpp",
     "server/domain/device/src/a2dp/audio_a2dp_device_behavior.cpp",
     "server/domain/device/src/pnp/audio_arm_device_behavior.cpp",
     "server/domain/device/src/hearing_aid/audio_hearing_aid_device_behavior.cpp",

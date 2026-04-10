@@ -28,6 +28,7 @@
 #include "i_policy_provider.h"
 #include "audio_spatialization_service.h"
 #include "audio_safe_volume_notification.h"
+#include "safe_volume_notification_loader.h"
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
@@ -372,11 +373,11 @@ void AudioVolumeManager::CheckToCloseNotification(AudioStreamType streamType, in
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
         AUDIO_INFO_LOG("user select lower volume should close notification.");
         if (increaseNIsShowing_) {
-            CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+            SafeVolumeNotificationLoader::CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
             increaseNIsShowing_ = false;
         }
         if (restoreNIsShowing_) {
-            CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+            SafeVolumeNotificationLoader::CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
             restoreNIsShowing_ = false;
         }
     }
@@ -786,68 +787,6 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolumeEx(AudioVolumeType streamType
     return audioPolicyManager_.SetNearlinkDeviceVolume(streamType, volumeLevel);
 }
 
-void AudioVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
-{
-    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
-    if (libHandle == nullptr) {
-        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
-        return;
-    }
-    CreateSafeVolumeNotification *createSafeVolumeNotificationImpl =
-        reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
-    if (createSafeVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
-    if (audioSafeVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    audioSafeVolumeNotificationImpl->PublishSafeVolumeNotification(notificationId);
-    delete audioSafeVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
-    dlclose(libHandle);
-#endif
-}
-
-void AudioVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
-{
-    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
-    if (libHandle == nullptr) {
-        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
-        return;
-    }
-    CreateSafeVolumeNotification *createSafeVolumeNotificationImpl =
-        reinterpret_cast<CreateSafeVolumeNotification*>(dlsym(libHandle, "CreateSafeVolumeNotificationImpl"));
-    if (createSafeVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("createSafeVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    AudioSafeVolumeNotification *audioSafeVolumeNotificationImpl = createSafeVolumeNotificationImpl();
-    if (audioSafeVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("audioSafeVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    audioSafeVolumeNotificationImpl->CancelSafeVolumeNotification(notificationId);
-    delete audioSafeVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
-    dlclose(libHandle);
-#endif
-}
-
 void AudioVolumeManager::HandleLegacyHighVolumeEvent()
 {
     HandleLegacyHighVolumeNotification(VolumeNotifyActionType::ACTOPN_CANCEL);
@@ -877,53 +816,26 @@ void AudioVolumeManager::HandleLegacyHighVolumeNotification(VolumeNotifyActionTy
         legacyHighVolumeStreamType_ = streamType;
         legacyHighVolumeLevel_ = volumeLevel;
     }
-    void *libHandle = dlopen("libaudio_safe_volume_notification_impl.z.so", RTLD_LAZY);
-    if (libHandle == nullptr) {
-        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
-        return;
-    }
-    CreateLegacyHighVolumeNotification *createLegacyHighVolumeNotificationImpl =
-        reinterpret_cast<CreateLegacyHighVolumeNotification*>(dlsym(libHandle,
-        "CreateLegacyHighVolumeNotificationImpl"));
-    if (createLegacyHighVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("createLegacyHighVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    AudioLegacyHighVolumeNotification *audioLegacyHighVolumeNotificationImpl = createLegacyHighVolumeNotificationImpl();
-    if (audioLegacyHighVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("audioLegacyHighVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
     AUDIO_INFO_LOG("legacy high volume notification type: %{public}d, streamType: %{public}d, volumeLevel: %{public}d"
         "isShowing: %{public}d", actionType, streamType, volumeLevel, isLegacyHighVolumeNtfShowing_.load());
     if (actionType == ACTION_PUBLISH) {
-        audioLegacyHighVolumeNotificationImpl->PublishLegacyHighVolumeNotification();
+        SafeVolumeNotificationLoader::PublishLegacyHighVolumeNotification();
         isLegacyHighVolumeNtfShowing_ = true;
     } else {
-        audioLegacyHighVolumeNotificationImpl->CancelLegacyHighVolumeNotification();
+        SafeVolumeNotificationLoader::CancelLegacyHighVolumeNotification();
         isLegacyHighVolumeNtfShowing_ = false;
     }
-    delete audioLegacyHighVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
-    dlclose(libHandle);
-#endif
 }
 
 void AudioVolumeManager::CancelSafeVolumeNotificationWhenSwitchDevice()
 {
     if (increaseNIsShowing_) {
-        CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
         increaseNIsShowing_ = false;
     }
 
     if (restoreNIsShowing_) {
-        CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = false;
     }
 }
@@ -957,10 +869,10 @@ int32_t AudioVolumeManager::DealWithSafeVolume(const int32_t volumeLevel, bool i
         (!isBtDevice && safeStatusSle_ == SAFE_ACTIVE)) {
         sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
         if (restoreNIsShowing_) {
-            CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+            SafeVolumeNotificationLoader::CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
             restoreNIsShowing_ = false;
         }
-        PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::PublishSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
         increaseNIsShowing_ = true;
         return sVolumeLevel;
     }
@@ -1155,10 +1067,10 @@ void AudioVolumeManager::CheckBlueToothActiveMusicTime(int32_t safeVolume)
         startSafeTimeBt_ = 0;
         activeSafeTimeBt_ = 0;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP, 0);
-        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (CheckMixActiveMusicTime(safeVolume)) {
-        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else {
         activeSafeTimeBt_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -1184,10 +1096,10 @@ void AudioVolumeManager::CheckNearlinkActiveMusicTime(int32_t safeVolume)
         startSafeTimeSle_ = 0;
         activeSafeTimeSle_ = 0;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_NEARLINK, 0);
-        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (CheckMixActiveMusicTime(safeVolume)) {
-        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else {
         activeSafeTimeSle_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_NEARLINK);
@@ -1213,10 +1125,10 @@ void AudioVolumeManager::CheckWiredActiveMusicTime(int32_t safeVolume)
         startSafeTime_ = 0;
         activeSafeTime_ = 0;
         audioPolicyManager_.SetDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET, 0);
-        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else if (CheckMixActiveMusicTime(safeVolume)) {
-        PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::PublishSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = true;
     } else {
         activeSafeTime_ = audioPolicyManager_.GetCurentDeviceSafeTime(DEVICE_TYPE_WIRED_HEADSET);
@@ -1312,7 +1224,7 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
     if (action == AUDIO_RESTORE_VOLUME_EVENT) {
         AUDIO_INFO_LOG("AUDIO_RESTORE_VOLUME_EVENT has been received");
         std::lock_guard<std::mutex> lock(notifyMutex_);
-        CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::CancelSafeVolumeNotification(RESTORE_VOLUME_NOTIFICATION_ID);
         restoreNIsShowing_ = false;
         ChangeDeviceSafeStatus(SAFE_INACTIVE);
         DealWithEventVolume(RESTORE_VOLUME_NOTIFICATION_ID);
@@ -1320,7 +1232,7 @@ void AudioVolumeManager::OnReceiveEvent(const EventFwk::CommonEventData &eventDa
     } else if (action == AUDIO_INCREASE_VOLUME_EVENT) {
         AUDIO_INFO_LOG("AUDIO_INCREASE_VOLUME_EVENT has been received");
         std::lock_guard<std::mutex> lock(notifyMutex_);
-        CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
+        SafeVolumeNotificationLoader::CancelSafeVolumeNotification(INCREASE_VOLUME_NOTIFICATION_ID);
         increaseNIsShowing_ = false;
         ChangeDeviceSafeStatus(SAFE_INACTIVE);
         DealWithEventVolume(INCREASE_VOLUME_NOTIFICATION_ID);
