@@ -2879,6 +2879,124 @@ HWTEST(AudioProcessInServerUnitTest, AudioPrivacyManagerInServer_001, TestSize.L
 }
 
 /**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_RecordStartInner_001
+ * @tc.desc  : Test StartInner with remote cast source.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_RecordStartInner_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STAND_BY);
+
+    EXPECT_NE(audioProcessInServerRet.Start(), SUCCESS);
+    EXPECT_FALSE(audioProcessInServerRet.isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_RecordStartInner_002
+ * @tc.desc  : Test StartInner when loopback stream should not turn on mic indicator.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_RecordStartInner_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    configRet.capturerInfo.isLoopback = true;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STAND_BY);
+    SwitchStreamInfo info = {
+        audioProcessInServerRet.GetSessionId(),
+        configRet.callerUid,
+        configRet.appInfo.appUid,
+        configRet.appInfo.appPid,
+        configRet.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_NE(audioProcessInServerRet.Start(), SUCCESS);
+    EXPECT_FALSE(audioProcessInServerRet.isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_RecordResume_001
+ * @tc.desc  : Test Resume when turn on mic indicator branch is entered.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_RecordResume_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    configRet.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
+    audioProcessInServerRet.streamStatus_->store(STREAM_STARTING);
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+    SwitchStreamInfo info = {
+        audioProcessInServerRet.GetSessionId(),
+        configRet.callerUid,
+        configRet.appInfo.appUid,
+        configRet.appInfo.appPid,
+        configRet.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_EQ(audioProcessInServerRet.Resume(), SUCCESS);
+    EXPECT_TRUE(audioProcessInServerRet.isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_RecordPauseStopRelease_001
+ * @tc.desc  : Test Pause/Stop/Release when mic indicator is on.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_RecordPauseStopRelease_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+    uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
+    uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
+    audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, g_audioStreamInfo);
+
+    audioProcessInServerRet.streamStatus_->store(STREAM_PAUSING);
+    EXPECT_EQ(audioProcessInServerRet.Pause(false), SUCCESS);
+
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+    audioProcessInServerRet.streamStatus_->store(STREAM_STOPPING);
+    int32_t stopStage = 0;
+    EXPECT_EQ(audioProcessInServerRet.Stop(stopStage), SUCCESS);
+
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+    audioProcessInServerRet.releaseCallback_ = AudioService::GetInstance();
+    EXPECT_EQ(audioProcessInServerRet.Release(false), ERROR);
+}
+
+/**
  * @tc.name  : Test SetMuteHint API
  * @tc.type  : FUNC
  * @tc.number: SetMuteHint_001
