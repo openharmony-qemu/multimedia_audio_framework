@@ -3189,6 +3189,28 @@ int32_t AudioPolicyServer::GetCurrentRendererChangeInfos(
     return result;
 }
 
+int32_t AudioPolicyServer::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    CHECK_AND_RETURN_RET_LOG(zoneId >= 0, ERR_INVALID_PARAM, "zoneId %{public}d is invalid", zoneId);
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> allRendererChangeInfos;
+    int32_t result = GetCurrentRendererChangeInfos(allRendererChangeInfos);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
+        "GetCurrentRendererChangeInfos failed, result %{public}d", result);
+
+    for (const auto &info : allRendererChangeInfos) {
+        CHECK_AND_CONTINUE(info != nullptr);
+        int32_t rendererZoneId = AudioZoneService::GetInstance().FindAudioZone(
+            info->clientUID, info->rendererInfo.streamUsage);
+        if (rendererZoneId == zoneId) {
+            audioRendererChangeInfos.push_back(info);
+        }
+    }
+    
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::GetCurrentCapturerChangeInfos(
     std::vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos)
 {

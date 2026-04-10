@@ -226,6 +226,15 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyManager::GetAudi
     return focusInfoList;
 }
 
+int32_t AudioPolicyManager::GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->GetCurrentRendererChangeInfosForZone(zoneId, audioRendererChangeInfos);
+}
+
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyManager::GetAudioInterruptForZone(
     int32_t zoneId, const std::string &deviceTag)
 {

@@ -343,4 +343,5 @@ interface IAudioPolicy {
     void SetRegisterInterruptCallbackFlag([in] unsigned int streamId, [in] boolean interruptCallbackFlag);
     void SetRegisterStateChangeCallbackFlag([in] boolean stateChangeCallbackFlag);
     void GetSessionDebugInfo([out] sharedptr<AudioSessionDebugInfo> sessionDebugInfo);
+    void GetCurrentRendererChangeInfosForZone([in] int zoneId, [out] List<sharedptr<AudioRendererChangeInfo>> infos);
 }

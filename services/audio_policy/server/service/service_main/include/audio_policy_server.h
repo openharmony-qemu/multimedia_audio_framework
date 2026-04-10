@@ -563,6 +563,9 @@ public:
     int32_t GetAudioInterruptForZone(int32_t zoneId,
         std::vector<std::map<AudioInterrupt, int32_t>> &retList) override;
 
+    int32_t GetCurrentRendererChangeInfosForZone(int32_t zoneId,
+        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+
     int32_t GetAudioInterruptForZone(int32_t zoneId, const std::string &deviceTag,
         std::vector<std::map<AudioInterrupt, int32_t>> &retList) override;
 
