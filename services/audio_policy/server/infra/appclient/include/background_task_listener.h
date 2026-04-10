@@ -33,6 +33,12 @@ public:
     void OnContinuousTaskStart(const std::shared_ptr<ContinuousTaskCallbackInfo> &ContinuousTaskCallbackInfo) override;
     void OnContinuousTaskStop(const std::shared_ptr<ContinuousTaskCallbackInfo> &ContinuousTaskCallbackInfo) override;
 
+    void AddTaskId(int32_t pid, int32_t continuousTaskId);
+    void DeleteTaskId(int32_t pid, int32_t continuousTaskId);
+    size_t GetSizeOfContinuousTaskIdSet(int32_t pid);
+private:
+    std::map<int32_t, std::unordered_set<int32_t>> continuousTaskIdMap_;
+    std::mutex appBackTaskTdMapMutex_;
 };
 
 }
