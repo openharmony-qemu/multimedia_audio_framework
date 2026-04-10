@@ -125,7 +125,8 @@ private:
     void UpdateClusterNodeInfoForRecognition(HpaeNodeInfo &clusterNodeInfo);
     int32_t OpenCollaborativePrimary();
     void CloseCollaborativePrimary();
-    void FakeReload(SourceType sourceType);
+    void OpenCollaboration(SourceType sourceType);
+    void CloseCollaboration(SourceType sourceType);
     void GetCollaborativeSourceInfo(IAudioSourceAttr &attr, HpaeNodeInfo &nodeInfo);
     HpaeProcessorType GetEffectiveSceneType(uint32_t sessionId);
 
@@ -147,7 +148,7 @@ private:
     std::vector<int32_t> appsUid_;
     std::vector<int32_t> sessionsId_;
 
-    std::set<HpaeProcessorType> collabSceneTypes_;
+    std::set<SourceType> activeCollabSourceTypes_;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

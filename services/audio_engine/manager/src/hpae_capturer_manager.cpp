@@ -82,7 +82,8 @@ HpaeProcessorType HpaeCapturerManager::GetEffectiveSceneType(uint32_t sessionId)
 {
     auto it = sessionNodeMap_.find(sessionId);
     CHECK_AND_RETURN_RET(it != sessionNodeMap_.end(), HPAE_SCENE_EFFECT_NONE);
-    CHECK_AND_RETURN_RET(collabSceneTypes_.count(it->second.sceneType) == 0, HPAE_SCENE_COLLABORATIVE);
+    CHECK_AND_RETURN_RET(activeCollabSourceTypes_.count(it->second.sourceType) == 0,
+        HPAE_SCENE_COLLABORATIVE);
     return it->second.sceneType;
 }
 
@@ -384,7 +385,7 @@ int32_t HpaeCapturerManager::CapturerSourceStart()
         ret = sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStart();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "micref capturer source start error, ret = %{public}d.", ret);
     }
-    if (!collabSceneTypes_.empty()) {
+    if (!activeCollabSourceTypes_.empty()) {
         auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT);
         CHECK_AND_RETURN_RET_LOG(collabInputCluster, ERR_ILLEGAL_STATE,
             "sourceInputCLusterMap_[%{public}d] is nullptr", HPAE_SOURCE_DEFAULT);
@@ -786,11 +787,11 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         AUDIO_INFO_LOG("re-Init success");
         HpaePolicyManager::GetInstance().SetInputDevice(captureId_, static_cast<DeviceType>(sourceInfo_.deviceType));
         // rebuild collaborative source if needed
-        if (!collabSceneTypes_.empty()) {
+        if (!activeCollabSourceTypes_.empty()) {
             int32_t ret = OpenCollaborativePrimary();
             if (ret != SUCCESS) {
                 AUDIO_ERR_LOG("rebuild collaborative source failed");
-                collabSceneTypes_.clear();
+                activeCollabSourceTypes_.clear();
             }
         }
         // connect
@@ -1275,15 +1276,14 @@ void HpaeCapturerManager::EnableCaptureCollaboration(SourceType sourceType)
 {
     auto request = [this, sourceType] () {
         CHECK_AND_RETURN_LOG(sourceInfo_.deviceClass != DEFAULT_DEVICE_CLASS, "Collaboration is not support");
-        HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
-        CHECK_AND_RETURN_LOG(collabSceneTypes_.count(sceneType) == 0,
-            "Collaboration sceneType[%{public}d] already enabled", sceneType);
-        if (collabSceneTypes_.empty()) {
+        CHECK_AND_RETURN_LOG(IsCollabRecordSupported(sourceType), "sourceType not supported for collaboration");
+        CHECK_AND_RETURN_LOG(activeCollabSourceTypes_.count(sourceType) == 0,
+            "Collaboration sourceType[%{public}d] already enabled", sourceType);
+        if (activeCollabSourceTypes_.empty()) {
             int32_t ret = OpenCollaborativePrimary();
             CHECK_AND_RETURN_LOG(ret == SUCCESS, "OpenCollaborativePrimary fail, abort collaboration");
         }
-        collabSceneTypes_.insert(sceneType);
-        FakeReload(sourceType);
+        OpenCollaboration(sourceType);
     };
     SendRequest(request, __func__);
 }
@@ -1292,12 +1292,10 @@ void HpaeCapturerManager::DisableCaptureCollaboration(SourceType sourceType)
 {
     auto request = [this, sourceType] () {
         CHECK_AND_RETURN_LOG(sourceInfo_.deviceClass != DEFAULT_DEVICE_CLASS, "Collaboration is not support");
-        HpaeProcessorType sceneType = TransSourceTypeToSceneType(sourceType);
-        CHECK_AND_RETURN_LOG(collabSceneTypes_.count(sceneType) > 0,
-            "Collaboration sceneType[%{public}d] not enabled", sceneType);
-        collabSceneTypes_.erase(sceneType);
-        FakeReload(sourceType);
-        if (collabSceneTypes_.empty()) {
+        CHECK_AND_RETURN_LOG(activeCollabSourceTypes_.count(sourceType) > 0,
+            "Collaboration sourceType[%{public}d] not enabled", sourceType);
+        CloseCollaboration(sourceType);
+        if (activeCollabSourceTypes_.empty()) {
             CloseCollaborativePrimary();
         }
     };
@@ -1362,41 +1360,40 @@ void HpaeCapturerManager::CloseCollaborativePrimary()
     sourceInputClusterMap_.erase(HPAE_SOURCE_DEFAULT);
 }
 
-void HpaeCapturerManager::FakeReload(SourceType sourceType)
+void HpaeCapturerManager::OpenCollaboration(SourceType sourceType)
 {
     for (auto session : sourceOutputNodeMap_) {
         DisConnectOutputSession(session.first);
     }
 
+    activeCollabSourceTypes_.insert(sourceType);
+    CreateSceneCluster(HPAE_SCENE_COLLABORATIVE,
+        TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE));
+
+    CheckIfAnyStreamRunning();
+
+    AUDIO_INFO_LOG("sourceType[%{public}d] open collaboration", sourceType);
+}
+
+void HpaeCapturerManager::CloseCollaboration(SourceType sourceType)
+{
+    for (auto session : sourceOutputNodeMap_) {
+        DisConnectOutputSession(session.first);
+    }
+
+    activeCollabSourceTypes_.erase(sourceType);
+
     HpaeProcessorType normalSceneType = TransSourceTypeToSceneType(sourceType);
+    CreateSceneCluster(normalSceneType, TransProcessType2EnhanceScene(normalSceneType));
 
-    // 释放正常 cluster（开协同时不再需要）
-    if (SafeGetMap(sceneClusterMap_, normalSceneType)) {
-        CaptureEffectRelease(normalSceneType);
-        sceneClusterMap_.erase(normalSceneType);
-    }
-
-    // 确保 COLLABORATIVE cluster 存在（幂等）
-    if (!collabSceneTypes_.empty()) {
-        CreateSceneCluster(HPAE_SCENE_COLLABORATIVE,
-            TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE));
-    }
-
-    // 全部关闭时释放 COLLABORATIVE
-    if (collabSceneTypes_.empty() && SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE)) {
+    if (activeCollabSourceTypes_.empty() && SafeGetMap(sceneClusterMap_, HPAE_SCENE_COLLABORATIVE)) {
         CaptureEffectRelease(HPAE_SCENE_COLLABORATIVE);
         sceneClusterMap_.erase(HPAE_SCENE_COLLABORATIVE);
     }
 
-    // 关协同时重建正常 cluster
-    if (collabSceneTypes_.count(normalSceneType) == 0) {
-        CreateSceneCluster(normalSceneType, TransProcessType2EnhanceScene(normalSceneType));
-    }
-
-    AUDIO_INFO_LOG("sourceType[%{public}d] %{public}s collaboration",
-        sourceType, !collabSceneTypes_.empty() ? "open" : "close");
-
     CheckIfAnyStreamRunning();
+
+    AUDIO_INFO_LOG("sourceType[%{public}d] close collaboration", sourceType);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

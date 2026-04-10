@@ -2460,7 +2460,7 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_004, TestSize.Level1)
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
  * tc.number : CaptureCollaboration_005
- * tc.desc   : Test ReloadCaptureManager with collaboration enabled (rebuilds collabSceneTypes_)
+ * tc.desc   : Test ReloadCaptureManager with collaboration enabled (rebuilds activeCollabSourceTypes_)
  */
 HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_005, TestSize.Level1)
 {
@@ -2608,7 +2608,7 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_007, TestSize.Level1)
     WaitForMsgProcessing(capturerManager);
     capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_MIC);
     WaitForMsgProcessing(capturerManager);
-    // collabSceneTypes_ now empty, CloseCollaborativePrimary should be called
+    // activeCollabSourceTypes_ now empty, CloseCollaborativePrimary should be called
     EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 }
@@ -2780,13 +2780,13 @@ HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_011, TestSize.Level1)
     EXPECT_EQ(capturerManager->Init(), SUCCESS);
     WaitForMsgProcessing(capturerManager);
 
-    // enable then disable collaboration -> collabSceneTypes_ empty
+    // enable then disable collaboration -> activeCollabSourceTypes_ empty
     capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_MIC);
     WaitForMsgProcessing(capturerManager);
     capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_MIC);
     WaitForMsgProcessing(capturerManager);
 
-    // create stream, then reload -> collabSceneTypes_ empty, should NOT call OpenCollaborativePrimary
+    // create stream, then reload -> activeCollabSourceTypes_ empty, should NOT call OpenCollaborativePrimary
     HpaeStreamInfo streamInfo;
     InitReloadStreamInfo(streamInfo);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
