@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_volume_manager.h"
+#include "app_volume_manager.h"
 #include <ability_manager_client.h>
 #include "iservice_registry.h"
 #include "parameter.h"
@@ -60,20 +61,10 @@ private:
     const std::string reason_;
 };
 
-class FlushSystemAppVolumeAction : public AsyncActionHandler::AsyncAction {
-public:
-    void Exec() override
-    {
-        AudioVolumeManager::GetInstance().FlushSystemAppVolume();
-    }
-};
-
 static const int64_t MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S = 24 * 60 * 60; // 24h
 static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
-constexpr uint32_t SYSTEM_APP_VOLUME_PERSIST_DELAY_MS = 1000; // 1s
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
-constexpr int32_t VOLUME_PERCENTAGE_UNSET = -1;
 
 static std::string GetEncryptAddr(const std::string &addr)
 {
@@ -184,6 +175,7 @@ std::shared_ptr<LoudVolumeManager> AudioVolumeManager::GetLoudVolumeManager()
 void AudioVolumeManager::SetAsyncActionHandler(std::shared_ptr<AsyncActionHandler> &handler)
 {
     asyncHandler_ = handler;
+    appVolumeManager_.SetAsyncActionHandler(handler);
 }
 
 int32_t AudioVolumeManager::ClearLoudVolumeHoldMapForCall()
@@ -280,7 +272,7 @@ void AudioVolumeManager::SetSharedSleAbsVolumeScene(const bool support)
 
 int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel)
 {
-    return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
+    return appVolumeManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId)
@@ -419,167 +411,62 @@ bool AudioVolumeManager::DeviceIsSupportSafeVolume()
 
 int32_t AudioVolumeManager::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel)
 {
-    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeLevel");
-    // audioPolicyManager_ : AudioAdapterManager
-    int32_t result = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
-    return result;
+    return appVolumeManager_.SetAppVolumeLevel(appUid, volumeLevel);
 }
 
 int32_t AudioVolumeManager::SetSelfAppVolumeLevelWithCallback(int32_t appUid, int32_t volumeLevel, bool isUpdateUi)
 {
-    AUDIO_INFO_LOG("appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
-        appUid, volumeLevel, isUpdateUi);
-    int32_t ret = audioPolicyManager_.SetAppVolumeLevel(appUid, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set App Volume level");
-
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = STREAM_APP;
-    volumeEvent.volume = volumeLevel;
-    volumeEvent.updateUi = isUpdateUi;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
-    audioPolicyServerHandler_->SendSelfAppVolumeChangeCallback(appUid, volumeEvent);
-    return ret;
+    return appVolumeManager_.SetSelfAppVolumeLevelWithCallback(appUid, volumeLevel, isUpdateUi);
 }
 
 int32_t AudioVolumeManager::SetAppVolumeMuted(int32_t appUid, bool muted)
 {
-    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppVolumeMuted");
-    int32_t result = audioPolicyManager_.SetAppVolumeMuted(appUid, muted);
-    return result;
+    return appVolumeManager_.SetAppVolumeMuted(appUid, muted);
 }
 
 int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
-    AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppVolumeMute");
-    int32_t result = audioPolicyManager_.IsAppVolumeMute(appUid, owned, isMute);
-    return result;
+    return appVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
 }
 
 int32_t AudioVolumeManager::SetSystemAppVolumePercentage(int32_t appUid, int32_t volumePercentage)
 {
-    // For system-controlled app volume, the volumeLevel range is 0-100.
-    int32_t volumeLevel = volumePercentage;
-    int32_t ret = audioPolicyManager_.SetSystemAppVolumeLevel(appUid, volumeLevel);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set system app volume level fail");
-    systemAppVolumeDirty_ = true;
-    ScheduleSystemAppVolumePersist();
-    return SUCCESS;
-}
-
-void AudioVolumeManager::ScheduleSystemAppVolumePersist()
-{
-    if (systemAppVolumeFlushScheduled_.exchange(true)) {
-        return;
-    }
-
-    auto action = std::make_shared<FlushSystemAppVolumeAction>();
-    CHECK_AND_RETURN_LOG(action != nullptr, "action is nullptr");
-    AsyncActionHandler::AsyncActionDesc desc;
-    desc.action = std::static_pointer_cast<AsyncActionHandler::AsyncAction>(action);
-    desc.delayTimeMs = SYSTEM_APP_VOLUME_PERSIST_DELAY_MS;
-    CHECK_AND_CALL_FUNC_RETURN_LOG(asyncHandler_ != nullptr,
-        systemAppVolumeFlushScheduled_ = false, "asyncHandler_ is nullptr");
-    asyncHandler_->PostAsyncAction(desc);
-}
-
-void AudioVolumeManager::FlushSystemAppVolume()
-{
-    if (systemAppVolumeDirty_) {
-        audioPolicyManager_.SaveSystemAppVolumeLevelToDb();
-        audioPolicyManager_.SaveSystemAppVolumeMuteStatusToDb();
-        systemAppVolumeDirty_ = false;
-    }
-    systemAppVolumeFlushScheduled_ = false;
+    return appVolumeManager_.SetSystemAppVolumePercentage(appUid, volumePercentage);
 }
 
 int32_t AudioVolumeManager::GetSystemAppVolumePercentage(int32_t appUid, int32_t &volumePercentage)
 {
-    int32_t volumeLevel = 0;
-    int32_t ret = audioPolicyManager_.GetSystemAppVolumeLevel(appUid, volumeLevel);
-    // For system-controlled app volume, the volumeLevel range is 0-100.
-    volumePercentage = volumeLevel;
-    return ret;
+    return appVolumeManager_.GetSystemAppVolumePercentage(appUid, volumePercentage);
 }
 
 int32_t AudioVolumeManager::SetSystemAppVolumeMuted(int32_t appUid, bool muted)
 {
-    int32_t ret = audioPolicyManager_.SetSystemAppVolumeMuted(appUid, muted);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set system app mute status fail");
-    audioPolicyManager_.SaveSystemAppVolumeMuteStatusToDb(true);
-    return ret;
+    return appVolumeManager_.SetSystemAppVolumeMuted(appUid, muted);
 }
 
 int32_t AudioVolumeManager::IsSystemAppVolumeMuted(int32_t appUid, bool &isMute)
 {
-    return audioPolicyManager_.IsSystemAppVolumeMuted(appUid, isMute);
+    return appVolumeManager_.IsSystemAppVolumeMuted(appUid, isMute);
 }
 
 int32_t AudioVolumeManager::SetSystemAppVolumeMutedForUid(int32_t appUid, bool muted)
 {
-    bool appliedSystemAppMuteStatus = false;
-    IsSystemAppVolumeMuted(appUid, appliedSystemAppMuteStatus);
-    AUDIO_INFO_LOG("appUid: %{public}d, new mute: %{public}d, old mute: %{public}d",
-        appUid, muted, appliedSystemAppMuteStatus);
-    // Skip setting if mute status is already up-to-date
-    CHECK_AND_RETURN_RET(appliedSystemAppMuteStatus != muted, SUCCESS);
-
-    int32_t ret = SetSystemAppVolumeMuted(appUid, muted);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set systemAppVolume mute");
-
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
-    int32_t volumePercentage = 0;
-    GetSystemAppVolumePercentage(appUid, volumePercentage);
-    volumeEvent.volume = muted ? 0 : volumePercentage;
-    volumeEvent.updateUi = true;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    volumeEvent.appUid = appUid;
-    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
-    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
-    return ret;
+    return appVolumeManager_.SetSystemAppVolumeMutedForUid(appUid, muted);
 }
 
 int32_t AudioVolumeManager::SetSystemAppVolumePercentageWithCallback(int32_t appUid, int32_t volumePercentage)
 {
-    int32_t appliedVolumePercentage = VOLUME_PERCENTAGE_UNSET;
-    GetSystemAppVolumePercentage(appUid, appliedVolumePercentage);
-    AUDIO_INFO_LOG("appUid: %{public}d, new percentage: %{public}d, old percentage: %{public}d",
-        appUid, volumePercentage, appliedVolumePercentage);
-    // Skip setting if volume percentage is already up-to-date
-    CHECK_AND_RETURN_RET(appliedVolumePercentage != volumePercentage, SUCCESS);
-
-    int32_t ret = SetSystemAppVolumePercentage(appUid, volumePercentage);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fail to set system app volume percentage");
-
-    VolumeEvent volumeEvent;
-    volumeEvent.volumeType = VolumeUtils::IsPCVolumeEnable() ? STREAM_ALL : STREAM_MUSIC;
-    volumeEvent.volume = volumePercentage;
-    volumeEvent.updateUi = true;
-    volumeEvent.volumeGroupId = 0;
-    volumeEvent.networkId = LOCAL_NETWORK_ID;
-    volumeEvent.volumeMode = AUDIOSTREAM_VOLUMEMODE_APP_INDIVIDUAL;
-    volumeEvent.appUid = appUid;
-    CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is null");
-    audioPolicyServerHandler_->SendSystemAppVolumeChangeCallback(appUid, volumeEvent);
-    return ret;
+    return appVolumeManager_.SetSystemAppVolumePercentageWithCallback(appUid, volumePercentage);
 }
 
 int32_t AudioVolumeManager::SetAppRingMuted(int32_t appUid, bool muted)
 {
-    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppRingMuted");
-    int32_t result = audioPolicyManager_.SetAppRingMuted(appUid, muted);
-    return result;
+    return appVolumeManager_.SetAppRingMuted(appUid, muted);
 }
 
 bool AudioVolumeManager::IsAppRingMuted(int32_t appUid)
 {
-    AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppRingMuted");
-    return audioPolicyManager_.IsAppRingMuted(appUid);
+    return appVolumeManager_.IsAppRingMuted(appUid);
 }
 
 int32_t AudioVolumeManager::GetVolumeAdjustZoneId()

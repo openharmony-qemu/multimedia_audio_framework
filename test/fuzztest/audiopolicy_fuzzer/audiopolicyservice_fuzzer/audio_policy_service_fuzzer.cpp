@@ -315,7 +315,7 @@ void AudioPolicyServiceSubscribeSafeVolumeEventFuzztest(const uint8_t *rawData, 
         return;
     }
 
-    SafeVolumeEventSubscriber::GetInstance().SubscribeSafeVolumeEvent();
+    OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
 }
 
 void AudioPolicyServiceSetAppVolumeLevelFuzztest(const uint8_t *rawData, size_t size)

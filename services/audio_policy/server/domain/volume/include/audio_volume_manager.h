@@ -45,6 +45,7 @@
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "audio_loud_volume_manager.h"
 #endif
+#include "app_volume_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -207,7 +208,6 @@ public:
     void HandleLegacyHighVolumeNotification(VolumeNotifyActionType actionType,
         AudioStreamType streamType = STREAM_DEFAULT, int32_t volumeLevel = 0);
     bool IsLegacyHighVolumeChecked();
-    void FlushSystemAppVolume();
     void InitAudioZoneVolume(int32_t zoneId, std::shared_ptr<AudioDeviceDescriptor> desc);
     int32_t SetAudioZoneVolumeConfig(const std::string &zoneName,
         const std::vector<AudioZoneVolumeConfig> &configs);
@@ -217,8 +217,9 @@ public:
     bool IsRingerModeValid(AudioRingerMode ringMode);
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
     void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
+
 private:
-    AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
@@ -268,7 +269,6 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> &volDeviceDesc, int32_t zoneId = 0);
     int32_t HandleStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
         const DeviceType &deviceType, const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t zoneId);
-    void ScheduleSystemAppVolumePersist();
 
 private:
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
@@ -335,8 +335,7 @@ private:
     std::atomic<bool> isPrimaryMicModuleInfoLoaded_ = false;
     DeviceType curOutputDeviceType_ = DEVICE_TYPE_NONE;
 
-    std::atomic<bool> systemAppVolumeDirty_ {false};
-    std::atomic<bool> systemAppVolumeFlushScheduled_ {false};
+    AppVolumeManager appVolumeManager_;
 
     std::shared_ptr<FixedSizeList<AdjustVolumeInfo>> systemVolumeLevelInfo_ =
         std::make_shared<FixedSizeList<AdjustVolumeInfo>>(MAX_CACHE_AMOUNT);

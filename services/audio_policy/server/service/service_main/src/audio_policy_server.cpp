@@ -992,7 +992,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
 #ifdef USB_ENABLE
     usbManager_.SubscribeEvent();
 #endif
-    SafeVolumeEventSubscriber::GetInstance().SubscribeSafeVolumeEvent();
+    OHOS::Singleton<SafeVolumeEventSubscriber>::GetInstance().SubscribeSafeVolumeEvent();
     isAlreadyRegisterCommonEventListener_ = true;
 }
 
