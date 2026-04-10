@@ -42,6 +42,7 @@ static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
 static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string USB_SINK_NAME = "Usb_arm_speaker";
+static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
 
 HpaeManagerThread::~HpaeManagerThread()
@@ -2600,9 +2601,10 @@ void HpaeManager::HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hp
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(coreSink_);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager =
+            GetRendererManagerByName(DEFAULT_SPEAKER_SINK_NAME);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", coreSink_.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SPEAKER_SINK_NAME.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->ConnectCoBufferNode(hpaeCoBufferNode);
     };
@@ -2613,9 +2615,10 @@ void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode>
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleDisConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(coreSink_);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager =
+            GetRendererManagerByName(DEFAULT_SPEAKER_SINK_NAME);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", coreSink_.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SPEAKER_SINK_NAME.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->DisConnectCoBufferNode(hpaeCoBufferNode);
     };
