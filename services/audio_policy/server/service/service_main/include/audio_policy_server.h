@@ -404,9 +404,9 @@ public:
 
     int32_t SetClientCallbacksEnable(int32_t callbackchange, bool enable) override;
 
-    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = -1) override;
+    int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo, const int32_t uid = INVALID_UID) override;
 
-    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
+    int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo, const int32_t uid = INVALID_UID) override;
 
     int32_t GetAudioFocusInfoList(std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList,
         int32_t zoneId) override;
