@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef SAFE_VOLUME_NOTIFICATION_LOADER_H
-#define SAFE_VOLUME_NOTIFICATION_LOADER_H
+#ifndef SAFE_VOLUME_MANAGER_H
+#define SAFE_VOLUME_MANAGER_H
 
 #include <cstdint>
 
 namespace OHOS {
 namespace AudioStandard {
 
-class SafeVolumeNotificationLoader {
+class SafeVolumeManager {
 public:
     static void PublishSafeVolumeNotification(int32_t notificationId);
     static void CancelSafeVolumeNotification(int32_t notificationId);
@@ -34,4 +34,4 @@ private:
 
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // SAFE_VOLUME_NOTIFICATION_LOADER_H
+#endif // SAFE_VOLUME_MANAGER_H

@@ -14,10 +14,10 @@
  */
 
 #ifndef LOG_TAG
-#define LOG_TAG "SafeVolumeNotificationLoader"
+#define LOG_TAG "SafeVolumeManager"
 #endif
 
-#include "safe_volume_notification_loader.h"
+#include "safe_volume_manager.h"
 
 #include <dlfcn.h>
 #include "audio_policy_log.h"
@@ -26,7 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-void SafeVolumeNotificationLoader::PublishSafeVolumeNotification(int32_t notificationId)
+void SafeVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
 {
     void *libHandle = dlopen(LIB_NAME, RTLD_LAZY);
     if (libHandle == nullptr) {
@@ -57,7 +57,7 @@ void SafeVolumeNotificationLoader::PublishSafeVolumeNotification(int32_t notific
 #endif
 }
 
-void SafeVolumeNotificationLoader::CancelSafeVolumeNotification(int32_t notificationId)
+void SafeVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
 {
     void *libHandle = dlopen(LIB_NAME, RTLD_LAZY);
     if (libHandle == nullptr) {
@@ -88,7 +88,7 @@ void SafeVolumeNotificationLoader::CancelSafeVolumeNotification(int32_t notifica
 #endif
 }
 
-void SafeVolumeNotificationLoader::PublishLegacyHighVolumeNotification()
+void SafeVolumeManager::PublishLegacyHighVolumeNotification()
 {
     void *libHandle = dlopen(LIB_NAME, RTLD_LAZY);
     if (libHandle == nullptr) {
@@ -120,7 +120,7 @@ void SafeVolumeNotificationLoader::PublishLegacyHighVolumeNotification()
 #endif
 }
 
-void SafeVolumeNotificationLoader::CancelLegacyHighVolumeNotification()
+void SafeVolumeManager::CancelLegacyHighVolumeNotification()
 {
     void *libHandle = dlopen(LIB_NAME, RTLD_LAZY);
     if (libHandle == nullptr) {

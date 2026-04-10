@@ -15,7 +15,7 @@
 
 #include "audio_volume_manager.h"
 #include "audio_interrupt_service.h"
-#include "safe_volume_notification_loader.h"
+#include "safe_volume_manager.h"
 #include "../../fuzz_utils.h"
 #include <fuzzer/FuzzedDataProvider.h>
 using namespace std;
@@ -327,7 +327,7 @@ void AudioVolumeManagerSetA2dpDeviceVolumeFuzzTest(FuzzedDataProvider& fdp)
 void AudioVolumeManagerCancelSafeVolumeNotificationFuzzTest(FuzzedDataProvider& fdp)
 {
     int32_t notificationId = g_fuzzUtils.GetData<int32_t>();
-    SafeVolumeNotificationLoader::CancelSafeVolumeNotification(notificationId);
+    SafeVolumeManager::CancelSafeVolumeNotification(notificationId);
 }
 
 void AudioVolumeManagerSetRestoreVolumeLevelFuzzTest(FuzzedDataProvider& fdp)
