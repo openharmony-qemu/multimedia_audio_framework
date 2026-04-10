@@ -1214,6 +1214,27 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_037, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_037A.
+ * @tc.desc  : Test TurnOnMicIndicator failure path when NotifyPrivacyStart fails.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_037A, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    capturerInServer_->streamIndex_ = 100;
+    capturerInServer_->isMicIndicatorOn_ = false;
+    capturerInServer_->processConfig_.appInfo.appTokenId = 0;
+    auto ret = capturerInServer_->TurnOnMicIndicator();
+    EXPECT_FALSE(ret);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
  * @tc.number: CapturerInServerUnitTest_038.
  * @tc.desc  : Test TurnOffMicIndicator interface.
  */
@@ -1231,6 +1252,33 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1
     capturerInServer_->isMicIndicatorOn_ = true;
     ret = capturerInServer_->TurnOffMicIndicator(capturerState);
     EXPECT_EQ(true, ret);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038J.
+ * @tc.desc  : Test TurnOffMicIndicator failure path when NotifyPrivacyStop fails.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038J, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    auto &manager = RecordPrivacyManager::GetInstance();
+    manager.tokenIdRecordMap_.clear();
+    capturerInServer_->streamIndex_ = 101;
+    capturerInServer_->isMicIndicatorOn_ = true;
+    capturerInServer_->processConfig_.appInfo.appTokenId = 0;
+    manager.tokenIdRecordMap_[0] = {capturerInServer_->streamIndex_};
+
+    auto ret = capturerInServer_->TurnOffMicIndicator(CAPTURER_STOPPED);
+    EXPECT_FALSE(ret);
+    EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
+    EXPECT_EQ(manager.tokenIdRecordMap_[0].size(), 1);
+    manager.tokenIdRecordMap_.clear();
 }
 
 /**
@@ -1359,6 +1407,40 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038E, TestSize.Level
     EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
     EXPECT_EQ(capturerInServer_->StartInner(), ERROR);
     EXPECT_TRUE(capturerInServer_->isMicIndicatorOn_);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_038K.
+ * @tc.desc  : Test StartInner when TurnOnMicIndicator fails.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038K, TestSize.Level1)
+{
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    processConfig.audioMode = AUDIO_MODE_RECORD;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    processConfig.capturerInfo.isLoopback = false;
+    processConfig.appInfo.appTokenId = 0;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->status_ = I_STATUS_IDLE;
+    capturerInServer_->streamIndex_ = 125;
+    capturerInServer_->stream_ = std::make_shared<ICapturerStreamTest1>();
+    SwitchStreamInfo info = {
+        capturerInServer_->streamIndex_,
+        processConfig.callerUid,
+        processConfig.appInfo.appUid,
+        processConfig.appInfo.appPid,
+        processConfig.appInfo.appTokenId,
+        CAPTURER_RUNNING,
+    };
+
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING));
+    EXPECT_TRUE(SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED));
+    EXPECT_EQ(capturerInServer_->StartInner(), ERR_PERMISSION_DENIED);
+    EXPECT_FALSE(capturerInServer_->isMicIndicatorOn_);
 }
 
 /**
