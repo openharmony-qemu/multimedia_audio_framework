@@ -235,6 +235,12 @@ void HpaeCaptureEffectNode::SetCapturerEffectConfig(AudioBufferConfig micConfig,
     capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_MIC, micInfo);
     capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_EC, ecInfo);
     capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_MICREF, micrefInfo);
+    if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
+        capturerEffectConfigMap_[HPAE_SOURCE_BUFFER_TYPE_MIC].format = SAMPLE_F32LE;
+        micrefInfo.format = SAMPLE_F32LE;
+        micrefInfo.format = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
+        capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_DEFAULT, micrefInfo);
+    }
 }
 
 int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, CaptureEffectAttr attr)
