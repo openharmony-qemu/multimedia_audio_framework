@@ -890,9 +890,6 @@ private:
     void AddSystemAbilityListenerAfterAudioServerStart();
     void HandleAudioServerRelatedSystemAbility(int32_t systemAbilityId, const std::string &deviceId);
 
-    // for updating default device selection state when game audio stream is muted
-    void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
-    void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
     AudioStreamType GetCurrentStreamInFocus(int32_t zoneId = 0);
     int32_t GetSystemVolumeDegreeInternal(AudioStreamType streamType, int32_t zoneId = 0);
@@ -900,7 +897,7 @@ private:
         bool isUpdatedAudioStrategy);
     int32_t UpdateAudioSceneAfterDeactivateInterrupt(int32_t zoneId, const AudioInterrupt &audioInterrupt);
     int32_t UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
-        const AudioSessionStrategy &strategy, const bool isStandalone);
+        const AudioSessionStrategy &strategy, const bool isStandalone, int32_t callerUid);
     bool IsScreenOnAdjustVolume();
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
 

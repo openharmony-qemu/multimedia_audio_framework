@@ -616,9 +616,7 @@ void AudioCoreService::UpdateDefaultOutputDeviceWhenStopping(int32_t uid)
 {
     std::vector<uint32_t> sessionIDSet = streamCollector_.GetAllRendererSessionIDForUID(uid);
     for (const auto &sessionID : sessionIDSet) {
-        audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
-        audioDeviceManager_.RemoveSelectedDefaultOutputDevice(sessionID);
-	if (isRingDualToneOnPrimarySpeaker_ && (streamCollector_.GetStreamType(sessionID) == STREAM_RING ||
+	    if (isRingDualToneOnPrimarySpeaker_ && (streamCollector_.GetStreamType(sessionID) == STREAM_RING ||
             streamCollector_.GetStreamType(sessionID) == STREAM_ALARM)) {
             AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer died");
             isRingDualToneOnPrimarySpeaker_ = false;
@@ -2079,43 +2077,6 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 bool AudioCoreService::IsOffloadAllowedForUid(uint32_t uid) const
 {
     return offloadAllowedUids_.find(uid) != offloadAllowedUids_.end();
-}
-
-int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning, bool skipForce)
-{
-    CHECK_AND_RETURN_RET_LOG(pipeManager_->GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
-    CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
-        "sessionId is not exist");
-
-    if (!audioSessionService_.IsStreamAllowedToSetDevice(sessionID)) {
-        AUDIO_ERR_LOG("current stream is contained in a session which had set default output device");
-        return ERR_NOT_SUPPORTED;
-    }
-
-    AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
-        isRunning ? "running" : "not running", sessionID);
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    bool forceFetch = false;
-    for (auto &changeInfo : audioRendererChangeInfos) {
-        if (changeInfo->sessionId == static_cast<int32_t>(sessionID) &&
-            (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION)) {
-            CHECK_AND_CONTINUE(!skipForce);
-            AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
-                std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
-            forceFetch = true;
-        }
-    }
-    int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    if (ret == NEED_TO_FETCH || forceFetch) {
-        FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
-            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
-        return SUCCESS;
-    }
-    return ret;
 }
 
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason)

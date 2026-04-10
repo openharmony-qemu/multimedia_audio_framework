@@ -1223,26 +1223,6 @@ void AudioPolicyServerIsCapturerFocusAvailableFuzzTest()
     audioPolicyServer->IsCapturerFocusAvailable(capturerInfo, ret);
 }
 
-void AudioPolicyServerUpdateDefaultOutputDeviceWhenStartingFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-
-    uint32_t sessionID = GetData<uint32_t>();
-
-    audioPolicyServer->UpdateDefaultOutputDeviceWhenStarting(sessionID);
-}
-
-void AudioPolicyServerUpdateDefaultOutputDeviceWhenStoppingFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-
-    uint32_t sessionID = GetData<uint32_t>();
-
-    audioPolicyServer->UpdateDefaultOutputDeviceWhenStopping(sessionID);
-}
-
 void AudioPolicyServerIsAcousticEchoCancelerSupportedFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -2152,8 +2132,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerSetCallbackStreamUsageInfoFuzzTest,
     AudioPolicyServerForceStopAudioStreamFuzzTest,
     AudioPolicyServerIsCapturerFocusAvailableFuzzTest,
-    AudioPolicyServerUpdateDefaultOutputDeviceWhenStartingFuzzTest,
-    AudioPolicyServerUpdateDefaultOutputDeviceWhenStoppingFuzzTest,
     AudioPolicyServerIsAcousticEchoCancelerSupportedFuzzTest,
     AudioPolicyServerSetKaraokeParametersFuzzTest,
     AudioPolicyServerUpdateDeviceInfoFuzzTest,

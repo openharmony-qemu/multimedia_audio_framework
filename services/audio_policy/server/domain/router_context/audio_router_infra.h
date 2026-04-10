@@ -51,15 +51,18 @@ public:
     AudioSelectDeviceInfo GetSystemSelectDevice(SelectDeviceType type);
     AudioSelectDeviceInfo GetAppSelectDevice(SelectDeviceType type, int32_t uid);
     AudioSelectDeviceInfo GetLatestAppSelectDevice(SelectDeviceType type);
-    AudioSelectDeviceInfo GetHighestPrioritySelectDevice(SelectDeviceType type);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetRecognitionCaptureDevice();
 
     void UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
-    void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
+    void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId, SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamSelectDevice(int32_t uid, uint32_t streamId);
-    std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId,
+        SelectDeviceType type);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetFirstRunningStreamDefaultDevice(
+        int32_t uid, SelectDeviceType type);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetLatestStreamSelectDevice(SelectDeviceType type);
     void ClearStreamSelectDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &device);
 
     void UpdatePreferredInputCategory(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
@@ -84,16 +87,17 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>>& devices);
     std::vector<std::shared_ptr<AudioDeviceSimpleDescriptor>> GetCurrentInputDevice(int32_t uid);
 
-    void UpdateInputStreamState(int32_t uid, uint32_t streamId, SourceType sourceType, StreamState state);
-    void UpdateOutputStreamState(int32_t uid, uint32_t streamId, StreamUsage streamUsage, StreamState state);
+    void UpdateInputStreamState(int32_t uid, uint32_t streamId, SourceType sourceType, CapturerState state);
+    void UpdateOutputStreamState(int32_t uid, uint32_t streamId, StreamUsage streamUsage,
+        RendererState state, bool updatePriority = true);
 
+    int32_t GetHighestInputPriorityApp();
     int32_t GetHighestOutputPriorityApp();
     bool HasHighestPriorityRunningSourceType(const std::vector<SourceType>& sourceTypes);
-    std::vector<SourceType> GetHighestPriorityRunningSourceTypes();
-    std::vector<StreamUsage> GetHighestPriorityRunningStreamUsages();
+    std::vector<SourceType> GetAppRunningSourceTypes(int32_t uid);
+    std::vector<StreamUsage> GetAppRunningStreamUsages(int32_t uid);
     SourceType GetStreamSourceType(int32_t uid, uint32_t streamId);
     StreamUsage GetStreamStreamUsage(int32_t uid, uint32_t streamId);
-    SourceType GetFirstAppRunningSourceType(int32_t uid);
 
     void UpdateAppForegroundState(int32_t uid, bool isForeground);
     void OnAppDied(int32_t uid);
@@ -117,12 +121,15 @@ private:
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
     void ClearAllAppSelectDevice(SelectDeviceType type,
         const std::shared_ptr<AudioDeviceSimpleDescriptor>& device);
+    std::shared_ptr<AudioDeviceSimpleDescriptor> GetFirstRunningStreamDefaultDeviceNoLock(
+        int32_t uid, SelectDeviceType type);
     void AdjustInputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     bool HasRunningInputStream(int32_t uid);
     bool HasRunningOutputStream(int32_t uid);
     bool HasAppSelectOutputDevice(int32_t uid);
     int64_t GetCurrentTimeMs() const;
+    std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid)
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);

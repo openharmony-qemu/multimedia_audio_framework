@@ -44,7 +44,7 @@ class AudioPipeManager;
 class AudioSession {
 public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-        AudioSessionStateMonitor &audioSessionStateMonitor);
+        AudioSessionStateMonitor &audioSessionStateMonitor, int32_t callerUid = INVALID_UID);
     ~AudioSession();
     bool IsSceneParameterSet();
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
@@ -93,6 +93,7 @@ private:
     bool IsSessionDefaultDeviceEnabled();
     bool IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage);
     int32_t callerPid_;
+    int32_t callerUid_;
     bool needToFetch_ = false;
     AudioSessionStrategy strategy_ {AudioConcurrencyMode::INVALID};
     AudioSessionStateMonitor &audioSessionStateMonitor_;

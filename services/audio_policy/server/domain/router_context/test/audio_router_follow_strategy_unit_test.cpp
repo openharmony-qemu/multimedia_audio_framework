@@ -128,10 +128,10 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_CAMCORDER);
@@ -142,7 +142,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10002Result, nullptr);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
-        StreamState::STOPPED);
+        CapturerState::CAPTURER_STOPPED);
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_CAMCORDER);
@@ -152,16 +152,13 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
 
     app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_VOICE_MESSAGE);
-    ASSERT_NE(app10002Result, nullptr);
-    EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(app10002Result->deviceId_, mic->deviceId_);
+    EXPECT_EQ(app10002Result, nullptr);
 
     routerInfra.OnAppDied(TEST_APP_UID_10001);
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_CAMCORDER);
     EXPECT_EQ(app10001Result, nullptr);
-
     app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_VOICE_MESSAGE);
     EXPECT_EQ(app10002Result, nullptr);
@@ -180,7 +177,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
@@ -193,13 +190,13 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STOPPED);
+        CapturerState::CAPTURER_STOPPED);
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_MIC);
     ASSERT_NE(app10001Result, nullptr);
-    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_006, TestSize.Level1)
@@ -213,7 +210,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
     usleep(10000); // sleep 10ms
@@ -249,7 +246,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
@@ -275,7 +272,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_CAMCORDER,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
@@ -301,7 +298,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_00
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_LIVE,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
 
@@ -324,7 +321,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_HIGH_QUALITY);
 
@@ -355,11 +352,11 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10002, PREFERRED_LOW_LATENCY);
 
     auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
@@ -375,7 +372,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10002Result->deviceId_, sco->deviceId_);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2, SOURCE_TYPE_VOICE_MESSAGE,
-        StreamState::STOPPED);
+        CapturerState::CAPTURER_STOPPED);
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_MIC);
@@ -386,8 +383,8 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10002, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_VOICE_MESSAGE);
     ASSERT_NE(app10002Result, nullptr);
-    EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_MIC);
-    EXPECT_EQ(app10002Result->deviceId_, mic->deviceId_);
+    EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(app10002Result->deviceId_, sco->deviceId_);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_012, TestSize.Level1)
@@ -401,7 +398,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_VOICE_MESSAGE,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
     strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, mic);
     strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, sco);
 
@@ -412,7 +409,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_VOICE_MESSAGE,
-        StreamState::STOPPED);
+        CapturerState::CAPTURER_STOPPED);
 
     app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
         SOURCE_TYPE_VOICE_MESSAGE);
@@ -447,7 +444,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_NONE);
 
@@ -467,7 +464,7 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     AudioRouterFollowStrategy strategy;
 
     routerInfra.UpdateInputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
-        StreamState::STARTED);
+        CapturerState::CAPTURER_RUNNING);
 
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_HIGH_QUALITY);
 
@@ -478,6 +475,34 @@ HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_01
     ASSERT_NE(app10001Result, nullptr);
     EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_EQ(app10001Result->deviceId_, sco->deviceId_);
+}
+
+HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_016, TestSize.Level1)
+{
+    auto &deviceManager = AudioDeviceManager::GetAudioDeviceManager();
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+
+    auto mic = AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:00:01");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, INPUT_DEVICE, "00:00:00:00:00:02");
+
+    routerInfra.UpdateInputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_1, SOURCE_TYPE_MIC,
+        CapturerState::CAPTURER_RUNNING);
+
+    AudioRouterFollowStrategy strategy;
+    strategy.SetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID, sco);
+    strategy.SetMediaInputDevice(SYSTEM_UID, TEST_STREAM_INVALID_ID, mic);
+
+    auto app10001Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
+    ASSERT_NE(app10001Result, nullptr);
+    EXPECT_EQ(app10001Result->deviceType_, DEVICE_TYPE_MIC);
+    EXPECT_EQ(app10001Result->deviceId_, mic->deviceId_);
+
+    auto app10002Result = strategy.GetMediaInputDevice(TEST_APP_UID_10001, TEST_STREAM_INVALID_ID,
+        SOURCE_TYPE_MIC);
+    ASSERT_NE(app10002Result, nullptr);
+    EXPECT_EQ(app10002Result->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+    EXPECT_EQ(app10002Result->deviceId_, sco->deviceId_);
 }
 
 HWTEST_F(AudioRouterFollowStrategyUnitTest, AudioRouterFollowStrategyUnitTest_CallOutput_001,

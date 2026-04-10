@@ -78,7 +78,8 @@ public:
 
     // interfaces for AudioSessionService
     AudioInterruptResult ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
-        const AudioSessionStrategy &strategy, const bool isStandalone = false);
+        const AudioSessionStrategy &strategy, const bool isStandalone = false,
+        int32_t callerUid = INVALID_UID);
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
 
@@ -130,7 +131,7 @@ public:
     void AudioInterruptZoneDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     // for audiosessionv2
-    int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
+    int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene, int32_t callerUid = INVALID_UID);
     std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
         const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
     std::set<int32_t> GetStreamIdsForAudioSessionByDeviceType(const int32_t zoneId, DeviceType deviceType);
@@ -155,7 +156,8 @@ public:
     AudioScene GetHighestPriorityAudioSceneFromAllZones();
     int32_t FindAudioZoneByStreamId(const uint32_t streamId);
     bool IsAudioStreamActive(const AudioFocuState &state);
-    int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior);
+    int32_t SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
+        int32_t callerUid = INVALID_UID);
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;

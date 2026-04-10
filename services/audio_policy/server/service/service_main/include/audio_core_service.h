@@ -184,7 +184,8 @@ public:
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
         int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-        int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+        int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType,
+            int32_t callerUid = INVALID_UID);
 
         // Functions related to get operations - device related
         bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
@@ -313,9 +314,6 @@ public:
         bool needRemoveFromMap = false);
 
     // ICoreServiceProvider from EventEntry
-    int32_t SetDefaultOutputDevice(
-        const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
-        bool skipForce = false);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     std::string GetModuleNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
@@ -382,7 +380,8 @@ public:
     bool HandleRingToNonRingSceneChange(AudioScene lastAudioScene, AudioScene audioScene);
     bool IsCallOrRingToDefault(AudioScene lastAudioScene, AudioScene audioScene);
     int32_t SetSessionDefaultOutputDevice(
-        const int32_t callerPid, const DeviceType &deviceType, bool skipForce = false);
+        const int32_t callerPid, const DeviceType &deviceType, bool skipForce = false,
+        int32_t callerUid = INVALID_UID);
     int32_t FetchAndActivateOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
@@ -508,7 +507,6 @@ private:
     void NotifyUnmuteVoiceCall();
     void SetUpdateModemRouteFinished(bool flag);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-    void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
     void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
         const AudioStreamDeviceChangeReasonExt reason);
     void RecordSelectDevice(const std::string &history);

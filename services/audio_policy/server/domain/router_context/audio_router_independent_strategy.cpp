@@ -47,12 +47,14 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
         if (selectResult.source_ == SelectDeviceSource::STREAM) {
             effectiveSourceType = routerInfra.GetStreamSourceType(uid, streamId);
         } else if (selectResult.source_ == SelectDeviceSource::APP) {
-            effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
+            auto sourceTypes = routerInfra.GetAppRunningSourceTypes(uid);
+            effectiveSourceType = sourceTypes.empty() ? SourceType::SOURCE_TYPE_INVALID : sourceTypes[0];
         }
 
         if (simpleDesc == nullptr) {
             simpleDesc = ConvertDeviceToSimple(GetPreferDevice(category));
-            effectiveSourceType = routerInfra.GetFirstAppRunningSourceType(uid);
+            auto sourceTypes = routerInfra.GetAppRunningSourceTypes(uid);
+            effectiveSourceType = sourceTypes.empty() ? SourceType::SOURCE_TYPE_INVALID : sourceTypes[0];
         }
     }
 
