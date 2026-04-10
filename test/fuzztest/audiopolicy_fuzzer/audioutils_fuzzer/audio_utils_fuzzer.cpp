@@ -208,16 +208,6 @@ void VerifyBackgroundCaptureFuzzTest(const uint8_t* rawData, size_t size)
     PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
 }
 
-void NotifyPrivacyFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t targetTokenId = *(reinterpret_cast<const uint32_t*>(rawData));
-    PermissionUtil::NotifyPrivacyStart(targetTokenId, 0);
-    PermissionUtil::NotifyPrivacyStop(targetTokenId, 0);
-}
-
 void GetTimeFuzzTest(FuzzedDataProvider& fdp)
 {
     GetTime();
