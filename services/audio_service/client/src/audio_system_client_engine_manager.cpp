@@ -179,5 +179,13 @@ int32_t AudioSystemClientEngineManager::ReportPlaybackCaptureUserChoice(uint32_t
     int32_t res = gasp->ReportPlaybackCaptureUserChoice(sessionId, choice);
     return res;
 }
+
+int32_t AudioSystemClientEngineManager::ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo)
+{
+    const sptr<IStandardAudioService> gasp = AudioServiceProxy::GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    int32_t res = gasp->ReportWakeupEvent(audioWakeupTrackInfo);
+    return res;
+}
 } // namespace AudioStandard
 } // namespace OHOS
