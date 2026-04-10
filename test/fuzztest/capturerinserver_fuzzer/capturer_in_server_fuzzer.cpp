@@ -712,6 +712,8 @@ void MicIndicatorFuzzTest()
         capturerInServer_->processConfig_.callerUid, true, SOURCE_TYPE_MIC);
     (void)RecordPrivacyManager::GetInstance().StartUsingMicrophone(
         capturerInServer_->processConfig_.appInfo.appTokenId);
+    (void)RecordPrivacyManager::GetInstance().StartUsingMicrophone(
+        capturerInServer_->processConfig_.appInfo.appTokenId);
     (void)RecordPrivacyManager::GetInstance().StopUsingMicrophone(
         capturerInServer_->processConfig_.appInfo.appTokenId);
 

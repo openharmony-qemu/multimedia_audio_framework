@@ -2876,6 +2876,8 @@ HWTEST(AudioProcessInServerUnitTest, AudioPrivacyManagerInServer_001, TestSize.L
     auto &privacyManager = AudioPrivacyManagerInServer::GetInstance();
     EXPECT_FALSE(privacyManager.StartUsingMicrophone(0));
     EXPECT_FALSE(privacyManager.StopUsingMicrophone(0));
+    EXPECT_TRUE(privacyManager.StartUsingMicrophone(1));
+    EXPECT_TRUE(privacyManager.StartUsingMicrophone(1));
 }
 
 /**

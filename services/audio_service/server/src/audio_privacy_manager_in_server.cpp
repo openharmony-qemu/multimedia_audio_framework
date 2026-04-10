@@ -49,7 +49,8 @@ bool AudioPrivacyManagerInServer::StartUsingMicrophone(uint32_t targetTokenId)
     CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
         "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
     if (res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING) {
-        AUDIO_ERR_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING error code:%{public}d", res);
+        AUDIO_WARNING_LOG("The PrivacyKit return ERR_PERMISSION_ALREADY_START_USING error code:%{public}d", res);
+        return true;
     }
 
     WatchTimeout recordGuard("Security::AccessToken::PrivacyKit::AddPermissionUsedRecord:"
