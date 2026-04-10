@@ -347,6 +347,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.sinkLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.sinkLatency));
     sinkInfo.fixedLatency = static_cast<uint32_t>(StringToNum(audioModuleInfo.fixedLatency));
     sinkInfo.deviceName = audioModuleInfo.name;
+    sinkInfo.routeFlag = audioModuleInfo.routeFlag;
     if (audioModuleInfo.needEmptyChunk) {
         sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
     }

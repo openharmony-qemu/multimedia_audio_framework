@@ -45,6 +45,7 @@ static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
 static const char* MMAP_CLASS = "primary_mmap";
 static const char* DIRECT_CLASS = "primary_direct";
 static const char* A2DP_FAST_CLASS = "a2dp_fast";
+static const char* INTERPHONE_CLASS = "interphone";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
 static const char* BLUETOOTH_A2DP_FAST = "bt_a2dp_fast";
 static const char* HEARING_AID_SPEAKER = "Hearing_Aid_Speaker";
@@ -76,6 +77,7 @@ static const char* VIRTUAL_AUDIO = "virtual_audio";
 static const char* PRIMARY_UNPROCESS_MIC = "Built_in_unprocess";
 static const char* PRIMARY_VOICE_RECOGNITION_MIC = "Built_in_voice_recognition";
 static const char* PRIMARY_RAW_AI_MIC = "Built_in_raw_ai";
+static const char* PRIMARY_INTERPHON_MIC = "Built_in_interphone";
 }
 
 enum NodeName {

@@ -131,6 +131,9 @@ public:
     std::shared_ptr<AudioPipeInfo> FindPipeBySessionId(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId);
     bool IsStreamUsageActive(const StreamUsage &usage);
+    bool IsInterphoneStreamActive();
+    bool IsInterphoneCapturerActive();
+    bool IsVoipOrCellularStreamActive();
     int32_t IsCaptureVoipCall();
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
@@ -146,6 +149,8 @@ public:
     void AddSwitchStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void UpdateNewDeviceDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsByStreamUsage(StreamUsage streamUsage);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetStreamDescsBySourceType(SourceType sourceType);
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
 

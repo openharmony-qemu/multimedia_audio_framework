@@ -58,6 +58,7 @@ constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_3DA_DIRECT = 6;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
 constexpr int32_t AUDIO_FLAG_ULTRA_FAST = 11;
+constexpr int32_t AUDIO_FLAG_INTERPHONE_VOIP = 12;
 constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
 constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;

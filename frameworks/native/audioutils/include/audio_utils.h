@@ -616,6 +616,7 @@ enum HdiCaptureOffset : uint32_t {
     HDI_CAPTURE_OFFSET_ULTRASONIC = 14,
     HDI_CAPTURE_OFFSET_VOICE_RECOGNITION = 15,
     HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT = 16,
+    HDI_CAPTURE_OFFSET_INTERPHON = 17,
 };
 
 enum HdiRenderOffset : uint32_t {
@@ -635,6 +636,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
     HDI_RENDER_OFFSET_HEARING_AID = 15,
     HDI_RENDER_OFFSET_AUDIO_VIVID_3DA_DIRECT = 16,
+    HDI_RENDER_OFFSET_NTERPHON = 17,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);

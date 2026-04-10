@@ -1068,6 +1068,7 @@ int32_t HpaeRendererManager::InitManager(bool isReload)
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.routeFlag = sinkInfo_.routeFlag;
     nodeInfo.statusCallback = weak_from_this();
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         outputCluster_ = std::make_unique<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo_);

@@ -3278,5 +3278,123 @@ HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Leve
     int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(1, false);
     EXPECT_NE(ret, 0);
 }
+
+/**
+ * @tc.name  : Test SetVoiceVolume for Interphone
+ * @tc.type  : FUNC
+ * @tc.number: SetVoiceVolume_Interphone_001
+ * @tc.desc  : Test SetVoiceVolume interface for interphone volume.
+ */
+HWTEST_F(AudioServerUnitTest, SetVoiceVolume_Interphone_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->SetVoiceVolume(0.0f);
+    EXPECT_EQ(ret, -62980105);
+
+    ret = audioServer->SetVoiceVolume(0.5f);
+    EXPECT_EQ(ret, -62980105);
+
+    ret = audioServer->SetVoiceVolume(1.0f);
+    EXPECT_EQ(ret, -62980105);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderFormat for SOURCE_TYPE_INTERPHONE
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderFormat_Interphone_001
+ * @tc.desc  : Test CheckRecorderFormat interface with SOURCE_TYPE_INTERPHONE.
+ */
+HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    config.streamInfo.channels = MONO;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderFormat for SOURCE_TYPE_INTERPHONE with fast stream
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderFormat_Interphone_002
+ * @tc.desc  : Test CheckRecorderFormat interface with SOURCE_TYPE_INTERPHONE fast stream flags.
+ */
+HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_FAST;
+    config.streamInfo.channels = MONO;
+    config.streamInfo.channelLayout = CH_LAYOUT_MONO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test CreateHdiSinkPort for AUDIO_OUTPUT_FLAG_INTERPHONE
+ * @tc.type  : FUNC
+ * @tc.number: CreateHdiSinkPort_Interphone_001
+ * @tc.desc  : Test CreateHdiSinkPort interface with AUDIO_OUTPUT_FLAG_INTERPHONE.
+ */
+HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_Interphone_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    IAudioSinkAttr attr;
+    attr.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+    uint32_t renderId = HDI_INVALID_ID;
+    int32_t ret = audioServer->CreateHdiSinkPort("primary", "interphone", attr, renderId);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(renderId, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : Test CreateHdiSinkPort for AUDIO_OUTPUT_FLAG_INTERPHONE with normal flag
+ * @tc.type  : FUNC
+ * @tc.number: CreateHdiSinkPort_Interphone_002
+ * @tc.desc  : Test CreateHdiSinkPort interface with normal routeFlag.
+ */
+HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_Interphone_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    IAudioSinkAttr attr;
+    attr.routeFlag = AUDIO_OUTPUT_FLAG_NONE;
+    uint32_t renderId = HDI_INVALID_ID;
+    int32_t ret = audioServer->CreateHdiSinkPort("primary", "default", attr, renderId);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(renderId, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderFormat for interphone source type value
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderFormat_Interphone_003
+ * @tc.desc  : Test CheckRecorderFormat validates SOURCE_TYPE_INTERPHONE is supported.
+ */
+HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.channelLayout = CH_LAYOUT_STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    bool ret = audioServer->CheckRecorderFormat(config);
+    EXPECT_EQ(ret, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

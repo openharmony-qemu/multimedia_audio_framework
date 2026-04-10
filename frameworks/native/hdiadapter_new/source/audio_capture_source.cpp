@@ -147,7 +147,7 @@ AudioCaptureSource::~AudioCaptureSource()
 
 int32_t AudioCaptureSource::Init(const IAudioSourceAttr &attr)
 {
-    AUDIO_INFO_LOG("in");
+    AUDIO_INFO_LOG("in routeFlag:%{public}d", attr.routeFlag);
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (attr.sourceType == SOURCE_TYPE_MIC_REF || attr.sourceType == SOURCE_TYPE_EC) {
         InitEcOrMicRefAttr(attr);
@@ -834,9 +834,10 @@ const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioI
     {"AUDIO_INPUT_RAW_TYPE", AUDIO_INPUT_RAW_TYPE},
     {"AUDIO_INPUT_LIVE_TYPE", AUDIO_INPUT_LIVE_TYPE},
     {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION},
-    {"AUDIO_INPUT_ULTRASONIC_TYPE",  AUDIO_INPUT_ULTRASONIC_TYPE},
+    {"AUDIO_INPUT_ULTRASONIC_TYPE", AUDIO_INPUT_ULTRASONIC_TYPE},
     {"AUDIO_INPUT_RAW_AI_TYPE", AUDIO_INPUT_RAW_AI_TYPE},
-    {"AUDIO_INPUT_CAMCORDER_TYPE", AUDIO_INPUT_CAMCORDER_TYPE}
+    {"AUDIO_INPUT_CAMCORDER_TYPE", AUDIO_INPUT_CAMCORDER_TYPE},
+    {"AUDIO_INPUT_INTERPHON_TYPE", AUDIO_INPUT_INTERPHON_TYPE}
 };
 
 AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceType)
@@ -903,6 +904,9 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             break;
         case SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT: // This configuration uses the old channel.
             hdiAudioInputType = AUDIO_INPUT_VOICE_TRANSCRIPTION;
+            break;
+        case SOURCE_TYPE_INTERPHONE:
+            hdiAudioInputType = AUDIO_INPUT_INTERPHON_TYPE;
             break;
         default:
             hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
@@ -1020,6 +1024,8 @@ uint32_t AudioCaptureSource::GenerateUniqueIDByHdiSource(AudioInputType hdiSourc
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_RECOGNITION);
         case AUDIO_INPUT_RAW_AI_TYPE:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_UNPROCESSED_VOICE_ASSISTANT);
+        case AUDIO_INPUT_INTERPHON_TYPE:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_INTERPHON);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<!-- Copyright (c) 2023 Huawei Device Co., Ltd.
+<!-- Copyright (c) 2022 - 2026 Huawei Device Co., Ltd.
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -13,17 +13,16 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<audioUsageStrategy version="1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+<audioUsageStrategy xmlns:xi="http://www.w3.org/2001/XInclude">
     <adapter name="streamUsage">
         <strategy name="MEDIA_RENDER" streamUsage="STREAM_USAGE_UNKNOWN,STREAM_USAGE_MEDIA,STREAM_USAGE_MUSIC,STREAM_USAGE_MOVIE,STREAM_USAGE_GAME,STREAM_USAGE_AUDIOBOOK,STREAM_USAGE_NAVIGATION,STREAM_USAGE_ULTRASONIC,STREAM_USAGE_VOICE_MESSAGE"/>
-        <strategy name="CALL_RENDER"  streamUsage="STREAM_USAGE_VOICE_COMMUNICATION,STREAM_USAGE_VOICE_MODEM_COMMUNICATION,STREAM_USAGE_VIDEO_COMMUNICATION,
-        STREAM_USAGE_VOICE_CALL_ASSISTANT"/>
+        <strategy name="CALL_RENDER"  streamUsage="STREAM_USAGE_VOICE_COMMUNICATION,STREAM_USAGE_VOICE_MODEM_COMMUNICATION,STREAM_USAGE_VIDEO_COMMUNICATION,STREAM_USAGE_VOICE_CALL_ASSISTANT,STREAM_USAGE_INTERPHONE"/>
         <strategy name="RING_RENDER"  streamUsage="STREAM_USAGE_ALARM,STREAM_USAGE_NOTIFICATION_RINGTONE,STREAM_USAGE_RINGTONE,STREAM_USAGE_RANGING,STREAM_USAGE_VOICE_RINGTONE"/>
         <strategy name="TONE_RENDER"  streamUsage="STREAM_USAGE_NOTIFICATION,STREAM_USAGE_ACCESSIBILITY,STREAM_USAGE_SYSTEM,STREAM_USAGE_DTMF,STREAM_USAGE_ENFORCED_TONE,STREAM_USAGE_VOICE_ASSISTANT"/>
     </adapter>
     <adapter name="sourceType">
         <strategy name="RECORD_CAPTURE" sourceType="SOURCE_TYPE_MIC,SOURCE_TYPE_VOICE_RECOGNITION,SOURCE_TYPE_ULTRASONIC,SOURCE_TYPE_VOICE_TRANSCRIPTION,SOURCE_TYPE_CAMCORDER,SOURCE_TYPE_UNPROCESSED,SOURCE_TYPE_LIVE,SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT"/>
-        <strategy name="CALL_CAPTURE"  sourceType="SOURCE_TYPE_VOICE_COMMUNICATION,SOURCE_TYPE_VIRTUAL_CAPTURE,SOURCE_TYPE_VOICE_CALL"/>
-        <strategy name="VOICE_MESSAGE_CAPTURE"  sourceType="SOURCE_TYPE_VOICE_MESSAGE"/>
+        <strategy name="CALL_CAPTURE" sourceType="SOURCE_TYPE_VOICE_COMMUNICATION,SOURCE_TYPE_VIRTUAL_CAPTURE,SOURCE_TYPE_VOICE_CALL,SOURCE_TYPE_INTERPHONE"/>
+        <strategy name="VOICE_MESSAGE_CAPTURE" sourceType="SOURCE_TYPE_VOICE_MESSAGE"/>
     </adapter>
 </audioUsageStrategy>

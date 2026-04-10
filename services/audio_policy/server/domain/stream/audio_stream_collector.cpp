@@ -92,6 +92,7 @@ map<pair<ContentType, StreamUsage>, AudioStreamType> AudioStreamCollector::Creat
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MUSIC)] = STREAM_MUSIC;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VIDEO_COMMUNICATION)] = STREAM_VOICE_COMMUNICATION;
+    streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_INTERPHONE)] = STREAM_VOICE_COMMUNICATION;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_MODEM_COMMUNICATION)] = STREAM_VOICE_CALL;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_VOICE_ASSISTANT)] = STREAM_VOICE_ASSISTANT;
     streamMap[make_pair(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_ALARM)] = STREAM_ALARM;
@@ -1774,7 +1775,7 @@ void AudioStreamCollector::WriteCaptureStreamReleaseSysEvent(
 bool AudioStreamCollector::IsCallStreamUsage(StreamUsage usage)
 {
     if (usage == STREAM_USAGE_VOICE_COMMUNICATION || usage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-        usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+        usage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION || usage == STREAM_USAGE_INTERPHONE) {
         return true;
     }
     return false;
@@ -2032,7 +2033,7 @@ bool AudioStreamCollector::IsVoipStreamActive()
 bool AudioStreamCollector::IsStreamRunning(StreamUsage streamUsage)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (auto &changeInfo: audioRendererChangeInfos_) {
+    for (auto &changeInfo : audioRendererChangeInfos_) {
         if (changeInfo != nullptr &&
             ((changeInfo->rendererInfo).streamUsage == streamUsage &&
             changeInfo->rendererState == RENDERER_RUNNING)) {
@@ -2041,5 +2042,6 @@ bool AudioStreamCollector::IsStreamRunning(StreamUsage streamUsage)
     }
     return false;
 }
+
 } // namespace AudioStandard
 } // namespace OHOS

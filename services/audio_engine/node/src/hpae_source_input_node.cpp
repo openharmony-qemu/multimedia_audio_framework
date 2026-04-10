@@ -24,6 +24,7 @@
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
+#include "audio_stream_enum.h"
 #include "capturer_clock_manager.h"
 #include "audio_engine_log.h"
 
@@ -323,6 +324,9 @@ void HpaeSourceInputNode::DoProcess()
     CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr,
         "audioCapturerSource_ is nullptr NodeId: %{public}u", GetNodeId());
     uint64_t replyBytes = 0;
+    if (GetNodeInfo().routeFlag == AUDIO_INPUT_FLAG_INTERPHONE) {
+        return;
+    }
     if (sourceInputNodeType_ == HpaeSourceInputNodeType::HPAE_SOURCE_MIC_EC) {
         uint64_t replyBytesEc = 0;
         audioCapturerSource_->CaptureFrameWithEc(&fdescMap_.at(HPAE_SOURCE_BUFFER_TYPE_MIC), replyBytes,

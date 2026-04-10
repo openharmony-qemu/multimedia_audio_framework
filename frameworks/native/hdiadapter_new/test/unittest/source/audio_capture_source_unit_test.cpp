@@ -1168,5 +1168,32 @@ HWTEST_F(AudioCaptureSourceUnitTest, UpdateRawSampleAttr_002, TestSize.Level1)
     captureSource->UpdateRawSampleAttr(param);
     EXPECT_NE(captureSource, nullptr);
 }
+
+/**
+ * @tc.name   : Test GetUniqueIdBySourceType API
+ * @tc.number : GetUniqueIdBySourceType_012
+ * @tc.desc   : Test GetUniqueIdBySourceType for AUDIO_INPUT_INTERPHON_TYPE
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_012, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    uint32_t id = 0;
+    captureSource->attr_.sourceType = SOURCE_TYPE_INTERPHONE;
+    captureSource->attr_.hdiSourceType = "AUDIO_INPUT_INTERPHON_TYPE";
+    id = captureSource->GetUniqueIdBySourceType();
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHON * UNIQUE_ID_INTERVAL);
+}
+
+/**
+ * @tc.name   : Test ConvertToAudioInputRouteFlag API
+ * @tc.number : ConvertToAudioInputRouteFlag_002
+ * @tc.desc   : Test ConvertToAudioInputRouteFlag for SOURCE_TYPE_INTERPHONE
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, ConvertToAudioInputRouteFlag_002, TestSize.Level1)
+{
+    auto captureSource = std::make_shared<AudioCaptureSource>(1);
+    AudioFlag result = captureSource->ConvertToAudioInputRouteFlag(SOURCE_TYPE_INTERPHONE);
+    EXPECT_EQ(result, AUDIO_INPUT_FLAG_INTERPHONE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

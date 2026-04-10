@@ -127,6 +127,7 @@ struct HpaeSinkInfo {
     std::string splitMode;
     bool needEmptyChunk = true;
     bool auxSinkEnable = false;
+    uint32_t routeFlag = 0;
 };
 
 enum HpaeEcType {

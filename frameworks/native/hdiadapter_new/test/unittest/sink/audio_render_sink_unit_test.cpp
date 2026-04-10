@@ -40,16 +40,20 @@ public:
     void DeInitDirectSink();
     void InitVoipSink();
     void DeInitVoipSink();
+    void InitInterphoneSink();
+    void DeInitInterphoneSink();
 
 protected:
     static uint32_t primaryId_;
     static uint32_t usbId_;
     static uint32_t directId_;
     static uint32_t voipId_;
+    static uint32_t interphoneId_;
     static std::shared_ptr<IAudioRenderSink> primarySink_;
     static std::shared_ptr<IAudioRenderSink> usbSink_;
     static std::shared_ptr<IAudioRenderSink> directSink_;
     static std::shared_ptr<IAudioRenderSink> voipSink_;
+    static std::shared_ptr<IAudioRenderSink> interphoneSink_;
     static IAudioSinkAttr attr_;
     static bool primarySinkInited_;
 };
@@ -58,10 +62,12 @@ uint32_t AudioRenderSinkUnitTest::primaryId_ = HDI_INVALID_ID;
 uint32_t AudioRenderSinkUnitTest::usbId_ = HDI_INVALID_ID;
 uint32_t AudioRenderSinkUnitTest::directId_ = HDI_INVALID_ID;
 uint32_t AudioRenderSinkUnitTest::voipId_ = HDI_INVALID_ID;
+uint32_t AudioRenderSinkUnitTest::interphoneId_ = HDI_INVALID_ID;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::primarySink_ = nullptr;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::usbSink_ = nullptr;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::directSink_ = nullptr;
 std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::voipSink_ = nullptr;
+std::shared_ptr<IAudioRenderSink> AudioRenderSinkUnitTest::interphoneSink_ = nullptr;
 IAudioSinkAttr AudioRenderSinkUnitTest::attr_ = {};
 bool AudioRenderSinkUnitTest::primarySinkInited_ = false;
 
@@ -75,6 +81,7 @@ void AudioRenderSinkUnitTest::SetUpTestCase()
     usbId_ = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB, true);
     directId_ = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DIRECT, true);
     voipId_ = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOIP, true);
+    interphoneId_ = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_INTERPHONE, true);
 }
 
 void AudioRenderSinkUnitTest::TearDownTestCase()
@@ -83,6 +90,7 @@ void AudioRenderSinkUnitTest::TearDownTestCase()
     HdiAdapterManager::GetInstance().ReleaseId(usbId_);
     HdiAdapterManager::GetInstance().ReleaseId(directId_);
     HdiAdapterManager::GetInstance().ReleaseId(voipId_);
+    HdiAdapterManager::GetInstance().ReleaseId(interphoneId_);
 }
 
 void AudioRenderSinkUnitTest::InitPrimarySink()
@@ -195,6 +203,34 @@ void AudioRenderSinkUnitTest::DeInitVoipSink()
         voipSink_->DeInit();
     }
     voipSink_ = nullptr;
+}
+
+void AudioRenderSinkUnitTest::InitInterphoneSink()
+{
+    interphoneSink_ = HdiAdapterManager::GetInstance().GetRenderSink(interphoneId_, true);
+    if (interphoneSink_ == nullptr) {
+        return;
+    }
+    attr_.adapterName = "primary";
+    attr_.sampleRate = 48000; // 48000: sample rate
+    attr_.channel = 2; // 2: channel
+    attr_.format = SAMPLE_S16LE;
+    attr_.channelLayout = 3; // 3: channel layout
+    attr_.deviceType = DEVICE_TYPE_SPEAKER;
+    attr_.volume = 1.0f;
+    attr_.openMicSpeaker = 1;
+    attr_.routeFlag = AUDIO_OUTPUT_FLAG_INTERPHONE;
+    interphoneSink_->Init(attr_);
+}
+
+void AudioRenderSinkUnitTest::DeInitInterphoneSink()
+{
+    if (interphoneSink_ && interphoneSink_->IsInited()) {
+        std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
+        interphoneSink_->UpdateActiveDevice(deviceTypes);
+        interphoneSink_->DeInit();
+    }
+    interphoneSink_ = nullptr;
 }
 
 /**
@@ -844,5 +880,185 @@ HWTEST_F(AudioRenderSinkUnitTest, UpdateActiveDevice_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
     DeInitPrimarySink();
 }
+
+/**
+ * @tc.name   : Test GetUniqueId API for Interphone
+ * @tc.number : GetUniqueId_Interphone_001
+ * @tc.desc   : Test GetUniqueId returns correct ID for HDI_ID_INFO_INTERPHONE
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetUniqueId_Interphone_001, TestSize.Level1)
+{
+    InitInterphoneSink();
+    EXPECT_TRUE(interphoneSink_ && interphoneSink_->IsInited());
+    
+    uint32_t uniqueId = interphoneSink_->GetUniqueId();
+    uint32_t expectedId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_NTERPHON);
+    EXPECT_EQ(uniqueId, expectedId);
+    
+    DeInitInterphoneSink();
+}
+
+/**
+ * @tc.name   : Test GetUniqueId API for Primary
+ * @tc.number : GetUniqueId_Primary_001
+ * @tc.desc   : Test GetUniqueId returns correct ID for primary sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetUniqueId_Primary_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    
+    uint32_t uniqueId = primarySink_->GetUniqueId();
+    uint32_t expectedId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
+    EXPECT_EQ(uniqueId, expectedId);
+    
+    DeInitPrimarySink();
+}
+
+/**
+ * @tc.name   : Test GetUniqueId API for USB
+ * @tc.number : GetUniqueId_USB_001
+ * @tc.desc   : Test GetUniqueId returns correct ID for USB sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetUniqueId_USB_001, TestSize.Level1)
+{
+    InitUsbSink();
+    EXPECT_TRUE(usbSink_ && usbSink_->IsInited());
+    
+    uint32_t uniqueId = usbSink_->GetUniqueId();
+    uint32_t expectedId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_USB);
+    EXPECT_EQ(uniqueId, expectedId);
+    
+    DeInitUsbSink();
+}
+
+/**
+ * @tc.name   : Test GetUniqueId API for VOIP
+ * @tc.number : GetUniqueId_VOIP_001
+ * @tc.desc   : Test GetUniqueId returns correct ID for VOIP sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetUniqueId_VOIP_001, TestSize.Level1)
+{
+    InitVoipSink();
+    EXPECT_TRUE(voipSink_ && voipSink_->IsInited());
+    
+    uint32_t uniqueId = voipSink_->GetUniqueId();
+    uint32_t expectedId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
+    EXPECT_EQ(uniqueId, expectedId);
+    
+    DeInitVoipSink();
+}
+
+/**
+ * @tc.name   : Test GetUniqueId API for Direct
+ * @tc.number : GetUniqueId_Direct_001
+ * @tc.desc   : Test GetUniqueId returns correct ID for Direct sink
+ */
+HWTEST_F(AudioRenderSinkUnitTest, GetUniqueId_Direct_001, TestSize.Level1)
+{
+    InitDirectSink();
+    EXPECT_TRUE(directSink_ && directSink_->IsInited());
+    
+    uint32_t uniqueId = directSink_->GetUniqueId();
+    uint32_t expectedId = GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
+    EXPECT_EQ(uniqueId, expectedId);
+    
+    DeInitDirectSink();
+}
+
+/**
+ * @tc.name   : Test InterphoneSink API
+ * @tc.number : InterphoneSinkUnitTest_001
+ * @tc.desc   : Test interphone sink create with AUDIO_OUTPUT_FLAG_INTERPHONE
+ */
+HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_001, TestSize.Level1)
+{
+    InitInterphoneSink();
+    EXPECT_TRUE(interphoneSink_ != nullptr);
+    DeInitInterphoneSink();
+}
+
+/**
+ * @tc.name   : Test InterphoneSink API
+ * @tc.number : InterphoneSinkUnitTest_002
+ * @tc.desc   : Test interphone sink init with routeFlag AUDIO_OUTPUT_FLAG_INTERPHONE
+ */
+HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_002, TestSize.Level1)
+{
+    InitInterphoneSink();
+    EXPECT_TRUE(interphoneSink_ && interphoneSink_->IsInited());
+    DeInitInterphoneSink();
+}
+
+/**
+ * @tc.name   : Test InterphoneSink API
+ * @tc.number : InterphoneSinkUnitTest_003
+ * @tc.desc   : Test interphone sink start, stop
+ */
+HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_003, TestSize.Level1)
+{
+    InitInterphoneSink();
+    EXPECT_TRUE(interphoneSink_ && interphoneSink_->IsInited());
+    int32_t ret = interphoneSink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = interphoneSink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = interphoneSink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = interphoneSink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitInterphoneSink();
+}
+
+/**
+ * @tc.name   : Test InterphoneSink API
+ * @tc.number : InterphoneSinkUnitTest_004
+ * @tc.desc   : Test interphone sink resume
+ */
+HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_004, TestSize.Level1)
+{
+    InitInterphoneSink();
+    EXPECT_TRUE(interphoneSink_ && interphoneSink_->IsInited());
+    int32_t ret = interphoneSink_->Start();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = interphoneSink_->Resume();
+    EXPECT_EQ(ret, SUCCESS);
+    ret = interphoneSink_->Stop();
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitInterphoneSink();
+}
+
+/**
+ * @tc.name   : Test InterphoneSink API
+ * @tc.number : InterphoneSinkUnitTest_005
+ * @tc.desc   : Test interphone sink mute for switch device
+ */
+HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_005, TestSize.Level1)
+{
+    InitInterphoneSink();
+    EXPECT_TRUE(interphoneSink_ && interphoneSink_->IsInited());
+    int32_t ret = interphoneSink_->SetSinkMuteForSwitchDevice(true);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = interphoneSink_->SetSinkMuteForSwitchDevice(false);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitInterphoneSink();
+}
+
+/**
+ * @tc.name   : Test InterphoneSink API
+ * @tc.number : InterphoneSinkUnitTest_006
+ * @tc.desc   : Test interphone sink render frame
+ */
+HWTEST_F(AudioRenderSinkUnitTest, InterphoneSinkUnitTest_006, TestSize.Level1)
+{
+    InitInterphoneSink();
+    EXPECT_TRUE(interphoneSink_ && interphoneSink_->IsInited());
+    uint64_t writeLen = 0;
+    std::vector<char> buffer{'8', '8', '8', '8', '8', '8', '8', '8'};
+    int32_t ret = interphoneSink_->RenderFrame(*buffer.data(), buffer.size(), writeLen);
+    EXPECT_EQ(ret, SUCCESS);
+    DeInitInterphoneSink();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

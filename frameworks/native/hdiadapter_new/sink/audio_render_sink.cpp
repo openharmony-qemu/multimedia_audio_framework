@@ -112,6 +112,8 @@ int32_t AudioRenderSink::Start(void)
     std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
     Trace trace("AudioRenderSink::Start");
+    struct AudioSampleAttributes attrInfo = {};
+    audioRender_->GetSampleAttributes(audioRender_, &attrInfo);
 #ifdef FEATURE_POWER_MANAGER
     AudioXCollie audioXCollie("AudioRenderSink::CreateRunningLock", TIMEOUT_SECONDS_10,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
@@ -833,6 +835,8 @@ uint32_t AudioRenderSink::GetUniqueId(void) const
         return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
     } else if (halName_ == HDI_ID_INFO_DIRECT) {
         return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
+    } else if (halName_ == HDI_ID_INFO_INTERPHONE)
+        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_NTERPHON);
     }
     return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
 }
@@ -844,6 +848,9 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.interleaved = true;
     param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
     param.type = AUDIO_IN_MEDIA;
+    if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
+        param.type = AUDIO_D2D;
+    }
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
     param.isSignedData = true;
@@ -862,6 +869,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
         param.type = AUDIO_DP;
     } else if (halName_ == HDI_ID_INFO_DIRECT) {
         param.type = AUDIO_DIRECT;
+    }
         param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT));
     } else if (halName_ == HDI_ID_INFO_VOIP) {
         param.type = AUDIO_IN_COMMUNICATION;
