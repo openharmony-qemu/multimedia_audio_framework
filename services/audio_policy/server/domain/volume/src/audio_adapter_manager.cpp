@@ -220,6 +220,17 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         CloneSystemSoundUrl();
     }
 
+    auto descs = audioConnectedDevice_.GetCopy();
+    for (auto &desc : descs) {
+        UpdateVolumeWhenDeviceConnect(desc);
+#ifdef FEATURE_AUDIO_ZONE
+        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
+            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
+        }
+#endif
+    }
+    UpdateVolumeForStreams();
+
     if (!isNeedCopyVolumeData_ && !isNeedCopyMuteData_ && !isNeedCopyRingerModeData_ && !isNeedCopySystemUrlData_) {
         isAllCopyDone_ = true;
         if (audioPolicyServerHandler_ != nullptr) {
@@ -235,17 +246,6 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         AUDIO_INFO_LOG("Copy audio_policy private database success to settings database, delete private database...");
         DeleteAudioPolicyKvStore();
     }
-
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-#ifdef FEATURE_AUDIO_ZONE
-        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
-            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
-        }
-#endif
-    }
-    UpdateVolumeForStreams();
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
