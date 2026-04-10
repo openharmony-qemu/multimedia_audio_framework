@@ -377,12 +377,22 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
         case AudioSamplingRate::SAMPLE_RATE_96000:
         case AudioSamplingRate::SAMPLE_RATE_176400:
         case AudioSamplingRate::SAMPLE_RATE_192000:
-            AUDIO_DEBUG_LOG("sampleFormat input value is valid");
+        case AudioSamplingRate::SAMPLE_RATE_384000:
+            AUDIO_DEBUG_LOG("samplingRate input value is valid");
             break;
         default:
-            AUDIO_ERR_LOG("sampleFormat input value is invalid");
+            if (streamType_ == RENDERER_TYPE &&
+                (rate >= SAMPLE_RATE_8000 && rate <= SAMPLE_RATE_384000 &&
+                rate % SAMPLE_RATE_RESOLUTION_10 == 0)) {
+                AUDIO_INFO_LOG("custom samplingRate %{public}d", rate);
+                customSampleRate_ = rate;
+                samplingRate_ = SAMPLE_RATE_48000;
+                return AUDIOSTREAM_SUCCESS;
+            }
+            AUDIO_ERR_LOG("samplingRate input value is invalid");
             return AUDIOSTREAM_ERROR_INVALID_PARAM;
     }
+    customSampleRate_ = 0;
     samplingRate_ = rate;
     return AUDIOSTREAM_SUCCESS;
 }
@@ -518,6 +528,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::Generate(OH_AudioRenderer **renderer
         (AudioChannel)channelCount_,
         channelLayout_
     };
+    streamInfo.customSampleRate = customSampleRate_;
 
     AudioRendererInfo rendererInfo = {
         CONTENT_TYPE_UNKNOWN,

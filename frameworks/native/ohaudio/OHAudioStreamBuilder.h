@@ -89,6 +89,7 @@ private:
     AudioEncodingType encodingType_ = ENCODING_PCM;
     AudioSampleFormat sampleFormat_ = SAMPLE_S16LE;
     AudioChannelLayout channelLayout_ = CH_LAYOUT_UNKNOWN;
+    uint32_t customSampleRate_ = 0;
 
     // renderer params
     StreamUsage usage_ = STREAM_USAGE_UNKNOWN;
