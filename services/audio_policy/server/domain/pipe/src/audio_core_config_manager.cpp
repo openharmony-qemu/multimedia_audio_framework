@@ -162,12 +162,6 @@ void AudioCoreConfigManager::OnInterruptGroupParsed(std::unordered_map<std::stri
 void AudioCoreConfigManager::OnUpdateRouteSupport(bool isSupported)
 {
     isUpdateRouteSupported_ = isSupported;
-    isEnhancedRoutingSupported_ = isSupported;
-}
-
-void AudioCoreConfigManager::SetEnhancedRoutingSupported(bool isSupported)
-{
-    isEnhancedRoutingSupported_ = isSupported;
 }
 
 void AudioCoreConfigManager::OnGlobalConfigsParsed(PolicyGlobalConfigs &globalConfigs)
@@ -441,11 +435,6 @@ bool AudioCoreConfigManager::GetVoipConfig()
 bool AudioCoreConfigManager::GetUpdateRouteSupport()
 {
     return isUpdateRouteSupported_;
-}
-
-bool AudioCoreConfigManager::GetEnhancedRoutingSupported()
-{
-    return isEnhancedRoutingSupported_;
 }
 
 bool AudioCoreConfigManager::GetAdapterInfoFlag()

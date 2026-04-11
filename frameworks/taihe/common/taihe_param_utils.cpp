@@ -760,6 +760,7 @@ CurrentOutputDeviceChangedEvent TaiheParamUtils::SetValueCurrentOutputDeviceChan
         .devices = TaiheParamUtils::SetDeviceDescriptors(event.devices),
         .changeReason = TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(event.changeReason),
         .recommendedAction = TaiheAudioEnum::ToTaiheOutputDeviceChangeRecommendedAction(event.recommendedAction),
+        .preDevices = TaiheParamUtils::SetDeviceDescriptors(event.preDevices),
     };
     return currentOutputDeviceChangedEvent;
 }

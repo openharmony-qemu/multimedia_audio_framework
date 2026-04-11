@@ -89,13 +89,13 @@ private:
     OH_AudioConverter_Result ValidateProcessParams(void* audioData, uint32_t* outputSize);
     OH_AudioConverter_Result CalculateOutputFormatParams(uint32_t outputCapacity,
         uint32_t& outputBytesPerFrame, uint32_t& maxOutputFrames);
-    int32_t CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame);
+    uint32_t CalculateMinBytesForIntMs(uint32_t inputBytesPerFrame);
     OH_AudioConverter_Result ReadAndCacheInputData(bool* shouldStopProcessing);
     OH_AudioConverter_Result CalculateMinBytesForIntMsInternal(uint32_t inputBytesPerFrame,
         uint32_t& minBytesForIntMs, uint32_t& alignedCachedSize, bool& shouldStopProcessing, uint32_t outputCapacity);
     OH_AudioConverter_Result CalculateProcessableBytesInternal(const ProcessableBytesCalculationParams& params,
         uint32_t& alignedProcessableBytes, bool& shouldStopProcessing);
-    OH_AudioConverter_Result WrapAndConvertInputData(int32_t processableSize,
+    OH_AudioConverter_Result WrapAndConvertInputData(uint32_t processableSize,
         AudioSuite::AudioSuitePcmBuffer* outConvertedBuffer);
     OH_AudioConverter_Result ProcessConversion(void* audioData, uint32_t outputCapacity,
         uint32_t* outputSize, uint32_t outputBytesPerFrame, uint32_t maxOutputFrames);

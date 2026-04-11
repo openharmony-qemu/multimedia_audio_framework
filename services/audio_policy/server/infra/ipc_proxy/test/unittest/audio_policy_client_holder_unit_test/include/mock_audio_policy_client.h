@@ -63,7 +63,8 @@ public:
     MOCK_METHOD(ErrCode, OnRendererDeviceChange,
                 (uint32_t sessionId,
                  const AudioDeviceDescriptor& deviceInfo,
-                 const AudioStreamDeviceChangeReasonExt& reason), (override));
+                 const AudioStreamDeviceChangeReasonExt& reason,
+                 const AudioDeviceDescriptor& preDeviceInfo), (override));
     MOCK_METHOD(ErrCode, OnRecreateRendererStreamEvent,
                 (uint32_t sessionId,
                  int32_t streamFlag,

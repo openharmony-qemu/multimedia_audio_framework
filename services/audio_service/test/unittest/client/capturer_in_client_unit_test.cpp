@@ -112,6 +112,8 @@ public:
 
     virtual int32_t Start() override { return 0; }
 
+    virtual int32_t Standby() override { return 0; }
+
     virtual int32_t Pause()  override { return 0; }
 
     virtual int32_t Stop()  override { return 0; }
@@ -584,6 +586,62 @@ HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_007, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test SetAudioStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioStreamInfo_008
+ * @tc.desc  : Test SetAudioStreamInfo for voice recognition ec-only request.
+ */
+HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_008, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = AudioChannel::MONO;
+    info.micInChannels = AudioChannel::CHANNEL_UNKNOW;
+    info.ecChannels = AudioChannel::STEREO;
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    capturerInClientInner->state_ = NEW;
+
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_GT(capturerInClientInner->sizePerFrameInByte_, 0);
+}
+
+/**
+ * @tc.name  : Test SetAudioStreamInfo API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioStreamInfo_009
+ * @tc.desc  : Test SetAudioStreamInfo for degraded voice recognition micIn/ec request.
+ */
+HWTEST(CapturerInClientUnitTest, SetAudioStreamInfo_009, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    AudioStreamParams info;
+    info.format = AudioSampleFormat::SAMPLE_S16LE;
+    info.encoding = AudioEncodingType::ENCODING_AUDIOVIVID;
+    info.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    info.channels = static_cast<AudioChannel>(8);
+    info.micInChannels = static_cast<AudioChannel>(8);
+    info.ecChannels = AudioChannel::STEREO;
+    info.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+    info.isVoiceRecognitionMicInEcDegrade = true;
+    capturerInClientInner->state_ = NEW;
+
+    int32_t ret = capturerInClientInner->SetAudioStreamInfo(info, proxyObj);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test GetAudioServerProxy API
  * @tc.type  : FUNC
  * @tc.number: GetAudioServerProxy_001
@@ -893,6 +951,29 @@ HWTEST(CapturerInClientUnitTest, ConstructConfig_003, TestSize.Level1)
     int32_t expectChannels = static_cast<int32_t>(capturerInClientInner->streamParams_.channels) +
         static_cast<int32_t>(capturerInClientInner->streamParams_.ecChannels);
     EXPECT_EQ(static_cast<int32_t>(ret.streamInfo.channels), expectChannels);
+}
+
+/**
+ * @tc.name  : Test ConstructConfig API
+ * @tc.type  : FUNC
+ * @tc.number: ConstructConfig_004
+ * @tc.desc  : Test ConstructConfig degraded voice recognition keeps process channels.
+ */
+HWTEST(CapturerInClientUnitTest, ConstructConfig_004, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner);
+    capturerInClientInner->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    capturerInClientInner->streamParams_.channels = AudioChannel::MONO;
+    capturerInClientInner->streamParams_.micInChannels = AudioChannel::CHANNEL_UNKNOW;
+    capturerInClientInner->streamParams_.ecChannels = AudioChannel::STEREO;
+    capturerInClientInner->streamParams_.isVoiceRecognitionMicInEcDegrade = true;
+    AudioProcessConfig ret = capturerInClientInner->ConstructConfig();
+
+    int32_t processChannels = static_cast<int32_t>(capturerInClientInner->streamParams_.channels);
+    int32_t realChannels = static_cast<int32_t>(ret.streamInfo.channels);
+    EXPECT_EQ(realChannels, processChannels);
 }
 
 /**

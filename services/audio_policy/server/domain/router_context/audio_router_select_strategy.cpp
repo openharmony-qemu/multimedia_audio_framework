@@ -24,16 +24,21 @@
 #include "audio_router_infra.h"
 #include "audio_device_manager.h"
 #include "audio_policy_log.h"
+#include "audio_core_config_manager.h"
+#include "parameters.h"
 
 namespace OHOS {
 namespace AudioStandard {
-
+constexpr const char *MULTI_STREAM_DEVICE_SUPPORT = "const.multimedia.audio.sys_multidevice_capability.enable";
+const bool ENHANCE_ROUTING_SUPPORTED = OHOS::system::GetBoolParameter(MULTI_STREAM_DEVICE_SUPPORT, false);
 AudioRouterSelectStrategy& AudioRouterSelectStrategy::GetInstance()
 {
-    static AudioRouterIndependentStrategy independent;
-    static AudioRouterFollowStrategy follow;
+    if (ENHANCE_ROUTING_SUPPORTED) {
+        static AudioRouterIndependentStrategy independent;
+        return independent;
+    }
 
-    // 这儿要根据配置以及是否PC模式决定走独立还是跟随策略todo
+    static AudioRouterFollowStrategy follow;
     return follow;
 }
 
@@ -200,6 +205,11 @@ void AudioRouterSelectStrategy::SetRecognitionInputDevice(
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
     AudioRouterInfra::GetInstance().SetRecognitionCaptureDevice(simpleDesc);
+}
+
+bool AudioRouterSelectStrategy::GetEnhancedRoutingSupported() const
+{
+    return ENHANCE_ROUTING_SUPPORTED;
 }
 
 void AudioRouterSelectStrategy::UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,

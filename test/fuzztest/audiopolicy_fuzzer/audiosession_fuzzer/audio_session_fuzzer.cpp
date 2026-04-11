@@ -237,7 +237,9 @@ void IsSessionOutputDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->IsSessionOutputDeviceChanged(std::make_shared<AudioDeviceDescriptor>());
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescriptors;
+    audioSession->IsSessionOutputDeviceChanged(
+        std::make_shared<AudioDeviceDescriptor>(), oldDeviceDescriptors);
 }
 
 void GetSessionStreamUsageFuzzTest(FuzzedDataProvider& fdp)

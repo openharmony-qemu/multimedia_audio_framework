@@ -20,6 +20,7 @@
 #include "nativetoken_kit.h"
 #include "dfx_msg_manager.h"
 #include "audio_errors.h"
+#include "audio_unit_test.h"
 #include <thread>
 #include <memory>
 #include <vector>
@@ -901,6 +902,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceManager_001, TestSize.Leve
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001 start");
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
@@ -917,6 +920,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestS
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_001() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
+    MockNative::Resume();
 }
 
 /**
@@ -927,6 +931,8 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_001, TestS
 HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002 start");
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
     auto server = GetServerUtil::GetServerPtr();
     EXPECT_NE(nullptr, server);
 
@@ -943,6 +949,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UnexcludeOutputDevicesTest_002, TestS
     AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnexcludeOutputDevicesTest_002() result:%{public}d", result);
 
     EXPECT_EQ(result, SUCCESS);
+    MockNative::Resume();
 }
 
 /**

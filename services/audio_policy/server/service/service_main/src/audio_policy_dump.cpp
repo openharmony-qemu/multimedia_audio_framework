@@ -29,6 +29,7 @@
 #include "media_monitor_manager.h"
 #include "audio_converter_parser.h"
 #include "audio_bundle_manager.h"
+#include "boot_animation_state_info.h"
 
 namespace {
 const std::string CALLER_NAME = "audio_server";
@@ -717,6 +718,135 @@ std::string AudioPolicyDump::GetRingerModeType(AudioRingerMode ringerMode)
             break;
     }
     return audioRingerMode;
+}
+
+void AudioPolicyDump::RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime)
+{
+    CHECK_AND_RETURN(state < AudioPolicyServerBootState::MAX);
+    policyBootInfo_[static_cast<size_t>(state)] = curTime;
+}
+
+void AudioPolicyDump::RecordBootAnimationClientStateTime(const BootAnimationInfo &info)
+{
+    size_t idx = static_cast<size_t>(BootAnimationState::CREATE_RENDERER_BEGIN);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::CHECK_POLICY_SERVICE_AVAILABLE);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::GET_BUNDLE_NAME);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::VERIFY_PERMISSION_IN_CREATE);
+ 	bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::PREPARE_AUDIO_STREAM);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::INIT_AUDIO_STREAM);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::SET_AUDIO_STREAM_INFO);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::CREATE_RENDERER_END);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::START_RENDERER_BEGIN);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::START_AUDIO_STREAM);
+    bootAnimationInfo_[idx] = info[idx];
+    idx = static_cast<size_t>(BootAnimationState::START_RENDERER_END);
+    bootAnimationInfo_[idx] = info[idx];
+}
+
+void AudioPolicyDump::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
+{
+    CHECK_AND_RETURN(uid == BOOT_ANIMATION_UID && state < BootAnimationState::MAX);
+    bootAnimationInfo_[static_cast<size_t>(state)] = curTime;
+}
+
+std::string AudioPolicyDump::BootStateTime(AudioPolicyServerBootState state)
+{
+    CHECK_AND_RETURN_RET(state < AudioPolicyServerBootState::MAX, "err");
+    return std::to_string(policyBootInfo_[static_cast<size_t>(state)]);
+}
+std::string AudioPolicyDump::BootStateTime(BootAnimationState state)
+{
+    CHECK_AND_RETURN_RET(state < BootAnimationState::MAX, "err");
+    return std::to_string(bootAnimationInfo_[static_cast<size_t>(state)]);
+}
+
+void AudioPolicyDump::AudioPolicyBootDump(std::string &dumpString)
+{
+    AppendFormat(dumpString, "==== Audio Policy Server Boot State Timestamp (ms) ====\n");
+    AppendFormat(dumpString, "start audio policy server:\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::BEGIN).c_str());
+    AppendFormat(dumpString, "  - load libxml2:\t\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LOAD_LIBXML2).c_str());
+    AppendFormat(dumpString, "  - load audio_interrupt_policy_config.xml:\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_INTERRUPT_POLICY_CONFIG).c_str());
+    AppendFormat(dumpString, "  - load audio_volume_config.xml:\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_VOLUME_CONFIG).c_str());
+    AppendFormat(dumpString, "  - load audio_policy_config.xml:\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_CONFIG).c_str());
+    AppendFormat(dumpString, "  - load audio_effect_config.xml:\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_EFFECT_CONFIG).c_str());
+    AppendFormat(dumpString, "  - load audio_policy_global_config.xml:\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_GLOBAL_CONFIG).c_str());
+    AppendFormat(dumpString, "  - load audio_tone_dtmf_config.xml:\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_TONE_DTMF_CONFIG).c_str());
+    AppendFormat(dumpString, "  - listening device status:\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::LISTENING_DEVICE_STATUS).c_str());
+    AppendFormat(dumpString, "publish available:\t\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::PUBLISH_AVAILABLE).c_str());
+    AppendFormat(dumpString, "  - register access token callback:\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::REGISTER_ACCESS_TOKEN_CB).c_str());
+    AppendFormat(dumpString, "  - register volume key event:\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::REGISTER_VOLUME_KEY_EVENT).c_str());
+    AppendFormat(dumpString, "  - init volume database:\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::INIT_VOLUME_DATABASE).c_str());
+    AppendFormat(dumpString, "  - init database:\t\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::INIT_DATABASE).c_str());
+    AppendFormat(dumpString, "  - get screen status:\t\t\t\t %s\n",
+        BootStateTime(AudioPolicyServerBootState::GET_SCREEN_STATUS).c_str());
+    AppendFormat(dumpString, "started audio policy server:\t\t\t %s\n\n",
+        BootStateTime(AudioPolicyServerBootState::END).c_str());
+
+    BootAnimationDump(dumpString);
+}
+
+void AudioPolicyDump::BootAnimationDump(std::string &dumpString)
+{
+    AppendFormat(dumpString, "==== Boot Animation State Timestamp (ms) ====\n");
+    AppendFormat(dumpString, "create renderer begin:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::CREATE_RENDERER_BEGIN).c_str());
+    AppendFormat(dumpString, "  - verify permission in create:\t\t %s\n",
+        BootStateTime(BootAnimationState::VERIFY_PERMISSION_IN_CREATE).c_str());
+    AppendFormat(dumpString, "  - wait for service ready:\t\t\t %s\n",
+        BootStateTime(BootAnimationState::WAIT_FOR_SERVICE_READY).c_str());
+    AppendFormat(dumpString, "  - get bundle name:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::GET_BUNDLE_NAME).c_str());
+    AppendFormat(dumpString, "  - prepare audio stream:\t\t\t %s\n",
+        BootStateTime(BootAnimationState::PREPARE_AUDIO_STREAM).c_str());
+    AppendFormat(dumpString, "  - init audio stream:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::INIT_AUDIO_STREAM).c_str());
+    AppendFormat(dumpString, "  - create from local:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::CREATE_FROM_LOCAL).c_str());
+    AppendFormat(dumpString, "  - set audio stream info:\t\t\t %s\n",
+        BootStateTime(BootAnimationState::SET_AUDIO_STREAM_INFO).c_str());
+    AppendFormat(dumpString, "create renderer end:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::CREATE_RENDERER_END).c_str());
+    AppendFormat(dumpString, "start renderer begin:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::START_RENDERER_BEGIN).c_str());
+    AppendFormat(dumpString, "  - fetch output devices:\t\t\t %s\n",
+        BootStateTime(BootAnimationState::FETCH_OUTPUT_DEVICES).c_str());
+    AppendFormat(dumpString, "  - verify permission in start:\t\t\t %s\n",
+        BootStateTime(BootAnimationState::VERIFY_PERMISSION_IN_START).c_str());
+    AppendFormat(dumpString, "  - activate audio interrupt:\t\t\t %s\n",
+        BootStateTime(BootAnimationState::ACTIVATE_AUDIO_INTERRUPT).c_str());
+    AppendFormat(dumpString, "  - set volume db:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::SET_VOLUME_DB).c_str());
+    AppendFormat(dumpString, "  - pree audio start:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::PREE_AUDIO_START).c_str());
+    AppendFormat(dumpString, "  - wait for data connection:\t\t\t %s\n",
+        BootStateTime(BootAnimationState::WAIT_FOR_DATA_CONNECTION).c_str());
+    AppendFormat(dumpString, "  - start audio stream:\t\t\t\t %s\n",
+        BootStateTime(BootAnimationState::START_AUDIO_STREAM).c_str());
+    AppendFormat(dumpString, "start renderer end:\t\t\t\t %s\n\n",
+        BootStateTime(BootAnimationState::START_RENDERER_END).c_str());
 }
 }
 }

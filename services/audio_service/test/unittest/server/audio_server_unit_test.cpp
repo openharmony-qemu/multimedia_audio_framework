@@ -65,13 +65,11 @@ HWTEST(AudioServerUnitTest, SetIORoutes_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioServerUnitTest SetIORoutes_001 start");
     int32_t systemAbilityId = 100;
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
-    DeviceType type = DEVICE_TYPE_USB_ARM_HEADSET;
     DeviceFlag flag = ALL_DEVICES_FLAG;
     std::vector<DeviceType> deviceTypes;
     DeviceType deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
     deviceTypes.push_back(deviceType);
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_OFFLOAD;
-    bool ret = audioServer->SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag);
+    bool ret = audioServer->SetIORoutes(flag, deviceTypes);
     EXPECT_EQ(false, ret);
 }
 
@@ -995,6 +993,90 @@ HWTEST(AudioServerUnitTest, AudioParameterValueCheck_014, TestSize.Level1)
     value = "Asr_Aec_Mode=1";
     boolResult = audioServer->AudioParameterValueCheck(key, value);
     EXPECT_TRUE(boolResult);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderPermission API with loopback mode
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderPermission_Loopback_001
+ * @tc.desc  : Test CheckRecorderPermission returns true for loopback mode with with MIC and FAST flag.
+ */
+HWTEST(AudioServerUnitTest, CheckRecorderPermission_Loopback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest CheckRecorderPermission_Loopback_001 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    AudioProcessConfig config;
+    config.appInfo.appUid = 1000;
+    config.callerUid = 1000;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    config.capturerInfo.isLoopback = true;
+    bool result = audioServer->CheckRecorderPermission(config);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderPermission API without loopback mode
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderPermission_NonLoopback_001
+ * @tc.desc  : Test CheckRecorderPermission with MIC and FAST flag but no loopback mode.
+ */
+HWTEST(AudioServerUnitTest, CheckRecorderPermission_NonLoopback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest CheckRecorderPermission_NonLoopback_001 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    AudioProcessConfig config;
+    config.appInfo.appUid = 1000;
+    config.callerUid = 1000;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    config.capturerInfo.isLoopback = false;
+    bool result = audioServer->CheckRecorderPermission(config);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderPermission API with different source type
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderPermission_SourceType_001
+ * @tc.desc  : Test CheckRecorderPermission with VOICE_COMMUNICATION and loopback mode.
+ */
+HWTEST(AudioServerUnitTest, CheckRecorderPermission_SourceType_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest CheckRecorderPermission_SourceType_001 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    AudioProcessConfig config;
+    config.appInfo.appUid = 1000;
+    config.callerUid = 1000;
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    config.capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    config.capturerInfo.isLoopback = true;
+    bool result = audioServer->CheckRecorderPermission(config);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderPermission API without FAST flag
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderPermission_FastFlag_001
+ * @tc.desc  : Test CheckRecorderPermission with loopback mode but without FAST flag.
+ */
+HWTEST(AudioServerUnitTest, CheckRecorderPermission_FastFlag_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest CheckRecorderPermission_FastFlag_001 start");
+    int32_t systemAbilityId = 100;
+    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
+    AudioProcessConfig config;
+    config.appInfo.appUid = 1000;
+    config.callerUid = 1000;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = 0;
+    config.capturerInfo.isLoopback = true;
+    bool result = audioServer->CheckRecorderPermission(config);
+    EXPECT_FALSE(result);
 }
 
 } // namespace AudioStandard

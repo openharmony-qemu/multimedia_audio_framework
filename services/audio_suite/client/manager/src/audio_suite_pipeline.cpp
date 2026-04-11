@@ -142,6 +142,11 @@ uint32_t AudioSuitePipeline::GetPipelineId()
     return id_;
 }
 
+PipelineWorkMode AudioSuitePipeline::GetWorkMode()
+{
+    return pipelineWorkMode_;
+}
+
 int32_t AudioSuitePipeline::Start()
 {
     CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "pipeline not init, can not start.");

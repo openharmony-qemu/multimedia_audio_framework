@@ -62,6 +62,8 @@ public:
 
     int32_t Start() override;
 
+    int32_t Standby() override;
+
     int32_t Pause() override;
 
     int32_t Stop() override;

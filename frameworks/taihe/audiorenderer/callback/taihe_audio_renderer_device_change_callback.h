@@ -58,7 +58,10 @@ public:
     explicit TaiheAudioRendererOutputDeviceChangeWithInfoCallback();
     ~TaiheAudioRendererOutputDeviceChangeWithInfoCallback();
     void OnOutputDeviceChange(const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo,
-        const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason) override;
+        const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason) override {}
+    void OnOutputDeviceChangeWithPreDevice(const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo,
+        const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason,
+        const OHOS::AudioStandard::AudioDeviceDescriptor &preDeviceInfo) override;
     int32_t GetCallbackListSize() const;
     void AddCallbackReference(std::shared_ptr<uintptr_t> callback);
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback = nullptr);
@@ -69,6 +72,7 @@ private:
         std::string callbackName = "unknown";
         array<AudioDeviceDescriptor> deviceInfo_ = array<AudioDeviceDescriptor>(nullptr, 0);
         OHOS::AudioStandard::AudioStreamDeviceChangeReason reason_;
+        array<AudioDeviceDescriptor> preDeviceInfo_ = array<AudioDeviceDescriptor>(nullptr, 0);
     };
 
     void OnJsCallbackOutputDeviceInfo(std::unique_ptr<AudioRendererOutputDeviceChangeWithInfoJsCallback> &jsCb);

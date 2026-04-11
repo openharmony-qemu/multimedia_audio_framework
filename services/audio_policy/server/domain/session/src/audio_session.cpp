@@ -403,14 +403,15 @@ bool AudioSession::IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeRe
     return changeReason == AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
 }
 
-bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc)
+bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> desc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &oldDeviceDescriptors)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "input device desc is nullptr");
     
     if (deviceDescriptor_.IsSameDeviceDescPtr(desc)) {
         return false;
     }
-
+    oldDeviceDescriptors = {std::make_shared<AudioDeviceDescriptor>(deviceDescriptor_)};
     deviceDescriptor_ = AudioDeviceDescriptor(desc);
     return true;
 }

@@ -2164,5 +2164,213 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetMuteStatusByVolumeType_004, TestSize.Le
     bool ret =  sleAudioDeviceManager_->GetMuteStatusByVolumeType(volumeType, nearLinkDevice);
     EXPECT_FALSE(ret);
 }
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported
+ * @tc.number: IsAudioLoopbackSupported_001
+ * @tc.desc  : Test SleAudioDeviceManager::IsAudioLoopbackSupported
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, IsAudioLoopbackSupported_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    std::string remoteAddr = "1234567890";
+    bool ret = sleAudioDeviceManager_->IsAudioLoopbackSupported(remoteAddr);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported
+ * @tc.number: IsAudioLoopbackSupported_002
+ * @tc.desc  : Test SleAudioDeviceManager::IsAudioLoopbackSupported with empty address
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, IsAudioLoopbackSupported_002, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    std::string remoteAddr = "";
+    bool ret = sleAudioDeviceManager_->IsAudioLoopbackSupported(remoteAddr);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test GetSleStreamTypeByStreamUsage with isLoopback parameter
+ * @tc.number: GetSleStreamTypeByStreamUsage_Loopback_001
+ * @tc.desc  : Test SleAudioDeviceManager::GetSleStreamTypeByStreamUsage with isLoopback=true
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamTypeByStreamUsage_Loopback_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = true;
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_GAME);
+}
+
+/**
+ * @tc.name  : Test GetSleStreamTypeByStreamUsage with isLoopback parameter
+ * @tc.number: GetSleStreamTypeByStreamUsage_Loopback_002
+ * @tc.desc  : Test SleAudioDeviceManager::GetSleStreamTypeByStreamUsage with isLoopback=false
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamTypeByStreamUsage_Loopback_002, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = false;
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_MUSIC);
+}
+
+/**
+ * @tc.name  : Test GetSleStreamTypeByStreamUsage with isLoopback parameter
+ * @tc.number: GetSleStreamTypeByStreamUsage_Loopback_003
+ * @tc.desc  : Test SleAudioDeviceManager::GetSleStreamTypeByStreamUsage with isLoopback=true and non-music usage
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, GetSleStreamTypeByStreamUsage_Loopback_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_MESSAGE;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = true;
+    uint32_t ret = sleAudioDeviceManager_->GetSleStreamTypeByStreamUsage(streamUsage, uid, isLoopback);
+    EXPECT_EQ(ret, SLE_AUDIO_STREAM_UNDEFINED);
+}
+
+/**
+ * @tc.name  : Test SetActiveDevice with isLoopback parameter
+ * @tc.number: SetActiveDevice_Loopback_001
+ * @tc.desc  : Test SleAudioDeviceManager::SetActiveDevice with isLoopback=true
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetActiveDevice_Loopback_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = true;
+    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(deviceDesc, streamUsage, uid, isLoopback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetActiveDevice with isLoopback parameter
+ * @tc.number: SetActiveDevice_Loopback_002
+ * @tc.desc  : Test SleAudioDeviceManager::SetActiveDevice with isLoopback=false
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetActiveDevice_Loopback_002, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = false;
+    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(deviceDesc, streamUsage, uid, isLoopback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test StartPlaying with isLoopback parameter
+ * @tc.number: StartPlaying_Loopback_001
+ * @tc.desc  : Test SleAudioDeviceManager::StartPlaying with isLoopback=true
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_Loopback_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = true;
+    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, streamUsage, uid, isLoopback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test StartPlaying with isLoopback parameter
+ * @tc.number: StartPlaying_Loopback_002
+ * @tc.desc  : Test SleAudioDeviceManager::StartPlaying with isLoopback=false
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_Loopback_002, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = false;
+    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, streamUsage, uid, isLoopback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetActiveDevice with SourceType and isLoopback parameter
+ * @tc.number: SetActiveDevice_SourceType_Loopback_001
+ * @tc.desc  : Test SleAudioDeviceManager::SetActiveDevice with SourceType and isLoopback=true
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetActiveDevice_SourceType_Loopback_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    deviceDesc.macAddress_ = "LocalDevice";
+    SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = true;
+    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(deviceDesc, sourceType, uid, isLoopback);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test StartPlaying with SourceType and isLoopback parameter
+ * @tc.number: StartPlaying_SourceType_Loopback_001
+ * @tc.desc  : Test SleAudioDeviceManager::StartPlaying with SourceType and isLoopback=true
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_SourceType_Loopback_001, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    deviceDesc.macAddress_ = "LocalDevice";
+    SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
+    int32_t uid = INVALID_UID;
+    bool isLoopback = true;
+    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, sourceType, uid, isLoopback);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

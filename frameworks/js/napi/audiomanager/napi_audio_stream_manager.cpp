@@ -1053,7 +1053,7 @@ napi_value NapiAudioStreamMgr::IsMultichannelPlaybackSupported(napi_env env, nap
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         result, "get streamUsage failed");
-    
+
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsMultichannelPlaybackSupported(audioStreamInfo,
         static_cast<StreamUsage>(streamUsage));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);
@@ -1082,7 +1082,7 @@ napi_value NapiAudioStreamMgr::IsDirectPlaybackSupported(napi_env env, napi_call
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         result, "get streamUsage failed");
-    
+
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsDirectPlaybackSupported(audioStreamInfo,
         static_cast<StreamUsage>(streamUsage));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);
@@ -1111,7 +1111,7 @@ napi_value NapiAudioStreamMgr::IsOffloadPlaybackSupported(napi_env env, napi_cal
     NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM1]);
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
         result, "get streamUsage failed");
-    
+
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsOffloadPlaybackSupported(audioStreamInfo,
         static_cast<StreamUsage>(streamUsage));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);

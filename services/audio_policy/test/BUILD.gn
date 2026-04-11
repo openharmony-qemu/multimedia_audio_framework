@@ -1601,6 +1601,7 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "../../audio_policy/server/include",
     "../../audio_engine/manager/include",
     "../../audio_service/server/include",
+    "../../audio_service/test/unittest/include",
   ]
 
   use_exceptions = true

@@ -59,7 +59,6 @@ public:
     void SetEcEnableState(bool ecEnableState);
     AudioSampleFormat GetFastFormat() const;
     bool IsSupportInnerCaptureOffload();
-    bool GetEnhancedRoutingSupported();
     bool NeedUidCheckForOffloadPipe(const std::shared_ptr<AudioStreamDescriptor> &desc);
     int32_t GetMaxRendererInstances();
     void GetDeviceClassInfo(std::unordered_map<ClassType, std::list<AudioModuleInfo>> &deviceClassInfo);
@@ -88,6 +87,7 @@ public:
 
     void StartClient(uint32_t sessionId);
     void PauseClient(uint32_t sessionId);
+    void StandbyClient(uint32_t sessionId);
     void StopClient(uint32_t sessionId);
     void RemoveClient(uint32_t sessionId);
 
@@ -99,6 +99,7 @@ public:
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescByIdInner(uint32_t sessionId);
     int32_t GetStreamCount(const std::string adapterName, const uint32_t routeFlag);
     uint32_t GetPaIndexByIoHandle(AudioIOHandle id);
+    uint32_t QueryPipeIdBySessionId(uint32_t sessionId);
     void UpdateRendererPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     void UpdateCapturerPipeInfos(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfos);
     uint32_t PcmOffloadSessionCount();

@@ -124,6 +124,7 @@ private:
     AudioLoopbackReportInfo GetReportInfo(AudioLoopbackErrorScope scope, AudioLoopbackErrorType type);
     void GetValidDevice();
 
+    bool isGlobal_ = false;
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
     AppInfo appInfo_ = {};

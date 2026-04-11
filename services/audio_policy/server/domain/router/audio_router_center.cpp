@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioRouterCenter"
 #endif
 
+#include "boot_animation_state_info.h"
 #include "audio_router_center.h"
 #include "audio_policy_service.h"
 #include "audio_zone_service.h"
@@ -269,7 +270,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     };
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
-        bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
+        bool hasSystemPermission = (clientUID == BOOT_ANIMATION_UID || PermissionUtil::VerifySystemPermission());
+        AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::VERIFY_PERMISSION_IN_START, clientUID,
+            ClockTime::GetCurMilli());
         AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (IsMediaFollowCallStrategy(audioScene)) {
@@ -303,6 +306,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         audioDeviceRefinerCb_->OnAudioOutputDeviceRefined(descs, bak);
     }
     PostProcessOutPutDeviceLog(descs, bak, routerType, info);
+    AudioPolicyDump::GetInstance().RecordBootStateTime(BootAnimationState::FETCH_OUTPUT_DEVICES, clientUID,
+        ClockTime::GetCurMilli());
     return descs;
 }
 

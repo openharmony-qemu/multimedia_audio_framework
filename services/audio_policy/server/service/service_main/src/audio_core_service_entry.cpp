@@ -60,7 +60,8 @@ static const char *SessionOperationMsgToString(SessionOperationMsg opMsg)
     }
 }
 
-AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService) : coreService_(coreService)
+AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService) : coreService_(coreService),
+    audioPolicyDump_(AudioPolicyDump::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -106,6 +107,8 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     int32_t waitRet = WaitForServiceReady();
+    RecordBootStateTime(static_cast<int32_t>(BootAnimationState::WAIT_FOR_SERVICE_READY), streamDesc->GetRealUid(),
+        ClockTime::GetCurMilli());
     CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
@@ -152,6 +155,13 @@ int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, S
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->ReloadCaptureSession(sessionId, operation);
+}
+
+int32_t AudioCoreService::EventEntry::RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime)
+{
+    CHECK_AND_RETURN_RET(uid == BOOT_ANIMATION_UID, SUCCESS);
+    audioPolicyDump_.RecordBootStateTime(static_cast<BootAnimationState>(state), uid, curTime);
+    return SUCCESS;
 }
 
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)

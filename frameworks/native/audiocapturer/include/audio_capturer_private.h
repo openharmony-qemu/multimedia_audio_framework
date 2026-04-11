@@ -181,6 +181,9 @@ private:
         IAudioStream::SwitchInfo &info);
     bool GenerateNewStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo, CapturerState previousState,
         IAudioStream::SwitchInfo &info);
+    bool FallbackToNormalStreamForGenerateNewStream(const RestoreInfo &restoreInfo,
+        std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, IAudioStream::SwitchInfo &switchInfo,
+        std::shared_ptr<IAudioStream> &newAudioStream);
     void HandleAudioInterruptWhenServerDied();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
@@ -317,7 +320,7 @@ public:
     virtual ~InputDeviceChangeWithInfoCallbackImpl() = default;
 
     void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) override;
+        const AudioStreamDeviceChangeReasonExt reason, const AudioDeviceDescriptor &preDeviceInfo) override;
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;

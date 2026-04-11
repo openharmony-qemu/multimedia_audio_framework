@@ -35,12 +35,14 @@ vector<shared_ptr<AudioDeviceDescriptor>> GetBTCarDevices(const vector<shared_pt
     return carDescs;
 }
 
-shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetMediaRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID, const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }
 
-shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> CockpitPhoneRouter::GetCallRenderDevice(StreamUsage streamUsage,
+    int32_t clientUID, const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs =
         AudioDeviceManager::GetAudioDeviceManager().GetCommRenderPublicDevices();

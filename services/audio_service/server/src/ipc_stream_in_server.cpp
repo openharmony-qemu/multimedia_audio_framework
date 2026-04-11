@@ -202,6 +202,11 @@ int32_t IpcStreamInServer::Start()
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::Standby()
+{
+    return rendererInServer_->Standby();
+}
+
 int32_t IpcStreamInServer::Pause()
 {
     {

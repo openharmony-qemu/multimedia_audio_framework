@@ -64,8 +64,6 @@ public:
 
     // AudioCapturer#setInputDeviceToAccessory
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID, int32_t uid);
-    // AudioSessionManager#setBluetoothAndNearlinkPreferredRecordCategory
-    int32_t PreferBluetoothAndNearlinkRecordByUid(int32_t uid, BluetoothAndNearlinkPreferredRecordCategory category);
     // AudioCapturer#AudioCapturerOptions#preferredInputDevice
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
 
@@ -78,6 +76,7 @@ public:
     int32_t SetA2dpDeviceOffloadManager(std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager);
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
     int32_t GetPreferredUid(int32_t uid);
+    bool GetEnhancedRoutingSupported() const;
     void SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
 
 private:
@@ -100,9 +99,13 @@ private:
         const int32_t uid = -1);
     int32_t SelectFastOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    int32_t FetchInputAndOutputDevice(const std::string &caller,
+        const AudioStreamDeviceChangeReasonExt outputReason = AudioStreamDeviceChangeReason::UNKNOWN,
+        const AudioStreamDeviceChangeReasonExt inputReason = AudioStreamDeviceChangeReason::UNKNOWN);
     void HandleFetchDeviceChange(const AudioStreamDeviceChangeReason &reason, const std::string &caller);
     static void WriteDesignateAudioCaptureDeviceEvent(SourceType sourceType, int32_t deviceType,
         bool isNormalSelection);
+    int32_t RefreshVirtualDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_ = nullptr;

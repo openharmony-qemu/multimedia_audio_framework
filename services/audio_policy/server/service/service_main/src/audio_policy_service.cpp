@@ -78,19 +78,34 @@ AudioPolicyService::~AudioPolicyService()
     Deinit();
 }
 
+void AudioPolicyService::RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime)
+{
+    audioPolicyDump_.RecordBootStateTime(state, curTime);
+}
+
+void AudioPolicyService::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
+{
+    CHECK_AND_RETURN(uid == BOOT_ANIMATION_UID);
+    audioPolicyDump_.RecordBootStateTime(state, uid, curTime);
+}
+
 bool AudioPolicyService::Init(void)
 {
     audioPolicyManager_.Init();
+    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_CONFIG, ClockTime::GetCurMilli());
     audioEffectService_.EffectServiceInit();
+    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_EFFECT_CONFIG, ClockTime::GetCurMilli());
     audioDeviceManager_.ParseDeviceXml();
     audioAffinityManager_.ParseAffinityXml();
 #ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.init();
 #endif
     audioGlobalConfigManager_.ParseGlobalConfigXml();
+    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_POLICY_GLOBAL_CONFIG, ClockTime::GetCurMilli());
 
 #ifdef FEATURE_DTMF_TONE
     bool ret = audioToneManager_.LoadToneDtmfConfig();
+    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_TONE_DTMF_CONFIG, ClockTime::GetCurMilli());
     CHECK_AND_RETURN_RET_LOG(ret, false, "Audio Tone Load Configuration failed");
 #endif
 

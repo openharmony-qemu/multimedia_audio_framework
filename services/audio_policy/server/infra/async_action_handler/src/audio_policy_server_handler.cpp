@@ -527,10 +527,11 @@ bool AudioPolicyServerHandler::SendCapturerInfoEvent(
 }
 
 bool AudioPolicyServerHandler::SendRendererDeviceChangeEvent(const int32_t clientPid, const uint32_t sessionId,
-    const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const AudioDeviceDescriptor &outputDeviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+    const AudioDeviceDescriptor &preOutputDeviceInfo)
 {
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = std::make_shared<RendererDeviceChangeEvent>(
-        clientPid, sessionId, outputDeviceInfo, reason);
+        clientPid, sessionId, outputDeviceInfo, reason, preOutputDeviceInfo);
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
 
     lock_guard<mutex> runnerlock(runnerMutex_);
@@ -1590,7 +1591,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
     CHECK_AND_RETURN_LOG(event != nullptr, "event get nullptr");
     std::shared_ptr<RendererDeviceChangeEvent> eventContextObj = event->GetSharedObject<RendererDeviceChangeEvent>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    const auto &[pid, sessionId, outputDeviceInfo, reason] = *eventContextObj;
+    const auto &[pid, sessionId, outputDeviceInfo, reason, preOutputDeviceInfo] = *eventContextObj;
     bool cbFlag = false;
     Trace trace("AudioPolicyServerHandler::HandleRendererDeviceChangeEvent pid:" + std::to_string(pid));
     std::lock_guard<std::mutex> lock(handleMapMutex_);
@@ -1607,7 +1608,7 @@ void AudioPolicyServerHandler::HandleRendererDeviceChangeEvent(const AppExecFwk:
         clientCallbacksMap_[pid].count(CALLBACK_DEVICE_CHANGE_WITH_INFO) > 0 &&
         clientCallbacksMap_[pid][CALLBACK_DEVICE_CHANGE_WITH_INFO]) {
         cbFlag = true;
-        capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason);
+        capturerStateChangeCb->OnRendererDeviceChange(sessionId, outputDeviceInfo, reason, preOutputDeviceInfo);
     }
     AUDIO_INFO_LOG("deviceType:%{public}d pid:%{public}d cbFlag:%{public}d", outputDeviceInfo.deviceType_, pid, cbFlag);
 }
@@ -2268,8 +2269,11 @@ void AudioPolicyServerHandler::HandlePreferredDeviceSetEvent(const AppExecFwk::I
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
-        std::shared_ptr<AudioPolicyClientHolder> preferredDeviceSetCb = it->second;
-        if (preferredDeviceSetCb != nullptr) {
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_PREFERRED_DEVICE_SET) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_PREFERRED_DEVICE_SET]) {
+            std::shared_ptr<AudioPolicyClientHolder> preferredDeviceSetCb = it->second;
+            CHECK_AND_CONTINUE(preferredDeviceSetCb != nullptr && preferredDeviceSetCb->hasSystemPermission_);
             PreferredType preferredType = eventContextObj->preferredType_;
             std::shared_ptr<AudioDeviceDescriptor> deviceDesc = eventContextObj->descriptor;
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescs;
@@ -2279,13 +2283,9 @@ void AudioPolicyServerHandler::HandlePreferredDeviceSetEvent(const AppExecFwk::I
             if (!(preferredDeviceSetCb->hasBTPermission_)) {
                 AudioPolicyService::GetAudioPolicyService().UpdateDescWhenNoBTPermission(deviceDescs);
             }
-            if (clientCallbacksMap_.count(it->first) > 0 &&
-                clientCallbacksMap_[it->first].count(CALLBACK_PREFERRED_DEVICE_SET) > 0 &&
-                clientCallbacksMap_[it->first][CALLBACK_PREFERRED_DEVICE_SET]) {
-                AUDIO_INFO_LOG("preferredType[%{public}d] deviceType[%{public}d] to clientPid[%{public}d]",
-                    preferredType, deviceDescs[0]->deviceType_, it->first);
-                preferredDeviceSetCb->OnPreferredDeviceSet(preferredType, deviceDescs[0], uid, caller);
-            }
+            AUDIO_INFO_LOG("preferredType[%{public}d] deviceType[%{public}d] to clientPid[%{public}d]",
+                preferredType, deviceDescs[0]->deviceType_, it->first);
+            preferredDeviceSetCb->OnPreferredDeviceSet(preferredType, deviceDescs[0], uid, caller);
         }
     }
 }

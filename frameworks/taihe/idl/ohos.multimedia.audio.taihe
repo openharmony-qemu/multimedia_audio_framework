@@ -759,6 +759,7 @@ enum AudioStreamDeviceChangeReason: i32 {
 struct AudioStreamDeviceChangeInfo {
   devices: Array<AudioDeviceDescriptor>;
   changeReason: AudioStreamDeviceChangeReason;
+  preDevices: Array<AudioDeviceDescriptor>;
 }
 
 enum ToneType: i32 {
@@ -868,6 +869,7 @@ struct CurrentOutputDeviceChangedEvent {
   devices: Array<AudioDeviceDescriptor>;
   changeReason: AudioStreamDeviceChangeReason;
   recommendedAction: OutputDeviceChangeRecommendedAction;
+  preDevices: Array<AudioDeviceDescriptor>;
 }
 
 enum BluetoothAndNearlinkPreferredRecordCategory: i32 {

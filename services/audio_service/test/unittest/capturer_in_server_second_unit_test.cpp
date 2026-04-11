@@ -17,6 +17,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "capturer_in_server.h"
+#include "record_privacy_manager.h"
 
 using namespace testing::ext;
 
@@ -672,11 +673,11 @@ HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_037, Tes
 
     CapturerState capturerState = CAPTURER_NEW;
     capturerInServer_->processConfig_.appInfo.appFullTokenId = (static_cast<uint64_t>(1) << 32);
-    auto ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    auto ret = capturerInServer_->CheckBgRecordPermission(capturerState);
     EXPECT_EQ(ret, false);
 
     capturerInServer_->isMicIndicatorOn_ = true;
-    ret = capturerInServer_->TurnOnMicIndicator(capturerState);
+    ret = capturerInServer_->TurnOnMicIndicator();
     EXPECT_EQ(true, ret);
 }
 
