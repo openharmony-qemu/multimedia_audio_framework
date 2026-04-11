@@ -85,13 +85,13 @@ uint64_t HpaeLimiterNode::GetLatency(uint32_t sessionId)
 HpaePcmBuffer *HpaeLimiterNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     Trace trace("HpaeLimiterNode::SignalProcess");
-    limiterOutput_.Reset();
-    CHECK_AND_RETURN_RET_LOG((!inputs.empty()) && inputs[0], &limiterOutput_,
-        "NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
+    CHECK_AND_RETURN_RET_LOG((!inputs.empty()) && inputs[0] && inputs[0]->IsValid(), inputs[0],
+        "NodeId %{public}d, sessionId %{public}d input is empty or invalid", GetNodeId(), GetSessionId());
     if (limiter_ == nullptr) {
         Trace trace("HpaeLimiterNode::SignalProcess::NoneLimiter");
         return inputs[0];
     }
+    limiterOutput_.Reset();
     uint32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
     // Process with limiter
     limiter_->Process(bufferSize, inputs[0]->GetPcmDataBuffer(), limiterOutput_.GetPcmDataBuffer());
