@@ -413,7 +413,7 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
 {
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_ok, "samplingRate field not present");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "samplingRate field not present");
     // Validate sample rate: 8000-384000, divisible by 10, or 11025
     constexpr int32_t SAMPLE_RATE_RESOLUTION_10 = 10;
     bool isValidRate = (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000 &&
