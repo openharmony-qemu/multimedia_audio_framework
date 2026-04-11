@@ -2335,7 +2335,7 @@ HWTEST_F(HpaeManagerUnitTest, EnableCaptureCollaboration_001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     // call without init, should not crash
-    hpaeManager_->EnableCaptureCollaboration(0, SOURCE_TYPE_MIC);
+    hpaeManager_->EnableCaptureCollaboration(0, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     hpaeManager_->Init();
@@ -2343,7 +2343,7 @@ HWTEST_F(HpaeManagerUnitTest, EnableCaptureCollaboration_001, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->IsInit(), true);
 
     // call with non-existent sourcePortIndex, should log and return
-    hpaeManager_->EnableCaptureCollaboration(999, SOURCE_TYPE_MIC);
+    hpaeManager_->EnableCaptureCollaboration(999, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 }
 
@@ -2370,11 +2370,11 @@ HWTEST_F(HpaeManagerUnitTest, EnableCaptureCollaboration_002, TestSize.Level1)
     int32_t sourcePortId = callback->GetPortId();
 
     // enable collaboration on valid source port
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     // duplicate enable, should be ignored
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     EXPECT_EQ(hpaeManager_->CloseAudioPort(sourcePortId), SUCCESS);
@@ -2404,21 +2404,21 @@ HWTEST_F(HpaeManagerUnitTest, DisableCaptureCollaboration_001, TestSize.Level1)
     int32_t sourcePortId = callback->GetPortId();
 
     // disable without enable, should be ignored without crash
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     // enable then disable
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     // double disable, should be ignored without crash
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     // disable on non-existent port, should not crash
-    hpaeManager_->DisableCaptureCollaboration(999, SOURCE_TYPE_MIC);
+    hpaeManager_->DisableCaptureCollaboration(999, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     EXPECT_EQ(hpaeManager_->CloseAudioPort(sourcePortId), SUCCESS);
@@ -2454,7 +2454,7 @@ HWTEST_F(HpaeManagerUnitTest, CaptureCollaboration_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 
     // enable collaboration while stream exists
-    hpaeManager_->EnableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->EnableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     // start stream after collaboration enabled
@@ -2462,7 +2462,7 @@ HWTEST_F(HpaeManagerUnitTest, CaptureCollaboration_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 
     // disable collaboration while stream running
-    hpaeManager_->DisableCaptureCollaboration(sourcePortId, SOURCE_TYPE_MIC);
+    hpaeManager_->DisableCaptureCollaboration(sourcePortId, 0, SOURCE_TYPE_LIVE);
     WaitForMsgProcessing(hpaeManager_);
 
     // stop and cleanup
