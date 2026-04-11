@@ -385,7 +385,7 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetSamplingRate(int32_t rate)
                 (rate >= SAMPLE_RATE_8000 && rate <= SAMPLE_RATE_384000 &&
                 rate % SAMPLE_RATE_RESOLUTION_10 == 0)) {
                 AUDIO_INFO_LOG("custom samplingRate %{public}d", rate);
-                customSampleRate_ = rate;
+                customSampleRate_ = static_cast<uint32_t>(rate);
                 samplingRate_ = SAMPLE_RATE_48000;
                 return AUDIOSTREAM_SUCCESS;
             }
