@@ -507,6 +507,7 @@ private:
     void NotifyUnmuteVoiceCall();
     void SetUpdateModemRouteFinished(bool flag);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
+    void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
     void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
         const AudioStreamDeviceChangeReasonExt reason);
     void RecordSelectDevice(const std::string &history);

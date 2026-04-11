@@ -122,11 +122,11 @@ HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetMediaDefaultOutputDevice
 
     auto result1 = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     ASSERT_NE(result1, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_SPEAKER);
 
     auto result2 = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10002, TEST_STREAM_ID_2);
     ASSERT_NE(result2, nullptr);
-    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result2->deviceType_, DEVICE_TYPE_SPEAKER);
 }
 
 HWTEST_F(AudioRouterFollowStrategyDefaultDeviceTest, GetMediaDefaultOutputDevice_NotRunning_001, TestSize.Level1)

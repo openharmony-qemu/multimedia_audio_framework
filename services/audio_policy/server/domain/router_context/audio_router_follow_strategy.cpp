@@ -42,7 +42,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     };
     bool isSystemSelectActive = routerInfra.HasHighestPriorityRunningSourceType(checkSourceTypes);
     int32_t uid = routerInfra.GetHighestInputPriorityApp();
-    return GetMediaInputDeviceWhenByPriority(uid, category, isSystemSelectActive);
+    return GetMediaInputDeviceByPriority(uid, category, isSystemSelectActive);
 }
 
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMediaInputDeviceWhenNoRunningStream(
@@ -57,10 +57,10 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
     category = routerInfra.GetPreferredInputCategory(uid);
     bool isSystemSelectActive = (sourceType == SOURCE_TYPE_MIC) ||
         (sourceType == SOURCE_TYPE_CAMCORDER) || (sourceType == SOURCE_TYPE_LIVE);
-    return GetMediaInputDeviceWhenByPriority(uid, category, isSystemSelectActive);
+    return GetMediaInputDeviceByPriority(uid, category, isSystemSelectActive);
 }
 
-std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMediaInputDeviceWhenByPriority(
+std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMediaInputDeviceByPriority(
     int uid, BluetoothAndNearlinkPreferredRecordCategory &category, bool isSystemSelectActive)
 {
     auto &routerInfra = AudioRouterInfra::GetInstance();

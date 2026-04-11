@@ -807,7 +807,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterInfra::GetLatestStreamSe
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
 
-    for (const audo &uid : outputPriorityList_) {
+    for (const auto &uid : outputPriorityList_) {
         auto simpleDesc = GetFirstRunningStreamDefaultDeviceNoLock(uid, type);
         if (simpleDesc != nullptr) {
             return simpleDesc;

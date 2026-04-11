@@ -348,7 +348,7 @@ AudioInterruptResult AudioInterruptService::ActivateAudioSession(const int32_t z
     return result;
 }
 
-int32_t AudioInterruptService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scen, int32_t callerUid)
+int32_t AudioInterruptService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene, int32_t callerUid)
 {
     std::unique_lock<std::mutex> lock(mutex_);
     return sessionService_.SetAudioSessionScene(callerPid, scene, callerUid);
