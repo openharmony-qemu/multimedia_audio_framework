@@ -38,6 +38,7 @@
 #include "audio_volume.h"
 #include "volume_tools.h"
 #include "audio_sink_latency_fetcher.h"
+#include "boot_animation_state_info.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 
@@ -163,6 +164,8 @@ int32_t HpaeRendererStreamImpl::Start()
     }
     std::string tempStringSessionId = std::to_string(streamIndex_);
     IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume_);
+    CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+        BootAnimationState::PREE_AUDIO_START), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;

@@ -43,6 +43,7 @@
 #include "audio_device_common.h"
 #include "audio_device_lock.h"
 #include "audio_device_manager.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -63,7 +64,14 @@ public:
     void XmlParsedDataMapDump(std::string &dumpString);
     void EffectManagerInfoDump(std::string &dumpString);
     void MicrophoneMuteInfoDump(std::string &dumpString);
+    void AudioPolicyBootDump(std::string &dumpString);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
+    void RecordBootAnimationClientStateTime(const BootAnimationInfo &info);
 private:
+    std::string BootStateTime(AudioPolicyServerBootState state);
+    std::string BootStateTime(BootAnimationState state);
+    void BootAnimationDump(std::string &dumpString);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDumpDeviceInfo(
         std::string &dumpString, DeviceFlag deviceFlag);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDumpDevices(DeviceFlag deviceFlag);
@@ -105,7 +113,11 @@ private:
         audioMicrophoneDescriptor_(AudioMicrophoneDescriptor::GetInstance()),
         audioOffloadStream_(AudioOffloadStream::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()),
-        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()) {}
+        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager())
+        {
+            policyBootInfo_ = std::vector<int64_t>(static_cast<size_t>(AudioPolicyServerBootState::MAX), 0);
+            bootAnimationInfo_ = std::vector<int64_t>(static_cast<size_t>(BootAnimationState::MAX), 0);
+        }
     ~AudioPolicyDump() {}
 private:
     IAudioPolicyInterface& audioPolicyManager_;
@@ -126,6 +138,8 @@ private:
     ConnectType conneceType_ = CONNECT_TYPE_LOCAL;
     SupportedEffectConfig supportedEffectConfig_;
     ConverterConfig converterConfig_;
+    AudioPolicyServerBootInfo policyBootInfo_;
+    BootAnimationInfo bootAnimationInfo_;
 };
 
 }

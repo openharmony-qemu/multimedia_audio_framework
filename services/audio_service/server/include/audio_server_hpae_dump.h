@@ -27,6 +27,7 @@
 #include "audio_timer.h"
 #include "audio_errors.h"
 #include "i_audio_server_hpae_dump.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,6 +41,7 @@ public:
     ~AudioServerHpaeDump();
     int32_t Initialize() override;
     void AudioDataDump(std::string &dumpString, std::queue<std::u16string> &argQue) override;
+    void RecordBootStateTime(AudioServerBootState state, int64_t curTime) override;
     void OnDumpSinkInfoCb(std::string &dumpStr, int32_t result) override;
     void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) override;
     void OnDumpAllAvailableDeviceCb(int32_t result, HpaeDeviceInfo &&devicesInfo) override;
@@ -62,6 +64,8 @@ private:
     void HdiAdapterDump(std::string &dumpString);
     void PlaybackSinkInputDump(std::string &dumpString);
     void RecordSourceOutputDump(std::string &dumpString);
+    void AudioServerBootDump(std::string &dumpString);
+    std::string BootStateTime(AudioServerBootState state);
     bool GetDevicesInfo();
 
     using DumpFunc = void(AudioServerHpaeDump::*)(std::string &dumpString);
@@ -80,6 +84,7 @@ private:
     bool isFinishGetHdfModulesInfo_ = false;
     bool isFinishGetStreamInfo_ = false;
     HpaeDeviceInfo devicesInfo_;
+    AudioServerBootInfo serverBootInfo_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

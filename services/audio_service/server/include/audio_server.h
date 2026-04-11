@@ -501,9 +501,11 @@ private:
     int32_t SetAudioBalanceValueInner(bool isAudioBalanceEnable, float audioBalance);
     void OnStartExpansion();
     bool AudioParameterValueCheck(const std::string &key, const std::string &value);
+    void RecordBootStateTime(AudioServerBootState state, int64_t curTime);
+    void InitAudioEngine();
+    void RegisterResSchedSys();
     void HapReportWakeupEvent(const std::string &key,
-        const std::vector<std::pair<std::string, std::string>> &kvpairs);
-
+    const std::vector<std::pair<std::string, std::string>> &kvpairs);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

@@ -300,6 +300,7 @@ interface IAudioPolicy {
     void SetAncoSourceOutputStreamMute([in] int uid, [in] boolean setMute);
     void UpdateSafeVolumeByStrMode();
     void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
+    [oneway] void RecordBootAnimationClientStateTime([in] List<long> info);
     // AudioPolicyInterfaceCode end
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode

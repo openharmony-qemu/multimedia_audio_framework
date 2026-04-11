@@ -57,6 +57,7 @@ public:
     void OnCheckActiveMusicTime(const std::string &reason);
     int32_t CaptureConcurrentCheck(uint32_t sessionID);
     int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute);
+    int32_t RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;
