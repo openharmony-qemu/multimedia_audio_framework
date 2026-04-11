@@ -189,7 +189,7 @@ std::shared_ptr<PipeStreamPropInfo> VADeviceManager::ConvertVADeviceStreamProper
     pipeStreamInfo->format_ = vaStreamProperty.sampleFormat_;
     pipeStreamInfo->sampleRate_ = vaStreamProperty.sampleRate_;
     pipeStreamInfo->channelLayout_ = vaStreamProperty.channelLayout_;
-    pipeStreamInfo->channels_ = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(pipeStreamInfo->channelLayout_);
+    pipeStreamInfo->channels_ = ConvertLayoutToAudioChannel(pipeStreamInfo->channelLayout_);
     pipeStreamInfo->bufferSize_ = CalculateBufferSize(vaStreamProperty);
     return pipeStreamInfo;
 }
@@ -202,7 +202,7 @@ uint32_t VADeviceManager::CalculateBufferSize(const VAAudioStreamProperty &vaStr
         AUDIO_ERR_LOG("invalid samplesPerCycle");
         return 0;
     }
-    uint8_t channels = AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(vaStreamProperty.channelLayout_);
+    uint8_t channels = ConvertLayoutToAudioChannel(vaStreamProperty.channelLayout_);
     uint32_t samplesPerCycle_ = vaStreamProperty.samplesPerCycle_;
     uint32_t bitWidth = 2;
     uint32_t bufferSize = channels * samplesPerCycle_ * bitWidth;
