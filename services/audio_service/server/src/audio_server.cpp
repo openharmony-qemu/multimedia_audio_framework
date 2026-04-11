@@ -482,7 +482,8 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-    audioEffectServer_(std::make_unique<AudioEffectServer>())
+    audioEffectServer_(std::make_unique<AudioEffectServer>()),
+    hpaeDumpObj_(std::make_shared<AudioServerHpaeDump>())
 {
     AudioStreamMonitor::GetInstance().SetAudioServerPtr(this);
 }
@@ -516,9 +517,6 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
 #ifdef SUPPORT_OLD_ENGINE
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        if (hpaeDumpObj_ == nullptr) {
-            hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
-        }
         res = hpaeDumpObj_->Initialize();
         CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
             "Audio Service Hpae Dump Not Initialed");
@@ -531,9 +529,6 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         dumpObj.AudioDataDump(dumpString, argQue);
     }
 #else
-    if (hpaeDumpObj_ == nullptr) {
-        hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
-    }
     res = hpaeDumpObj_->Initialize();
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR,
         "Audio Service Hpae Dump Not Initialed");
@@ -711,36 +706,19 @@ void AudioServer::InitMaxRendererStreamCntPerUid()
 
 void AudioServer::OnStartExpansion()
 {
-    AudioSystemloadListener audioSystemloadListener;
-
     RegisterAudioCapturerSourceCallback();
     RegisterAudioRendererSinkCallback();
     ParseAudioParameter();
-    NotifyProcessStatus();
-    audioSystemloadListener.RegisterResSchedSys();
 }
 
-void AudioServer::OnStart()
+void AudioServer::RecordBootStateTime(AudioServerBootState state, int64_t curTime)
 {
-    AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
-    DlopenUtils::Init();
-    InitMaxRendererStreamCntPerUid();
-    AudioInnerCall::GetInstance()->RegisterAudioServer(this);
-    asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_ASAsyncHandler");
+    CHECK_AND_RETURN(hpaeDumpObj_, "hpaeDumpObj_ is nullptr");
+    hpaeDumpObj_->RecordBootStateTime(state, curTime);
+}
 
-    // After publish, other process can call audioserver functions through ipc
-    bool res = Publish(this);
-    if (!res) {
-        AUDIO_ERR_LOG("start err");
-        WriteServiceStartupError();
-    }
-    int32_t audioCacheState = 0;
-    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
-    if (audioCacheState != 0) {
-        AudioCacheMgr::GetInstance().Init();
-    }
-    AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
-    AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+void AudioServer::InitAudioEngine()
+{
 #ifdef SUPPORT_OLD_ENGINE
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
@@ -761,9 +739,39 @@ void AudioServer::OnStart()
     HPAE::IHpaeManager::GetHpaeManager().Init();
     AUDIO_INFO_LOG("IHpaeManager Init\n");
 #endif // SUPPORT_OLD_ENGINE
+    RecordBootStateTime(AudioServerBootState::INIT_PREEAUDIO, ClockTime::GetCurMilli());
+}
+
+void AudioServer::OnStart()
+{
+    RecordBootStateTime(AudioServerBootState::BEGIN, ClockTime::GetCurMilli());
+    AUDIO_INFO_LOG("OnStart uid:%{public}d", getuid());
+    RecordBootStateTime(AudioServerBootState::LOAD_LIBXML2, ClockTime::GetCurMilli());
+    DlopenUtils::Init();
+    InitMaxRendererStreamCntPerUid();
+    AudioInnerCall::GetInstance()->RegisterAudioServer(this);
+    asyncHandler_ = std::make_shared<AsyncActionHandler>("OS_ASAsyncHandler");
+
+    // After publish, other process can call audioserver functions through ipc
+    bool res = Publish(this);
+    RecordBootStateTime(AudioServerBootState::PUBLISH_AVAILABLE, ClockTime::GetCurMilli());
+    if (!res) {
+        AUDIO_ERR_LOG("start err");
+        WriteServiceStartupError();
+    }
+    int32_t audioCacheState = 0;
+    GetSysPara("persist.multimedia.audio.audioCacheState", audioCacheState);
+    if (audioCacheState != 0) {
+        AudioCacheMgr::GetInstance().Init();
+    }
+    AddSystemAbilityListener(AUDIO_POLICY_SERVICE_ID);
+    AddSystemAbilityListener(RES_SCHED_SYS_ABILITY_ID);
+    AddSystemAbilityListener(MEMORY_MANAGER_SA_ID);
+    InitAudioEngine();
     OnStartExpansion();
     DlopenUtils::DeInit();
     RegisterDataTransferStateChangeCallback();
+    RecordBootStateTime(AudioServerBootState::END, ClockTime::GetCurMilli());
 }
 // LCOV_EXCL_STOP
 
@@ -778,6 +786,7 @@ void AudioServer::ParseAudioParameter()
         AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
     }
     isAudioParameterParsed_.store(true);
+    RecordBootStateTime(AudioServerBootState::LOAD_AUDIO_PARAM_CONFIG_XML, ClockTime::GetCurMilli());
 
     {
         std::unique_lock<std::mutex> lock(audioParameterCacheMutex_);
@@ -815,11 +824,22 @@ void AudioServer::OnAddSystemAbility(int32_t systemAbilityId, const std::string&
         case RES_SCHED_SYS_ABILITY_ID:
             AUDIO_INFO_LOG("ressched service start");
             OnAddResSchedService(getpid());
+            RegisterResSchedSys();
+            break;
+        case MEMORY_MANAGER_SA_ID:
+            AUDIO_INFO_LOG("memory manager service start");
+            NotifyProcessStatus();
             break;
         default:
             AUDIO_ERR_LOG("unhandled sysabilityId:%{public}d", systemAbilityId);
             break;
     }
+}
+
+void AudioServer::RegisterResSchedSys()
+{
+    AudioSystemloadListener listener;
+    listener.RegisterResSchedSys();
 }
 
 void AudioServer::OnStop()
@@ -2149,6 +2169,7 @@ void AudioServer::NotifyProcessStatus()
     AUDIO_INFO_LOG("notify to memmgr when audio_server is started");
     int pid = getpid();
     notifyProcessStatus(pid, 1, RSS_THRESHOLD, 0);
+    RecordBootStateTime(AudioServerBootState::STAY_RESIDENT, ClockTime::GetCurMilli());
 #ifndef TEST_COVERAGE
     dlclose(libMemMgrClientHandle);
 #endif

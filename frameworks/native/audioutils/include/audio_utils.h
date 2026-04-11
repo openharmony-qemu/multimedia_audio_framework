@@ -130,6 +130,7 @@ public:
 class ClockTime {
 public:
     static int64_t GetCurNano();
+    static int64_t GetCurMilli();
     static int64_t GetRealNano();
     static int64_t GetBootNano();
     static int32_t AbsoluteSleep(int64_t nanoTime);

@@ -20,6 +20,7 @@
 
 #include "audio_errors.h"
 #include "audio_common_log.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -74,6 +75,13 @@ int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutpu
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
     return iCoreServiceProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning,
         skipForce);
+}
+
+int32_t CoreServiceHandler::RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime)
+{
+    CHECK_AND_RETURN_RET(uid == BOOT_ANIMATION_UID, SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    return iCoreServiceProvider_->RecordBootStateTime(state, uid, curTime);
 }
 
 std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)

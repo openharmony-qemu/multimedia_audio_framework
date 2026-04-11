@@ -298,6 +298,11 @@ int64_t ClockTime::GetCurNano()
     return result;
 }
 
+int64_t ClockTime::GetCurMilli()
+{
+    return GetCurNano() / AUDIO_NS_PER_MILLISECOND;
+}
+
 int64_t ClockTime::GetRealNano()
 {
     int64_t result = -1; // -1 for bad result
@@ -2186,7 +2191,7 @@ int32_t VolumeUtils::VolumeLevelToDegree(int32_t level, int32_t maxLevel)
     if (level == VOLUME_LEVEL_ZERO) {
         return VOLUME_DEGREE_ZERO;
     }
-    
+
     if (level == maxLevel) {
         return MAX_VOLUME_DEGREE;
     }
