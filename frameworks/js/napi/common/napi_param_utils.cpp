@@ -817,6 +817,8 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
 
     status = GetStreamInfo(env, &(opts->streamInfo), result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseStreamInfo failed");
+    CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
+        "streamInfo does not support custom sample rate");
 
     status = napi_get_named_property(env, in, "capturerInfo", &result);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
@@ -836,6 +838,8 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     if (napi_get_named_property(env, in, "processedStreamInfo", &result) == napi_ok) {
         status = GetStreamInfo(env, &(opts->streamInfo), result);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseProcessedStreamInfo failed");
+        CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
+            "processedStreamInfo does not support custom sample rate");
     } else {
         AUDIO_INFO_LOG("ParseCapturerOptions, without processedStreamInfo");
     }
@@ -849,6 +853,8 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
         }
         status = GetMicInStreamInfo(env, targetMicInStreamInfo, result);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseMicInStreamInfo failed");
+        CHECK_AND_RETURN_RET_LOG(targetMicInStreamInfo->customSampleRate == 0, napi_generic_failure,
+            "micInStreamInfo does not support custom sample rate");
     } else {
         AUDIO_INFO_LOG("ParseCapturerOptions, without micInStreamInfo");
     }
@@ -856,6 +862,8 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
     if (napi_get_named_property(env, in, "ecStreamInfo", &result) == napi_ok) {
         status = GetEcStreamInfo(env, &(opts->ecStreamInfo), result);
         CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseEcStreamInfo failed");
+        CHECK_AND_RETURN_RET_LOG(opts->ecStreamInfo.customSampleRate == 0, napi_generic_failure,
+            "ecStreamInfo does not support custom sample rate");
     } else {
         AUDIO_INFO_LOG("ParseCapturerOptions, without ecStreamInfo");
     }
