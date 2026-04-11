@@ -369,7 +369,7 @@ void AudioVolumeManager::CheckToCloseNotification(AudioStreamType streamType, in
 {
     AUDIO_INFO_LOG("enter.");
     int32_t sVolumeLevel = audioPolicyManager_.GetSafeVolumeLevel();
-    if (volumeLevel < sVolumeLevel && DeviceIsSupportSafeVolume() &&
+    if (volumeLevel < sVolumeLevel && SafeVolumeManager::DeviceIsSupportSafeVolume() &&
         VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC) {
         AUDIO_INFO_LOG("user select lower volume should close notification.");
         if (increaseNIsShowing_) {
@@ -383,30 +383,6 @@ void AudioVolumeManager::CheckToCloseNotification(AudioStreamType streamType, in
     }
     if (isLegacyHighVolumeNtfShowing_) {
         HandleLegacyHighVolumeNotification(VolumeNotifyActionType::ACTOPN_CANCEL);
-    }
-}
-
-bool AudioVolumeManager::DeviceIsSupportSafeVolume()
-{
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
-    switch (curOutputDeviceType) {
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-        case DEVICE_TYPE_NEARLINK:
-            if (curOutputDeviceCategory != BT_SOUNDBOX &&
-                curOutputDeviceCategory != BT_CAR) {
-                return true;
-            }
-            [[fallthrough]];
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            return true;
-        default:
-            AUDIO_INFO_LOG("current device unsupport safe volume:%{public}d", curOutputDeviceType);
-            return false;
     }
 }
 

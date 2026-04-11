@@ -22,9 +22,37 @@
 #include <dlfcn.h>
 #include "audio_policy_log.h"
 #include "audio_safe_volume_notification.h"
+#include "audio_active_device.h"
+#include "audio_policy_manager_factory.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+bool SafeVolumeManager::DeviceIsSupportSafeVolume()
+{
+    AudioActiveDevice& audioActiveDevice = AudioActiveDevice::GetInstance();
+    IAudioPolicyInterface& audioPolicyManager = AudioPolicyManagerFactory::GetAudioPolicyManager();
+    DeviceType curOutputDeviceType = audioActiveDevice.GetCurrentOutputDeviceType();
+    DeviceCategory curOutputDeviceCategory = audioPolicyManager.GetCurrentOutputDeviceCategory();
+    switch (curOutputDeviceType) {
+        case DEVICE_TYPE_BLUETOOTH_A2DP:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+        case DEVICE_TYPE_NEARLINK:
+            if (curOutputDeviceCategory != BT_SOUNDBOX &&
+                curOutputDeviceCategory != BT_CAR) {
+                return true;
+            }
+            [[fallthrough]];
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            return true;
+        default:
+            AUDIO_INFO_LOG("current device unsupport safe volume:%{public}d", curOutputDeviceType);
+            return false;
+    }
+}
 
 void SafeVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
 {

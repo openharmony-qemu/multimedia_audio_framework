@@ -27,6 +27,7 @@ public:
     static void CancelSafeVolumeNotification(int32_t notificationId);
     static void PublishLegacyHighVolumeNotification();
     static void CancelLegacyHighVolumeNotification();
+    static bool DeviceIsSupportSafeVolume();
 
 private:
     static constexpr const char* LIB_NAME = "libaudio_safe_volume_notification_impl.z.so";

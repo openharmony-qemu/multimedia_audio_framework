@@ -244,7 +244,6 @@ private:
         DeviceType deviceType = DEVICE_TYPE_NONE);
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
-    bool DeviceIsSupportSafeVolume();
     void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
     void CheckLowerDeviceVolume(DeviceType deviceType);
     int32_t CheckRestoreDeviceVolume(DeviceType deviceType);
