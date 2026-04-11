@@ -413,7 +413,9 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
 {
     int32_t intValue = {0};
     napi_status status = GetValueInt32(env, "samplingRate", intValue, in);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "samplingRate field not present");
+    // samplingRate is an optional field. If not present, keep default value and return napi_ok
+    // to allow other fields in the same object to continue parsing
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, napi_ok, "samplingRate field not present");
     // Validate sample rate: 8000-384000, divisible by 10, or 11025
     constexpr int32_t SAMPLE_RATE_RESOLUTION_10 = 10;
     bool isValidRate = (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000 &&
@@ -809,31 +811,11 @@ napi_status NapiParamUtils::GetPlaybackCaptureConfig(const napi_env &env,
     return NapiParamUtils::GetCaptureFilterOptionsVector(env, &(captureConfig->filterOptions), res);
 }
 
-napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+napi_status NapiParamUtils::GetCapturerSubStreamOptions(
+    const napi_env &env, AudioCapturerOptions *opts, napi_value in)
 {
     napi_value result = nullptr;
-    napi_status status = napi_get_named_property(env, in, "streamInfo", &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get streamInfo name failed");
-
-    status = GetStreamInfo(env, &(opts->streamInfo), result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseStreamInfo failed");
-    CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
-        "streamInfo does not support custom sample rate");
-
-    status = napi_get_named_property(env, in, "capturerInfo", &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
-
-    status = GetCapturerInfo(env, &(opts->capturerInfo), result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
-
-    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
-    auto device = std::make_shared<AudioDeviceDescriptor>();
-    bool argTransFlag = false;
-    status = GetAudioDeviceDescriptor(env, device, argTransFlag, result);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
-    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
-    opts->preferredInputDevice = device;
+    napi_status status = napi_ok;
 
     if (napi_get_named_property(env, in, "processedStreamInfo", &result) == napi_ok) {
         status = GetStreamInfo(env, &(opts->streamInfo), result);
@@ -874,6 +856,35 @@ napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapture
 
     AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
     return napi_ok;
+}
+
+napi_status NapiParamUtils::GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in)
+{
+    napi_value result = nullptr;
+    napi_status status = napi_get_named_property(env, in, "streamInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get streamInfo name failed");
+
+    status = GetStreamInfo(env, &(opts->streamInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseStreamInfo failed");
+    CHECK_AND_RETURN_RET_LOG(opts->streamInfo.customSampleRate == 0, napi_generic_failure,
+        "streamInfo does not support custom sample rate");
+
+    status = napi_get_named_property(env, in, "capturerInfo", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get capturerInfo name failed");
+
+    status = GetCapturerInfo(env, &(opts->capturerInfo), result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "ParseCapturerInfo failed");
+
+    status = napi_get_named_property(env, in, "preferredInputDevice", &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get preferInputDevice failed");
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    bool argTransFlag = false;
+    status = GetAudioDeviceDescriptor(env, device, argTransFlag, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "Parse PreferInputDevice failed");
+    CHECK_AND_RETURN_RET_LOG(argTransFlag, napi_generic_failure, "PreferInputDevice argTransFlag is false");
+    opts->preferredInputDevice = device;
+
+    return GetCapturerSubStreamOptions(env, opts, in);
 }
 
 napi_status NapiParamUtils::SetAudioCapturerChangeInfoDescriptors(const napi_env &env,

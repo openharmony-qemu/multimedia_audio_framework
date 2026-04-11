@@ -153,6 +153,7 @@ public:
     static napi_status GetPlaybackCaptureConfig(const napi_env &env,
         AudioPlaybackCaptureConfig* captureConfig, napi_value in);
     static napi_status GetCapturerOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in);
+    static napi_status GetCapturerSubStreamOptions(const napi_env &env, AudioCapturerOptions *opts, napi_value in);
     static napi_status SetAudioCapturerChangeInfoDescriptors(const napi_env &env,
         const AudioCapturerChangeInfo &changeInfo, napi_value &result);
     static napi_status SetMicrophoneDescriptor(const napi_env &env, const sptr<MicrophoneDescriptor> &micDesc,
