@@ -16,6 +16,7 @@
 #ifndef AUDIO_SYSTEM_CLIENT_ENGINE_MANAGER_H
 #define AUDIO_SYSTEM_CLIENT_ENGINE_MANAGER_H
 #include "audio_interrupt_types.h"
+#include "audio_capturer_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -171,6 +172,14 @@ public:
      * @since 24
      */
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
+
+    /**
+     * @brief Report wakeup stage, result and errCode.
+     *
+     * @param audioWakeupTrackInfo Wakeup track info, include stage, result and errCode.
+     * @since 26
+     */
+    int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo);
 private:
     AudioSystemClientEngineManager() = default;
     ~AudioSystemClientEngineManager() = default;

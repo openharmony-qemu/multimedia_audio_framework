@@ -28,6 +28,8 @@
 #include <vector>
 #include <format>
 #include <optional>
+#include <sys/ioctl.h>
+#include <fcntl.h>
 
 #include "bundle_mgr_interface.h"
 #include "bundle_mgr_proxy.h"
@@ -81,6 +83,7 @@ extern "C" {
 #endif // SUPPORT_OLD_ENGINE
 using namespace std;
 
+#define IOCTL_AUDIO_WAKEUP_TRACK_REPORT_CMD          _IO('A', 0x02)
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t UID_MSDP_SA = 6699;
@@ -98,12 +101,15 @@ const std::string PCM_DUMP_KEY = "PCM_DUMP";
 const std::string EFFECT_LIVE_KEY = "hpae_effect";
 const std::string HOME_MUSIC_KEY = "HomeMusic";
 const std::string ZONE_ID_CHANGE = "zone_id_change";
+const std::string MAIN_KEY_DFX = "dfx";
+const std::string SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT = "update_wakeup_trace_result";
 constexpr int32_t UID_CALL_MANAGER_SA = 1001;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
 const char* MANAGE_INTELLIGENT_VOICE_PERMISSION = "ohos.permission.MANAGE_INTELLIGENT_VOICE";
 const char* CAST_AUDIO_OUTPUT_PERMISSION = "ohos.permission.CAST_AUDIO_OUTPUT";
 const char* CAPTURE_PLAYBACK_PERMISSION = "ohos.permission.CAPTURE_PLAYBACK";
+static constexpr char WAKEUP_TRACK_FILE_PATCH[] = "/dev/audio_wakeup_track";
 static const std::vector<StreamUsage> STREAMS_NEED_VERIFY_SYSTEM_PERMISSION = {
     STREAM_USAGE_SYSTEM,
     STREAM_USAGE_DTMF,
@@ -868,6 +874,33 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
 }
 // LCOV_EXCL_STOP
 
+void AudioServer::HapReportWakeupEvent(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs)
+{
+    CHECK_AND_RETURN(key == MAIN_KEY_DFX);
+    for (const auto &kvPair : kvpairs) {
+        CHECK_AND_CONTINUE(kvPair.first == SUB_KEY_UPDATE_WAKEUP_TRACE_RESULT);
+        nlohmann::json json;
+        CHECK_AND_BREAK_LOG(nlohmann::json::accept(kvPair.second) == true,
+            "Failed to parse dfx: invalid JSON format");
+        json = nlohmann::json::parse(kvPair.second);
+        CHECK_AND_BREAK_LOG((json.contains("stage") && json.contains("result") && json.contains("errCode")),
+            "Failed to parse update_wakeup_trace_result: contains check error");
+        std::string stageStr = json["stage"].get<std::string>();
+        std::string resultStr = json["result"].get<std::string>();
+        std::string errCodeStr = json["errCode"].get<std::string>();
+
+        AudioWakeupTrackInfo audioWakeupTrackInfo;
+        audioWakeupTrackInfo.stage = static_cast<AudioWakeupStageCode>(std::stoi(stageStr, nullptr, 0));
+        audioWakeupTrackInfo.result = static_cast<AudioWakeupResult>(std::stoi(resultStr, nullptr, 0));
+        audioWakeupTrackInfo.errCode = static_cast<AudioWakeupErrorCode>(std::stoi(errCodeStr, nullptr, 0));
+        AUDIO_INFO_LOG("stage=%{public}d, result=%{public}d, errCode=%{public}d",
+            audioWakeupTrackInfo.stage, audioWakeupTrackInfo.result, audioWakeupTrackInfo.errCode);
+        ReportWakeupEvent(audioWakeupTrackInfo);
+        break;
+    }
+}
+
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<StringPair> &kvpairs)
 {
@@ -902,7 +935,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
         CHECK_AND_RETURN_RET_LOG(ret, ERROR, "set audiodump parameters failed");
         return SUCCESS;
     }
-
+    HapReportWakeupEvent(key, newPair);
     CHECK_AND_RETURN_RET_LOG(!CacheExtraParameters(key, newPair), ERROR, "cached");
 
     if (audioParameterKeys.empty()) {
@@ -3606,6 +3639,21 @@ int32_t AudioServer::CheckInnerCapVoIP(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     AudioService::GetInstance()->CheckInnerCapVoIP(sessionId);
+    return SUCCESS;
+}
+
+int32_t AudioServer::ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo)
+{
+    int32_t fd = open(WAKEUP_TRACK_FILE_PATCH, O_RDWR | O_NONBLOCK, 0);
+    CHECK_AND_RETURN_RET_LOG(fd >= 0, ERR_OPERATION_FAILED,
+        "Open audio_wakeup_track err, errno: %{public}d (%{public}s)", errno, strerror(errno));
+    WakeupTrackInfo wakeupTrackInfo;
+    wakeupTrackInfo.stage = static_cast<WakeupStageCode>(audioWakeupTrackInfo.stage);
+    wakeupTrackInfo.result = static_cast<WakeupResult>(audioWakeupTrackInfo.result);
+    wakeupTrackInfo.errCode = static_cast<WakeupErrorCode>(audioWakeupTrackInfo.errCode);
+    int32_t ret = ioctl(fd,  IOCTL_AUDIO_WAKEUP_TRACK_REPORT_CMD, &wakeupTrackInfo);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret >= 0, ERR_OPERATION_FAILED, (void)close(fd));
+    (void)close(fd);
     return SUCCESS;
 }
 // LCOV_EXCL_STOP

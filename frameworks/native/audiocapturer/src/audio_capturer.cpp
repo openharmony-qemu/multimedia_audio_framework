@@ -30,6 +30,8 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
 #include "audio_info.h"
+#include "audio_system_client_engine_manager.h"
+#include "audio_capturer_types.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -464,11 +466,43 @@ static inline void FillCreateCapturerParams(AudioCapturerParams &params, const A
     FillMicInParams(params, capturerOptions.micInStreamInfo);
 }
 
+static void ReportWakeupEvent(SourceType sourceType,
+    int32_t stage, int32_t wakeupResult, int32_t wakeupErrCode)
+{
+    CHECK_AND_RETURN((sourceType == SOURCE_TYPE_WAKEUP || sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+        sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT));
+    AUDIO_INFO_LOG("sourceType: %{public}d, stage: %{public}d, result: %{public}d",
+        sourceType, stage, wakeupResult);
+    AudioWakeupTrackInfo audioWakeupTrackInfo;
+    audioWakeupTrackInfo.stage = static_cast<AudioWakeupStageCode>(stage);
+    audioWakeupTrackInfo.result = static_cast<AudioWakeupResult>(wakeupResult);
+    audioWakeupTrackInfo.errCode = static_cast<AudioWakeupErrorCode>(wakeupErrCode);
+    AudioSystemClientEngineManager::GetInstance().ReportWakeupEvent(audioWakeupTrackInfo);
+}
+
+static void InitializeCapturer(std::shared_ptr<AudioCapturerPrivate>& capturer,
+    const AudioCapturerOptions& capturerOptions)
+{
+    if (capturer != nullptr && AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
+        capturer->isChannelChange_ = true;
+    }
+
+    AudioWakeupErrorCode errCode = (capturer == nullptr)
+                    ? WAKEUP_TRACK_FWK_CREATE_ERROR
+                    : WAKEUP_TRACK_FWK_NO_ERROR;
+    AudioWakeupResult result = (capturer == nullptr)
+                        ? WAKEUP_RESULT_FAIL
+                        : WAKEUP_RESULT_DEFAULT;
+    ReportWakeupEvent(capturerOptions.capturerInfo.sourceType,
+        STAGE_FWK_CREATE_EXIT, result, errCode);
+}
+
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
 {
     Trace trace("KeyAction AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
+    ReportWakeupEvent(sourceType, STAGE_FWK_CREATE_ENTER, WAKEUP_RESULT_DEFAULT, WAKEUP_TRACK_FWK_NO_ERROR);
     if (sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
         AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;
@@ -515,9 +549,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         capturer = nullptr;
     }
-    if (capturer != nullptr && AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
-        capturer->isChannelChange_ = true;
-    }
+    InitializeCapturer(capturer, capturerOptions);
     return capturer;
 }
 
@@ -1177,6 +1209,18 @@ int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
     return SUCCESS;
 }
 
+void AudioCapturerPrivate::CheckStartResultAndReport(bool result)
+{
+    AudioWakeupErrorCode errCode = (result == true)
+                                ? WAKEUP_TRACK_FWK_NO_ERROR
+                                : WAKEUP_TRACK_FWK_START_ERROR;
+    AudioWakeupResult wakeupResult = (result == true)
+                                ? WAKEUP_RESULT_DEFAULT
+                                : WAKEUP_RESULT_FAIL;
+    ReportWakeupEvent(audioInterrupt_.audioFocusType.sourceType,
+        STAGE_FWK_START_EXIT, wakeupResult, errCode);
+}
+
 int32_t AudioCapturerPrivate::StartImpl()
 {
     AsyncCheckAudioCapturer("Start");
@@ -1187,6 +1231,8 @@ int32_t AudioCapturerPrivate::StartImpl()
     }
     HILOG_COMM_INFO("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
+    ReportWakeupEvent(audioInterrupt_.audioFocusType.sourceType, STAGE_FWK_START_ENTER,
+        WAKEUP_RESULT_DEFAULT, WAKEUP_TRACK_FWK_NO_ERROR);
 
     CapturerState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == CAPTURER_PREPARED) || (state == CAPTURER_STOPPED) || (state == CAPTURER_PAUSED),
@@ -1217,7 +1263,7 @@ int32_t AudioCapturerPrivate::StartImpl()
             AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
         }
     }
-
+    CheckStartResultAndReport(result);
     return result ? SUCCESS : ERROR;
 }
 

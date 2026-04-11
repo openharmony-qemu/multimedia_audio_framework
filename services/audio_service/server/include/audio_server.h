@@ -44,9 +44,37 @@
 #include "iaudio_engine_callback_handle.h"
 #include "audio_engine_callback_types.h"
 #include "audio_stream_types.h"
+#include "audio_capturer_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+enum WakeupStageCode {
+    STAGE_CREATE_ENTER  = 0x0100,    /* fwk stage start */
+    STAGE_CREATE_EXIT   = 0x015F,
+    STAGE_START_ENTER   = 0x0160,
+    STAGE_START_EXIT    = 0x01AF,    /* fwk stage end */
+    STAGE_END           = 0x01FF,
+};
+
+enum WakeupErrorCode {
+    WAKEUP_NO_ERROR = 0x1000,
+    WAKEUP_CREATE_ERROR,
+    WAKEUP_START_ERROR
+};
+
+enum WakeupResult {
+    RESULT_DEFAULT,
+    RESULT_SUCC,
+    RESULT_FAIL
+};
+
+struct WakeupTrackInfo {
+    enum WakeupStageCode stage;
+    enum WakeupResult result;
+    enum WakeupErrorCode errCode;
+};
+
 class AudioServer;
 class ProxyDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
@@ -297,6 +325,7 @@ public:
     int32_t SetAuxiliarySinkEnable(bool isEnabled) override;
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice) override;
     int32_t CheckInnerCapVoIP(uint32_t sessionId) override;
+    int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo) override;
 
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
@@ -475,6 +504,8 @@ private:
     void RecordBootStateTime(AudioServerBootState state, int64_t curTime);
     void InitAudioEngine();
     void RegisterResSchedSys();
+    void HapReportWakeupEvent(const std::string &key,
+    const std::vector<std::pair<std::string, std::string>> &kvpairs);
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

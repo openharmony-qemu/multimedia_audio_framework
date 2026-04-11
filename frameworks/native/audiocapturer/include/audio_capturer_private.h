@@ -207,6 +207,7 @@ private:
     bool IsRestoreOrStopNeeded();
     bool RestartAudioStream(std::shared_ptr<IAudioStream> newAudioStream,
         CapturerState previousState);
+    void CheckStartResultAndReport(bool result);
 
     std::shared_ptr<InputDeviceChangeWithInfoCallbackImpl> inputDeviceChangeCallback_ = nullptr;
     bool isSwitching_ = false;
