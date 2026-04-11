@@ -286,14 +286,34 @@ void AudioPolicyServer::Init()
     audioIOHandleMap_.SetAsyncActionHandler(asyncHandler);
 }
 
+void AudioPolicyServer::RegisterPermStateChangeCallback()
+{
+    Security::AccessToken::PermStateChangeScope scopeInfo;
+    scopeInfo.permList = {"ohos.permission.MICROPHONE"};
+    auto callbackPtr = std::make_shared<PerStateChangeCbCustomizeCallback>(scopeInfo, this);
+    callbackPtr->ready_ = false;
+    CHECK_AND_RETURN_LOG(Security::AccessToken::AccessTokenKit::RegisterPermStateChangeCallback(callbackPtr) >= 0,
+        "fail to call RegisterPermStateChangeCallback.");
+    RecordBootStateTime(AudioPolicyServerBootState::REGISTER_ACCESS_TOKEN_CB, ClockTime::GetCurMilli());
+}
+
+void AudioPolicyServer::GetScreenStates()
+{
+    isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
+    RecordBootStateTime(AudioPolicyServerBootState::GET_SCREEN_STATUS, ClockTime::GetCurMilli());
+}
+
 void AudioPolicyServer::OnStart()
 {
+    RecordBootStateTime(AudioPolicyServerBootState::BEGIN, ClockTime::GetCurMilli());
     AUDIO_INFO_LOG("Audio policy server on start");
     DlopenUtils::Init();
+    RecordBootStateTime(AudioPolicyServerBootState::LOAD_LIBXML2, ClockTime::GetCurMilli());
     Init();
     bool res = false;
     if (!isNeedPublished_) {
         res = Publish(this);
+        RecordBootStateTime(AudioPolicyServerBootState::PUBLISH_AVAILABLE, ClockTime::GetCurMilli());
         isPublishCalled_ = true;
     }
     if (!res) {
@@ -307,30 +327,20 @@ void AudioPolicyServer::OnStart()
     }
     AddSystemAbilityListeners();
 
-    Security::AccessToken::PermStateChangeScope scopeInfo;
-    scopeInfo.permList = {"ohos.permission.MICROPHONE"};
-    auto callbackPtr = std::make_shared<PerStateChangeCbCustomizeCallback>(scopeInfo, this);
-    callbackPtr->ready_ = false;
-    int32_t iRes = Security::AccessToken::AccessTokenKit::RegisterPermStateChangeCallback(callbackPtr);
-    if (iRes < 0) {
-        AUDIO_ERR_LOG("fail to call RegisterPermStateChangeCallback.");
-    }
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-    SubscribeVolumeKeyEvents();
-#endif
     if (getpid() > FIRST_SCREEN_ON_PID) {
         coreService_->SetFirstScreenOn();
     }
     // Restart to reload the volume.
-    InitKVStore();
-    isScreenOffOrLock_ = !PowerMgr::PowerMgrClient::GetInstance().IsScreenOn(true);
     DlopenUtils::DeInit();
     DfxMsgManager::GetInstance().Init();
+    RecordBootStateTime(AudioPolicyServerBootState::END, ClockTime::GetCurMilli());
     AUDIO_INFO_LOG("Audio policy server start end");
 }
 
 void AudioPolicyServer::AddSystemAbilityListeners()
 {
+    AddSystemAbilityListener(ACCESS_TOKEN_MANAGER_SERVICE_ID);
+    AddSystemAbilityListener(INPUT_METHOD_SYSTEM_ABILITY_ID);
     AddSystemAbilityListener(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID);
     AddSystemAbilityListener(AUDIO_DISTRIBUTED_SERVICE_ID);
     AddSystemAbilityListener(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID);
@@ -378,12 +388,14 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #endif
         case DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID:
+            InitKVStore();
             HandleKvDataShareEvent();
             break;
         case DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID:
             AddRemoteDevstatusCallback();
             break;
         case POWER_MANAGER_SERVICE_ID:
+            GetScreenStates();
             SubscribePowerStateChangeEvents();
             RegisterPowerStateListener();
             RegisterSyncHibernateListener();
@@ -433,6 +445,14 @@ void AudioPolicyServer::HandleAudioServerRelatedSystemAbility(int32_t systemAbil
             break;
         case BLUETOOTH_HOST_SYS_ABILITY_ID:
             RegisterBluetoothListener();
+            break;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+        case INPUT_METHOD_SYSTEM_ABILITY_ID:
+            SubscribeVolumeKeyEvents();
+            break;
+#endif
+        case ACCESS_TOKEN_MANAGER_SERVICE_ID:
+            RegisterPermStateChangeCallback();
             break;
         default:
             AUDIO_WARNING_LOG("unhandled sysabilityId:%{public}d",
@@ -824,6 +844,7 @@ void AudioPolicyServer::SubscribeVolumeKeyEvents()
         hasSubscribedVolumeKeyEvents_.store(false);
         std::thread(&AudioPolicyServer::SubscribeVolumeKeyEventsRetryFunc, this).detach();
     }
+    RecordBootStateTime(AudioPolicyServerBootState::REGISTER_VOLUME_KEY_EVENT, ClockTime::GetCurMilli());
 }
 
 void AudioPolicyServer::SubscribeVolumeKeyEventsRetryFunc()
@@ -2885,6 +2906,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }
+    RecordBootStateTime(BootAnimationState::ACTIVATE_AUDIO_INTERRUPT, audioInterrupt.uid, ClockTime::GetCurMilli());
 
     return ret;
 }
@@ -3072,6 +3094,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-as"] = &AudioPolicyServer::AudioSessionInfoDump;
     dumpFuncMap[u"-ap"] = &AudioPolicyServer::AudioPipeManagerDump;
     dumpFuncMap[u"-sd"] = &AudioPolicyServer::SelectDeviceDump;
+    dumpFuncMap[u"-boot"] = &AudioPolicyServer::AudioPolicyBootDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -3135,6 +3158,22 @@ void AudioPolicyServer::MicrophoneMuteInfoDump(std::string &dumpString)
     audioPolicyDump_.MicrophoneMuteInfoDump(dumpString);
 }
 
+void AudioPolicyServer::AudioPolicyBootDump(std::string &dumpString)
+{
+    audioPolicyDump_.AudioPolicyBootDump(dumpString);
+}
+
+void AudioPolicyServer::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
+{
+    CHECK_AND_RETURN(uid == BOOT_ANIMATION_UID);
+    audioPolicyDump_.RecordBootStateTime(state, uid, curTime);
+}
+
+void AudioPolicyServer::RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime)
+{
+    audioPolicyDump_.RecordBootStateTime(state, curTime);
+}
+
 void AudioPolicyServer::AudioSessionInfoDump(std::string &dumpString)
 {
     sessionService_.AudioSessionInfoDump(dumpString);
@@ -3193,6 +3232,7 @@ void AudioPolicyServer::InfoDumpHelp(std::string &dumpString)
     AppendFormat(dumpString, "  -e\t\t\t|dump audio effect manager info\n");
     AppendFormat(dumpString, "  -as\t\t\t|dump audio session info\n");
     AppendFormat(dumpString, "  -ap\t\t\t|dump audio pipe manager info\n");
+    AppendFormat(dumpString, "  -boot\t\t\t|dump audio policy boot info\n");
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -3904,7 +3944,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
         GetMaxVolumeLevel(streamTypeIn, volumeLevelMax);
         volumeEvent.volumeDegree = VolumeUtils::VolumeLevelToDegree(volume, volumeLevelMax);
         volumeEvent.deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        
+
         CHECK_AND_RETURN_RET_LOG(audioPolicyServerHandler_ != nullptr, ERROR, "audioPolicyServerHandler_ is nullptr");
         if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK) {
             audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
@@ -5325,6 +5365,7 @@ int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, uint32_t 
             silentControl);
         return SUCCESS;
     }
+    
     isAllowed = audioBackgroundManager_.IsAllowedPlayback(uid, pid, sessionId, streamUsage, silentControl);
     return SUCCESS;
 }
@@ -5809,7 +5850,7 @@ int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
     int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
-    
+
     volumeDegree = GetSystemVolumeDegreeInternal(newStreamType, zoneId);
     return SUCCESS;
 }
@@ -5831,6 +5872,12 @@ int32_t AudioPolicyServer::UpdateSafeVolumeByStrMode()
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED,
         "UpdateSafeVolumeByStrMode: No system permission");
     return audioVolumeManager_.UpdateSafeVolumeByStrMode();
+}
+
+int32_t AudioPolicyServer::RecordBootAnimationClientStateTime(const BootAnimationInfo &info)
+{
+    audioPolicyDump_.RecordBootAnimationClientStateTime(info);
+    return SUCCESS;
 }
 
 bool AudioPolicyServer::IsPublishCalled() const

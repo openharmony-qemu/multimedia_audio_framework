@@ -54,6 +54,8 @@
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
 #include "async_action_handler.h"
+#include "audio_policy_dump.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -120,6 +122,7 @@ public:
         int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning, bool skipForce = false) override;
+        int32_t RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime) override;
         int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         std::string GetModuleNameBySessionId(uint32_t sessionId) override;
@@ -235,6 +238,7 @@ public:
         std::condition_variable serviceReadyCV_;
         std::atomic<bool> serviceReady_ = false;
         int32_t serviceReadyWaitCount_ = 0;
+        AudioPolicyDump &audioPolicyDump_;
     };
 
     // Ctor & dtor
@@ -460,6 +464,8 @@ public:
     void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
         const AudioStreamDeviceChangeReason reason);
@@ -863,6 +869,7 @@ private:
     bool isMicRefRecordOn_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
+    AudioPolicyDump &audioPolicyDump_;
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     int32_t isSupportUltraFast_ = 0;

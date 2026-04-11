@@ -28,6 +28,7 @@
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_spatialization_state_change_listener.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -3533,6 +3534,14 @@ int32_t AudioPolicyManager::UpdateSafeVolumeByStrMode()
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     return gsp->UpdateSafeVolumeByStrMode();
+}
+
+int32_t AudioPolicyManager::RecordBootAnimationClientStateTime(const BootAnimationInfo &info)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    return gsp->RecordBootAnimationClientStateTime(info);
 }
 
 int32_t AudioPolicyManager::RegisterCollaborationEnabledForCurrentDeviceEventListener(

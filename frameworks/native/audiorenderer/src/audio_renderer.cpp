@@ -36,6 +36,7 @@
 #include "audio_stream_types.h"
 #include "audio_performance_monitor.h"
 #include "audio_device_info.h"
+#include "boot_animation_state_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -114,6 +115,14 @@ static const std::vector<StreamUsage> AUDIO_DEFAULT_OUTPUT_DEVICE_SUPPORTED_STRE
     STREAM_USAGE_VIDEO_COMMUNICATION,
     STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
 };
+
+static BootAnimationInfo g_bootAnimationInfo = std::vector<int64_t>(static_cast<size_t>(BootAnimationState::MAX), 0);
+
+static void RecordBootAnimationStateTime(const int32_t uid, BootAnimationState state)
+{
+    CHECK_AND_RETURN(uid == BOOT_ANIMATION_UID && state < BootAnimationState::MAX);
+    g_bootAnimationInfo[static_cast<size_t>(state)] = ClockTime::GetCurMilli();
+}
 
 static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamInfo)
 {
@@ -390,6 +399,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
 void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
+    rendererInfo_.keepRunning = rendererOptions.rendererInfo.keepRunning;
+    rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
     rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
@@ -413,8 +424,7 @@ bool AudioRendererPrivate::GetFinalOffloadAllowed(bool originalAllowed)
 {
     if (getuid() == UID_MEDIA) {
         // Boot animation use avplayer, do not get bundle name to avoid increasing boot duration.
-        std::string bundleName = AppBundleManager::GetSelfBundleName(appInfo_.appUid);
-        if (bundleName == "mockNotOffloadHap") {
+        if (GetBundleNameByAppUid(appInfo_.appUid) == "mockNotOffloadHap") {
             AUDIO_INFO_LOG("Force set offload allowed to false for this stream");
             return false;
         }
@@ -426,14 +436,17 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     const AppInfo &appInfo)
 {
     Trace trace("KeyAction AudioRenderer::Create");
+    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CREATE_RENDERER_BEGIN);
     std::lock_guard<std::mutex> lock(createRendererMutex_);
     CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy() != nullptr,
         nullptr, "sa not start");
+    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CHECK_POLICY_SERVICE_AVAILABLE);
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (!CheckStreamTypeAndPermission(audioStreamType, rendererOptions.rendererInfo.streamUsage)) {
         return nullptr;
     }
+    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::VERIFY_PERMISSION_IN_CREATE);
 
     auto audioRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, false);
     if (audioRenderer == nullptr) {
@@ -462,8 +475,6 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.toneFlag = rendererOptions.rendererInfo.toneFlag;
-    audioRenderer->rendererInfo_.keepRunning = rendererOptions.rendererInfo.keepRunning;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
@@ -472,7 +483,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
         AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
             ERR_OPERATION_FAILED);
     }
-
+    RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CREATE_RENDERER_END);
     return audioRenderer;
 }
 
@@ -634,12 +645,13 @@ int32_t AudioRendererPrivate::InitAudioStream(AudioStreamParams audioStreamParam
         audioStream_->SetStaticBufferInfo(staticBufferInfo_);
     }
     int32_t ret = audioStream_->SetAudioStreamInfo(audioStreamParams, rendererProxyObj_);
+    RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::SET_AUDIO_STREAM_INFO);
     CHECK_AND_CALL_FUNC_RETURN_RET(!ret, ret, HILOG_COMM_ERROR("[InitAudioStream]SetParams SetAudioStreamInfo Failed"));
 
     ret = GetAudioStreamIdInner(sessionID_);
     CHECK_AND_CALL_FUNC_RETURN_RET(!ret, ret, HILOG_COMM_ERROR("[InitAudioStream]GetAudioStreamId err"));
     InitLatencyMeasurement(audioStreamParams);
-
+    RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::INIT_AUDIO_STREAM);
     return SUCCESS;
 }
 
@@ -773,6 +785,21 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     return InitAudioInterruptCallback();
 }
 
+std::string &AudioRendererPrivate::GetBundleNameByUid()
+{
+    CHECK_AND_RETURN_RET(bundleNameByUid_.empty(), bundleNameByUid_);
+    bundleNameByUid_ = AppBundleManager::GetSelfBundleName(getuid());
+    RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::GET_BUNDLE_NAME);
+    return bundleNameByUid_;
+}
+
+std::string &AudioRendererPrivate::GetBundleNameByAppUid(int32_t uid)
+{
+    CHECK_AND_RETURN_RET(bundleNameByAppUid_.empty(), bundleNameByAppUid_);
+    bundleNameByAppUid_ = AppBundleManager::GetSelfBundleName(uid);
+    return bundleNameByAppUid_;
+}
+
 int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamParams,
     const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag)
 {
@@ -804,9 +831,9 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
         audioStream_->NotifyRouteUpdate(flag, networkId);
-        std::string bundleName = AppBundleManager::GetSelfBundleName(getuid());
-        audioStream_->SetBundleName(bundleName);
+        audioStream_->SetBundleName(GetBundleNameByUid());
     }
+    RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::PREPARE_AUDIO_STREAM);
     return SUCCESS;
 }
 
@@ -1020,6 +1047,7 @@ bool AudioRendererPrivate::GetStartStreamResult(StateChangeCmdType cmdType)
     }
 
     bool result = audioStream_->StartAudioStream(cmdType);
+    RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_AUDIO_STREAM);
     if (!result) {
         HILOG_COMM_ERROR("[GetStartStreamResult]Start audio stream failed");
         std::lock_guard<std::mutex> lock(silentModeAndMixWithOthersMutex_);
@@ -1193,9 +1221,31 @@ bool AudioRendererPrivate::WaitSwitchStreamIfNeeded(bool needWait)
     return true;
 }
 
+int32_t AudioRendererPrivate::ActivateAudioInterruptInStart(const bool isMute)
+{
+    if ((OHOS::AudioStandard::FLOAT_COMPARE_EQ(GetVolumeInner(), 0.0f) && isStillZeroStreamVolume_) || isMute) {
+        AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillZeroStreamVolume_=%{public}d"
+            " isMute=%{public}d", GetVolumeInner(), isStillZeroStreamVolume_, isMute);
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+    } else {
+        isStillZeroStreamVolume_ = false;
+    }
+    {
+        std::lock_guard<std::mutex> lockSilentMode(silentModeAndMixWithOthersMutex_);
+        if (audioStream_->GetSilentModeAndMixWithOthers()) {
+            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+        }
+        audioInterrupt_.state = audioInterruptState_.load();
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
+    }
+    return SUCCESS;
+}
+
 int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
 {
     Trace trace("KeyAction AudioRenderer::Start " + std::to_string(sessionID_));
+    RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_BEGIN);
     AsyncCheckAudioRenderer("Start", true);
     AudioXCollie audioXCollie("AudioRendererPrivate::Start", START_TIME_OUT_SECONDS,
         [](void *) { AUDIO_ERR_LOG("Start timeout"); }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -1229,24 +1279,12 @@ int32_t AudioRendererPrivate::StartImpl(StateChangeCmdType cmdType)
     bool isMute = audioStream_->GetMute() || silentControl;
     AUDIO_INFO_LOG("VolumeInfo for Renderer::Start. duckVolume: %{public}f, isMute: %{public}d", duckVolume, isMute);
 
-    if ((GetVolumeInner() == 0 && isStillZeroStreamVolume_) || isMute) {
-        AUDIO_INFO_LOG("StreamClientState for Renderer::Start. volume=%{public}f, isStillZeroStreamVolume_=%{public}d"
-            " isMute=%{public}d", GetVolumeInner(), isStillZeroStreamVolume_, isMute);
-        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
-    } else {
-        isStillZeroStreamVolume_ = false;
-    }
-    {
-        std::lock_guard<std::mutex> lockSilentMode(silentModeAndMixWithOthersMutex_);
-        if (audioStream_->GetSilentModeAndMixWithOthers()) {
-            audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
-        }
-        audioInterrupt_.state = audioInterruptState_.load();
-        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == 0, ERROR, HILOG_COMM_ERROR("[Start]ActivateAudioInterrupt Failed"));
-    }
-
-    return GetStartStreamResult(cmdType) ? SUCCESS : ERROR;
+    int32_t ret = ActivateAudioInterruptInStart(isMute);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    ret = GetStartStreamResult(cmdType) ? SUCCESS : ERROR;
+    RecordBootAnimationStateTime(appInfo_.appUid, BootAnimationState::START_RENDERER_END);
+    AudioPolicyManager::GetInstance().RecordBootAnimationClientStateTime(g_bootAnimationInfo);
+    return ret;
 }
 
 int32_t AudioRendererPrivate::Write(uint8_t *buffer, size_t bufferSize)
@@ -3090,8 +3128,7 @@ void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackT
 bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
 {
     bool isBundleNameValid = false;
-    std::string bundleName = AppBundleManager::GetSelfBundleName(getuid());
-    int32_t ret = AudioPolicyManager::GetInstance().CheckVKBInfo(bundleName, isBundleNameValid);
+    int32_t ret = AudioPolicyManager::GetInstance().CheckVKBInfo(GetBundleNameByUid(), isBundleNameValid);
     bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
         && isBundleNameValid;
     AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, isVKB:%{public}s", ret, flags,

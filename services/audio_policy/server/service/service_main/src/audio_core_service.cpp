@@ -308,7 +308,8 @@ AudioCoreService::AudioCoreService()
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
       audioSessionService_(OHOS::Singleton<AudioSessionService>::GetInstance()),
       pipeManager_(AudioPipeManager::GetPipeManager()),
-      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance())
+      audioInjectorPolicy_(AudioInjectorPolicy::GetInstance()),
+      audioPolicyDump_(AudioPolicyDump::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -344,6 +345,7 @@ void AudioCoreService::Init()
 
     // Register device status listener
     int32_t status = deviceStatusListener_->RegisterDeviceStatusListener();
+    RecordBootStateTime(AudioPolicyServerBootState::LISTENING_DEVICE_STATUS, ClockTime::GetCurMilli());
     if (status != SUCCESS) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Register for device status events failed");
         AUDIO_ERR_LOG("Register for device status events failed");
@@ -358,6 +360,16 @@ void AudioCoreService::DeInit()
     if (isBtListenerRegistered) {
         UnregisterBluetoothListener();
     }
+}
+
+void AudioCoreService::RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime)
+{
+    audioPolicyDump_.RecordBootStateTime(state, curTime);
+}
+
+void AudioCoreService::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
+{
+    audioPolicyDump_.RecordBootStateTime(state, uid, curTime);
 }
 
 void AudioCoreService::SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler)

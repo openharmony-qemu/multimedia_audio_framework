@@ -147,6 +147,8 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     // load configuration
     std::unique_ptr<AudioFocusParser> parser = make_unique<AudioFocusParser>();
     int32_t ret = parser->LoadConfig(focusCfgMap_);
+    server->RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_INTERRUPT_POLICY_CONFIG,
+        ClockTime::GetCurMilli());
     if (ret != SUCCESS) {
         WriteServiceStartupError();
     }

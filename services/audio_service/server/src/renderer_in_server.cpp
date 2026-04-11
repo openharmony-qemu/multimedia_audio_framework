@@ -49,6 +49,7 @@
 #include "audio_effect_chain_manager.h"
 #include "app_bundle_manager.h"
 #include "audio_resource_service.h"
+#include "boot_animation_state_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -2994,6 +2995,8 @@ void RendererInServer::WaitForDataConnection()
             });
         AUDIO_INFO_LOG("data-connection blocking ends, reason %{public}s.", stopWaiting ? "connected" : "timeout");
     }
+    CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+        BootAnimationState::WAIT_FOR_DATA_CONNECTION), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
 }
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
@@ -3094,6 +3097,8 @@ int32_t RendererInServer::CreateServerBuffer()
     } else {
         // create OHAudioBuffer in server
         audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
+        CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+            BootAnimationState::CREATE_FROM_LOCAL), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
 
         // we need to clear data buffer to avoid dirty data.

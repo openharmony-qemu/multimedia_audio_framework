@@ -57,6 +57,7 @@
 #include "audio_usb_manager.h"
 #endif
 #include "audio_pipe_selector.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -736,6 +737,12 @@ public:
     void AudioSessionInfoDump(std::string &dumpString);
     void AudioPipeManagerDump(std::string &dumpString);
     void SelectDeviceDump(std::string &dumpString);
+    void AudioPolicyBootDump(std::string &dumpString);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
+    int32_t RecordBootAnimationClientStateTime(const BootAnimationInfo &info) override;
+    void RegisterPermStateChangeCallback();
+    void GetScreenStates();
 
     // for hibernate callback
     void CheckHibernateState(bool hibernate);

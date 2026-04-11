@@ -87,6 +87,16 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
 } // namespace
 
 // LCOV_EXCL_START
+void AudioAdapterManager::RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime)
+{
+    AudioCoreService::GetCoreService()->RecordBootStateTime(state, curTime);
+}
+
+void AudioAdapterManager::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
+{
+    AudioCoreService::GetCoreService()->RecordBootStateTime(state, uid, curTime);
+}
+
 bool AudioAdapterManager::Init()
 {
     char testMode[10] = {0}; // 10 for system parameter usage
@@ -99,6 +109,7 @@ bool AudioAdapterManager::Init()
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
     auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
+    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_VOLUME_CONFIG, ClockTime::GetCurMilli());
     lowerVolumeInfos_ = audiovolumeParser->GetLowerVolumeInfoCfg();
     AudioVolumeUtils::GetInstance().Init();
     defaultVolumeTypeList_ = (VolumeUtils::IsPCVolumeEnable()) ? PC_VOLUME_TYPE_LIST : BASE_VOLUME_TYPE_LIST;
@@ -203,6 +214,7 @@ void AudioAdapterManager::InitKVStoreInternal()
         handler_->SendKvDataUpdate(isFirstBoot);
     }
     AudioSpatializationService::GetAudioSpatializationService().InitSpatializationState();
+    RecordBootStateTime(AudioPolicyServerBootState::INIT_VOLUME_DATABASE, ClockTime::GetCurMilli());
 }
 
 void AudioAdapterManager::HandleKvData(bool isFirstBoot)
@@ -1389,6 +1401,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
             int32_t volumeLevel = GetStreamVolumeInternal(tempDesc, volumeType);
             SaveSystemVolumeForSwitchDevice(tempDesc, volumeType, volumeLevel);
             SetVolumeDb(tempDesc, volumeType);
+            RecordBootStateTime(BootAnimationState::SET_VOLUME_DB, streamDesc->GetRealUid(), ClockTime::GetCurMilli());
             UpdateVolumeForLowLatency(tempDesc, volumeType);
             HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
                 "device: %{public}s, sessionId: %{public}d", volumeLevel, GetStreamMuteInternal(tempDesc, volumeType),
@@ -2442,6 +2455,7 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
             }
         } while (retries <= KVSTORE_CONNECT_RETRY_COUNT);
     }
+    RecordBootStateTime(AudioPolicyServerBootState::INIT_DATABASE, ClockTime::GetCurMilli());
 
     if (audioPolicyKvStore_ != nullptr) {
         isNeedCopyVolumeData_ = true;
