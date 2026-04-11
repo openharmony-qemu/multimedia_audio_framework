@@ -1078,6 +1078,14 @@ HWTEST(AudioServerUnitTest, CheckRecorderPermission_FastFlag_001, TestSize.Level
     config.capturerInfo.isLoopback = true;
     bool result = audioServer->CheckRecorderPermission(config);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test CheckRecorderPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecorderPermission_FastFlag_001
+ * @tc.desc  : Test CheckRecorderPermission interface.
+ */
 HWTEST(AudioServerUnitTest, CheckRecorderPermission_FastFlag_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioServerUnitTest CheckRecorderPermission_FastFlag_001 start");
