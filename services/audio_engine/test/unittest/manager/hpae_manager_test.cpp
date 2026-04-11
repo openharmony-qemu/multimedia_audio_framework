@@ -2458,7 +2458,7 @@ HWTEST_F(HpaeManagerUnitTest, CaptureCollaboration_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 
     // start stream after collaboration enabled
-    EXPECT_EQ(hpaeManager_->Start(captureStreamInfo.sessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Start(captureStreamInfo.streamClassType, captureStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
     // disable collaboration while stream running
@@ -2466,9 +2466,9 @@ HWTEST_F(HpaeManagerUnitTest, CaptureCollaboration_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 
     // stop and cleanup
-    EXPECT_EQ(hpaeManager_->Stop(captureStreamInfo.sessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Stop(captureStreamInfo.streamClassType, captureStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->DestroyStream(captureStreamInfo.sessionId), SUCCESS);
+    EXPECT_EQ(hpaeManager_->DestroyStream(captureStreamInfo.streamClassType, captureStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->CloseAudioPort(sourcePortId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
