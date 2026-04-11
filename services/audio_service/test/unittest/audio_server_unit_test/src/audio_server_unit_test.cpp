@@ -31,6 +31,7 @@
 #include "audio_service_types.h"
 #include "audio_server_hpae_dump.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_capturer_types.h"
 
 using namespace testing::ext;
 using OHOS::AudioStandard::SetSysPara;
@@ -3229,6 +3230,315 @@ HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Leve
     EXPECT_NE(nullptr, audioServer);
     int32_t ret = audioServer->ReportPlaybackCaptureUserChoice(1, false);
     EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test ReportWakeupEvent API
+ * @tc.type  : FUNC
+ * @tc.number: ReportWakeupEvent_001
+ * @tc.desc  : Test ReportWakeupEvent interface with valid params.
+ */
+HWTEST_F(AudioServerUnitTest, ReportWakeupEvent_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioWakeupTrackInfo audioWakeupTrackInfo;
+    audioWakeupTrackInfo.stage = STAGE_FWK_CREATE_ENTER;
+    audioWakeupTrackInfo.result = WAKEUP_RESULT_DEFAULT;
+    audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
+    int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test ReportWakeupEvent API
+ * @tc.type  : FUNC
+ * @tc.number: ReportWakeupEvent_002
+ * @tc.desc  : Test ReportWakeupEvent with different stage codes.
+ */
+HWTEST_F(AudioServerUnitTest, ReportWakeupEvent_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioWakeupTrackInfo audioWakeupTrackInfo;
+    audioWakeupTrackInfo.result = WAKEUP_RESULT_SUCC;
+    audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
+
+    audioWakeupTrackInfo.stage = STAGE_FWK_CREATE_EXIT;
+    int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    audioWakeupTrackInfo.stage = STAGE_FWK_START_ENTER;
+    ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    audioWakeupTrackInfo.stage = STAGE_FWK_START_EXIT;
+    ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    audioWakeupTrackInfo.stage = STAGE_FWK_END;
+    ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test ReportWakeupEvent API
+ * @tc.type  : FUNC
+ * @tc.number: ReportWakeupEvent_003
+ * @tc.desc  : Test ReportWakeupEvent with different results.
+ */
+HWTEST_F(AudioServerUnitTest, ReportWakeupEvent_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioWakeupTrackInfo audioWakeupTrackInfo;
+    audioWakeupTrackInfo.stage = STAGE_FWK_CREATE_ENTER;
+    audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
+
+    audioWakeupTrackInfo.result = WAKEUP_RESULT_DEFAULT;
+    int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    audioWakeupTrackInfo.result = WAKEUP_RESULT_SUCC;
+    ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    audioWakeupTrackInfo.result = WAKEUP_RESULT_FAIL;
+    ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test ReportWakeupEvent API
+ * @tc.type  : FUNC
+ * @tc.number: ReportWakeupEvent_004
+ * @tc.desc  : Test ReportWakeupEvent with different error codes.
+ */
+HWTEST_F(AudioServerUnitTest, ReportWakeupEvent_004, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioWakeupTrackInfo audioWakeupTrackInfo;
+    audioWakeupTrackInfo.stage = STAGE_FWK_CREATE_ENTER;
+    audioWakeupTrackInfo.result = WAKEUP_RESULT_FAIL;
+
+    audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
+    int32_t ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_CREATE_ERROR;
+    ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+
+    audioWakeupTrackInfo.errCode = WAKEUP_TRACK_FWK_START_ERROR;
+    ret = audioServer->ReportWakeupEvent(audioWakeupTrackInfo);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+}
+
+/**
+ * @tc.name  : Test HapReportWakeupEvent via SetExtraParameters
+ * @tc.type  : FUNC
+ * @tc.number: HapReportWakeupEvent_001
+ * @tc.desc  : Test HapReportWakeupEvent with valid JSON format.
+ */
+HWTEST_F(AudioServerUnitTest, HapReportWakeupEvent_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->isAudioParameterParsed_.store(true);
+    AudioServer::audioParameterKeys["dfx"] = {};
+    std::vector<StringPair> kvpairs;
+    std::string jsonStr = "{\"stage\":\"0x0100\",\"result\":\"0\",\"errCode\":\"0x1000\"}";
+    kvpairs.push_back({"update_wakeup_trace_result", jsonStr});
+    int32_t ret = audioServer->SetExtraParameters("dfx", kvpairs);
+    EXPECT_EQ(ERROR, ret);
+    auto it = AudioServer::audioParameterKeys.find("dfx");
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase("dfx");
+    }
+}
+
+/**
+ * @tc.name  : Test HapReportWakeupEvent via SetExtraParameters
+ * @tc.type  : FUNC
+ * @tc.number: HapReportWakeupEvent_002
+ * @tc.desc  : Test HapReportWakeupEvent with invalid JSON format.
+ */
+HWTEST_F(AudioServerUnitTest, HapReportWakeupEvent_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->isAudioParameterParsed_.store(true);
+    AudioServer::audioParameterKeys["dfx"] = {};
+    std::vector<StringPair> kvpairs;
+    std::string invalidJsonStr = "invalid_json_string";
+    kvpairs.push_back({"update_wakeup_trace_result", invalidJsonStr});
+    int32_t ret = audioServer->SetExtraParameters("dfx", kvpairs);
+    EXPECT_EQ(ERROR, ret);
+    auto it = AudioServer::audioParameterKeys.find("dfx");
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase("dfx");
+    }
+}
+
+/**
+ * @tc.name  : Test HapReportWakeupEvent via SetExtraParameters
+ * @tc.type  : FUNC
+ * @tc.number: HapReportWakeupEvent_003
+ * @tc.desc  : Test HapReportWakeupEvent with missing required fields.
+ */
+HWTEST_F(AudioServerUnitTest, HapReportWakeupEvent_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->isAudioParameterParsed_.store(true);
+    AudioServer::audioParameterKeys["dfx"] = {};
+    std::vector<StringPair> kvpairs;
+    std::string jsonStrMissingField = "{\"stage\":\"0x0100\",\"result\":\"0\"}";
+    kvpairs.push_back({"update_wakeup_trace_result", jsonStrMissingField});
+    int32_t ret = audioServer->SetExtraParameters("dfx", kvpairs);
+    EXPECT_EQ(ERROR, ret);
+    auto it = AudioServer::audioParameterKeys.find("dfx");
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase("dfx");
+    }
+}
+
+/**
+ * @tc.name  : Test HapReportWakeupEvent via SetExtraParameters
+ * @tc.type  : FUNC
+ * @tc.number: HapReportWakeupEvent_004
+ * @tc.desc  : Test HapReportWakeupEvent with wrong key.
+ */
+HWTEST_F(AudioServerUnitTest, HapReportWakeupEvent_004, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->isAudioParameterParsed_.store(true);
+    AudioServer::audioParameterKeys["wrong_key"] = {};
+    std::vector<StringPair> kvpairs;
+    std::string jsonStr = "{\"stage\":\"0x0100\",\"result\":\"0\",\"errCode\":\"0x1000\"}";
+    kvpairs.push_back({"update_wakeup_trace_result", jsonStr});
+    int32_t ret = audioServer->SetExtraParameters("wrong_key", kvpairs);
+    EXPECT_EQ(ERROR, ret);
+    auto it = AudioServer::audioParameterKeys.find("wrong_key");
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase("wrong_key");
+    }
+}
+
+/**
+ * @tc.name  : Test HapReportWakeupEvent via SetExtraParameters
+ * @tc.type  : FUNC
+ * @tc.number: HapReportWakeupEvent_005
+ * @tc.desc  : Test HapReportWakeupEvent with wrong sub_key.
+ */
+HWTEST_F(AudioServerUnitTest, HapReportWakeupEvent_005, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->isAudioParameterParsed_.store(true);
+    AudioServer::audioParameterKeys["dfx"] = {};
+    std::vector<StringPair> kvpairs;
+    std::string jsonStr = "{\"stage\":\"0x0100\",\"result\":\"0\",\"errCode\":\"0x1000\"}";
+    kvpairs.push_back({"wrong_sub_key", jsonStr});
+    int32_t ret = audioServer->SetExtraParameters("dfx", kvpairs);
+    EXPECT_EQ(ERROR, ret);
+    auto it = AudioServer::audioParameterKeys.find("dfx");
+    if (it != AudioServer::audioParameterKeys.end()) {
+        AudioServer::audioParameterKeys.erase("dfx");
+    }
+}
+
+/**
+ * @tc.name  : Test AudioWakeupTrackInfo Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: AudioWakeupTrackInfoMarshalling_001
+ * @tc.desc  : Test AudioWakeupTrackInfo serialization and deserialization.
+ */
+HWTEST_F(AudioServerUnitTest, AudioWakeupTrackInfoMarshalling_001, TestSize.Level1)
+{
+    AudioWakeupTrackInfo originalInfo;
+    originalInfo.stage = STAGE_FWK_CREATE_ENTER;
+    originalInfo.result = WAKEUP_RESULT_DEFAULT;
+    originalInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
+
+    Parcel parcel;
+    bool ret = originalInfo.Marshalling(parcel);
+    EXPECT_TRUE(ret);
+
+    AudioWakeupTrackInfo *unmarshalledInfo = AudioWakeupTrackInfo::Unmarshalling(parcel);
+    EXPECT_NE(nullptr, unmarshalledInfo);
+    EXPECT_EQ(unmarshalledInfo->stage, originalInfo.stage);
+    EXPECT_EQ(unmarshalledInfo->result, originalInfo.result);
+    EXPECT_EQ(unmarshalledInfo->errCode, originalInfo.errCode);
+    delete unmarshalledInfo;
+}
+
+/**
+ * @tc.name  : Test AudioWakeupTrackInfo Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: AudioWakeupTrackInfoMarshalling_002
+ * @tc.desc  : Test AudioWakeupTrackInfo with different values.
+ */
+HWTEST_F(AudioServerUnitTest, AudioWakeupTrackInfoMarshalling_002, TestSize.Level1)
+{
+    AudioWakeupTrackInfo originalInfo;
+    originalInfo.stage = STAGE_FWK_START_EXIT;
+    originalInfo.result = WAKEUP_RESULT_FAIL;
+    originalInfo.errCode = WAKEUP_TRACK_FWK_START_ERROR;
+
+    Parcel parcel;
+    bool ret = originalInfo.Marshalling(parcel);
+    EXPECT_TRUE(ret);
+
+    AudioWakeupTrackInfo *unmarshalledInfo = AudioWakeupTrackInfo::Unmarshalling(parcel);
+    EXPECT_NE(nullptr, unmarshalledInfo);
+    EXPECT_EQ(unmarshalledInfo->stage, STAGE_FWK_START_EXIT);
+    EXPECT_EQ(unmarshalledInfo->result, WAKEUP_RESULT_FAIL);
+    EXPECT_EQ(unmarshalledInfo->errCode, WAKEUP_TRACK_FWK_START_ERROR);
+    delete unmarshalledInfo;
+}
+
+/**
+ * @tc.name  : Test AudioWakeupTrackInfo Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: AudioWakeupTrackInfoMarshalling_003
+ * @tc.desc  : Test AudioWakeupTrackInfo with create error.
+ */
+HWTEST_F(AudioServerUnitTest, AudioWakeupTrackInfoMarshalling_003, TestSize.Level1)
+{
+    AudioWakeupTrackInfo originalInfo;
+    originalInfo.stage = STAGE_FWK_CREATE_EXIT;
+    originalInfo.result = WAKEUP_RESULT_FAIL;
+    originalInfo.errCode = WAKEUP_TRACK_FWK_CREATE_ERROR;
+
+    Parcel parcel;
+    bool ret = originalInfo.Marshalling(parcel);
+    EXPECT_TRUE(ret);
+
+    AudioWakeupTrackInfo *unmarshalledInfo = AudioWakeupTrackInfo::Unmarshalling(parcel);
+    EXPECT_NE(nullptr, unmarshalledInfo);
+    EXPECT_EQ(unmarshalledInfo->stage, STAGE_FWK_CREATE_EXIT);
+    EXPECT_EQ(unmarshalledInfo->result, WAKEUP_RESULT_FAIL);
+    EXPECT_EQ(unmarshalledInfo->errCode, WAKEUP_TRACK_FWK_CREATE_ERROR);
+    delete unmarshalledInfo;
+}
+
+/**
+ * @tc.name  : Test AudioWakeupTrackInfo Marshalling/Unmarshalling
+ * @tc.type  : FUNC
+ * @tc.number: AudioWakeupTrackInfoMarshalling_004
+ * @tc.desc  : Test AudioWakeupTrackInfo with success result.
+ */
+HWTEST_F(AudioServerUnitTest, AudioWakeupTrackInfoMarshalling_004, TestSize.Level1)
+{
+    AudioWakeupTrackInfo originalInfo;
+    originalInfo.stage = STAGE_FWK_START_EXIT;
+    originalInfo.result = WAKEUP_RESULT_SUCC;
+    originalInfo.errCode = WAKEUP_TRACK_FWK_NO_ERROR;
+
+    Parcel parcel;
+    bool ret = originalInfo.Marshalling(parcel);
+    EXPECT_TRUE(ret);
+
+    AudioWakeupTrackInfo *unmarshalledInfo = AudioWakeupTrackInfo::Unmarshalling(parcel);
+    EXPECT_NE(nullptr, unmarshalledInfo);
+    EXPECT_EQ(unmarshalledInfo->stage, STAGE_FWK_START_EXIT);
+    EXPECT_EQ(unmarshalledInfo->result, WAKEUP_RESULT_SUCC);
+    EXPECT_EQ(unmarshalledInfo->errCode, WAKEUP_TRACK_FWK_NO_ERROR);
+    delete unmarshalledInfo;
 }
 } // namespace AudioStandard
 } // namespace OHOS
