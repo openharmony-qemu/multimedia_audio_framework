@@ -1081,27 +1081,6 @@ HWTEST(AudioServerUnitTest, CheckRecorderPermission_FastFlag_001, TestSize.Level
 }
 
 /**
- * @tc.name  : Test CheckRecorderPermission API
- * @tc.type  : FUNC
- * @tc.number: CheckRecorderPermission_FastFlag_001
- * @tc.desc  : Test CheckRecorderPermission interface.
- */
-HWTEST(AudioServerUnitTest, CheckRecorderPermission_FastFlag_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioServerUnitTest CheckRecorderPermission_FastFlag_001 start");
-    int32_t systemAbilityId = 100;
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(systemAbilityId, true);
-    AudioProcessConfig config;
-    config.appInfo.appUid = 1000;
-    config.callerUid = 1000;
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    config.capturerInfo.capturerFlags = 0;
-    config.capturerInfo.isLoopback = true;
-    bool result = audioServer->CheckRecorderPermission(config);
-    EXPECT_FALSE(result);
-}
-
-/**
  * @tc.name  : Test ReportWakeupEvent API
  * @tc.type  : FUNC
  * @tc.number: ReportWakeupEvent_001
