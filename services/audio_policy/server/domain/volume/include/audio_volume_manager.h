@@ -46,6 +46,7 @@
 #include "audio_loud_volume_manager.h"
 #endif
 #include "app_volume_manager.h"
+#include "safe_volume_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -345,6 +346,7 @@ private:
     AudioActiveDevice& audioActiveDevice_;
     AudioConnectedDevice& audioConnectedDevice_;
     AudioOffloadStream& audioOffloadStream_;
+    SafeVolumeManager safeVolumeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::mutex forceControlVolumeTypeMutex_;
     bool needForceControlVolumeType_ = false;

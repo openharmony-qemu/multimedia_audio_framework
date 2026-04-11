@@ -21,16 +21,24 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class AudioActiveDevice;
+class IAudioPolicyInterface;
+
 class SafeVolumeManager {
 public:
-    static void PublishSafeVolumeNotification(int32_t notificationId);
-    static void CancelSafeVolumeNotification(int32_t notificationId);
-    static void PublishLegacyHighVolumeNotification();
-    static void CancelLegacyHighVolumeNotification();
-    static bool DeviceIsSupportSafeVolume();
+    SafeVolumeManager();
+    ~SafeVolumeManager() = default;
+
+    void PublishSafeVolumeNotification(int32_t notificationId);
+    void CancelSafeVolumeNotification(int32_t notificationId);
+    void PublishLegacyHighVolumeNotification();
+    void CancelLegacyHighVolumeNotification();
+    bool DeviceIsSupportSafeVolume();
 
 private:
     static constexpr const char* LIB_NAME = "libaudio_safe_volume_notification_impl.z.so";
+    AudioActiveDevice& audioActiveDevice_;
+    IAudioPolicyInterface& audioPolicyManager_;
 };
 
 } // namespace AudioStandard

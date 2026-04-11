@@ -14,7 +14,6 @@
  */
 
 #include "audio_volume_manager_unit_test.h"
-#include "safe_volume_manager.h"
 
 using namespace testing::ext;
 
@@ -160,7 +159,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_106, TestSize.Level1)
     int32_t volumeLevel = -1;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_MAX;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
-    EXPECT_EQ(SafeVolumeManager::DeviceIsSupportSafeVolume(), false);
+    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(), false);
 
     audioVolumeManager->CheckToCloseNotification(streamType, volumeLevel);
 }
@@ -179,7 +178,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_107, TestSize.Level1)
     int32_t volumeLevel = 1;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_MAX;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
-    EXPECT_EQ(SafeVolumeManager::DeviceIsSupportSafeVolume(), false);
+    EXPECT_EQ(audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume(), false);
 
     audioVolumeManager->CheckToCloseNotification(streamType, volumeLevel);
 }
@@ -197,7 +196,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_108, TestSize.Level1)
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceCategory_ = CATEGORY_DEFAULT;
 
-    auto ret = SafeVolumeManager::DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 
@@ -214,7 +213,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_109, TestSize.Level1)
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_CAR;
 
-    auto ret = SafeVolumeManager::DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 
@@ -231,7 +230,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_110, TestSize.Level1)
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
 
-    auto ret = SafeVolumeManager::DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 
@@ -247,7 +246,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_111, TestSize.Level1)
 
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WIRED_HEADSET;
 
-    auto ret = SafeVolumeManager::DeviceIsSupportSafeVolume();
+    auto ret = audioVolumeManager->safeVolumeManager_.DeviceIsSupportSafeVolume();
     EXPECT_EQ(ret, true);
 }
 

@@ -28,12 +28,16 @@
 namespace OHOS {
 namespace AudioStandard {
 
+SafeVolumeManager::SafeVolumeManager()
+    : audioActiveDevice_(AudioActiveDevice::GetInstance()),
+      audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())
+{
+}
+
 bool SafeVolumeManager::DeviceIsSupportSafeVolume()
 {
-    AudioActiveDevice& audioActiveDevice = AudioActiveDevice::GetInstance();
-    IAudioPolicyInterface& audioPolicyManager = AudioPolicyManagerFactory::GetAudioPolicyManager();
-    DeviceType curOutputDeviceType = audioActiveDevice.GetCurrentOutputDeviceType();
-    DeviceCategory curOutputDeviceCategory = audioPolicyManager.GetCurrentOutputDeviceCategory();
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
     switch (curOutputDeviceType) {
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
