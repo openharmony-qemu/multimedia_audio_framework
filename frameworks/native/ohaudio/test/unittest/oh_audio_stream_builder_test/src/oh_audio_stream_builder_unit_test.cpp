@@ -1451,5 +1451,309 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetPlaybackCaptureMod
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API with 384000 for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_001
+ * @tc.desc  : Test SetSamplingRate with 384000 (newly added standard rate) for RENDERER type.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 384000;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetSamplingRate API with 384000 for capturer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_002
+ * @tc.desc  : Test SetSamplingRate with 384000 (newly added standard rate) for CAPTURER type.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 384000;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with 10Hz custom rate for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_003
+ * @tc.desc  : Test SetSamplingRate with 48010 (10Hz custom rate) for RENDERER type.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 48010;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with 10Hz custom rate 8010 for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_004
+ * @tc.desc  : Test SetSamplingRate with 8010 (10Hz custom rate near lower bound) for RENDERER type.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 8010;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with 10Hz custom rate 383990 for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_005
+ * @tc.desc  : Test SetSamplingRate with 383990 (10Hz custom rate near upper bound) for RENDERER type.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_005, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 383990;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with 10Hz custom rate 44100 for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_006
+ * @tc.desc  : Test SetSamplingRate with 44100 (standard rate) still works after 10Hz changes.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_006, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 44100;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with 10Hz custom rate for capturer (should fail).
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_007
+ * @tc.desc  : Test SetSamplingRate with 48010 for CAPTURER type, should return INVALID_PARAM.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_007, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 48010;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with invalid rate not divisible by 10.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_008
+ * @tc.desc  : Test SetSamplingRate with 48001 (not divisible by 10) for RENDERER, should fail.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_008, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 48001;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with rate below valid range.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_009
+ * @tc.desc  : Test SetSamplingRate with 7990 (below 8000) for RENDERER, should fail.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_009, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 7990;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate API with rate above valid range.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_010
+ * @tc.desc  : Test SetSamplingRate with 384010 (above 384000) for RENDERER, should fail.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_010, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 384010;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate with custom rate then override with standard rate.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_011
+ * @tc.desc  : Test that setting a custom rate then a standard rate clears customSampleRate.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_011, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // First set custom rate
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, 48010);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    // Then override with standard rate
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, 48000);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate with 10Hz rate 8000 for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_012
+ * @tc.desc  : Test SetSamplingRate with 8000 (lower boundary, standard rate) still works.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_012, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 8000;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate with 10Hz custom rate 12050 for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_013
+ * @tc.desc  : Test SetSamplingRate with 12050 (10Hz custom rate) for RENDERER type.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_013, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 12050;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate with negative rate for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_014
+ * @tc.desc  : Test SetSamplingRate with negative rate for RENDERER, should fail.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_014, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = -10;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetSamplingRate with zero rate for renderer.
+ * @tc.number: OH_AudioStreamBuilder_SetSamplingRate_10Hz_015
+ * @tc.desc  : Test SetSamplingRate with 0 for RENDERER, should fail.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetSamplingRate_10Hz_015, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    int32_t samplingRate = 0;
+    result = OH_AudioStreamBuilder_SetSamplingRate(builder, samplingRate);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
