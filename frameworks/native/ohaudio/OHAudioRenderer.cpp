@@ -625,7 +625,8 @@ int32_t OHAudioRenderer::GetSamplingRate()
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, MONO, "renderer client is nullptr");
     AudioRendererParams params;
     audioRenderer_->GetParams(params);
-    return params.sampleRate;
+    return params.customSampleRate != 0 ?
+        static_cast<int32_t>(params.customSampleRate) : static_cast<int32_t>(params.sampleRate);
 }
 
 AudioSampleFormat OHAudioRenderer::GetSampleFormat()
