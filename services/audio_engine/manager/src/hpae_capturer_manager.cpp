@@ -513,7 +513,7 @@ int32_t HpaeCapturerManager::CapturerSourceStop()
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
     }
 
-    if(auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT)) {
+    if (auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT)) {
         collabInputCluster->CapturerSourceStop();
     }
 
@@ -915,7 +915,7 @@ int32_t HpaeCapturerManager::DeInit(bool isMoveDefault)
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceDeInit();
     }
 
-    if(auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT)) {
+    if (auto collabInputCluster = SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_DEFAULT)) {
         collabInputCluster->CapturerSourceDeInit();
     }
     isInit_.store(false);

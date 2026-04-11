@@ -88,8 +88,9 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
 #ifdef ENABLE_HOOK_PCM
             inputMicDumper_->Dump((int8_t *)inputs[i]->GetPcmDataBuffer(), micBufferLength_);
 #endif
-            memcpy_s(micCache_.data(), micCache_.size(),
+            auto ret = memcpy_s(micCache_.data(), micCache_.size(),
                 inputs[i]->GetPcmDataBuffer(), micBufferLength_);
+            CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "mic memcpy error");
             transBuf.micData = static_cast<void *>(micCache_.data());
             transBuf.micDataLen = micCache_.size();
             processLength = micBufferLength_;
@@ -98,8 +99,9 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
 #ifdef ENABLE_HOOK_PCM
             inputRefDumper_->Dump((int8_t *)inputs[i]->GetPcmDataBuffer(), micBufferLength_);
 #endif
-            memcpy_s(micRefCache_.data(), micRefCache_.size(),
+            auto ret = memcpy_s(micRefCache_.data(), micRefCache_.size(),
                 inputs[i]->GetPcmDataBuffer(), micrefBufferLength_);
+            CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "collab mic memcpy error");
             transBuf.micRefData = static_cast<void *>(micRefCache_.data());
             transBuf.micRefDataLen = micRefCache_.size();
             AUDIO_DEBUG_LOG("collaborative ref size:%{public}u", micrefBufferLength_);
