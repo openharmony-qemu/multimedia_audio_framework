@@ -85,7 +85,9 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
     // Collaborative recording: float data pass-through, no format conversion
     for (uint32_t i = 0; i < inputs.size(); i++) {
         if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_MIC) {
+#ifdef ENABLE_HOOK_PCM
             inputMicDumper_->Dump((int8_t *)inputs[i]->GetPcmDataBuffer(), micBufferLength_);
+#endif
             memcpy_s(micCache_.data(), micCache_.size(),
                 inputs[i]->GetPcmDataBuffer(), micBufferLength_);
             transBuf.micData = static_cast<void *>(micCache_.data());
@@ -93,7 +95,9 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
             processLength = micBufferLength_;
             AUDIO_DEBUG_LOG("collaborative mic size:%{public}u", processLength);
         } else if (inputs[i]->GetSourceBufferType() == HPAE_SOURCE_BUFFER_TYPE_DEFAULT) {
+#ifdef ENABLE_HOOK_PCM
             inputRefDumper_->Dump((int8_t *)inputs[i]->GetPcmDataBuffer(), micBufferLength_);
+#endif
             memcpy_s(micRefCache_.data(), micRefCache_.size(),
                 inputs[i]->GetPcmDataBuffer(), micrefBufferLength_);
             transBuf.micRefData = static_cast<void *>(micRefCache_.data());
@@ -108,7 +112,9 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
     audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
         static_cast<size_t>(processLength));
     memcpy_s(outPcmBuffer_->GetPcmDataBuffer(), processLength, cacheDataOut_.data(), processLength);
+#ifdef ENABLE_HOOK_PCM
     outputDumper_->Dump((int8_t *)cacheDataOut_.data(), micBufferLength_);
+#endif
     return outPcmBuffer_.get();
 }
 
@@ -234,12 +240,13 @@ void HpaeCaptureEffectNode::SetCapturerEffectConfig(AudioBufferConfig micConfig,
     micrefInfo.format = static_cast<AudioSampleFormat>(micrefConfig.format / BITLENGTH - 1);
     capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_MIC, micInfo);
     capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_EC, ecInfo);
-    capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_MICREF, micrefInfo);
     if (sceneType_ == "SCENE_COLLABORATIVE_RECORD") {
         capturerEffectConfigMap_[HPAE_SOURCE_BUFFER_TYPE_MIC].format = SAMPLE_F32LE;
         micrefInfo.format = SAMPLE_F32LE;
-        micrefInfo.format = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
+        micrefInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_DEFAULT;
         capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_DEFAULT, micrefInfo);
+    } else {
+        capturerEffectConfigMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_MICREF, micrefInfo);
     }
 }
 

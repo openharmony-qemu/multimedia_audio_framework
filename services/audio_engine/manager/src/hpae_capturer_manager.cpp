@@ -141,6 +141,7 @@ void HpaeCapturerManager::CreateSceneCluster(HpaeProcessorType sceneType, AudioE
     clusterNodeInfo.frameLen = CalculateFrameLenBySampleRate(clusterNodeInfo.samplingRate);
     clusterNodeInfo.statusCallback = weak_from_this();
     clusterNodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    clusterNodeInfo.effectInfo.enhanceScene = enhanceScene;
 
     UpdateClusterNodeInfoForRecognition(clusterNodeInfo);
     
