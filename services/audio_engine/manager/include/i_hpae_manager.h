@@ -161,6 +161,12 @@ public:
     virtual void LoadCollaborationConfig() = 0;
     virtual int32_t SetAuxiliarySinkEnable(bool isEnabled) { return 0; };
     virtual void TriggerAppsUidUpdate(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
+
+    // interface for collaborative record
+    virtual void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType);
+    virtual void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType);
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

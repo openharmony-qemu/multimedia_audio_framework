@@ -54,6 +54,7 @@ struct HpaeCapturerSessionInfo {
     HpaeSessionState state = HPAE_SESSION_NEW;
     bool isMoveAble = true;
     bool mixWithWakeUp = false;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
 };
 
 struct HpaeSourceOutputInfo {

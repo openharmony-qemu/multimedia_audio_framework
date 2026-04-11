@@ -636,6 +636,22 @@ void ProAudioServiceAdapterImpl::RemoveCaptureInjector(const uint32_t &sinkPortI
     IHpaeManager::GetHpaeManager().RemoveCaptureInjector(sinkPortIndex, sourcePortIndex, sourceType);
 }
 
+void ProAudioServiceAdapterImpl::EnableCaptureCollaboration(uint32_t sourcePortIndex,
+    uint32_t collabSourcePortIndex, SourceType sourceType)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().EnableCaptureCollaboration(sourcePortIndex, collabSourcePortIndex,
+        sourceType);
+}
+
+void ProAudioServiceAdapterImpl::DisableCaptureCollaboration(uint32_t sourcePortIndex,
+    uint32_t collabSourcePortIndex, SourceType sourceType)
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().DisableCaptureCollaboration(sourcePortIndex, collabSourcePortIndex,
+        sourceType);
+}
+
 void ProAudioServiceAdapterImpl::UpdateAudioPortInfo(const uint32_t &sinkPortIndex,
     const AudioModuleInfo &audioPortInfo)
 {

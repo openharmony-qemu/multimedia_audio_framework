@@ -90,6 +90,10 @@ public:
     virtual bool IsChannelLayoutSupportedForDspEffect(AudioChannelLayout channelLayout) override;
     int32_t UpdateCollaborativeProductId(const std::string &productId) override;
     void LoadCollaborationConfig() override;
+    void EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType) override;
+    void DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+        SourceType sourceType) override;
     virtual void OnGetCollaborativeUpdateCb(int32_t result) override;
     virtual void OnUpdateSpatializationStateCb(int32_t result) override;
 
