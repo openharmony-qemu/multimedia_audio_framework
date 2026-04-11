@@ -90,7 +90,7 @@ public:
     bool HasConnectedA2dp();
     bool IsVirtualConnectedDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedDesc);
     int32_t UpdateDeviceDescDeviceId(std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
-    shared_ptr<AudioDeviceDescriptor> GetBuiltinOutpuDevice(DeviceType devType);
+    shared_ptr<AudioDeviceDescriptor> GetBuiltinOutputDevice(DeviceType devType);
     int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
     VolumeBehavior GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType);
     void Dump(std::string &dumpString);

@@ -1543,7 +1543,7 @@ int32_t AudioDeviceManager::UpdateDeviceDescDeviceId(std::shared_ptr<AudioDevice
     return SUCCESS;
 }
 
-shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetBuiltinOutpuDevice(DeviceType devType)
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetBuiltinOutputDevice(DeviceType devType)
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
     if (devType == DEVICE_TYPE_EARPIECE) {

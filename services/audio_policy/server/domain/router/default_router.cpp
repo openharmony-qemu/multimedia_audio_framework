@@ -26,7 +26,7 @@ namespace AudioStandard {
 shared_ptr<AudioDeviceDescriptor> DefaultRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
     const uint32_t sessionID)
 {
-    auto desc = AudioRouterSelectStrategy::GetInstance().GetMediaDefaulOutputDevice(clientUID, sessionID);
+    auto desc = AudioRouterSelectStrategy::GetInstance().GetMediaDefaultOutputDevice(clientUID, sessionID);
     if (desc == nullptr) {
         desc = AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice();
     }

@@ -256,15 +256,15 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateStreamDefaultDevice_001, Test
     strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 1, speaker);
     strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 2, sco);
 
-    auto result1 = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10001, 1);
+    auto result1 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
     ASSERT_NE(result1, nullptr);
     EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_SPEAKER);
 
-    auto result2 = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10001, 2);
+    auto result2 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 2);
     ASSERT_NE(result2, nullptr);
     EXPECT_EQ(result2->deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
 
-    auto result3 = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10001, 3);
+    auto result3 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 3);
     EXPECT_EQ(result3, nullptr);
 }
 
@@ -275,13 +275,13 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, UpdateStreamDefaultDevice_002, Test
     AudioRouterFollowStrategy strategy;
     strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 1, speaker);
 
-    auto result1 = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10001, 1);
+    auto result1 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
     ASSERT_NE(result1, nullptr);
     EXPECT_EQ(result1->deviceType_, DEVICE_TYPE_SPEAKER);
 
     strategy.UpdateMediaDefaultOutputDevice(TEST_APP_UID_10001, 1, nullptr);
 
-    auto result2 = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10001, 1);
+    auto result2 = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
     EXPECT_EQ(result2, nullptr);
 }
 
@@ -324,7 +324,7 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, GetStreamDefaultDevice_005, TestSiz
 {
     AudioRouterFollowStrategy strategy;
 
-    auto result = strategy.GetMediaDefaulOutputDevice(TEST_APP_UID_10001, 1);
+    auto result = strategy.GetMediaDefaultOutputDevice(TEST_APP_UID_10001, 1);
     EXPECT_EQ(result, nullptr);
     result = strategy.GetCallDefaultOutputDevice(TEST_APP_UID_10001, 1);
     EXPECT_EQ(result, nullptr);

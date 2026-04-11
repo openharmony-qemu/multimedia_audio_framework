@@ -41,8 +41,7 @@ std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMedia
         SOURCE_TYPE_MIC, SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_LIVE
     };
     bool isSystemSelectActive = routerInfra.HasHighestPriorityRunningSourceType(checkSourceTypes);
-    int32_t uid = routerInfra.GetHighestInputPriorityApp();
-    return GetMediaInputDeviceByPriority(uid, category, isSystemSelectActive);
+    return GetMediaInputDeviceByPriority(highestUid, category, isSystemSelectActive);
 }
 
 std::shared_ptr<AudioDeviceSimpleDescriptor> AudioRouterFollowStrategy::GetMediaInputDeviceWhenNoRunningStream(
@@ -293,7 +292,7 @@ void AudioRouterFollowStrategy::RefreshCallOutputDevice(int32_t uid, uint32_t st
     routerInfra.RefreshSelectDevice(SelectDeviceType::CALL_OUTPUT, uid, simpleDesc);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaDefaulOutputDevice(
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaDefaultOutputDevice(
     int32_t uid, uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
@@ -310,7 +309,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaDefaul
     return ConvertSimpleToDevice(simpleDesc);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaDefaulOutputDevice()
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterFollowStrategy::GetMediaDefaultOutputDevice()
 {
     AudioRouterInfra::GetInstance().Lock();
     auto &routerInfra = AudioRouterInfra::GetInstance();

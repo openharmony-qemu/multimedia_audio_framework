@@ -220,9 +220,9 @@ int32_t AudioRouterSelectStrategy::UpdateDefaultOutputDevice(DeviceType deviceTy
 
     auto setDev = AudioDeviceManager::GetAudioDeviceManager().GetBuiltinOutpuDevice(deviceType);
     if (streamUsage == STREAM_USAGE_VOICE_MESSAGE) {
-        auto before = GetMediaDefaulOutputDevice(uid, streamId);
+        auto before = GetMediaDefaultOutputDevice(uid, streamId);
         UpdateMediaDefaultOutputDevice(uid, streamId, setDev);
-        auto after = GetMediaDefaulOutputDevice(uid, streamId);
+        auto after = GetMediaDefaultOutputDevice(uid, streamId);
         if (!IsSameDeviceDeviceDescriptor(before, after)) {
             AUDIO_WARNING_LOG("media default output device change");
             return NEED_TO_FETCH;
@@ -265,7 +265,7 @@ void AudioRouterSelectStrategy::UpdateMediaDefaultOutputDevice(int32_t uid, uint
         SelectDeviceType::MEDIA_OUTPUT, simpleDesc);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetMediaDefaulOutputDevice(
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetMediaDefaultOutputDevice(
     int32_t uid, uint32_t streamId)
 {
     AudioRouterInfra::GetInstance().Lock();
@@ -278,7 +278,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetMediaDefaul
     return result;
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetMediaDefaulOutputDevice()
+std::shared_ptr<AudioDeviceDescriptor> AudioRouterSelectStrategy::GetMediaDefaultOutputDevice()
 {
     return nullptr;
 }

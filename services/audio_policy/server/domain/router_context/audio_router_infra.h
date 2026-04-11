@@ -129,7 +129,7 @@ private:
     bool HasRunningOutputStream(int32_t uid);
     bool HasAppSelectOutputDevice(int32_t uid);
     int64_t GetCurrentTimeMs() const;
-    std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid)
+    std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
 
     void WriteExcludeOutputSysEvents(AudioDeviceUsage audioDevUsage,
         const std::shared_ptr<AudioDeviceSimpleDescriptor> &deviceDesc, ExcludeDeviceType excludeType);

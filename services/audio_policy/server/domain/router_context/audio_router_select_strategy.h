@@ -59,9 +59,9 @@ public:
     virtual bool IsStreamSetDefaultOutputDevice(int32_t uid, uint32_t streamId);
     virtual void UpdateMediaDefaultOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaulOutputDevice(int32_t uid,
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice(int32_t uid,
         uint32_t streamId);
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaulOutputDevice();
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice();
     virtual void UpdateCallDefaultOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice(int32_t uid,
