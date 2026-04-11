@@ -17,6 +17,7 @@
 #define SAFE_VOLUME_MANAGER_H
 
 #include <cstdint>
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,6 +35,9 @@ public:
     void PublishLegacyHighVolumeNotification();
     void CancelLegacyHighVolumeNotification();
     bool DeviceIsSupportSafeVolume();
+    bool IsWiredHeadSet(const DeviceType &deviceType);
+    bool IsBlueTooth(const DeviceType &deviceType);
+    bool IsNearLink(const DeviceType &deviceType);
 
 private:
     static constexpr const char* LIB_NAME = "libaudio_safe_volume_notification_impl.z.so";

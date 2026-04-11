@@ -232,8 +232,6 @@ private:
         bool isNearlinkDevice = false, AudioStreamType streamType = STREAM_DEFAULT);
     int32_t DealWithSafeVolume(const int32_t volumeLevel, bool isBtDevice);
     void CreateCheckMusicActiveThread();
-    bool IsBlueTooth(const DeviceType &deviceType);
-    bool IsNearLink(const DeviceType &deviceType);
     void CheckBlueToothActiveMusicTime(int32_t safeVolume);
     void CheckNearlinkActiveMusicTime(int32_t safeVolume);
     void CheckWiredActiveMusicTime(int32_t safeVolume);
@@ -243,7 +241,6 @@ private:
     void SetAbsVolumeSceneAsync(const std::string &macAddress, const bool support, int32_t volume);
     int32_t SelectDealSafeVolume(AudioStreamType streamType, int32_t volumeLevel,
         DeviceType deviceType = DEVICE_TYPE_NONE);
-    bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     void SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume);
     void CheckLowerDeviceVolume(DeviceType deviceType);

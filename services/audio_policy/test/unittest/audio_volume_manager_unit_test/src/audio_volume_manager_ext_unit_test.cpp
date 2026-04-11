@@ -1017,7 +1017,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, IsNearLink_001, TestSize.Level4)
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     DeviceType deviceType = DEVICE_TYPE_NEARLINK;
 
-    auto ret = audioVolumeManager.IsNearLink(deviceType);
+    auto ret = audioVolumeManager.safeVolumeManager_.IsNearLink(deviceType);
     EXPECT_EQ(ret, true);
 }
 
@@ -1031,7 +1031,7 @@ HWTEST_F(AudioVolumeManagerExtUnitTest, IsNearLink_002, TestSize.Level4)
     auto &audioVolumeManager = AudioVolumeManager::GetInstance();
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
 
-    auto ret = audioVolumeManager.IsNearLink(deviceType);
+    auto ret = audioVolumeManager.safeVolumeManager_.IsNearLink(deviceType);
     EXPECT_EQ(ret, false);
 }
 

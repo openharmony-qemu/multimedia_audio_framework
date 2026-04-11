@@ -125,23 +125,23 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_005, TestSize.Level1)
     bool bRet;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    bRet = audioVolumeManager.IsWiredHeadSet(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(bRet, false);
 
     deviceType = DEVICE_TYPE_WIRED_HEADSET;
-    bRet = audioVolumeManager.IsWiredHeadSet(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(bRet, true);
 
     deviceType = DEVICE_TYPE_WIRED_HEADPHONES;
-    bRet = audioVolumeManager.IsWiredHeadSet(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(bRet, true);
 
     deviceType = DEVICE_TYPE_USB_HEADSET;
-    bRet = audioVolumeManager.IsWiredHeadSet(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(bRet, true);
 
     deviceType = DEVICE_TYPE_USB_ARM_HEADSET;
-    bRet = audioVolumeManager.IsWiredHeadSet(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsWiredHeadSet(deviceType);
     EXPECT_EQ(bRet, true);
 }
 
@@ -156,26 +156,26 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_006, TestSize.Level1)
     bool bRet;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
-    bRet = audioVolumeManager.IsBlueTooth(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, false);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_CAR;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bRet = audioVolumeManager.IsBlueTooth(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, false);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    bRet = audioVolumeManager.IsBlueTooth(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, false);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = CATEGORY_DEFAULT;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    bRet = audioVolumeManager.IsBlueTooth(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, true);
 
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
-    bRet = audioVolumeManager.IsBlueTooth(deviceType);
+    bRet = audioVolumeManager.safeVolumeManager_.IsBlueTooth(deviceType);
     EXPECT_EQ(bRet, true);
 }
 

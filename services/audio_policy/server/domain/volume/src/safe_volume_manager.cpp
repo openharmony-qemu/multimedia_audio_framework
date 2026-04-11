@@ -58,6 +58,40 @@ bool SafeVolumeManager::DeviceIsSupportSafeVolume()
     }
 }
 
+bool SafeVolumeManager::IsWiredHeadSet(const DeviceType &deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_USB_ARM_HEADSET:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool SafeVolumeManager::IsBlueTooth(const DeviceType &deviceType)
+{
+    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
+        if (audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_CAR &&
+            audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_SOUNDBOX) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SafeVolumeManager::IsNearLink(const DeviceType &deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_NEARLINK:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void SafeVolumeManager::PublishSafeVolumeNotification(int32_t notificationId)
 {
     void *libHandle = dlopen(LIB_NAME, RTLD_LAZY);

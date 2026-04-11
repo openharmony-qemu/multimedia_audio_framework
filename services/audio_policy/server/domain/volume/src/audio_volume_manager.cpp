@@ -863,40 +863,6 @@ void AudioVolumeManager::CreateCheckMusicActiveThread()
     }
 }
 
-bool AudioVolumeManager::IsWiredHeadSet(const DeviceType &deviceType)
-{
-    switch (deviceType) {
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool AudioVolumeManager::IsBlueTooth(const DeviceType &deviceType)
-{
-    if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP || deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        if (audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_CAR &&
-            audioPolicyManager_.GetCurrentOutputDeviceCategory() != BT_SOUNDBOX) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool AudioVolumeManager::IsNearLink(const DeviceType &deviceType)
-{
-    switch (deviceType) {
-        case DEVICE_TYPE_NEARLINK:
-            return true;
-        default:
-            return false;
-    }
-}
-
 void AudioVolumeManager::SetRestoreVolumeLevel(DeviceType deviceType, int32_t curDeviceVolume)
 {
     int32_t btDeviceVol = audioPolicyManager_.GetDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
@@ -987,15 +953,15 @@ int32_t AudioVolumeManager::CheckActiveMusicTime(const std::string &reason)
         AUDIO_INFO_LOG("activeMusic:%{public}d, deviceType_:%{public}d, isUpSafeVolume:%{public}d " \
             "reason:%{public}s", activeMusic, curOutputDeviceType, isUpSafeVolume, innerReason.c_str());
         if ((activeMusic || std::string("Offload") == innerReason) && (safeStatusBt_ == SAFE_INACTIVE) &&
-            isUpSafeVolume && IsBlueTooth(curOutputDeviceType)) {
+            isUpSafeVolume && safeVolumeManager_.IsBlueTooth(curOutputDeviceType)) {
             SetRestoreVolumeLevel(DEVICE_TYPE_BLUETOOTH_A2DP, curDeviceVolume);
             CheckBlueToothActiveMusicTime(safeVolume);
         } else if ((activeMusic || std::string("Offload") == innerReason) && (safeStatus_ == SAFE_INACTIVE) &&
-            isUpSafeVolume && IsWiredHeadSet(curOutputDeviceType)) {
+            isUpSafeVolume && safeVolumeManager_.IsWiredHeadSet(curOutputDeviceType)) {
             SetRestoreVolumeLevel(DEVICE_TYPE_WIRED_HEADSET, curDeviceVolume);
             CheckWiredActiveMusicTime(safeVolume);
         } else if ((activeMusic || std::string("Offload") == innerReason) && (safeStatusSle_ == SAFE_INACTIVE) &&
-            isUpSafeVolume && IsNearLink(curOutputDeviceType)) {
+            isUpSafeVolume && safeVolumeManager_.IsNearLink(curOutputDeviceType)) {
             SetRestoreVolumeLevel(DEVICE_TYPE_NEARLINK, curDeviceVolume);
             CheckNearlinkActiveMusicTime(safeVolume);
         } else {
@@ -1590,7 +1556,7 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
     const int32_t ONE_VOLUME_LEVEL = 1;
     int32_t ret = 0;
     std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
-    if (IsBlueTooth(curOutputDeviceType)) {
+    if (safeVolumeManager_.IsBlueTooth(curOutputDeviceType)) {
         switch (notificationId) {
             case RESTORE_VOLUME_NOTIFICATION_ID:
                 ret = CheckRestoreDeviceVolume(DEVICE_TYPE_BLUETOOTH_A2DP);
@@ -1601,7 +1567,7 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
             default:
                 AUDIO_ERR_LOG("current state unsupport safe volume");
         }
-    } else if (IsWiredHeadSet(curOutputDeviceType)) {
+    } else if (safeVolumeManager_.IsWiredHeadSet(curOutputDeviceType)) {
         switch (notificationId) {
             case RESTORE_VOLUME_NOTIFICATION_ID:
                 ret = CheckRestoreDeviceVolume(DEVICE_TYPE_WIRED_HEADSET);
