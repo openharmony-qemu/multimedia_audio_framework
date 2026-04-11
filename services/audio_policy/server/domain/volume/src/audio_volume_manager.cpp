@@ -63,7 +63,6 @@ private:
 };
 
 static const int64_t MAX_LEGACY_HIGH_VOLUME_CHECK_TIME_S = 24 * 60 * 60; // 24h
-static const int64_t WAIT_RINGER_MODE_MUTE_RESET_TIME_MS = 500; // 500ms
 const int32_t DUAL_TONE_RING_VOLUME = 0;
 constexpr int32_t DEFAULT_ZONE_ID = 0;
 
@@ -136,7 +135,7 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
         }
     }
 #endif
-    supportVibrator_ = system::GetBoolParameter("const.vibrator.support_vibrator", true);
+    ringerModeManager_.Init();
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
     return true;
@@ -160,11 +159,11 @@ void AudioVolumeManager::DeInit(void)
         safeVolumeDialogThrd_ = nullptr;
     }
     audioPolicyServerHandler_ = nullptr;
+    ringerModeManager_.DeInit();
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     loudVolumeSupportMode_ = 0;
     loudVolumeManager_ = nullptr;
 #endif
-    supportVibrator_ = false;
 }
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -1596,21 +1595,24 @@ int32_t AudioVolumeManager::DealWithEventVolume(const int32_t notificationId)
     return ret;
 }
 
-int32_t AudioVolumeManager::ResetRingerModeMute()
-{
-    audioPolicyManager_.ClearDeviceNoMuteForRinger();
-    SetRingerModeMute(true);
-    return SUCCESS;
-}
-
 bool AudioVolumeManager::IsRingerModeMute()
 {
-    return ringerModeMute_.load();
+    return ringerModeManager_.IsRingerModeMute();
 }
 
 void AudioVolumeManager::SetRingerModeMute(bool flag)
 {
-    ringerModeMute_.store(flag);
+    ringerModeManager_.SetRingerModeMute(flag);
+}
+
+int32_t AudioVolumeManager::ResetRingerModeMute()
+{
+    return ringerModeManager_.ResetRingerModeMute();
+}
+
+bool AudioVolumeManager::IsRingerModeValid(AudioRingerMode ringMode)
+{
+    return ringerModeManager_.IsRingerModeValid(ringMode);
 }
 
 bool AudioVolumeManager::GetVolumeGroupInfosNotWait(std::vector<sptr<VolumeGroupInfo>> &infos)
@@ -1924,11 +1926,7 @@ int32_t AudioVolumeManager::SetRingerMode(AudioRingerMode inputRingerMode, bool 
 void AudioVolumeManager::ProcUpdateRingerMode()
 {
     int32_t curRingVolumeLevel = GetSystemVolumeLevelNoMuteStateInterface(STREAM_RING);
-    AudioRingerMode ringerMode = (curRingVolumeLevel > 0) ? RINGER_MODE_NORMAL :
-        (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT);
-    if (!supportVibrator_) {
-        AUDIO_INFO_LOG("The device does not support vibration");
-    }
+    AudioRingerMode ringerMode = ringerModeManager_.GetRingerModeForVolumeLevel(curRingVolumeLevel);
     AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring volume level", ringerMode);
     // Update ringer mode but no need to update volume again.
     SetRingerMode(ringerMode, true);
@@ -2050,9 +2048,7 @@ int32_t AudioVolumeManager::SetSingleStreamVolume(AudioStreamType streamType, in
     if ((streamType == AudioStreamType::STREAM_RING || streamType == AudioStreamType::STREAM_VOICE_RING) &&
         volumeType == AudioStreamType::STREAM_RING) {
         // Check whether the currentRingerMode is suitable for the ringtone volume level.
-        AudioRingerMode currentRingerMode = audioPolicyManager_.GetRingerMode();
-        if ((currentRingerMode == RINGER_MODE_NORMAL && volumeLevel == 0) ||
-            (currentRingerMode != RINGER_MODE_NORMAL && volumeLevel > 0)) {
+        if (ringerModeManager_.ShouldUpdateRingerMode(volumeLevel)) {
             // When isUpdateUi is false, the func is called by others. Need to verify permission.
             if (!isUpdateUi && !PermissionUtil::VerifyGeneralPermission(ACCESS_NOTIFICATION_POLICY_PERMISSION)) {
                 AUDIO_ERR_LOG("ACCESS_NOTIFICATION_POLICY_PERMISSION permission denied for ringtone volume!");
@@ -2171,11 +2167,7 @@ void AudioVolumeManager::TriggerAudioZoneVolumeSync(int32_t zoneId)
 void AudioVolumeManager::ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute)
 {
     if (updateRingerMode) {
-        AudioRingerMode ringerMode = mute ?
-            (supportVibrator_ ? RINGER_MODE_VIBRATE : RINGER_MODE_SILENT) :	RINGER_MODE_NORMAL;
-        if (!supportVibrator_) {
-            AUDIO_INFO_LOG("The device does not support vibration");
-        }
+        AudioRingerMode ringerMode = ringerModeManager_.GetRingerModeForMute(mute);
         AUDIO_INFO_LOG("RingerMode should be set to %{public}d because of ring mute state", ringerMode);
         // Update ringer mode but no need to update mute state again.
         SetRingerMode(ringerMode, true);
@@ -2190,23 +2182,6 @@ bool AudioVolumeManager::CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType
         return false;
     }
     return true;
-}
-
-bool AudioVolumeManager::IsRingerModeValid(AudioRingerMode ringMode)
-{
-    bool result = false;
-    switch (ringMode) {
-        case RINGER_MODE_SILENT:
-        case RINGER_MODE_VIBRATE:
-        case RINGER_MODE_NORMAL:
-            result = true;
-            break;
-        default:
-            result = false;
-            AUDIO_ERR_LOG("IsRingerModeValid: ringMode[%{public}d] is not supported", ringMode);
-            break;
-    }
-    return result;
 }
 
 bool AudioVolumeManager::ShouldNotifyForLegacyVolume(int32_t volumeLevel)

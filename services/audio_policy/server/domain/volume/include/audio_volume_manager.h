@@ -47,6 +47,7 @@
 #endif
 #include "app_volume_manager.h"
 #include "safe_volume_manager.h"
+#include "ringer_mode_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -274,7 +275,6 @@ private:
     int32_t loudVolumeSupportMode_ = 0;
     std::shared_ptr<LoudVolumeManager> loudVolumeManager_;
 #endif
-    bool supportVibrator_ = false;
     int32_t volumeStep_ = 1;
     std::shared_ptr<AudioInterruptService> interruptService_;
 
@@ -310,9 +310,6 @@ private:
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
     std::mutex volumeGroupsMutex_;
 
-    std::mutex ringerModeMuteMutex_;
-    std::atomic<bool> ringerModeMute_ = true;
-    std::condition_variable ringerModeMuteCondition_;
     bool isVoiceRingtoneMute_ = false;
 
     std::mutex notifyMutex_;
@@ -344,6 +341,7 @@ private:
     AudioConnectedDevice& audioConnectedDevice_;
     AudioOffloadStream& audioOffloadStream_;
     SafeVolumeManager safeVolumeManager_;
+    RingerModeManager ringerModeManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     std::mutex forceControlVolumeTypeMutex_;
     bool needForceControlVolumeType_ = false;

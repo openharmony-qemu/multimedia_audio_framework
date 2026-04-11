@@ -953,7 +953,6 @@ private:
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
     bool screenOffAdjustVolumeEnable_ = false;
-    bool supportVibrator_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     int32_t loudVolumeSupportMode_ = 0;
 #endif

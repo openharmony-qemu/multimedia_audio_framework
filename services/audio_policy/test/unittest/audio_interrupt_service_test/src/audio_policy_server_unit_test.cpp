@@ -2670,10 +2670,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_130, TestSize.Level1)
 
     server->coreService_ = std::make_shared<AudioCoreService>();
     server->audioVolumeManager_.ProcUpdateRingerModeForMute(false, true);
-    server->audioVolumeManager_.supportVibrator_ = false;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = false;
     server->audioVolumeManager_.ProcUpdateRingerModeForMute(true, true);
 
-    server->audioVolumeManager_.supportVibrator_ = true;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = true;
     server->audioVolumeManager_.ProcUpdateRingerModeForMute(true, true);
 }
 
@@ -2741,10 +2741,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_134, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     server->coreService_ = std::make_shared<AudioCoreService>();
-    server->supportVibrator_ = true;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = true;
     server->audioVolumeManager_.ProcUpdateRingerMode();
 
-    server->supportVibrator_ = false;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = false;
     server->audioVolumeManager_.ProcUpdateRingerMode();
 }
 

@@ -698,7 +698,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_029, TestSize.Level1)
     audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 
     zoneId = 0;
-    audioVolumeManager->ringerModeMute_ = true;
+    audioVolumeManager->SetRingerModeMute(true);
     audioVolumeManager->GetSystemVolumeLevel(streamType, zoneId);
 }
 
@@ -1115,7 +1115,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_052, TestSize.Level1)
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
     ASSERT_TRUE(audioVolumeManager != nullptr);
 
-    audioVolumeManager->ringerModeMute_ = false;
+    audioVolumeManager->SetRingerModeMute(false);
     audioVolumeManager->audioPolicyServerHandler_ = nullptr;
     audioVolumeManager->SetSafeVolumeCallback(streamType);
 
