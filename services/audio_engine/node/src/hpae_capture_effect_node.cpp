@@ -113,7 +113,8 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcessCollaboration(const std::vect
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
     audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
         static_cast<size_t>(processLength));
-    memcpy_s(outPcmBuffer_->GetPcmDataBuffer(), processLength, cacheDataOut_.data(), processLength);
+    ret = memcpy_s(outPcmBuffer_->GetPcmDataBuffer(), processLength, cacheDataOut_.data(), processLength);
+    CHECK_AND_RETURN_RET_LOG(ret == EOK, nullptr, "effect out cpy error");
 #ifdef ENABLE_HOOK_PCM
     outputDumper_->Dump((int8_t *)cacheDataOut_.data(), micBufferLength_);
 #endif
