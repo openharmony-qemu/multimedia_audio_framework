@@ -418,10 +418,7 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
     constexpr int32_t SAMPLE_RATE_RESOLUTION_10 = 10;
     bool isValidRate = (intValue >= SAMPLE_RATE_8000 && intValue <= SAMPLE_RATE_384000 &&
         intValue % SAMPLE_RATE_RESOLUTION_10 == 0) || intValue == SAMPLE_RATE_11025;
-    if (!isValidRate) {
-        AUDIO_ERR_LOG("invalid samplingRate: %{public}d", intValue);
-        return napi_generic_failure;
-    }
+    CHECK_AND_RETURN_RET_LOG(isValidRate, napi_generic_failure, "invalid samplingRate: %{public}d", intValue);
     // Check if it's a standard enum value
     bool isStandardEnum = false;
     for (const auto &rate : AUDIO_SUPPORTED_SAMPLING_RATES) {
@@ -433,11 +430,10 @@ napi_status NapiParamUtils::ParseSamplingRate(const napi_env &env, AudioStreamIn
     }
 
     // If not a standard enum value, treat as custom sample rate
-    if (!isStandardEnum) {
-        streamInfo->samplingRate = SAMPLE_RATE_48000; // default fallback
-        streamInfo->customSampleRate = static_cast<uint32_t>(intValue);
-        AUDIO_INFO_LOG("custom sample rate: %{public}d", intValue);
-    }
+    CHECK_AND_RETURN_RET(!isStandardEnum, napi_ok);
+    streamInfo->samplingRate = SAMPLE_RATE_48000; // default fallback
+    streamInfo->customSampleRate = static_cast<uint32_t>(intValue);
+    AUDIO_INFO_LOG("custom sample rate: %{public}d", intValue);
     return napi_ok;
 }
 
