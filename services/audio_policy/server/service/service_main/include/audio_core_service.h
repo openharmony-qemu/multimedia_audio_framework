@@ -64,6 +64,7 @@ enum OffloadType {
 
 const uint32_t PCM_8_BIT = 8;
 const uint32_t SESSION_ID_INVALID = 0;
+const int32_t AUDIO_EXT_UID = 1041;
 const std::string PIPE_PRIMARY_INPUT = "primary_input";
 const std::string PIPE_WAKEUP_INPUT = "wakeup_input";
 const std::string PIPE_PRIMARY_INPUT_AI = "primary_input_AI";
