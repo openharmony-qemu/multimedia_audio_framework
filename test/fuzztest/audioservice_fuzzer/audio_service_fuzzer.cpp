@@ -227,10 +227,10 @@ void AudioServiceOnProcessReleaseFuzzTest()
 
 void AudioServiceReleaseProcessFuzzTest()
 {
-    AudioService audioService;
+    AudioService *audioService = AudioService::GetInstance();
     std::string endpointName = "test";
     int32_t delayTime = GetData<int32_t>();
-    audioService.ReleaseProcess(endpointName, delayTime);
+    audioService->ReleaseProcess(endpointName, delayTime);
 }
 
 void AudioServiceGetStandbyStatusFuzzTest()

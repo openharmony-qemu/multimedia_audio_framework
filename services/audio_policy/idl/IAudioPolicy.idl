@@ -229,6 +229,7 @@ interface IAudioPolicy {
     void DeactivateAudioSession();
     void IsAudioSessionActivated([out] boolean retIsActivated);
     void SetInputDevice([in] int deviceType, [in] unsigned int session_ID, [in] int sourceType, [in] boolean isRunning);
+    void SetSplitModeReady();
     void LoadSplitModule([in] String splitArgs, [in] String networkId);
     void GetSystemActiveVolumeType([in] int clientUid, [out] int audioStreamType); //  AudioStreamType audioStreamType
     void GetOutputDevice([in] sptr<AudioRendererFilter> audioRendererFilter, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
@@ -299,6 +300,7 @@ interface IAudioPolicy {
     void SetAncoSourceOutputStreamMute([in] int uid, [in] boolean setMute);
     void UpdateSafeVolumeByStrMode();
     void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
+    [oneway] void RecordBootAnimationClientStateTime([in] List<long> info);
     // AudioPolicyInterfaceCode end
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode

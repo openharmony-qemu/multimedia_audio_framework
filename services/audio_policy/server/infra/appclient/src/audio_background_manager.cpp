@@ -85,8 +85,6 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
     if (!(appState.isBack && !appState.isSystem)) {
         streamCollector_.HandleStartStreamMuteState(startStreamInfo, false, false, silentControl);
         return true;
-    } else {
-        AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(sessionId, true);
     }
     bool mute = appState.hasBackTask ? false : (appState.isBinder ? true : false);
     if (appState.hasSession) {
@@ -106,6 +104,7 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
 void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32_t pid, AppIsBackState state)
 {
     bool isBack = (state != STATE_FOREGROUND);
+    AudioPerformanceMonitor::GetInstance().UpdateIsBackPlay(pid, true);
     {
         std::lock_guard<std::mutex> lock(appStatesMapMutex_);
         if (state == STATE_END) {
@@ -285,7 +284,9 @@ void AudioBackgroundManager::InsertIntoAppStatesMapWithoutUid(int32_t pid, AppSt
     int32_t uid = 0;
     std::string appBundleName = "";
     appMgrClient_->GetBundleNameByPid(pid, appBundleName, uid);
-    appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    if (!appBundleName.empty()) {
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    }
     appStatesMap_.insert(std::make_pair(pid, appState));
     AUDIO_INFO_LOG("appStatesMap_ add pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d, isSystem: %{public}d", pid, appState.hasSession,
@@ -320,18 +321,26 @@ void AudioBackgroundManager::RecoveryAppState()
         }
     }
 
-    std::map<int32_t, bool> appBackTaskMap;
-    Media::MediaMonitor::MediaMonitorManager::GetInstance().GetAudioAppBackTaskMsg(appBackTaskMap);
-    for (auto &appBackTask : appBackTaskMap) {
-        if (!FindKeyInMap(appBackTask.first)) {
+    std::vector<std::shared_ptr<ContinuousTaskCallbackInfo>> continuousTaskList;
+    ErrCode code = BackgroundTaskMgr::BackgroundTaskMgrHelper::GetContinuousTaskApps(continuousTaskList);
+    CHECK_AND_RETURN_LOG(backgroundTaskListener_ != nullptr, "backgroundTaskListener_ is nullptr.");
+    CHECK_AND_RETURN_LOG(code != 0, "continuousTaskList acquisition failed.");
+
+    for (auto &task : continuousTaskList) {
+        int32_t pid = task->GetCreatorPid();
+        int32_t continuousTaskId = task->GetContinuousTaskId();
+        backgroundTaskListener_->AddTaskId(pid, continuousTaskId);
+        CHECK_AND_CONTINUE(backgroundTaskListener_->GetSizeOfContinuousTaskIdSet(pid) == 1);
+
+        if (!FindKeyInMap(pid)) {
             AppState appState;
-            appState.hasBackTask = appBackTask.second;
-            InsertIntoAppStatesMapWithoutUid(appBackTask.first, appState);
+            appState.hasBackTask = true;
+            InsertIntoAppStatesMapWithoutUid(pid, appState);
         } else {
-            AppState &appState = appStatesMap_[appBackTask.first];
-            appState.hasBackTask = appBackTask.second;
-            AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasBackTask: %{public}d",
-                appBackTask.first, appState.hasBackTask);
+            AppState &appState = appStatesMap_[pid];
+            appState.hasBackTask = true;
+            AUDIO_INFO_LOG("continuousTaskList change pid: %{public}d with hasBackTask: %{public}d,"
+                "continuousTaskId:%{public}d", pid, appState.hasBackTask, continuousTaskId);
         }
     }
 }

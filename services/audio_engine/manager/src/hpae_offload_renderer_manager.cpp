@@ -191,7 +191,7 @@ int32_t HpaeOffloadRendererManager::CreateStream(const HpaeStreamInfo &streamInf
 void HpaeOffloadRendererManager::DeleteInputSession()
 {
     DisConnectInputSession();
-    if (curNode_->GetState() == HPAE_SESSION_RUNNING) {
+    if (curNode_->GetState() == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
         sinkOutputNode_->StopStream();
     }
     RemoveNodeFromMap(curNode_->GetSessionId());
@@ -340,7 +340,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_PAUSED);
         if (sessionId == curNode_->GetSessionId()) {
             DisConnectInputSession();
-            if (state == HPAE_SESSION_RUNNING) {
+            if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
             }
         }
@@ -397,7 +397,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, node->GetState(), OPERATION_STOPPED);
         if (sessionId == curNode_->GetSessionId()) {
             DisConnectInputSession();
-            if (state == HPAE_SESSION_RUNNING) {
+            if (state == HPAE_SESSION_RUNNING && sinkOutputNode_ != nullptr) {
                 sinkOutputNode_->StopStream();
             }
         }
@@ -560,11 +560,14 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
     auto request = [this, sinkInfo, isReload]() {
         Trace trace("HpaeOffloadRendererManager::ReloadRenderManager[" + std::to_string(isReload) + "]");
         AUDIO_INFO_LOG("reload offload");
-        StopOuputNode();
         if (curNode_ != nullptr && curNode_->GetState() == HPAE_SESSION_RUNNING) {
             DisConnectInputSession();
+            if (sinkOutputNode_ != nullptr) {
+                sinkOutputNode_->StopStream();
+            }
             DestroyOffloadNodes();
         }
+        StopOuputNode();
         sinkInfo_ = sinkInfo;
         InitSinkInner(isReload);
 

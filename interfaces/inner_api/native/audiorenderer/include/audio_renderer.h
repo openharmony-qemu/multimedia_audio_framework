@@ -145,6 +145,8 @@ public:
      */
     virtual void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReason reason) = 0;
+    virtual void OnOutputDeviceChangeWithPreDevice(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason, const AudioDeviceDescriptor &preDeviceInfo) {}
 };
 
 class AudioRendererFastStatusChangeCallback {

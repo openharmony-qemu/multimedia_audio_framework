@@ -82,6 +82,7 @@ public:
         int32_t requestFrameSize, int32_t *responseSize, bool *finishedFlag) override;
     int32_t SetOptions(uint32_t nodeId, std::string name, std::string value) override;
     int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) override;
+    PipelineWorkMode GetWorkMode() override;
 
     // for queue and thread
     bool IsRunning(void) override;

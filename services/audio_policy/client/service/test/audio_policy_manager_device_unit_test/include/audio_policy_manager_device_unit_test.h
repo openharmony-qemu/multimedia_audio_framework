@@ -50,7 +50,7 @@ public:
 
 class ConcreteDeviceChangeWithInfoCallback : public DeviceChangeWithInfoCallback {
     void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) override {}
+        const AudioStreamDeviceChangeReasonExt reason, const AudioDeviceDescriptor &preDeviceInfo) override {}
     void OnRecreateStreamEvent(
         const uint32_t sessionId, const int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason) override {}
 };

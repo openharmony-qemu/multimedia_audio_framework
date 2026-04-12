@@ -23,6 +23,7 @@
 #include "audio_routing_manager.h"
 
 #include "audio_workgroup_client_manager.h"
+#include "audio_capturer_types.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1221,6 +1222,15 @@ public:
     int32_t InjectInterruption(const std::string networkId, InterruptEvent &event);
 
     /**
+     * @brief Set split mode ready to ensure that device can be selected.
+     *
+     * @return Returns {@link SUCCESS} if the device is set successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     * @since 23
+     */
+    int32_t SetSplitModeReady();
+
+    /**
      * @brief Load the split module for audio stream separation.
      *
      * @param splitArgs Specifies the types of audio to be split into different streams.
@@ -1578,6 +1588,15 @@ public:
      */
     int32_t ReportPlaybackCaptureUserChoice(uint32_t sessionId, bool choice);
 
+    /**
+     * @brief Report wakeup stage, result and errCode.
+     *
+     * @param stage Wakeup stage.
+     * @param wakeupResult Wakeup result.
+     * @param wakeupErrCode Wakeup error code.
+     * @since 26
+     */
+    int32_t ReportWakeupEvent(const AudioWakeupTrackInfo &audioWakeupTrackInfo);
 private:
     AudioSystemManager();
     virtual ~AudioSystemManager();

@@ -64,6 +64,7 @@ public:
         const std::shared_ptr<AudioCapturerOnPlaybackCaptureStartCallback> &callback) override;
     void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
     void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
+    void CheckInnerCapVoIP() override;
     void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
     int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj,
@@ -236,6 +237,7 @@ public:
     int32_t SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback) override;
     int32_t SetStaticTriggerRecreateCallback(std::function<void()> sendStaticRecreateFunc) override;
     int32_t SetLoopTimes(int64_t bufferLoopTimes) override;
+    void UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal) override;
     int32_t GetLatencyWithFlag(uint64_t &latency, LatencyFlag flag) override;
     const std::string GetBundleName() override;
     void SetBundleName(std::string &name) override;
@@ -338,6 +340,8 @@ private:
 
     int32_t CallStartWhenInStandby();
 
+    int32_t Standby();
+
     void NotifyStopWaiting();
 
     void UpdateStopState();
@@ -429,7 +433,7 @@ private:
     bool silentModeAndMixWithOthers_ = false;
 
     float loudnessGain_ = 0.0f;
-    
+
     bool flushAfterStop_ = false;
 
     uint64_t clientWrittenBytes_ = 0;

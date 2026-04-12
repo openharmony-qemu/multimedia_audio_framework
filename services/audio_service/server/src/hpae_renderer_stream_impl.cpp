@@ -38,6 +38,7 @@
 #include "audio_volume.h"
 #include "volume_tools.h"
 #include "audio_sink_latency_fetcher.h"
+#include "boot_animation_state_info.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 
@@ -163,6 +164,8 @@ int32_t HpaeRendererStreamImpl::Start()
     }
     std::string tempStringSessionId = std::to_string(streamIndex_);
     IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume_);
+    CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+        BootAnimationState::PREE_AUDIO_START), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
     if (ret != 0) {
         AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
         return ERR_INVALID_PARAM;
@@ -624,7 +627,8 @@ void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &
     if (callBackStreamInfo.hdiFramePosition > 0) {
         lastHdiFramePosition_ +=
             // from time (us) to sample
-            callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S;
+            callBackStreamInfo.hdiFramePosition * usedSampleRate_ / AUDIO_US_PER_S +
+            callBackStreamInfo.rewindTime * usedSampleRate_ / AUDIO_US_PER_S;
     }
     bool checkResult = ClockTime::CheckTimeInterval(lastLogTimestampArr_[ON_DEVICE_CLASS_CHANGE],
         PRINT_TIMESTAMP_INTERVAL_NS);
@@ -915,9 +919,9 @@ int32_t HpaeRendererStreamImpl::SetOffloadMode(int32_t state, bool isAppBack)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
         "SetOffloadPolicy failed, errcode is %{public}d", ret);
     offloadStatePolicy_.store(statePolicy);
-    std::shared_ptr<IStatusCallback> offloadStateCallback = offloadStateCallback_.lock();
-        if (offloadStateCallback != nullptr) {
-            offloadStateCallback->OnStatusUpdate(statePolicy == OFFLOAD_INACTIVE_BACKGROUND ?
+    std::shared_ptr<IStatusCallback> statusCallback = statusCallback_.lock();
+        if (statusCallback != nullptr) {
+            statusCallback->OnStatusUpdate(statePolicy == OFFLOAD_INACTIVE_BACKGROUND ?
                 OFFLOAD_INACTIVE_BACKGROUND_RUNNING : OFFLOAD_ACTIVE_FOREGROUND_RUNNING);
         }
 #else

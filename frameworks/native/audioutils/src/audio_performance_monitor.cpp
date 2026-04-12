@@ -62,7 +62,7 @@ void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSile
     JudgeNoise(sessionId, isSilence, uid);
 }
 
-void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId, uint32_t appPid)
+void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId, int32_t appPid)
 {
     std::lock_guard<std::mutex> lock(monitorMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
@@ -192,7 +192,7 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
             AudioPipeType pipeType = silenceDetectMap_[sessionId].pipeType;
             int32_t periodMs = static_cast<int32_t>(silenceDetectMap_[sessionId].silenceStateCount *
                 (pipeType == PIPE_TYPE_OUT_LOWLATENCY ? FAST_DURATION_MS : NORMAL_DURAION_MS));
-            ReportEvent(SILENCE_EVENT, periodMs, pipeType, ADAPTER_TYPE_UNKNOWN, uid);
+            ReportEvent(SILENCE_EVENT, periodMs, pipeType, ADAPTER_TYPE_UNKNOWN, uid, sessionId);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();
             return;
@@ -221,36 +221,28 @@ void AudioPerformanceMonitor::NotifyXperf(int32_t faultcode, uint32_t uid, uint3
     XperfAdapter::GetInstance().ReportFaultEvent(faultcode, uid, sessionId);
 }
 
-void AudioPerformanceMonitor::UpdateIsBackPlay(uint32_t sessionId, bool isBackPlay)
+void AudioPerformanceMonitor::UpdateIsBackPlay(int32_t appPid, bool isBackPlay)
 {
-    auto it = silenceDetectMap_.find(sessionId);
-    if (it != silenceDetectMap_.end()) {
-        it->second.isBackPlay = isBackPlay;
+    for (auto it = silenceDetectMap_.begin(); it != silenceDetectMap_.end(); ++it) {
+        if (it->second.appPid == appPid) {
+            it->second.isBackPlay = isBackPlay;
+        }
     }
 }
 
 void AudioPerformanceMonitor::UpdateIsUseArk(uint32_t sessionId, bool isUseArk)
 {
-    auto it = silenceDetectMap_.find(sessionId);
-    if (it != silenceDetectMap_.end()) {
-        it->second.isUseArk = isUseArk;
-    }
+    silenceDetectMap_[sessionId].isUseArk = isUseArk;
 }
 
 void AudioPerformanceMonitor::UpdateIsTimeoutCB(uint32_t sessionId, bool isTimeoutCb)
 {
-    auto it = silenceDetectMap_.find(sessionId);
-    if (it != silenceDetectMap_.end()) {
-        it->second.isTimeoutCb = isTimeoutCb;
-    }
+    silenceDetectMap_[sessionId].isTimeoutCb = isTimeoutCb;
 }
 
 void AudioPerformanceMonitor::UpdateIsNoDdl(uint32_t sessionId, bool isNoDdl)
 {
-    auto it = silenceDetectMap_.find(sessionId);
-    if (it != silenceDetectMap_.end()) {
-        it->second.isNoDdl = isNoDdl;
-    }
+    silenceDetectMap_[sessionId].isNoDdl = isNoDdl;
 }
 
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,

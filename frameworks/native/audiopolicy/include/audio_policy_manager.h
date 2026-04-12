@@ -33,6 +33,7 @@
 #include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
 #include "audio_capturer_options.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -145,8 +146,7 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(
         sptr<AudioRendererFilter> audioRendererFilter);
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(
-        sptr<AudioCapturerFilter> audioCapturerFilter);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
 
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
 
@@ -360,8 +360,7 @@ public:
     int32_t GetCurrentCapturerChangeInfos(
         std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
 
-    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState,
-                                    StreamUsage streamUsage);
+    int32_t UpdateStreamState(const int32_t clientUid, StreamSetState streamSetState, StreamUsage streamUsage);
 
     int32_t GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos);
 
@@ -681,6 +680,8 @@ public:
     int32_t UnsetAudioSceneChangeCallback(
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
+    int32_t SetSplitModeReady();
+
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     bool IsAllowedPlayback(const int32_t &uid, const int32_t &pid, const uint32_t sessionId,
@@ -748,6 +749,7 @@ public:
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
     int32_t RestoreDistributedDeviceInfo();
 
+    int32_t RecordBootAnimationClientStateTime(const BootAnimationInfo &info);
     int32_t SetVolumeDegreeCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
     int32_t UnsetVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);

@@ -49,6 +49,7 @@
 #include "audio_effect_chain_manager.h"
 #include "app_bundle_manager.h"
 #include "audio_resource_service.h"
+#include "boot_animation_state_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -89,6 +90,7 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
     : processConfig_(processConfig)
 {
     streamListener_ = streamListener;
+    voipNoPrivacyFlag_.store(processConfig_.rendererInfo.voipNoPrivacyFlag);
     managerType_ = PLAYBACK;
     if (processConfig_.callerUid == MEDIA_UID) {
         isNeedFade_ = true;
@@ -531,7 +533,9 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
+    auto stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener, "streamListener_ expired");
+    stateListener->OnOperationHandled(STANDBY, 0);
     RecordStandbyTime(standByEnable_, true);
     enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
@@ -570,11 +574,14 @@ bool RendererInServer::ShouldEnableStandBy()
         maxStandByCounter = 400; // for 20ms, 50 * 400 = 8000ms
         timeLimit = 8 * AUDIO_NS_PER_SECOND; // for 20ms 8s
     }
-    if (offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING && standByCounter_ >= offloadStanby_) {
+    if (!isOffloadJankReport && offloadState_ == OFFLOAD_ACTIVE_FOREGROUND_RUNNING &&
+        standByCounter_ >= offloadStanby_) {
         ReportExceptionForOffload();
-    } else if (offloadState_ == OFFLOAD_INACTIVE_BACKGROUND_RUNNING && timeCost >=
-        OFFLOAD_COUNT * AUDIO_NS_PER_SECOND) {
+        isOffloadJankReport = true;
+    } else if (!isOffloadJankReport && offloadState_ == OFFLOAD_INACTIVE_BACKGROUND_RUNNING && timeCost >=
+        static_cast<int64_t>(OFFLOAD_COUNT * AUDIO_NS_PER_SECOND)) {
         ReportExceptionForOffload();
+        isOffloadJankReport = true;
         }
     if (standByCounter_ >= maxStandByCounter && timeCost >= timeLimit) {
         AUDIO_INFO_LOG("sessionId:%{public}u reach the limit of stand by: %{public}u time:%{public}" PRId64"ns",
@@ -842,10 +849,13 @@ int32_t RendererInServer::Write3DAModeData(uint64_t currentReadFrame, uint64_t c
 
 bool RendererInServer::CheckIsUnderrun(uint64_t currentReadFrame, uint64_t currentWriteFrame)
 {
+    // For non-DIRECT_PLAYBACK modes: underrun when read position catches up to write position
     if (managerType_ != DIRECT_PLAYBACK && currentReadFrame >= currentWriteFrame) {
         return true;
     }
-    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInByte_) > currentWriteFrame) {
+    // For DIRECT_PLAYBACK mode: The direct path does not have the logic for filling in empty frames.
+    // therefore, if there are insufficinet frames, a pop may occur
+    if (managerType_ == DIRECT_PLAYBACK && (currentReadFrame + spanSizeInFrame_) > currentWriteFrame) {
         return true;
     }
     return false;
@@ -873,6 +883,7 @@ int32_t RendererInServer::WriteData()
         int32_t ret = Write3DAModeData(currentReadFrame, currentWriteFrame);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "3DA: Write3DAModeData failed");
         standByCounter_ = 0;
+        isOffloadJankReport = false;
         lastWriteTime_ = ClockTime::GetCurNano();
         return SUCCESS;
     }
@@ -908,6 +919,7 @@ int32_t RendererInServer::WriteData()
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     lastWriteTime_ = ClockTime::GetCurNano();
     return SUCCESS;
 }
@@ -957,6 +969,7 @@ void RendererInServer::ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc,
 void RendererInServer::OnWriteDataFinish()
 {
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     lastWriteTime_ = ClockTime::GetCurNano();
 
     UpdateStreamInfo();
@@ -1254,12 +1267,18 @@ int32_t RendererInServer::Start()
     return ret;
 }
 
+int32_t RendererInServer::Standby()
+{
+    return CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
+}
+
 int32_t RendererInServer::StartInnerDuringStandby()
 {
     int32_t ret = 0;
     AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     startedTime_ = ClockTime::GetCurNano();
     audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
     ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
@@ -1401,6 +1420,7 @@ int32_t RendererInServer::Pause()
         isStandbyTmp = true;
     }
     standByCounter_ = 0;
+    isOffloadJankReport = false;
     MarkStaticFadeOut();
 
     // remove eac3 param check
@@ -1841,9 +1861,20 @@ int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
     return stream_->SetPrivacyType(privacyType);
 }
 
+int32_t RendererInServer::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
+{
+    voipNoPrivacyFlag_.store(voipNoPrivacyFlag);
+    return SUCCESS;
+}
+
 int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 {
     return stream_->GetPrivacyType(privacyType);
+}
+
+bool RendererInServer::GetVoipNoPrivacyFlag() const
+{
+    return voipNoPrivacyFlag_.load();
 }
 
 int32_t RendererInServer::EnableInnerCap(int32_t innerCapId)
@@ -2971,6 +3002,8 @@ void RendererInServer::WaitForDataConnection()
             });
         AUDIO_INFO_LOG("data-connection blocking ends, reason %{public}s.", stopWaiting ? "connected" : "timeout");
     }
+    CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+        BootAnimationState::WAIT_FOR_DATA_CONNECTION), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
 }
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
@@ -2995,6 +3028,22 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
     WriteMuteDataSysEvent(bufferDesc);
 
     OnWriteDataFinish();
+    return SUCCESS;
+}
+
+int32_t RendererInServer::UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal)
+{
+    UnderrunInfoType infoType = static_cast<UnderrunInfoType>(underrunInfoKey);
+    switch (infoType) {
+        case UNDERRUN_TYPE_ISTIMEOUT:
+            AudioPerformanceMonitor::GetInstance().UpdateIsTimeoutCB(streamIndex_, static_cast<bool>(underrunInfoVal));
+            break;
+        case UNDERRUN_TYPE_ISUSEARK:
+            AudioPerformanceMonitor::GetInstance().UpdateIsUseArk(streamIndex_, static_cast<bool>(underrunInfoVal));
+            break;
+        default:
+            break;
+    }
     return SUCCESS;
 }
 
@@ -3055,6 +3104,8 @@ int32_t RendererInServer::CreateServerBuffer()
     } else {
         // create OHAudioBuffer in server
         audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
+        CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+            BootAnimationState::CREATE_FROM_LOCAL), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
 
         // we need to clear data buffer to avoid dirty data.

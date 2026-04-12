@@ -271,6 +271,7 @@ void HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFra
     CHECK_AND_RETURN_LOG(historyBuffer_, "historyBuffer_ is nullptr");
     hdiFramePosition_.store(hdiFramePosition);
     AUDIO_INFO_LOG("rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
+    rewindTime_.store(rewindTime);
     historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     OnStreamInfoChange(false);
 }
@@ -337,6 +338,7 @@ int32_t HpaeSinkInputNode::OnStreamInfoChange(bool isPullData)
     streamInfo_ = {
         .framePosition = totalFrames_,
         .hdiFramePosition = hdiFramePosition_.exchange(0),
+        .rewindTime = rewindTime_.exchange(0),
         .framesWritten = totalFrames_,
         .latency = latency,
         .inputData = interleveData_.data(),

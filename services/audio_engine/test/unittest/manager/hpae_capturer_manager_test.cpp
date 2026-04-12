@@ -2144,6 +2144,796 @@ HWTEST_F(HpaeCapturerManagerTest, UpdateClusterNodeInfoForRecognition_003, TestS
         static_cast<uint8_t>(sourceInfo.channels) + static_cast<uint8_t>(sourceInfo.ecChannels);
     EXPECT_EQ(nodeInfo.channels == (AudioChannel)totalChannels, false);
 }
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : EnableCaptureCollaboration_001
+ * tc.desc   : Test EnableCaptureCollaboration normal flow with stream operations
+ */
+HWTEST_F(HpaeCapturerManagerTest, EnableCaptureCollaboration_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+
+    // create stream before collaboration
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration for LIVE
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // verify stream still exists after collaboration enable
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+
+    // start stream after collaboration
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // stop and cleanup
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : EnableCaptureCollaboration_002
+ * tc.desc   : Test duplicate enable, unsupported sourceType, and re-enable
+ */
+HWTEST_F(HpaeCapturerManagerTest, EnableCaptureCollaboration_002, TestSize.Level1)
+{
+    // 1. normal enable then duplicate enable should be ignored
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // duplicate: same sourceType, should log and return early
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // unsupported sourceType should be rejected by IsCollabRecordSupported
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_MIC);
+    WaitForMsgProcessing(capturerManager);
+
+    // disable once and re-enable should work
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : DisableCaptureCollaboration_001
+ * tc.desc   : Test DisableCaptureCollaboration normal flow and edge cases
+ */
+HWTEST_F(HpaeCapturerManagerTest, DisableCaptureCollaboration_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // disable without prior enable, should be ignored without crash
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable then disable
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // double disable, should be ignored without crash
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream after disable to verify manager still works normally
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_001
+ * tc.desc   : Test collaboration enable/disable cycle with stream lifecycle
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_001, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream, start it
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration while stream is running
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // verify stream state still valid
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+
+    // disable collaboration while stream is running
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // re-enable collaboration
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // stop stream, then disable collaboration
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // cleanup
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_002
+ * tc.desc   : Test collaboration on primary device class (should be rejected) and without Init
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_002, TestSize.Level1)
+{
+    // 1. non-primary device class (file_io) should reject collaboration
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> manager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(manager, nullptr);
+    EXPECT_EQ(manager->Init(), SUCCESS);
+    WaitForMsgProcessing(manager);
+
+    // enable on file_io: should be rejected by deviceClass check, no crash
+    manager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(manager);
+    // disable on file_io: should also be rejected
+    manager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(manager);
+
+    // manager should still work normally
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(manager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(manager);
+    EXPECT_EQ(manager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(manager);
+
+    // 2. enable without Init - SendRequest won't process, no crash
+    HpaeSourceInfo sourceInfo2;
+    InitSourceInfo(sourceInfo2);
+    std::shared_ptr<HpaeCapturerManager> noInitManager = std::make_shared<HpaeCapturerManager>(sourceInfo2);
+    EXPECT_NE(noInitManager, nullptr);
+    // do not call Init, Enable should not crash
+    noInitManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(noInitManager);
+    // disable without enable, also no crash
+    noInitManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(noInitManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_003
+ * tc.desc   : Test CreateStream and DestroyStream after collaboration enabled (GetEffectiveSceneType -> COLLABORATIVE)
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_003, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration first, then create stream -> GetEffectiveSceneType returns COLLABORATIVE
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream under collaboration: CreateOutputSession will use COLLABORATIVE sceneType
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // start stream under collaboration: ConnectOutputSession connects COLLABORATIVE cluster
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // pause under collaboration: DisConnectOutputSession with COLLABORATIVE sceneType
+    EXPECT_EQ(capturerManager->Pause(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // resume, then stop
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // destroy stream under collaboration: DeleteOutputSession with COLLABORATIVE sceneType
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_004
+ * tc.desc   : Test SetAppsEnhanceMuteState with collaboration enabled (uses COLLABORATIVE cluster)
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_004, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream, start it, then enable collaboration
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // SetAppsEnhanceMuteState under collaboration: GetEffectiveSceneType returns COLLABORATIVE
+    EXPECT_EQ(capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, true), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->SetAppsEnhanceMuteState(streamInfo.sessionId, false), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // cleanup
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_005
+ * tc.desc   : Test ReloadCaptureManager with collaboration enabled (rebuilds activeCollabSourceTypes_)
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_005, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create and start a stream
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // reload with new source info while collaboration is enabled
+    // -> ReloadCaptureManager should rebuild collaborative source (OpenCollaborativePrimary)
+    HpaeSourceInfo newSourceInfo;
+    newSourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    newSourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    newSourceInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    newSourceInfo.filePath = g_rootCapturerPath;
+    newSourceInfo.samplingRate = SAMPLE_RATE_48000;
+    newSourceInfo.channels = STEREO;
+    newSourceInfo.format = SAMPLE_S16LE;
+    newSourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    newSourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    newSourceInfo.micRef = HPAE_REF_OFF;
+    EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // verify stream still works after reload
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+
+    // cleanup
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_006
+ * tc.desc   : Test MoveStream with collaboration enabled (AddSingleNodeToSource -> GetEffectiveSceneType)
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_006, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream and start
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // verify stream info before collaboration
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+
+    // enable collaboration while stream running (rejected by deviceClass check in test env)
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // MoveAllStream: should not crash
+    std::vector<uint32_t> sessionIds = {streamInfo.sessionId};
+    capturerManager->MoveAllStream(DEFAULT_SOURCE_NAME, sessionIds, MOVE_ALL);
+    WaitForMsgProcessing(capturerManager);
+
+    // cleanup
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_007
+ * tc.desc   : Test unsupported sourceType rejected, SOURCE_TYPE_LIVE works correctly
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_007, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // unsupported sourceType should be rejected by IsCollabRecordSupported
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_VOICE_COMMUNICATION);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_MIC);
+    WaitForMsgProcessing(capturerManager);
+
+    // supported sourceType should work
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream with matching sourceType
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // stop, destroy
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    // activeCollabSourceTypes_ now empty, CloseCollaborativePrimary should be called
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_008
+ * tc.desc   : Test Release/Flush/Drain/SetStreamMute with collaboration enabled
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_008, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration first
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream under collaboration
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // Flush under collaboration: DisConnectOutputSession -> GetEffectiveSceneType -> COLLABORATIVE
+    EXPECT_EQ(capturerManager->Flush(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // restart after flush
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // Drain under collaboration
+    EXPECT_EQ(capturerManager->Drain(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // SetStreamMute under collaboration
+    EXPECT_EQ(capturerManager->SetStreamMute(streamInfo.sessionId, true), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->SetStreamMute(streamInfo.sessionId, false), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // Release under collaboration: goes through DisConnectOutputSession -> GetEffectiveSceneType
+    EXPECT_EQ(capturerManager->Release(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_009
+ * tc.desc   : Test StopManager/DumpSourceInfo/GetDeviceHDFDumpInfo with collaboration enabled
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_009, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration (rejected by deviceClass check in test env, no crash)
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // DumpSourceInfo: should not crash
+    capturerManager->DumpSourceInfo();
+    WaitForMsgProcessing(capturerManager);
+
+    // GetDeviceHDFDumpInfo: should return valid string
+    std::string hdfDumpInfo = capturerManager->GetDeviceHDFDumpInfo();
+    EXPECT_FALSE(hdfDumpInfo.empty());
+
+    // GetAllSourceOutputsInfo with no streams
+    std::vector<SourceOutput> outputs = capturerManager->GetAllSourceOutputsInfo();
+    EXPECT_EQ(outputs.empty(), true);
+
+    // create stream
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // StopManager: should not crash
+    EXPECT_EQ(capturerManager->StopManager(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // cleanup
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_010
+ * tc.desc   : Test SetMute (manager level) with collaboration enabled
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_010, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create and start stream under collaboration
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // SetMute (manager level) under collaboration
+    EXPECT_EQ(capturerManager->SetMute(true), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->SetMute(false), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // cleanup
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_011
+ * tc.desc   : Test ReloadCaptureManager without collaboration after previous enable/disable
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_011, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable then disable collaboration -> activeCollabSourceTypes_ empty
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream, then reload -> activeCollabSourceTypes_ empty, should NOT call OpenCollaborativePrimary
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeSourceInfo newSourceInfo;
+    newSourceInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    newSourceInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    newSourceInfo.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    newSourceInfo.filePath = g_rootCapturerPath;
+    newSourceInfo.samplingRate = SAMPLE_RATE_48000;
+    newSourceInfo.channels = STEREO;
+    newSourceInfo.format = SAMPLE_S16LE;
+    newSourceInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    newSourceInfo.ecType = HPAE_EC_TYPE_NONE;
+    newSourceInfo.micRef = HPAE_REF_OFF;
+    EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // verify stream still exists after reload
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+
+    // enable collaboration again after reload
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_012
+ * tc.desc   : Test RegisterReadCallback and OnNodeStatusUpdate with collaboration enabled
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_012, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create stream
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    streamInfo.sourceType = SOURCE_TYPE_LIVE;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // RegisterReadCallback under collaboration
+    auto readCb = std::make_shared<ReadDataCb>(g_rootCapturerPath);
+    EXPECT_EQ(capturerManager->RegisterReadCallback(streamInfo.sessionId, readCb), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // start stream
+    EXPECT_EQ(capturerManager->Start(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    capturerManager->OnNotifyQueue();
+
+    // GetSourceOutputInfo under collaboration
+    HpaeSourceOutputInfo sourceOutputInfo;
+    EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo), SUCCESS);
+
+    // cleanup
+    EXPECT_EQ(capturerManager->Stop(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : CaptureCollaboration_013
+ * tc.desc   : Test multiple streams with collaboration, some started some paused
+ */
+HWTEST_F(HpaeCapturerManagerTest, CaptureCollaboration_013, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // enable collaboration
+    capturerManager->EnableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // create two streams under collaboration
+    HpaeStreamInfo streamInfo1;
+    InitReloadStreamInfo(streamInfo1);
+    streamInfo1.sourceType = SOURCE_TYPE_LIVE;
+    streamInfo1.sessionId = DEFAULT_SESSION_ID;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo1), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    HpaeStreamInfo streamInfo2;
+    InitReloadStreamInfo(streamInfo2);
+    streamInfo2.sourceType = SOURCE_TYPE_LIVE;
+    streamInfo2.sessionId = DEFAULT_SESSION_ID + 1;
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo2), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // start both streams under collaboration
+    EXPECT_EQ(capturerManager->Start(streamInfo1.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Start(streamInfo2.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // pause one stream under collaboration
+    EXPECT_EQ(capturerManager->Pause(streamInfo1.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    // disable collaboration while one is running and one is paused
+    capturerManager->DisableCaptureCollaboration(SOURCE_TYPE_LIVE);
+    WaitForMsgProcessing(capturerManager);
+
+    // stop both after collaboration disabled
+    EXPECT_EQ(capturerManager->Start(streamInfo1.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Stop(streamInfo1.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Stop(streamInfo2.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo1.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo2.sessionId), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

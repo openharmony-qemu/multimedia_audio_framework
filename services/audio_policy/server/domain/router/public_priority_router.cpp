@@ -23,7 +23,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(StreamUsage streamUsage,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
@@ -44,7 +44,7 @@ shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetMediaRenderDevice(Str
 }
 
 shared_ptr<AudioDeviceDescriptor> PublicPriorityRouter::GetCallRenderDevice(StreamUsage streamUsage,
-    int32_t clientUID)
+    int32_t clientUID, const uint32_t sessionID)
 {
     return make_shared<AudioDeviceDescriptor>();
 }

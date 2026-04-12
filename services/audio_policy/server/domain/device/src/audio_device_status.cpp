@@ -1051,6 +1051,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
             }
             
             UpdateDeviceDescriptorByCapability(*connDevDesc);
+            audioDeviceManager_.UpdateDeviceDescriptorByCapability(connDevDesc);
             audioDeviceCommon_.OnPreferredOutputDeviceUpdated(connDevDesc, AudioStreamDeviceChangeReason::OVERRODE);
             AUDIO_INFO_LOG("Update capability, send preferred output device update");
             return SUCCESS_BUT_NOT_CONTINUE;

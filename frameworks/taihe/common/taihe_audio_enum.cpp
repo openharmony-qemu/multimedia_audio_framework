@@ -16,6 +16,7 @@
 #define LOG_TAG "TaiheAudioEnum"
 #endif
 
+#include "audio_utils.h"
 #include "taihe_audio_enum.h"
 #include "taihe_audio_error.h"
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
@@ -223,6 +224,7 @@ static const std::map<TaiheAudioEnum::AudioJsVolumeType, AudioVolumeType> AUDIO_
     {TaiheAudioEnum::AudioJsVolumeType::SYSTEM, AudioVolumeType::key_t::SYSTEM},
     {TaiheAudioEnum::AudioJsVolumeType::VOICE_ASSISTANT, AudioVolumeType::key_t::VOICE_ASSISTANT},
     {TaiheAudioEnum::AudioJsVolumeType::ULTRASONIC, AudioVolumeType::key_t::ULTRASONIC},
+    {TaiheAudioEnum::AudioJsVolumeType::NOTIFICATION, AudioVolumeType::key_t::NOTIFICATION},
     {TaiheAudioEnum::AudioJsVolumeType::ALL, AudioVolumeType::key_t::ALL},
 };
 
@@ -840,9 +842,9 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeTypeMore(OHOS::AudioStandard::Au
         case OHOS::AudioStandard::AudioStreamType::STREAM_NOTIFICATION:
         case OHOS::AudioStandard::AudioStreamType::STREAM_SYSTEM_ENFORCED:
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
-            result = (OHOS::system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0))?
+            result = OHOS::AudioStandard::VolumeUtils::IsPCVolumeEnable() ?
                 TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::SYSTEM) :
-                    TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::NOTIFICATION);
+                TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::NOTIFICATION);
 #else
             result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
 #endif

@@ -1056,7 +1056,7 @@ napi_value NapiAudioCapturer::SetMuteHint(napi_env env, napi_callback_info info)
             "AudioCapturer state is error.");
         CHECK_AND_RETURN_LOG(napiAudioCapturer->audioCapturer_ != nullptr, "audioCapturer_ is nullptr");
         context->intValue = napiAudioCapturer->audioCapturer_->SetMuteHint(context->muteHint);
-        if (context->intValue == ERROR_ILLEGAL_STATE) {
+        if (context->intValue == ERROR_ILLEGAL_STATE || context->intValue == ERR_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE);
             return;
         }

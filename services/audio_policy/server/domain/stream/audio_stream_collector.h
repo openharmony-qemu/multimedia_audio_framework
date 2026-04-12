@@ -121,7 +121,7 @@ public:
     bool IsVoipStreamActive();
     bool IsStreamRunning(StreamUsage streamUsage);
     void UpdateAppVolume(int32_t appUid, int32_t volume);
-    void ReportExceptionForBackMute(uint32_t sessionId, uint32_t usage, int32_t uid);
+    void ReportExceptionForBackgroundMute(uint32_t sessionId, uint32_t usage, int32_t uid);
 
 private:
     std::mutex streamsInfoMutex_;

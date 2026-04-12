@@ -397,5 +397,25 @@ HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_SetCaptureMuteHint_
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE);
 }
 
+/**
+ * @tc.name  : Test OH_AudioSessionManager_SetCaptureMuteHint.
+ * @tc.number: OH_AudioSessionManager_SetCaptureMuteHint_003
+ * @tc.desc  : Test OH_AudioSessionManager_SetCaptureMuteHint when inner audioSessionManager_ is null.
+ */
+HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_SetCaptureMuteHint_003, TestSize.Level0)
+{
+    OHAudioSessionManager *instance = OHAudioSessionManager::GetInstance();
+    ASSERT_NE(instance, nullptr);
+
+    AudioSessionManager *backupManager = instance->audioSessionManager_;
+    instance->audioSessionManager_ = nullptr;
+
+    OH_AudioSessionManager *audioManager = reinterpret_cast<OH_AudioSessionManager *>(instance);
+    OH_AudioCommon_Result result = OH_AudioSessionManager_SetCaptureMuteHint(audioManager, true);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_SYSTEM);
+
+    instance->audioSessionManager_ = backupManager;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

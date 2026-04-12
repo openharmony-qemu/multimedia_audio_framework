@@ -221,6 +221,7 @@ public:
     MOCK_METHOD(int32_t, OnDistributedRoutingRoleChange,
         (const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t type), (override));
     MOCK_METHOD(int32_t, OnDistributedServiceOnline, (), (override));
+    MOCK_METHOD(int32_t, SetSplitModeReadyRefined, (), (override));
 };
 
 /**
@@ -381,12 +382,12 @@ public:
           recordCaptureRet_(std::move(recordCaptureRet)),
           ringRenderRet_(std::move(ringRenderRet)) {}
 
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t, const uint32_t) override
     {
         return mediaRenderRet_;
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t, const uint32_t) override
     {
         return callRenderRet_;
     }
@@ -434,7 +435,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_desc_nullptr, TestSize.
     center.mediaRenderRouters_.emplace_back(
         std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr));
     RouterType rtype = ROUTER_TYPE_NONE;
-    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, {ROUTER_TYPE_STREAM_FILTER});
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
@@ -453,7 +454,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_deviceType_NONE, TestSi
     center.mediaRenderRouters_.emplace_back(
         std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, invalidDesc));
     RouterType rtype = ROUTER_TYPE_NONE;
-    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, {ROUTER_TYPE_STREAM_FILTER});
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
@@ -472,7 +473,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_deviceType_valid, TestS
     center.mediaRenderRouters_.emplace_back(
         std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, validDesc));
     RouterType rtype = ROUTER_TYPE_NONE;
-    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, {ROUTER_TYPE_STREAM_FILTER});
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result, validDesc);
     EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
@@ -491,7 +492,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_bypassType_skip, TestSi
     center.mediaRenderRouters_.emplace_back(
         std::make_unique<MockRouter>(ROUTER_TYPE_STREAM_FILTER, validDesc));
     RouterType rtype = ROUTER_TYPE_NONE;
-    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, {ROUTER_TYPE_STREAM_FILTER});
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
@@ -904,6 +905,74 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_015, TestSize.Level1)
     EXPECT_FALSE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_VOICE_RINGING));
     EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CALL));
     EXPECT_TRUE(audioRouterCenter.IsMediaFollowCallStrategy(AUDIO_SCENE_PHONE_CHAT));
+}
+
+/**
+ * @tc.name  : Test IsWirelessPrivacyDevice.
+ * @tc.number: IsWirelessPrivacyDevice_001
+ * @tc.desc  : Verify that IsWirelessPrivacyDevice returns correct value for different device types and categories.
+ */
+HWTEST(AudioRouterCenterUnitTest, IsWirelessPrivacyDevice_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    auto desc1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc1->deviceCategory_ = BT_HEADPHONE;
+    EXPECT_TRUE(audioRouterCenter.IsWirelessPrivacyDevice(desc1));
+
+    auto desc2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc2->deviceCategory_ = BT_GLASSES;
+    EXPECT_TRUE(audioRouterCenter.IsWirelessPrivacyDevice(desc2));
+
+    auto desc3 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc3->deviceCategory_ = CATEGORY_DEFAULT;
+    EXPECT_FALSE(audioRouterCenter.IsWirelessPrivacyDevice(desc3));
+
+    auto desc4 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    desc4->deviceCategory_ = BT_HEADPHONE;
+    EXPECT_TRUE(audioRouterCenter.IsWirelessPrivacyDevice(desc4));
+
+    auto desc5 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    desc5->deviceCategory_ = BT_GLASSES;
+    EXPECT_TRUE(audioRouterCenter.IsWirelessPrivacyDevice(desc5));
+
+    auto desc6 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    desc6->deviceCategory_ = CATEGORY_DEFAULT;
+    EXPECT_FALSE(audioRouterCenter.IsWirelessPrivacyDevice(desc6));
+
+    auto desc7 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc7->deviceCategory_ = BT_HEADPHONE;
+    EXPECT_FALSE(audioRouterCenter.IsWirelessPrivacyDevice(desc7));
+}
+
+/**
+ * @tc.name  : Test IsVehicleDevice.
+ * @tc.number: IsVehicleDevice_001
+ * @tc.desc  : Verify that IsVehicleDevice returns correct value for different device types and categories.
+ */
+HWTEST(AudioRouterCenterUnitTest, IsVehicleDevice_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+
+    auto desc1 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc1->deviceCategory_ = BT_CAR;
+    EXPECT_TRUE(audioRouterCenter.IsVehicleDevice(desc1));
+
+    auto desc2 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_BLUETOOTH_A2DP, OUTPUT_DEVICE);
+    desc2->deviceCategory_ = BT_HEADPHONE;
+    EXPECT_FALSE(audioRouterCenter.IsVehicleDevice(desc2));
+
+    auto desc3 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    desc3->deviceCategory_ = BT_CAR;
+    EXPECT_TRUE(audioRouterCenter.IsVehicleDevice(desc3));
+
+    auto desc4 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_NEARLINK, OUTPUT_DEVICE);
+    desc4->deviceCategory_ = BT_HEADPHONE;
+    EXPECT_FALSE(audioRouterCenter.IsVehicleDevice(desc4));
+
+    auto desc5 = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    desc5->deviceCategory_ = BT_CAR;
+    EXPECT_FALSE(audioRouterCenter.IsVehicleDevice(desc5));
 }
 } // namespace AudioStandard
 } // namespace OHOS

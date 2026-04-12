@@ -477,17 +477,6 @@ void AudioCoreServicePrivateUpdateDefaultOutputDeviceWhenStoppingFuzzTest()
     audioCoreService->UpdateDefaultOutputDeviceWhenStopping(uid);
 }
 
-void AudioCoreServicePrivateUpdateInputDeviceWhenStoppingFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-
-    int32_t uid = GetData<int32_t>();
-    audioCoreService->UpdateInputDeviceWhenStopping(uid);
-}
-
 void AudioCoreServicePrivateRemoveUnusedPipeFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -1151,7 +1140,6 @@ TestFuncs g_testFuncs[] = {
     UpdateCapturerInfoWhenNoPermissionFuzzTest,
     AudioCoreServicePrivateGetEncryptAddrFuzzTest,
     AudioCoreServicePrivateUpdateDefaultOutputDeviceWhenStoppingFuzzTest,
-    AudioCoreServicePrivateUpdateInputDeviceWhenStoppingFuzzTest,
     AudioCoreServicePrivateRemoveUnusedPipeFuzzTest,
     AudioCoreServicePrivateIsStreamBelongToUidFuzzTest,
     AudioCoreServicePrivateMoveToNewOutputDeviceFuzzTest,

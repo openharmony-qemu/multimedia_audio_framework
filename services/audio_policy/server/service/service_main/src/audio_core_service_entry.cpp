@@ -60,7 +60,8 @@ static const char *SessionOperationMsgToString(SessionOperationMsg opMsg)
     }
 }
 
-AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService) : coreService_(coreService)
+AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService) : coreService_(coreService),
+    audioPolicyDump_(AudioPolicyDump::GetInstance())
 {
     AUDIO_INFO_LOG("Ctor");
 }
@@ -106,6 +107,8 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     int32_t waitRet = WaitForServiceReady();
+    RecordBootStateTime(static_cast<int32_t>(BootAnimationState::WAIT_FOR_SERVICE_READY), streamDesc->GetRealUid(),
+        ClockTime::GetCurMilli());
     CHECK_AND_RETURN_RET(waitRet != ERR_RETRY_IN_CLIENT, ERR_RETRY_IN_CLIENT);
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
@@ -154,6 +157,13 @@ int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, S
     return coreService_->ReloadCaptureSession(sessionId, operation);
 }
 
+int32_t AudioCoreService::EventEntry::RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime)
+{
+    CHECK_AND_RETURN_RET(uid == BOOT_ANIMATION_UID, SUCCESS);
+    audioPolicyDump_.RecordBootStateTime(static_cast<BootAnimationState>(state), uid, curTime);
+    return SUCCESS;
+}
+
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -197,6 +207,13 @@ int32_t AudioCoreService::EventEntry::SetOffloadAllowedForUid(uint32_t uid, bool
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_UNKNOWN, "coreService_ is nullptr");
     return coreService_->SetOffloadAllowedForUid(uid, allowed);
+}
+
+int32_t AudioCoreService::EventEntry::SetSplitModeReady()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr, ERR_UNKNOWN, "coreService_ is nullptr");
+    return coreService_->SetSplitModeReady();
 }
 
 int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
@@ -305,6 +322,12 @@ void AudioCoreService::EventEntry::OnConnectFailed(AudioDeviceDescriptor &desc)
     coreService_->OnConnectFailed(desc);
 }
 
+void AudioCoreService::EventEntry::OnVehiclePriorityChanged(bool enable)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->OnVehiclePriorityChanged(enable);
+}
+
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -331,12 +354,11 @@ int32_t AudioCoreService::EventEntry::SetDeviceActive(InternalDeviceType deviceT
     return coreService_->SetDeviceActive(deviceType, active, uid);
 }
 
-int32_t AudioCoreService::EventEntry::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const SourceType sourceType, bool isRunning)
+int32_t AudioCoreService::EventEntry::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID, int32_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock");
-    return coreService_->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    return coreService_->SetInputDevice(deviceType, sessionID, uid);
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredOutputDeviceDescriptors(

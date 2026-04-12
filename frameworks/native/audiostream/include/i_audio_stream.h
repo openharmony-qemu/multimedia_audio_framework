@@ -164,6 +164,7 @@ public:
     virtual void SetClientDeviceId(const std::string &deviceId) = 0;
     virtual void SetRendererInfo(const AudioRendererInfo &rendererInfo) = 0;
     virtual void GetRendererInfo(AudioRendererInfo &rendererInfo) = 0;
+    virtual void CheckInnerCapVoIP() = 0;
     virtual void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) = 0;
     virtual int32_t SetAudioStreamInfo(const AudioStreamParams info,
         const std::shared_ptr<AudioClientTracker> &proxyObj,
@@ -364,6 +365,8 @@ public:
     virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 
     virtual bool IsRestoreNeeded() { return false; }
+
+    virtual void UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal) {}
 
     virtual int32_t SetLoopTimes(int64_t bufferLoopTimes) = 0;
 

@@ -820,6 +820,11 @@ int32_t AudioSystemManager::InjectInterruption(const std::string networkId, Inte
     return AudioInterruptClientManager::GetInstance().InjectInterruption(networkId, event);
 }
 
+int32_t AudioSystemManager::SetSplitModeReady()
+{
+    return AudioSystemClientPolicyManager::GetInstance().SetSplitModeReady();
+}
+
 int32_t AudioSystemManager::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
 {
     return AudioSystemClientPolicyManager::GetInstance().LoadSplitModule(splitArgs, networkId);

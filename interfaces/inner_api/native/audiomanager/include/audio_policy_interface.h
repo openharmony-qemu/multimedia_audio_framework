@@ -118,6 +118,7 @@ public:
     virtual int32_t GetSplitInfoRefined(std::string &splitInfo) = 0;
     virtual int32_t OnDistributedOutputChange(bool isRemote) = 0;
     virtual int32_t OnDistributedServiceOnline() = 0;
+    virtual int32_t SetSplitModeReadyRefined() = 0;
 };
 
 class AudioClientInfoMgrCallback {

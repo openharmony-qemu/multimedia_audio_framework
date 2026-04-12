@@ -622,7 +622,7 @@ void RendererInClientInner::CallClientHandle()
         auto endRunning = ClockTime::GetCurNano();
         auto duration = endRunning - startRunning;
         if (duration >= ONWRITEDATA_TIMEOUT_NS) {
-            AudioPerformanceMonitor::GetInstance().UpdateIsTimeoutCB(sessionId_, true);
+            ipcStream_->UpdateUnderrunInfo(UNDERRUN_TYPE_ISTIMEOUT, true);
         }
         guard.CheckCurrTimeout();
     }
@@ -1192,6 +1192,13 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     return SUCCESS;
 }
 
+int32_t RendererInClientInner::Standby()
+{
+    std::unique_lock<std::mutex> stateLock(statusMutex_);
+    CHECK_AND_RETURN_RET(state_ == RUNNING, SUCCESS);
+    return ipcStream_->Standby();
+}
+
 int32_t RendererInClientInner::SetStaticBufferEventCallback(std::shared_ptr<StaticBufferEventCallback> callback)
 {
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.isStatic, ERROR_UNSUPPORTED, "not support!");
@@ -1210,6 +1217,12 @@ int32_t RendererInClientInner::SetStaticTriggerRecreateCallback(std::function<vo
     std::lock_guard<std::mutex> lock(staticBufferMutex_);
     sendStaticRecreateFunc_ = sendStaticRecreateFunc;
     return SUCCESS;
+}
+
+void RendererInClientInner::UpdateUnderrunInfo(UnderrunInfoType underrunInfoKey, int32_t underrunInfoVal)
+{
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream_ is nullptr");
+    ipcStream_->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
 }
 
 int32_t RendererInClientInner::SetLoopTimes(int64_t bufferLoopTimes)

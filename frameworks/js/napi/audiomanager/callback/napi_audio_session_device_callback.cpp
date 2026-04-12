@@ -51,7 +51,7 @@ void NapiAudioSessionDeviceCallback::OnAudioSessionCurrentDeviceChanged(
     cb->audioSessionDeviceEvent.devices = deviceEvent.devices;
     cb->audioSessionDeviceEvent.changeReason = deviceEvent.changeReason;
     cb->audioSessionDeviceEvent.recommendedAction = deviceEvent.recommendedAction;
-
+    cb->audioSessionDeviceEvent.preDevices = deviceEvent.preDevices;
     return OnJsCallbackAudioSessionDevice(cb);
 }
 
@@ -117,6 +117,11 @@ void NapiAudioSessionDeviceCallback::SafeJsCallbackAudioSessionDeviceWork(
             static_cast<int32_t>(event->audioSessionDeviceEvent.recommendedAction), args[PARAM0]);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
             "%{public}s fail to recommendedAction callback", request.c_str());
+        napi_value preDeviceObj = nullptr;
+        nstatus = NapiParamUtils::SetDeviceDescriptors(
+            env, event->audioSessionDeviceEvent.preDevices, preDeviceObj);
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && preDeviceObj != nullptr, "fail to convert to jsobj");
+        napi_set_named_property(env, args[PARAM0], "preDevices", preDeviceObj);
 
         const size_t argCount = ARGS_ONE;
         napi_value result = nullptr;

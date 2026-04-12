@@ -722,6 +722,7 @@ struct VolumeEvent {
   networkId: String;
   volumeMode: Optional<AudioVolumeMode>;
   percentage: Optional<i32>;
+  appUid: Optional<i32>;
 }
 
 struct StreamVolumeEvent {
@@ -758,6 +759,7 @@ enum AudioStreamDeviceChangeReason: i32 {
 struct AudioStreamDeviceChangeInfo {
   devices: Array<AudioDeviceDescriptor>;
   changeReason: AudioStreamDeviceChangeReason;
+  preDevices: Array<AudioDeviceDescriptor>;
 }
 
 enum ToneType: i32 {
@@ -867,6 +869,7 @@ struct CurrentOutputDeviceChangedEvent {
   devices: Array<AudioDeviceDescriptor>;
   changeReason: AudioStreamDeviceChangeReason;
   recommendedAction: OutputDeviceChangeRecommendedAction;
+  preDevices: Array<AudioDeviceDescriptor>;
 }
 
 enum BluetoothAndNearlinkPreferredRecordCategory: i32 {
@@ -903,8 +906,8 @@ interface AudioSessionManager {
   SetMediaOutputDeviceSync(deviceType: DeviceType): void;
 
   EnableMuteSuggestionWhenMixWithOthers(enable: bool): void;
-  @gen_promise("setCaptureMuteHint")
-  SetCaptureMuteHintSync(mute: bool): void;
+  @gen_promise("setCapturerMuteHint")
+  SetCapturerMuteHintSync(mute: bool): void;
 
   SetAudioSessionBehavior(behavior: i32): void;
 

@@ -201,7 +201,7 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->ActivateAudioSession(context->audioSessionStrategy);
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Activate audio session fail.");
         }
     };
 
@@ -234,7 +234,7 @@ napi_value NapiAudioSessionMgr::DeactivateAudioSession(napi_env env, napi_callba
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->DeactivateAudioSession();
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Deactivate audio session fail.");
         }
     };
 
@@ -992,7 +992,7 @@ napi_value NapiAudioSessionMgr::ClearSelectedMediaInputDevice(napi_env env, napi
         }
         context->intValue = napiSessionMgr->audioSessionMngr_->ClearSelectedInputDevice();
         if (context->intValue != SUCCESS) {
-            context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
+            context->SignError(NAPI_ERR_SYSTEM, "System error. Clear selected input device fail.");
         }
     };
 
@@ -1123,7 +1123,7 @@ napi_value NapiAudioSessionMgr::SetCapturerMuteHint(napi_env env, napi_callback_
         auto *napiSessionMgr = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioSessionStatus(napiSessionMgr, context), "AudioSession state is error.");
         context->intValue = napiSessionMgr->audioSessionMngr_->SetCapturerMuteHint(context->isTrue);
-        if (context->intValue == ERROR_ILLEGAL_STATE) {
+        if (context->intValue == ERROR_ILLEGAL_STATE || context->intValue == ERR_ILLEGAL_STATE) {
             context->SignError(NAPI_ERR_ILLEGAL_STATE);
             return;
         }

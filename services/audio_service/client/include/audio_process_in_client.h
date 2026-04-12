@@ -158,6 +158,8 @@ public:
 
     virtual void SetRebuildFlag() = 0;
 
+    virtual void SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag) = 0;
+
     virtual bool IsRestoreNeeded() = 0;
 
     virtual void GetKeepRunning(bool &keepRunning) = 0;
@@ -178,6 +180,8 @@ public:
     virtual void SetIsFirstFrame(bool value) = 0;
 
     virtual int32_t ResetStaticPlayPosition() = 0; // Only can be used in static mode.
+
+    virtual void CheckInnerCapVoIP() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

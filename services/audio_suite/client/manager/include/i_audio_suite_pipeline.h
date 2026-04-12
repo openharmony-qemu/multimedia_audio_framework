@@ -53,6 +53,7 @@ public:
     virtual int32_t GetOptions(uint32_t nodeId, std::string name, std::string &value) = 0;
 
     virtual uint32_t GetPipelineId() = 0;
+    virtual PipelineWorkMode GetWorkMode() = 0;
 };
 
 }  // namespace AudioSuite

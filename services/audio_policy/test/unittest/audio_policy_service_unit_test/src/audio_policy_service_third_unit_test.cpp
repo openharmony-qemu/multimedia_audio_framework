@@ -1795,27 +1795,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsCurrentActiveDeviceA2dp_001, TestSiz
     EXPECT_EQ(ret, false);
 }
 
-#ifdef TEMP_DISABLE
-/**
- * @tc.name  : Test SetInputDevice.
- * @tc.number: SetInputDevice_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetInputDevice_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    DeviceType deviceType = DEVICE_TYPE_MAX;
-    uint32_t sessionID = 0;
-    SourceType sourceType = SOURCE_TYPE_INVALID;
-    bool isRunning = false;
-
-    int32_t ret = server->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
-    EXPECT_EQ(ret, SUCCESS);
-}
-#endif
-
 /**
  * @tc.name  : Test CheckConnectedDevice.
  * @tc.number: CheckConnectedDevice_001

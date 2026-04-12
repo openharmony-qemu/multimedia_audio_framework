@@ -140,6 +140,7 @@ struct AudioStreamParams {
     uint8_t micInFormat = 0;
     uint8_t micInChannels = 0;
     uint64_t micInChannelLayout = 0ULL;
+    bool isVoiceRecognitionMicInEcDegrade = false;
     uint8_t ultraFastFlag = 0;
 };
 
@@ -420,7 +421,8 @@ inline const std::vector<AudioSamplingRate> AUDIO_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_88200,
     SAMPLE_RATE_96000,
     SAMPLE_RATE_176400,
-    SAMPLE_RATE_192000
+    SAMPLE_RATE_192000,
+    SAMPLE_RATE_384000
 };
 
 inline const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
@@ -527,6 +529,7 @@ struct AudioStreamData {
 struct AudioCallBackStreamInfo {
     uint64_t framePosition = 0;
     uint64_t hdiFramePosition = 0;
+    uint64_t rewindTime = 0;
     uint64_t framesWritten = 0;
     std::vector<uint64_t> timestamp = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency = 0;

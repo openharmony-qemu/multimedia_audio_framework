@@ -52,6 +52,8 @@ public:
     virtual std::shared_ptr<AudioDeviceDescriptor> GetRecognitionInputDevice();
     virtual void SetRecognitionInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
 
+    bool GetEnhancedRoutingSupported() const;
+
     void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
     std::shared_ptr<AudioDeviceDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);

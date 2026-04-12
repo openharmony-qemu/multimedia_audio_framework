@@ -27,6 +27,7 @@ interface IIpcStream {
     void UpdatePosition();
     void GetAudioSessionID([out] unsigned int sessionId);
     void Start();
+    void Standby();
     void Pause();
     void Stop();
     void Release([in] boolean isSwitchStream); // isSwitchStream = false
@@ -47,6 +48,7 @@ interface IIpcStream {
     void SetAudioEffectMode([in] int effectMode); // renderer only
     void GetAudioEffectMode([out] int effectMode); // renderer only
     void SetPrivacyType([in] int privacyType); // renderer only
+    void SetVoipNoPrivacyFlag([in] boolean voipNoPrivacyFlag); // renderer only
     void GetPrivacyType([out] int privacyType); // renderer only
     void SetOffloadMode([in] int state, [in] boolean isAppBack); // renderer only
     void UnsetOffloadMode(); // renderer only
@@ -76,4 +78,5 @@ interface IIpcStream {
     void ResetStaticPlayPosition();
     void SetInMainThreadState([in] boolean isInMainThread);
     void CalculateCacheCount([in] unsigned int cacheSizeInFrame, [out] unsigned int cacheCount);
+    void UpdateUnderrunInfo([in] unsigned int underrunInfoKey, [in] int underrunInfoVal);
 }

@@ -41,6 +41,8 @@ ohos_shared_library("ohaudiosuite") {
     "../../../interfaces/kits/c/",
     "../../../interfaces/kits/c/common/",
     "../../../interfaces/kits/c/audio_suite/",
+    "../../../services/audio_suite/client/utils/include",
+    "../../../services/audio_engine/plugin/resample/include",
   ]
 
   configs = [ ":audio_config" ]
@@ -49,10 +51,15 @@ ohos_shared_library("ohaudiosuite") {
     sources = [
       "./OHAudioSuiteEngine.cpp",
       "./OHAudioSuiteNodeBuilder.cpp",
+      "./OHAudioSuiteFormatConverter.cpp",
+      "../../../services/audio_suite/client/utils/src/audio_suite_format_conversion.cpp",
+      "../../../services/audio_suite/client/utils/src/audio_suite_pcm_buffer.cpp",
     ]
 
   deps = [
     "../../../services/audio_suite:audio_suite",
+    "../../../services/audio_engine:audio_engine_plugins",
+    "../../../services/audio_engine:audio_engine_utils",
     "../audioutils:audio_utils",
   ]
   cflags = [ "-Werror" ]

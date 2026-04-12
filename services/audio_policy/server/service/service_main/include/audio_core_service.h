@@ -30,7 +30,6 @@
 #include "audio_stream_change_info.h"
 #include "audio_active_device.h"
 #include "audio_scene_manager.h"
-#include "audio_usr_select_manager.h"
 #include "audio_volume_manager.h"
 #include "audio_device_manager.h"
 #include "audio_connected_device.h"
@@ -54,6 +53,8 @@
 #include "audio_injector_policy.h"
 #include "client_type_manager.h"
 #include "async_action_handler.h"
+#include "audio_policy_dump.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -120,12 +121,14 @@ public:
         int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning, bool skipForce = false) override;
+        int32_t RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime) override;
         int32_t SetOffloadAllowedForUid(uint32_t uid, bool allowed);
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         std::string GetModuleNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             AudioStreamInfo &streamInfo, bool &isUltraFast, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
+        int32_t SetSplitModeReady();
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
         void OnCheckActiveMusicTime(const std::string &reason) override;
         int32_t SetCapturerMuteHint(uint32_t sessionId, bool mute) override;
@@ -154,8 +157,7 @@ public:
         int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
         int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
-        int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-            const SourceType sourceType, bool isRunning);
+        int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID, int32_t uid);
         int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
             const int32_t uid = INVALID_UID);
         int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -224,6 +226,7 @@ public:
             AudioEnhancePropertyArray oldPropertyArray, AudioEnhancePropertyArray propertyArray);
         void ReloadSourceForEffectV3(
             AudioEffectPropertyArrayV3 oldPropertyArray, AudioEffectPropertyArrayV3 propertyArray);
+        void OnVehiclePriorityChanged(bool enable);
     private:
         int32_t WaitForServiceReady();
         void NotifyServiceReady();
@@ -234,6 +237,7 @@ public:
         std::condition_variable serviceReadyCV_;
         std::atomic<bool> serviceReady_ = false;
         int32_t serviceReadyWaitCount_ = 0;
+        AudioPolicyDump &audioPolicyDump_;
     };
 
     // Ctor & dtor
@@ -303,7 +307,6 @@ public:
         std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &audioFlag, uint32_t &sessionId,
         std::string &networkId);
     void SetPreferredInputDeviceIfValid(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void WriteDesignateAudioCaptureDeviceEvent(SourceType sourceType, int32_t deviceType, bool isNormalSelection);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     int32_t StartClient(uint32_t sessionId);
@@ -323,6 +326,7 @@ public:
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool &isUltraFast);
     uint32_t GenerateSessionId();
+    int32_t SetSplitModeReady();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnCheckActiveMusicTime(const std::string &reason);
 
@@ -349,8 +353,7 @@ public:
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
     bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
     int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
-    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
-            const SourceType sourceType, bool isRunning);
+    int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID, int32_t uid);
     int32_t SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
         const int32_t uid = INVALID_UID);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
@@ -461,6 +464,8 @@ public:
     void ReloadSourceForDeviceChange(const AudioDeviceDescriptor &inputDevice,
         const AudioDeviceDescriptor &outputDevice, const std::string &caller);
     int32_t GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor &deviceDescriptor,
         const AudioStreamDeviceChangeReason reason);
@@ -511,7 +516,6 @@ private:
     void SetUpdateModemRouteFinished(bool flag);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
-    void UpdateInputDeviceWhenStopping(int32_t uid);
     void ProcessOutputPipeReload(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag,
         const AudioStreamDeviceChangeReasonExt reason);
     void RecordSelectDevice(const std::string &history);
@@ -692,7 +696,7 @@ private:
     bool WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     // for collaboration
-    void UpdateRouteForCollaboration(InternalDeviceType deviceType);
+    void UpdateRouteForCollaboration(InternalDeviceType deviceType, uint32_t sessionId);
     void CheckAndUpdateHearingAidCall(const DeviceType deviceType);
     int32_t CheckModuleForHearingAid(uint32_t &paIndex);
     void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);
@@ -745,11 +749,13 @@ private:
     bool HasNormalTypeSession(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList);
     bool IsSourceTypeValidForEc(SourceType sourceType);
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
+    bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
     int32_t ReloadCaptureSoftLink(std::shared_ptr<AudioPipeInfo> &pipeInfo, const AudioModuleInfo &moduleInfo);
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
 
     void CheckAndUpdateEffect(std::shared_ptr<AudioStreamDescriptor> streamDesc);
+    void OnVehiclePriorityChanged(bool enable);
 
 private:
     std::shared_ptr<EventEntry> eventEntry_;
@@ -775,7 +781,6 @@ private:
     AudioA2dpDevice& audioA2dpDevice_;
     AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
-    AudioUsrSelectManager &audioUsrSelectManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
     AudioSessionService &audioSessionService_;
 
@@ -867,6 +872,7 @@ private:
     bool isMicRefRecordOn_ = false;
 
     AudioInjectorPolicy &audioInjectorPolicy_;
+    AudioPolicyDump &audioPolicyDump_;
 
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
     int32_t isSupportUltraFast_ = 0;

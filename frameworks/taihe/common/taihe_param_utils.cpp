@@ -631,7 +631,7 @@ VolumeEvent TaiheParamUtils::SetValueVolumeEvent(const OHOS::AudioStandard::Volu
         .volumeMode = taihe::optional<AudioVolumeMode>(std::in_place_t{},
             TaiheAudioEnum::GetJsAudioVolumeMode(volumeEvent.volumeMode)),
         .percentage = taihe::optional<int32_t>(std::in_place_t{}, volumeEvent.volumeDegree),
-        
+        .appUid = taihe::optional<int32_t>(std::in_place_t{}, volumeEvent.appUid),
     };
     return taiheVolumeEvent;
 }
@@ -760,6 +760,7 @@ CurrentOutputDeviceChangedEvent TaiheParamUtils::SetValueCurrentOutputDeviceChan
         .devices = TaiheParamUtils::SetDeviceDescriptors(event.devices),
         .changeReason = TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(event.changeReason),
         .recommendedAction = TaiheAudioEnum::ToTaiheOutputDeviceChangeRecommendedAction(event.recommendedAction),
+        .preDevices = TaiheParamUtils::SetDeviceDescriptors(event.preDevices),
     };
     return currentOutputDeviceChangedEvent;
 }

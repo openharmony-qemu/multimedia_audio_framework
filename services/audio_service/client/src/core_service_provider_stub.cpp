@@ -53,6 +53,11 @@ int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(int32_t defaultOutput
     return coreServiceWorker_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice), sessionID,
         static_cast<StreamUsage>(streamUsage), isRunning, skipForce);
 }
+int32_t CoreServiceProviderWrapper::RecordBootStateTime(int32_t state, int32_t uid, int64_t curTime)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    return coreServiceWorker_->RecordBootStateTime(state, uid, curTime);
+}
 
 int32_t CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID, std::string& name)
 {

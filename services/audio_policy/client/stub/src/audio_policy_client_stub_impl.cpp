@@ -26,6 +26,7 @@
 namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t RSS_UID = 1096;
+constexpr int32_t ALL_APPS_UID = -1;
 static const int32_t FOCUS_INFO_VALID_SIZE = 128;
 static const int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 static const int32_t PREFERRED_DEVICE_VALID_SIZE = 128;
@@ -709,10 +710,9 @@ int32_t AudioPolicyClientStubImpl::OnSystemAppVolumeChanged(int32_t appUid, cons
     {
         std::lock_guard<std::mutex> lockCbMap(appVolumeChangeForUidMutex_);
         for (const auto &iter : appVolumeChangeForUidCallback_) {
-            if (iter.first != appUid) {
-                continue;
+            if (iter.first == appUid || iter.first == ALL_APPS_UID) {
+                iter.second->OnAppVolumeChangedForUid(appUid, volumeEvent);
             }
-            iter.second->OnAppVolumeChangedForUid(appUid, volumeEvent);
         }
     }
     return SUCCESS;
@@ -1127,7 +1127,8 @@ size_t AudioPolicyClientStubImpl::GetDeviceChangeWithInfoCallbackkSize() const
 }
 
 int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
-    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason)
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
@@ -1145,7 +1146,7 @@ int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
     if (callback != nullptr) {
         Trace traceCallback("callback->OnDeviceChangeWithInfo sessionid:" + std::to_string(sessionId)
             + " reason:" + std::to_string(static_cast<int>(reason)));
-        callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason);
+        callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason, preDeviceInfo);
     }
     return SUCCESS;
 }

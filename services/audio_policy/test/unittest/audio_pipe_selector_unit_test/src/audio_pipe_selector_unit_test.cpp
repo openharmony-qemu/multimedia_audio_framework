@@ -552,7 +552,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_003, TestSize.Level1)
     pipeInfo->name_ = "offload_distributed_output";
     pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
     pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
-    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+    pipeInfo->moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
     pipeInfo->moduleInfo_.networkId = "test_networkId";
@@ -607,7 +607,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_004, TestSize.Level1)
     pipeInfo->name_ = "remote";
     pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
     pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
-    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
+    pipeInfo->moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(
         AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
     pipeInfo->moduleInfo_.networkId = "test_networkId";
@@ -974,7 +974,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_007, TestSize.Le
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
 
-    EXPECT_EQ(info.moduleInfo_.openMicRef, "1");
+    EXPECT_EQ(info.moduleInfo_.openMicRef, "");
     EXPECT_EQ(info.moduleInfo_.micInRate, "48000");
     EXPECT_EQ(info.moduleInfo_.micInChannels, "4");
     EXPECT_EQ(info.moduleInfo_.micInFormat, "s16");
@@ -1048,6 +1048,172 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_008, TestSize.Le
     EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefChannels, "4");
     EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefFormat, "");
     EXPECT_EQ(micOnlyInfo.moduleInfo_.ecType, "");
+}
+
+/**
+ * @tc.name: ConvertStreamDescToPipeInfo_009
+ * @tc.desc: Test remote input stream should not carry voice recognition micIn/ec module info.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_009, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
+    streamDesc->sessionId_ = 102;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "RemoteDevice";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->micInStreamInfo_.channels = CHANNEL_4;
+    streamDesc->micInStreamInfo_.format = SAMPLE_S16LE;
+    streamDesc->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->ecStreamInfo_.channels = STEREO;
+    streamDesc->ecStreamInfo_.format = SAMPLE_S16LE;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_INPUT;
+
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+
+    EXPECT_EQ(info.moduleInfo_.ecType, "");
+    EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "");
+    EXPECT_EQ(info.moduleInfo_.ecChannels, "");
+    EXPECT_EQ(info.moduleInfo_.ecFormat, "");
+    EXPECT_EQ(info.moduleInfo_.micInRate, "");
+    EXPECT_EQ(info.moduleInfo_.micInChannels, "");
+    EXPECT_EQ(info.moduleInfo_.micInFormat, "");
+    EXPECT_EQ(info.moduleInfo_.micRefRate, "");
+    EXPECT_EQ(info.moduleInfo_.micRefChannels, "");
+    EXPECT_EQ(info.moduleInfo_.micRefFormat, "");
+}
+
+/**
+ * @tc.name: ConvertStreamDescToPipeInfo_010
+ * @tc.desc: Test old remote input device should also disable voice recognition micIn/ec module info.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_010, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
+    streamDesc->sessionId_ = 103;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->oldDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->oldDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_MIC;
+    streamDesc->oldDeviceDescs_.front()->networkId_ = "RemoteDevice";
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->micInStreamInfo_.channels = CHANNEL_4;
+    streamDesc->micInStreamInfo_.format = SAMPLE_S16LE;
+    streamDesc->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->ecStreamInfo_.channels = STEREO;
+    streamDesc->ecStreamInfo_.format = SAMPLE_S16LE;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+
+    EXPECT_EQ(info.moduleInfo_.ecType, "");
+    EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "");
+    EXPECT_EQ(info.moduleInfo_.ecChannels, "");
+    EXPECT_EQ(info.moduleInfo_.ecFormat, "");
+    EXPECT_EQ(info.moduleInfo_.micInRate, "");
+    EXPECT_EQ(info.moduleInfo_.micInChannels, "");
+    EXPECT_EQ(info.moduleInfo_.micInFormat, "");
+    EXPECT_EQ(info.moduleInfo_.micRefRate, "");
+    EXPECT_EQ(info.moduleInfo_.micRefChannels, "");
+    EXPECT_EQ(info.moduleInfo_.micRefFormat, "");
+}
+
+/**
+ * @tc.name: ConvertStreamDescToPipeInfo_011
+ * @tc.desc: Test local non-primary input device should also disable voice recognition micIn/ec module info.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_011, TestSize.Level1)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_VOICE_RECOGNITION;
+    streamDesc->sessionId_ = 104;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_ACCESSORY;
+    streamDesc->newDeviceDescs_.front()->networkId_ = LOCAL_NETWORK_ID;
+    streamDesc->capturerInfo_.sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    streamDesc->micInStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->micInStreamInfo_.channels = CHANNEL_4;
+    streamDesc->micInStreamInfo_.format = SAMPLE_S16LE;
+    streamDesc->ecStreamInfo_.samplingRate = SAMPLE_RATE_48000;
+    streamDesc->ecStreamInfo_.channels = STEREO;
+    streamDesc->ecStreamInfo_.format = SAMPLE_S16LE;
+
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    streamPropInfo->sampleRate_ = 48000;
+    streamPropInfo->channelLayout_ = AudioChannelLayout::CH_LAYOUT_MONO;
+    streamPropInfo->bufferSize_ = 1024;
+
+    std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = std::make_shared<AdapterPipeInfo>();
+    pipeInfoPtr->paProp_.lib_ = "test_lib";
+    pipeInfoPtr->paProp_.role_ = "test_role";
+    pipeInfoPtr->paProp_.moduleName_ = "test_module";
+    pipeInfoPtr->name_ = "test_name";
+    pipeInfoPtr->role_ = PIPE_ROLE_INPUT;
+    std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = std::make_shared<PolicyAdapterInfo>();
+    adapterInfoPtr->adapterName = "test_adapter";
+    pipeInfoPtr->adapterInfo_ = adapterInfoPtr;
+    streamPropInfo->pipeInfo_ = pipeInfoPtr;
+
+    AudioPipeInfo info;
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+
+    EXPECT_EQ(info.moduleInfo_.ecType, "");
+    EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "");
+    EXPECT_EQ(info.moduleInfo_.ecChannels, "");
+    EXPECT_EQ(info.moduleInfo_.ecFormat, "");
+    EXPECT_EQ(info.moduleInfo_.micInRate, "");
+    EXPECT_EQ(info.moduleInfo_.micInChannels, "");
+    EXPECT_EQ(info.moduleInfo_.micInFormat, "");
+    EXPECT_EQ(info.moduleInfo_.micRefRate, "");
+    EXPECT_EQ(info.moduleInfo_.micRefChannels, "");
+    EXPECT_EQ(info.moduleInfo_.micRefFormat, "");
 }
 
 /**

@@ -202,6 +202,11 @@ int32_t IpcStreamInServer::Start()
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::Standby()
+{
+    return rendererInServer_->Standby();
+}
+
 int32_t IpcStreamInServer::Pause()
 {
     {
@@ -416,6 +421,15 @@ int32_t IpcStreamInServer::SetPrivacyType(int32_t privacyType)
     return ERR_OPERATION_FAILED;
 }
 
+int32_t IpcStreamInServer::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
+{
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->SetVoipNoPrivacyFlag(voipNoPrivacyFlag);
+    }
+    AUDIO_ERR_LOG("SetVoipNoPrivacyFlag failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
+
 int32_t IpcStreamInServer::GetPrivacyType(int32_t &privacyType)
 {
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
@@ -609,6 +623,16 @@ int32_t IpcStreamInServer::SetLoopTimes(int64_t bufferLoopTimes)
         return ERR_OPERATION_FAILED;
     }
     return rendererInServer_->SetLoopTimes(bufferLoopTimes);
+}
+
+int32_t IpcStreamInServer::UpdateUnderrunInfo(uint32_t underrunInfoKey, int32_t underrunInfoVal)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->UpdateUnderrunInfo(underrunInfoKey, underrunInfoVal);
 }
 
 int32_t IpcStreamInServer::GetLatencyWithFlag(uint64_t &latency, uint32_t flag)

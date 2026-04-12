@@ -1601,6 +1601,7 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "../../audio_policy/server/include",
     "../../audio_engine/manager/include",
     "../../audio_service/server/include",
+    "../../audio_service/test/unittest/include",
   ]
 
   use_exceptions = true
@@ -2137,6 +2138,7 @@ ohos_unittest("audio_policy_server_unit_test") {
     "../../audio_policy/test/unittest/audio_interrupt_service_test/include",
     "../../../services/audio_engine/manager/include",
     "../../../services/audio_service/server/include",
+    "../../audio_service/test/unittest/include"
   ]
 
   use_exceptions = true
@@ -5262,6 +5264,7 @@ ohos_unittest("audio_background_manager_unit_test") {
     "../../audio_policy/server/domain/device/src/a2dp",
     "../../audio_policy/server/include",
     "../../audio_policy/server/include/service/listener",
+    "../../audio_service/test/unittest/include"
   ]
 
   use_exceptions = true

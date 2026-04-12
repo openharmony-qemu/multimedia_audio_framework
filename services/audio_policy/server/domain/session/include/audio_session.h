@@ -68,7 +68,8 @@ public:
     bool GetAndClearNeedToFetchFlag();
     bool IsRecommendToStopAudio(AudioStreamDeviceChangeReason changeReason,
         const std::shared_ptr<AudioDeviceDescriptor> desc);
-    bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &oldDeviceDescriptors);
     bool IsSessionInputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
     StreamUsage GetAudioSessionStreamUsageForDevice();

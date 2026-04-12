@@ -14,6 +14,7 @@
  */
 
 #include "audio_router_context_test_base.h"
+#include "audio_device_simple_descriptor.h"
 #include "audio_router_follow_strategy.h"
 #include "audio_device_manager.h"
 #include "audio_device_descriptor.h"
@@ -306,6 +307,75 @@ HWTEST_F(AudioRouterSelectStrategyExtraTest, GetStreamDefaultDevice_004, TestSiz
     AudioRouterFollowStrategy strategy;
 
     auto result = strategy.GetStreamDefaultDevice(TEST_APP_UID_10001, 1);
+    EXPECT_EQ(result, nullptr);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_001, TestSize.Level1)
+{
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:01");
+    AudioDeviceSimpleDescriptor simpleDesc(speaker->deviceType_, speaker->deviceRole_, speaker->deviceId_,
+        speaker->networkId_, speaker->macAddress_);
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, speaker->deviceType_);
+    EXPECT_EQ(result->deviceRole_, speaker->deviceRole_);
+    EXPECT_EQ(result->deviceId_, speaker->deviceId_);
+    EXPECT_EQ(result->networkId_, speaker->networkId_);
+    EXPECT_EQ(result->macAddress_, speaker->macAddress_);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_002, TestSize.Level1)
+{
+    auto speaker = AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:02");
+    AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:10:03");
+    AudioDeviceSimpleDescriptor simpleDesc(speaker->deviceType_, speaker->deviceRole_, speaker->deviceId_ + 100,
+        "mismatch_network", "");
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, speaker->deviceType_);
+    EXPECT_EQ(result->deviceId_, speaker->deviceId_);
+    EXPECT_EQ(result->macAddress_, speaker->macAddress_);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_003, TestSize.Level1)
+{
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:04");
+    auto sco = AddDeviceDescriptor(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, "11:22:33:44:55:66");
+    AudioDeviceSimpleDescriptor simpleDesc(sco->deviceType_, INPUT_DEVICE, sco->deviceId_ + 200,
+        "another_network", sco->macAddress_);
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, sco->deviceType_);
+    EXPECT_EQ(result->macAddress_, sco->macAddress_);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_004, TestSize.Level1)
+{
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:05");
+    AddDeviceDescriptor(DEVICE_TYPE_MIC, INPUT_DEVICE, "00:00:00:00:10:06");
+    AudioDeviceSimpleDescriptor simpleDesc(DEVICE_TYPE_BLUETOOTH_SCO, OUTPUT_DEVICE, 99999,
+        "unknown_network", "ff:ee:dd:cc:bb:aa");
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
+    EXPECT_EQ(result, nullptr);
+}
+
+HWTEST_F(AudioRouterSelectStrategyExtraTest, GetOnlineDeviceDescriptor_005, TestSize.Level1)
+{
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:07");
+    AddDeviceDescriptor(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, "00:00:00:00:10:08");
+    AudioDeviceSimpleDescriptor simpleDesc(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 99998,
+        "unknown_network", "ff:ee:dd:cc:bb:ab");
+
+    auto result = simpleDesc.GetOnlineDeviceDescriptor();
+
     EXPECT_EQ(result, nullptr);
 }
 

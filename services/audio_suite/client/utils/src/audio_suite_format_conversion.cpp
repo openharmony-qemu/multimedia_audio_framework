@@ -36,12 +36,16 @@ int32_t AudioSuiteFormatConversion::ChannelConvert(AudioSuitePcmBuffer *in, Audi
     AUDIO_DEBUG_LOG(
         "Do ChannelConvert: inChannelCount: %{public}u, outChannelCount: %{public}u", inChannelCount, outChannelCount);
 
-    CHECK_AND_RETURN_RET_LOG((inChannelCount != 0) && (outChannelCount != 0) && (inChannelCount != outChannelCount),
-        ERROR, "Do ChannelConvert error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",
-        inChannelCount, outChannelCount);
+    CHECK_AND_RETURN_RET_LOG(
+        (inChannelCount != 0) && (outChannelCount != 0) && (in->GetChannelLayout() != out->GetChannelLayout()),
+        ERROR,
+        "Do ChannelConvert error: invalid input, inChannelCount: %{public}u outChannelCount: %{public}u",
+        inChannelCount,
+        outChannelCount);
 
     AudioChannelInfo inChannelInfo = {in->GetChannelLayout(), inChannelCount};
     AudioChannelInfo outChannelInfo = {out->GetChannelLayout(), outChannelCount};
+    channelConverter_.SetUpmixCoef(HPAE::COEF_M6DB_F);
     int32_t ret = channelConverter_.SetParam(inChannelInfo, outChannelInfo, SAMPLE_F32LE, true);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetParam fail with error code: %{public}d", ret);
 
@@ -131,7 +135,7 @@ AudioSuitePcmBuffer *AudioSuiteFormatConversion::Process(
         in = &rateOut_;
     }
 
-    if (in->GetChannelCount() != outFormat.channelCount) {
+    if (in->GetChannelLayout() != outFormat.channelLayout) {
         AUDIO_DEBUG_LOG("ConvertChannel, inchannel:%{public}u, outchannel: %{public}u ",
             in->GetChannelCount(), outFormat.channelCount);
         channelOut_.ResizePcmBuffer(PcmBufferFormat(in->GetSampleRate(),

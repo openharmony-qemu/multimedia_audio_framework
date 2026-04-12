@@ -20,13 +20,10 @@
 #include "audio_capturer.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-namespace {
-const int32_t APP_SELECT_INDEPENDENT = 1;
-}
-
 AudioDeviceEnhanceManager &AudioDeviceEnhanceManager::GetInstance()
 {
     static AudioDeviceEnhanceManager manager;
@@ -48,7 +45,7 @@ int32_t AudioDeviceEnhanceManager::SelectOutputDevice(const std::shared_ptr<Audi
     audioRendererFilter->uid = uid;
     
     return AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors,
-        APP_SELECT_INDEPENDENT);
+        SELECT_STRATEGY_INDEPENDENT);
 }
 
 int32_t AudioDeviceEnhanceManager::SelectInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &desc)
@@ -58,7 +55,7 @@ int32_t AudioDeviceEnhanceManager::SelectInputDevice(const std::shared_ptr<Audio
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED, "create capturer filter failed");
     int32_t uid = static_cast<int32_t>(getuid());
     audioCapturerFilter->uid = uid;
-    audioCapturerFilter->audioDeviceSelectMode = APP_SELECT_INDEPENDENT;
+    audioCapturerFilter->audioDeviceSelectMode = SELECT_STRATEGY_INDEPENDENT;
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
 

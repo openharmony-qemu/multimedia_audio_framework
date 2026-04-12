@@ -449,6 +449,17 @@ void DoStreamFuzzTest(const AudioProcessConfig &config, const uint8_t *rawData, 
     CallStreamFuncs(ipcStream);
 }
 
+AppInfo GetAppInfoData()
+{
+    AppInfo appInfo;
+    appInfo.appUid = GetData<int32_t>();
+    appInfo.appTokenId = GetData<uint32_t>();
+    appInfo.appPid = GetData<int32_t>();
+    appInfo.appFullTokenId = GetData<uint64_t>();
+    appInfo.deviceId = "";
+    return appInfo;
+}
+
 void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
 {
     g_baseFuzzData = rawData;
@@ -462,7 +473,7 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     Parcel parcel;
     AudioProcessConfig config = {};
     config.callerUid = GetData<int32_t>();
-    config.appInfo = GetData<AppInfo>();
+    config.appInfo = GetAppInfoData();
 
     config.streamInfo = testStreamInfo;
     config.rendererInfo.rendererFlags = GetData<int32_t>();

@@ -1784,34 +1784,6 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_120, TestSize.Leve
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_121
- * @tc.desc  : Test AudioCoreService::UpdateInputDeviceWhenStopping
- */
-HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    ASSERT_NE(audioCoreService, nullptr);
-
-    int32_t uid = getuid();
-    std::vector<uint32_t> sessionIDSet  = audioCoreService->streamCollector_.GetAllCapturerSessionIDForUID(uid);
-    std::shared_ptr<AudioDeviceDescriptor> device;
-
-    for (const auto &sessionID : sessionIDSet) {
-        audioCoreService->audioDeviceManager_.SetInputDevice(DEVICE_TYPE_MIC, sessionID, SOURCE_TYPE_MIC, 1);
-        device = audioCoreService->audioDeviceManager_.GetSelectedCaptureDevice(sessionID);
-        EXPECT_EQ(device->deviceType_ == DEVICE_TYPE_MIC, true);
-    }
-
-    audioCoreService->UpdateInputDeviceWhenStopping(uid);
-
-    for (const auto &sessionID : sessionIDSet) {
-        device = audioCoreService->audioDeviceManager_.GetSelectedCaptureDevice(sessionID);
-        EXPECT_EQ(device->deviceType_ != DEVICE_TYPE_MIC, true);
-    }
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: IsFastAllowedTest_001
  * @tc.desc  : Test AudioCoreService::IsFastAllowed, return true when bundleName is null.
  */
@@ -3761,8 +3733,7 @@ HWTEST_F(AudioCoreServicePrivateTest, FetchRendererPipeAndExecute_001, TestSize.
     pipeInfo->name_ = "offload_distributed_output";
     pipeInfo->moduleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[AudioSampleFormat::SAMPLE_S16LE];
     pipeInfo->moduleInfo_.rate = std::to_string(AudioSamplingRate::SAMPLE_RATE_48000);
-    pipeInfo->moduleInfo_.channels = std::to_string(AudioDefinitionPolicyUtils::ConvertLayoutToAudioChannel(
-        AudioChannelLayout::CH_LAYOUT_STEREO));
+    pipeInfo->moduleInfo_.channels = std::to_string(ConvertLayoutToAudioChannel(AudioChannelLayout::CH_LAYOUT_STEREO));
     pipeInfo->moduleInfo_.channelLayout = std::to_string(AudioChannelLayout::CH_LAYOUT_STEREO);
     pipeInfo->moduleInfo_.networkId = "test_networkId";
     pipeInfoList.push_back(pipeInfo);

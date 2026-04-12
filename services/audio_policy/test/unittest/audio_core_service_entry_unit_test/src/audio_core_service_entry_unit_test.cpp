@@ -526,12 +526,12 @@ public:
           callCaptureRet_(std::move(callCaptureRet)),
           recordCaptureRet_(std::move(recordCaptureRet)) {}
 
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t, const uint32_t) override
     {
         return mediaRenderRet_;
     }
 
-    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t, const uint32_t) override
     {
         return callRenderRet_;
     }
