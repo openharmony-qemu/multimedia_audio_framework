@@ -44,7 +44,6 @@ static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string USB_SINK_NAME = "Usb_arm_speaker";
 static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
-static const std::string NO_DATA_SINK_NAME = "no_data";
 
 HpaeManagerThread::~HpaeManagerThread()
 {
