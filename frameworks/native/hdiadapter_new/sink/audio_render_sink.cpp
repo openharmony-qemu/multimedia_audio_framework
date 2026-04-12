@@ -869,7 +869,6 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
         param.type = AUDIO_DP;
     } else if (halName_ == HDI_ID_INFO_DIRECT) {
         param.type = AUDIO_DIRECT;
-    }
         param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT));
     } else if (halName_ == HDI_ID_INFO_VOIP) {
         param.type = AUDIO_IN_COMMUNICATION;
