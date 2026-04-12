@@ -31,6 +31,7 @@
 #include "audio_service_types.h"
 #include "audio_server_hpae_dump.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_stream_enum.h"
 
 using namespace testing::ext;
 using OHOS::AudioStandard::SetSysPara;
@@ -3283,7 +3284,7 @@ HWTEST_F(AudioServerUnitTest, CheckRecorderFormat_Interphone_002, TestSize.Level
     AudioProcessConfig config;
     config.audioMode = AUDIO_MODE_RECORD;
     config.capturerInfo.sourceType = SOURCE_TYPE_INTERPHONE;
-    config.capturerInfo.capturerFlags = AUDIO_FLAG_FAST;
+    config.capturerInfo.capturerFlags = AUDIO_INPUT_FLAG_FAST;
     config.streamInfo.channels = MONO;
     config.streamInfo.channelLayout = CH_LAYOUT_MONO;
     config.streamInfo.encoding = ENCODING_PCM;
@@ -3320,7 +3321,7 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_Interphone_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     IAudioSinkAttr attr;
-    attr.routeFlag = AUDIO_OUTPUT_FLAG_NONE;
+    attr.routeFlag = AUDIO_FLAG_NONE;
     uint32_t renderId = HDI_INVALID_ID;
     int32_t ret = audioServer->CreateHdiSinkPort("primary", "default", attr, renderId);
     EXPECT_EQ(ret, SUCCESS);
