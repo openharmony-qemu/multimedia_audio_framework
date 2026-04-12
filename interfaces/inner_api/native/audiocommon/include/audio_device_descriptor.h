@@ -32,6 +32,12 @@ inline bool IsUsb(DeviceType deviceType)
         || deviceType == DEVICE_TYPE_LINE_DIGITAL;
 }
 
+inline bool IsBtDevice(DeviceType deviceType)
+{
+    return deviceType == DEVICE_TYPE_BLUETOOTH_SCO || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP
+        || deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+}
+
 inline bool IsNearlinkDevice(DeviceType deviceType)
 {
     return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
@@ -124,6 +130,10 @@ public:
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
 
     bool IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
+
+    bool IsSameBtDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
+
+    bool IsSameBtDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const;
 
     bool IsSameDeviceInfo(const AudioDeviceDescriptor &deviceInfo) const;
 
