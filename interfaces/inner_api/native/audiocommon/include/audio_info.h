@@ -854,13 +854,6 @@ struct AudioRendererDesc {
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
 };
 
-struct AudioRendererOptions {
-    AudioStreamInfo streamInfo;
-    AudioRendererInfo rendererInfo;
-    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
-    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
-};
-
 struct MicStateChangeEvent : public Parcelable {
     bool mute;
 
@@ -1158,6 +1151,14 @@ struct AppInfo {
     int32_t appPid { 0 };
     uint64_t appFullTokenId { 0 };
     std::string deviceId {""};
+};
+
+struct AudioRendererOptions {
+    AudioStreamInfo streamInfo;
+    AudioRendererInfo rendererInfo;
+    AudioPrivacyType privacyType = PRIVACY_TYPE_PUBLIC;
+    AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
+    AppInfo appInfo;
 };
 
 struct BufferQueueState {
