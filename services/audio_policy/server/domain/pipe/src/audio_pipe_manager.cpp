@@ -1083,6 +1083,16 @@ bool AudioPipeManager::HasRunningStream()
     return false;
 }
 
+bool AudioPipeManager::IsA2dpUsed()
+{
+    auto outputStreamDescs = GetAllOutputStreamDescs();
+    return std::any_of(outputStreamDescs.begin(), outputStreamDescs.end(), [](const auto &streamDesc) {
+        return streamDesc && streamDesc->streamStatus_ == STREAM_STATUS_STARTED &&
+            !streamDesc->newDeviceDescs_.empty() && streamDesc->newDeviceDescs_.front() &&
+            streamDesc->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP;
+    });
+}
+
 bool AudioPipeManager::HasFastOutputPipe()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);

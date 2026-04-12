@@ -66,6 +66,8 @@ private:
         int32_t startSessionId, DeviceType deviceType, bool getSpatialFromService,
         std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnabledMap);
 #ifdef BLUETOOTH_ENABLE
+    BluetoothOffloadState JudgeA2dpOffloadFlag(const DeviceType deviceType,
+        const std::vector<Bluetooth::A2dpStreamInfo> &allRunningA2dpInfos);
     void UpdateA2dpOffloadFlagInternal(const std::vector<Bluetooth::A2dpStreamInfo> &allActiveSessions,
         std::vector<int32_t> &allRunningSessions, DeviceType deviceType = DEVICE_TYPE_NONE);
 #endif

@@ -142,6 +142,7 @@ public:
     uint32_t GetPaIndexByName(std::string portName);
     bool HasPrimarySink();
     bool HasRunningStream();
+    bool IsA2dpUsed();
     bool HasFastOutputPipe();
     bool HasUltraFastStreamRequest();
     bool IsStreamUseUltraFastRoute(uint32_t sessionId);
