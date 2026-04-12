@@ -635,10 +635,11 @@ int32_t AudioCoreService::CreateRendererClient(std::shared_ptr<AudioStreamDescri
     return SUCCESS;
 }
 
-int32_t AudioCoreService::CheckCapturerStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc) {
-// Check interphone capturer conflict with VoIP/Cellular streams
-if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_INTERPHONE) {
-    if (pipeManager_->IsVoipOrCellularStreamActive()) {
+int32_t AudioCoreService::CheckCapturerStreamConflicts(const std::shared_ptr<AudioStreamDescriptor>& streamDesc)
+{
+    // Check interphone capturer conflict with VoIP/Cellular streams
+    if (streamDesc->capturerInfo_.sourceType == SOURCE_TYPE_INTERPHONE) {
+        if (pipeManager_->IsVoipOrCellularStreamActive()) {
             AUDIO_ERR_LOG("Cannot create interphone capturer: VoIP or Cellular stream is active");
             return ERR_ILLEGAL_STATE;
         }

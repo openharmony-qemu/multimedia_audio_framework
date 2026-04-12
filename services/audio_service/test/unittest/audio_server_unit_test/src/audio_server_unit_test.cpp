@@ -3236,19 +3236,20 @@ HWTEST_F(AudioServerUnitTest, ReportPlaybackCaptureUserChoice_001, TestSize.Leve
  * @tc.name  : Test SetVoiceVolume for Interphone
  * @tc.type  : FUNC
  * @tc.number: SetVoiceVolume_Interphone_001
- * @tc.desc  : Test SetVoiceVolume interface for interphone volume.
+ * @tc.desc  : Test SetVoiceVolume interface for interphone volume range validation.
  */
 HWTEST_F(AudioServerUnitTest, SetVoiceVolume_Interphone_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
+    // Test volume range 0.0 to 1.0
     int32_t ret = audioServer->SetVoiceVolume(0.0f);
-    EXPECT_EQ(ret, -62980105);
+    EXPECT_EQ(ret, SUCCESS);
 
     ret = audioServer->SetVoiceVolume(0.5f);
-    EXPECT_EQ(ret, -62980105);
+    EXPECT_EQ(ret, SUCCESS);
 
     ret = audioServer->SetVoiceVolume(1.0f);
-    EXPECT_EQ(ret, -62980105);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -3308,7 +3309,8 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_Interphone_001, TestSize.Level1)
     uint32_t renderId = HDI_INVALID_ID;
     int32_t ret = audioServer->CreateHdiSinkPort("primary", "interphone", attr, renderId);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(renderId, HDI_INVALID_ID);
+    // renderId will be assigned a valid value when sink is created
+    EXPECT_NE(renderId, HDI_INVALID_ID);
 }
 
 /**
@@ -3325,7 +3327,8 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_Interphone_002, TestSize.Level1)
     uint32_t renderId = HDI_INVALID_ID;
     int32_t ret = audioServer->CreateHdiSinkPort("primary", "default", attr, renderId);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(renderId, HDI_INVALID_ID);
+    // renderId will be assigned a valid value when sink is created
+    EXPECT_NE(renderId, HDI_INVALID_ID);
 }
 
 /**

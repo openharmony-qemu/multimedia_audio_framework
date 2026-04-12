@@ -1181,7 +1181,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetUniqueIdBySourceType_012, TestSize.Level
     captureSource->attr_.sourceType = SOURCE_TYPE_INTERPHONE;
     captureSource->attr_.hdiSourceType = "AUDIO_INPUT_INTERPHON_TYPE";
     id = captureSource->GetUniqueIdBySourceType();
-    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHON * UNIQUE_ID_INTERVAL);
+    EXPECT_EQ(id, AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_INTERPHONE * UNIQUE_ID_INTERVAL);
 }
 
 /**

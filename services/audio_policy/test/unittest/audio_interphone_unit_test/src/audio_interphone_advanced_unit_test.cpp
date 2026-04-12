@@ -14,31 +14,32 @@
  */
 
 #include "audio_errors.h"
+#include "audio_info.h"
 #include "audio_unit_test.h"
 #include "audio_system_manager.h"
 #include "audio_stream_collector.h"
 #include "audio_pipe_manager.h"
 #include "audio_core_service.h"
-#include "audio_server.h"
-#include "audio_interphone_test.h"
+#include "audio_interphone_unit_test.h"
 
 using namespace std;
 using namespace OHOS::AudioStandard;
 using namespace testing::ext;
+using testing::ValuesIn;
 
 namespace OHOS {
 namespace AudioStandard {
-namespace V1_0 {
-void AudioInterphoneAdvancedTest::SetUpTestCase(void)
+
+void AudioInterphoneAdvancedUnitTest::SetUpTestCase(void)
 {
     ASSERT_NE(nullptr, AudioSystemManager::GetInstance());
 }
 
-void AudioInterphoneAdvancedTest::TearDownTestCase(void) {}
+void AudioInterphoneAdvancedUnitTest::TearDownTestCase(void) {}
 
-void AudioInterphoneAdvancedTest::SetUp(void) {}
+void AudioInterphoneAdvancedUnitTest::SetUp(void) {}
 
-void AudioInterphoneAdvancedTest::TearDown(void) {}
+void AudioInterphoneAdvancedUnitTest::TearDown(void) {}
 
 namespace {
 const InterphoneAdvancedParam STREAM_COLLECTOR_PARAMS[] = {
@@ -88,7 +89,7 @@ const InterphoneAdvancedParam ROUTE_FLAG_PARAMS[] = {
  * Test IsInterphoneStreamActive
  *
  */
-HWTEST_F(AudioInterphoneAdvancedTest, TestIsInterphoneStreamActive, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestIsInterphoneStreamActive, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -101,7 +102,7 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestIsInterphoneStreamActive, TestSize.Lev
  * Test IsInterphoneCapturerActive
  *
  */
-HWTEST_F(AudioInterphoneAdvancedTest, TestIsInterphoneCapturerActive, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestIsInterphoneCapturerActive, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -114,7 +115,7 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestIsInterphoneCapturerActive, TestSize.L
  * Test IsVoipOrCellularStreamActive
  *
  */
-HWTEST_F(AudioInterphoneAdvancedTest, TestIsVoipOrCellularStreamActive, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestIsVoipOrCellularStreamActive, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -127,52 +128,52 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestIsVoipOrCellularStreamActive, TestSize
  * Test GetStreamDescsByStreamUsage
  *
  */
-HWTEST_P(AudioInterphoneAdvancedTest, TestGetStreamDescsByStreamUsage, TestSize.Level1)
+HWTEST_P(AudioInterphoneAdvancedUnitTest, TestGetStreamDescsByStreamUsage, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
     InterphoneAdvancedParam params = GetParam();
 
-    auto result = AudioPipeManager::GetInstance().GetStreamDescsByStreamUsage(params.streamUsage);
+    auto result = AudioPipeManager::GetPipeManager()->GetStreamDescsByStreamUsage(params.streamUsage);
     EXPECT_TRUE(result.empty() || result.size() > 0);
     MockNative::Resume();
 }
 
 INSTANTIATE_TEST_SUITE_P(
     TestGetStreamDescsByStreamUsage,
-    AudioInterphoneAdvancedTest,
+    AudioInterphoneAdvancedUnitTest,
     ValuesIn(STREAM_COLLECTOR_PARAMS));
 
 /*
  * Test GetStreamDescsBySourceType
  *
  */
-HWTEST_P(AudioInterphoneAdvancedTest, TestGetStreamDescsBySourceType, TestSize.Level1)
+HWTEST_P(AudioInterphoneAdvancedUnitTest, TestGetStreamDescsBySourceType, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
     InterphoneAdvancedParam params = GetParam();
 
-    auto result = AudioPipeManager::GetInstance().GetStreamDescsBySourceType(params.sourceType);
+    auto result = AudioPipeManager::GetPipeManager()->GetStreamDescsBySourceType(params.sourceType);
     EXPECT_TRUE(result.empty() || result.size() > 0);
     MockNative::Resume();
 }
 
 INSTANTIATE_TEST_SUITE_P(
     TestGetStreamDescsBySourceType,
-    AudioInterphoneAdvancedTest,
+    AudioInterphoneAdvancedUnitTest,
     ValuesIn(SOURCE_TYPE_PARAMS));
 
 /*
  * Test ForceStopInterphoneRenderer
  *
  */
-HWTEST_F(AudioInterphoneAdvancedTest, TestForceStopInterphoneRenderer, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestForceStopInterphoneRenderer, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
 
-    AudioCoreService::GetInstance().ForceStopInterphoneRenderer();
+    AudioCoreService::GetCoreService()->ForceStopInterphoneRenderer();
     MockNative::Resume();
 }
 
@@ -180,12 +181,17 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestForceStopInterphoneRenderer, TestSize.
  * Test IsStreamSupportOutputInterPhone
  *
  */
-HWTEST_F(AudioInterphoneAdvancedTest, TestIsStreamSupportOutputInterPhone, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestIsStreamSupportOutputInterPhone, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
 
-    EXPECT_FALSE(AudioCoreService::GetInstance().IsStreamSupportOutputInterPhone(nullptr));
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_INTERPHONE;
+    EXPECT_TRUE(AudioCoreService::GetCoreService()->IsStreamSupportOutputInterPhone(streamDesc));
+
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    EXPECT_FALSE(AudioCoreService::GetCoreService()->IsStreamSupportOutputInterPhone(streamDesc));
     MockNative::Resume();
 }
 
@@ -193,53 +199,7 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestIsStreamSupportOutputInterPhone, TestS
  * Test Stream Usage Conflict Detection
  *
  */
-HWTEST_F(AudioInterphoneAdvancedTest, TestInterphoneVoipConflict, TestSize.Level1)
-{
-    MockNative::GenerateNativeTokenID("multimodalinput");
-    MockNative::Mock();
-
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneStreamActive());
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsVoipOrCellularStreamActive());
-    MockNative::Resume();
-}
-
-/*
- * Test Source Type Conflict Detection
- *
- */
-HWTEST_F(AudioInterphoneAdvancedTest, TestInterphoneSourceConflict, TestSize.Level1)
-{
-    MockNative::GenerateNativeTokenID("multimodalinput");
-    MockNative::Mock();
-
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneCapturerActive());
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsVoipOrCellularStreamActive());
-    MockNative::Resume();
-}
-
-HWTEST_F(AudioInterphoneAdvancedTest, TestForceStopInterphoneStreamsWhenVoipRendererStarts, TestSize.Level1)
-{
-    MockNative::GenerateNativeTokenID("multimodalinput");
-    MockNative::Mock();
-
-    AudioCoreService::GetInstance().ForceStopInterphoneRenderer();
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneStreamActive());
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneCapturerActive());
-    MockNative::Resume();
-}
-
-HWTEST_F(AudioInterphoneAdvancedTest, TestForceStopInterphoneStreamsWhenVoipCapturerStarts, TestSize.Level1)
-{
-    MockNative::GenerateNativeTokenID("multimodalinput");
-    MockNative::Mock();
-
-    AudioCoreService::GetInstance().ForceStopInterphoneRenderer();
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneStreamActive());
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneCapturerActive());
-    MockNative::Resume();
-}
-
-HWTEST_F(AudioInterphoneAdvancedTest, TestInterphoneStreamStatusCheck, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestInterphoneStreamStatusCheck, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -250,17 +210,18 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestInterphoneStreamStatusCheck, TestSize.
     MockNative::Resume();
 }
 
-HWTEST_F(AudioInterphoneAdvancedTest, TestVoipOrCellularStreamCheck, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestForceStopInterphoneStreamsWhenVoipStarts, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
 
-    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsVoipOrCellularStreamActive());
-    AudioCoreService::GetInstance().ForceStopInterphoneRenderer();
+    AudioCoreService::GetCoreService()->ForceStopInterphoneRenderer();
+    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneStreamActive());
+    EXPECT_FALSE(AudioPipeManager::GetPipeManager()->IsInterphoneCapturerActive());
     MockNative::Resume();
 }
 
-HWTEST_F(AudioInterphoneAdvancedTest, TestCheckStreamConflictsWithInterphone, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithInterphone, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -269,12 +230,12 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestCheckStreamConflictsWithInterphone, Te
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_INTERPHONE;
     uint32_t audioFlag = 0;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetInstance().CheckStreamConflicts(streamDesc, audioFlag));
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
     EXPECT_EQ(AUDIO_OUTPUT_FLAG_INTERPHONE, audioFlag);
     MockNative::Resume();
 }
 
-HWTEST_F(AudioInterphoneAdvancedTest, TestCheckStreamConflictsWithVoip, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithVoip, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -283,11 +244,11 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestCheckStreamConflictsWithVoip, TestSize
     streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     uint32_t audioFlag = 0;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetInstance().CheckStreamConflicts(streamDesc, audioFlag));
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
     MockNative::Resume();
 }
 
-HWTEST_F(AudioInterphoneAdvancedTest, TestCheckCapturerStreamConflictsWithInterphone, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckCapturerStreamConflictsWithInterphone, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -295,11 +256,11 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestCheckCapturerStreamConflictsWithInterp
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_INTERPHONE;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetInstance().CheckCapturerStreamConflicts(streamDesc));
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckCapturerStreamConflicts(streamDesc));
     MockNative::Resume();
 }
 
-HWTEST_F(AudioInterphoneAdvancedTest, TestCheckCapturerStreamConflictsWithVoip, TestSize.Level1)
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckCapturerStreamConflictsWithVoip, TestSize.Level1)
 {
     MockNative::GenerateNativeTokenID("multimodalinput");
     MockNative::Mock();
@@ -307,10 +268,63 @@ HWTEST_F(AudioInterphoneAdvancedTest, TestCheckCapturerStreamConflictsWithVoip, 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     
-    EXPECT_EQ(SUCCESS, AudioCoreService::GetInstance().CheckCapturerStreamConflicts(streamDesc));
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckCapturerStreamConflicts(streamDesc));
     MockNative::Resume();
 }
 
-} // namespace V1_0
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithVideoCommunication, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
+    uint32_t audioFlag = 0;
+    
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
+    MockNative::Resume();
+}
+
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckStreamConflictsWithVoiceModemCommunication, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    uint32_t audioFlag = 0;
+    
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag));
+    MockNative::Resume();
+}
+
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestCheckCapturerStreamConflictsWithVoiceCall, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_CALL;
+    
+    EXPECT_EQ(SUCCESS, AudioCoreService::GetCoreService()->CheckCapturerStreamConflicts(streamDesc));
+    MockNative::Resume();
+}
+
+HWTEST_F(AudioInterphoneAdvancedUnitTest, TestInterphoneRendererRouteFlagSet, TestSize.Level1)
+{
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_INTERPHONE;
+    uint32_t audioFlag = 0;
+    
+    int32_t ret = AudioCoreService::GetCoreService()->CheckStreamConflicts(streamDesc, audioFlag);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(AUDIO_OUTPUT_FLAG_INTERPHONE, streamDesc->audioFlag_);
+    EXPECT_EQ(AUDIO_OUTPUT_FLAG_INTERPHONE, streamDesc->routeFlag_);
+    MockNative::Resume();
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

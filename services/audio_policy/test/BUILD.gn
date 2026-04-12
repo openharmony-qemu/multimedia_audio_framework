@@ -103,6 +103,7 @@ group("audio_policy_unittest_packages") {
     ":audio_device_manager_unit_test",
     ":user_select_router_unit_test",
     ":user_select_router_ext_unit_test",
+    ":audio_interphone_unit_test",
     "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group",
     "../client/stub:client_stub_unit_test_group",
   ]
@@ -6809,6 +6810,102 @@ ohos_unittest("va_device_manager_test") {
   sources = [ "./unittest/va_device_manager_test/src/va_device_manager_test.cpp" ]
 
   if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+  }
+}
+
+ohos_unittest("audio_interphone_unit_test") {
+  module_out_path = "audio_framework/audio_framework_policy/audio_interphone"
+
+  include_dirs = [
+    "./unittest/audio_interphone_unit_test/include",
+    "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/pipe/include",
+    "../../audio_policy/server/domain/device/include",
+    "../../audio_policy/server/infra/datashare/include",
+    "${audio_framework_root}/frameworks/native/hdiadapter_new/include/util",
+    "${audio_framework_root}/interfaces/inner_api/native/audiocommon/include",
+    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include",
+    "${audio_framework_root}/interfaces/inner_api/native/audiorenderer/include",
+    "${audio_framework_root}/interfaces/inner_api/native/audiocapturer/include",
+    "${audio_framework_root}/services/audio_service/client/include",
+    "${audio_framework_root}/services/audio_service/server/include",
+    "${audio_framework_root}/services/audio_service/test/unittest/include",
+    "${audio_framework_root}/services/audio_policy/server/domain/pipe/src",
+    "${audio_framework_root}/frameworks/native/audiopolicy/include",
+    "${audio_framework_root}/frameworks/native/bluetoothclient",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  defines = [ "BLUETOOTH_ENABLE" ]
+
+  sources = [
+    "./unittest/audio_interphone_unit_test/src/audio_interphone_advanced_unit_test.cpp",
+    "./unittest/audio_interphone_unit_test/src/audio_interphone_branch_unit_test.cpp",
+  ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service:audio_client",
+    "${audio_framework_root}/services/audio_service:audio_policy_manager",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "${audio_framework_root}/frameworks/native/audiorenderer:audio_renderer",
+    "${audio_framework_root}/frameworks/native/audiocapturer:audio_capturer",
+    "../../audio_policy:audio_policy_service_static",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_6.0",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  if (bluetooth_part_enable == true) {
+    deps += [ "${audio_framework_root}/frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
   }
 }

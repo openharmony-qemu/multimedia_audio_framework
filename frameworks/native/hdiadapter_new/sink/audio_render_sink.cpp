@@ -38,6 +38,7 @@ namespace AudioStandard {
 namespace {
 const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
 const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
+static constexpr uint32_t AUDIO_D2D = 12;
 }
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
     : renderId_(renderId), halName_(halName), needSetHdiVolume_(halName == HDI_ID_INFO_VOIP)
@@ -836,7 +837,7 @@ uint32_t AudioRenderSink::GetUniqueId(void) const
     } else if (halName_ == HDI_ID_INFO_DIRECT) {
         return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
     } else if (halName_ == HDI_ID_INFO_INTERPHONE) {
-        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_NTERPHON);
+        return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_INTERPHONE);
     }
     return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
 }
@@ -849,7 +850,7 @@ void AudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttributes &param)
     param.streamId = static_cast<int32_t>(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
     param.type = AUDIO_IN_MEDIA;
     if (attr_.routeFlag == AUDIO_OUTPUT_FLAG_INTERPHONE) {
-        param.type = AUDIO_D2D;
+        param.type = static_cast<AudioCategory>(AUDIO_D2D);
     }
     param.period = DEEP_BUFFER_RENDER_PERIOD_SIZE;
     param.isBigEndian = false;
