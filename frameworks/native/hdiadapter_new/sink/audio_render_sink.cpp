@@ -835,7 +835,7 @@ uint32_t AudioRenderSink::GetUniqueId(void) const
         return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_VOIP);
     } else if (halName_ == HDI_ID_INFO_DIRECT) {
         return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_DIRECT);
-    } else if (halName_ == HDI_ID_INFO_INTERPHONE)
+    } else if (halName_ == HDI_ID_INFO_INTERPHONE) {
         return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_NTERPHON);
     }
     return GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY);
