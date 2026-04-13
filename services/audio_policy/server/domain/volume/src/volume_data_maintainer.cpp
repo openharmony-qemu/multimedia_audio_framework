@@ -1288,7 +1288,6 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDevic
     CHECK_AND_RETURN_RET_LOG(device != nullptr, DEFAULT_VOLUME_DEGREE, "param device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-
     if (Util::IsDualToneStreamType(volumeType)) {
         device = ringerDevice_;
     }
