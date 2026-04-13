@@ -104,6 +104,18 @@ static const std::vector<AudioStreamType> AUDIO_STREAMTYPE_VOLUME_LIST = {
 #endif
 };
 
+AudioVolumeManager::AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+                                           audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
+                                           audioSceneManager_(AudioSceneManager::GetInstance()),
+                                           audioActiveDevice_(AudioActiveDevice::GetInstance()),
+                                           audioConnectedDevice_(AudioConnectedDevice::GetInstance()),
+                                           audioOffloadStream_(AudioOffloadStream::GetInstance())
+{
+    ringerModeManager_.Init();
+    volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
+    AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
+}
+
 bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler,
     std::shared_ptr<AudioInterruptService> interruptService)
 {
@@ -135,9 +147,6 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
         }
     }
 #endif
-    ringerModeManager_.Init();
-    volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
-    AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
     return true;
 }
 void AudioVolumeManager::DeInit(void)
@@ -159,7 +168,6 @@ void AudioVolumeManager::DeInit(void)
         safeVolumeDialogThrd_ = nullptr;
     }
     audioPolicyServerHandler_ = nullptr;
-    ringerModeManager_.DeInit();
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     loudVolumeSupportMode_ = 0;
     loudVolumeManager_ = nullptr;

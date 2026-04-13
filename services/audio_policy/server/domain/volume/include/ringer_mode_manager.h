@@ -33,7 +33,6 @@ public:
     ~RingerModeManager() = default;
 
     void Init();
-    void DeInit();
 
     bool IsRingerModeMute() const;
     void SetRingerModeMute(bool flag);

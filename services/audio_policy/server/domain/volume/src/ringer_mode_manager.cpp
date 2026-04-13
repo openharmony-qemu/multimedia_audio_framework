@@ -36,11 +36,6 @@ void RingerModeManager::Init()
     supportVibrator_ = system::GetBoolParameter("const.vibrator.support_vibrator", true);
 }
 
-void RingerModeManager::DeInit()
-{
-    supportVibrator_ = false;
-}
-
 bool RingerModeManager::IsRingerModeMute() const
 {
     return ringerModeMute_.load();
