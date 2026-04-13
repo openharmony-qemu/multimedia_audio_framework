@@ -177,12 +177,6 @@ HWTEST_F(AudioActiveDeviceNewUnitTest, UpdateDevice_001, TestSize.Level4)
     desc->deviceId_ = 2;
     desc->macAddress_ = "AA:BB:CC:DD:EE:01";
     desc->networkId_ = "bt_net_001";
-    auto preferredDesc = std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_WIRED_HEADSET, OUTPUT_DEVICE);
-    preferredDesc->deviceId_ = 3;
-    preferredDesc->macAddress_ = "FF:EE:DD:CC:BB:01";
-    preferredDesc->networkId_ = "wired_net_001";
-    auto& affinityManager = audioActiveDevice->audioAffinityManager_;
-    affinityManager.activeRendererDeviceMap_[1001] = preferredDesc;
     AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
     auto rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     rendererChangeInfo->clientUID = 1001;

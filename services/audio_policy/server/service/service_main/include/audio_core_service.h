@@ -774,7 +774,6 @@ private:
     AudioRouteMap& audioRouteMap_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
     AudioSessionService &audioSessionService_;

@@ -913,7 +913,6 @@ private:
     int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
 
     AudioEffectService &audioEffectService_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioStateManager &audioStateManager_;
     AudioToneManager &audioToneManager_;
     AudioMicrophoneDescriptor &audioMicrophoneDescriptor_;

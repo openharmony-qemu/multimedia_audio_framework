@@ -45,7 +45,6 @@
 #include "audio_state_manager.h"
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
-#include "audio_affinity_manager.h"
 #include "audio_ec_info.h"
 
 #ifdef BLUETOOTH_ENABLE
@@ -270,7 +269,6 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectService_(AudioEffectService::GetAudioEffectService()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
 #ifdef AUDIO_WIRED_DETECT
@@ -386,7 +384,6 @@ private:
     bool isMicrophoneMutePersistent_ = false;
 
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 #ifdef AUDIO_WIRED_DETECT

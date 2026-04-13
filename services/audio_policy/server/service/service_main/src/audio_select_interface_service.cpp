@@ -29,7 +29,6 @@
 #include "audio_bundle_manager.h"
 #include "ipc_skeleton.h"
 #include "sle_audio_device_manager.h"
-#include "audio_affinity_manager.h"
 #include "audio_stream_collector.h"
 #include "audio_router_map.h"
 #include "bluetooth_device_manager.h"
@@ -169,7 +168,6 @@ int32_t AudioSelectInterfaceService::SelectOutputDevice(sptr<AudioRendererFilter
 
     AudioActiveDevice::GetInstance().NotifyUserSelectionEventToRemote(selectedDesc[0]);
     SetDeviceEnableAndUsage(selectedDesc[0]);
-    RestoreSelectRendererDevice(selectedDesc[0], audioRendererFilter->uid);
 
     if (audioDeviceSelectMode == SELECT_STRATEGY_STREAM) {
         AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(audioRendererFilter->uid,
@@ -229,19 +227,9 @@ void AudioSelectInterfaceService::SetDeviceEnableAndUsage(const std::shared_ptr<
     AudioDeviceManager::GetAudioDeviceManager().UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE, reason);
 }
 
-void AudioSelectInterfaceService::RestoreSelectRendererDevice(
-    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, const int32_t uid)
-{
-    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
-    if (deviceDesc->deviceType_ == DEVICE_TYPE_NONE && uid >= 0) {
-        AudioAffinityManager::GetAudioAffinityManager().DelSelectRendererDevice(uid);
-    }
-}
-
 int32_t AudioSelectInterfaceService::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    AudioAffinityManager::GetAudioAffinityManager().AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     AudioStreamCollector::GetAudioStreamCollector().GetCurrentRendererChangeInfos(rendererChangeInfos);
     for (auto &changeInfo : rendererChangeInfos) {
@@ -378,8 +366,8 @@ int32_t AudioSelectInterfaceService::SelectInputDevice(sptr<AudioCapturerFilter>
     auto coreService = AudioCoreService::GetCoreService();
     CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     int32_t selectUid = audioCapturerFilter->uid == -1 ? SYSTEM_UID : audioCapturerFilter->uid;
-    int32_t selectStreamId = audioCapturerFilter->audioDeviceSelectMode == SELECT_STRATEGY_STREAM ?
-        audioCapturerFilter->streamId : INVALID_STREAM_ID;
+    uint32_t selectStreamId = audioCapturerFilter->audioDeviceSelectMode == SELECT_STRATEGY_STREAM ?
+        static_cast<uint32_t>(audioCapturerFilter->streamId) : INVALID_STREAM_ID;
     SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
     AudioScene scene = AudioSceneManager::GetInstance().GetAudioScene(true);
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST) {

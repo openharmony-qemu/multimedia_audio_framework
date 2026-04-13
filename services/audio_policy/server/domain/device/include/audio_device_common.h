@@ -32,7 +32,6 @@
 #include "audio_device_manager.h"
 #include "audio_stream_collector.h"
 #include "audio_state_manager.h"
-#include "audio_affinity_manager.h"
 #include "audio_policy_server_handler.h"
 
 #include "audio_a2dp_device.h"
@@ -105,7 +104,6 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
         audioConfigManager_(AudioCoreConfigManager::GetInstance()),
@@ -128,7 +126,6 @@ private:
 
     bool IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
     bool IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceDesc);
-    void RemoveOfflineDevice(const AudioDeviceDescriptor& updatedDesc);
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
     bool IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
@@ -174,7 +171,6 @@ private:
     AudioRouterCenter& audioRouterCenter_;
     AudioStateManager &audioStateManager_;
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioIOHandleMap& audioIOHandleMap_;
     AudioActiveDevice& audioActiveDevice_;
     AudioCoreConfigManager& audioConfigManager_;

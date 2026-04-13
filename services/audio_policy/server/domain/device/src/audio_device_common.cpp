@@ -378,16 +378,6 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnecting(const AudioDeviceDe
     }
 }
 
-void AudioDeviceCommon::RemoveOfflineDevice(const AudioDeviceDescriptor& updatedDesc)
-{
-    if (IsOutputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
-        audioAffinityManager_.RemoveOfflineRendererDevice(updatedDesc);
-    }
-    if (IsInputDevice(updatedDesc.deviceType_, updatedDesc.deviceRole_)) {
-        audioAffinityManager_.RemoveOfflineCapturerDevice(updatedDesc);
-    }
-}
-
 void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDeviceDescriptor>> &descForCb)
 {
     auto &strategy = AudioRouterSelectStrategy::GetInstance();
@@ -419,7 +409,6 @@ void AudioDeviceCommon::ClearPreferredDevices(const vector<shared_ptr<AudioDevic
 void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, bool updateVolume)
 {
-    RemoveOfflineDevice(updatedDesc);
     AUDIO_INFO_LOG("[%{public}s], devType:[%{public}d]", __func__, updatedDesc.deviceType_);
 
     // Remember the disconnected device descriptor and remove it

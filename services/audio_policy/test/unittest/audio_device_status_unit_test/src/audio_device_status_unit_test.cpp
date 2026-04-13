@@ -131,7 +131,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_005, TestSize.Level1)
     std::string deviceName = "usb_headset";
     AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
 
     ClassType classType = TYPE_A2DP;
     AudioModuleInfo moduleInfo = {"className", "TEST", "TEST"};
