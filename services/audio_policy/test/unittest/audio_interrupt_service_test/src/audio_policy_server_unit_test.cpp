@@ -5980,5 +5980,24 @@ HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_003, TestSize.Level1)
     int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+* @tc.name  : Test VerifyUidAndPid.
+* @tc.number: VerifyUidAndPid_001
+* @tc.desc  : Test AudioPolicyServer::VerifyUidAndPid
+*/
+HWTEST(AudioPolicyUnitTest, VerifyUidAndPid_001, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+    EXPECT_NE(server, nullptr);
+    
+    int32_t pid = 3009;
+    int32_t uid = 3009;
+    int ret = server->VerifyUidAndPid(uid, pid);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // AudioStandard
 } // OHOS

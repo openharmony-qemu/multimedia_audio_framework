@@ -2872,6 +2872,21 @@ std::set<int32_t> AudioPolicyServer::GetStreamIdsForAudioSessionByStreamUsage(
     return streamIds;
 }
 
+int32_t AudioPolicyServer::VerifyUidAndPid(const int32_t uid, const int32_t pid)
+{
+    if (PermissionUtil::VerifySystemPermission()) {
+        return SUCCESS;
+    }
+    auto callerUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(uid == callerUid,
+        ERR_UNKNOWN, "The callingUid is not equal to clientUid");
+    auto callerPid = IPCSkeleton::GetCallingPid();
+    CHECK_AND_RETURN_RET_LOG(pid == callerPid,
+        ERR_UNKNOWN, "The callingPid is not equal to callerPid");
+ 
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     const AudioInterrupt &audioInterruptIn, int32_t zoneID, bool isUpdatedAudioStrategy)
 {
@@ -2881,6 +2896,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
         HILOG_COMM_ERROR("[ActivateAudioInterrupt]The interruptService_ is nullptr");
         return ERR_UNKNOWN;
     }
+    CHECK_AND_RETURN_RET_LOG(VerifyUidAndPid(audioInterrupt.uid, audioInterrupt.pid) == SUCCESS,
+        ERR_UNKNOWN, "VerifyUidAndPid failed");
 
     auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
         audioInterrupt.audioFocusType.streamType);
@@ -2949,6 +2966,9 @@ int32_t AudioPolicyServer::SetAppSilentOnDisplay(const int32_t displayId)
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
+        CHECK_AND_RETURN_RET_LOG(VerifyUidAndPid(audioInterrupt.uid, audioInterrupt.pid) == SUCCESS,
+            ERR_UNKNOWN, "VerifyUidAndPid failed");
+
         int32_t zoneId = interruptService_->FindAudioZoneByStreamId(audioInterrupt.streamId);
         StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(audioInterrupt.uid,
             audioInterrupt.streamId);

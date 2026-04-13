@@ -910,6 +910,7 @@ private:
         const AudioSessionStrategy &strategy, const bool isStandalone);
     bool IsScreenOnAdjustVolume();
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
+    int32_t VerifyUidAndPid(const int32_t uid, const int32_t pid);
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
