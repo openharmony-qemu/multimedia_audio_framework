@@ -324,7 +324,7 @@ void AudioBackgroundManager::RecoveryAppState()
     std::vector<std::shared_ptr<ContinuousTaskCallbackInfo>> continuousTaskList;
     ErrCode code = BackgroundTaskMgr::BackgroundTaskMgrHelper::GetContinuousTaskApps(continuousTaskList);
     CHECK_AND_RETURN_LOG(backgroundTaskListener_ != nullptr, "backgroundTaskListener_ is nullptr.");
-    CHECK_AND_RETURN_LOG(code != 0, "continuousTaskList acquisition failed.");
+    CHECK_AND_RETURN_LOG(code == ERR_OK, "continuousTaskList acquisition failed.");
 
     for (auto &task : continuousTaskList) {
         int32_t pid = task->GetCreatorPid();
