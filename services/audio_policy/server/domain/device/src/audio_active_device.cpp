@@ -512,8 +512,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     std::vector<StreamUsage> usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(type);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (auto usage : usages) {
-        devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
-            usage, -1, "GetDeviceForVolumeByStreamType").front());
+        FetchDeviceInfo info = {usage, "GetDeviceForVolumeByStreamType"};
+        devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front());
     }
     SortDevicesByPriority(devices);
     AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from router and add to map",
@@ -537,8 +537,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Str
             return streamUsageDeviceMap_[usage].front();
         }
     }
-    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
-        usage, -1, "GetDeviceForVolumeByStreamUsage").front();
+    FetchDeviceInfo info = {usage, "GetDeviceForVolumeByStreamUsage"};
+    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
@@ -574,9 +574,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
             return streamUsageDeviceMap_[usage].front();
         }
     }
-    
-    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
-        STREAM_USAGE_MUSIC, -1, "GetDeviceForVolumeByTopPriority").front();
+    FetchDeviceInfo info = {STREAM_USAGE_MUSIC, "GetDeviceForVolumeByTopPriority"};
+    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int32_t appUid)

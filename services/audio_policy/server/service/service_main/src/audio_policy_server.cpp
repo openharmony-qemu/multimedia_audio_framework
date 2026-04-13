@@ -4914,15 +4914,14 @@ int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId,
         AUDIO_ERR_LOG("No permission");
         return ERR_PERMISSION_DENIED;
     }
-
-    auto mediaDeviceList = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
-        "SetDeviceVolumeBehavior_1", ROUTER_TYPE_USER_SELECT);
+    FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "SetDeviceVolumeBehavior_1", ROUTER_TYPE_USER_SELECT};
+    auto mediaDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!mediaDeviceList.empty(), ERROR, "mediaDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor = mediaDeviceList.front();
     CHECK_AND_RETURN_RET_LOG(newMediaDescriptor != nullptr, ERROR, "newMediaDescriptor is nullptr");
 
-    auto callDeviceList = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
-        "SetDeviceVolumeBehavior_2", ROUTER_TYPE_USER_SELECT);
+    info = { STREAM_USAGE_VOICE_COMMUNICATION, "SetDeviceVolumeBehavior_2", ROUTER_TYPE_USER_SELECT};
+    auto callDeviceList = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!callDeviceList.empty(), ERROR, "callDeviceList is empty");
     std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor = callDeviceList.front();
     CHECK_AND_RETURN_RET_LOG(newCallDescriptor != nullptr, ERROR, "newCallDescriptor is nullptr");

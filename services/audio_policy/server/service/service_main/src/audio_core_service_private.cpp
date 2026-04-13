@@ -358,7 +358,10 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     } else {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
     }
-    descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "CheckModemScene");
+    FetchDeviceInfo info = {
+        STREAM_USAGE_VOICE_MODEM_COMMUNICATION, "CheckModemScene"
+    };
+    descs = audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
     pipeManager_->UpdateModemStreamDevice(descs);
     AudioDeviceDescriptor curDesc = audioActiveDevice_.GetCurrentOutputDevice();
@@ -392,13 +395,14 @@ void AudioCoreService::CheckRingAndVoipScene(const AudioStreamDeviceChangeReason
     if (audioScene == AUDIO_SCENE_DEFAULT && !CheckRingAndVoipStreamRunning()) {
         return;
     }
-
+    FetchDeviceInfo info = { STREAM_USAGE_NOTIFICATION_RINGTONE, "CheckRingAndVoipScene_1" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> ringDescs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_NOTIFICATION_RINGTONE, -1, "CheckRingAndVoipScene");
+        audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_LOG(ringDescs.size() != 0, "Fetch output device for ring failed");
 
+    info = { STREAM_USAGE_VOICE_COMMUNICATION, "CheckRingAndVoipScene_2" };
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> voipDescs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "CheckRingAndVoipScene");
+        audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_LOG(voipDescs.size() != 0, "Fetch output device for voip failed");
 
     pipeManager_->UpdateRingAndVoipStreamStatus(audioScene);
@@ -2120,8 +2124,9 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
 
 int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStreamDeviceChangeReasonExt reason)
 {
+    FetchDeviceInfo info = { STREAM_USAGE_MEDIA, "HandleFetchOutputWhenNoRunningStream" };
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "HandleFetchOutputWhenNoRunningStream");
+        audioRouterCenter_.FetchOutputDevices(info);
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
     AudioDeviceDescriptor tmpOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
     if (descs.front()->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(descs.front(), tmpOutputDeviceDesc)) {
@@ -2765,8 +2770,9 @@ void AudioCoreService::UpdateStreamDevicesForStart(
                 DeviceRole::OUTPUT_DEVICE)
         };
     } else {
-        devices = audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
-            caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
+        FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
+            streamDesc->bundleName_ };
+        devices = audioRouterCenter_.FetchOutputDevices(info);
     }
 
     pipeManager_->UpdateNewDeviceDescWithCheck(streamDesc, devices);
@@ -2786,8 +2792,10 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
     CHECK_AND_RETURN_LOG(streamDesc != nullptr, "Invalid stream desc");
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", streamDesc->GetSessionId());
     streamDesc->UpdateOldDevice(streamDesc->newDeviceDescs_);
-    auto devices = audioRouterCenter_.FetchOutputDevices(streamDesc->GetRenderUsage(),
-        GetRealUid(streamDesc), caller, RouterType::ROUTER_TYPE_NONE, streamDesc->GetRenderPrivacyType());
+
+    FetchDeviceInfo info = { streamDesc->GetRenderUsage(), GetRealUid(streamDesc),
+        streamDesc->GetRenderPrivacyType(), caller, streamDesc->bundleName_ };
+    auto devices = audioRouterCenter_.FetchOutputDevices(info);
 
     pipeManager_->UpdateNewDeviceDesc(streamDesc, devices);
     HILOG_COMM_INFO("[DeviceFetchInfo] device %{public}s for stream %{public}d",
@@ -3075,9 +3083,10 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
 {
     for (auto &desc : outputDescs) {
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
-        auto newDescs = audioRouterCenter_.FetchOutputDevices(desc->rendererInfo_.streamUsage,
-            GetRealUid(desc), "StartClient", RouterType::ROUTER_TYPE_NONE,
-            streamDesc->rendererInfo_.privacyType);
+        FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
+            streamDesc->rendererInfo_.privacyType, "StartClient", streamDesc->bundleName_ };
+
+        auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
     audioActiveDevice_.UpdateStreamDeviceMap("FetchOutputDevicesForDescs");
