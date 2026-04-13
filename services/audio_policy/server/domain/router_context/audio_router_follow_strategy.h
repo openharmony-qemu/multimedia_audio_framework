@@ -45,6 +45,7 @@ public:
 
     std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice(int32_t uid,
         uint32_t streamId) override;
+
     std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice(int32_t uid,
         uint32_t streamId) override;
 
@@ -52,7 +53,7 @@ private:
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceWhenHasRunningStream(
         SourceType &effectiveSourceType, BluetoothAndNearlinkPreferredRecordCategory &category);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceWhenNoRunningStream(
-        int32_t uid, BluetoothAndNearlinkPreferredRecordCategory &category);
+        int32_t uid, BluetoothAndNearlinkPreferredRecordCategory &category, SourceType sourceType);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetCallOutputDeviceByUid(int32_t uid);
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetCallLatestOutputDevice();
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceByPriority(int uid,
