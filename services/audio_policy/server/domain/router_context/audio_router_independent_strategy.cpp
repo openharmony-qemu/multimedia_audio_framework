@@ -47,7 +47,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioRouterIndependentStrategy::GetMediaI
 
         if (selectResult.source_ == SelectDeviceSource::STREAM) {
             effectiveSourceType = routerInfra.GetStreamSourceType(uid, streamId);
-        } else if (selectResult.source_ == SelectDeviceSource::APP) {  
+        } else if (selectResult.source_ == SelectDeviceSource::APP) {
             effectiveSourceType = sourceTypes.empty() ? SourceType::SOURCE_TYPE_INVALID : appRunningSourceTypes[0];
         }
 
