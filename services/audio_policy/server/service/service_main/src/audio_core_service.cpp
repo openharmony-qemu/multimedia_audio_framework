@@ -977,6 +977,7 @@ void AudioCoreService::HandlePlaybackStoppingOperations(std::shared_ptr<AudioStr
         FetchOutputDeviceAndRoute(caller);
     }
 
+    const StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
     if (enableDualHalToneState_ &&
         static_cast<int64_t>(streamDesc->sessionId_) == static_cast<int64_t>(enableDualHalToneSessionId_)) {
         FetchOutputDeviceAndRoute("UpdateTracker_ForDualHalTone");
