@@ -171,7 +171,7 @@ void AudioAdapterManager::InitBootAnimationVolume()
     int32_t bootAnimationVolume = GetStreamVolume(typeForBootAnimation);
     AUDIO_DEBUG_LOG("Init: Type[%{public}d],volume[%{public}d]", typeForBootAnimation, bootAnimationVolume);
     std::string defaultVolume = std::to_string(bootAnimationVolume);
-    auto ret = GetParameter("persist.multimedia.audio.notificationvolume", defaultVolume.c_str(),
+    auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", defaultVolume.c_str(),
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         auto desc = audioActiveDevice_.GetDeviceForVolume(typeForBootAnimation);
@@ -377,7 +377,8 @@ void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDev
     if (isRightVolumeType && device->deviceType_ == DEVICE_TYPE_SPEAKER) {
         int32_t volumeLevel =
             GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
-        int32_t ret = SetParameter("persist.multimedia.audio.notificationvolume", std::to_string(volumeLevel).c_str());
+        // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
+        int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
             AUDIO_INFO_LOG("Save notification volume for boot success %{public}d", volumeLevel);
         } else {
