@@ -1771,6 +1771,19 @@ vector<sptr<MicrophoneDescriptor>> AudioPolicyManager::GetAvailableMicrophones()
     return retMicList;
 }
 
+int32_t AudioPolicyManager::GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo &audioDebugInfo)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    std::shared_ptr<AudioDebugInfo> audioDebugInfoPtr = nullptr;
+    int32_t ret = gsp->GetAudioDebugInfo(sessionId, audioDebugInfoPtr);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioDebugInfo failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(audioDebugInfoPtr != nullptr, ERR_OPERATION_FAILED,
+        "GetAudioDebugInfo failed: audioDebugInfo is nullptr");
+    audioDebugInfo = *audioDebugInfoPtr;
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManager::SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support,
     const int32_t volume)
 {

@@ -98,6 +98,7 @@ public:
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
+    int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) override;
 
     // callback mode api
     int32_t SetRenderMode(AudioRenderMode renderMode) override;

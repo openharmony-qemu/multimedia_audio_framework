@@ -187,6 +187,13 @@ int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t s
     return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isUltraFast);
 }
 
+int32_t AudioCoreService::EventEntry::GetAudioDebugInfoBySessionId(uint32_t sessionId,
+    AudioDebugInfo &audioDebugInfo)
+{
+    std::shared_lock<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetAudioDebugInfoBySessionId(sessionId, audioDebugInfo);
+}
+
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()
 {
     return coreService_->GenerateSessionId();

@@ -32,6 +32,7 @@
 #include "microphone_descriptor.h"
 #include "audio_spatialization_types.h"
 #include "audio_stream_descriptor.h"
+#include "audio_debug_info.h"
 #include "audio_capturer_options.h"
 #include "boot_animation_state_info.h"
 
@@ -431,6 +432,8 @@ public:
 
     std::vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
 
+    int32_t GetAudioDebugInfo(uint32_t sessionId, AudioDebugInfo &audioDebugInfo);
+
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support, const int32_t volume);
 
     bool IsAbsVolumeScene();
@@ -677,8 +680,7 @@ public:
     int32_t SetAudioSceneChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
-    int32_t UnsetAudioSceneChangeCallback(
-        const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
+    int32_t UnsetAudioSceneChangeCallback(const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
     int32_t SetSplitModeReady();
 

@@ -21,6 +21,9 @@
 #include "audio_errors.h"
 #include "audio_stream_info.h"
 #include "audio_policy_manager.h"
+#include "audio_debug_manager.h"
+#include "audio_debug_info.h"
+#include "audio_debug_callback.h"
 #include "securec.h"
 #include "access_token.h"
 #include "accesstoken_kit.h"
@@ -49,12 +52,42 @@ namespace {
     };
 }
 
+class AudioLoopbackDebugCallbackImpl : public AudioLoopbackDebugCallback {
+public:
+    explicit AudioLoopbackDebugCallbackImpl(const std::weak_ptr<AudioLoopback> &audioLoopback)
+        : audioLoopback_(audioLoopback) {}
+
+    int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) override
+    {
+        auto audioLoopback = audioLoopback_.lock();
+        return audioLoopback == nullptr ? ERR_ILLEGAL_STATE : audioLoopback->GetLoopbackDebugInfo(debugInfo);
+    }
+
+private:
+    std::weak_ptr<AudioLoopback> audioLoopback_;
+};
+
+static void RegisterAudioLoopbackDebugManager(const std::shared_ptr<AudioLoopback> &audioLoopback)
+{
+    if (audioLoopback == nullptr) {
+        return;
+    }
+    auto debugCallback = std::make_shared<AudioLoopbackDebugCallbackImpl>(std::weak_ptr<AudioLoopback>(audioLoopback));
+    if (debugCallback == nullptr) {
+        return;
+    }
+    (void)AudioDebugManager::GetInstance().RegisterAudioLoopback(
+        reinterpret_cast<uintptr_t>(audioLoopback.get()), debugCallback);
+}
+
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
     if (mode == LOOPBACK_HARDWARE) {
         static std::shared_ptr<AudioLoopbackPrivate> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
+        RegisterAudioLoopbackDebugManager(instance);
         return instance;
     }
+
     AUDIO_ERR_LOG("Invalid mode");
     return nullptr;
 }
@@ -101,10 +134,12 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
     AUDIO_INFO_LOG("~AudioLoopbackPrivate");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     std::unique_lock<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN_LOG(currentState_ == LOOPBACK_STATE_RUNNING, "AudioLoopback not Running");
-    currentState_ = LOOPBACK_STATE_DESTROYING;
-    stateLock.unlock();
-    DestroyAudioLoopbackInner();
+    if (currentState_ == LOOPBACK_STATE_RUNNING) {
+        currentState_ = LOOPBACK_STATE_DESTROYING;
+        stateLock.unlock();
+        DestroyAudioLoopbackInner();
+    }
+    (void)AudioDebugManager::GetInstance().UnregisterAudioLoopback(reinterpret_cast<uintptr_t>(this));
 }
 
 void AudioLoopbackPrivate::GetValidDevice()
@@ -261,6 +296,14 @@ AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
 {
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     return currentEqualizerPreset_;
+}
+
+int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
+{
+    (void)debugInfo;
+    AUDIO_INFO_LOG("GetLoopbackDebugInfo enter, mode:%{public}d, currentState:%{public}d",
+        static_cast<int32_t>(mode_), static_cast<int32_t>(currentState_));
+    return SUCCESS;
 }
 
 bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)

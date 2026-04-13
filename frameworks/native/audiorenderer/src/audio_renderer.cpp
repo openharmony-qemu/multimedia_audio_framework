@@ -25,6 +25,9 @@
 
 #include "audio_renderer_log.h"
 #include "audio_errors.h"
+#include "audio_debug_manager.h"
+#include "audio_debug_info.h"
+#include "audio_debug_callback.h"
 #include "audio_policy_manager.h"
 #include "audio_speed.h"
 
@@ -136,6 +139,34 @@ static AudioRendererParams SetStreamInfoToParams(const AudioStreamInfo &streamIn
     return params;
 }
 
+class AudioRendererDebugCallbackImpl : public AudioRendererDebugCallback {
+public:
+    explicit AudioRendererDebugCallbackImpl(const std::weak_ptr<AudioRenderer> &audioRenderer)
+        : audioRenderer_(audioRenderer) {}
+
+    int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) override
+    {
+        auto audioRenderer = audioRenderer_.lock();
+        return audioRenderer == nullptr ? ERR_ILLEGAL_STATE : audioRenderer->GetRendererDebugInfo(debugInfo);
+    }
+
+private:
+    std::weak_ptr<AudioRenderer> audioRenderer_;
+};
+
+static void RegisterAudioRendererDebugManager(const std::shared_ptr<AudioRenderer> &audioRenderer)
+{
+    if (audioRenderer == nullptr) {
+        return;
+    }
+    auto debugCallback = std::make_shared<AudioRendererDebugCallbackImpl>(std::weak_ptr<AudioRenderer>(audioRenderer));
+    if (debugCallback == nullptr) {
+        return;
+    }
+    (void)AudioDebugManager::GetInstance().RegisterAudioRenderer(
+        reinterpret_cast<uintptr_t>(audioRenderer.get()), debugCallback);
+}
+
 std::mutex AudioRenderer::createRendererMutex_;
 
 AudioRenderer::~AudioRenderer() = default;
@@ -151,6 +182,7 @@ AudioRendererPrivate::~AudioRendererPrivate()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
+    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
 
     RendererState state = GetStatus();
     if (state != RENDERER_RELEASED && state != RENDERER_NEW) {
@@ -306,7 +338,7 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(AudioStreamType audioStream
 
     auto sharedRenderer = std::make_shared<AudioRendererPrivate>(audioStreamType, appInfo, true);
     CHECK_AND_RETURN_RET_LOG(sharedRenderer != nullptr, nullptr, "renderer is null");
-
+    RegisterAudioRendererDebugManager(sharedRenderer);
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
@@ -393,6 +425,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::Create(const AudioRendererOptions 
     audioRenderer->SetRenderMode(RENDER_MODE_STATIC);
     CHECK_AND_RETURN_RET_LOG(audioRenderer->SetStaticBufferCallback(callback) == SUCCESS,
         nullptr, "SetStaticBufferCallback fail");
+    RegisterAudioRendererDebugManager(audioRenderer);
     return audioRenderer;
 }
 
@@ -484,6 +517,9 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
             ERR_OPERATION_FAILED);
     }
     RecordBootAnimationStateTime(appInfo.appUid, BootAnimationState::CREATE_RENDERER_END);
+
+    RegisterAudioRendererDebugManager(audioRenderer);
+
     return audioRenderer;
 }
 
@@ -1549,6 +1585,7 @@ int32_t AudioRendererPrivate::ReleaseImpl()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
+    (void)AudioDebugManager::GetInstance().UnregisterAudioRenderer(reinterpret_cast<uintptr_t>(this));
     SetReleaseFlagNoLock(false);
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback(audioStream_);
@@ -2925,6 +2962,58 @@ float AudioRendererPrivate::GetSpeed()
     return audioStream_->GetSpeed();
 #endif
     return speed_.value_or(1.0f);
+}
+
+int32_t AudioRendererPrivate::GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const
+{
+    AUDIO_DEBUG_LOG("GetRendererDebugInfo enter");
+    std::shared_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    AudioDebugInfo audioDebugInfo;
+    int32_t ret = audioStream_->GetAudioDebugInfo(audioDebugInfo);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioDebugInfo failed");
+
+    debugInfo = AudioRendererDebugInfo();
+    debugInfo.sessionId = audioDebugInfo.sessionId;
+    debugInfo.samplingRate = static_cast<int32_t>(audioDebugInfo.streamParams.samplingRate);
+    debugInfo.channels = static_cast<AudioChannel>(audioDebugInfo.streamParams.channels);
+    debugInfo.format = static_cast<AudioSampleFormat>(audioDebugInfo.streamParams.format);
+    debugInfo.encoding = static_cast<AudioEncodingType>(audioDebugInfo.streamParams.encoding);
+    debugInfo.streamUsage = audioDebugInfo.rendererInfo.streamUsage;
+    debugInfo.rendererFlags = audioDebugInfo.rendererInfo.rendererFlags;
+    debugInfo.speed = audioDebugInfo.speed;
+    debugInfo.pitch = audioDebugInfo.pitch;
+    debugInfo.effectMode = audioDebugInfo.effectMode;
+
+    debugInfo.pipeId = audioDebugInfo.pipeId;
+    debugInfo.paIndex = audioDebugInfo.paIndex;
+    debugInfo.pipeRole = audioDebugInfo.pipeRole;
+    debugInfo.pipeName = audioDebugInfo.pipeName;
+    debugInfo.routeFlag = audioDebugInfo.routeFlag;
+    debugInfo.adapterName = audioDebugInfo.adapterName;
+    debugInfo.moduleName = audioDebugInfo.moduleName;
+    debugInfo.pipeFormat = audioDebugInfo.pipeFormat;
+    debugInfo.pipeRate = audioDebugInfo.pipeRate;
+    debugInfo.pipeChannels = audioDebugInfo.pipeChannels;
+    debugInfo.pipeChannelLayout = audioDebugInfo.pipeChannelLayout;
+    debugInfo.pipeDeviceType = audioDebugInfo.pipeDeviceType;
+
+    debugInfo.mainDeviceType = audioDebugInfo.mainDeviceType;
+    debugInfo.networkId = audioDebugInfo.networkId;
+    debugInfo.macAddress = audioDebugInfo.macAddress;
+
+    debugInfo.volumeType = audioDebugInfo.volumeType;
+    debugInfo.streamVolume = audioDebugInfo.streamVolume;
+    debugInfo.systemVolume = audioDebugInfo.systemVolume;
+    debugInfo.volume = audioDebugInfo.volume;
+
+    debugInfo.hintType = audioDebugInfo.hintType;
+    debugInfo.historyHintType = audioDebugInfo.historyHintType;
+    return SUCCESS;
 }
 
 bool AudioRendererPrivate::IsOffloadEnable()

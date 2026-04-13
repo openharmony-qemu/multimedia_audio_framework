@@ -3868,6 +3868,22 @@ int32_t AudioPolicyServer::GetAvailableMicrophones(std::vector<sptr<MicrophoneDe
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetAudioDebugInfo(uint32_t sessionId,
+    std::shared_ptr<AudioDebugInfo> &audioDebugInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(eventEntry_ != nullptr, ERR_NULL_POINTER, "eventEntry_ is nullptr");
+    auto callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission() ||
+        coreService_->IsStreamBelongToUid(callingUid, sessionId), ERR_PERMISSION_DENIED,
+        "GetAudioDebugInfo denied, sessionId:%{public}u, callingUid:%{public}d", sessionId, callingUid);
+    auto audioDebugInfoValue = std::make_shared<AudioDebugInfo>();
+    int32_t ret = eventEntry_->GetAudioDebugInfoBySessionId(sessionId, *audioDebugInfoValue);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret,
+        "GetPipeDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
+    audioDebugInfo = audioDebugInfoValue;
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::SetDeviceAbsVolumeSupported(const std::string &macAddress, bool support,
     int32_t volume)
 {

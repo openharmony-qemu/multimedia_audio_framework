@@ -21,6 +21,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+struct AudioLoopbackDebugInfo;
+class AudioLoopbackDebugCallback;
 
 class AudioLoopbackCallback {
 public:
@@ -71,6 +73,11 @@ public:
 
     virtual AudioLoopbackEqualizerPreset GetEqualizerPreset() = 0;
 
+    virtual int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const
+    {
+        (void)debugInfo;
+        return 0;
+    }
     virtual ~AudioLoopback();
 };
 } // namespace AudioStandard

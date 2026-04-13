@@ -22,6 +22,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "./include",
     "../../../include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../../../../audiostream/include",
     "../../../../../../services/audio_policy/server/include",
     "../../../../audioschedule/include",
@@ -69,6 +70,7 @@ ohos_unittest("inner_capturer_unit_test") {
     "./include",
     "../../../include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audio_debug_manager/include",
   ]
 
   cflags = [
@@ -99,6 +101,7 @@ ohos_unittest("audio_fast_capturer_unit_test") {
     "./include",
     "../../../include",
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../../../interfaces/inner_api/native/audio_debug_manager/include",
     "../../../../audiostream/include",
   ]
 

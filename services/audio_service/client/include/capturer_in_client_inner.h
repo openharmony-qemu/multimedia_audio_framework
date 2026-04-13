@@ -98,6 +98,7 @@ public:
     int32_t SetSpeed(float speed) override;
     int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
+    int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) override;
 
     // callback mode api
     AudioRenderMode GetRenderMode() override;
@@ -269,6 +270,9 @@ private:
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
     bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
+
+    void FillCapturerClientOnlyInfo(AudioDebugInfo &debugInfo);
+    void FillCapturerDeviceInfo(AudioDebugInfo &debugInfo, uint32_t sessionId);
 
 private:
     AudioStreamType eStreamType_;

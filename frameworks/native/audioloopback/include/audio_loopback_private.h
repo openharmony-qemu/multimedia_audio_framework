@@ -72,10 +72,10 @@ public:
     AudioLoopbackReverbPreset GetReverbPreset() override;
     bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) override;
     AudioLoopbackEqualizerPreset GetEqualizerPreset() override;
+    int32_t GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debugInfo) const override;
 
     static void ReportAudioLoopbackException(const AudioLoopbackReportInfo &info);
 private:
-
     class RendererCallbackImpl : public AudioRendererCallback,
                                  public AudioRendererOutputDeviceChangeCallback,
                                  public AudioRendererFastStatusChangeCallback {

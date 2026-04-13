@@ -1146,5 +1146,10 @@ int32_t OHAudioRenderer::SetIndependentAudioSessionStrategy(
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetIndependentAudioSessionStrategy(strategy, behavior);
 }
+
+const AudioRenderer *OHAudioRenderer::GetAudioRenderer() const
+{
+    return audioRenderer_.get();
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
