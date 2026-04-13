@@ -912,7 +912,6 @@ private:
     bool ShouldNotifyForLegacyVolume(int32_t volumeLevel);
 
     AudioEffectService &audioEffectService_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioStateManager &audioStateManager_;
     AudioToneManager &audioToneManager_;
     AudioMicrophoneDescriptor &audioMicrophoneDescriptor_;

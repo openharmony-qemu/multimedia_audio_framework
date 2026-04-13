@@ -391,7 +391,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_026, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 
@@ -410,7 +409,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_027, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenConnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    audioDeviceCommon.RemoveOfflineDevice(updatedDesc);
     EXPECT_EQ(2, audioDeviceDescriptorSptrVector.size());
 }
 

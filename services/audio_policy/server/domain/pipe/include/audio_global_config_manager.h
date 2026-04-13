@@ -43,4 +43,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif //ST_AUDIO_AFFINITY_MANAGER_H
+#endif //ST_AUDIO_GLOBAL_CONFIG_MANAGER_H

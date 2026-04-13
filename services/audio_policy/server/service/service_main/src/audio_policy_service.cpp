@@ -29,7 +29,6 @@
 #ifdef FEATURE_DEVICE_MANAGER
 #endif
 
-#include "audio_affinity_manager.h"
 #include "audio_collaborative_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_converter_parser.h"
@@ -96,7 +95,6 @@ bool AudioPolicyService::Init(void)
     audioEffectService_.EffectServiceInit();
     RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_EFFECT_CONFIG, ClockTime::GetCurMilli());
     audioDeviceManager_.ParseDeviceXml();
-    audioAffinityManager_.ParseAffinityXml();
 #ifdef AUDIO_WIRED_DETECT
     audioPnpServer_.init();
 #endif
@@ -274,17 +272,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetPrefe
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    if (audioRendererFilter->uid != -1) {
-        shared_ptr<AudioDeviceDescriptor> preferredDesc =
-            audioAffinityManager_.GetRendererDevice(audioRendererFilter->uid);
-        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*preferredDesc);
-        CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, deviceList, "devDesc is nullptr.");
-        if (devDesc->deviceId_ != 0) {
-            deviceList.push_back(devDesc);
-            return deviceList;
-        }
-    }
     return audioDeviceCommon_.GetPreferredOutputDeviceDescInner(audioRendererFilter->rendererInfo,
         LOCAL_NETWORK_ID, audioRendererFilter->uid);
 }
@@ -293,12 +280,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetInput
     sptr<AudioCapturerFilter> audioCapturerFilter)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
-    if (audioCapturerFilter->uid != -1) {
-        shared_ptr<AudioDeviceDescriptor> preferredDesc =
-            audioAffinityManager_.GetCapturerDevice(audioCapturerFilter->uid);
-        std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*preferredDesc);
-        deviceList.push_back(devDesc);
-    }
     return deviceList;
 }
 
