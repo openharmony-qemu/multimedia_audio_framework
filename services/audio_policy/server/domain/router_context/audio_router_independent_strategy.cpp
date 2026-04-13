@@ -75,7 +75,7 @@ void AudioRouterIndependentStrategy::SetMediaInputDevice(int32_t uid, uint32_t s
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
-    if (uid != SYSTEM_UID && streamId != 0) {
+    if (uid != SYSTEM_UID && streamId != INVALID_STREAM_ID) {
         AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);
     } else {
         AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_INPUT, uid, simpleDesc);
@@ -99,7 +99,7 @@ void AudioRouterIndependentStrategy::SetMediaOutputDevice(int32_t uid, uint32_t 
     const std::shared_ptr<AudioDeviceDescriptor> &device)
 {
     auto simpleDesc = ConvertDeviceToSimple(device);
-    if (uid != SYSTEM_UID && streamId != 0) {
+    if (uid != SYSTEM_UID && streamId != INVALID_STREAM_ID) {
         AudioRouterInfra::GetInstance().UpdateStreamSelectDevice(uid, streamId, simpleDesc);
     } else {
         AudioRouterInfra::GetInstance().RefreshSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid, simpleDesc);
@@ -151,7 +151,7 @@ AudioRouterIndependentStrategy::SelectDeviceResult AudioRouterIndependentStrateg
     result.device_ = nullptr;
     result.source_ = SelectDeviceSource::NONE;
 
-    if (streamId != 0) {
+    if (streamId != INVALID_STREAM_ID) {
         auto streamSelectDevice = routerInfra.GetStreamSelectDevice(uid, streamId);
         if (streamSelectDevice != nullptr) {
             result.device_ = streamSelectDevice;
