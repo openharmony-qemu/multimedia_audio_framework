@@ -2872,6 +2872,9 @@ std::set<int32_t> AudioPolicyServer::GetStreamIdsForAudioSessionByStreamUsage(
     return streamIds;
 }
 
+int32_t AudioPolicyServer::VerifyUidAndPid(const int32_t uid, const int32_t pid)
+{}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     const AudioInterrupt &audioInterruptIn, int32_t zoneID, bool isUpdatedAudioStrategy)
 {

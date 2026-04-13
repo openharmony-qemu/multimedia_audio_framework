@@ -5980,5 +5980,8 @@ HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_003, TestSize.Level1)
     int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
     EXPECT_EQ(result, SUCCESS);
 }
+
+/**
+*/
 } // AudioStandard
 } // OHOS
