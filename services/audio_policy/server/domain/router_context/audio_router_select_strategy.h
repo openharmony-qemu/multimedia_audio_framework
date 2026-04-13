@@ -61,12 +61,10 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &device);
     virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice(int32_t uid,
         uint32_t streamId);
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice();
     virtual void UpdateCallDefaultOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
     virtual std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice(int32_t uid,
         uint32_t streamId);
-    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice();
 
     void UpdateCurrentOutputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);

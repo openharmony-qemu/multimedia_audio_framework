@@ -45,10 +45,8 @@ public:
 
     std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice(int32_t uid,
         uint32_t streamId) override;
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice() override;
     std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice(int32_t uid,
         uint32_t streamId) override;
-    std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice() override;
 
 private:
     std::shared_ptr<AudioDeviceSimpleDescriptor> GetMediaInputDeviceWhenHasRunningStream(
