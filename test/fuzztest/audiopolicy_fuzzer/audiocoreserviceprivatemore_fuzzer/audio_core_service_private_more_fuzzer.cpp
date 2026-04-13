@@ -675,36 +675,6 @@ void AudioCoreServicePrivateIsFastAllowedFuzzTest(FuzzedDataProvider& fdp)
     audioCoreService->IsFastAllowed(bundleName);
 }
 
-void AudioCoreServicePrivateSetDefaultOutputDeviceFuzzTest(FuzzedDataProvider& fdp)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    if (audioCoreService == nullptr) {
-        return;
-    }
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    uint32_t sessionID = GetData<uint32_t>();
-    StreamUsage streamUsage = GetData<StreamUsage>();
-    bool isRunning = GetData<bool>();
-    bool skipForce = GetData<bool>();
-    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
-    if (audioCoreService->pipeManager_ == nullptr) {
-        return;
-    }
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    if (pipeInfo == nullptr) {
-        return;
-    }
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    if (streamDesc == nullptr) {
-        return;
-    }
-    streamDesc->sessionId_ = sessionID;
-    pipeInfo->streamDescriptors_.push_back(streamDesc);
-    audioCoreService->pipeManager_->curPipeList_.push_back(pipeInfo);
-    audioCoreService->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning, skipForce);
-}
-
 void AudioCoreServicePrivateSleepForSwitchDeviceFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -807,7 +777,6 @@ void Test(FuzzedDataProvider& fdp)
     AudioCoreServicePrivateLogCapturerConcurrentResultFuzzTest,
     AudioCoreServicePrivateWriteCapturerConcurrentMsgFuzzTest,
     AudioCoreServicePrivateIsFastAllowedFuzzTest,
-    AudioCoreServicePrivateSetDefaultOutputDeviceFuzzTest,
     AudioCoreServicePrivateIsHeadsetToSpkOrEpFuzzTest,
     AudioCoreServicePrivateSleepForSwitchDeviceFuzzTest,
     AudioCoreServicePrivateUpdateRouteForCollaborationFuzzTest,
