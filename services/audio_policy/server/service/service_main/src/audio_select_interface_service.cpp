@@ -620,19 +620,18 @@ int32_t AudioSelectInterfaceService::SetDefaultOutputDevice(const DeviceType dev
     bool forceFetch = false;
     int32_t clientUid = INVALID_UID;
     for (auto &changeInfo : audioRendererChangeInfos) {
-        if (changeInfo->sessionId == static_cast<int32_t>(sessionID)) {
+        if (changeInfo->sessionId != static_cast<int32_t>(sessionID)) {
             continue;
         }
         if (changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
-                changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
+            changeInfo->rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION) {
             CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
             forceFetch = true;
         }
         clientUid = changeInfo->clientUID;
-        break;
     }
     if (clientUid == INVALID_UID) {
         return SUCCESS;
