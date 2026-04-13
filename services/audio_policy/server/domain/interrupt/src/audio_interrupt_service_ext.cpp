@@ -542,10 +542,11 @@ void AudioInterruptService::ResetInterruptMuteState(const AudioInterrupt &audioI
     streamCollector_.CapturerMutedFlagChange(sessionId, 0);
 }
 
-int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior)
+int32_t AudioInterruptService::SetAudioSessionBehavior(const int32_t callerPid, const uint32_t behavior,
+    int32_t callerUid)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    return sessionService_.SetAudioSessionBehavior(callerPid, behavior);
+    return sessionService_.SetAudioSessionBehavior(callerPid, behavior, callerUid);
 }
  
 void AudioInterruptService::HandleMuteSessionBehavior(const AudioInterrupt &audioInterrupt, bool muteFlag)

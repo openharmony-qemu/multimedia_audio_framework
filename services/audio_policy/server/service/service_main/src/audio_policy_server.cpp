@@ -5221,7 +5221,7 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
 
     bool isStandalone = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
         IPCSkeleton::GetCallingUid(), true);
-    int32_t ret = UpdateAudioSceneAfterActivateSession(zoneId, callerPid, strategy, isStandalone);
+    int32_t ret = UpdateAudioSceneAfterActivateSession(zoneId, callerPid, strategy, isStandalone, callerUid);
     if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(callerPid)) &&
         (eventEntry_ != nullptr)) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioSession",
@@ -5237,10 +5237,11 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
 }
 
 int32_t AudioPolicyServer::UpdateAudioSceneAfterActivateSession(const int32_t zoneId, const int32_t callerPid,
-    const AudioSessionStrategy &strategy, const bool isStandalone)
+    const AudioSessionStrategy &strategy, const bool isStandalone, int32_t callerUid)
 {
     std::lock_guard<std::mutex> lock(focusUpdateMutex_);
-    AudioInterruptResult result = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone);
+    AudioInterruptResult result = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy,
+        isStandalone, callerUid);
     CHECK_AND_RETURN_RET(result.needSetAudioScene, result.retCode);
     SetAudioSceneInternal(result.targetAudioScene, result.ownerUid, result.ownerPid);
     return result.retCode;
@@ -5292,7 +5293,9 @@ int32_t AudioPolicyServer::SetAudioSessionScene(int32_t audioSessionScene)
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    return interruptService_->SetAudioSessionScene(callerPid, static_cast<AudioSessionScene>(audioSessionScene));
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    return interruptService_->SetAudioSessionScene(callerPid,
+        static_cast<AudioSessionScene>(audioSessionScene), callerUid);
 }
 
 int32_t AudioPolicyServer::EnableMuteSuggestionWhenMixWithOthers(bool enable)
@@ -5333,7 +5336,9 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(int32_t deviceType)
     }
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t ret = eventEntry_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    int32_t ret = eventEntry_->SetSessionDefaultOutputDevice(callerPid,
+        static_cast<DeviceType>(deviceType), callerUid);
     if ((ret == SUCCESS) && (sessionService_.IsSessionNeedToFetchOutputDevice(callerPid))) {
         eventEntry_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
@@ -5644,18 +5649,6 @@ int32_t AudioPolicyServer::SetSourceOutputStreamMute(int32_t uid, bool mute)
     return audioPolicyService_.SetSourceOutputStreamMute(uid, mute);
 }
 
-void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
-{
-    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
-    TriggerFetchDevice(AudioStreamDeviceChangeReasonExt());
-}
-
-void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
-{
-    audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
-    TriggerFetchDevice(AudioStreamDeviceChangeReasonExt());
-}
-
 int32_t AudioPolicyServer::IsAcousticEchoCancelerSupported(int32_t sourceType, bool &ret)
 {
     ret = AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(static_cast<SourceType>(sourceType));
@@ -5924,7 +5917,8 @@ int32_t AudioPolicyServer::SetAudioSessionBehavior(const uint32_t behavior)
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    return interruptService_->SetAudioSessionBehavior(callerPid, behavior);
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    return interruptService_->SetAudioSessionBehavior(callerPid, behavior, callerUid);
 }
 
 int32_t AudioPolicyServer::GetActiveStreamsVolumeInfo(std::vector<ActiveStreamVolumeInfo> &activeStreamsVolumeInfo)

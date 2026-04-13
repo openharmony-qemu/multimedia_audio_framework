@@ -723,62 +723,6 @@ HWTEST_F(AudioCoreServiceUnitTest, AudioSelectInterfaceService_SetPreferredInput
 
 /**
 * @tc.name  : Test AudioCoreService.
-* @tc.number: SetDefaultOutputDevice_001
-* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device to nonexistent session.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SetDefaultOutputDevice_001 start");
-    uint32_t sessionID = 99999; // nonexistent sessionId
-    auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER,
-        sessionID, STREAM_USAGE_MEDIA, false);
-
-    auto desc = GetServerPtr()->eventEntry_->coreService_->pipeManager_->GetStreamDescById(sessionID);
-    if (desc == nullptr) {
-        EXPECT_EQ(result, ERR_NOT_SUPPORTED);
-    } else {
-        EXPECT_EQ(result, SUCCESS);
-    }
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
-* @tc.number: SetDefaultOutputDevice_002
-* @tc.desc  : Test SetDefaultOutputDevice - Set DEVICE_TYPE_SPEAKER as default device.
-*/
-HWTEST_F(AudioCoreServiceUnitTest, SetDefaultOutputDevice_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioCoreServiceUnitTest SetDefaultOutputDevice_002 start");
-    uint32_t sessionID = 0; // sessionId
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
-    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
-    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
-
-    streamDesc->callerUid_ = getuid();
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    std::string networkId = LOCAL_NETWORK_ID;
-    auto createResult = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, sessionID, networkId);
-    EXPECT_EQ(createResult, SUCCESS);
-
-    auto result = GetServerPtr()->eventEntry_->SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER,
-        sessionID, STREAM_USAGE_MEDIA, false);
-    auto desc = GetServerPtr()->eventEntry_->coreService_->pipeManager_->GetStreamDescById(sessionID);
-    if (desc == nullptr) {
-        EXPECT_EQ(result, ERR_NOT_SUPPORTED);
-    } else {
-        EXPECT_NE(result, SUCCESS);
-    }
-}
-
-/**
-* @tc.name  : Test AudioCoreService.
 * @tc.number: GetModuleNameBySessionId_001
 * @tc.desc  : Test GetModuleNameBySessionId - invalid session id return "".
 */
@@ -2946,64 +2890,6 @@ HWTEST_F(AudioCoreServiceUnitTest, IsForcedNormal_010, TestSize.Level1)
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), true);
     deviceDesc->SetDeviceSupportMmap(1);
     EXPECT_EQ(audioCoreService->IsForcedNormal(streamDesc), false);
-}
-
-/**
- * @tc.name: HandlePlaybackStoppingOperations_001
- * @tc.desc: Test condition1: Set device then RELEASED removes it.
- * @tc.type: FUNC
- */
-HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_001, TestSize.Level1)
-{
-    auto audioCoreService = GetServerPtr()->coreService_;
-    ASSERT_NE(audioCoreService, nullptr);
-    audioCoreService->Init();
-
-    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-
-    audioCoreService->audioDeviceManager_.SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER, TEST_SESSION_ID,
-        STREAM_USAGE_MUSIC, true);
-    EXPECT_TRUE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = TEST_SESSION_ID;
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->streamStatus_ = STREAM_STATUS_RELEASED;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-
-    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
-
-    EXPECT_FALSE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
-}
-
-/**
- * @tc.name: HandlePlaybackStoppingOperations_002
- * @tc.desc: Test condition1 NOT released: device should NOT be removed.
- * @tc.type: FUNC
- */
-HWTEST_F(AudioCoreServiceUnitTest, HandlePlaybackStoppingOperations_002, TestSize.Level1)
-{
-    auto audioCoreService = GetServerPtr()->coreService_;
-    ASSERT_NE(audioCoreService, nullptr);
-    audioCoreService->Init();
-
-    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
-    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
-
-    audioCoreService->audioDeviceManager_.SetDefaultOutputDevice(DEVICE_TYPE_SPEAKER, TEST_SESSION_ID,
-        STREAM_USAGE_MUSIC, true);
-    EXPECT_TRUE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->sessionId_ = TEST_SESSION_ID;
-    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->streamStatus_ = STREAM_STATUS_STOPPED;
-    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
-
-    audioCoreService->HandlePlaybackStoppingOperations(streamDesc, "TestCaller");
-
-    EXPECT_TRUE(audioCoreService->audioDeviceManager_.IsSessionSetDefaultDevice(TEST_SESSION_ID));
 }
 
 /**

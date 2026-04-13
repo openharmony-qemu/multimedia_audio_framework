@@ -20,6 +20,8 @@
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_session_state_monitor.h"
+#include "audio_router_select_strategy.h"
+#include "audio_router_infra.h"
 #include "audio_stream_descriptor.h"
 #include "audio_active_device.h"
 #include "audio_device_common.h"
@@ -34,8 +36,10 @@ static constexpr time_t AUDIO_SESSION_TIME_OUT_DURATION_S = 60; // Audio session
 static constexpr time_t AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S = 10; // Audio sessionV2 timeout duration : 10 seconds
 
 AudioSession::AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
-                           AudioSessionStateMonitor &audioSessionStateMonitor)
+                           AudioSessionStateMonitor &audioSessionStateMonitor,
+                           int32_t callerUid)
     : callerPid_(callerPid),
+      callerUid_(callerUid),
       strategy_(strategy),
       audioSessionStateMonitor_(audioSessionStateMonitor),
       pipeManager_(AudioPipeManager::GetPipeManager()),
@@ -200,8 +204,6 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
 void AudioSession::UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt)
 {
     if (CanCurrentStreamSetDefaultOutputDevice(interrupt)) {
-        deviceManager_.UpdateDefaultOutputDeviceWhenStopping(interrupt.streamId);
-
         CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
 
         std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor =
@@ -210,9 +212,8 @@ void AudioSession::UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrup
         CHECK_AND_RETURN_LOG(audioStreamDescriptor != nullptr, "cannot find stream desc of id %{public}d",
             interrupt.streamId);
 
-        deviceManager_.SetDefaultOutputDevice(DEVICE_TYPE_DEFAULT,
-            interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage,
-            audioStreamDescriptor->streamStatus_ == STREAM_STATUS_STARTED);
+        AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(DEVICE_TYPE_DEFAULT,
+            interrupt.uid, interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage);
     }
 }
 
@@ -221,7 +222,8 @@ void AudioSession::UpdateVoipStreamsDefaultOutputDevice()
     for (auto interrupt : streamsInSession_) {
         UpdateSingleVoipStreamDefaultOutputDevice(interrupt);
     }
-    deviceManager_.UpdateDefaultOutputDeviceWhenStopping(fakeStreamId_);
+    AudioRouterInfra::GetInstance().UpdateOutputStreamState(callerUid_, fakeStreamId_,
+        GetStreamUsageInner(), RendererState::RENDERER_STOPPED, false);
 }
 
 int32_t AudioSession::Deactivate()
@@ -263,10 +265,10 @@ int32_t AudioSession::EnableSingleVoipStreamDefaultOutputDevice(const AudioInter
     if (CanCurrentStreamSetDefaultOutputDevice(interrupt) && (pipeManager_ != nullptr)) {
         std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor =
             pipeManager_->GetStreamDescById(interrupt.streamId);
-        if (audioStreamDescriptor != nullptr) {
-            ret = deviceManager_.SetDefaultOutputDevice(defaultDeviceType_,
-                interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage,
-                audioStreamDescriptor->streamStatus_ == STREAM_STATUS_STARTED);
+        if (audioStreamDescriptor != nullptr &&
+            audioStreamDescriptor->streamStatus_ == STREAM_STATUS_STARTED) {
+            ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(defaultDeviceType_,
+                interrupt.uid, interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage);
         }
     }
 
@@ -301,8 +303,10 @@ int32_t AudioSession::EnableDefaultDevice(bool forceFetch)
         return SUCCESS;
     }
 
-    int32_t ret = deviceManager_.SetDefaultOutputDevice(defaultDeviceType_, fakeStreamId_,
-        GetStreamUsageInner(), true);
+    AudioRouterInfra::GetInstance().UpdateOutputStreamState(callerUid_, fakeStreamId_,
+        GetStreamUsageInner(), RendererState::RENDERER_RUNNING, false);
+    int32_t ret = AudioRouterSelectStrategy::GetInstance().UpdateDefaultOutputDevice(
+        defaultDeviceType_, callerUid_, fakeStreamId_, GetStreamUsageInner());
     AUDIO_INFO_LOG("enable default output device for session %d, ret is %d", fakeStreamId_, ret);
     if (ret == NEED_TO_FETCH || forceFetch) {
         needToFetch_ = true;

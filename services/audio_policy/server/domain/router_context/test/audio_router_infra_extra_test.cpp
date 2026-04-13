@@ -31,11 +31,11 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateOutputStream
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, StreamState::STARTED);
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_2,
-        STREAM_USAGE_ALARM, StreamState::STARTED);
+        STREAM_USAGE_ALARM, RendererState::RENDERER_RUNNING);
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_3,
-        STREAM_USAGE_VOICE_COMMUNICATION, StreamState::STARTED);
+        STREAM_USAGE_VOICE_COMMUNICATION, RendererState::RENDERER_RUNNING);
 
     auto result1 = routerInfra.GetStreamStreamUsage(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     auto result2 = routerInfra.GetStreamStreamUsage(TEST_APP_UID_10001, TEST_STREAM_ID_2);
@@ -52,13 +52,13 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateOutputStream
     auto &routerInfra = AudioRouterInfra::GetInstance();
 
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, StreamState::STARTED);
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, StreamState::STOPPED);
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_STOPPED);
 
     auto result1 = routerInfra.GetStreamStreamUsage(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     EXPECT_EQ(result1, STREAM_USAGE_INVALID);
-    auto result2 = routerInfra.GetHighestPriorityRunningStreamUsages();
+    auto result2 = routerInfra.GetAppRunningStreamUsages(routerInfra.GetHighestOutputPriorityApp());
     EXPECT_TRUE(result2.empty());
     auto result3 = routerInfra.GetStreamStreamUsage(TEST_APP_UID_10002, TEST_STREAM_ID_1);
     EXPECT_EQ(result3, STREAM_USAGE_INVALID);
@@ -71,13 +71,13 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateOutputStream
 
     std::vector<StreamUsage> streamUsages1 = { STREAM_USAGE_MEDIA };
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, StreamState::STARTED);
-    auto result1 = routerInfra.GetHighestPriorityRunningStreamUsages();
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
+    auto result1 = routerInfra.GetAppRunningStreamUsages(routerInfra.GetHighestOutputPriorityApp());
     ASSERT_EQ(result1.size(), 1);
     EXPECT_EQ(result1[0], STREAM_USAGE_MEDIA);
 
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, StreamState::PAUSED);
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_PAUSED);
     auto result2 = routerInfra.GetStreamStreamUsage(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     EXPECT_EQ(result2, STREAM_USAGE_INVALID);
 }
@@ -91,9 +91,9 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateOutputStream
     routerInfra.UpdateAppForegroundState(TEST_APP_UID_10001, false);
 
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10001, TEST_STREAM_ID_1,
-        STREAM_USAGE_MEDIA, StreamState::STARTED);
+        STREAM_USAGE_MEDIA, RendererState::RENDERER_RUNNING);
     routerInfra.UpdateOutputStreamState(TEST_APP_UID_10002, TEST_STREAM_ID_2,
-        STREAM_USAGE_ALARM, StreamState::STARTED);
+        STREAM_USAGE_ALARM, RendererState::RENDERER_RUNNING);
 
     auto result1 = routerInfra.GetStreamStreamUsage(TEST_APP_UID_10001, TEST_STREAM_ID_1);
     auto result2 = routerInfra.GetStreamStreamUsage(TEST_APP_UID_10002, TEST_STREAM_ID_2);
@@ -101,7 +101,7 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_UpdateOutputStream
     EXPECT_EQ(result1, STREAM_USAGE_MEDIA);
     EXPECT_EQ(result2, STREAM_USAGE_ALARM);
 
-    auto result = routerInfra.GetHighestPriorityRunningStreamUsages();
+    auto result = routerInfra.GetAppRunningStreamUsages(routerInfra.GetHighestOutputPriorityApp());
     ASSERT_EQ(result.size(), 1);
     EXPECT_TRUE(std::find(result.begin(), result.end(), STREAM_USAGE_MEDIA) == result.end());
     EXPECT_TRUE(std::find(result.begin(), result.end(), STREAM_USAGE_ALARM) != result.end());
@@ -120,11 +120,6 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ParamAbrnormal_001
     auto result2 = routerInfra.GetAppSelectDevice(SelectDeviceType::INVALID_TYPE, TEST_APP_UID_10001);
     EXPECT_EQ(result2.device_, nullptr);
 
-    auto result3 = routerInfra.GetHighestPrioritySelectDevice(SelectDeviceType::MEDIA_INPUT);
-    EXPECT_EQ(result3.device_, nullptr);
-    auto result4 = routerInfra.GetHighestPrioritySelectDevice(SelectDeviceType::MEDIA_OUTPUT);
-    EXPECT_EQ(result4.device_, nullptr);
-
     routerInfra.UpdatePreferredInputCategory(TEST_APP_UID_10001, PREFERRED_NONE);
     auto result5 = routerInfra.GetHighestPriorityPreferredInputCategory();
     EXPECT_EQ(result5, PREFERRED_NONE);
@@ -139,9 +134,11 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ParamAbrnormal_002
     auto result1 = routerInfra.HasHighestPriorityRunningSourceType(sourceTypes);
     EXPECT_EQ(result1, false);
 
-    auto result3 = routerInfra.GetHighestPriorityRunningSourceTypes();
+    int32_t highestUid = routerInfra.GetHighestInputPriorityApp();
+    auto result3 = routerInfra.GetAppRunningSourceTypes(highestUid);
     EXPECT_EQ(result3.size(), 0);
-    auto result4 = routerInfra.GetHighestPriorityRunningStreamUsages();
+    highestUid = routerInfra.GetHighestOutputPriorityApp();
+    auto result4 = routerInfra.GetAppRunningStreamUsages(highestUid);
     EXPECT_EQ(result4.size(), 0);
 
     auto result5 = routerInfra.GetStreamSourceType(TEST_APP_UID_10001, TEST_STREAM_ID_1);
