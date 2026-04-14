@@ -667,9 +667,10 @@ int32_t AudioVolumeManager::SelectDealSafeVolume(AudioStreamType streamType, int
         // Safe Volume only applying to  STREAM_MUSIC
         return sVolumeLevel;
     }
+    auto targetDevice = audioActiveDevice_.GetDeviceForVolume(streamType);
     DeviceType curOutputDeviceType = (deviceType == DEVICE_TYPE_NONE) ?
-        audioActiveDevice_.GetDeviceForVolume(streamType)->deviceType_ : deviceType;
-    DeviceCategory curOutputDeviceCategory = audioPolicyManager_.GetCurrentOutputDeviceCategory();
+        targetDevice->deviceType_ : deviceType;
+    DeviceCategory curOutputDeviceCategory = targetDevice->deviceCategory_;
     if (sVolumeLevel > audioPolicyManager_.GetSafeVolumeLevel()) {
         switch (curOutputDeviceType) {
             case DEVICE_TYPE_BLUETOOTH_A2DP:
