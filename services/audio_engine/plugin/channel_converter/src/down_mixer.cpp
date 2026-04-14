@@ -136,7 +136,9 @@ int32_t DownMixer::SetupDownMixTable()
 
 void DownMixer::SetNormalization(bool normalizing)
 {
-    CHECK_AND_RETURN_LOG(normalizing != normalizing_, "no need to update downmix normalizing state");
+    if (normalizing == normalizing_) {
+        AUDIO_DEBUG_LOG("no need to update downmix normalizing state");
+    }
     AUDIO_INFO_LOG("normalization state is set to %{public}d", normalizing);
     normalizing_ = normalizing;
     SetupDownMixTable();
