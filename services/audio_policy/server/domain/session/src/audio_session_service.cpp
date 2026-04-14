@@ -569,7 +569,7 @@ int32_t AudioSessionService::FillCurrentOutputDeviceChangedEvent(
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(callerPid);
-    if ((session == sessionMap_.end()) || (session->second == nullptr)) {
+    if (session == sessionMap_.end()) {
         return ERROR;
     }
 
@@ -665,7 +665,7 @@ bool AudioSessionService::IsMuteSuggestionWhenMixEnabled(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(callerPid);
-    if (session == sessionMap_.end() || session->second == nullptr) {
+    if (session == sessionMap_.end()) {
         AUDIO_WARNING_LOG("The audio session of pid %{public}d has not been created", callerPid);
         return false;
     }
@@ -730,7 +730,7 @@ AudioSessionActiveBehaviors AudioSessionService::GetSessionBehaviors(const int32
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(callerPid);
-    if (session == sessionMap_.end() || session->second == nullptr) {
+    if (session == sessionMap_.end()) {
         AUDIO_WARNING_LOG("The audio session of pid %{public}d has not been created", callerPid);
         return {};
     }
