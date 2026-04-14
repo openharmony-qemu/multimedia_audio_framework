@@ -4115,6 +4115,10 @@ void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDevi
     bool mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
     volumeDataMaintainer_.SaveMuteToMap(device, STREAM_RING, mute);
     volumeDataMaintainer_.SaveMuteToDb(device, STREAM_RING, mute);
+    if (mute) {
+        volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, mute);
+        volumeDataMaintainer_.SaveMuteToDb(device, STREAM_NOTIFICATION, mute);
+    }
     AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_.load());
 }
 
