@@ -437,11 +437,11 @@ private:
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const uint32_t pipeId, const std::string &networkId = LOCAL_NETWORK_ID);
-    int32_t SetIORoutes(const DeviceFlag flag, std::vector<DeviceType> deviceTypes);
+    int32_t SetIORoutes(const DeviceType type, const DeviceFlag flag, std::vector<DeviceType> deviceTypes);
     int32_t SetIORoutesForRemote(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
         const std::string &networkId);
-    int32_t SetIORoutesForSpecificPipe(const DeviceFlag flag, std::vector<DeviceType> &deviceTypes,
-        const uint32_t pipeId, const std::string &networkId);
+    int32_t SetIORoutesForSpecificPipe(const DeviceType type, const DeviceFlag flag,
+        std::vector<DeviceType> &deviceTypes, const uint32_t pipeId, const std::string &networkId);
     const std::string GetDPParameter(const std::string &condition);
     const std::string GetUsbParameter(const std::string &condition);
     void WriteServiceStartupError();
