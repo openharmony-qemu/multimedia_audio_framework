@@ -80,6 +80,11 @@ public:
         (void)debugInfo;
         return 0;
     }
+
+    virtual std::vector<AudioDevicePair> GetSupportedDevicePairs() = 0;
+
+    virtual AudioDevicePair GetPreferredDevicePair() = 0;
+
     virtual ~AudioLoopback();
 };
 } // namespace AudioStandard
