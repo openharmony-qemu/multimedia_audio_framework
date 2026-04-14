@@ -94,7 +94,6 @@ void AudioRouterInfra::RefreshAppSelectDevice(SelectDeviceType type, int32_t uid
             appContext->appSelectDevice_.mediaOutput_.device_ = device;
             appContext->appSelectDevice_.mediaOutput_.selectTime_ = currentTime;
             AdjustOutputPriority(uid, HasRunningOutputStream(uid), appContext->isForeground_, true);
-            WriteSelectOutputSysEvents(device, type);
             break;
         case SelectDeviceType::CALL_INPUT:
             appContext->appSelectDevice_.callInput_.device_ = device;
@@ -186,7 +185,6 @@ void AudioRouterInfra::ClearAllAppSelectDevice(SelectDeviceType type,
                     *device == *appSelect.mediaOutput_.device_)) {
                     appSelect.mediaOutput_.device_ = nullptr;
                     appSelect.mediaOutput_.selectTime_ = 0;
-                    WriteSelectOutputSysEvents(device, type);
                 }
                 break;
             case SelectDeviceType::CALL_INPUT:
