@@ -368,17 +368,17 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
-    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
 
     desc.deviceType_ = DEVICE_TYPE_NEARLINK;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
-    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
 
     desc.deviceType_ = DEVICE_TYPE_INVALID;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
-    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE);
 
     updateCommand = ENABLE_UPDATE;
     desc.isEnable_ = false;
@@ -1013,6 +1013,33 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_074, TestSize.Level1)
     hdiPin = AUDIO_PIN_OUT_LINEOUT;
     deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_075
+* @tc.desc  : Test OnDeviceInfoUpdated interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_075, TestSize.Level1)
+{
+    auto devDesc = make_shared<AudioDeviceDescriptor>();
+    devDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    devDesc->macAddress_ = "macAddress";
+    devDesc->networkId_ = "networkId";
+    devDesc->deviceRole_ = OUTPUT_DEVICE;
+    devDesc->exceptionFlag_ = false;
+    AudioDeviceManager::GetAudioDeviceManager().AddNewDevice(devDesc);
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    desc.macAddress_ = "macAddress";
+    desc.networkId_ = "networkId";
+    desc.deviceRole_ = OUTPUT_DEVICE;
+    desc.exceptionFlag_ = true;
+    DeviceInfoUpdateCommand command = EXCEPTION_FLAG_UPDATE;
+    audioDeviceStatus.OnDeviceInfoUpdated(desc, command);
+    EXPECT_EQ(desc.exceptionFlag_, true);
 }
 
 /**

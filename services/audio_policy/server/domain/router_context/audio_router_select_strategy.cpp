@@ -485,5 +485,11 @@ bool AudioRouterSelectStrategy::IsPreferredDevice(const AudioDeviceDescriptor &d
     auto &routerInfra = AudioRouterInfra::GetInstance();
     return routerInfra.IsPreferredDevice(simpleDesc);
 }
+
+bool AudioRouterSelectStrategy::HasValidSelectDevice(AudioSelectDeviceInfo selectInfo)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    return routerInfra.HasValidSelectDevice(selectInfo);
+}
 }
 }
