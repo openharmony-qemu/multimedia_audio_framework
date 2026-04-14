@@ -14,10 +14,9 @@
  */
 #ifndef TIMESTAMP_H
 #define TIMESTAMP_H
+#include <stdint.h>
 #ifdef __MUSL__
 #include <sys/time.h>
-
-#include <stdint.h>
 #endif // __MUSL__
 #include <unistd.h>
 
@@ -34,7 +33,7 @@ public:
         time.tv_nsec = 0;
     }
     virtual ~Timestamp() = default;
-    uint32_t framePosition;
+    int64_t framePosition;
     struct timespec time;
 
     /**

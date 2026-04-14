@@ -46,7 +46,7 @@ public:
     MOCK_METHOD(int32_t, Release, (bool isSwitchStream), (override));
 
     MOCK_METHOD(int32_t, GetSessionID, (uint32_t &sessionID), (override));
-    MOCK_METHOD(bool, GetAudioTime, (uint32_t &framePos, int64_t &sec, int64_t &nanoSec), (override));
+    MOCK_METHOD(bool, GetAudioTime, (int64_t &framePos, int64_t &sec, int64_t &nanoSec), (override));
     MOCK_METHOD(int32_t, GetBufferSize, (size_t &bufferSize), (override));
     MOCK_METHOD(int32_t, GetFrameCount, (uint32_t &frameCount), (override));
     MOCK_METHOD(int32_t, GetLatency, (uint64_t &latency), (override));
