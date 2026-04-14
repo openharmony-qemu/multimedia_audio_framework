@@ -884,16 +884,24 @@ void AudioServer::HapReportWakeupEvent(const std::string &key,
         CHECK_AND_BREAK_LOG(nlohmann::json::accept(kvPair.second) == true,
             "Failed to parse dfx: invalid JSON format");
         json = nlohmann::json::parse(kvPair.second);
-        CHECK_AND_BREAK_LOG((json.contains("stage") && json.contains("result") && json.contains("errCode")),
-            "Failed to parse update_wakeup_trace_result: contains check error");
+        CHECK_AND_BREAK_LOG((json.contains("stage") && json.contains("result") && json.contains("errCode") &&
+            json["stage"].is_string() && json["result"].is_string() && json["errCode"].is_string()),
+            "Failed to parse update_wakeup_trace_result: contains or type check error");
         std::string stageStr = json["stage"].get<std::string>();
         std::string resultStr = json["result"].get<std::string>();
         std::string errCodeStr = json["errCode"].get<std::string>();
 
+        int32_t stage = 0;
+        int32_t result = 0;
+        int32_t errCode = 0;
+        CHECK_AND_BREAK_LOG(sscanf_s(stageStr.c_str(), "%i", &stage) == 1, "parse stage failed");
+        CHECK_AND_BREAK_LOG(sscanf_s(resultStr.c_str(), "%i", &result) == 1, "parse result failed");
+        CHECK_AND_BREAK_LOG(sscanf_s(errCodeStr.c_str(), "%i", &errCode) == 1, "parse errCode failed");
+
         AudioWakeupTrackInfo audioWakeupTrackInfo;
-        audioWakeupTrackInfo.stage = static_cast<AudioWakeupStageCode>(std::stoi(stageStr, nullptr, 0));
-        audioWakeupTrackInfo.result = static_cast<AudioWakeupResult>(std::stoi(resultStr, nullptr, 0));
-        audioWakeupTrackInfo.errCode = static_cast<AudioWakeupErrorCode>(std::stoi(errCodeStr, nullptr, 0));
+        audioWakeupTrackInfo.stage = static_cast<AudioWakeupStageCode>(stage);
+        audioWakeupTrackInfo.result = static_cast<AudioWakeupResult>(result);
+        audioWakeupTrackInfo.errCode = static_cast<AudioWakeupErrorCode>(errCode);
         AUDIO_INFO_LOG("stage=%{public}d, result=%{public}d, errCode=%{public}d",
             audioWakeupTrackInfo.stage, audioWakeupTrackInfo.result, audioWakeupTrackInfo.errCode);
         ReportWakeupEvent(audioWakeupTrackInfo);
