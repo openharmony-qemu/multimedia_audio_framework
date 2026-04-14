@@ -90,9 +90,6 @@ private:
     void SelectOutputDeviceLog(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors,
         const int32_t audioDeviceSelectMode = 0);
-    void RestoreSelectRendererDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, const int32_t uid);
-    int32_t SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     int32_t SelectOutputDeviceForFastInner(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     int32_t SetRenderDeviceForUsage(StreamUsage streamUsage, std::shared_ptr<AudioDeviceDescriptor> desc,

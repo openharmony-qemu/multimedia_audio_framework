@@ -64,9 +64,11 @@ public:
         const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
-        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
+        AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1,
+        const uint32_t streamId = INVALID_STREAM_ID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
-        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1);
+        AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID, const int32_t uid = -1,
+        const uint32_t streamId = INVALID_STREAM_ID);
     int32_t GetPreferredOutputStreamTypeInner(StreamUsage streamUsage, DeviceType deviceType, int32_t flags,
         std::string &networkId, AudioSamplingRate &samplingRate, bool isFirstCreate = true);
     int32_t GetPreferredInputStreamTypeInner(SourceType sourceType, DeviceType deviceType, int32_t flags,

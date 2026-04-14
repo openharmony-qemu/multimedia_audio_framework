@@ -1321,7 +1321,7 @@ int32_t AudioCoreService::SetInputDevice(const DeviceType deviceType, const uint
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferredOutputDeviceDescInner(
-    AudioRendererInfo &rendererInfo, std::string networkId)
+    AudioRendererInfo &rendererInfo, int32_t uid, std::string networkId)
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceList = {};
     if (rendererInfo.streamUsage <= STREAM_USAGE_UNKNOWN ||
@@ -1334,8 +1334,8 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     }
     if (networkId == LOCAL_NETWORK_ID) {
         FetchDeviceInfo info = { rendererInfo.streamUsage, "GetPreferredOutputDeviceDescInner" };
-        vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-            audioRouterCenter_.FetchOutputDevices(info);
+        info.clientUID = uid;
+        vector<std::shared_ptr<AudioDeviceDescriptor>> descs = audioRouterCenter_.FetchOutputDevices(info);
         for (size_t i = 0; i < descs.size(); i++) {
             std::shared_ptr<AudioDeviceDescriptor> devDesc = std::make_shared<AudioDeviceDescriptor>(*descs[i]);
             deviceList.push_back(devDesc);
@@ -1374,7 +1374,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferr
     }
 
     if (networkId == LOCAL_NETWORK_ID) {
-        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
+        std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, uid);
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr");
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {

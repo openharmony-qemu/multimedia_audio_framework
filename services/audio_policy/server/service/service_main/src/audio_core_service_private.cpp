@@ -2800,6 +2800,7 @@ void AudioCoreService::UpdateStreamDevicesForStart(
     } else {
         FetchDeviceInfo info = { streamUsage, GetRealUid(streamDesc), streamDesc->GetRenderPrivacyType(), caller,
             streamDesc->bundleName_ };
+        info.streamId = streamDesc->sessionId_;
         devices = audioRouterCenter_.FetchOutputDevices(info);
     }
 
@@ -2823,6 +2824,7 @@ void AudioCoreService::UpdateStreamDevicesForCreate(
 
     FetchDeviceInfo info = { streamDesc->GetRenderUsage(), GetRealUid(streamDesc),
         streamDesc->GetRenderPrivacyType(), caller, streamDesc->bundleName_ };
+    info.streamId = streamDesc->sessionId_;
     auto devices = audioRouterCenter_.FetchOutputDevices(info);
 
     pipeManager_->UpdateNewDeviceDesc(streamDesc, devices);
@@ -3113,7 +3115,7 @@ void AudioCoreService::FetchOutputDevicesForDescs(const std::shared_ptr<AudioStr
         CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is null");
         FetchDeviceInfo info = { desc->rendererInfo_.streamUsage, GetRealUid(desc),
             streamDesc->rendererInfo_.privacyType, "StartClient", streamDesc->bundleName_ };
-
+        info.streamId = streamDesc->sessionId_;
         auto newDescs = audioRouterCenter_.FetchOutputDevices(info);
         pipeManager_->UpdateNewDeviceDesc(desc, newDescs);
     }
