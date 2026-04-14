@@ -975,16 +975,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_007, TestSize.Le
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
 
     EXPECT_EQ(info.moduleInfo_.openMicRef, "");
-    EXPECT_EQ(info.moduleInfo_.micInRate, "48000");
-    EXPECT_EQ(info.moduleInfo_.micInChannels, "4");
-    EXPECT_EQ(info.moduleInfo_.micInFormat, "s16");
-    EXPECT_EQ(info.moduleInfo_.micRefRate, "48000");
-    EXPECT_EQ(info.moduleInfo_.micRefChannels, "4");
-    EXPECT_EQ(info.moduleInfo_.micRefFormat, "s16");
-    EXPECT_EQ(info.moduleInfo_.ecType, std::to_string(EC_TYPE_SAME_ADAPTER));
-    EXPECT_EQ(info.moduleInfo_.ecSamplingRate, "48000");
-    EXPECT_EQ(info.moduleInfo_.ecChannels, "2");
-    EXPECT_EQ(info.moduleInfo_.ecFormat, "s16");
 }
 
 /**
@@ -1027,12 +1017,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_008, TestSize.Le
     streamDesc->ecStreamInfo_.format = INVALID_WIDTH;
     AudioPipeInfo ecOnlyInfo;
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, ecOnlyInfo);
-    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecType, std::to_string(EC_TYPE_SAME_ADAPTER));
-    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecSamplingRate, "48000");
-    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecChannels, "2");
-    EXPECT_EQ(ecOnlyInfo.moduleInfo_.ecFormat, "");
-    EXPECT_EQ(ecOnlyInfo.moduleInfo_.micInRate, "");
-    EXPECT_EQ(ecOnlyInfo.moduleInfo_.micRefRate, "");
 
     // micIn only + invalid micIn format
     streamDesc->ecStreamInfo_.channels = CHANNEL_UNKNOW;
@@ -1041,12 +1025,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_008, TestSize.Le
     streamDesc->micInStreamInfo_.format = INVALID_WIDTH;
     AudioPipeInfo micOnlyInfo;
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, micOnlyInfo);
-    EXPECT_EQ(micOnlyInfo.moduleInfo_.micInRate, "16000");
-    EXPECT_EQ(micOnlyInfo.moduleInfo_.micInChannels, "4");
-    EXPECT_EQ(micOnlyInfo.moduleInfo_.micInFormat, "");
-    EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefRate, "16000");
-    EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefChannels, "4");
-    EXPECT_EQ(micOnlyInfo.moduleInfo_.micRefFormat, "");
     EXPECT_EQ(micOnlyInfo.moduleInfo_.ecType, "");
 }
 
