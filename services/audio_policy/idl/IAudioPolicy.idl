@@ -46,6 +46,7 @@ sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneMix;
 sequenceable audio_system_manager..OHOS.AudioStandard.ActiveStreamVolumeInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneVolumeConfig;
+sequenceable audio_debug_info..OHOS.AudioStandard.AudioDebugInfo;
 
 // ! WARNING !
 // ! WARNING ! When reordering entries up to the 'AudioPolicyInterfaceCode end' marker:
@@ -301,6 +302,7 @@ interface IAudioPolicy {
     void UpdateSafeVolumeByStrMode();
     void SetOffloadAllowedForUid([in] unsigned int uid, [in] boolean allowed);
     [oneway] void RecordBootAnimationClientStateTime([in] List<long> info);
+    void GetAudioDebugInfo([in] unsigned int sessionId, [out] sharedptr<AudioDebugInfo> audioDebugInfo);
     // AudioPolicyInterfaceCode end
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode

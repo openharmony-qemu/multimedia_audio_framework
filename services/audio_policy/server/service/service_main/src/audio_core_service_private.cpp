@@ -989,6 +989,90 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
     return SUCCESS;
 }
 
+int32_t AudioCoreService::GetPipeBaseDebugInfo(const std::shared_ptr<AudioPipeInfo> &pipe, AudioDebugInfo &debugInfo)
+{
+    debugInfo.pipeId = pipe->id_;
+    debugInfo.paIndex = pipe->paIndex_;
+    debugInfo.pipeRole = pipe->pipeRole_;
+    debugInfo.pipeName = pipe->name_;
+    debugInfo.routeFlag = pipe->routeFlag_;
+    debugInfo.adapterName = pipe->adapterName_;
+    debugInfo.moduleName = pipe->moduleInfo_.name;
+    debugInfo.pipeFormat = pipe->moduleInfo_.format;
+    debugInfo.pipeRate = pipe->moduleInfo_.rate;
+    debugInfo.pipeChannels = pipe->moduleInfo_.channels;
+    debugInfo.pipeChannelLayout = pipe->moduleInfo_.channelLayout;
+    debugInfo.pipeDeviceType = pipe->moduleInfo_.deviceType;
+    debugInfo.pipeClassName = pipe->moduleInfo_.className;
+    *debugInfo.pipeStreamInfo = pipe->audioStreamInfo_;
+    debugInfo.networkId = pipe->moduleInfo_.networkId;
+    debugInfo.macAddress = pipe->moduleInfo_.macAddress;
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::GetStreamDebugInfo(uint32_t sessionId, const std::shared_ptr<AudioPipeInfo> &pipe,
+    AudioDebugInfo &debugInfo)
+{
+    auto streamIter = pipe->streamDescMap_.find(sessionId);
+    if (streamIter == pipe->streamDescMap_.end() || streamIter->second == nullptr) {
+        return SUCCESS;
+    }
+    debugInfo.streamDesc = streamIter->second;
+    *debugInfo.pipeStreamInfo = streamIter->second->streamInfo_;
+    debugInfo.streamParams.samplingRate = static_cast<uint32_t>(streamIter->second->streamInfo_.samplingRate);
+    debugInfo.streamParams.encoding = static_cast<uint8_t>(streamIter->second->streamInfo_.encoding);
+    debugInfo.streamParams.format = static_cast<uint8_t>(streamIter->second->streamInfo_.format);
+    debugInfo.streamParams.channels = static_cast<uint8_t>(streamIter->second->streamInfo_.channels);
+    debugInfo.streamParams.channelLayout = static_cast<uint64_t>(streamIter->second->streamInfo_.channelLayout);
+
+    if (debugInfo.pipeRole == PIPE_ROLE_OUTPUT) {
+        debugInfo.rendererInfo = streamIter->second->rendererInfo_;
+    } else {
+        *debugInfo.capturerInfo = streamIter->second->capturerInfo_;
+    }
+
+    debugInfo.mainDeviceType = streamIter->second->GetMainNewDeviceType();
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::GetVolumeDebugInfo(AudioDebugInfo &debugInfo)
+{
+    if (debugInfo.pipeRole != PIPE_ROLE_OUTPUT) {
+        return SUCCESS;
+    }
+    if (debugInfo.volumeType == STREAM_DEFAULT) {
+        debugInfo.volumeType = static_cast<AudioStreamType>(
+            VolumeUtils::GetVolumeTypeFromStreamUsage(debugInfo.rendererInfo.streamUsage));
+    }
+    AudioVolume *audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_NULL_POINTER, "audioVolume is nullptr");
+
+    VolumeValues volumeValues = {};
+    debugInfo.volume = audioVolume->GetVolume(debugInfo.sessionId,
+        static_cast<int32_t>(debugInfo.volumeType), debugInfo.pipeClassName, &volumeValues);
+    debugInfo.streamVolume = volumeValues.volumeStream;
+    debugInfo.systemVolume = volumeValues.volumeSystem;
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::GetAudioDebugInfoBySessionId(uint32_t sessionId, AudioDebugInfo &audioDebugInfo)
+{
+    AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
+    const std::vector<std::shared_ptr<AudioPipeInfo>> pipeList = pipeManager_->GetPipeList();
+    std::shared_ptr<AudioPipeInfo> pipe = pipeManager_->FindPipeBySessionId(pipeList, sessionId);
+    CHECK_AND_RETURN_RET_LOG(pipe != nullptr, ERR_INVALID_PARAM,
+        "cannot find pipe by sessionId:%{public}u", sessionId);
+
+    audioDebugInfo.sessionId = sessionId;
+    int32_t ret = GetPipeBaseDebugInfo(pipe, audioDebugInfo);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    ret = GetStreamDebugInfo(sessionId, pipe, audioDebugInfo);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    ret = GetVolumeDebugInfo(audioDebugInfo);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
+    return SUCCESS;
+}
+
 uint32_t AudioCoreService::GenerateSessionId()
 {
     return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();

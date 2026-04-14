@@ -46,6 +46,7 @@
 #include "volume_tools.h"
 #include "audio_manager_util.h"
 #include "audio_effect_map.h"
+#include "audio_common_utils.h"
 
 #include "media_monitor_manager.h"
 #include "parameters.h"
@@ -787,6 +788,38 @@ float RendererInClientInner::GetSpeed()
 {
     std::lock_guard lock(speedMutex_);
     return realSpeed_.has_value() ? realSpeed_.value() : 1.0f;
+}
+
+int32_t RendererInClientInner::GetAudioDebugInfo(AudioDebugInfo &debugInfo)
+{
+    AUDIO_DEBUG_LOG("GetAudioDebugInfo enter");
+    uint32_t sessionId = UINT32_MAX;
+    if (GetAudioSessionID(sessionId) != SUCCESS) {
+        AUDIO_WARNING_LOG("GetAudioSessionID failed");
+    }
+
+    auto FillClientOnlyInfo = [&debugInfo, this]() {
+        debugInfo.speed = GetSpeed();
+        debugInfo.pitch = 1.0f; // Audio pitch debug is not implemented currently, keep default value.
+        debugInfo.effectMode = GetAudioEffectMode();
+    };
+
+    if (sessionId != UINT32_MAX) {
+        int32_t ret = AudioPolicyManager::GetInstance().GetAudioDebugInfo(sessionId, debugInfo);
+        if (ret == SUCCESS) {
+            FillClientOnlyInfo();
+            return SUCCESS;
+        }
+        AUDIO_WARNING_LOG("GetAudioDebugInfo failed, sessionId:%{public}u, ret:%{public}d", sessionId, ret);
+    }
+
+    debugInfo.sessionId = sessionId;
+    GetAudioStreamInfo(debugInfo.streamParams);
+    GetRendererInfo(debugInfo.rendererInfo);
+
+    FillClientOnlyInfo();
+    AUDIO_DEBUG_LOG("GetAudioDebugInfo fallback with local info, sessionId:%{public}u", sessionId);
+    return SUCCESS;
 }
 
 void RendererInClientInner::InitCallbackLoop()

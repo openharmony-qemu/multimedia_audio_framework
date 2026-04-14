@@ -32,6 +32,9 @@
 #include "audio_info.h"
 #include "audio_system_client_engine_manager.h"
 #include "audio_capturer_types.h"
+#include "audio_debug_manager.h"
+#include "audio_debug_info.h"
+#include "audio_debug_callback.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -72,6 +75,34 @@ static const std::map<AudioFlag, int32_t> INPUT_ROUTE_TO_STREAM_MAP = {
     {AUDIO_OUTPUT_FLAG_DIRECT, AUDIO_FLAG_DIRECT},
     {AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP},
 };
+
+class AudioCapturerDebugCallbackImpl : public AudioCapturerDebugCallback {
+public:
+    explicit AudioCapturerDebugCallbackImpl(const std::weak_ptr<AudioCapturer> &audioCapturer)
+        : audioCapturer_(audioCapturer) {}
+
+    int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) override
+    {
+        auto audioCapturer = audioCapturer_.lock();
+        return audioCapturer == nullptr ? ERR_ILLEGAL_STATE : audioCapturer->GetCapturerDebugInfo(debugInfo);
+    }
+
+private:
+    std::weak_ptr<AudioCapturer> audioCapturer_;
+};
+
+static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapturer> &audioCapturer)
+{
+    if (audioCapturer == nullptr) {
+        return;
+    }
+    auto debugCallback = std::make_shared<AudioCapturerDebugCallbackImpl>(std::weak_ptr<AudioCapturer>(audioCapturer));
+    if (debugCallback == nullptr) {
+        return;
+    }
+    (void)AudioDebugManager::GetInstance().RegisterAudioCapturer(
+        reinterpret_cast<uintptr_t>(audioCapturer.get()), debugCallback);
+}
 
 AudioCapturer::~AudioCapturer() = default;
 
@@ -507,8 +538,7 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;
     }
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX ||
-        sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;
@@ -550,6 +580,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         capturer = nullptr;
     }
     InitializeCapturer(capturer, capturerOptions);
+    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, capturer, "capturer is nullptr");
+    RegisterAudioCapturerDebugManager(capturer);
     return capturer;
 }
 
@@ -857,6 +889,53 @@ FastStatus AudioCapturerPrivate::GetFastStatus()
     }
 
     return GetFastStatusInner();
+}
+
+int32_t AudioCapturerPrivate::GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const
+{
+    AUDIO_DEBUG_LOG("GetCapturerDebugInfo enter");
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
+
+    AudioDebugInfo audioDebugInfo;
+    int32_t ret = currentStream->GetAudioDebugInfo(audioDebugInfo);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("GetAudioDebugInfo failed, ret:%{public}d", ret);
+        uint32_t sessionId = INVALID_STREAM_ID;
+        if (GetAudioStreamId(sessionId) == SUCCESS) {
+            audioDebugInfo.sessionId = sessionId;
+        }
+        AudioStreamInfo streamInfo;
+        if (GetStreamInfo(streamInfo) == SUCCESS) {
+            audioDebugInfo.streamParams.samplingRate = static_cast<uint32_t>(streamInfo.samplingRate);
+            audioDebugInfo.streamParams.channels = static_cast<uint8_t>(streamInfo.channels);
+            audioDebugInfo.streamParams.format = static_cast<uint8_t>(streamInfo.format);
+            audioDebugInfo.streamParams.encoding = static_cast<uint8_t>(streamInfo.encoding);
+            audioDebugInfo.streamParams.channelLayout = static_cast<uint64_t>(streamInfo.channelLayout);
+        }
+        AudioCapturerInfo capturerInfo;
+        if (GetCapturerInfo(capturerInfo) == SUCCESS) {
+            *audioDebugInfo.capturerInfo = capturerInfo;
+        }
+    }
+
+    debugInfo.sessionId = audioDebugInfo.sessionId;
+    debugInfo.samplingRate = static_cast<int32_t>(audioDebugInfo.streamParams.samplingRate);
+    debugInfo.channels = static_cast<AudioChannel>(audioDebugInfo.streamParams.channels);
+    debugInfo.format = static_cast<AudioSampleFormat>(audioDebugInfo.streamParams.format);
+    debugInfo.encoding = static_cast<AudioEncodingType>(audioDebugInfo.streamParams.encoding);
+    debugInfo.channelLayout = static_cast<AudioChannelLayout>(audioDebugInfo.streamParams.channelLayout);
+    debugInfo.sourceType = audioDebugInfo.capturerInfo->sourceType;
+    debugInfo.capturerFlag = audioDebugInfo.capturerInfo->capturerFlags;
+    debugInfo.captureTimestamp = audioDebugInfo.captureTimestamp;
+    debugInfo.bufferSize = audioDebugInfo.captureBufferSize;
+    debugInfo.overflowCount = audioDebugInfo.captureOverflowCount;
+    debugInfo.muteWhenInterrupted = audioDebugInfo.muteWhenInterrupted;
+    debugInfo.inputDeviceInfo = audioDebugInfo.inputDeviceInfo;
+    debugInfo.pipeRole = audioDebugInfo.pipeRole;
+    debugInfo.pipeStreamInfo = *audioDebugInfo.pipeStreamInfo;
+
+    return SUCCESS;
 }
 
 FastStatus AudioCapturerPrivate::GetFastStatusInner()
@@ -1372,6 +1451,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
+    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(reinterpret_cast<uintptr_t>(this));
 
     return audioStream_->ReleaseAudioStream() ? SUCCESS : ERROR;
 }

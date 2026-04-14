@@ -23,6 +23,7 @@
 #include "audio_stream_types.h"
 #include "audio_device_info.h"
 #include "audio_errors.h"
+#include "audio_debug_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -196,6 +197,7 @@ public:
     virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
+    virtual int32_t GetAudioDebugInfo(AudioDebugInfo &debugInfo) { return SUCCESS; }
 
     virtual int32_t SetRebuildFlag() { return 0; }
     virtual int32_t RequestUserPrivacyAuthority(uint32_t sessionId) = 0;
