@@ -109,7 +109,7 @@ void VADeviceManager::OnDevicesDisconnected(const std::shared_ptr<VADevice> &vaD
         vaDevice->configuration_.name_.c_str(),
         vaDevice->configuration_.type_);
     std::shared_ptr<AudioDeviceDescriptor> descriptor = ConvertVADeviceToDescriptor(vaDevice);
-    AudioCoreService::GetCoreService()->GetEventEntry()->OnDeviceStatusUpdated(*descriptor, false);
+    AudioCoreService::GetCoreService()->OnDeviceStatusUpdated(*descriptor, false);
     connectedVADeviceMap_.erase(vaDevice->configuration_.address_);
     if (connectedVADeviceMap_.size() <= 0) {
         config_.UnregisterAdapter(AudioAdapterType::TYPE_VA);
