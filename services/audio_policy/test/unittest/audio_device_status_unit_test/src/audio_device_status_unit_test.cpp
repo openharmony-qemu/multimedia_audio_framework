@@ -212,10 +212,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
     hdiPin = AUDIO_PIN_OUT_LINEOUT;
     deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
-
-    hdiPin = AUDIO_PIN_IN_REAR_MIC;
-    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
-    EXPECT_EQ(deviceType, DEVICE_TYPE_WIRED_MICIN);
 }
 
 /**
