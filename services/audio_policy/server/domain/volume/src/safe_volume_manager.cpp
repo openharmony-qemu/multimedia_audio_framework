@@ -154,7 +154,7 @@ void SafeVolumeManager::CancelSafeVolumeNotification(int32_t notificationId)
 #endif
 }
 
-void SafeVolumeManager::PublishLegacyHighVolumeNotification()
+void SafeVolumeManager::HandleLegacyHighVolumeNotification(LegacyHighVolumeAction action)
 {
     void *libHandle = dlopen(LIB_NAME, RTLD_LAZY);
     if (libHandle == nullptr) {
@@ -179,43 +179,27 @@ void SafeVolumeManager::PublishLegacyHighVolumeNotification()
 #endif
         return;
     }
-    audioLegacyHighVolumeNotificationImpl->PublishLegacyHighVolumeNotification();
+
+    if (action == LegacyHighVolumeAction::PUBLISH) {
+        audioLegacyHighVolumeNotificationImpl->PublishLegacyHighVolumeNotification();
+    } else {
+        audioLegacyHighVolumeNotificationImpl->CancelLegacyHighVolumeNotification();
+    }
+
     delete audioLegacyHighVolumeNotificationImpl;
 #ifndef TEST_COVERAGE
     dlclose(libHandle);
 #endif
 }
 
+void SafeVolumeManager::PublishLegacyHighVolumeNotification()
+{
+    HandleLegacyHighVolumeNotification(LegacyHighVolumeAction::PUBLISH);
+}
+
 void SafeVolumeManager::CancelLegacyHighVolumeNotification()
 {
-    void *libHandle = dlopen(LIB_NAME, RTLD_LAZY);
-    if (libHandle == nullptr) {
-        AUDIO_ERR_LOG("dlopen failed %{public}s", __func__);
-        return;
-    }
-    CreateLegacyHighVolumeNotification *createLegacyHighVolumeNotificationImpl =
-        reinterpret_cast<CreateLegacyHighVolumeNotification*>(dlsym(libHandle,
-        "CreateLegacyHighVolumeNotificationImpl"));
-    if (createLegacyHighVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("createLegacyHighVolumeNotificationImpl failed %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    AudioLegacyHighVolumeNotification *audioLegacyHighVolumeNotificationImpl = createLegacyHighVolumeNotificationImpl();
-    if (audioLegacyHighVolumeNotificationImpl == nullptr) {
-        AUDIO_ERR_LOG("audioLegacyHighVolumeNotificationImpl is nullptr %{public}s", __func__);
-#ifndef TEST_COVERAGE
-        dlclose(libHandle);
-#endif
-        return;
-    }
-    audioLegacyHighVolumeNotificationImpl->CancelLegacyHighVolumeNotification();
-    delete audioLegacyHighVolumeNotificationImpl;
-#ifndef TEST_COVERAGE
-    dlclose(libHandle);
-#endif
+    HandleLegacyHighVolumeNotification(LegacyHighVolumeAction::CANCEL);
 }
 
 }  // namespace AudioStandard

@@ -40,6 +40,8 @@ public:
     bool IsNearLink(const DeviceType &deviceType);
 
 private:
+    enum class LegacyHighVolumeAction { PUBLISH, CANCEL };
+    void HandleLegacyHighVolumeNotification(LegacyHighVolumeAction action);
     static constexpr const char* LIB_NAME = "libaudio_safe_volume_notification_impl.z.so";
     AudioActiveDevice& audioActiveDevice_;
     IAudioPolicyInterface& audioPolicyManager_;

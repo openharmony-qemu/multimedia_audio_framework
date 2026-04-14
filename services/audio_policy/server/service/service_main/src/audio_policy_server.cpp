@@ -655,7 +655,8 @@ void AudioPolicyServer::TriggerMuteCheck()
     if (mutePlay) {
         // print volume info
         AudioStreamType streamInFocus = GetCurrentStreamInFocus();
-        int32_t volume = audioVolumeManager_.GetSystemVolumeLevelInterface(VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus));
+        int32_t volume =
+            audioVolumeManager_.GetSystemVolumeLevelInterface(VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus));
         AUDIO_WARNING_LOG("StreamInFocus is [%{public}d], volume is %{public}d", streamInFocus, volume);
     }
 }
@@ -1573,7 +1574,9 @@ int32_t AudioPolicyServer::SetSingleStreamMute(AudioStreamType streamType, bool 
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Fail to set stream mute!");
     }
 
-    if (!mute && audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId) == 0 && !VolumeUtils::IsPCVolumeEnable()) {
+    if (!mute &&
+        audioVolumeManager_.GetSystemVolumeLevelInterface(streamType, zoneId) == 0 &&
+        !VolumeUtils::IsPCVolumeEnable()) {
         // If mute state is set to false but volume is 0, set volume to 1
         std::shared_ptr<AudioDeviceDescriptor> deviceDesc = nullptr;
         audioVolumeManager_.SetSystemVolumeLevel(streamType, 1, deviceDesc, zoneId);
@@ -5623,7 +5626,7 @@ int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid
     AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
     int32_t callingUid = uid != 0 ? uid : IPCSkeleton::GetCallingUid();
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
-    
+
     volumeDegree = audioVolumeManager_.GetSystemVolumeDegreeInterface(newStreamType, zoneId);
     return SUCCESS;
 }

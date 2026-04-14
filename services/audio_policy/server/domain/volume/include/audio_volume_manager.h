@@ -221,7 +221,7 @@ public:
     void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
 
 private:
-     AudioVolumeManager();
+    AudioVolumeManager();
     ~AudioVolumeManager() = default;
 
     int32_t HandleAbsBluetoothVolume(const std::string &macAddress, const int32_t volumeLevel,
