@@ -1051,7 +1051,7 @@ void VolumeDataMaintainer::SaveVolumeToMapInner(std::shared_ptr<AudioDeviceDescr
     CHECK_AND_RETURN_LOG(device != nullptr, "SaveVolumeToMap device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(volumeType)) {
         device = ringerDevice_;
     }
 #ifdef FEATURE_AUDIO_ZONE
@@ -1077,7 +1077,7 @@ int32_t VolumeDataMaintainer::LoadVolumeFromMap(std::shared_ptr<AudioDeviceDescr
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
 
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(volumeType)) {
         device = ringerDevice_;
     }
     int32_t defaultVolume = DEFAULT_VOLUME_LEVEL;
@@ -1213,7 +1213,7 @@ void VolumeDataMaintainer::SaveMuteToMap(std::shared_ptr<AudioDeviceDescriptor> 
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_LOG(device != nullptr, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(volumeType)) {
         device = ringerDevice_;
     }
 #ifdef FEATURE_AUDIO_ZONE
@@ -1233,7 +1233,7 @@ bool VolumeDataMaintainer::LoadMuteFromMap(std::shared_ptr<AudioDeviceDescriptor
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     CHECK_AND_RETURN_RET_LOG(device != nullptr, false, "device is null");
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(volumeType)) {
         device = ringerDevice_;
     }
 #ifdef FEATURE_AUDIO_ZONE
@@ -1288,8 +1288,7 @@ int32_t VolumeDataMaintainer::LoadVolumeDegreeFromMap(std::shared_ptr<AudioDevic
     CHECK_AND_RETURN_RET_LOG(device != nullptr, DEFAULT_VOLUME_DEGREE, "param device is null");
     std::lock_guard<ffrt::mutex> lock(volumeForMapMutex_);
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-
-    if (Util::IsDualToneStreamType(streamType)) {
+    if (Util::IsDualToneStreamType(volumeType)) {
         device = ringerDevice_;
     }
     int32_t defaultVolumeDegree = DEFAULT_VOLUME_DEGREE;
