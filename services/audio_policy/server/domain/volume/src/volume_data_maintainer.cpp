@@ -940,6 +940,22 @@ void VolumeDataMaintainer::LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDevice
         VolumeScale volume{infos[i].value, validDegree, infos[i].maxValue};
         SaveVolumeToMap(device, volumeList[i], volume, zoneId);
     }
+
+    CheckNotificationVolumeState(device, zoneId);
+}
+
+void VolumeDataMaintainer::CheckNotificationVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId)
+{
+    // If the user upgrades from the version without notification volume,
+    // it is necessary to check whether the initial value of the notification volume is correct.
+    if (CheckVolumeState(device, STREAM_NOTIFICATION) != SUCCESS) {
+        // There is no notification volume value. Use ringtone volume as the initial value.
+        int32_t ringtoneVolumeLevel = LoadVolumeFromMap(device, STREAM_RING, zoneId);
+        int32_t ringtoneVolumeDegree = LoadVolumeDegreeFromMap(device, STREAM_RING, zoneId);
+        VolumeScale ringtoneVolume{ringtoneVolumeLevel, ringtoneVolumeDegree};
+        SaveVolumeToMap(device, STREAM_NOTIFICATION, ringtoneVolume, zoneId);
+        SaveVolumeToDb(device, STREAM_NOTIFICATION, ringtoneVolume, zoneId);
+    }
 }
 
 IntValueInfo VolumeDataMaintainer::GetVolumeLevelInfo(std::shared_ptr<AudioDeviceDescriptor> device,
@@ -1170,6 +1186,15 @@ void VolumeDataMaintainer::LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDe
     }
     for (size_t i = 0; i < volumeList.size(); i++) {
         SaveMuteToMap(device, volumeList[i], infos[i].value);
+    }
+
+    // If the user upgrades from the version without notification volume,
+    // it is necessary to check whether the initial value of the notification mute status is correct.
+    if (CheckMuteState(device, STREAM_NOTIFICATION) != SUCCESS) {
+        // There is no notification mute status value. Use ringtone volume as the initial value.
+        bool ringtoneMute = LoadMuteFromMap(device, STREAM_RING, zoneId);
+        SaveMuteToMap(device, STREAM_NOTIFICATION, ringtoneMute, zoneId);
+        SaveMuteToDb(device, STREAM_NOTIFICATION, ringtoneMute, zoneId);
     }
 }
 

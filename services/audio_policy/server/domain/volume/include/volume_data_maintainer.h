@@ -195,6 +195,7 @@ private:
 
     void LoadDeviceVolumeMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
     void LoadDeviceMuteMapFromDb(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
+    void CheckNotificationVolumeState(std::shared_ptr<AudioDeviceDescriptor> device, int32_t zoneId);
 
     void WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg);
     int32_t SaveVolumeToDbInner(std::shared_ptr<AudioDeviceDescriptor> device,
