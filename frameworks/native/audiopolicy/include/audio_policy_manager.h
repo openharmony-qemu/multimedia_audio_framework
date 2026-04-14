@@ -671,9 +671,13 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode, DeviceType deviceType);
+    std::vector<AudioDevicePair> GetLoopbackSupportedDevicePairs();
+    AudioDevicePair GetLoopbackPreferredDevicePair();
     bool IsSupportInnerCaptureOffload();
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
     bool SetKaraokeParameters(DeviceType deviceType, const std::string &parameters);
+    bool SetLoopbackVolume(float volume);
+    float GetLoopbackVolume();
     int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
     int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 

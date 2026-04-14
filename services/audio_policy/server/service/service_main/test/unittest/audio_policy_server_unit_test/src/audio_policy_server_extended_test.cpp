@@ -412,5 +412,80 @@ HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_020, TestSize.Level4)
     audioPolicyServer_->audioVolumeManager_.audioPolicyManager_.SetLegacyHighVolumeCheckTime(currentTime);
     EXPECT_TRUE(audioPolicyServer_->ShouldNotifyForLegacyVolume(10));
 }
+
+/**
+* @tc.name  : Test AudioPolicyServer IsDeviceSupportLoopback.
+* @tc.number: AudioPolicyServer_IsDeviceSupportLoopback_003
+* @tc.desc  : Test IsDeviceSupportLoopback with unsupported device type.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_IsDeviceSupportLoopback_003, TestSize.Level1)
+{
+    auto device = std::make_shared<AudioDeviceDescriptor>();
+    device->SetDeviceType(DEVICE_TYPE_USB_ARM_HEADSET);
+    bool result = audioPolicyServer_->IsDeviceSupportLoopback(device);
+    device->SetDeviceType(DEVICE_TYPE_USB_HEADSET);
+    result = audioPolicyServer_->IsDeviceSupportLoopback(device);
+    device->SetDeviceType(DEVICE_TYPE_SPEAKER);
+    result = audioPolicyServer_->IsDeviceSupportLoopback(device);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer GetLoopbackSupportedDevicePairs.
+* @tc.number: AudioPolicyServer_GetLoopbackSupportedDevicePairs_001
+* @tc.desc  : Test GetLoopbackSupportedDevicePairs with empty devices.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackSupportedDevicePairs_001, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    int32_t ret = ERROR;
+    int32_t result = audioPolicyServer_->GetLoopbackSupportedDevicePairs(inputDevices, outputDevices, ret);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer GetLoopbackSupportedDevicePairs.
+* @tc.number: AudioPolicyServer_GetLoopbackSupportedDevicePairs_002
+* @tc.desc  : Test GetLoopbackSupportedDevicePairs with normal case.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackSupportedDevicePairs_002, TestSize.Level2)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> inputDevices;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
+    int32_t ret = ERROR;
+    auto result = audioPolicyServer_->GetLoopbackSupportedDevicePairs(inputDevices, outputDevices, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer GetLoopbackPreferredDevicePair.
+* @tc.number: AudioPolicyServer_GetLoopbackPreferredDevicePair_001
+* @tc.desc  : Test GetLoopbackPreferredDevicePair with normal case.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackPreferredDevicePair_001, TestSize.Level2)
+{
+    std::shared_ptr<AudioDeviceDescriptor> inputDevice;
+    std::shared_ptr<AudioDeviceDescriptor> outputDevice;
+    int32_t ret = ERR_DEVICE_NOT_SUPPORTED;
+    int32_t result = audioPolicyServer_->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer GetLoopbackPreferredDevicePair.
+* @tc.number: AudioPolicyServer_GetLoopbackPreferredDevicePair_002
+* @tc.desc  : Test GetLoopbackPreferredDevicePair with no supported output device.
+*/
+HWTEST_F(AudioPolicyServerUnitTest, AudioPolicyServer_GetLoopbackPreferredDevicePair_002, TestSize.Level2)
+{
+    std::shared_ptr<AudioDeviceDescriptor> inputDevice;
+    std::shared_ptr<AudioDeviceDescriptor> outputDevice;
+    int32_t ret = SUCCESS;
+    int32_t result = audioPolicyServer_->GetLoopbackPreferredDevicePair(inputDevice, outputDevice, ret);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(ret, ERR_DEVICE_NOT_SUPPORTED);
+}
 } // AudioStandard
 } // OHOS

@@ -148,6 +148,19 @@ std::map<PolicyType, uint32_t> POLICY_TYPE_MAP = {
     {PolicyType::TEMPORARY_POLCIY_TYPE, 2}
 };
 
+const std::set<DeviceType> g_maySupportedDeviceTypeSet = {
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_NEARLINK,
+};
+
+const std::set<std::pair<DeviceType, DeviceType>> g_maySupportedDevicePairSet = {
+    {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_TYPE_USB_ARM_HEADSET},
+    {DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_USB_HEADSET},
+    {DEVICE_TYPE_USB_HEADSET, DEVICE_TYPE_NEARLINK},
+    {DEVICE_TYPE_MIC, DEVICE_TYPE_NEARLINK},
+};
+
 AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
       audioEffectService_(AudioEffectService::GetAudioEffectService()),
@@ -5678,6 +5691,26 @@ int32_t AudioPolicyServer::SetKaraokeParameters(int32_t deviceType, const std::s
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::SetLoopbackVolume(float volume, bool &ret)
+{
+    ret = false;
+    CHECK_AND_RETURN_RET_LOG(volume >= 0.0f && volume <= 1.0f, SUCCESS,
+        "SetLoopbackVolume invalid volume %{public}f", volume);
+
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    AUDIO_INFO_LOG("SetLoopbackVolume callingPid %{public}d, volume %{public}f", callerPid, volume);
+    loopbackVolume_.store(volume, std::memory_order_relaxed);
+    ret = true;
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetLoopbackVolume(float &volume, bool &ret)
+{
+    volume = loopbackVolume_.load(std::memory_order_relaxed);
+    ret = true;
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, int32_t deviceType, bool &ret)
 {
     AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(modeIn);
@@ -5691,6 +5724,90 @@ int32_t AudioPolicyServer::IsAudioLoopbackSupported(int32_t modeIn, int32_t devi
         std::string remoteAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
         ret = SleAudioDeviceManager::GetInstance().IsAudioLoopbackSupported(remoteAddr);
     }
+    return SUCCESS;
+}
+
+bool AudioPolicyServer::IsDeviceSupportLoopback(std::shared_ptr<AudioDeviceDescriptor> device)
+{
+    DeviceType type = device->getType();
+    if (type == DEVICE_TYPE_USB_ARM_HEADSET || type == DEVICE_TYPE_USB_HEADSET) {
+        static bool ret = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(LOOPBACK_HARDWARE, type);
+        return ret;
+    }
+
+    CHECK_AND_RETURN_RET(type == DEVICE_TYPE_NEARLINK, false);
+    bool isPrimarySupport = AudioServerProxy::GetInstance().IsAudioLoopbackSupported(LOOPBACK_HARDWARE, type);
+    CHECK_AND_RETURN_RET_LOG(isPrimarySupport, false, "Primary is not supported!");
+    std::string remoteAddr = device->macAddress_;
+    bool result = SleAudioDeviceManager::GetInstance().IsAudioLoopbackSupported(remoteAddr);
+    return result;
+}
+
+int32_t AudioPolicyServer::GetLoopbackSupportedDevicePairs(
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &inputDevices,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices, int32_t &ret)
+{
+    ret = ERROR;
+    auto allInputs = audioConnectedDevice_.GetDevicesInner(INPUT_DEVICES_FLAG);
+    auto allOutputs = audioConnectedDevice_.GetDevicesInner(OUTPUT_DEVICES_FLAG);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempOutputs;
+    bool isSupported = false;
+    for (const auto &device : allOutputs) {
+        if (g_maySupportedDeviceTypeSet.count(device->getType())) {
+            CHECK_AND_CONTINUE(IsDeviceSupportLoopback(device));
+            tempOutputs.push_back(device);
+            isSupported = true;
+        }
+    }
+
+    CHECK_AND_RETURN_RET_LOG(isSupported, SUCCESS, "No suppprted device.");
+
+    for (const auto &output : tempOutputs) {
+        auto outputType = output->getType();
+        for (const auto &input : allInputs) {
+            auto inputType = input->getType();
+            CHECK_AND_CONTINUE(g_maySupportedDevicePairSet.count({inputType, outputType}));
+            inputDevices.push_back(input);
+            outputDevices.push_back(output);
+        }
+    }
+    AUDIO_INFO_LOG("Find %{public}zu Supported device pair", inputDevices.size());
+    ret = SUCCESS;
+
+    return SUCCESS;
+}
+ 	 
+int32_t AudioPolicyServer::GetLoopbackPreferredDevicePair(std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
+    std::shared_ptr<AudioDeviceDescriptor> &outputDevice, int32_t &ret)
+{
+    ret = ERR_DEVICE_NOT_SUPPORTED;
+
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    rendererInfo.rendererFlags = STREAM_FLAG_FAST;
+    rendererInfo.isLoopback = true;
+    rendererInfo.loopbackMode = LOOPBACK_HARDWARE;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempOutputDevices;
+    int32_t result = GetPreferredOutputDeviceDescriptors(rendererInfo, true, tempOutputDevices);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempOutputDevices.empty(), SUCCESS, "No suppprted output device.");
+    outputDevice = tempOutputDevices.front();
+    CHECK_AND_RETURN_RET(outputDevice != nullptr && IsDeviceSupportLoopback(outputDevice), SUCCESS);
+
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
+    capturerInfo.capturerFlags = STREAM_FLAG_FAST;
+    capturerInfo.isLoopback = true;
+    capturerInfo.loopbackMode = LOOPBACK_HARDWARE;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> tempInputDevices;
+    result = GetPreferredInputDeviceDescriptors(capturerInfo, tempInputDevices);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS && !tempInputDevices.empty(), SUCCESS, "No suppprted input device.");
+    inputDevice = tempInputDevices.front();
+    CHECK_AND_RETURN_RET(inputDevice != nullptr &&
+        g_maySupportedDevicePairSet.count({inputDevice->getType(), outputDevice->getType()}), SUCCESS);
+
+    ret = SUCCESS;
     return SUCCESS;
 }
 

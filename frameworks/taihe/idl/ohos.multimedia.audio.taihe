@@ -714,6 +714,11 @@ struct AudioDeviceDescriptor {
   @readonly capabilities: Optional<Array<AudioStreamInfo>>;
 }
 
+struct AudioDevicePair {
+  inputDevice: AudioDeviceDescriptor;
+  outputDevice: AudioDeviceDescriptor;
+}
+
 struct VolumeEvent {
   volumeType: AudioVolumeType;
   volume: i32;
@@ -1411,12 +1416,23 @@ enum AudioLoopbackEqualizerPreset: i32 {
   BRIGHT = 3,
 }
 
+union AudioDevicePairOrNull {
+  type_audioDevicePair: AudioDevicePair;
+  type_null: @null unit;
+}
+
 interface AudioLoopback {
   @gen_promise("getStatus")
   GetStatusSync(): AudioLoopbackStatus;
 
   @gen_promise("setVolume")
   SetVolumeSync(volume: f64): void;
+
+  GetVolume(): f64;
+
+  GetSupportedDevicePairs(): Array<AudioDevicePair>;
+
+  GetPreferredDevicePair(): AudioDevicePairOrNull;
 
   @gen_promise("enable")
   EnableSync(enable: bool): bool;

@@ -32,6 +32,31 @@ namespace AudioStandard {
 static __thread napi_ref g_loopbackConstructor = nullptr;
 static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
 static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+
+static napi_status SetJsDevicePair(const napi_env &env, const std::shared_ptr<AudioDeviceDescriptor> &inputDevice,
+    const std::shared_ptr<AudioDeviceDescriptor> &outputDevice, napi_value &result)
+{
+    CHECK_AND_RETURN_RET_LOG(inputDevice != nullptr && outputDevice != nullptr, napi_invalid_arg,
+        "SetJsDevicePair inputDevice or outputDevice is nullptr");
+    napi_status status = napi_create_object(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair napi_create_object failed");
+
+    napi_value inputDeviceValue = nullptr;
+    status = NapiParamUtils::SetDeviceDescriptor(env, *inputDevice, inputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set inputDevice failed");
+
+    napi_value outputDeviceValue = nullptr;
+    status = NapiParamUtils::SetDeviceDescriptor(env, *outputDevice, outputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set outputDevice failed");
+
+    status = napi_set_named_property(env, result, "inputDevice", inputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set inputDevice property failed");
+
+    status = napi_set_named_property(env, result, "outputDevice", outputDeviceValue);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetJsDevicePair set outputDevice property failed");
+    return napi_ok;
+}
+
 mutex NapiAudioLoopback::createMutex_;
 int32_t NapiAudioLoopback::isConstructSuccess_ = SUCCESS;
 AudioLoopbackMode NapiAudioLoopback::sLoopbackMode_ = LOOPBACK_HARDWARE;
@@ -63,6 +88,9 @@ napi_value NapiAudioLoopback::Init(napi_env env, napi_value exports)
     napi_property_descriptor audio_loopback_properties[] = {
         DECLARE_NAPI_FUNCTION("getStatus", GetStatus),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
+        DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
+        DECLARE_NAPI_FUNCTION("getSupportedDevicePairs", GetSupportedDevicePairs),
+        DECLARE_NAPI_FUNCTION("getPreferredDevicePair", GetPreferredDevicePair),
         DECLARE_NAPI_FUNCTION("enable", Enable),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
@@ -261,6 +289,89 @@ napi_value NapiAudioLoopback::SetVolume(napi_env env, napi_callback_info info)
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetVolume", executor, complete);
+}
+
+napi_value NapiAudioLoopback::GetVolume(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioLoopbackAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("GetVolume failed : no memory");
+        NapiAudioError::ThrowError(env, "GetVolume failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    context->GetCbInfo(env, info);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioLoopback*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioLoopback = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioLoopbackStatus(napiAudioLoopback, context),
+            "context object state is error.");
+        context->volLevel = napiAudioLoopback->loopback_->GetVolume();
+    };
+
+    auto complete = [env, context](napi_value &output) {
+        NapiParamUtils::SetValueDouble(env, context->volLevel, output);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "GetVolume", executor, complete);
+}
+ 
+napi_value NapiAudioLoopback::GetSupportedDevicePairs(napi_env env, napi_callback_info info)
+{
+    size_t argc = PARAM0;
+    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
+
+    AUDIO_INFO_LOG("GetSupportedDevicePairs called");
+    std::vector<AudioDevicePair> nativePairs = napiLoopback->loopback_->GetSupportedDevicePairs();
+    napi_value result = nullptr;
+    napi_status status = napi_create_array(env, &result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "napi_create_array failed");
+
+    size_t insertIndex = 0;
+    for (const auto &nativePair : nativePairs) {
+        if (nativePair.first == nullptr || nativePair.second == nullptr) {
+            AUDIO_WARNING_LOG("GetSupportedDevicePairs skip invalid pair");
+            continue;
+        }
+        napi_value pairValue = nullptr;
+        status = SetJsDevicePair(env, nativePair.first, nativePair.second, pairValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "SetJsDevicePair failed");
+        status = napi_set_element(env, result, insertIndex, pairValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+            "napi_set_element failed");
+        insertIndex++;
+    }
+    return result;
+}
+
+napi_value NapiAudioLoopback::GetPreferredDevicePair(napi_env env, napi_callback_info info)
+{
+    size_t argc = PARAM0;
+    NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
+
+    AUDIO_INFO_LOG("GetPreferredDevicePair called");
+    AudioDevicePair nativePair = napiLoopback->loopback_->GetPreferredDevicePair();
+    napi_value result = nullptr;
+    if (nativePair.first == nullptr || nativePair.second == nullptr) {
+        napi_get_null(env, &result);
+        return result;
+    }
+    napi_status status = SetJsDevicePair(env, nativePair.first, nativePair.second, result);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM),
+        "SetJsDevicePair failed");
+    return result;
 }
 
 napi_value NapiAudioLoopback::Enable(napi_env env, napi_callback_info info)

@@ -36,7 +36,10 @@ public:
     static AudioLpback CreateAudioLoopbackWrapper(OHOS::AudioStandard::AudioLoopbackMode loopbackMode);
     AudioLoopbackStatus GetStatusSync();
     void SetVolumeSync(double volume);
+    double GetVolume();
     bool EnableSync(bool enable);
+    array<AudioDevicePair> GetSupportedDevicePairs();
+    AudioDevicePairOrNull GetPreferredDevicePair();
     bool SetReverbPreset(AudioLoopbackReverbPreset preset);
     AudioLoopbackReverbPreset GetReverbPreset();
     bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset);

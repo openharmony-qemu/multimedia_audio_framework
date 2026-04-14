@@ -252,8 +252,15 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
         std::string parameters = "Karaoke_volume=" + karaokeParams_["Karaoke_volume"];
         CHECK_AND_RETURN_RET_LOG(SetKaraokeParameters(parameters), ERROR, "SetVolume failed");
+        AudioPolicyManager::GetInstance().SetLoopbackVolume(volume);
     }
     return SUCCESS;
+}
+
+float AudioLoopbackPrivate::GetVolume()
+{
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
+    return AudioPolicyManager::GetInstance().GetLoopbackVolume();
 }
 
 bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
@@ -304,6 +311,16 @@ int32_t AudioLoopbackPrivate::GetLoopbackDebugInfo(AudioLoopbackDebugInfo &debug
     AUDIO_INFO_LOG("GetLoopbackDebugInfo enter, mode:%{public}d, currentState:%{public}d",
         static_cast<int32_t>(mode_), static_cast<int32_t>(currentState_));
     return SUCCESS;
+}
+
+std::vector<AudioDevicePair> AudioLoopbackPrivate::GetSupportedDevicePairs()
+{
+    return AudioPolicyManager::GetInstance().GetLoopbackSupportedDevicePairs();
+}
+
+AudioDevicePair AudioLoopbackPrivate::GetPreferredDevicePair()
+{
+    return AudioPolicyManager::GetInstance().GetLoopbackPreferredDevicePair();
 }
 
 bool AudioLoopbackPrivate::SetKaraokeParameters(const std::string &parameters)
@@ -471,9 +488,11 @@ AudioLoopbackErrorType AudioLoopbackPrivate::CheckDeviceSupport()
     activeInputDevice_ = AudioPolicyManager::GetInstance().GetActiveInputDevice();
     AUDIO_INFO_LOG("activeOutputDevice is %{public}d, activeInputDevice is %{public}d", activeOutputDevice_,
         activeInputDevice_);
-    if (activeOutputDevice_ == DEVICE_TYPE_NEARLINK && activeInputDevice_ == DEVICE_TYPE_MIC) {
+    if (activeOutputDevice_ == DEVICE_TYPE_NEARLINK) {
         bool ret = AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_, activeOutputDevice_);
         CHECK_AND_RETURN_RET_LOG(ret, ERROR_DEVICE_NOT_SUPPORT, "Not supported nearlink device!");
+        CHECK_AND_RETURN_RET_LOG(activeInputDevice_ == DEVICE_TYPE_MIC || validDevice.count(activeInputDevice_),
+            ERROR_DEVICE_NOT_SUPPORT, "Not supported input device with nearlink!");
         isRendererUsb_ = true;
         isCapturerUsb_ = true;
         AUDIO_INFO_LOG("nearlink case!");
