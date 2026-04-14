@@ -66,10 +66,13 @@ enum class AudioZoneSupportType {
 
 class AudioZoneContext : public Parcelable {
 public:
+    static constexpr int32_t INVALID_USER_ID = -1;
+
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
     MediaBackStrategy backStrategy_ = MediaBackStrategy::STOP;
     InitMode initMode_ = InitMode::NONE;
     AudioZoneSupportType supportType_ = AudioZoneSupportType::PLAY_AND_RECORD;
+    int32_t userId_ = INVALID_USER_ID;
 
     AudioZoneContext() = default;
 
@@ -78,7 +81,8 @@ public:
         return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_))
             && parcel.WriteInt32(static_cast<int32_t>(backStrategy_))
             && parcel.WriteInt32(static_cast<int32_t>(initMode_))
-            && parcel.WriteInt32(static_cast<int32_t>(supportType_));
+            && parcel.WriteInt32(static_cast<int32_t>(supportType_))
+            && parcel.WriteInt32(userId_);
     }
 
     static AudioZoneContext *Unmarshalling(Parcel &parcel)
@@ -92,6 +96,7 @@ public:
         info->backStrategy_ = static_cast<MediaBackStrategy>(parcel.ReadInt32());
         info->initMode_ = static_cast<InitMode>(parcel.ReadInt32());
         info->supportType_ = static_cast<AudioZoneSupportType>(parcel.ReadInt32());
+        info->userId_ = parcel.ReadInt32();
         return info;
     }
 };

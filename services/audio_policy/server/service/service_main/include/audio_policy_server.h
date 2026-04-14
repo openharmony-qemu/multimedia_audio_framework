@@ -533,6 +533,8 @@ public:
 
     int32_t UpdateContextForAudioZone(int32_t zoneId, const AudioZoneContext &context) override;
 
+    int32_t GetAudioZoneForApp(const std::vector<int32_t> &userIds, std::vector<int32_t> &retUserIds) override;
+
     int32_t GetAllAudioZone(std::vector<std::shared_ptr<AudioZoneDescriptor>> &descs) override;
 
     int32_t GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor> &desc) override;

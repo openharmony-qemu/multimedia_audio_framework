@@ -347,4 +347,5 @@ interface IAudioPolicy {
     void CreateLoopback([in] int mode, [in] int type, [in] IRemoteObject cbObject, [out] IRemoteObject loopback,
         [out] int ret);
     void DestroyLoopback([in] int type, [out] int ret);
+    void GetAudioZoneForApp([in] List<int> userIds, [out] List<int> retUserIds);
 }
