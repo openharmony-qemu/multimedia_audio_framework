@@ -7038,6 +7038,108 @@ HWTEST_F(AudioCoreServiceUnitTest, ReleaseClient_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test HasNormalTypeCapturerSession.
+* @tc.number: HasNormalTypeCapturerSession_001
+* @tc.desc  : Test HasNormalTypeCapturerSession - empty pipeList returns false.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, HasNormalTypeCapturerSession_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest HasNormalTypeCapturerSession_001 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    std::vector<std::shared_ptr<AudioPipeInfo>> emptyPipeList;
+    bool result = coreService->HasNormalTypeCapturerSession(emptyPipeList);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_002
+* @tc.desc  : Test OnCapturerSessionRemoved - sessionID in sessionWithInputPipeRouteFlag_ only.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_002 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    uint64_t sessionId = 500001;
+    coreService->sessionWithInputPipeRouteFlag_[sessionId] = AUDIO_INPUT_FLAG_NORMAL;
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->sessionWithInputPipeRouteFlag_.count(sessionId), 0);
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_003
+* @tc.desc  : Test OnCapturerSessionRemoved - sessionID not in any map, goes to capturerSessionIdisRemovedSet_.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_003, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_003 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    uint64_t sessionId = 500002;
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->capturerSessionIdisRemovedSet_.count(sessionId), 1);
+
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_004
+* @tc.desc  : Test OnCapturerSessionRemoved - special source type, HandleRemoteCastDevice(false).
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_004, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_004 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    uint64_t sessionId = 500003;
+    coreService->sessionSourceTypeMap_[sessionId] = SOURCE_TYPE_REMOTE_CAST;
+
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(sessionId), 0);
+
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
+* @tc.name  : Test OnCapturerSessionRemoved.
+* @tc.number: OnCapturerSessionRemoved_005
+* @tc.desc  : Test OnCapturerSessionRemoved - VOICE_COMMUNICATION, ResetAudioEcInfo and CloseNormalSource.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, OnCapturerSessionRemoved_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest OnCapturerSessionRemoved_005 start");
+    auto coreService = GetServerPtr()->coreService_;
+    ASSERT_NE(coreService, nullptr);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    uint64_t sessionId = 500004;
+    coreService->sessionSourceTypeMap_[sessionId] = SOURCE_TYPE_VOICE_COMMUNICATION;
+
+    coreService->OnCapturerSessionRemoved(sessionId);
+    EXPECT_EQ(coreService->sessionSourceTypeMap_.count(sessionId), 0);
+
+    AudioPipeManager::GetPipeManager()->curPipeList_.clear();
+    coreService->sessionSourceTypeMap_.clear();
+    coreService->capturerSessionIdisRemovedSet_.clear();
+    coreService->sessionWithInputPipeRouteFlag_.clear();
+}
+
+/**
  * @tc.name  : GetEnhancedRoutingSupported_001
  * @tc.number: GetEnhancedRoutingSupported_001
  * @tc.desc  : Verify AudioSelectInterfaceService forwards enhanced routing support from strategy layer.

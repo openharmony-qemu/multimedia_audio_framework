@@ -747,7 +747,7 @@ private:
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo);
     std::pair<SourceType, uint32_t> GetTargetSessionForEc();
-    bool HasNormalTypeSession(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList);
+    bool HasNormalTypeCapturerSession(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList);
     bool IsSourceTypeValidForEc(SourceType sourceType);
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
     bool IsEnhancedRoutingAvailableForSelectMode(int32_t audioDeviceSelectMode);
@@ -853,8 +853,7 @@ private:
     bool isFirstScreenOn_ = false;
     bool isCreateProcess_ = false;
     std::unordered_map<uint32_t, uint32_t> sessionWithInputPipeRouteFlag_;
-    // key:sessionId value:adapterName, use for getting pipe when release
-    std::unordered_map<uint32_t, std::string> sessionWithInputPipeAdapterName_;
+    std::unordered_map<uint32_t, SourceType> sessionSourceTypeMap_;
 
     AudioModuleInfo usbSinkModuleInfo_ = {};
     AudioModuleInfo usbSourceModuleInfo_ = {};
