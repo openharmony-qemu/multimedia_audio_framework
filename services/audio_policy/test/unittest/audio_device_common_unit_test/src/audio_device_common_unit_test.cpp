@@ -930,7 +930,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, ClearPreferredDevices_001, TestSize.Level1)
     dev->macAddress_ = "card=2;device=0";
     comm.audioStateManager_.SetPreferredCallCaptureDevice(dev);
     strategy.SetCallOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev, "");
-    strategy.SetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID, dev);
+    strategy.SetMediaOutputDevice(SYSTEM_UID, INVALID_STREAM_ID, dev);
     comm.audioStateManager_.SetPreferredRecordCaptureDevice(dev);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb{dev};
     comm.ClearPreferredDevices(descForCb);

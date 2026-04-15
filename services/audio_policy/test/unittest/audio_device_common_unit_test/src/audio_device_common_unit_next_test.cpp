@@ -144,7 +144,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
     preferredMediaRenderDevice->deviceRole_ = desc->deviceRole_;
     preferredMediaRenderDevice->networkId_ = desc->networkId_;
     AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(
-        INVALID_UID, INVALID_STREAM_ID, preferredMediaRenderDevice);
+        SYSTEM_UID, INVALID_STREAM_ID, preferredMediaRenderDevice);
 
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_DP);

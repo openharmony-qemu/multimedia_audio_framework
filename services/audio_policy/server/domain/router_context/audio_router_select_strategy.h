@@ -83,6 +83,7 @@ public:
     void SetScoExcluded(bool scoExcluded);
     bool GetScoExcluded();
     bool IsPreferredDevice(const AudioDeviceDescriptor &desc);
+    bool HasValidSelectDevice(AudioSelectDeviceInfo selectInfo);
 
 protected:
     std::shared_ptr<AudioDeviceDescriptor> ConvertSimpleToDevice(

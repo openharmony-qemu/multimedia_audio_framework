@@ -160,5 +160,18 @@ HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_ParamAbrnormal_003
     EXPECT_EQ(result1, false);
 }
 
+HWTEST_F(AudioRouterInfraExtraTest, AudioRouterInfraExtraTest_AdjustOutputPriority_001,
+    TestSize.Level1)
+{
+    auto &routerInfra = AudioRouterInfra::GetInstance();
+    int32_t uid = TEST_APP_UID_10001;
+    routerInfra.AdjustOutputPriority(uid, false, true, true);
+    routerInfra.AdjustOutputPriority(uid, true, true, true);
+    routerInfra.AdjustOutputPriority(uid, true, false, true);
+    routerInfra.AdjustOutputPriority(uid, false, true, false);
+    routerInfra.AdjustOutputPriority(uid, true, true, false);
+    routerInfra.AdjustOutputPriority(uid, true, false, false);
+    EXPECT_EQ(uid, TEST_APP_UID_10001);
+}
 }
 }

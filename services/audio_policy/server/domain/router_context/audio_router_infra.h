@@ -103,6 +103,9 @@ public:
     void OnAppDied(int32_t uid);
     bool IsSystemUid(int32_t uid) const;
     bool IsPreferredDevice(const std::shared_ptr<AudioDeviceSimpleDescriptor> &desc);
+    bool HasValidSelectDevice(AudioSelectDeviceInfo selectInfo);
+    bool HasRunningInputStream(int32_t uid);
+    bool HasRunningOutputStream(int32_t uid);
 
     void Lock();
     void Unlock();
@@ -125,9 +128,6 @@ private:
         int32_t uid, SelectDeviceType type);
     void AdjustInputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
     void AdjustOutputPriority(int32_t uid, bool hasRunningStream, bool isForeground, bool isSelfSelecting);
-    bool HasRunningInputStream(int32_t uid);
-    bool HasRunningOutputStream(int32_t uid);
-    bool HasAppSelectOutputDevice(int32_t uid);
     int64_t GetCurrentTimeMs() const;
     std::vector<SourceType> GetAppRunningSourceTypesNoLock(int32_t uid);
 

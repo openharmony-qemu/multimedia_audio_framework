@@ -480,7 +480,9 @@ HWTEST_F(AudioDeviceStatusExtendedTest, AudioDeviceStatus_028, TestSize.Level4)
     desc.deviceCategory_ = BT_HEADPHONE;
     desc.deviceType_ = DEVICE_TYPE_NEARLINK;
     DeviceInfoUpdateCommand updateCommand = CATEGORY_UPDATE;
-    AudioStreamDeviceChangeReasonExt reason;
+    AudioStreamDeviceChangeReasonExt::ExtEnum newDevice =
+        AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE;
+    AudioStreamDeviceChangeReasonExt reason(newDevice);
     audioDeviceStatus_->OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 

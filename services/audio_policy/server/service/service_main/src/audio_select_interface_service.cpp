@@ -259,7 +259,7 @@ int32_t AudioSelectInterfaceService::SelectOutputDeviceForFastInner(sptr<AudioRe
         CHECK_AND_RETURN_RET_LOG(coreService != nullptr, ERR_NULL_POINTER, "coreService is null");
     coreService->FetchOutputDeviceAndRoute("SelectOutputDeviceForFastInner",
         AudioStreamDeviceChangeReason::OVERRODE);
-    return true;
+    return SUCCESS;
 }
 
 int32_t AudioSelectInterfaceService::SetRenderDeviceForUsage(StreamUsage streamUsage,
@@ -334,7 +334,7 @@ int32_t AudioSelectInterfaceService::SetMediaOutputDeviceByUid(DeviceType device
 {
     int32_t callerUid = GetPreferredUid(uid);
     if (deviceType == DEVICE_TYPE_DEFAULT) {
-        AudioRouterFollowStrategy::GetInstance().SetMediaOutputDevice(
+        AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(
             callerUid, INVALID_STREAM_ID, std::make_shared<AudioDeviceDescriptor>());
         return SUCCESS;
     }
@@ -346,9 +346,9 @@ int32_t AudioSelectInterfaceService::SetMediaOutputDeviceByUid(DeviceType device
         AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice()
     };
     auto itr = std::find_if(mediaDevices.begin(), mediaDevices.end(), isPresent);
-    CHECK_AND_RETURN_RET_LOG(itr != mediaDevices.end(), ERR_OPERATION_FAILED,
+    CHECK_AND_RETURN_RET_LOG(itr != mediaDevices.end(), SUCCESS,
         "Requested device not available %{public}d", deviceType);
-    AudioRouterFollowStrategy::GetInstance().SetMediaOutputDevice(callerUid, INVALID_STREAM_ID, *itr);
+    AudioRouterSelectStrategy::GetInstance().SetMediaOutputDevice(callerUid, INVALID_STREAM_ID, *itr);
     return SUCCESS;
 }
 

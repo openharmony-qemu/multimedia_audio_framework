@@ -465,11 +465,9 @@ int32_t AudioRouterInfra::GetHighestInputPriorityApp()
 int32_t AudioRouterInfra::GetHighestOutputPriorityApp()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
-    CHECK_AND_RETURN_RET_LOG(!outputPriorityList_.empty(), INVALID_UID, "outputPriorityList_ is empty");
-    auto it = appContexts_.find(outputPriorityList_.front());
-    CHECK_AND_RETURN_RET_LOG(it != appContexts_.end(), INVALID_UID, "cannot find appContext");
-    CHECK_AND_RETURN_RET_LOG(it->second != nullptr, INVALID_UID, "audioAppRouterContext is nullptr");
-    CHECK_AND_RETURN_RET_LOG(!it->second->outputStreams_.empty(), INVALID_UID, "no running stream");
+    if (outputPriorityList_.empty()) {
+        return INVALID_UID;
+    }
     return outputPriorityList_.front();
 }
 
@@ -627,13 +625,12 @@ void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream,
 {
     if (isSelfSelecting) {
         if (isForeground && hasRunningStream) {
-            CHECK_AND_RETURN(HasAppSelectOutputDevice(uid));
+            CHECK_AND_RETURN(HasValidSelectDevice(GetAppSelectDevice(SelectDeviceType::MEDIA_OUTPUT, uid)));
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
         }
     } else {
-        if (hasRunningStream) {
-            CHECK_AND_RETURN(HasAppSelectOutputDevice(uid));
+        if (isForeground && hasRunningStream) {
             outputPriorityList_.remove(uid);
             outputPriorityList_.push_front(uid);
         } else {
@@ -645,6 +642,7 @@ void AudioRouterInfra::AdjustOutputPriority(int32_t uid, bool hasRunningStream,
 
 bool AudioRouterInfra::HasRunningInputStream(int32_t uid)
 {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
         return false;
@@ -654,6 +652,7 @@ bool AudioRouterInfra::HasRunningInputStream(int32_t uid)
 
 bool AudioRouterInfra::HasRunningOutputStream(int32_t uid)
 {
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
     auto it = appContexts_.find(uid);
     if (it == appContexts_.end()) {
         return false;
@@ -662,13 +661,10 @@ bool AudioRouterInfra::HasRunningOutputStream(int32_t uid)
     return !it->second->outputStreams_.empty();
 }
 
-bool AudioRouterInfra::HasAppSelectOutputDevice(int32_t uid)
+bool AudioRouterInfra::HasValidSelectDevice(AudioSelectDeviceInfo selectInfo)
 {
-    auto it = appContexts_.find(uid);
-    CHECK_AND_RETURN_RET(it != appContexts_.end(), false);
-    CHECK_AND_RETURN_RET(it->second != nullptr, false);
-    return it->second->appSelectDevice_.mediaOutput_.device_ != nullptr &&
-        it->second->appSelectDevice_.mediaOutput_.device_->deviceType_ != DEVICE_TYPE_NONE;
+    std::lock_guard<std::recursive_mutex> lock(mutex_);
+    return selectInfo.device_ != nullptr && selectInfo.device_->deviceType_ != DEVICE_TYPE_NONE;
 }
 
 void AudioRouterInfra::UpdateStreamSelectDevice(int32_t uid, uint32_t streamId,
@@ -970,20 +966,20 @@ void AudioRouterInfra::WriteExcludeOutputSysEvents(const AudioDeviceUsage audioD
 void AudioRouterInfra::WriteSelectOutputSysEvents(
     const std::shared_ptr<AudioDeviceSimpleDescriptor>& device, SelectDeviceType type)
 {
+    CHECK_AND_RETURN(device != nullptr);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_FORCE_USE_AUDIO_DEVICE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
-    AudioDeviceDescriptor curOutputDeviceDesc = AudioActiveDevice::GetInstance().GetCurrentOutputDevice();
     bean->Add("CLIENT_UID", static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
-    bean->Add("DEVICE_TYPE", curOutputDeviceDesc.deviceType_);
+    bean->Add("DEVICE_TYPE", device->deviceType_);
     if (type == SelectDeviceType::MEDIA_OUTPUT) {
         bean->Add("STREAM_TYPE", STREAM_USAGE_MEDIA);
     } else if (type == SelectDeviceType::CALL_OUTPUT) {
         bean->Add("STREAM_TYPE", STREAM_USAGE_VOICE_COMMUNICATION);
     }
-    bean->Add("BT_TYPE", curOutputDeviceDesc.deviceCategory_);
-    bean->Add("DEVICE_NAME", curOutputDeviceDesc.deviceName_);
-    bean->Add("ADDRESS", curOutputDeviceDesc.macAddress_);
+    bean->Add("BT_TYPE", 0);
+    bean->Add("DEVICE_NAME", "");
+    bean->Add("ADDRESS", device->macAddress_);
     bean->Add("IS_PLAYBACK", 1);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
@@ -1017,6 +1013,13 @@ bool AudioRouterInfra::IsPreferredDevice(const std::shared_ptr<AudioDeviceSimple
                 preferred->macAddress_ == desc->macAddress_ && preferred->networkId_ == desc->networkId_;
         });
         CHECK_AND_RETURN_RET(!isPreferred, isPreferred);
+        for (const auto& [sessionId, streamDevice] : context->streamSelectDevices_) {
+            CHECK_AND_CONTINUE_LOG(
+                streamDevice != nullptr, "Null streamDevice found for sessionId: %{public}d", sessionId);
+            isPreferred = streamDevice->deviceType_ == desc->deviceType_ &&
+                streamDevice->macAddress_ == desc->macAddress_ && streamDevice->networkId_ == desc->networkId_;
+            CHECK_AND_RETURN_RET(!isPreferred, isPreferred);
+        }
     }
     return false;
 }
