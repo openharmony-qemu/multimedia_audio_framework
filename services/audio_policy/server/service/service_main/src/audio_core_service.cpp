@@ -2577,6 +2577,15 @@ void AudioCoreService::NotifyRemoteRouteStateChange(const std::string &networkId
     std::shared_ptr<AudioDeviceDescriptor> desc = audioConnectedDevice_.GetConnectedDeviceByType(networkId,
         deviceType);
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+
+    auto &strategy = AudioRouterSelectStrategy::GetInstance();
+    auto preferredMediaDevice = strategy.GetMediaOutputDevice(INVALID_UID, INVALID_STREAM_ID);
+    CHECK_AND_RETURN_LOG(preferredMediaDevice != nullptr, "preferredMediaDevice is nullptr");
+    if (!enable && (preferredMediaDevice->dmDeviceType_ == DM_DEVICE_TYPE_WIFI_SOUNDBOX)) {
+        AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
+            std::make_shared<AudioDeviceDescriptor>(), INVALID_UID, "NotifyRemoteRouteStateChange");
+    }
+
     desc->connectState_ = enable ? CONNECTED : VIRTUAL_CONNECTED;
     OnDeviceInfoUpdated(*desc, CONNECTSTATE_UPDATE);
     CHECK_AND_RETURN(!enable);

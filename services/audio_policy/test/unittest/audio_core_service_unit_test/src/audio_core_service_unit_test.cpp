@@ -7264,5 +7264,82 @@ HWTEST_F(AudioCoreServiceUnitTest, NotifyStandbyStatus_004, TestSize.Level1)
 
     AudioPipeManager::GetPipeManager()->curPipeList_.clear();
 }
+
+/**
+ * @tc.name  : NotifyRemoteRouteStateChange_001
+ * @tc.number: NotifyRemoteRouteStateChange_001
+ * @tc.desc  : Test NotifyRemoteRouteStateChange with enable=true sets CONNECTED state.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyRemoteRouteStateChange_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> remoteDevice = std::make_shared<AudioDeviceDescriptor>();
+    remoteDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    remoteDevice->networkId_ = "1234567890";
+    remoteDevice->deviceRole_ = OUTPUT_DEVICE;
+    remoteDevice->connectState_ = VIRTUAL_CONNECTED;
+    remoteDevice->dmDeviceType_ = DM_DEVICE_TYPE_MUSIC_HOST;
+    GetServerPtr()->coreService_->audioConnectedDevice_.AddConnectedDevice(remoteDevice);
+    GetServerPtr()->coreService_->audioDeviceManager_.AddNewDevice(remoteDevice);
+
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, remoteDevice);
+    GetServerPtr()->eventEntry_->NotifyRemoteRouteStateChange("1234567890", DEVICE_TYPE_SPEAKER, true);
+    auto currentPreferredDevice = AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(
+        INVALID_UID, INVALID_STREAM_ID);
+    EXPECT_NE(currentPreferredDevice->dmDeviceType_, DM_DEVICE_TYPE_DEFAULT);
+
+    GetServerPtr()->coreService_->audioConnectedDevice_.DelConnectedDevice("1234567890", DEVICE_TYPE_SPEAKER);
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, std::make_shared<AudioDeviceDescriptor>());
+}
+
+/**
+ * @tc.name  : NotifyRemoteRouteStateChange_002
+ * @tc.number: NotifyRemoteRouteStateChange_002
+ * @tc.desc  : Test NotifyRemoteRouteStateChange with enable=false and non-WIFI_SOUNDBOX device.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyRemoteRouteStateChange_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> remoteDevice = std::make_shared<AudioDeviceDescriptor>();
+    remoteDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    remoteDevice->networkId_ = "1234567891";
+    remoteDevice->deviceRole_ = OUTPUT_DEVICE;
+    remoteDevice->connectState_ = CONNECTED;
+    remoteDevice->dmDeviceType_ = DM_DEVICE_TYPE_MUSIC_HOST;
+    GetServerPtr()->coreService_->audioConnectedDevice_.AddConnectedDevice(remoteDevice);
+    GetServerPtr()->coreService_->audioDeviceManager_.AddNewDevice(remoteDevice);
+
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, remoteDevice);
+    GetServerPtr()->eventEntry_->NotifyRemoteRouteStateChange("1234567891", DEVICE_TYPE_SPEAKER, false);
+    auto currentPreferredDevice = AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(
+        INVALID_UID, INVALID_STREAM_ID);
+    EXPECT_NE(currentPreferredDevice->dmDeviceType_, DM_DEVICE_TYPE_DEFAULT);
+
+    GetServerPtr()->coreService_->audioConnectedDevice_.DelConnectedDevice("1234567891", DEVICE_TYPE_SPEAKER);
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, std::make_shared<AudioDeviceDescriptor>());
+}
+
+/**
+ * @tc.name  : NotifyRemoteRouteStateChange_003
+ * @tc.number: NotifyRemoteRouteStateChange_003
+ * @tc.desc  : Test NotifyRemoteRouteStateChange with WIFI_SOUNDBOX triggers SetPreferredDevice.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, NotifyRemoteRouteStateChange_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> remoteDevice = std::make_shared<AudioDeviceDescriptor>();
+    remoteDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
+    remoteDevice->networkId_ = "1234567892";
+    remoteDevice->deviceRole_ = OUTPUT_DEVICE;
+    remoteDevice->connectState_ = CONNECTED;
+    remoteDevice->dmDeviceType_ = DM_DEVICE_TYPE_WIFI_SOUNDBOX;
+    GetServerPtr()->coreService_->audioConnectedDevice_.AddConnectedDevice(remoteDevice);
+    GetServerPtr()->coreService_->audioDeviceManager_.AddNewDevice(remoteDevice);
+
+    AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER, remoteDevice);
+    GetServerPtr()->eventEntry_->NotifyRemoteRouteStateChange("1234567892", DEVICE_TYPE_SPEAKER, false);
+    auto currentPreferredDevice = AudioRouterSelectStrategy::GetInstance().GetMediaOutputDevice(
+        INVALID_UID, INVALID_STREAM_ID);
+    EXPECT_EQ(currentPreferredDevice->dmDeviceType_, DM_DEVICE_TYPE_DEFAULT);
+
+    GetServerPtr()->coreService_->audioConnectedDevice_.DelConnectedDevice("1234567892", DEVICE_TYPE_SPEAKER);
+}
 } // namespace AudioStandard
 } // namespace OHOS
