@@ -603,6 +603,8 @@ AudioPipeType AudioPipeSelector::GetInputNormalPipeType(uint32_t flag)
         return PIPE_TYPE_IN_NORMAL_RAW_AI;
     } else if (flag & AUDIO_INPUT_FLAG_INTERPHONE) {
         return PIPE_TYPE_IN_INTERPHONE;
+    } else {	 
+        return PIPE_TYPE_IN_NORMAL;
     }
 }
 
