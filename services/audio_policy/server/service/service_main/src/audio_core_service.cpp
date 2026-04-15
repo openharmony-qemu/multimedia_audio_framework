@@ -62,6 +62,19 @@ static constexpr int32_t MS_PER_S = 1000;
 static constexpr uint64_t ROUNDING_HALF_DIVISOR = 2ULL;
 static const std::string PIPE_PRIMARY_INPUT_VOICE_RECOGNITION = "primary_input_voice_recognition";
 
+static const std::set<AudioSamplingRate> DIRECT_SUPPORTED_SAMPLE_RATES = {
+    SAMPLE_RATE_48000,
+    SAMPLE_RATE_88200,
+    SAMPLE_RATE_96000,
+    SAMPLE_RATE_176400,
+    SAMPLE_RATE_192000
+};
+
+static const std::set<AudioSampleFormat> DIRECT_SUPPORTED_FORMATS = {
+    SAMPLE_S24LE,
+    SAMPLE_S32LE
+};
+
 static const std::vector<DeviceType> MIC_REF_DEVICES = {
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_USB_HEADSET,
@@ -719,14 +732,21 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
         return false;
     }
-    if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
-        streamDesc->streamInfo_.samplingRate < SAMPLE_RATE_48000 ||
-        streamDesc->streamInfo_.format < SAMPLE_S24LE) {
-        JUDGE_AND_INFO_LOG(isCreateProcess_, "normal stream because stream info");
+    if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC) {
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "stream usage is not music");
         return false;
     }
-    if (streamDesc->streamInfo_.samplingRate > SAMPLE_RATE_192000) {
-        JUDGE_AND_INFO_LOG(isCreateProcess_, "sample rate over 192k");
+
+    AudioSamplingRate samplingRate = streamDesc->streamInfo_.samplingRate;
+    AudioSampleFormat format = streamDesc->streamInfo_.format;
+
+    if (DIRECT_SUPPORTED_SAMPLE_RATES.find(samplingRate) == DIRECT_SUPPORTED_SAMPLE_RATES.end()) {
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "sample rate not supported for direct: %{public}d", samplingRate);
+        return false;
+    }
+
+    if (DIRECT_SUPPORTED_FORMATS.find(format) == DIRECT_SUPPORTED_FORMATS.end()) {
+        JUDGE_AND_INFO_LOG(isCreateProcess_, "format not supported for direct: %{public}d", format);
         return false;
     }
     auto ret = AudioSpatializationService::GetAudioSpatializationService().IsSpatializationEnabled(
