@@ -36,6 +36,16 @@ std::shared_ptr<AudioDeviceDescriptor> AudioDeviceSimpleDescriptor::GetOnlineDev
             return device;
         }
     }
+
+    for (const auto &device : devices) {
+        if (device == nullptr || device->deviceType_ != deviceType_) {
+            continue;
+        }
+        
+        if (macAddress_.empty() || device->macAddress_ == macAddress_) {
+            return device;
+        }
+    }
     return nullptr;
 }
 

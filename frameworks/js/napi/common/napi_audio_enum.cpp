@@ -596,7 +596,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::BluetoothAndNearlinkPreferre
     {"PREFERRED_HIGH_QUALITY", PREFERRED_HIGH_QUALITY},
 };
 
-const std::map<std::string, int32_t> NapiAudioEnum::AudioSessionBehaviorFlagsMap = {
+const std::map<std::string, int32_t> NapiAudioEnum::audioSessionBehaviorFlagsMap = {
     {"DEFAULT_BEHAVIOR", static_cast<int32_t>(AudioSessionBehaviorFlags::DEFAULT)},
     {"VOIP_PRIVACY_TYPE_PUBLIC", static_cast<int32_t>(AudioSessionBehaviorFlags::VOIP_PRIVACY_TYPE_PUBLIC)},
     {"MUTE_WHEN_INTERRUPTED", static_cast<int32_t>(AudioSessionBehaviorFlags::MUTE_WHEN_INTERRUPTED)},
@@ -775,7 +775,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("BluetoothAndNearlinkPreferredRecordCategory",
             CreateEnumObject(env, BluetoothAndNearlinkPreferredRecordCategoryMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionBehaviorFlags",
-            CreateEnumObject(env, AudioSessionBehaviorFlagsMap)),
+            CreateEnumObject(env, audioSessionBehaviorFlagsMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }

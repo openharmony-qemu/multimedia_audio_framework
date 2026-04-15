@@ -28,6 +28,7 @@
 #include "token_setproc.h"
 #include "audio_bundle_manager.h"
 #include "audio_zone_info.h"
+#include "audio_unit_test.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -230,7 +231,8 @@ HWTEST(AudioPolicyUnitTest, SetSystemVolumeLevelWithDeviceInternal_001, TestSize
     int32_t result = ptrAudioPolicyServer->SetSystemVolumeLevelWithDeviceInternal(
         streamType, volumeLevel, isUpdateUi, deviceType);
 
-    EXPECT_EQ(result, ptrAudioPolicyServer->SetSingleStreamVolumeWithDevice(
+    auto &audioVolumeManager = ptrAudioPolicyServer->audioVolumeManager_;
+    EXPECT_EQ(result, audioVolumeManager.SetSingleStreamVolumeWithDevice(
         streamType, volumeLevel, isUpdateUi, deviceType));
 }
 
@@ -1068,10 +1070,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_042, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
 
     AudioStreamType streamType = STREAM_ALL;
-    int res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    int res = ptrAudioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamType);
     EXPECT_EQ(res, 5);
     streamType = STREAM_MUSIC;
-    res = ptrAudioPolicyServer->GetSystemVolumeLevelNoMuteState(streamType);
+    res = ptrAudioPolicyServer->audioVolumeManager_.GetSystemVolumeLevelNoMuteStateInterface(streamType);
     EXPECT_EQ(res, 5);
 }
 
@@ -2617,7 +2619,8 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_127, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    server->UpdateSystemMuteStateAccordingMusicState(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, false, true);
+    server->audioVolumeManager_.UpdateSystemMuteStateAccordingMusicState(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, false, true);
 }
 
 /**
@@ -2632,10 +2635,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_128, TestSize.Level1)
 
     bool isUpdateUi = true;
     server->audioPolicyServerHandler_ = nullptr;
-    server->SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 
     server->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    server->SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendMuteKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 }
 
 /**
@@ -2666,12 +2671,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_130, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     server->coreService_ = std::make_shared<AudioCoreService>();
-    server->ProcUpdateRingerModeForMute(false, true);
-    server->supportVibrator_ = false;
-    server->ProcUpdateRingerModeForMute(true, true);
+    server->audioVolumeManager_.ProcUpdateRingerModeForMute(false, true);
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = false;
+    server->audioVolumeManager_.ProcUpdateRingerModeForMute(true, true);
 
-    server->supportVibrator_ = true;
-    server->ProcUpdateRingerModeForMute(true, true);
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = true;
+    server->audioVolumeManager_.ProcUpdateRingerModeForMute(true, true);
 }
 
 /**
@@ -2721,10 +2726,12 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_133, TestSize.Level1)
 
     bool isUpdateUi = true;
     server->audioPolicyServerHandler_ = nullptr;
-    server->SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 
     server->audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    server->SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
+    server->audioVolumeManager_.SendVolumeKeyEventCbWithUpdateUiOrNot(
+        AudioStreamType::STREAM_VOICE_CALL_ASSISTANT, isUpdateUi);
 }
 
 /**
@@ -2738,10 +2745,10 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_134, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     server->coreService_ = std::make_shared<AudioCoreService>();
-    server->supportVibrator_ = true;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = true;
     server->audioVolumeManager_.ProcUpdateRingerMode();
 
-    server->supportVibrator_ = false;
+    server->audioVolumeManager_.ringerModeManager_.supportVibrator_ = false;
     server->audioVolumeManager_.ProcUpdateRingerMode();
 }
 
@@ -2929,9 +2936,16 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
+    MockNative::GenerateNativeTokenID("multimodalinput");
+    MockNative::Mock();
+    volumeLevel = 6;
+    ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+    MockNative::Resume();
+
     volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 #ifdef TEMP_DISABLE
@@ -3066,8 +3080,8 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_155, TestSize.Level1)
     sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
     ASSERT_TRUE(server != nullptr);
 
-    server->GetSystemVolumeLevelInternal(AudioStreamType::STREAM_ALL);
-    server->GetSystemVolumeLevelInternal(AudioStreamType::STREAM_VOICE_RING);
+    server->audioVolumeManager_.GetSystemVolumeLevelInterface(AudioStreamType::STREAM_ALL);
+    server->audioVolumeManager_.GetSystemVolumeLevelInterface(AudioStreamType::STREAM_VOICE_RING);
 }
 
 /**
@@ -3097,19 +3111,21 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_157, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     int32_t volumeLevel = 1;
-    server->volumeStep_ = 1;
-    auto ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 1;
+    auto ret =
+        server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
     EXPECT_EQ(ret, false);
 
-    server->volumeStep_ = 0;
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 0;
+    ret =
+        server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_ASSISTANT, volumeLevel);
     EXPECT_EQ(ret, true);
 
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, true);
 
-    server->volumeStep_ = 1;
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 1;
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, true);
 }
 
@@ -3124,14 +3140,16 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_158, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     int32_t volumeLevel = 1;
-    server->volumeStep_ = 1;
-    auto ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_CALL, volumeLevel);
+    server->audioVolumeManager_.volumeStep_ = 1;
+    auto ret =
+        server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_CALL, volumeLevel);
     EXPECT_EQ(ret, false);
 
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_ALARM, volumeLevel);
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_ALARM, volumeLevel);
     EXPECT_EQ(ret, false);
 
-    ret = server->CheckCanMuteVolumeTypeByStep(AudioVolumeType::STREAM_VOICE_COMMUNICATION, volumeLevel);
+    ret = server->audioVolumeManager_.CheckCanMuteVolumeTypeByStep(
+        AudioVolumeType::STREAM_VOICE_COMMUNICATION, volumeLevel);
     EXPECT_EQ(ret, false);
 }
 
@@ -5916,6 +5934,79 @@ HWTEST(AudioPolicyUnitTest, TriggerAudioZoneVolumeSync_001, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     int32_t ret = server->TriggerAudioZoneVolumeSync();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported.
+ * @tc.number: IsAudioLoopbackSupported_001
+ * @tc.desc  : Test AudioPolicyServer::IsAudioLoopbackSupported with normal device type
+ */
+HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t modeIn = 0;
+    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
+    bool ret = false;
+    int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported.
+ * @tc.number: IsAudioLoopbackSupported_002
+ * @tc.desc  : Test AudioPolicyServer::IsAudioLoopbackSupported with NEARLINK device type
+ */
+HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t modeIn = 0;
+    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_NEARLINK);
+    bool ret = false;
+    int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported.
+ * @tc.number: IsAudioLoopbackSupported_003
+ * @tc.desc  : Test AudioPolicyServer::IsAudioLoopbackSupported with different loopback modes
+ */
+HWTEST(AudioPolicyUnitTest, IsAudioLoopbackSupported_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    int32_t modeIn = 1;
+    int32_t deviceType = static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
+    bool ret = false;
+    int32_t result = ptrAudioPolicyServer->IsAudioLoopbackSupported(modeIn, deviceType, ret);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test VerifyUidAndPid.
+* @tc.number: VerifyUidAndPid_001
+* @tc.desc  : Test AudioPolicyServer::VerifyUidAndPid
+*/
+HWTEST(AudioPolicyUnitTest, VerifyUidAndPid_001, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerUnitTest();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+    EXPECT_NE(server, nullptr);
+    
+    int32_t pid = 3009;
+    int32_t uid = 3009;
+    int ret = server->VerifyUidAndPid(uid, pid);
     EXPECT_EQ(ret, SUCCESS);
 }
 } // AudioStandard

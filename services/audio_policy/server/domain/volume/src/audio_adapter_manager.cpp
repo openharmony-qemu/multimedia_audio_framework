@@ -87,6 +87,16 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
 } // namespace
 
 // LCOV_EXCL_START
+void AudioAdapterManager::RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime)
+{
+    AudioCoreService::GetCoreService()->RecordBootStateTime(state, curTime);
+}
+
+void AudioAdapterManager::RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime)
+{
+    AudioCoreService::GetCoreService()->RecordBootStateTime(state, uid, curTime);
+}
+
 bool AudioAdapterManager::Init()
 {
     char testMode[10] = {0}; // 10 for system parameter usage
@@ -99,6 +109,7 @@ bool AudioAdapterManager::Init()
     std::unique_ptr<AudioVolumeParser> audiovolumeParser = make_unique<AudioVolumeParser>();
     CHECK_AND_RETURN_RET_LOG(audiovolumeParser, false, "audiovolumeParser is null");
     auto lret = audiovolumeParser->LoadConfig(streamVolumeInfos_);
+    RecordBootStateTime(AudioPolicyServerBootState::LOAD_AUDIO_VOLUME_CONFIG, ClockTime::GetCurMilli());
     lowerVolumeInfos_ = audiovolumeParser->GetLowerVolumeInfoCfg();
     AudioVolumeUtils::GetInstance().Init();
     defaultVolumeTypeList_ = (VolumeUtils::IsPCVolumeEnable()) ? PC_VOLUME_TYPE_LIST : BASE_VOLUME_TYPE_LIST;
@@ -160,7 +171,7 @@ void AudioAdapterManager::InitBootAnimationVolume()
     int32_t bootAnimationVolume = GetStreamVolume(typeForBootAnimation);
     AUDIO_DEBUG_LOG("Init: Type[%{public}d],volume[%{public}d]", typeForBootAnimation, bootAnimationVolume);
     std::string defaultVolume = std::to_string(bootAnimationVolume);
-    auto ret = GetParameter("persist.multimedia.audio.notificationvolume", defaultVolume.c_str(),
+    auto ret = GetParameter("persist.multimedia.audio.ringtonevolume", defaultVolume.c_str(),
         currentVolumeValue, sizeof(currentVolumeValue));
     if (ret > 0) {
         auto desc = audioActiveDevice_.GetDeviceForVolume(typeForBootAnimation);
@@ -203,6 +214,7 @@ void AudioAdapterManager::InitKVStoreInternal()
         handler_->SendKvDataUpdate(isFirstBoot);
     }
     AudioSpatializationService::GetAudioSpatializationService().InitSpatializationState();
+    RecordBootStateTime(AudioPolicyServerBootState::INIT_VOLUME_DATABASE, ClockTime::GetCurMilli());
 }
 
 void AudioAdapterManager::HandleKvData(bool isFirstBoot)
@@ -220,6 +232,17 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         CloneSystemSoundUrl();
     }
 
+    auto descs = audioConnectedDevice_.GetCopy();
+    for (auto &desc : descs) {
+        UpdateVolumeWhenDeviceConnect(desc);
+#ifdef FEATURE_AUDIO_ZONE
+        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
+            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
+        }
+#endif
+    }
+    UpdateVolumeForStreams();
+
     if (!isNeedCopyVolumeData_ && !isNeedCopyMuteData_ && !isNeedCopyRingerModeData_ && !isNeedCopySystemUrlData_) {
         isAllCopyDone_ = true;
         if (audioPolicyServerHandler_ != nullptr) {
@@ -235,17 +258,6 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         AUDIO_INFO_LOG("Copy audio_policy private database success to settings database, delete private database...");
         DeleteAudioPolicyKvStore();
     }
-
-    auto descs = audioConnectedDevice_.GetCopy();
-    for (auto &desc : descs) {
-        UpdateVolumeWhenDeviceConnect(desc);
-#ifdef FEATURE_AUDIO_ZONE
-        if (AudioZoneService::GetInstance().IsSystemVolumeProxyEnable(DEFAULT_ZONEID, desc->deviceType_)) {
-            TriggerAudioZoneVolumeSync(DEFAULT_ZONEID, desc);
-        }
-#endif
-    }
-    UpdateVolumeForStreams();
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
@@ -365,7 +377,8 @@ void AudioAdapterManager::SaveNotificationVolumeToLocal(std::shared_ptr<AudioDev
     if (isRightVolumeType && device->deviceType_ == DEVICE_TYPE_SPEAKER) {
         int32_t volumeLevel =
             GetStreamVolumeInternal(device, audioVolumeMap) * (GetStreamMuteInternal(device, audioVolumeMap) ? 0 : 1);
-        int32_t ret = SetParameter("persist.multimedia.audio.notificationvolume", std::to_string(volumeLevel).c_str());
+        // To keep the startup volume consistent between the new and old versions, still use "ringtonevolume".
+        int32_t ret = SetParameter("persist.multimedia.audio.ringtonevolume", std::to_string(volumeLevel).c_str());
         if (ret == 0) {
             AUDIO_INFO_LOG("Save notification volume for boot success %{public}d", volumeLevel);
         } else {
@@ -1389,6 +1402,7 @@ void AudioAdapterManager::UpdateVolumeForStreams()
             int32_t volumeLevel = GetStreamVolumeInternal(tempDesc, volumeType);
             SaveSystemVolumeForSwitchDevice(tempDesc, volumeType, volumeLevel);
             SetVolumeDb(tempDesc, volumeType);
+            RecordBootStateTime(BootAnimationState::SET_VOLUME_DB, streamDesc->GetRealUid(), ClockTime::GetCurMilli());
             UpdateVolumeForLowLatency(tempDesc, volumeType);
             HILOG_COMM_INFO("[UpdateVolumeForStreams]volume: %{public}d, mute: %{public}d for stream type %{public}d, "
                 "device: %{public}s, sessionId: %{public}d", volumeLevel, GetStreamMuteInternal(tempDesc, volumeType),
@@ -2442,6 +2456,7 @@ bool AudioAdapterManager::InitAudioPolicyKvStore(bool& isFirstBoot)
             }
         } while (retries <= KVSTORE_CONNECT_RETRY_COUNT);
     }
+    RecordBootStateTime(AudioPolicyServerBootState::INIT_DATABASE, ClockTime::GetCurMilli());
 
     if (audioPolicyKvStore_ != nullptr) {
         isNeedCopyVolumeData_ = true;
@@ -3441,7 +3456,6 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene, int32_t volum
     auto desc = audioConnectedDevice_.GetDeviceByDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
 
     if (isAbsVolumeScene) {
-        SaveVolumeData(desc, STREAM_MUSIC, volume, false, true);
         bool mute = volume == 0;
         isAbsVolumeMute_ = mute;
     }
@@ -4101,8 +4115,10 @@ void AudioAdapterManager::UpdateRingerMuteByRingerMode(std::shared_ptr<AudioDevi
     bool mute = (ringerMode_ == RINGER_MODE_NORMAL) ? false : true;
     volumeDataMaintainer_.SaveMuteToMap(device, STREAM_RING, mute);
     volumeDataMaintainer_.SaveMuteToDb(device, STREAM_RING, mute);
-    volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, mute);
-    volumeDataMaintainer_.SaveMuteToDb(device, STREAM_NOTIFICATION, mute);
+    if (mute) {
+        volumeDataMaintainer_.SaveMuteToMap(device, STREAM_NOTIFICATION, mute);
+        volumeDataMaintainer_.SaveMuteToDb(device, STREAM_NOTIFICATION, mute);
+    }
     AUDIO_INFO_LOG("update mute: %{public}d for ring by ringermode: %{public}d", mute, ringerMode_.load());
 }
 

@@ -67,6 +67,9 @@ public:
         const SourceType &sourceType) = 0;
     virtual void TriggerAppsUidUpdate(uint32_t sessionId) { return; };
     virtual int32_t SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isMute) { return 0; };
+    // interface for collaborative record
+    virtual void EnableCaptureCollaboration(SourceType sourceType);
+    virtual void DisableCaptureCollaboration(SourceType sourceType);
 private:
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxMapTree dfxTree_;

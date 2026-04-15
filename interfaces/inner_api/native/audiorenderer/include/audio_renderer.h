@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <memory>
 #include <cstring>
+#include <string>
 #include <timestamp.h>
 #include <mutex>
 #include "audio_effect.h"
@@ -28,6 +29,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct AudioRendererDebugInfo;
+class AudioRendererDebugCallback;
 /**
  * @brief Defines information about audio renderer parameters.
  * @since 8
@@ -145,6 +149,8 @@ public:
      */
     virtual void OnOutputDeviceChange(const AudioDeviceDescriptor &deviceInfo,
         const AudioStreamDeviceChangeReason reason) = 0;
+    virtual void OnOutputDeviceChangeWithPreDevice(const AudioDeviceDescriptor &deviceInfo,
+        const AudioStreamDeviceChangeReason reason, const AudioDeviceDescriptor &preDeviceInfo) {}
 };
 
 class AudioRendererFastStatusChangeCallback {
@@ -1114,6 +1120,18 @@ public:
      * @since 11
      */
     virtual float GetSpeed() = 0;
+
+    /**
+     * @brief Get current renderer debug info.
+     *
+     * @param debugInfo Renderer debug info.
+     * @return Returns 0 if successful.
+     */
+    virtual int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const
+    {
+        (void)debugInfo;
+        return 0;
+    }
 
     /**
     * @brief Get offload status.

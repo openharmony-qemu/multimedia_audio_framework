@@ -440,11 +440,12 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_022, TestSize.Le
     EXPECT_EQ(result, SUCCESS);
 
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    AudioDeviceDescriptor preDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    audioPolicyClient->OnRendererDeviceChange(0, deviceInfo, reason);
+    audioPolicyClient->OnRendererDeviceChange(0, deviceInfo, reason, preDeviceInfo);
     EXPECT_NE(audioPolicyClient, nullptr);
 
-    audioPolicyClient->OnRendererDeviceChange(1, deviceInfo, reason);
+    audioPolicyClient->OnRendererDeviceChange(1, deviceInfo, reason, preDeviceInfo);
     EXPECT_NE(audioPolicyClient, nullptr);
 }
 
@@ -948,8 +949,9 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_042, TestSize.Le
     audioPolicyClient->AddDeviceChangeWithInfoCallback(sessionId, cb);
 
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    AudioDeviceDescriptor preDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    audioPolicyClient->OnRendererDeviceChange(sessionId, deviceInfo, reason);
+    audioPolicyClient->OnRendererDeviceChange(sessionId, deviceInfo, reason, preDeviceInfo);
 }
 
 /**
@@ -1697,8 +1699,10 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_080, TestSize.Le
 
     mockCallback.reset();
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    AudioDeviceDescriptor preDeviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    EXPECT_EQ(audioPolicyClient->OnRendererDeviceChange(sessionId, deviceInfo, reason), ERR_CALLBACK_NOT_REGISTERED);
+    EXPECT_EQ(audioPolicyClient->OnRendererDeviceChange(sessionId, deviceInfo, reason, preDeviceInfo),
+        ERR_CALLBACK_NOT_REGISTERED);
 }
 
 /**

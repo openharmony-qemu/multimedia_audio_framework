@@ -94,6 +94,7 @@ public:
 
 private:
     void InitAudioEnhanceChain();
+    void InitCollabAudioEnhanceChain();
     int32_t DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset);
     int32_t SetPropertyToHandle(AudioEffectHandle handle, const std::string &property);
     int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
@@ -112,6 +113,7 @@ private:
     int32_t WriteChainOutputData(void *buf, size_t bufSize);
     int32_t CacheChainInputData(const EnhanceTransBuffer &transBuf);
     int32_t InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp);
+    int32_t InitSingleEnhanceModuleForCollab(AudioEffectHandle enhanceHandle, const std::string &enhanceProp);
     void ScheduleAudioTask(const ThreadHandler::Task &task);
 
     AlgoAttr algoAttr_;

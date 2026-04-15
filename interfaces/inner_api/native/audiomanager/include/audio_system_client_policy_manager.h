@@ -257,6 +257,15 @@ public:
      */
     int32_t DisableSafeMediaVolume();
 
+    /**
+     * @brief Set split mode ready to ensure that device can be selected.
+     *
+     * @return Returns {@link SUCCESS} if the device is set successfully; otherwise, returns an error code defined
+     * in {@link audio_errors.h}.
+     * @since 23
+     */
+    int32_t SetSplitModeReady();
+
      /**
      * @brief Load the split module for audio stream separation.
      *

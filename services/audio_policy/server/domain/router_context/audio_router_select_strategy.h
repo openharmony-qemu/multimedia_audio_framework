@@ -52,9 +52,19 @@ public:
     virtual std::shared_ptr<AudioDeviceDescriptor> GetRecognitionInputDevice();
     virtual void SetRecognitionInputDevice(const std::shared_ptr<AudioDeviceDescriptor> &device);
 
-    void UpdateStreamDefaultDevice(int32_t uid, uint32_t streamId,
+    bool GetEnhancedRoutingSupported() const;
+
+    virtual int32_t UpdateDefaultOutputDevice(DeviceType deviceType, int32_t uid, uint32_t streamId,
+        StreamUsage streamUsage);
+    virtual bool IsStreamSetDefaultOutputDevice(int32_t uid, uint32_t streamId);
+    virtual void UpdateMediaDefaultOutputDevice(int32_t uid, uint32_t streamId,
         const std::shared_ptr<AudioDeviceDescriptor> &device);
-    std::shared_ptr<AudioDeviceDescriptor> GetStreamDefaultDevice(int32_t uid, uint32_t streamId);
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetMediaDefaultOutputDevice(int32_t uid,
+        uint32_t streamId);
+    virtual void UpdateCallDefaultOutputDevice(int32_t uid, uint32_t streamId,
+        const std::shared_ptr<AudioDeviceDescriptor> &device);
+    virtual std::shared_ptr<AudioDeviceDescriptor> GetCallDefaultOutputDevice(int32_t uid,
+        uint32_t streamId);
 
     void UpdateCurrentOutputDevice(int32_t uid,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices);
@@ -95,6 +105,9 @@ protected:
     std::shared_ptr<AudioDeviceDescriptor> GetFinalOutputDeviceForCall(
         const std::shared_ptr<AudioDeviceDescriptor> &desc);
     
+    bool IsSameDeviceDeviceDescriptor(std::shared_ptr<AudioDeviceDescriptor> desc1,
+        std::shared_ptr<AudioDeviceDescriptor> desc2);
+
     void ExcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,
         AudioDeviceUsage usage);
     void UnexcludePairDevice(const std::shared_ptr<AudioDeviceDescriptor> &device,

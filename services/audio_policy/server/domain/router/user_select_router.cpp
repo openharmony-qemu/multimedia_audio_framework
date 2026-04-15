@@ -25,7 +25,8 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
     if (streamUsage == STREAM_USAGE_RINGTONE || streamUsage == STREAM_USAGE_VOICE_RINGTONE) {
         AUDIO_INFO_LOG("Ringtone skip user select");
@@ -50,7 +51,8 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetMediaRenderDevice(StreamU
     }
 }
 
-shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID)
+shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallRenderDevice(StreamUsage streamUsage, int32_t clientUID,
+    const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
         AudioRouterSelectStrategy::GetInstance().GetCallOutputDevice(INVALID_UID, INVALID_STREAM_ID);
@@ -71,7 +73,7 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetCallCaptureDevice(SourceT
     const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredCallCaptureDevice();
+        AudioRouterSelectStrategy::GetInstance().GetCallInputDevice(INVALID_UID, INVALID_STREAM_ID);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     vector<shared_ptr<AudioDeviceDescriptor>> callDevices =
         AudioDeviceManager::GetAudioDeviceManager().GetAvailableDevicesByUsage(CALL_INPUT_DEVICES);
@@ -137,10 +139,10 @@ shared_ptr<AudioDeviceDescriptor> UserSelectRouter::GetRecordCaptureDevice(Sourc
     const uint32_t sessionID)
 {
     shared_ptr<AudioDeviceDescriptor> perDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice();
+        AudioRouterSelectStrategy::GetInstance().GetMediaInputDevice(clientUID, sessionID, sourceType);
     CHECK_AND_RETURN_RET_LOG(perDev_ != nullptr, make_shared<AudioDeviceDescriptor>(), "perDev is null");
     shared_ptr<AudioDeviceDescriptor> perRecognitionDev_ =
-        AudioStateManager::GetAudioStateManager().GetPreferredRecognitionCaptureDevice();
+        AudioRouterSelectStrategy::GetInstance().GetRecognitionInputDevice();
     if (sourceType == SOURCE_TYPE_VOICE_RECOGNITION && perRecognitionDev_ && perRecognitionDev_->deviceId_ != 0) {
         perDev_ = perRecognitionDev_;
     }

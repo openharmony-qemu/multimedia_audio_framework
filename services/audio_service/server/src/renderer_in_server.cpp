@@ -49,6 +49,7 @@
 #include "audio_effect_chain_manager.h"
 #include "app_bundle_manager.h"
 #include "audio_resource_service.h"
+#include "boot_animation_state_info.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B83
@@ -89,6 +90,7 @@ RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_p
     : processConfig_(processConfig)
 {
     streamListener_ = streamListener;
+    voipNoPrivacyFlag_.store(processConfig_.rendererInfo.voipNoPrivacyFlag);
     managerType_ = PLAYBACK;
     if (processConfig_.callerUid == MEDIA_UID) {
         isNeedFade_ = true;
@@ -531,7 +533,9 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
-    CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
+    auto stateListener = streamListener_.lock();
+    CHECK_AND_RETURN_LOG(stateListener, "streamListener_ expired");
+    stateListener->OnOperationHandled(STANDBY, 0);
     RecordStandbyTime(standByEnable_, true);
     enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
@@ -1263,6 +1267,11 @@ int32_t RendererInServer::Start()
     return ret;
 }
 
+int32_t RendererInServer::Standby()
+{
+    return CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STANDBY);
+}
+
 int32_t RendererInServer::StartInnerDuringStandby()
 {
     int32_t ret = 0;
@@ -1852,9 +1861,20 @@ int32_t RendererInServer::SetPrivacyType(int32_t privacyType)
     return stream_->SetPrivacyType(privacyType);
 }
 
+int32_t RendererInServer::SetVoipNoPrivacyFlag(bool voipNoPrivacyFlag)
+{
+    voipNoPrivacyFlag_.store(voipNoPrivacyFlag);
+    return SUCCESS;
+}
+
 int32_t RendererInServer::GetPrivacyType(int32_t &privacyType)
 {
     return stream_->GetPrivacyType(privacyType);
+}
+
+bool RendererInServer::GetVoipNoPrivacyFlag() const
+{
+    return voipNoPrivacyFlag_.load();
 }
 
 int32_t RendererInServer::EnableInnerCap(int32_t innerCapId)
@@ -2982,6 +3002,8 @@ void RendererInServer::WaitForDataConnection()
             });
         AUDIO_INFO_LOG("data-connection blocking ends, reason %{public}s.", stopWaiting ? "connected" : "timeout");
     }
+    CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+        BootAnimationState::WAIT_FOR_DATA_CONNECTION), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
 }
 
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
@@ -3082,6 +3104,8 @@ int32_t RendererInServer::CreateServerBuffer()
     } else {
         // create OHAudioBuffer in server
         audioServerBuffer_ = OHAudioBufferBase::CreateFromLocal(bufferTotalSizeInFrame_, byteSizePerFrame_);
+        CoreServiceHandler::GetInstance().RecordBootStateTime(static_cast<int32_t>(
+            BootAnimationState::CREATE_FROM_LOCAL), processConfig_.appInfo.appUid, ClockTime::GetCurMilli());
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create oh audio buffer failed");
 
         // we need to clear data buffer to avoid dirty data.

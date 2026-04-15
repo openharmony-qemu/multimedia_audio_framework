@@ -45,7 +45,6 @@
 #include "audio_state_manager.h"
 #include "audio_pnp_server.h"
 #include "audio_policy_server_handler.h"
-#include "audio_affinity_manager.h"
 #include "audio_ec_info.h"
 
 #ifdef BLUETOOTH_ENABLE
@@ -74,6 +73,8 @@
 #include "sle_audio_device_manager.h"
 #include "va_device_manager.h"
 #include "audio_pipe_manager.h"
+#include "audio_policy_dump.h"
+#include "boot_animation_state_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -141,6 +142,8 @@ public:
         const std::string &caller = "");
 
     void OnConnectFailed(AudioDeviceDescriptor &desc);
+
+    void OnVehiclePriorityChanged(bool enable);
 
     void LoadEffectLibrary();
 
@@ -243,9 +246,10 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsIntelligentNoiseReductionEnabledForCurrentDevice(SourceType sourceType);
 
-
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
+    void RecordBootStateTime(AudioPolicyServerBootState state, int64_t curTime);
+    void RecordBootStateTime(BootAnimationState state, int32_t uid, int64_t curTime);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
@@ -265,7 +269,6 @@ private:
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         audioEffectService_(AudioEffectService::GetAudioEffectService()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),
         audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
 #ifdef AUDIO_WIRED_DETECT
@@ -289,7 +292,8 @@ private:
         audioDeviceStatus_(AudioDeviceStatus::GetInstance()),
         sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
         vaDeviceManager_(VADeviceManager::GetInstance()),
-        pipeManager_(AudioPipeManager::GetPipeManager())
+        pipeManager_(AudioPipeManager::GetPipeManager()),
+        audioPolicyDump_(AudioPolicyDump::GetInstance())
     {
         deviceStatusListener_ = std::make_unique<DeviceStatusListener>(*this);
     }
@@ -380,7 +384,6 @@ private:
     bool isMicrophoneMutePersistent_ = false;
 
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioStateManager &audioStateManager_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
 #ifdef AUDIO_WIRED_DETECT
@@ -422,6 +425,7 @@ private:
     SleAudioDeviceManager& sleAudioDeviceManager_;
     VADeviceManager& vaDeviceManager_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+    AudioPolicyDump& audioPolicyDump_;
 };
 
 } // namespace AudioStandard

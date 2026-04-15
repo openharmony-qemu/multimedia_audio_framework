@@ -88,6 +88,16 @@ void FastAudioStream::SetRendererInfo(const AudioRendererInfo &rendererInfo)
 {
     rendererInfo_ = rendererInfo;
     rendererInfo_.samplingRate = static_cast<AudioSamplingRate>(streamInfo_.samplingRate);
+    if (processClient_ != nullptr && eMode_ == AUDIO_MODE_PLAYBACK) {
+        processClient_->SetVoipNoPrivacyFlag(rendererInfo_.voipNoPrivacyFlag);
+    }
+}
+
+void FastAudioStream::CheckInnerCapVoIP()
+{
+    if (eMode_ == AUDIO_MODE_PLAYBACK) {
+        processClient_->CheckInnerCapVoIP();
+    }
 }
 
 int32_t FastAudioStream::SetInMainThreadState(bool isInMainThread)
@@ -135,6 +145,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.isLoopback = rendererInfo_.isLoopback;
         config.rendererInfo.loopbackMode = rendererInfo_.loopbackMode;
         config.rendererInfo.keepRunning = rendererInfo_.keepRunning;
+        config.rendererInfo.voipNoPrivacyFlag = rendererInfo_.voipNoPrivacyFlag;
         config.rendererInfo.isStatic = rendererInfo_.isStatic;
         config.staticBufferInfo = staticBufferInfo_;
     } else if (eMode_ == AUDIO_MODE_RECORD) {

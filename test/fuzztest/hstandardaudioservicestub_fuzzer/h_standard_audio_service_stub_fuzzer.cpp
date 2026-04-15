@@ -86,25 +86,15 @@ void SetAudioScene(FuzzedDataProvider &provider)
     bool scoExcludeFlag = provider.ConsumeBool();
     audioServer->SetAudioScene(audioScene, a2dpOffloadFlag, scoExcludeFlag);
 }
- 
-void UpdateActiveDeviceRoute(FuzzedDataProvider &provider)
-{
-    sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    int32_t type = provider.ConsumeIntegral<int32_t>();
-    int32_t flag = provider.ConsumeIntegral<int32_t>();
-    int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
-    audioServer->UpdateActiveDeviceRoute(type, flag, a2dpOffloadFlag);
-}
 
 void UpdateActiveDevicesRoute(FuzzedDataProvider &provider)
 {
     sptr<AudioServer> audioServer = sptr<AudioServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     std::vector<IntPair> activeDevices;
     int32_t a2dpOffloadFlag = provider.ConsumeIntegral<int32_t>();
-    std::string deviceName =  provider.ConsumeRandomLengthString();
-    audioServer->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, deviceName);
+    uint32_t pipeId = provider.ConsumeIntegral<uint32_t>();
+    audioServer->UpdateActiveDevicesRoute(activeDevices, a2dpOffloadFlag, pipeId);
 }
-
 
 void UpdateDualToneState(FuzzedDataProvider &provider)
 {
@@ -887,7 +877,6 @@ FuzzFuncPtr g_fuzzFuncArray[] = {
     SetExtraParameters,
     SetMicrophoneMute,
     SetAudioScene,
-    UpdateActiveDeviceRoute,
     UpdateActiveDevicesRoute,
     UpdateDualToneState,
     SetParameterCallback,

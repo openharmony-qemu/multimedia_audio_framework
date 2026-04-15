@@ -1490,22 +1490,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, UpdateStreamState_001, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test RemoveDeviceForUid.
- * @tc.number: RemoveDeviceForUid_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, RemoveDeviceForUid_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    int32_t uid = 1;
-    server->audioAffinityManager_.DelSelectCapturerDevice(uid);
-    server->audioAffinityManager_.DelSelectRendererDevice(uid);
-    EXPECT_NE(server, nullptr);
-}
-
-/**
  * @tc.name  : Test InitSharedVolume.
  * @tc.number: InitSharedVolume_001
  * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1794,27 +1778,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsCurrentActiveDeviceA2dp_001, TestSiz
     auto ret = server->audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP;
     EXPECT_EQ(ret, false);
 }
-
-#ifdef TEMP_DISABLE
-/**
- * @tc.name  : Test SetInputDevice.
- * @tc.number: SetInputDevice_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetInputDevice_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    DeviceType deviceType = DEVICE_TYPE_MAX;
-    uint32_t sessionID = 0;
-    SourceType sourceType = SOURCE_TYPE_INVALID;
-    bool isRunning = false;
-
-    int32_t ret = server->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
-    EXPECT_EQ(ret, SUCCESS);
-}
-#endif
 
 /**
  * @tc.name  : Test CheckConnectedDevice.

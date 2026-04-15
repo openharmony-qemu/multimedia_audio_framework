@@ -145,6 +145,7 @@ public:
 
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
+    int32_t GetRendererDebugInfo(AudioRendererDebugInfo &debugInfo) const override;
     bool IsFastRenderer() override;
 
     void SetSilentModeAndMixWithOthers(bool on) override;
@@ -280,6 +281,9 @@ private:
     void SetSwitchInfoInner(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
     int32_t GetCurrentBackMuteStatus(bool &backMute);
     void SetSwitchInfoCallbacks(IAudioStream::SwitchInfo &info, std::shared_ptr<IAudioStream> audioStream);
+    std::string &GetBundleNameByUid();
+    std::string &GetBundleNameByAppUid(int32_t uid);
+    int32_t ActivateAudioInterruptInStart(const bool isMute);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -321,6 +325,8 @@ private:
     int64_t framesAlreadyWritten_ = 0;
     int64_t sourceDuration_ = -1;
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
+    std::string bundleNameByUid_ = "";
+    std::string bundleNameByAppUid_ = "";
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     int32_t audioHapticsSyncId_ = 0;
@@ -382,7 +388,7 @@ public:
     virtual ~OutputDeviceChangeWithInfoCallbackImpl() = default;
 
     void OnDeviceChangeWithInfo(const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo,
-        const AudioStreamDeviceChangeReasonExt reason) override;
+        const AudioStreamDeviceChangeReasonExt reason, const AudioDeviceDescriptor &preDeviceInfo) override;
 
     void OnRecreateStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
         const AudioStreamDeviceChangeReasonExt reason) override;

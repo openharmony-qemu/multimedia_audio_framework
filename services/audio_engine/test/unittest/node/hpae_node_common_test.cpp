@@ -349,10 +349,28 @@ HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_023, TestSize.Level0)
     EXPECT_EQ(TransProcessType2EnhanceScene(HPAE_SCENE_MUSIC), SCENE_NONE);
     EXPECT_EQ(TransProcessType2EnhanceScene(HPAE_SCENE_GAME), SCENE_NONE);
     EXPECT_EQ(TransProcessType2EnhanceScene(HPAE_SCENE_MOVIE), SCENE_NONE);
-    
+
     HpaeProcessorType invalidProcessorType = static_cast<HpaeProcessorType>(999);
     AudioEnhanceScene result = TransProcessType2EnhanceScene(invalidProcessorType);
     EXPECT_EQ(result, SCENE_NONE);
+}
+
+/**
+ * @tc.name: TestHpaeNodeCommon_023b
+ * @tc.type: FUNC
+ * @tc.number: TestHpaeNodeCommon_023b
+ * @tc.desc: Test TransProcessType2EnhanceScene with HPAE_SCENE_COLLABORATIVE and collaborative related mappings
+ */
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_023b, TestSize.Level0)
+{
+    // collaborative scene mapping
+    EXPECT_EQ(TransProcessType2EnhanceScene(HPAE_SCENE_COLLABORATIVE), SCENE_COLLABORATIVE_RECORD);
+
+    // verify TransEffectSceneToSceneType round-trip for collaborative
+    EXPECT_EQ(TransEffectSceneToSceneType(SCENE_COLLABORATIVE), HPAE_SCENE_COLLABORATIVE);
+
+    // verify TransProcessorTypeToSceneType round-trip for collaborative
+    EXPECT_EQ(TransProcessorTypeToSceneType(HPAE_SCENE_COLLABORATIVE), "SCENE_COLLABORATIVE");
 }
 
 /**

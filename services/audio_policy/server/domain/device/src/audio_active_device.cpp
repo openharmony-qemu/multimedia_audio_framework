@@ -43,6 +43,9 @@
 #define LOG_DOMAIN 0xD002B87
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr uint32_t DEFAULT_PIPE_ID = 0;
+}
 
 static const int32_t MEDIA_SERVICE_UID = 1013;
 
@@ -286,7 +289,7 @@ void AudioActiveDevice::NotifyUserSelectionEventToRemote(std::shared_ptr<AudioDe
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
     CHECK_AND_RETURN(desc->networkId_ != LOCAL_NETWORK_ID);
-    UpdateActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, desc->deviceName_,
+    UpdateActiveDeviceRoute(desc->deviceType_, DeviceFlag::DISTRIBUTED_OUTPUT_DEVICES_FLAG, DEFAULT_PIPE_ID,
         desc->networkId_);
 }
 
@@ -315,12 +318,8 @@ void AudioActiveDevice::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceD
 bool AudioActiveDevice::UpdateDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
     const AudioStreamDeviceChangeReasonExt reason, const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
-    std::shared_ptr<AudioDeviceDescriptor> preferredDesc =
-        audioAffinityManager_.GetRendererDevice(rendererChangeInfo->clientUID);
     AudioDeviceDescriptor tmpOutputDeviceDesc = GetCurrentOutputDevice();
-    if (((preferredDesc->deviceType_ != DEVICE_TYPE_NONE) && !desc->IsSameDeviceInfo(tmpOutputDeviceDesc)
-        && desc->deviceType_ != preferredDesc->deviceType_)
-        || ((preferredDesc->deviceType_ == DEVICE_TYPE_NONE) && !desc->IsSameDeviceInfo(tmpOutputDeviceDesc))) {
+    if (!desc->IsSameDeviceInfo(tmpOutputDeviceDesc)) {
         WriteOutputRouteChangeEvent(desc, reason);
         SetCurrentOutputDevice(*desc);
         AUDIO_DEBUG_LOG("currentActiveDevice update %{public}d", GetCurrentOutputDeviceType());
@@ -336,17 +335,17 @@ bool AudioActiveDevice::IsDeviceActive(DeviceType deviceType)
     return GetCurrentOutputDeviceType() == deviceType;
 }
 
-void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag,
-    const std::string &deviceName, std::string networkId)
+void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag, const uint32_t pipeId,
+    const std::string &networkId)
 {
     Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));
-    UpdateActiveDevicesRoute(activeDevices, deviceName, networkId);
+    UpdateActiveDevicesRoute(activeDevices, pipeId, networkId);
 }
 
-void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>>
-    &activeDevices, const std::string &deviceName, const std::string &networkId)
+void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
+    const uint32_t pipeId, const std::string &networkId)
 {
     CHECK_AND_RETURN_LOG(!activeDevices.empty(), "activeDevices is empty.");
 
@@ -358,7 +357,7 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
 
     Trace trace("AudioActiveDevice::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
-        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), deviceName, networkId);
+        audioA2dpOffloadFlag_.GetA2dpOffloadFlag(), pipeId, networkId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
@@ -509,8 +508,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Aud
     std::vector<StreamUsage> usages = VolumeUtils::GetStreamUsageByVolumeTypeForFetchDevice(type);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
     for (auto usage : usages) {
-        devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
-            usage, -1, "GetDeviceForVolumeByStreamType").front());
+        FetchDeviceInfo info = {usage, "GetDeviceForVolumeByStreamType"};
+        devices.push_back(AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front());
     }
     SortDevicesByPriority(devices);
     AUDIO_INFO_LOG("Get Device %{public}s for stream %{public}d from router and add to map",
@@ -534,8 +533,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(Str
             return streamUsageDeviceMap_[usage].front();
         }
     }
-    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
-        usage, -1, "GetDeviceForVolumeByStreamUsage").front();
+    FetchDeviceInfo info = {usage, "GetDeviceForVolumeByStreamUsage"};
+    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
@@ -571,9 +570,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume()
             return streamUsageDeviceMap_[usage].front();
         }
     }
-    
-    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(
-        STREAM_USAGE_MUSIC, -1, "GetDeviceForVolumeByTopPriority").front();
+    FetchDeviceInfo info = {STREAM_USAGE_MUSIC, "GetDeviceForVolumeByTopPriority"};
+    return AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(info).front();
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioActiveDevice::GetDeviceForVolume(int32_t appUid)

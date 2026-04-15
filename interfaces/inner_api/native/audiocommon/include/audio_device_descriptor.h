@@ -37,6 +37,11 @@ inline bool IsNearlinkDevice(DeviceType deviceType)
     return deviceType == DEVICE_TYPE_NEARLINK || deviceType == DEVICE_TYPE_NEARLINK_IN;
 }
 
+class AudioDeviceDescriptor;
+// input device and putput device
+using AudioDevicePair = std::pair<std::shared_ptr<AudioDeviceDescriptor>, std::shared_ptr<AudioDeviceDescriptor>>;
+using DevicePair = AudioDevicePair; // Kept for backward compatibility.
+
 /**
  * @brief The AudioDeviceDescriptor provides
  *         different sets of audio devices and their roles

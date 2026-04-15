@@ -52,8 +52,7 @@ public:
     void SetActiveOutputDeviceProxy(DeviceType deviceType);
     bool GetEffectOffloadEnabledProxy();
     int32_t UpdateActiveDevicesRouteProxy(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
-        BluetoothOffloadState state, const std::string &deviceName = "",
-        const std::string &networkId = LOCAL_NETWORK_ID);
+        BluetoothOffloadState state, const uint32_t pipeId, const std::string &networkId);
     int32_t ReleaseActiveDeviceRouteProxy(DeviceType deviceType, DeviceFlag deviceFlag, const std::string &networkId);
     int32_t UpdateDualToneStateProxy(const bool &enable, const int32_t &sessionId,
         const std::string &dupSinkName = "Speaker");

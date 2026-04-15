@@ -156,8 +156,13 @@ void FetchOutputDevicesFuzzTest(FuzzedDataProvider& fdp)
     uint32_t privacyTypeCount = GetData<uint32_t>() % PrivacyTypeVec.size();
     AudioPrivacyType privacyType = PrivacyTypeVec[privacyTypeCount];
     
-    AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(streamUsage,
-        clientUID, caller, bypassType, privacyType);
+    FetchDeviceInfo fetchDeviceInfo;
+    fetchDeviceInfo.streamUsage = streamUsage;
+    fetchDeviceInfo.clientUID = clientUID;
+    fetchDeviceInfo.routerType = bypassType;
+    fetchDeviceInfo.privacyType = privacyType;
+    fetchDeviceInfo.caller = caller;
+    AudioRouterCenter::GetAudioRouterCenter().FetchOutputDevices(fetchDeviceInfo);
 }
 
 void FetchDupDevicesFuzzTest(FuzzedDataProvider& fdp)

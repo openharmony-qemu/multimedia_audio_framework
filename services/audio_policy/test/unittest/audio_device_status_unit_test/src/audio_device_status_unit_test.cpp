@@ -131,7 +131,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_005, TestSize.Level1)
     std::string deviceName = "usb_headset";
     AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
 
     ClassType classType = TYPE_A2DP;
     AudioModuleInfo moduleInfo = {"className", "TEST", "TEST"};
@@ -170,10 +169,6 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
     deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
 
-    hdiPin = AUDIO_PIN_OUT_LINEOUT;
-    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
-    EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
-
     hdiPin = AUDIO_PIN_OUT_HDMI;
     deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
@@ -206,13 +201,17 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
     deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
 
-    hdiPin = AUDIO_PIN_IN_LINEIN;
-    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
-    EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
-
     hdiPin = AUDIO_PIN_IN_USB_EXT;
     deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DEVICE_TYPE_DEFAULT);
+
+    hdiPin = AUDIO_PIN_IN_LINEIN;
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
+
+    hdiPin = AUDIO_PIN_OUT_LINEOUT;
+    deviceType = audioDeviceStatus.GetDeviceTypeFromPin(hdiPin);
+    EXPECT_EQ(deviceType, DEVICE_TYPE_LINE_DIGITAL);
 }
 
 /**

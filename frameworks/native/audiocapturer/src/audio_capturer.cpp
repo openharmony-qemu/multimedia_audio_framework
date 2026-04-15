@@ -30,6 +30,11 @@
 #include "media_monitor_manager.h"
 #include "audio_stream_descriptor.h"
 #include "audio_info.h"
+#include "audio_system_client_engine_manager.h"
+#include "audio_capturer_types.h"
+#include "audio_debug_manager.h"
+#include "audio_debug_info.h"
+#include "audio_debug_callback.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002B82
@@ -44,7 +49,6 @@ static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 static constexpr int32_t UID_MEDIA_SA = 1013;
 static constexpr uint8_t AUDIO_MAX_CAPTURE_CHANNELS = 16;
-static constexpr int32_t APP_SELECT_INDEPENDENT = 1;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -71,6 +75,34 @@ static const std::map<AudioFlag, int32_t> INPUT_ROUTE_TO_STREAM_MAP = {
     {AUDIO_OUTPUT_FLAG_DIRECT, AUDIO_FLAG_DIRECT},
     {AUDIO_OUTPUT_FLAG_FAST, AUDIO_FLAG_MMAP},
 };
+
+class AudioCapturerDebugCallbackImpl : public AudioCapturerDebugCallback {
+public:
+    explicit AudioCapturerDebugCallbackImpl(const std::weak_ptr<AudioCapturer> &audioCapturer)
+        : audioCapturer_(audioCapturer) {}
+
+    int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) override
+    {
+        auto audioCapturer = audioCapturer_.lock();
+        return audioCapturer == nullptr ? ERR_ILLEGAL_STATE : audioCapturer->GetCapturerDebugInfo(debugInfo);
+    }
+
+private:
+    std::weak_ptr<AudioCapturer> audioCapturer_;
+};
+
+static void RegisterAudioCapturerDebugManager(const std::shared_ptr<AudioCapturer> &audioCapturer)
+{
+    if (audioCapturer == nullptr) {
+        return;
+    }
+    auto debugCallback = std::make_shared<AudioCapturerDebugCallbackImpl>(std::weak_ptr<AudioCapturer>(audioCapturer));
+    if (debugCallback == nullptr) {
+        return;
+    }
+    (void)AudioDebugManager::GetInstance().RegisterAudioCapturer(
+        reinterpret_cast<uintptr_t>(audioCapturer.get()), debugCallback);
+}
 
 AudioCapturer::~AudioCapturer() = default;
 
@@ -230,6 +262,12 @@ struct DeinterleaveTargetBuffers {
     BufferDesc &ecBufferDesc;
 };
 
+struct DeinterleaveDumpFiles {
+    FILE *processDumpFile = nullptr;
+    FILE *micInDumpFile = nullptr;
+    FILE *ecDumpFile = nullptr;
+};
+
 static int32_t ParseMicInEcBufferLayout(const AudioStreamParams &params, MicInEcBufferLayout &layout)
 {
     int32_t sampleByteSize = GetFormatByteSize(params.format);
@@ -274,6 +312,66 @@ static inline int32_t ValidateDeinterleaveOutputBuffer(const DeinterleaveTargetB
     return SUCCESS;
 }
 
+static inline void UpdateDeinterleaveDataLength(BufferDesc &processBufDesc, BufferDesc &micInBufDesc,
+    BufferDesc &ecBufferDesc, const MicInEcBufferSizes &bufferSizes)
+{
+    processBufDesc.dataLength = bufferSizes.processBufSize;
+    micInBufDesc.dataLength = bufferSizes.micInBufSize;
+    ecBufferDesc.dataLength = bufferSizes.ecBufSize;
+}
+
+static void DumpDeinterleaveBuffersImpl(const DeinterleaveDumpFiles &dumpFiles,
+    const DeinterleaveTargetBuffers &targetBuffers, const MicInEcBufferSizes &bufferSizes)
+{
+    if (bufferSizes.processBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFiles.processDumpFile,
+            static_cast<void *>(targetBuffers.processBufDesc.buffer),
+            bufferSizes.processBufSize);
+    }
+    if (bufferSizes.micInBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFiles.micInDumpFile,
+            static_cast<void *>(targetBuffers.micInBufDesc.buffer),
+            bufferSizes.micInBufSize);
+    }
+    if (bufferSizes.ecBufSize > 0) {
+        DumpFileUtil::WriteDumpFile(dumpFiles.ecDumpFile,
+            static_cast<void *>(targetBuffers.ecBufferDesc.buffer), bufferSizes.ecBufSize);
+    }
+}
+
+static inline void DumpDeinterleaveBuffers(const DeinterleaveDumpFiles &dumpFiles,
+    const DeinterleaveTargetBuffers &targetBuffers, const MicInEcBufferSizes &bufferSizes)
+{
+    DumpDeinterleaveBuffersImpl(dumpFiles, targetBuffers, bufferSizes);
+}
+
+static int32_t FillDegradeFallbackSilentBuffersImpl(const BufferDesc &srcBufDesc,
+    BufferDesc &processBufDesc, BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc,
+    const MicInEcBufferSizes &bufferSizes)
+{
+    int32_t copyRet = memcpy_s(processBufDesc.buffer, processBufDesc.bufLength, srcBufDesc.buffer,
+        bufferSizes.processBufSize);
+    CHECK_AND_RETURN_RET_LOG(copyRet == EOK, ERR_OPERATION_FAILED, "copy process frame failed");
+    if (bufferSizes.micInBufSize > 0) {
+        CHECK_AND_RETURN_RET_LOG(micInBufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "micIn buffer is null");
+        CHECK_AND_RETURN_RET_LOG(memset_s(micInBufDesc.buffer, micInBufDesc.bufLength, 0,
+            bufferSizes.micInBufSize) == EOK, ERR_OPERATION_FAILED, "clear micIn buffer failed");
+    }
+    if (bufferSizes.ecBufSize > 0) {
+        CHECK_AND_RETURN_RET_LOG(ecBufferDesc.buffer != nullptr, ERROR_INVALID_PARAM, "ec buffer is null");
+        CHECK_AND_RETURN_RET_LOG(memset_s(ecBufferDesc.buffer, ecBufferDesc.bufLength, 0,
+            bufferSizes.ecBufSize) == EOK, ERR_OPERATION_FAILED, "clear ec buffer failed");
+    }
+    return SUCCESS;
+}
+
+static inline int32_t FillDegradeFallbackSilentBuffers(const BufferDesc &srcBufDesc,
+    BufferDesc &processBufDesc, BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc,
+    const MicInEcBufferSizes &bufferSizes)
+{
+    return FillDegradeFallbackSilentBuffersImpl(srcBufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+}
+
 static int32_t DeinterleaveMicInEcFrames(const BufferDesc &srcBufDesc, const MicInEcBufferLayout &layout,
     const MicInEcBufferSizes &bufferSizes, DeinterleaveTargetBuffers &targetBuffers)
 {
@@ -315,10 +413,119 @@ static inline uint32_t GetClientDumpChannels(const AudioCapturerInfo &capturerIn
     return appChannels;
 }
 
+static inline bool IsVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &audioStreamParams)
+{
+    return capturerInfo.sourceType == SOURCE_TYPE_VOICE_RECOGNITION &&
+        (audioStreamParams.micInChannels > CHANNEL_UNKNOW || audioStreamParams.ecChannels > CHANNEL_UNKNOW);
+}
+
+static bool IsVoiceRecognitionMicInEcSupportedInputDeviceTypeImpl(DeviceType deviceType)
+{
+    switch (deviceType) {
+        case DEVICE_TYPE_MIC:
+        case DEVICE_TYPE_WAKEUP:
+        case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
+        case DEVICE_TYPE_USB_HEADSET:
+        case DEVICE_TYPE_BLUETOOTH_SCO:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceType(DeviceType deviceType)
+{
+    return IsVoiceRecognitionMicInEcSupportedInputDeviceTypeImpl(deviceType);
+}
+
+static inline bool IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(
+    const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    return deviceDesc != nullptr && deviceDesc->networkId_ == LOCAL_NETWORK_ID &&
+        IsVoiceRecognitionMicInEcSupportedInputDeviceType(deviceDesc->deviceType_);
+}
+
+static void UpdateVoiceRecognitionMicInEcDegradeFlagImpl(const AudioCapturerInfo &capturerInfo,
+    AudioStreamParams &audioStreamParams)
+{
+    if (!IsVoiceRecognitionMicInEcRequest(capturerInfo, audioStreamParams)) {
+        return;
+    }
+
+    DeviceType activeInputDevice = AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    if (activeInputDevice != DEVICE_TYPE_INVALID && activeInputDevice != DEVICE_TYPE_NONE) {
+        audioStreamParams.isVoiceRecognitionMicInEcDegrade =
+            !IsVoiceRecognitionMicInEcSupportedInputDeviceType(activeInputDevice);
+        if (audioStreamParams.isVoiceRecognitionMicInEcDegrade) {
+            return;
+        }
+    }
+
+    AudioCapturerInfo queryInfo = capturerInfo;
+    queryInfo.samplingRate = static_cast<AudioSamplingRate>(audioStreamParams.samplingRate);
+    queryInfo.encodingType = audioStreamParams.encoding;
+    queryInfo.channelLayout = audioStreamParams.channelLayout;
+    auto preferredInputDevices = AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(queryInfo);
+    for (const auto &deviceDesc : preferredInputDevices) {
+        if (deviceDesc == nullptr) {
+            continue;
+        }
+        audioStreamParams.isVoiceRecognitionMicInEcDegrade =
+            !IsVoiceRecognitionMicInEcSupportedInputDeviceDesc(deviceDesc);
+        return;
+    }
+}
+
+static inline void UpdateVoiceRecognitionMicInEcDegradeFlag(const AudioCapturerInfo &capturerInfo,
+    AudioStreamParams &audioStreamParams)
+{
+    UpdateVoiceRecognitionMicInEcDegradeFlagImpl(capturerInfo, audioStreamParams);
+}
+
+static inline bool IsDegradeVoiceRecognitionMicInEcRequest(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamParams &audioStreamParams)
+{
+    return IsVoiceRecognitionMicInEcRequest(capturerInfo, audioStreamParams) &&
+        audioStreamParams.isVoiceRecognitionMicInEcDegrade;
+}
+
 static inline void FillCreateCapturerParams(AudioCapturerParams &params, const AudioCapturerOptions &capturerOptions)
 {
     FillEcParams(params, capturerOptions.ecStreamInfo);
     FillMicInParams(params, capturerOptions.micInStreamInfo);
+}
+
+static void ReportWakeupEvent(SourceType sourceType,
+    int32_t stage, int32_t wakeupResult, int32_t wakeupErrCode)
+{
+    CHECK_AND_RETURN((sourceType == SOURCE_TYPE_WAKEUP || sourceType == SOURCE_TYPE_VOICE_RECOGNITION ||
+        sourceType == SOURCE_TYPE_UNPROCESSED_VOICE_ASSISTANT));
+    AUDIO_INFO_LOG("sourceType: %{public}d, stage: %{public}d, result: %{public}d",
+        sourceType, stage, wakeupResult);
+    AudioWakeupTrackInfo audioWakeupTrackInfo;
+    audioWakeupTrackInfo.stage = static_cast<AudioWakeupStageCode>(stage);
+    audioWakeupTrackInfo.result = static_cast<AudioWakeupResult>(wakeupResult);
+    audioWakeupTrackInfo.errCode = static_cast<AudioWakeupErrorCode>(wakeupErrCode);
+    AudioSystemClientEngineManager::GetInstance().ReportWakeupEvent(audioWakeupTrackInfo);
+}
+
+static void InitializeCapturer(std::shared_ptr<AudioCapturerPrivate>& capturer,
+    const AudioCapturerOptions& capturerOptions)
+{
+    if (capturer != nullptr && AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
+        capturer->isChannelChange_ = true;
+    }
+
+    AudioWakeupErrorCode errCode = (capturer == nullptr)
+                    ? WAKEUP_TRACK_FWK_CREATE_ERROR
+                    : WAKEUP_TRACK_FWK_NO_ERROR;
+    AudioWakeupResult result = (capturer == nullptr)
+                        ? WAKEUP_RESULT_FAIL
+                        : WAKEUP_RESULT_DEFAULT;
+    ReportWakeupEvent(capturerOptions.capturerInfo.sourceType,
+        STAGE_FWK_CREATE_EXIT, result, errCode);
 }
 
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
@@ -326,12 +533,12 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
 {
     Trace trace("KeyAction AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
+    ReportWakeupEvent(sourceType, STAGE_FWK_CREATE_ENTER, WAKEUP_RESULT_DEFAULT, WAKEUP_TRACK_FWK_NO_ERROR);
     if (sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE) {
         AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;
     }
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX ||
-        sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;
@@ -372,9 +579,9 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         capturer = nullptr;
     }
-    if (capturer != nullptr && AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
-        capturer->isChannelChange_ = true;
-    }
+    InitializeCapturer(capturer, capturerOptions);
+    CHECK_AND_RETURN_RET_LOG(capturer != nullptr, capturer, "capturer is nullptr");
+    RegisterAudioCapturerDebugManager(capturer);
     return capturer;
 }
 
@@ -471,6 +678,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
+    UpdateVoiceRecognitionMicInEcDegradeFlag(capturerInfo_, audioStreamParams);
     HILOG_COMM_INFO("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
@@ -658,7 +866,7 @@ int32_t AudioCapturerPrivate::SelectInputDeviceInner(const std::shared_ptr<Audio
     CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, ERR_OPERATION_FAILED, "create capturer filter failed");
     audioCapturerFilter->uid = static_cast<int32_t>(getuid());
     audioCapturerFilter->capturerInfo = capturerInfo_;
-    audioCapturerFilter->audioDeviceSelectMode = APP_SELECT_INDEPENDENT;
+    audioCapturerFilter->audioDeviceSelectMode = SELECT_STRATEGY_STREAM;
     audioCapturerFilter->streamId = static_cast<int32_t>(sessionID_);
     return AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
 }
@@ -681,6 +889,53 @@ FastStatus AudioCapturerPrivate::GetFastStatus()
     }
 
     return GetFastStatusInner();
+}
+
+int32_t AudioCapturerPrivate::GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const
+{
+    AUDIO_DEBUG_LOG("GetCapturerDebugInfo enter");
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
+
+    AudioDebugInfo audioDebugInfo;
+    int32_t ret = currentStream->GetAudioDebugInfo(audioDebugInfo);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("GetAudioDebugInfo failed, ret:%{public}d", ret);
+        uint32_t sessionId = INVALID_STREAM_ID;
+        if (GetAudioStreamId(sessionId) == SUCCESS) {
+            audioDebugInfo.sessionId = sessionId;
+        }
+        AudioStreamInfo streamInfo;
+        if (GetStreamInfo(streamInfo) == SUCCESS) {
+            audioDebugInfo.streamParams.samplingRate = static_cast<uint32_t>(streamInfo.samplingRate);
+            audioDebugInfo.streamParams.channels = static_cast<uint8_t>(streamInfo.channels);
+            audioDebugInfo.streamParams.format = static_cast<uint8_t>(streamInfo.format);
+            audioDebugInfo.streamParams.encoding = static_cast<uint8_t>(streamInfo.encoding);
+            audioDebugInfo.streamParams.channelLayout = static_cast<uint64_t>(streamInfo.channelLayout);
+        }
+        AudioCapturerInfo capturerInfo;
+        if (GetCapturerInfo(capturerInfo) == SUCCESS) {
+            *audioDebugInfo.capturerInfo = capturerInfo;
+        }
+    }
+
+    debugInfo.sessionId = audioDebugInfo.sessionId;
+    debugInfo.samplingRate = static_cast<int32_t>(audioDebugInfo.streamParams.samplingRate);
+    debugInfo.channels = static_cast<AudioChannel>(audioDebugInfo.streamParams.channels);
+    debugInfo.format = static_cast<AudioSampleFormat>(audioDebugInfo.streamParams.format);
+    debugInfo.encoding = static_cast<AudioEncodingType>(audioDebugInfo.streamParams.encoding);
+    debugInfo.channelLayout = static_cast<AudioChannelLayout>(audioDebugInfo.streamParams.channelLayout);
+    debugInfo.sourceType = audioDebugInfo.capturerInfo->sourceType;
+    debugInfo.capturerFlag = audioDebugInfo.capturerInfo->capturerFlags;
+    debugInfo.captureTimestamp = audioDebugInfo.captureTimestamp;
+    debugInfo.bufferSize = audioDebugInfo.captureBufferSize;
+    debugInfo.overflowCount = audioDebugInfo.captureOverflowCount;
+    debugInfo.muteWhenInterrupted = audioDebugInfo.muteWhenInterrupted;
+    debugInfo.inputDeviceInfo = audioDebugInfo.inputDeviceInfo;
+    debugInfo.pipeRole = audioDebugInfo.pipeRole;
+    debugInfo.pipeStreamInfo = *audioDebugInfo.pipeStreamInfo;
+
+    return SUCCESS;
 }
 
 FastStatus AudioCapturerPrivate::GetFastStatusInner()
@@ -1033,6 +1288,18 @@ int32_t AudioCapturerPrivate::AsyncCheckAudioCapturer(std::string callingFunc)
     return SUCCESS;
 }
 
+void AudioCapturerPrivate::CheckStartResultAndReport(bool result)
+{
+    AudioWakeupErrorCode errCode = (result == true)
+                                ? WAKEUP_TRACK_FWK_NO_ERROR
+                                : WAKEUP_TRACK_FWK_START_ERROR;
+    AudioWakeupResult wakeupResult = (result == true)
+                                ? WAKEUP_RESULT_DEFAULT
+                                : WAKEUP_RESULT_FAIL;
+    ReportWakeupEvent(audioInterrupt_.audioFocusType.sourceType,
+        STAGE_FWK_START_EXIT, wakeupResult, errCode);
+}
+
 int32_t AudioCapturerPrivate::StartImpl()
 {
     AsyncCheckAudioCapturer("Start");
@@ -1043,6 +1310,8 @@ int32_t AudioCapturerPrivate::StartImpl()
     }
     HILOG_COMM_INFO("StreamClientState for Capturer::Start. id %{public}u, sourceType: %{public}d",
         sessionID_, audioInterrupt_.audioFocusType.sourceType);
+    ReportWakeupEvent(audioInterrupt_.audioFocusType.sourceType, STAGE_FWK_START_ENTER,
+        WAKEUP_RESULT_DEFAULT, WAKEUP_TRACK_FWK_NO_ERROR);
 
     CapturerState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == CAPTURER_PREPARED) || (state == CAPTURER_STOPPED) || (state == CAPTURER_PAUSED),
@@ -1073,7 +1342,7 @@ int32_t AudioCapturerPrivate::StartImpl()
             AUDIO_WARNING_LOG("DeactivateAudioInterrupt Failed");
         }
     }
-
+    CheckStartResultAndReport(result);
     return result ? SUCCESS : ERROR;
 }
 
@@ -1182,6 +1451,7 @@ int32_t AudioCapturerPrivate::ReleaseImpl()
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
 
     RemoveCapturerPolicyServiceDiedCallback(audioStream_);
+    (void)AudioDebugManager::GetInstance().UnregisterAudioCapturer(reinterpret_cast<uintptr_t>(this));
 
     return audioStream_->ReleaseAudioStream() ? SUCCESS : ERROR;
 }
@@ -1476,22 +1746,39 @@ int32_t AudioCapturerPrivate::GetMicInBufferSize(BufferDesc &bufDesc, size_t &pr
     AudioStreamParams audioStreamParams;
     int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
-
-    MicInEcBufferLayout layout {};
-    ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+    int32_t sampleByteSize = GetFormatByteSize(audioStreamParams.format);
+    CHECK_AND_RETURN_RET_LOG(sampleByteSize > 0, ERROR_INVALID_PARAM, "invalid sample format");
+    const size_t processFrameSize =
+        static_cast<size_t>(audioStreamParams.channels) * static_cast<size_t>(sampleByteSize);
+    CHECK_AND_RETURN_RET_LOG(processFrameSize > 0, ERROR_INVALID_PARAM, "invalid process frame size");
+    bool degradeFallback = IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams);
 
     size_t validDataLength = (bufDesc.dataLength > 0 && bufDesc.dataLength <= bufDesc.bufLength) ?
         bufDesc.dataLength : bufDesc.bufLength;
-    CHECK_AND_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
-        "buffer length is invalid");
-    CHECK_AND_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
-        "buffer length is not frame aligned");
+    if (!degradeFallback) {
+        MicInEcBufferLayout layout {};
+        ret = ParseMicInEcBufferLayout(audioStreamParams, layout);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ParseMicInEcBufferLayout failed");
+        CHECK_AND_RETURN_RET_LOG(validDataLength >= layout.byteSizePerFrame, ERROR_INVALID_PARAM,
+            "buffer length is invalid");
+        CHECK_AND_RETURN_RET_LOG(validDataLength % layout.byteSizePerFrame == 0, ERROR_INVALID_PARAM,
+            "buffer length is not frame aligned");
+        size_t frameCount = validDataLength / layout.byteSizePerFrame;
+        processBufSize = frameCount * layout.processChannels * layout.byteSizePerSample;
+        micInBufSize = frameCount * layout.micInChannels * layout.byteSizePerSample;
+        ecBufSize = frameCount * layout.ecChannels * layout.byteSizePerSample;
+        return SUCCESS;
+    }
 
-    size_t frameCount = validDataLength / layout.byteSizePerFrame;
-    processBufSize = frameCount * layout.processChannels * layout.byteSizePerSample;
-    micInBufSize = frameCount * layout.micInChannels * layout.byteSizePerSample;
-    ecBufSize = frameCount * layout.ecChannels * layout.byteSizePerSample;
+    CHECK_AND_RETURN_RET_LOG(validDataLength >= processFrameSize, ERROR_INVALID_PARAM, "buffer length is invalid");
+    CHECK_AND_RETURN_RET_LOG(validDataLength % processFrameSize == 0, ERROR_INVALID_PARAM,
+        "buffer length is not process frame aligned");
+    size_t frameCount = validDataLength / processFrameSize;
+    processBufSize = frameCount * processFrameSize;
+    micInBufSize = frameCount * static_cast<size_t>(audioStreamParams.micInChannels) *
+        static_cast<size_t>(sampleByteSize);
+    ecBufSize = frameCount * static_cast<size_t>(audioStreamParams.ecChannels) * static_cast<size_t>(sampleByteSize);
+    AUDIO_INFO_LOG("GetMicInBufferSize use degrade fallback, frameCount:%{public}zu", frameCount);
     return SUCCESS;
 }
 
@@ -1499,36 +1786,38 @@ int32_t AudioCapturerPrivate::DeinterleaveBuffer(BufferDesc &bufDesc, BufferDesc
     BufferDesc &micInBufDesc, BufferDesc &ecBufferDesc)
 {
     CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr, ERROR_INVALID_PARAM, "bufDesc buffer is null");
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    AudioStreamParams audioStreamParams;
+    int32_t ret = currentStream->GetAudioStreamInfo(audioStreamParams);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioStreamInfo failed");
+
     MicInEcBufferSizes bufferSizes {};
-    int32_t ret = GetMicInBufferSize(bufDesc, bufferSizes.processBufSize, bufferSizes.micInBufSize,
+    ret = GetMicInBufferSize(bufDesc, bufferSizes.processBufSize, bufferSizes.micInBufSize,
         bufferSizes.ecBufSize);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetMicInBufferSize failed");
     DeinterleaveTargetBuffers targetBuffers {processBufDesc, micInBufDesc, ecBufferDesc};
+    DeinterleaveDumpFiles dumpFiles {dumpProcessFile_, dumpMicInFile_, dumpEcFile_};
     ret = ValidateDeinterleaveOutputBuffer(targetBuffers, bufferSizes);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "output buffer is invalid");
 
-    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
-    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    if (IsDegradeVoiceRecognitionMicInEcRequest(capturerInfo_, audioStreamParams)) {
+        ret = FillDegradeFallbackSilentBuffers(bufDesc, processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FillDegradeFallbackSilentBuffers failed");
+        UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+        DumpDeinterleaveBuffers(dumpFiles, targetBuffers, bufferSizes);
+        AUDIO_INFO_LOG("DeinterleaveBuffer use degrade fallback, micIn/ec filled with silence");
+        return SUCCESS;
+    }
+
     MicInEcBufferLayout layout {};
     ret = GetMicInEcBufferLayoutFromStream(currentStream, layout);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetMicInEcBufferLayoutFromStream failed");
     ret = DeinterleaveMicInEcFrames(bufDesc, layout, bufferSizes, targetBuffers);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "DeinterleaveMicInEcFrames failed");
 
-    processBufDesc.dataLength = bufferSizes.processBufSize;
-    micInBufDesc.dataLength = bufferSizes.micInBufSize;
-    ecBufferDesc.dataLength = bufferSizes.ecBufSize;
-    if (bufferSizes.processBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpProcessFile_, static_cast<void *>(processBufDesc.buffer),
-            bufferSizes.processBufSize);
-    }
-    if (bufferSizes.micInBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpMicInFile_, static_cast<void *>(micInBufDesc.buffer),
-            bufferSizes.micInBufSize);
-    }
-    if (bufferSizes.ecBufSize > 0) {
-        DumpFileUtil::WriteDumpFile(dumpEcFile_, static_cast<void *>(ecBufferDesc.buffer), bufferSizes.ecBufSize);
-    }
+    UpdateDeinterleaveDataLength(processBufDesc, micInBufDesc, ecBufferDesc, bufferSizes);
+    DumpDeinterleaveBuffers(dumpFiles, targetBuffers, bufferSizes);
     return SUCCESS;
 }
 
@@ -1866,6 +2155,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
         streamDesc, flag, switchInfo.params.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateCapturerClient failed");
+    UpdateVoiceRecognitionMicInEcDegradeFlag(switchInfo.capturerInfo, switchInfo.params);
 
     targetClass = DecideStreamClassAndUpdateCapturerInfo(flag);
     if (targetClass == IAudioStream::VOIP_STREAM) {
@@ -1878,23 +2168,8 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     // set new stream info
     int32_t initResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (initResult != SUCCESS && switchInfo.capturerInfo.originalFlag != AUDIO_FLAG_NORMAL) {
-        AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
-        if (restoreInfo.restoreReason == SERVER_DIED) {
-            switchInfo.sessionId = switchInfo.params.originalSessionId;
-            streamDesc->sessionId_ = switchInfo.params.originalSessionId;
-        }
-        streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
-        streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
-        int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
-            streamDesc, flag, switchInfo.params.originalSessionId);
-        CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
-            HILOG_COMM_ERROR("[GenerateNewStream]CreateRendererClient failed"));
-
-        newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
-            switchInfo.eStreamType, appInfo_.appUid);
-        CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
-        initResult = SetSwitchInfo(switchInfo, newAudioStream);
-        CHECK_AND_RETURN_RET_LOG(initResult == SUCCESS, false, "Init ipc strean failed");
+        CHECK_AND_RETURN_RET_LOG(FallbackToNormalStreamForGenerateNewStream(restoreInfo, streamDesc, flag,
+            switchInfo, newAudioStream), false, "FallbackToNormalStreamForGenerateNewStream failed");
     }
 
     std::shared_ptr<IAudioStream> oldAudioStream = audioStream_;
@@ -1914,6 +2189,31 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     bool restartResult = RestartAudioStream(newAudioStream, previousState);
     CHECK_AND_RETURN_RET_LOG(restartResult, false, "start new stream failed.");
+    return true;
+}
+
+bool AudioCapturerPrivate::FallbackToNormalStreamForGenerateNewStream(const RestoreInfo &restoreInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, IAudioStream::SwitchInfo &switchInfo,
+    std::shared_ptr<IAudioStream> &newAudioStream)
+{
+    AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+    if (restoreInfo.restoreReason == SERVER_DIED) {
+        switchInfo.sessionId = switchInfo.params.originalSessionId;
+        streamDesc->sessionId_ = switchInfo.params.originalSessionId;
+    }
+    streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+    streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
+    int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
+        streamDesc, flag, switchInfo.params.originalSessionId);
+    CHECK_AND_CALL_FUNC_RETURN_RET(ret == SUCCESS, false,
+        HILOG_COMM_ERROR("[FallbackToNormalStreamForGenerateNewStream]CreateRendererClient failed"));
+    UpdateVoiceRecognitionMicInEcDegradeFlag(switchInfo.capturerInfo, switchInfo.params);
+
+    newAudioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, switchInfo.params,
+        switchInfo.eStreamType, appInfo_.appUid);
+    CHECK_AND_RETURN_RET_LOG(newAudioStream != nullptr, false, "Get ipc stream failed");
+    ret = SetSwitchInfo(switchInfo, newAudioStream);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "Init ipc strean failed");
     return true;
 }
 
@@ -2153,7 +2453,8 @@ void AudioCapturerStateChangeCallbackImpl::HandleCapturerDestructor()
 }
 
 void InputDeviceChangeWithInfoCallbackImpl::OnDeviceChangeWithInfo(
-    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason)
+    const uint32_t sessionId, const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     AUDIO_INFO_LOG("For capturer, OnDeviceChangeWithInfo callback is not support");
 }
@@ -2348,6 +2649,7 @@ int32_t AudioCapturerPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag,
         audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
+    UpdateVoiceRecognitionMicInEcDegradeFlag(capturerInfo_, audioStreamParams);
     AUDIO_INFO_LOG("Create normal capturer, id: %{public}u", audioStreamParams.originalSessionId);
 
     audioStream_ = IAudioStream::GetRecordStream(streamClass, audioStreamParams, audioStreamType_, appInfo_.appUid);

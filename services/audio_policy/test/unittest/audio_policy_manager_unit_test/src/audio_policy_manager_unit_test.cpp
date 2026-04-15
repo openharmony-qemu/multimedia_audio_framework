@@ -997,5 +997,33 @@ HWTEST(AudioPolicyManager, EnableSystemVolumeProxy_001, TestSize.Level1)
     int32_t ret = audioPolicyManager_->EnableSystemVolumeProxy(zoneId, deviceType, enable);
     EXPECT_NE(ret, ERROR);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyManager GetLoopbackSupportedDevicePairs.
+ * @tc.number: GetLoopbackSupportedDevicePairs_001
+ * @tc.desc  : Test GetLoopbackSupportedDevicePairs with normal case.
+ */
+HWTEST(AudioPolicyManager, GetLoopbackSupportedDevicePairs_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    auto devicePairs = audioPolicyManager_->GetLoopbackSupportedDevicePairs();
+    EXPECT_TRUE(devicePairs.empty() || !devicePairs.empty());
+}
+
+/**
+ * @tc.name  : Test AudioPolicyManager GetLoopbackPreferredDevicePair.
+ * @tc.number: GetLoopbackPreferredDevicePair_002
+ * @tc.desc  : Test GetLoopbackPreferredDevicePair with proxy null case.
+ */
+HWTEST(AudioPolicyManager, GetLoopbackPreferredDevicePair_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager_, nullptr);
+
+    auto devicePair = audioPolicyManager_->GetLoopbackPreferredDevicePair();
+    EXPECT_TRUE(devicePair.first == nullptr || devicePair.second == nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

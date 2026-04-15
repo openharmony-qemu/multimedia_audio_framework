@@ -1127,7 +1127,8 @@ size_t AudioPolicyClientStubImpl::GetDeviceChangeWithInfoCallbackkSize() const
 }
 
 int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
-    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason)
+    const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason,
+    const AudioDeviceDescriptor &preDeviceInfo)
 {
     Trace trace("AudioPolicyClientStubImpl::OnRendererDeviceChange");
     std::shared_ptr<DeviceChangeWithInfoCallback> callback = nullptr;
@@ -1145,7 +1146,7 @@ int32_t AudioPolicyClientStubImpl::OnRendererDeviceChange(uint32_t sessionId,
     if (callback != nullptr) {
         Trace traceCallback("callback->OnDeviceChangeWithInfo sessionid:" + std::to_string(sessionId)
             + " reason:" + std::to_string(static_cast<int>(reason)));
-        callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason);
+        callback->OnDeviceChangeWithInfo(sessionId, deviceInfo, reason, preDeviceInfo);
     }
     return SUCCESS;
 }

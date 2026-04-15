@@ -30,8 +30,9 @@ typedef void (*TestFuncs)();
 std::shared_ptr<AudioSession> CreateAudioSession()
 {
     AudioSessionStrategy strategy;
+    int32_t callerPid = 1;
     auto &audioSessionService = OHOS::Singleton<AudioSessionService>::GetInstance();
-    return std::make_shared<AudioSession>(g_fuzzUtils.GetData<int32_t>(), strategy, audioSessionService);
+    return std::make_shared<AudioSession>(callerPid, strategy, audioSessionService);
 }
 
 void SetAudioSessionSceneFuzzTest(FuzzedDataProvider& fdp)
@@ -237,7 +238,9 @@ void IsSessionOutputDeviceChangedFuzzTest(FuzzedDataProvider& fdp)
 {
     auto audioSession = CreateAudioSession();
     CHECK_AND_RETURN(audioSession != nullptr);
-    audioSession->IsSessionOutputDeviceChanged(std::make_shared<AudioDeviceDescriptor>());
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> oldDeviceDescriptors;
+    audioSession->IsSessionOutputDeviceChanged(
+        std::make_shared<AudioDeviceDescriptor>(), oldDeviceDescriptors);
 }
 
 void GetSessionStreamUsageFuzzTest(FuzzedDataProvider& fdp)

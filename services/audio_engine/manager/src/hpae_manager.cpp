@@ -42,6 +42,7 @@ static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
 static constexpr int32_t SINK_INVALID_ID = -1;
 static const std::string BT_SINK_NAME = "Bt_Speaker";
 static const std::string USB_SINK_NAME = "Usb_arm_speaker";
+static const std::string DEFAULT_SPEAKER_SINK_NAME = "Speaker";
 static const std::string DEFAULT_CORE_SOURCE_NAME = "Virtual_Capture";
 
 HpaeManagerThread::~HpaeManagerThread()
@@ -2600,9 +2601,10 @@ void HpaeManager::HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hp
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(coreSink_);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager =
+            GetRendererManagerByName(DEFAULT_SPEAKER_SINK_NAME);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", coreSink_.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SPEAKER_SINK_NAME.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->ConnectCoBufferNode(hpaeCoBufferNode);
     };
@@ -2613,9 +2615,10 @@ void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode>
 {
     auto request = [this, hpaeCoBufferNode]() {
         AUDIO_INFO_LOG("HandleDisConnectCoBufferNode");
-        std::shared_ptr<IHpaeRendererManager> defaultRendererManager = GetRendererManagerByName(coreSink_);
+        std::shared_ptr<IHpaeRendererManager> defaultRendererManager =
+            GetRendererManagerByName(DEFAULT_SPEAKER_SINK_NAME);
         CHECK_AND_RETURN_LOG(defaultRendererManager != nullptr,
-            "can not find sink[%{public}s] in rendererManagerMap_", coreSink_.c_str());
+            "can not find sink[%{public}s] in rendererManagerMap_", DEFAULT_SPEAKER_SINK_NAME.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->DisConnectCoBufferNode(hpaeCoBufferNode);
     };
@@ -2903,6 +2906,38 @@ int32_t HpaeManager::SetAppsEnhanceMuteState(const uint32_t &sessionId, bool isM
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeManager::EnableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+    SourceType sourceType)
+{
+    auto request = [this, sourcePortIndex, sourceType] {
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "EnableCaptureCollaboration::sourcePortIndex[%{public}u] not exist", sourcePortIndex);
+        AUDIO_INFO_LOG("Enable collaboration on source %{public}s",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->EnableCaptureCollaboration(sourceType);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::DisableCaptureCollaboration(uint32_t sourcePortIndex, uint32_t collabSourcePortIndex,
+    SourceType sourceType)
+{
+    auto request = [this, sourcePortIndex, sourceType] {
+        CHECK_AND_RETURN_LOG(sourceIdSourceNameMap_.find(sourcePortIndex) != sourceIdSourceNameMap_.end(),
+            "DisableCaptureCollaboration::sourcePortIndex[%{public}u] not exist", sourcePortIndex);
+        AUDIO_INFO_LOG("Disable collaboration on source %{public}s",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        auto capturerManager = SafeGetMap(capturerManagerMap_, sourceIdSourceNameMap_[sourcePortIndex]);
+        CHECK_AND_RETURN_LOG(capturerManager, "source[%{public}s] is in wrong state",
+            sourceIdSourceNameMap_[sourcePortIndex].c_str());
+        capturerManager->DisableCaptureCollaboration(sourceType);
+    };
+    SendRequest(request, __func__);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

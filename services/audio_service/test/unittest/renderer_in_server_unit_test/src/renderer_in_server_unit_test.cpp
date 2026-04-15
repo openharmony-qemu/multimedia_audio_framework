@@ -2133,6 +2133,25 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerGetPrivacyType_001, TestSize.
 }
 
 /**
+ * @tc.name  : Test SetVoipNoPrivacyFlag API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetVoipNoPrivacyFlag_001
+ * @tc.desc  : Test renderer-side voip no privacy flag sync interface.
+ */
+HWTEST_F(RendererInServerUnitTest, RendererInServerSetVoipNoPrivacyFlag_001, TestSize.Level1)
+{
+    processConfig.deviceType = DEVICE_TYPE_INVALID;
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    processConfig.rendererInfo.voipNoPrivacyFlag = false;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    ASSERT_NE(nullptr, rendererInServer);
+
+    EXPECT_FALSE(rendererInServer->GetVoipNoPrivacyFlag());
+    EXPECT_EQ(SUCCESS, rendererInServer->SetVoipNoPrivacyFlag(true));
+    EXPECT_TRUE(rendererInServer->GetVoipNoPrivacyFlag());
+}
+
+/**
  * @tc.name  : Test EnableInnerCap API
  * @tc.type  : FUNC
  * @tc.number: RendererInServerEnableInnerCap_001

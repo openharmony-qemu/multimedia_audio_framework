@@ -27,8 +27,6 @@ group("audio_policy_unittest_packages") {
     ":audio_active_device_unit_test",
     ":audio_adapter_manager_unit_test",
     ":audio_adapter_manager_ext_unit_test",
-    ":audio_affinity_manager_unit_test",
-    ":audio_affinity_parser_test",
     ":audio_background_manager_unit_test",
     ":audio_client_tracker_callback_listener_unit_test",
     ":audio_client_tracker_callback_service_unit_test",
@@ -1601,6 +1599,7 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "../../audio_policy/server/include",
     "../../audio_engine/manager/include",
     "../../audio_service/server/include",
+    "../../audio_service/test/unittest/include",
   ]
 
   use_exceptions = true
@@ -2137,6 +2136,7 @@ ohos_unittest("audio_policy_server_unit_test") {
     "../../audio_policy/test/unittest/audio_interrupt_service_test/include",
     "../../../services/audio_engine/manager/include",
     "../../../services/audio_service/server/include",
+    "../../audio_service/test/unittest/include"
   ]
 
   use_exceptions = true
@@ -2889,71 +2889,6 @@ ohos_unittest("privacy_priority_router_unit_test") {
   }
 }
 
-ohos_unittest("audio_affinity_parser_test") {
-  module_out_path = module_output_path
-  include_dirs = [
-    "../server/include",
-    "./unittest/audio_affinity_parser_test/include",
-  ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  external_deps = [
-    "ability_base:session_info",
-    "ability_base:want",
-    "ability_base:zuri",
-    "ability_runtime:ability_connect_callback_stub",
-    "ability_runtime:ability_context_native",
-    "ability_runtime:ability_manager",
-    "ability_runtime:app_context",
-    "ability_runtime:dataobs_manager",
-    "ability_runtime:extension_manager",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bounds_checking_function:libsec_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_6.0",
-    "eventhandler:libeventhandler",
-    "hdf_core:libhdf_host",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdf_utils",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "init:libbegetutil",
-    "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "os_account:os_account_innerkits",
-    "power_manager:power_setting",
-    "power_manager:powermgr_client",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-
-  sources = [
-    "./unittest/audio_affinity_parser_test/src/audio_affinity_parser_test.cpp",
-  ]
-
-  deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../audio_policy:audio_policy_service_static",
-  ]
-}
-
 ohos_unittest("audio_global_config_manager_test") {
   module_out_path = module_output_path
   include_dirs = [
@@ -3674,79 +3609,6 @@ ohos_unittest("audio_policy_manager_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../audio_policy:audio_policy_client_static",
-  ]
-}
-
-ohos_unittest("audio_affinity_manager_unit_test") {
-  module_out_path = module_output_path
-
-  include_dirs = [
-    "./unittest/audio_affinity_manager_unit_test/include",
-    "../../audio_policy/server/include/service/",
-    "../../audio_policy/server/domain/device/include/",
-    "../../../interfaces/inner_api/native/audiomanager/include",
-    "../../audio_service/client/src",
-    "../../audio_policy/server/src/service/device",
-  ]
-
-  use_exceptions = true
-
-  defines = [ "BLUETOOTH_ENABLE" ]
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  external_deps = [
-    "ability_base:session_info",
-    "ability_base:want",
-    "ability_base:zuri",
-    "ability_runtime:ability_connect_callback_stub",
-    "ability_runtime:ability_context_native",
-    "ability_runtime:ability_manager",
-    "ability_runtime:app_context",
-    "ability_runtime:dataobs_manager",
-    "ability_runtime:extension_manager",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bounds_checking_function:libsec_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_6.0",
-    "eventhandler:libeventhandler",
-    "googletest:gmock",
-    "hdf_core:libhdf_host",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdf_utils",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "init:libbegetutil",
-    "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "os_account:os_account_innerkits",
-    "power_manager:power_setting",
-    "power_manager:powermgr_client",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-
-  sources = [ "./unittest/audio_affinity_manager_unit_test/src/audio_affinity_manager_unit_test.cpp" ]
-
-  deps = [
-    "../../audio_policy:audio_foundation",
-    "../../audio_policy:audio_policy_service_static",
   ]
 }
 
@@ -5262,6 +5124,7 @@ ohos_unittest("audio_background_manager_unit_test") {
     "../../audio_policy/server/domain/device/src/a2dp",
     "../../audio_policy/server/include",
     "../../audio_policy/server/include/service/listener",
+    "../../audio_service/test/unittest/include"
   ]
 
   use_exceptions = true

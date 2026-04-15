@@ -1298,8 +1298,7 @@ void AudioEffectChainManager::FindMaxEffectChannels(const std::string &sceneType
         uint32_t tmpChannelCount;
         uint64_t tmpChannelLayout;
         std::string deviceType = GetDeviceTypeName();
-        if (((deviceType == "DEVICE_TYPE_BLUETOOTH_A2DP") || (deviceType == "DEVICE_TYPE_SPEAKER") ||
-            (deviceType == "DEVICE_TYPE_NEARLINK")) && ExistAudioEffectChainInner(sceneType, info.sceneMode)) {
+        if (ExistAudioEffectChainInner(sceneType, info.sceneMode)) {
             tmpChannelLayout = info.channelLayout;
             tmpChannelCount = info.channels;
         } else {
@@ -2168,6 +2167,7 @@ bool AudioEffectChainManager::IsDownSamplingForSpatialization(const std::string 
 
 void AudioEffectChainManager::SetInitEffectBufferFlag(const bool isNeedInitEffectBuffer)
 {
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
     isNeedInitEffectBuffer_ = isNeedInitEffectBuffer;
 }
 } // namespace AudioStandard

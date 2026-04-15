@@ -777,6 +777,93 @@ HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_032, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_033
+ * @tc.desc  : Test AudioCapturerPrivate::ConvertToStreamDescriptor for voice recognition micIn/ec request.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_033, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MUSIC, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+    capturer->capturerInfo_.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+
+    AudioStreamParams streamParams = {};
+    streamParams.format = SAMPLE_S16LE;
+    streamParams.encoding = ENCODING_PCM;
+    streamParams.samplingRate = SAMPLE_RATE_48000;
+    streamParams.channels = MONO;
+    streamParams.channelLayout = CH_LAYOUT_MONO;
+    streamParams.micInFormat = SAMPLE_S16LE;
+    streamParams.micInEncoding = ENCODING_PCM;
+    streamParams.micInSamplingRate = SAMPLE_RATE_48000;
+    streamParams.micInChannels = CHANNEL_4;
+    streamParams.micInChannelLayout = CH_LAYOUT_UNKNOWN;
+    streamParams.ecFormat = SAMPLE_S16LE;
+    streamParams.ecEncoding = ENCODING_PCM;
+    streamParams.ecSamplingRate = SAMPLE_RATE_48000;
+    streamParams.ecChannels = STEREO;
+    streamParams.ecChannelLayout = CH_LAYOUT_STEREO;
+
+    auto streamDesc = capturer->ConvertToStreamDescriptor(streamParams);
+    ASSERT_NE(streamDesc, nullptr);
+    EXPECT_EQ(streamDesc->streamInfo_.channels, MONO);
+    if (streamDesc->micInStreamInfo_.channels == CHANNEL_UNKNOW) {
+        EXPECT_EQ(streamDesc->ecStreamInfo_.channels, CHANNEL_UNKNOW);
+        EXPECT_EQ(streamDesc->micInStreamInfo_.format, INVALID_WIDTH);
+        EXPECT_EQ(streamDesc->ecStreamInfo_.format, INVALID_WIDTH);
+    } else {
+        EXPECT_EQ(streamDesc->micInStreamInfo_.channels, CHANNEL_4);
+        EXPECT_EQ(streamDesc->ecStreamInfo_.channels, STEREO);
+    }
+}
+
+/**
+ * @tc.name  : Test AudioCapturerPrivate API
+ * @tc.type  : FUNC
+ * @tc.number: AudioCapturerPrivate_034
+ * @tc.desc  : Test AudioCapturerPrivate::GenerateStreamDesc for voice recognition micIn/ec request.
+ */
+HWTEST(AudioCapturerUnitTest, AudioCapturerPrivate_034, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    auto capturer = std::make_shared<AudioCapturerPrivate>(AudioStreamType::STREAM_MUSIC, appInfo, false);
+    ASSERT_NE(capturer, nullptr);
+
+    IAudioStream::SwitchInfo switchInfo = {};
+    switchInfo.capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    switchInfo.sessionId = 1001;
+    switchInfo.params.format = SAMPLE_S16LE;
+    switchInfo.params.encoding = ENCODING_PCM;
+    switchInfo.params.samplingRate = SAMPLE_RATE_48000;
+    switchInfo.params.channels = MONO;
+    switchInfo.params.channelLayout = CH_LAYOUT_MONO;
+    switchInfo.params.micInFormat = SAMPLE_S16LE;
+    switchInfo.params.micInEncoding = ENCODING_PCM;
+    switchInfo.params.micInSamplingRate = SAMPLE_RATE_48000;
+    switchInfo.params.micInChannels = CHANNEL_4;
+    switchInfo.params.micInChannelLayout = CH_LAYOUT_UNKNOWN;
+    switchInfo.params.ecFormat = SAMPLE_S16LE;
+    switchInfo.params.ecEncoding = ENCODING_PCM;
+    switchInfo.params.ecSamplingRate = SAMPLE_RATE_48000;
+    switchInfo.params.ecChannels = STEREO;
+    switchInfo.params.ecChannelLayout = CH_LAYOUT_STEREO;
+
+    RestoreInfo restoreInfo = {};
+    auto streamDesc = capturer->GenerateStreamDesc(switchInfo, restoreInfo);
+    ASSERT_NE(streamDesc, nullptr);
+    EXPECT_EQ(streamDesc->sessionId_, switchInfo.sessionId);
+    EXPECT_EQ(streamDesc->streamInfo_.channels, MONO);
+    if (streamDesc->micInStreamInfo_.channels == CHANNEL_UNKNOW) {
+        EXPECT_EQ(streamDesc->ecStreamInfo_.channels, CHANNEL_UNKNOW);
+    } else {
+        EXPECT_EQ(streamDesc->micInStreamInfo_.channels, CHANNEL_4);
+        EXPECT_EQ(streamDesc->ecStreamInfo_.channels, STEREO);
+    }
+}
+
+/**
  * @tc.name  : Test ParamsToStateCmdType API
  * @tc.type  : FUNC
  * @tc.number: ParamsToStateCmdType_001

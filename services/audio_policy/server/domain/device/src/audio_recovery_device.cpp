@@ -220,19 +220,6 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     // check size == 1 && input device
     int32_t res = audioDeviceCommon_.DeviceParamsCheck(DeviceRole::INPUT_DEVICE, selectedDesc);
     CHECK_AND_RETURN_RET(res == SUCCESS, res);
-    if (audioCapturerFilter->uid != -1 && !IsBtRecognition(audioCapturerFilter)) {
-        audioAffinityManager_.AddSelectCapturerDevice(audioCapturerFilter->uid, selectedDesc[0]);
-        vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-        streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-        for (auto &changeInfo : capturerChangeInfos) {
-            if (changeInfo->clientUID == audioCapturerFilter->uid && changeInfo->sessionId != 0) {
-                RestoreInfo restoreInfo;
-                restoreInfo.restoreReason = STREAM_SPLIT;
-                AudioServerProxy::GetInstance().RestoreSessionProxy(changeInfo->sessionId, restoreInfo);
-            }
-        }
-        return SUCCESS;
-    }
 
     SourceType srcType = audioCapturerFilter->capturerInfo.sourceType;
 

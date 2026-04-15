@@ -26,6 +26,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
+struct AudioCapturerDebugInfo;
+class AudioCapturerDebugCallback;
 /**
  * @brief Defines information about audio capturer parameters
  * @since 8
@@ -881,6 +884,12 @@ public:
     virtual int32_t SetInputDevice(DeviceType deviceType) const = 0;
 
     virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
+
+    virtual int32_t GetCapturerDebugInfo(AudioCapturerDebugInfo &debugInfo) const
+    {
+        (void)debugInfo;
+        return 0;
+    }
 
     virtual int32_t SetAudioSourceConcurrency(const std::vector<SourceType> &targetSources) = 0;
 

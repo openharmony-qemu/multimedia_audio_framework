@@ -26,7 +26,6 @@
 #include "audio_device_info.h"
 #include "audio_stream_collector.h"
 #include "audio_device_manager.h"
-#include "audio_affinity_manager.h"
 #include "media_monitor_manager.h"
 
 #include "audio_connected_device.h"
@@ -59,7 +58,6 @@ public:
 private:
     AudioRecoveryDevice() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
-        audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioActiveDevice_(AudioActiveDevice::GetInstance()),
         audioSceneManager_(AudioSceneManager::GetInstance()),
         audioRouteMap_(AudioRouteMap::GetInstance()),
@@ -85,7 +83,6 @@ private:
 private:
     AudioStreamCollector& streamCollector_;
     AudioDeviceManager &audioDeviceManager_;
-    AudioAffinityManager &audioAffinityManager_;
     AudioActiveDevice& audioActiveDevice_;
     AudioSceneManager& audioSceneManager_;
     AudioRouteMap& audioRouteMap_;
