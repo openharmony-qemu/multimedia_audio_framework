@@ -45,7 +45,6 @@ const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
 const uid_t MCU_UID = 7500;
 const uid_t TV_SERVICE_UID = 7501;
-const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 constexpr int32_t REMOTE_USER_TERMINATED = 200;
 constexpr int32_t DUAL_CONNECTION_FAILURE = 201;
