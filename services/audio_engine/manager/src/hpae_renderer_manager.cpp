@@ -472,6 +472,7 @@ int32_t HpaeRendererManager::ConnectInputSession(uint32_t sessionId)
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         ConnectProcessCluster(sessionId, sceneType);
     }
+    CHECK_AND_RETURN_RET_LOG(outputCluster_ != nullptr, ERR_INVALID_PARAM, "outputCluster_ is nullptr");
     if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
         noneStreamTime_ = 0;
         UpdateAppsUid();
