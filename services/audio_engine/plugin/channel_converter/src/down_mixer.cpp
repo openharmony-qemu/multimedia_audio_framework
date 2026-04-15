@@ -138,6 +138,7 @@ void DownMixer::SetNormalization(bool normalizing)
 {
     if (normalizing == normalizing_) {
         AUDIO_DEBUG_LOG("no need to update downmix normalizing state");
+        return;
     }
     AUDIO_INFO_LOG("normalization state is set to %{public}d", normalizing);
     normalizing_ = normalizing;
