@@ -83,6 +83,12 @@ AudioRendererImpl::AudioRendererImpl(std::shared_ptr<AudioRendererImpl> obj)
     }
 }
 
+int64_t AudioRendererImpl::GetImplPtr()
+{
+    return reinterpret_cast<uintptr_t>(this);
+}
+
+
 void AudioRendererImpl::CreateRendererFailed()
 {
     AudioRendererImpl::isConstructSuccess_ = TAIHE_ERR_SYSTEM;
