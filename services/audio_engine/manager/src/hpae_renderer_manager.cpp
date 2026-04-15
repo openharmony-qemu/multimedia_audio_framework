@@ -1022,7 +1022,6 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     }
     auto request = [this, sinkInfo, isReload]() {
-
         ReloadRenderManagerInner(sinkInfo, isReload);
     };
     SendRequest(request, __func__, true);
