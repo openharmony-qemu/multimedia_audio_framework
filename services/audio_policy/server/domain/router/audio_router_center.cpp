@@ -276,7 +276,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
         shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
         if (IsMediaFollowCallStrategy(audioScene)) {
-            bak.streamUsage = AudioStreamCollector::GetAudioStreamCollector().GetLastestRunningCallStreamUsage();
+            bak.streamUsage = AudioPipeManager::GetPipeManager()->GetLastestRunningCallStreamUsage();
             bak.streamUsage = (bak.streamUsage == STREAM_USAGE_UNKNOWN) ? STREAM_USAGE_VOICE_COMMUNICATION :
                 bak.streamUsage;
             AUDIO_INFO_LOG("Media follow call strategy, replace usage %{public}d to %{public}d", streamUsage,

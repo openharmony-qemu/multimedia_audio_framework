@@ -149,6 +149,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
     void UpdateNewDeviceDescWithCheck(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> newDeviceDesc);
+    StreamUsage GetLastestRunningCallStreamUsage();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);
