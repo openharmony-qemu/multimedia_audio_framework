@@ -195,7 +195,7 @@ uint32_t AudioVolume::GetDoNotDisturbStatusVolumeInternal(int32_t volumeType, in
         return DISTURB_STATE_VOLUME_UNMUTE;
     } else {
         // this stream is STREAM_RING, mute
-        if (volumeMapType != STREAM_RING) {
+        if (volumeMapType != STREAM_RING && volumeMapType != STREAM_NOTIFICATION) {
             return DISTURB_STATE_VOLUME_UNMUTE;
         } else {
             return DISTURB_STATE_VOLUME_MUTE;
