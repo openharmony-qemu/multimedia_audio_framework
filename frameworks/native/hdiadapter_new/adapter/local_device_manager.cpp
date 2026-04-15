@@ -77,18 +77,22 @@ void LocalDeviceManager::UnloadAdapter(const std::string &adapterName, bool forc
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
     CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
-    std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
-    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
-    CHECK_AND_RETURN_LOG(force || (wrapper->hdiRenderIds_.size() == 0 && wrapper->hdiCaptureIds_.size() == 0),
-        "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu", adapterName.c_str(),
-        wrapper->hdiRenderIds_.size(), wrapper->hdiCaptureIds_.size());
+    {
+        std::unique_lock<std::mutex> innerLock(wrapper->adapterMtx_);
+        std::scoped_lock ioLock(wrapper->renderMtx_, wrapper->captureMtx_);
+        CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+        const size_t renderNum = wrapper->hdiRenderIds_.size();
+        const size_t captureNum = wrapper->hdiCaptureIds_.size();
+        CHECK_AND_RETURN_LOG(force || (renderNum == 0 && captureNum == 0),
+            "adapter %{public}s has some ports busy, renderNum: %{public}zu, captureNum: %{public}zu",
+            adapterName.c_str(), renderNum, captureNum);
 
-    if (wrapper->routeHandle_ != -1) {
-        wrapper->adapter_->ReleaseAudioRoute(wrapper->adapter_, wrapper->routeHandle_);
+        if (wrapper->routeHandle_ != -1) {
+            wrapper->adapter_->ReleaseAudioRoute(wrapper->adapter_, wrapper->routeHandle_);
+        }
+        audioManager_->UnloadAdapter(audioManager_, wrapper->adapterDesc_.adapterName);
+        wrapper->adapter_ = nullptr;
     }
-    audioManager_->UnloadAdapter(audioManager_, wrapper->adapterDesc_.adapterName);
-    wrapper->adapter_ = nullptr;
-    innerLock.unlock();
     std::lock_guard<std::mutex> lock(adapterMtx_);
     adapters_[adapterName].reset();
     adapters_.erase(adapterName);
@@ -302,14 +306,17 @@ void *LocalDeviceManager::CreateRender(const std::string &adapterName, void *par
     struct AudioDeviceDescriptor *localDeviceDesc = static_cast<struct AudioDeviceDescriptor *>(deviceDesc);
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     localDeviceDesc->portId = GetPortId(adapterName, PORT_OUT);
 
+    std::unique_lock<std::mutex> lock(wrapper->renderMtx_);
+    CHECK_AND_RETURN_RET_LOG(wrapper->adapter_ != nullptr, nullptr, "adapter %{public}s is nullptr",
+        adapterName.c_str());
     struct IAudioRender *render = nullptr;
     int32_t ret = wrapper->adapter_->CreateRender(wrapper->adapter_, localDeviceDesc, localParam, &render,
         &hdiRenderId);
     if (ret != SUCCESS || render == nullptr) {
+        lock.unlock();
         AUDIO_ERR_LOG("create render fail");
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
             " create render fail, id:" + std::to_string(hdiRenderId)));
@@ -319,7 +326,6 @@ void *LocalDeviceManager::CreateRender(const std::string &adapterName, void *par
     AUDIO_INFO_LOG("create render success, hdiRenderId: %{public}u, desc: %{public}s", hdiRenderId,
         localDeviceDesc->desc);
 
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
     wrapper->hdiRenderIds_.insert(hdiRenderId);
     return render;
 }
@@ -329,12 +335,11 @@ void LocalDeviceManager::DestroyRender(const std::string &adapterName, uint32_t 
     AUDIO_INFO_LOG("destroy render, hdiRenderId: %{public}u", hdiRenderId);
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     CHECK_AND_RETURN_LOG(wrapper->hdiRenderIds_.count(hdiRenderId) != 0, "render not exist");
     wrapper->adapter_->DestroyRender(wrapper->adapter_, hdiRenderId);
-
-    std::lock_guard<std::mutex> lock(wrapper->renderMtx_);
     wrapper->hdiRenderIds_.erase(hdiRenderId);
 }
 
@@ -346,14 +351,17 @@ void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *pa
     struct AudioDeviceDescriptor *localDeviceDesc = static_cast<struct AudioDeviceDescriptor *>(deviceDesc);
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName, true);
-    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, nullptr,
-        "adapter %{public}s is nullptr", adapterName.c_str());
+    CHECK_AND_RETURN_RET_LOG(wrapper != nullptr, nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     localDeviceDesc->portId = GetPortId(adapterName, PORT_IN);
 
+    std::unique_lock<std::mutex> lock(wrapper->captureMtx_);
+    CHECK_AND_RETURN_RET_LOG(wrapper->adapter_ != nullptr, nullptr, "adapter %{public}s is nullptr",
+        adapterName.c_str());
     struct IAudioCapture *capture = nullptr;
     int32_t ret = wrapper->adapter_->CreateCapture(wrapper->adapter_, localDeviceDesc, localParam, &capture,
         &hdiCaptureId);
     if (ret != SUCCESS || capture == nullptr) {
+        lock.unlock();
         AUDIO_ERR_LOG("create capture fail");
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
             " create capture fail, id:" + std::to_string(hdiCaptureId)));
@@ -362,7 +370,6 @@ void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *pa
     }
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u", hdiCaptureId);
 
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
     wrapper->hdiCaptureIds_.insert(hdiCaptureId);
     return capture;
 }
@@ -372,20 +379,24 @@ void LocalDeviceManager::DestroyCapture(const std::string &adapterName, uint32_t
     AUDIO_INFO_LOG("destroy capture, hdiCaptureId: %{public}u", hdiCaptureId);
 
     std::shared_ptr<LocalAdapterWrapper> wrapper = GetAdapter(adapterName);
-    CHECK_AND_RETURN_LOG(wrapper != nullptr && wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr",
-        adapterName.c_str());
+    CHECK_AND_RETURN_LOG(wrapper != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
+    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
+    CHECK_AND_RETURN_LOG(wrapper->adapter_ != nullptr, "adapter %{public}s is nullptr", adapterName.c_str());
     CHECK_AND_RETURN_LOG(wrapper->hdiCaptureIds_.count(hdiCaptureId) != 0, "capture not exist");
     wrapper->adapter_->DestroyCapture(wrapper->adapter_, hdiCaptureId);
-
-    std::lock_guard<std::mutex> lock(wrapper->captureMtx_);
     wrapper->hdiCaptureIds_.erase(hdiCaptureId);
 }
 
 void LocalDeviceManager::DumpInfo(std::string &dumpString)
 {
     for (auto &item : adapters_) {
-        uint32_t renderNum = item.second == nullptr ? 0 : item.second->hdiRenderIds_.size();
-        uint32_t captureNum = item.second == nullptr ? 0 : item.second->hdiCaptureIds_.size();
+        uint32_t renderNum = 0;
+        uint32_t captureNum = 0;
+        if (item.second != nullptr) {
+            std::scoped_lock lock(item.second->renderMtx_, item.second->captureMtx_);
+            renderNum = item.second->hdiRenderIds_.size();
+            captureNum = item.second->hdiCaptureIds_.size();
+        }
         dumpString += "  - local/" + item.first + "\trenderNum: " + std::to_string(renderNum) + "\tcaptureNum: " +
             std::to_string(captureNum) + "\n";
     }
